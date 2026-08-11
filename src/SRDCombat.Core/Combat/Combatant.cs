@@ -1,3 +1,4 @@
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
 
@@ -38,6 +39,36 @@ public sealed record CombatAttack(
 }
 
 /// <summary>
+/// The character-only part of a combatant: implemented class features and the numbers
+/// they run on.
+/// </summary>
+/// <remarks>
+/// Null for a monster. Kept as its own record rather than as a dozen nullable fields on
+/// <see cref="CombatantStats"/>, so "is this a character?" is one question with one
+/// answer rather than a scattering of defaults that happen to mean nothing for monsters.
+/// </remarks>
+/// <param name="Features">Implemented features the character has.</param>
+/// <param name="AttacksPerAction">Attacks made with one Attack action. Two with Extra Attack.</param>
+/// <param name="SneakAttackDamage">The Rogue's Sneak Attack dice at this level.</param>
+/// <param name="RageDamageBonus">Bonus damage on Strength melee attacks while raging.</param>
+/// <param name="RageUses">Rages per long rest.</param>
+/// <param name="SecondWindUses">Second Wind uses per rest.</param>
+/// <param name="ActionSurgeUses">Action Surge uses per rest.</param>
+/// <param name="Level">Character level, which several features scale on.</param>
+public sealed record CombatantFeatures(
+    IReadOnlyList<ClassFeature> Features,
+    int AttacksPerAction,
+    DiceExpression? SneakAttackDamage,
+    int RageDamageBonus,
+    int RageUses,
+    int SecondWindUses,
+    int ActionSurgeUses,
+    int Level)
+{
+    public bool Has(ClassFeature feature) => Features.Contains(feature);
+}
+
+/// <summary>
 /// A combatant's unchanging statistics, resolved before the fight starts.
 /// </summary>
 /// <param name="ArmorClass">The number an attack roll must meet or beat.</param>
@@ -68,6 +99,12 @@ public sealed record CombatantStats(
     IReadOnlyList<CombatAttack> Attacks,
     bool DiesAtZeroHitPoints)
 {
+    /// <summary>Class features and their numbers. Null for a monster.</summary>
+    public CombatantFeatures? Character { get; init; }
+
+    /// <summary>True when this combatant has the given implemented class feature.</summary>
+    public bool Has(ClassFeature feature) => Character?.Has(feature) == true;
+
     /// <summary>The ability modifier for an ability, or 0 if the creature has no score for it.</summary>
     public int ModifierFor(Ability ability) =>
         Abilities.TryGetValue(ability, out var value) ? value.Modifier : 0;
@@ -75,6 +112,53 @@ public sealed record CombatantStats(
     /// <summary>The saving throw bonus for an ability.</summary>
     public int SaveBonusFor(Ability ability) =>
         Abilities.TryGetValue(ability, out var value) ? value.SaveBonus : 0;
+
+    /// <summary>
+    /// Builds combat statistics from a resolved character sheet.
+    /// </summary>
+    /// <remarks>
+    /// The one difference that matters most is <c>DiesAtZeroHitPoints: false</c> — a
+    /// character falls Unconscious and rolls Death Saving Throws where a monster simply
+    /// dies.
+    /// </remarks>
+    public static CombatantStats FromCharacter(
+        CharacterSheet sheet,
+        DiceExpression? sneakAttackDamage = null,
+        int rageDamageBonus = 0,
+        int rageUses = 0,
+        int secondWindUses = 0,
+        int actionSurgeUses = 0)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+
+        var abilities = sheet.AbilityScores.ToDictionary(
+            pair => pair.Key,
+            pair => new MonsterAbility(pair.Value, sheet.SavingThrows[pair.Key]));
+
+        return new CombatantStats(
+            sheet.ArmorClass,
+            sheet.MaximumHitPoints,
+            sheet.SpeedFeet,
+            sheet.Modifier(Ability.Dexterity),
+            abilities,
+            sheet.ProficiencyBonus,
+            sheet.Size,
+            new Dictionary<DamageType, DamageResponse>(),
+            [],
+            sheet.Attacks,
+            DiesAtZeroHitPoints: false)
+        {
+            Character = new CombatantFeatures(
+                sheet.Features.Select(granted => granted.Feature).ToArray(),
+                sheet.AttacksPerAction,
+                sneakAttackDamage,
+                rageDamageBonus,
+                rageUses,
+                secondWindUses,
+                actionSurgeUses,
+                sheet.Level),
+        };
+    }
 
     /// <summary>Builds combat statistics from an extracted stat block.</summary>
     public static CombatantStats FromMonster(MonsterDefinition monster)
@@ -146,6 +230,9 @@ public sealed class TurnResources
 
     public void SpendAction() => HasAction = false;
 
+    /// <summary>Gives the action back — what Action Surge buys.</summary>
+    public void RestoreAction() => HasAction = true;
+
     public void SpendBonusAction() => HasBonusAction = false;
 
     public void SpendReaction() => HasReaction = false;
@@ -158,6 +245,51 @@ public sealed class TurnResources
     public void StartDodging() => IsDodging = true;
 
     public void Disengage() => HasDisengaged = true;
+}
+
+/// <summary>
+/// The per-fight state of a combatant's class features: what is active, and what is
+/// left to spend.
+/// </summary>
+public sealed class FeatureState
+{
+    /// <summary>True while a Barbarian's Rage is running.</summary>
+    public bool IsRaging { get; internal set; }
+
+    /// <summary>Rages left this rest.</summary>
+    public int RagesRemaining { get; internal set; }
+
+    /// <summary>Second Wind uses left this rest.</summary>
+    public int SecondWindRemaining { get; internal set; }
+
+    /// <summary>Action Surge uses left this rest.</summary>
+    public int ActionSurgeRemaining { get; internal set; }
+
+    /// <summary>Sneak Attack is once per turn, not once per attack.</summary>
+    public bool SneakAttackUsedThisTurn { get; internal set; }
+
+    /// <summary>True once Reckless Attack has been declared this turn.</summary>
+    public bool IsRecklessThisTurn { get; internal set; }
+
+    /// <summary>
+    /// Whether the creature attacked on its turn. Rage ends if a turn passes without
+    /// the Barbarian attacking or forcing a saving throw.
+    /// </summary>
+    public bool AttackedThisTurn { get; internal set; }
+
+    /// <summary>
+    /// Attacks still available from the current Attack action. Extra Attack is modelled
+    /// as the action buying several attacks rather than as several actions.
+    /// </summary>
+    public int AttacksRemainingThisAction { get; internal set; }
+
+    internal void BeginTurn()
+    {
+        SneakAttackUsedThisTurn = false;
+        IsRecklessThisTurn = false;
+        AttackedThisTurn = false;
+        AttacksRemainingThisAction = 0;
+    }
 }
 
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>
@@ -178,6 +310,13 @@ public sealed class Combatant
         Stats = stats;
         Position = position;
         CurrentHitPoints = stats.MaximumHitPoints;
+
+        if (stats.Character is { } character)
+        {
+            Features.RagesRemaining = character.RageUses;
+            Features.SecondWindRemaining = character.SecondWindUses;
+            Features.ActionSurgeRemaining = character.ActionSurgeUses;
+        }
     }
 
     public string Id { get; }
@@ -200,6 +339,9 @@ public sealed class Combatant
     public int TemporaryHitPoints { get; private set; }
 
     public TurnResources Turn { get; } = new();
+
+    /// <summary>Class feature state for this fight.</summary>
+    public FeatureState Features { get; } = new();
 
     public IReadOnlyCollection<ConditionType> Conditions => _conditions;
 

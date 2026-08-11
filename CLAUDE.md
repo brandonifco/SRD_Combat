@@ -58,10 +58,29 @@ them ungated would repeat bug 1 in a new place. Don't wire them up until size co
 exists.
 
 **Phase 2 is in progress, sliced into small PRs.** Landed so far: **9 species,
-4 backgrounds, and all 12 classes** in `data/srd/` — Core Traits, the full 1–20 level
-table, and every feature's prose. `AdvancementRules` carries the XP thresholds and the
-proficiency-bonus-by-level table. Still to come: character resolution (levels 1–5);
-pregens and wiring characters into combat.
+4 backgrounds, and all 12 classes** in `data/srd/`; `AdvancementRules` (XP thresholds,
+proficiency bonus by level); and **character resolution with nine implemented class
+features**. A real party built from real content now fights real monsters. Still to
+come: the four pregenerated characters.
+
+### Working on characters
+
+- **`CharacterResolver` derives everything.** No number on a `CharacterSheet` is stored
+  independently of the rules that make it, so AC and armour cannot drift apart. Only
+  choices the engine cannot make — how the background's ability increases were spent,
+  which skills were taken — come from the draft.
+- **Ability increases come from the *background*, not the species.** A 2024 change; a
+  species grants no ability scores at all.
+- **`ClassFeatureRegistry` is a curated allowlist**, exactly like the extractor's inert
+  list. A printed feature name maps to an implemented `ClassFeature` only if the engine
+  really does the thing. **Add a name here only alongside the code that implements it** —
+  everything absent is reported on `CharacterSheet.UnimplementedFeatures` and stays
+  visible.
+- **Spellcasting is the big gap, and it is content before engine.** Spells are not
+  extracted. A Cleric or Wizard resolves correctly, gets correct slots, and has no way
+  to spend them; the sheet says so.
+- **Extra Attack is one action buying several attacks**, not several actions — modelling
+  it as extra actions would also wrongly allow a second Dodge or Dash.
 
 **Still not playable by a person** — there is no client and no character model yet.
 
