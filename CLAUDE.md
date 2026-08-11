@@ -15,7 +15,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #14 (Multiattack). **PR #17 (condition gates) is open and unmerged.** |
+| Branch | `main` at PR #17 (condition gates). Nothing open. |
 | Tests | **343 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
@@ -34,11 +34,51 @@ No gauntlet, no XP awards, no levelling in play, no loot, no save files, no preg
 characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings.
 
-**Picking up cold:** merge or review PR #17 first, then take a GitHub issue.
-`gh issue list`. The highest-value remaining is **#6 saving-throw effects for monsters**,
-which has both the area geometry (`AreaTargeting`) and now the condition plumbing it
-needed — 42 tier-1 saving-throw entries impose a condition on a failure and none of them
-land. Then **#15 condition durations**, which is what stops most of the rest.
+**Picking up cold:** `gh issue list` is the work queue, and the order below is not the
+order the issues were filed in. Take the top of it.
+
+### The order to do the open work in
+
+Ordered by what each piece rests on, not by how valuable it looks on its own. The
+governing plan doc carries the same list with the reasoning; this is the short form.
+
+1. **#15 condition durations — first, and wider than the issue asks.** Give the condition
+   record **both an expiry and the combatant who imposed it** in one pass. Expiry is all
+   #15 needs; the source is what #16 needs for "the grapple ends with its grappler", and
+   it is the same field on the same type. Split them and `Combatant`, the condition
+   collection and every call site get reopened twice.
+2. **#16 Grappled and Restrained.** Straight after, while that model is fresh. It is the
+   smallest real consumer of it and therefore the best proof it is shaped right:
+   Restrained exercises the expiry, the grapple exercises the source, and Escape
+   exercises removal by something that is not a timer.
+3. **A way for a monster to use a stat-block entry, together with #8 recharge.** This is
+   the prerequisite nothing has filed. `UsageLimit` is never read in `Core`,
+   `MonsterEntry.Save` is never read in `Core`, and every `Encounter` action is either
+   hardcoded (`Dodge`, `Dash`) or gated on `Stats.Character` (`CastSpell`, `Rage`) — so
+   **there is no path for a monster to use an entry at all**, and `SimpleTacticsPolicy`
+   has no concept of choosing between attacking and doing something else. Build the
+   "can I use this?" and "should I use it now?" branches together or write them twice.
+4. **#6 saving-throw effects.** Only now does it land with nothing left to invent: the
+   area geometry already existed, durations come from step 1, recharge gates the breath
+   weapons, and step 3 is what invokes it. Its title still says "needs area geometry";
+   that stopped being true when the spells work merged.
+5. **#9 passive monster traits.** Several reference machinery that has to exist first —
+   Magic Resistance is Advantage on saves and is worth nothing before #6. Best
+   repetition in the queue once unblocked: Pack Tactics ×18, Spider Climb ×10, Magic
+   Resistance ×7, Swarm ×7, Flyby ×7 across the tier-1 band.
+6. **#10 class features.** Same argument, weaker — Danger Sense wants saves executed,
+   Cunning Strike imposes conditions. The least architectural item here and on a
+   different subsystem from #9, which makes it the safest work to interleave.
+7. **#11 curate the monster pool — last, deliberately.** Weighting the pool by mechanical
+   coverage means nothing until coverage stops moving, and every step above moves it.
+
+**Conditions are the most-reopened type in that list** — #6 imposes them on a failed
+save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
+steps 1 and 2 come before anything else, and why they are worth doing as one design.
+
+Steps 1, 3 and 4 all touch the turn loop, so **the frozen transcript may churn**. It uses
+hand-authored combatants carrying no riders, so it may well survive — but if it diffs,
+read the diff before regenerating.
 
 ## The rule this project runs on
 
