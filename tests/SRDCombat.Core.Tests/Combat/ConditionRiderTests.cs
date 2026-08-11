@@ -1,0 +1,197 @@
+using SRDCombat.Core.Combat;
+using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
+
+namespace SRDCombat.Core.Tests.Combat;
+
+/// <summary>
+/// Conditions imposed by a hit — "If the target is a Medium or smaller creature, it has
+/// the Prone condition."
+/// </summary>
+/// <remarks>
+/// Two questions decide whether a rider lands, and they are deliberately kept apart. The
+/// model asks whether it expresses everything printed with the condition
+/// (<see cref="AppliedCondition.IsFullyModelled"/>); the engine asks whether it executes
+/// that condition at all (<see cref="ConditionRules.IsExecutable"/>). Only the size gate
+/// depends on who was hit, and only it is evaluated during the fight.
+/// </remarks>
+public class ConditionRiderTests
+{
+    /// <summary>An attack that always hits, so the rider is the only thing under test.</summary>
+    private static CombatAttack Knockdown(params AppliedCondition[] riders) =>
+        new(
+            "Slam",
+            AttackKind.Melee,
+            AttackBonus: 20,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Bludgeoning, 2)],
+            riders);
+
+    [Theory]
+    [InlineData(CreatureSize.Tiny, true)]
+    [InlineData(CreatureSize.Small, true)]
+    [InlineData(CreatureSize.Medium, true)]
+    [InlineData(CreatureSize.Large, false)]
+    [InlineData(CreatureSize.Gargantuan, false)]
+    public void ASizeGateDecidesWhoIsKnockedDown(CreatureSize targetSize, bool expected)
+    {
+        var rider = new AppliedCondition(ConditionType.Prone, MaximumTargetSize: CreatureSize.Medium);
+        var encounter = Fight(rider, targetSize);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        Assert.Equal(expected, Target(encounter).HasCondition(ConditionType.Prone));
+    }
+
+    [Fact]
+    public void AnUngatedRiderLandsOnAnythingItHits()
+    {
+        var encounter = Fight(new AppliedCondition(ConditionType.Prone), CreatureSize.Gargantuan);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        Assert.True(Target(encounter).HasCondition(ConditionType.Prone));
+    }
+
+    [Fact]
+    public void ARiderWithAnUnmodelledRequirementIsNeverImposed()
+    {
+        // The charge riders: "If the target is a Large or smaller creature and the
+        // allosaurus moved 30+ feet straight toward it ...". The engine cannot tell
+        // whether the charge happened, so imposing the condition would knock the target
+        // down on every hit rather than on a charge.
+        var rider = new AppliedCondition(
+            ConditionType.Prone,
+            UnmodelledRequirement: "and the allosaurus moved 30+ feet straight toward it");
+
+        var encounter = Fight(rider, CreatureSize.Medium);
+
+        Assert.False(ConditionRules.CanBeImposed(rider));
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        Assert.False(Target(encounter).HasCondition(ConditionType.Prone));
+    }
+
+    [Fact]
+    public void AConditionTheEngineDoesNotExecuteIsNeverImposed()
+    {
+        // Grappled is completely modelled — a size gate and an escape DC, nothing else —
+        // and still must not land. Nothing in the engine gives it an effect, so a
+        // Grappled creature would walk away at full speed while its sheet said otherwise.
+        var rider = new AppliedCondition(
+            ConditionType.Grappled,
+            EscapeDifficultyClass: 13,
+            MaximumTargetSize: CreatureSize.Large);
+
+        var encounter = Fight(rider, CreatureSize.Medium);
+
+        Assert.True(rider.IsFullyModelled);
+        Assert.False(ConditionRules.IsExecutable(ConditionType.Grappled));
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        Assert.False(Target(encounter).HasCondition(ConditionType.Grappled));
+    }
+
+    [Fact]
+    public void ImmunityStillRefusesAnOtherwiseValidRider()
+    {
+        var encounter = Fight(
+            new AppliedCondition(ConditionType.Prone, MaximumTargetSize: CreatureSize.Large),
+            CreatureSize.Medium,
+            immunities: [ConditionType.Prone]);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        Assert.False(Target(encounter).HasCondition(ConditionType.Prone));
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Condition);
+    }
+
+    [Fact]
+    public void AnImposedConditionIsNarrated()
+    {
+        var encounter = Fight(
+            new AppliedCondition(ConditionType.Prone, MaximumTargetSize: CreatureSize.Large),
+            CreatureSize.Medium);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+
+        var step = Assert.Single(encounter.Log, entry => entry.Kind == CombatStepKind.Condition);
+        Assert.Equal("victim has the Prone condition.", step.Narration);
+    }
+
+    [Fact]
+    public void KnockingATargetDownReallyChangesWhatItCanDo()
+    {
+        // The point of imposing the condition at all: Prone is not a label, it stops the
+        // target moving until it spends half its Speed standing up.
+        var encounter = Fight(
+            new AppliedCondition(ConditionType.Prone, MaximumTargetSize: CreatureSize.Large),
+            CreatureSize.Medium);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        encounter.EndTurn();
+
+        var victim = Target(encounter);
+        Assert.Same(victim, encounter.ActiveCombatant);
+
+        var refusal = encounter.Move(new GridPosition(4, 0));
+        Assert.Equal("combatant.prone", refusal?.Code);
+
+        Assert.Null(encounter.StandUp());
+        Assert.False(victim.HasCondition(ConditionType.Prone));
+    }
+
+    [Fact]
+    public void AMissImposesNothing()
+    {
+        var attack = new CombatAttack(
+            "Slam",
+            AttackKind.Melee,
+            AttackBonus: -20,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Bludgeoning, 2)],
+            [new AppliedCondition(ConditionType.Prone)]);
+
+        var encounter = Fight(attack, CreatureSize.Medium);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+        Assert.False(Target(encounter).HasCondition(ConditionType.Prone));
+    }
+
+    private static Combatant Target(Encounter encounter) =>
+        encounter.Combatants.Single(combatant => combatant.Id == "victim");
+
+    private static Encounter Fight(
+        AppliedCondition rider,
+        CreatureSize targetSize,
+        IReadOnlyList<ConditionType>? immunities = null) =>
+        Fight(Knockdown(rider), targetSize, immunities);
+
+    /// <summary>
+    /// The attacker acts first and the target is adjacent, so one call to
+    /// <see cref="Encounter.Attack"/> resolves the whole thing.
+    /// </summary>
+    private static Encounter Fight(
+        CombatAttack attack,
+        CreatureSize targetSize,
+        IReadOnlyList<ConditionType>? immunities = null) =>
+        Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                CombatTestData.Combatant(
+                    "brute",
+                    sideId: CombatTestData.Monsters,
+                    stats: CombatTestData.Stats(initiativeBonus: 10, attacks: [attack])),
+                CombatTestData.Combatant(
+                    "victim",
+                    sideId: CombatTestData.Heroes,
+                    stats: CombatTestData.Stats(
+                        maximumHitPoints: 60,
+                        initiativeBonus: -10,
+                        diesAtZeroHitPoints: false,
+                        conditionImmunities: immunities,
+                        size: targetSize),
+                    x: 1),
+            ],
+            new SeededRandomSource(5));
+}

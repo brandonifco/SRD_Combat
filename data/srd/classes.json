@@ -302,7 +302,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "The Rage lasts until the end of your next turn, and it ends early if you don Heavy armor or have the Incapacitated condition"
             }
           ],
           "unmodelledClauses": [
@@ -353,7 +354,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "You have Advantage on Dexterity saving throws unless you have the Incapacitated condition."
             }
           ],
           "unmodelledClauses": [
@@ -493,10 +495,12 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Unconscious"
+              "condition": "Unconscious",
+              "unmodelledRequirement": "Your Rage ends early if you have the Unconscious condition (not just the Incapacitated condition) or don Heavy armor."
             },
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "Your Rage ends early if you have the Unconscious condition (not just the Incapacitated condition) or don Heavy armor."
             }
           ],
           "unmodelledClauses": [
@@ -583,7 +587,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Frightened"
+              "condition": "Frightened",
+              "unmodelledRequirement": "On a failed save, a creature has the Frightened condition for 1 minute"
             }
           ],
           "unmodelledClauses": [
@@ -1666,7 +1671,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "This effect ends early on the creature if it takes any damage, if you have the Incapacitated condition, or if you die."
             }
           ],
           "unmodelledClauses": [
@@ -2327,7 +2333,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "You stay in that form for a number of hours equal to half your Druid level or until you use Wild Shape again, have the Incapacitated condition, or die"
             }
           ],
           "unmodelledClauses": [
@@ -2521,7 +2528,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Poisoned"
+              "condition": "Poisoned",
+              "unmodelledRequirement": "You are immune to the Poisoned condition, and you have Resistance to a damage type associated with your current land choice in the Circle Spells feature, as shown in the Nature's Ward table"
             }
           ],
           "unmodelledClauses": [
@@ -2535,7 +2543,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "They last there for 1 minute or until you have the Incapacitated condition or die"
             }
           ],
           "unmodelledClauses": [
@@ -3478,7 +3487,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Stunned"
+              "condition": "Stunned",
+              "unmodelledRequirement": "On a failed save, the target has the Stunned condition until the start of your next turn"
             }
           ],
           "unmodelledClauses": [
@@ -3503,7 +3513,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "You don't benefit from this feature if you have the Incapacitated condition."
             }
           ],
           "unmodelledClauses": [
@@ -3581,7 +3592,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "At the start of your turn, you can expend 3 Focus Points to bolster yourself against harm for 1 minute or until you have the Incapacitated condition"
             }
           ],
           "unmodelledClauses": [
@@ -3617,7 +3629,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Prone"
+              "condition": "Prone",
+              "unmodelledRequirement": "The target must succeed on a Dexterity saving throw or have the Prone condition."
             }
           ],
           "unmodelledClauses": [
@@ -4023,7 +4036,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Poisoned"
+              "condition": "Poisoned",
+              "unmodelledRequirement": "You can also expend 5 Hit Points from the pool of healing power to remove the Poisoned condition from the creature; those points don't also restore Hit Points to the creature."
             }
           ],
           "unmodelledClauses": [
@@ -4104,7 +4118,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "For the next 10 minutes or until you have the Incapacitated condition, you know the location of any creature of those types within 60 feet of yourself, and you know its creature type"
             }
           ],
           "unmodelledClauses": [
@@ -4176,7 +4191,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "The aura is inactive while you have the Incapacitated condition"
             }
           ],
           "unmodelledClauses": [
@@ -4192,7 +4208,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Frightened"
+              "condition": "Frightened",
+              "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage"
             }
           ],
           "unmodelledClauses": [
@@ -4208,7 +4225,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Frightened"
+              "condition": "Frightened",
+              "unmodelledRequirement": "You and your allies have Immunity to the Frightened condition while in your Aura of Protection"
             }
           ],
           "unmodelledClauses": [
@@ -4293,7 +4311,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Charmed"
+              "condition": "Charmed",
+              "unmodelledRequirement": "You and your allies have Immunity to the Charmed condition while in your Aura of Protection"
             }
           ],
           "unmodelledClauses": [
@@ -4844,7 +4863,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Invisible"
+              "condition": "Invisible",
+              "unmodelledRequirement": "As a Bonus Action, you can give yourself the Invisible condition until the end of your next turn"
             }
           ],
           "unmodelledClauses": [
@@ -5230,7 +5250,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "You don't need Advantage on the attack roll if at least one of your allies is within 5 feet of the target, the ally doesn't have the Incapacitated condition, and you don't have Disadvantage on the attack roll"
             }
           ],
           "unmodelledClauses": [
@@ -5310,10 +5331,12 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Poisoned"
+              "condition": "Poisoned",
+              "unmodelledRequirement": "On a failed save, the target has the Poisoned condition for 1 minute"
             },
             {
-              "condition": "Prone"
+              "condition": "Prone",
+              "unmodelledRequirement": "If the target is Large or smaller, it must succeed on a Dexterity saving throw or have the Prone condition"
             }
           ],
           "unmodelledClauses": [
@@ -5349,7 +5372,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "You can't use this feature if you have the Incapacitated condition."
             }
           ],
           "unmodelledClauses": [
@@ -5382,10 +5406,12 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Unconscious"
+              "condition": "Unconscious",
+              "unmodelledRequirement": "The target must succeed on a Constitution saving throw, or it has the Unconscious condition for 1 minute or until it takes any damage"
             },
             {
-              "condition": "Blinded"
+              "condition": "Blinded",
+              "unmodelledRequirement": "The target must succeed on a Dexterity saving throw, or it has the Blinded condition until the end of its next turn."
             }
           ],
           "unmodelledClauses": [
@@ -5416,7 +5442,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "No attack roll can have Advantage against you unless you have the Incapacitated condition."
             }
           ],
           "unmodelledClauses": [
@@ -6610,7 +6637,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Prone"
+              "condition": "Prone",
+              "unmodelledRequirement": "Eldritch Smite Prerequisite: Level 5+ Warlock, Pact of the Blade Invocation Once per turn when you hit a creature with your pact weapon, you can expend a Pact Magic spell slot to deal an extra 1d8 Force damage to the target, plus another 1d8 per level of the spell slot, and you can give the target the Prone condition if it is Huge or smaller"
             }
           ],
           "unmodelledClauses": [
@@ -6751,7 +6779,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "The target takes 8d10 Psychic damage if it isn't a Fiend, and it has the Incapacitated condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space"
             }
           ],
           "unmodelledClauses": [

@@ -18,6 +18,9 @@ public enum CombatStepKind
     Disengage,
     OpportunityAttack,
 
+    /// <summary>A condition being imposed on a creature.</summary>
+    Condition,
+
     /// <summary>A class feature being used or expiring.</summary>
     Feature,
 

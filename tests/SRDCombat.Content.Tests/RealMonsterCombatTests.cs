@@ -139,6 +139,65 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void ARealWolfCarriesItsProneRiderIntoTheFight()
+    {
+        // "Hit: 7 (2d4 + 2) Piercing damage. If the target is a Medium or smaller
+        // creature, it has the Prone condition." The whole route matters here: the rider
+        // hangs off the stat block entry rather than off the attack grammar, and has to
+        // survive extraction, the gate check, and conversion into a combatant.
+        var wolf = CombatantStats.FromMonster(Content.MonstersById["monster.wolf"]);
+
+        var rider = Assert.Single(wolf.Attacks.Single(attack => attack.Name == "Bite").AppliedConditions);
+
+        Assert.Equal(ConditionType.Prone, rider.Condition);
+        Assert.Equal(CreatureSize.Medium, rider.MaximumTargetSize);
+    }
+
+    [Fact]
+    public void ARiderTheEngineWillNotImposeNeverReachesACombatant()
+    {
+        // The Ankheg's Grappled and the Giant Centipede's Poisoned are both extracted,
+        // and neither may travel any further: one is a condition the engine does not
+        // execute, the other prints a duration nothing can end. They stay counted on the
+        // stat block entry instead.
+        foreach (var id in new[] { "monster.ankheg", "monster.giant-centipede" })
+        {
+            var monster = Content.MonstersById[id];
+            var stats = CombatantStats.FromMonster(monster);
+
+            Assert.Contains(monster.Entries, entry => entry.AppliedConditions.Count > 0);
+            Assert.All(stats.Attacks, attack => Assert.Empty(attack.AppliedConditions));
+        }
+    }
+
+    [Fact]
+    public void AWolfPackKnocksSomebodyDownOverAWholeFight()
+    {
+        // The end-to-end proof, run against real content: wolves bite Medium creatures
+        // and Medium creatures go down. Enough wolves and enough rounds that the seed
+        // does not have to be lucky.
+        var wolf = Content.MonstersById["monster.wolf"];
+        var bandit = Content.MonstersById["monster.bandit"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(wolf, "wolf-1", "wolves", new GridPosition(0, 4)),
+                Spawn(wolf, "wolf-2", "wolves", new GridPosition(0, 5)),
+                Spawn(wolf, "wolf-3", "wolves", new GridPosition(0, 6)),
+                Spawn(bandit, "bandit-1", "bandits", new GridPosition(11, 4)),
+                Spawn(bandit, "bandit-2", "bandits", new GridPosition(11, 6)),
+            ],
+            new SeededRandomSource(4));
+
+        SimpleTacticsPolicy.RunToCompletion(encounter);
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition && step.Narration.Contains("Prone", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void AMonsterWithNoParsedAttacksStillTakesItsTurn()
     {
         // The Shrieker Fungus genuinely has no attack in the SRD — it shrieks, and that

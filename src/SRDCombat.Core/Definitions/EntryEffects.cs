@@ -101,14 +101,56 @@ public sealed record SaveEffect(
     IReadOnlyList<AppliedCondition> AppliedConditions);
 
 /// <summary>
-/// A condition an entry imposes — "the target has the Grappled condition (escape DC 13)".
+/// A condition an entry imposes — "If the target is a Large or smaller creature, it has
+/// the Grappled condition (escape DC 13)".
 /// </summary>
+/// <remarks>
+/// <para>
+/// The condition is rarely the whole rule. It is nearly always printed with something
+/// attached: a gate on the target's size, a duration, a pull, a second condition that
+/// lasts until the first one ends. Capturing the condition and dropping the rest is the
+/// goblin conditional-damage bug in a new place — the rider would fire in more cases, or
+/// for longer, than the SRD allows, and nothing would say so.
+/// </para>
+/// <para>
+/// So exactly one qualifier is modelled — <see cref="MaximumTargetSize"/> — and anything
+/// else printed alongside the condition lands in <see cref="UnmodelledRequirement"/>,
+/// which makes the rider unusable rather than approximate. See
+/// <c>SRDCombat.Core.Rules.ConditionRules</c> for the other half of the decision: whether
+/// the engine executes the condition at all.
+/// </para>
+/// </remarks>
 /// <param name="Condition">The condition.</param>
 /// <param name="EscapeDifficultyClass">
 /// The DC to escape, for conditions that can be escaped. Null when the printed text
 /// gives none.
 /// </param>
-public sealed record AppliedCondition(ConditionType Condition, int? EscapeDifficultyClass = null);
+/// <param name="MaximumTargetSize">
+/// The largest target the condition can be imposed on, from "If the target is a Large or
+/// smaller creature". Null when the printed text gates on no size.
+/// </param>
+/// <param name="UnmodelledRequirement">
+/// What was printed alongside the condition that the model cannot express — a duration
+/// ("until the start of the devil's next turn"), a further requirement ("and the gorgon
+/// moved 20+ feet straight toward it"), or a trailing clause carrying its own rule.
+/// Null when the rider is nothing but the condition and a size gate.
+/// </param>
+public sealed record AppliedCondition(
+    ConditionType Condition,
+    int? EscapeDifficultyClass = null,
+    CreatureSize? MaximumTargetSize = null,
+    string? UnmodelledRequirement = null)
+{
+    /// <summary>
+    /// True when everything printed with this condition is expressed by the model, so
+    /// imposing it does exactly what the stat block says and no more.
+    /// </summary>
+    public bool IsFullyModelled => UnmodelledRequirement is null;
+
+    /// <summary>Whether a target of this size passes the printed size gate.</summary>
+    public bool AllowsTargetSize(CreatureSize size) =>
+        MaximumTargetSize is not { } maximum || size <= maximum;
+}
 
 /// <summary>
 /// A Multiattack: <c>The bandit makes two attacks, using Scimitar and Pistol in any

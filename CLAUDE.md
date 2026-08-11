@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #13 (casting). **PR #14 (Multiattack) is open and unmerged.** |
-| Tests | **324 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #14 (Multiattack). **PR #17 (condition gates) is open and unmerged.** |
+| Tests | **343 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
@@ -25,19 +25,20 @@ questions. Everything below is operational detail that doc doesn't carry.
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
 monsters, with nine implemented class features and working spellcasting (attack spells,
-save spells with areas, slots, Concentration). A frozen transcript pins one whole
-eight-round fight byte-for-byte.
+save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
+Prone and a Huge one not, from the stat block's own words. A frozen transcript pins one
+whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
 No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
 characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings.
 
-**Picking up cold:** merge or review PR #14 first, then take a GitHub issue.
-`gh issue list`. The highest-value remaining is **#5 condition gates** — 62 attacks
-capture a condition the engine will not apply until creature-size comparison exists.
-Then **#6 saving-throw effects for monsters**, which now has the area geometry it needed
-(`AreaTargeting`, built for spells).
+**Picking up cold:** merge or review PR #17 first, then take a GitHub issue.
+`gh issue list`. The highest-value remaining is **#6 saving-throw effects for monsters**,
+which has both the area geometry (`AreaTargeting`) and now the condition plumbing it
+needed — 42 tier-1 saving-throw entries impose a condition on a failure and none of them
+land. Then **#15 condition durations**, which is what stops most of the rest.
 
 ## The rule this project runs on
 
@@ -71,10 +72,22 @@ it prose only describes the format it is printed in. So:
    precomputed average, a spell prints neither. Silent, and visible only because the
    extractor counts what it modelled.
 
-**Conditions are captured but deliberately not executed.** Escape DCs and all, on
-`MonsterEntry.AppliedConditions`. The gates ("if the target is a Large or smaller
-creature") are not modelled, and applying them ungated would repeat bug 1 in a new place.
-Issue #5. Don't wire them up until size comparison exists.
+**Whether a condition rider lands is two questions, kept apart on purpose.** *Does the
+model express it?* — exactly one qualifier is modelled, the size gate, and anything else
+printed with the condition (a duration, a charge requirement, a pull, a chained second
+condition) goes to `AppliedCondition.UnmodelledRequirement` and makes the rider unusable
+rather than approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a
+curated allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Incapacitated
+and Unconscious. **Add a condition there only alongside the code that gives it effects.**
+Grappled is the instructive absence: its riders are fully modelled and it still must not
+be imposed, because a Grappled creature would walk away at full speed while its sheet
+said otherwise. Twenty attacks satisfy both checks today and all twenty are Prone.
+
+Finding this cost coverage, and the drop is worth understanding before you read the
+number: 342 tier-1 entries down to 322. Thirteen attacks had read as fully modelled
+because the whole entry is one sentence containing `Attack Roll:`, so the accounting
+matched on that and `and the target has the Poisoned condition until the start of its
+next turn` was invisible. That is bug 1's exact shape, third occurrence.
 
 **Coverage numbers are an internal check, not project status.** The extractor prints them
 so *it* can tell what is left; they do not belong in a status report.
@@ -238,8 +251,9 @@ dotnet run --project tools/SrdExtract -- --out data/srd
 ```
 
 It refuses to write when validation reports errors (`--force` overrides). A clean run
-reports 330 monsters, 38 weapons, 13 armor, 0 errors, and exactly one warning — the
-Archmage's XP, which is a real SRD inconsistency and is expected.
+reports 330 monsters, 38 weapons, 13 armor, 0 errors, and **10 warnings, all expected**:
+the Archmage's XP, which is a real SRD inconsistency, and nine spells whose component
+line is truncated at a column break in the source.
 
 **Why fonts matter more than text here.** The SRD's typography is a reliable parsing
 signal, and the parser is built on it (`StatBlockFonts`): `GillSans-SemiBold` at ~10.2pt

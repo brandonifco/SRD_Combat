@@ -450,21 +450,40 @@ by a test so it cannot regress:
 
 | | CR 0–4 (the band the gauntlet uses) |
 | --- | --- |
-| entries fully modelled | **342 / 611 (56%)** |
-| attacks, of which 62 carry clauses the model cannot express | 264 |
-| unmodelled entirely | 176 |
-| Multiattack | 70 |
-| saving-throw effects, 26 with clauses beyond the model | 62 |
+| entries fully modelled | **322 / 611 (53%)** |
+| attacks, of which 60 carry clauses the model cannot express | 264 |
+| unmodelled entirely | 182 |
+| Multiattack | 64 |
+| saving-throw effects, 42 with clauses beyond the model | 62 |
 | reactions, 5 with clauses beyond the model | 12 |
 | confirmed inert | 27 |
 
-**Captured but deliberately not executed yet.** Conditions imposed by an entry are
-extracted, including escape DCs — but the engine does not apply them, because the gates
-on them are not modelled. `If the target is a Large or smaller creature, it has the
-Grappled condition` would, if applied ungated, impose the condition in more cases than
-the SRD allows: the goblin bug again, in a new place. The condition data is there for
-when size comparison exists; until then the clause is reported as unmodelled and a test
-pins that it stays that way.
+**That number went down when condition riders were gated, and the drop is the point.**
+It was 342. Nine entries were gained — the size-gated Prone riders the engine now
+imposes — and twenty-three were lost, every one of them an entry that had been claiming
+to be fully modelled while carrying a condition nothing would ever apply. Thirteen were
+attacks whose entire entry is one sentence containing `Attack Roll:`, so the accounting
+matched on that and the `and the target has the Poisoned condition until the start of
+its next turn` hanging off the end was invisible. That is the goblin bug's exact shape,
+found a third time, in data that had already been checked twice.
+
+**Two separate questions decide whether a rider lands, and keeping them apart is the
+design.** The model asks whether it expresses everything printed with the condition:
+exactly one qualifier is modelled — a size gate — and a duration, a charge requirement,
+a pull or a chained second condition puts the whole clause in
+`AppliedCondition.UnmodelledRequirement`, which makes the rider unusable rather than
+approximate. The engine then asks whether it executes the condition at all, from
+`ConditionRules.Executable`, a curated allowlist in the same spirit as
+`ClassFeatureRegistry`. Twenty attacks across the bestiary satisfy both today, and all
+twenty are Prone.
+
+**Grappled is the instructive absence.** Its riders are now completely modelled — a size
+gate and a printed escape DC, nothing else — and it still must not be imposed, because
+nothing in the engine gives it an effect. A Grappled creature would walk away at full
+speed while its sheet said otherwise, which is a quieter failure than never applying it.
+It needs a speed of 0, an Escape action against the printed DC, and the grapple to end
+with its grappler. Same for durations: there is no clock to end a condition on, and a
+Poisoned that never wears off is not a smaller error than one that never lands.
 
 ## Open questions
 
@@ -474,8 +493,8 @@ pins that it stays that way.
    needs, and coverage is uneven — a creature whose entries are largely unmodelled is a
    poor choice for an authored encounter regardless of its CR. Curating the pool the
    encounter builder may pick from, weighted by coverage, is a Phase 4 decision.
-3. **What closes the remaining 44%?** Roughly in value order: condition gates (size
-   comparison), executing saving-throw effects (needs area geometry — Cone, Line,
-   Emanation), Multiattack execution, recharge tracking, and the long tail of passive
-   traits (Pack Tactics, Magic Resistance, Bloodied Frenzy). Each is a discrete piece of
-   work against a number that now moves visibly.
+3. **What closes the remaining 47%?** Roughly in value order: executing saving-throw
+   effects (the area geometry it needed now exists), condition durations, executing
+   Grappled and Restrained, recharge tracking, and the long tail of passive traits (Pack
+   Tactics, Magic Resistance, Bloodied Frenzy). Each is a discrete piece of work against
+   a number that now moves visibly — in both directions, as condition gates showed.

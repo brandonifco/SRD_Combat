@@ -67,7 +67,8 @@ internal static class CombatTestData
         bool diesAtZeroHitPoints = true,
         IReadOnlyList<CombatAttack>? attacks = null,
         IReadOnlyDictionary<DamageType, DamageResponse>? damageResponses = null,
-        IReadOnlyList<ConditionType>? conditionImmunities = null) =>
+        IReadOnlyList<ConditionType>? conditionImmunities = null,
+        CreatureSize size = CreatureSize.Medium) =>
         new(
             armorClass,
             maximumHitPoints,
@@ -75,7 +76,7 @@ internal static class CombatTestData
             initiativeBonus,
             Abilities(),
             ProficiencyBonus: 2,
-            CreatureSize.Medium,
+            size,
             damageResponses ?? new Dictionary<DamageType, DamageResponse>(),
             conditionImmunities ?? [],
             attacks ?? [MeleeAttack()],
