@@ -450,8 +450,8 @@ by a test so it cannot regress:
 
 | | CR 0–4 (the band the gauntlet uses) |
 | --- | --- |
-| entries fully modelled | **322 / 611 (53%)** |
-| attacks, of which 60 carry clauses the model cannot express | 264 |
+| entries fully modelled | **328 / 611 (54%)** |
+| attacks, of which 54 carry clauses the model cannot express | 264 |
 | unmodelled entirely | 182 |
 | Multiattack | 64 |
 | saving-throw effects, 42 with clauses beyond the model | 62 |
@@ -468,22 +468,47 @@ its next turn` hanging off the end was invisible. That is the goblin bug's exact
 found a third time, in data that had already been checked twice.
 
 **Two separate questions decide whether a rider lands, and keeping them apart is the
-design.** The model asks whether it expresses everything printed with the condition:
-exactly one qualifier is modelled — a size gate — and a duration, a charge requirement,
-a pull or a chained second condition puts the whole clause in
-`AppliedCondition.UnmodelledRequirement`, which makes the rider unusable rather than
-approximate. The engine then asks whether it executes the condition at all, from
-`ConditionRules.Executable`, a curated allowlist in the same spirit as
-`ClassFeatureRegistry`. Twenty attacks across the bestiary satisfy both today, and all
-twenty are Prone.
+design.** The model asks whether it expresses everything printed with the condition: two
+qualifiers are modelled — a size gate and a turn-boundary duration — and a charge
+requirement, a pull, a chained second condition or a duration of any other shape puts the
+whole clause in `AppliedCondition.UnmodelledRequirement`, which makes the rider unusable
+rather than approximate. The engine then asks whether it executes the condition at all,
+from `ConditionRules.Executable`, a curated allowlist in the same spirit as
+`ClassFeatureRegistry`. Thirty-three attacks across the bestiary satisfy both: twenty
+Prone, twelve Poisoned, one Incapacitated.
 
-**Grappled is the instructive absence.** Its riders are now completely modelled — a size
-gate and a printed escape DC, nothing else — and it still must not be imposed, because
-nothing in the engine gives it an effect. A Grappled creature would walk away at full
-speed while its sheet said otherwise, which is a quieter failure than never applying it.
-It needs a speed of 0, an Escape action against the printed DC, and the grapple to end
-with its grappler. Same for durations: there is no clock to end a condition on, and a
-Poisoned that never wears off is not a smaller error than one that never lands.
+**The Phase Spider is the case that shows the two questions are independent.** Its bite
+poisons "for 1 hour". Poisoned is a condition the engine executes, and the rider still
+cannot be imposed, because an hour is not a turn boundary and there is nothing to round it
+to that would not be a different rule.
+
+**Grappled is the instructive absence.** Its riders are completely modelled — a size gate
+and a printed escape DC, nothing else — and it still must not be imposed, because nothing
+in the engine gives it an effect. A Grappled creature would walk away at full speed while
+its sheet said otherwise, which is a quieter failure than never applying it. It needs a
+speed of 0, an Escape action against the printed DC, and the grapple to end with its
+grappler.
+
+**The clock, and why the condition record carries a source nothing reads yet.** A
+condition is held as an `ActiveCondition` — the condition, who imposed it, and a
+`ConditionExpiry` naming whose turns are counted, which boundary ends it, and at which
+turn number. Every combatant counts its own turns, and the number is fixed at the moment
+of application as *the owner's count plus one*. That is the whole of "next", and it is
+what makes one wording work in both places it appears: a rider applied on the devil's own
+turn and one applied during somebody else's, on an Opportunity Attack, both read "until
+the start of the devil's next turn" and mean different moments. The clock ticks for every
+creature whose turn comes round, including one that is dead or Unconscious and cannot take
+it — a duration measured against a creature that never acts again has to end anyway.
+
+The source is on the record before anything reads it, which is a deliberate exception to
+this project's habit of not building ahead. The grapple needs it, the grapple is next, and
+adding it later means reopening every call site that applies a condition rather than one.
+
+**Whose turn "next" refers to is read off the possessive, and the two readings are not
+interchangeable.** "until the end of *its* next turn" is the creature carrying the
+condition; "until the start of *the devil's* next turn" is the creature that imposed it.
+Getting them the wrong way round changes how long the condition lasts by most of a round,
+and both wordings are common in the bestiary.
 
 ## Open questions
 
@@ -505,11 +530,19 @@ answer: it is the item with the most unbuilt prerequisites, and starting there w
 meant building the condition model and the monster action economy incidentally, inside a
 branch about something else, and then reopening both.
 
-**1. Condition durations (#15), designed wider than the issue asks.** The condition
-record gets **an expiry and the combatant who imposed it, in the same pass**. Expiry is
-all #15 needs on its own; the source is what Grappled needs for "the grapple ends with
-its grappler". They are the same field on the same type, and splitting them reopens
-`Combatant`, the condition collection and every call site twice.
+**1. Condition durations (#15) — done.** The condition record took **an expiry and the
+combatant who imposed it in the same pass**, for the reason set out above: the source is
+what Grappled needs, and splitting them would reopen `Combatant`, the condition
+collection and every call site twice.
+
+Doing it turned up something the issue had not: **a clock nothing runs on proves nothing.**
+Of the fifteen riders whose duration is now modelled, only one — the Cloud Giant's
+Incapacitated — was on a condition the engine executes, so the whole subsystem would have
+shipped with a single CR 9 monster exercising it. Eleven were Poisoned, so Poisoned went
+on the allowlist in the same branch: it is Disadvantage on attack rolls, five lines in
+`AttackRules`, and nothing in a fight rolls the ability check the other half of the
+condition would need. That is the difference between a duration model and a duration model
+anyone can see working.
 
 **2. Grappled and Restrained (#16).** Immediately after, while that model is still soft.
 It is the smallest real consumer of it and so the best test that it is shaped right:

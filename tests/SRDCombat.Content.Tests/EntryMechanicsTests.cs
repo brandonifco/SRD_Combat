@@ -207,22 +207,57 @@ public class EntryMechanicsTests
     }
 
     [Fact]
-    public void APrintedDurationIsAnUnmodelledRequirement()
+    public void ATurnBoundaryDurationIsModelled()
     {
         // "... and the target has the Poisoned condition until the start of the
-        // centipede's next turn." The engine has no clock to end a condition on, so the
-        // duration makes the rider unusable rather than approximate — a Poisoned that
-        // never wears off is not a smaller error than one that never lands.
-        //
-        // This entry is a single sentence containing "Attack Roll:", which is why it read
-        // as fully modelled before the rider was examined at all.
+        // centipede's next turn."
         var bite = Content.MonstersById["monster.giant-centipede"].Entries.Single(entry => entry.Name == "Bite");
 
         var poisoned = Assert.Single(bite.AppliedConditions);
+        var duration = Assert.IsType<ConditionDuration>(poisoned.Duration);
 
         Assert.Equal(ConditionType.Poisoned, poisoned.Condition);
+        Assert.Equal(ConditionClock.StartOfTurn, duration.Clock);
+        Assert.Equal(ConditionDurationOwner.Source, duration.Owner);
+        Assert.True(poisoned.IsFullyModelled);
+        Assert.True(bite.IsFullyModelled);
+    }
+
+    [Fact]
+    public void TheDurationOwnerComesFromThePossessive()
+    {
+        // The distinction that is easy to get backwards and costs most of a round when
+        // you do. "its" is the creature carrying the condition; a name is the creature
+        // that imposed it.
+        var giant = Content.MonstersById["monster.hill-giant"].Entries.Single(entry => entry.Name == "Trash Lob");
+        var devil = Content.MonstersById["monster.bearded-devil"].Entries.Single(entry => entry.Name == "Beard");
+
+        // "... the target has the Poisoned condition until the end of its next turn."
+        Assert.Equal(
+            new ConditionDuration(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer),
+            Assert.Single(giant.AppliedConditions).Duration);
+
+        // "... until the start of the devil's next turn."
+        Assert.Equal(
+            new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source),
+            Assert.Single(devil.AppliedConditions).Duration);
+    }
+
+    [Fact]
+    public void ADurationShapeOutsideTheTwoModelledIsStillARequirement()
+    {
+        // The Phase Spider's bite poisons "for 1 hour". Poisoned is a condition the engine
+        // executes and this rider still cannot be imposed, because an hour is not a turn
+        // boundary and there is nothing to round it to that would not be a different rule.
+        // This is the case that shows the two checks are independent.
+        var bite = Content.MonstersById["monster.phase-spider"].Entries.Single(entry => entry.Name == "Bite");
+
+        var poisoned = bite.AppliedConditions.Single(applied => applied.Condition == ConditionType.Poisoned);
+
+        Assert.True(ConditionRules.IsExecutable(ConditionType.Poisoned));
+        Assert.Null(poisoned.Duration);
         Assert.False(poisoned.IsFullyModelled);
-        Assert.Contains("until the start of", poisoned.UnmodelledRequirement!, StringComparison.Ordinal);
+        Assert.False(ConditionRules.CanBeImposed(poisoned));
         Assert.False(bite.IsFullyModelled);
     }
 

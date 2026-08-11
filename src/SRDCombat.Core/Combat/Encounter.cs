@@ -260,8 +260,32 @@ public sealed partial class Encounter
         }
 
         EndRageIfUnsustained(combatant);
+        ExpireConditions(combatant, ConditionClock.EndOfTurn);
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
         AdvanceTurn();
+    }
+
+    /// <summary>
+    /// Ends every condition in the fight due to expire at this boundary of this
+    /// combatant's turn.
+    /// </summary>
+    /// <remarks>
+    /// Swept across every combatant rather than just the one whose turn it is, because a
+    /// duration is measured against whoever the SRD names — "until the start of the
+    /// devil's next turn" is a clock on the devil that runs out on somebody else.
+    /// </remarks>
+    private void ExpireConditions(Combatant owner, ConditionClock clock)
+    {
+        foreach (var bearer in _combatants)
+        {
+            foreach (var ended in bearer.ExpireConditions(owner.Id, clock, owner.TurnsBegun))
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} is no longer {ended}.",
+                    bearer);
+            }
+        }
     }
 
     private ActionRefusal? SpendActionOn(Action<Combatant> apply)
@@ -333,8 +357,18 @@ public sealed partial class Encounter
         {
             var combatant = _order[_turnIndex];
 
+            // The clock ticks before anything else, and for every creature whose turn
+            // comes round — dead, unconscious or fighting fit. A condition that reads
+            // "until the start of the devil's next turn" has to end even if the devil is
+            // in no state to take that turn, or it never ends at all.
+            combatant.BeginTurnClock();
+            ExpireConditions(combatant, ConditionClock.StartOfTurn);
+
             if (combatant.IsDead)
             {
+                // A skipped turn begins and ends in the same instant.
+                ExpireConditions(combatant, ConditionClock.EndOfTurn);
+
                 if (!AdvanceIndex())
                 {
                     return;
@@ -363,6 +397,8 @@ public sealed partial class Encounter
                     return;
                 }
 
+                ExpireConditions(combatant, ConditionClock.EndOfTurn);
+
                 if (!AdvanceIndex())
                 {
                     return;
@@ -374,6 +410,7 @@ public sealed partial class Encounter
             if (!combatant.CanAct)
             {
                 Add(CombatStepKind.TurnStarted, $"{combatant.Name} cannot act.", combatant);
+                ExpireConditions(combatant, ConditionClock.EndOfTurn);
 
                 if (!AdvanceIndex())
                 {
@@ -674,18 +711,32 @@ public sealed partial class Encounter
 
         foreach (var rider in attack.AppliedConditions)
         {
-            if (!ConditionRules.CanImpose(rider, target) || !target.AddCondition(rider.Condition))
+            if (!ConditionRules.CanImpose(rider, target))
+            {
+                continue;
+            }
+
+            var expiry = ConditionRules.ExpiryFor(rider.Duration, attacker, target);
+
+            if (!target.AddCondition(rider.Condition, attacker.Id, expiry))
             {
                 continue;
             }
 
             Add(
                 CombatStepKind.Condition,
-                $"{target.Name} has the {rider.Condition} condition.",
+                $"{target.Name} has the {rider.Condition} condition{DescribeDuration(rider.Duration, attacker, target)}.",
                 attacker,
                 target);
         }
     }
+
+    /// <summary>Narrates a duration the way the SRD prints it.</summary>
+    private static string DescribeDuration(ConditionDuration? duration, Combatant source, Combatant bearer) =>
+        duration is null
+            ? string.Empty
+            : $" until the {(duration.Clock == ConditionClock.StartOfTurn ? "start" : "end")} of " +
+              $"{(duration.Owner == ConditionDurationOwner.Bearer ? bearer.Name : source.Name)}'s next turn";
 
     private static string DescribeHealth(Combatant combatant) =>
         combatant.IsDead

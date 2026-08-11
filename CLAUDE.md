@@ -15,19 +15,20 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #17 (condition gates). Nothing open. |
-| Tests | **343 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #20 (docs). **PR #23 (condition durations) is open and unmerged.** |
+| Tests | **354 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **8 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **9 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
 monsters, with nine implemented class features and working spellcasting (attack spells,
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
-Prone and a Huge one not, from the stat block's own words. A frozen transcript pins one
-whole eight-round fight byte-for-byte.
+Prone and a Huge one not, and a Giant Centipede's poison lasts until the start of the
+centipede's next turn and no longer — both from the stat block's own words. A frozen
+transcript pins one whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
 No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
@@ -42,11 +43,12 @@ order the issues were filed in. Take the top of it.
 Ordered by what each piece rests on, not by how valuable it looks on its own. The
 governing plan doc carries the same list with the reasoning; this is the short form.
 
-1. **#15 condition durations — first, and wider than the issue asks.** Give the condition
-   record **both an expiry and the combatant who imposed it** in one pass. Expiry is all
-   #15 needs; the source is what #16 needs for "the grapple ends with its grappler", and
-   it is the same field on the same type. Split them and `Combatant`, the condition
-   collection and every call site get reopened twice.
+1. **#15 condition durations — done.** The condition record took an expiry *and* the
+   combatant who imposed it in one pass, so #16 does not reopen it. Worth knowing why
+   Poisoned joined the allowlist in the same branch: of the fifteen riders whose duration
+   became modellable, only one was on a condition the engine executes, so **the clock
+   would have shipped with nothing running on it**. Eleven were Poisoned, and Poisoned is
+   five lines in `AttackRules`.
 2. **#16 Grappled and Restrained.** Straight after, while that model is fresh. It is the
    smallest real consumer of it and therefore the best proof it is shaped right:
    Restrained exercises the expiry, the grapple exercises the source, and Escape
@@ -113,21 +115,48 @@ it prose only describes the format it is printed in. So:
    extractor counts what it modelled.
 
 **Whether a condition rider lands is two questions, kept apart on purpose.** *Does the
-model express it?* — exactly one qualifier is modelled, the size gate, and anything else
-printed with the condition (a duration, a charge requirement, a pull, a chained second
-condition) goes to `AppliedCondition.UnmodelledRequirement` and makes the rider unusable
-rather than approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a
-curated allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Incapacitated
+model express it?* — two qualifiers are modelled, the size gate and a turn-boundary
+duration, and anything else printed with the condition (a charge requirement, a pull, a
+chained second condition, a duration of another shape) goes to
+`AppliedCondition.UnmodelledRequirement` and makes the rider unusable rather than
+approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a curated
+allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Poisoned, Incapacitated
 and Unconscious. **Add a condition there only alongside the code that gives it effects.**
-Grappled is the instructive absence: its riders are fully modelled and it still must not
-be imposed, because a Grappled creature would walk away at full speed while its sheet
-said otherwise. Twenty attacks satisfy both checks today and all twenty are Prone.
+Thirty-three attacks satisfy both checks: 20 Prone, 12 Poisoned, 1 Incapacitated.
 
-Finding this cost coverage, and the drop is worth understanding before you read the
-number: 342 tier-1 entries down to 322. Thirteen attacks had read as fully modelled
-because the whole entry is one sentence containing `Attack Roll:`, so the accounting
-matched on that and `and the target has the Poisoned condition until the start of its
-next turn` was invisible. That is bug 1's exact shape, third occurrence.
+**The two questions are independent, and the Phase Spider proves it** — its bite poisons
+"for 1 hour", Poisoned *is* executable, and the rider still cannot be imposed, because an
+hour is not a turn boundary. Grappled is the mirror image: completely modelled, and
+refused because a Grappled creature would walk away at full speed while its sheet said
+otherwise.
+
+**Durations hang off a turn counter, not a countdown.** An `ActiveCondition` carries who
+imposed it and a `ConditionExpiry` — whose turns are counted, which boundary, and at which
+turn number, fixed at application as *the owner's count plus one*. That is the whole of
+"next", and it is why one wording works in both places it appears: applied on the devil's
+own turn, or during someone else's on an Opportunity Attack, "until the start of the
+devil's next turn" means different moments and needs no special case. **The clock ticks
+for every creature whose turn comes round, dead or Unconscious included** — a duration
+measured against a creature that never acts again still has to end.
+
+**Read the possessive.** "until the end of *its* next turn" is the creature carrying the
+condition; "until the start of *the devil's* next turn" is the creature that imposed it.
+Both are common, and swapping them changes the duration by most of a round.
+
+**When you touch `ConditionRules.Executable`, re-run the extractor.** The entry accounting
+calls `CanBeImposed`, so which conditions are executable decides what lands in
+`UnmodelledClauses`. Changing the allowlist without regenerating leaves the content
+disagreeing with the code, and the symptom is a content test failing on an entry you did
+not edit.
+
+Two findings from this work worth not rediscovering. **Gating riders cost coverage** —
+342 tier-1 entries down to 322 — because thirteen attacks had read as fully modelled while
+their whole entry was one sentence containing `Attack Roll:`, so the accounting matched on
+that and the `and the target has the Poisoned condition until ...` on the end was
+invisible. Bug 1's exact shape, third occurrence. **And a clock nothing runs on proves
+nothing**: of the fifteen riders whose duration became modellable, exactly one sat on a
+condition the engine executed, which is why Poisoned went on the allowlist in the same
+branch rather than a later one.
 
 **Coverage numbers are an internal check, not project status.** The extractor prints them
 so *it* can tell what is left; they do not belong in a status report.

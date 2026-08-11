@@ -100,6 +100,47 @@ public sealed record SaveEffect(
     SaveSuccessOutcome SuccessOutcome,
     IReadOnlyList<AppliedCondition> AppliedConditions);
 
+/// <summary>Which turn boundary a condition ends on.</summary>
+public enum ConditionClock
+{
+    /// <summary>"until the start of ... next turn".</summary>
+    StartOfTurn,
+
+    /// <summary>"until the end of ... next turn".</summary>
+    EndOfTurn,
+}
+
+/// <summary>Whose next turn a duration is counted against.</summary>
+/// <remarks>
+/// The SRD's wording decides this and the two readings are not interchangeable. "until
+/// the end of <em>its</em> next turn" is the creature carrying the condition; "until the
+/// start of <em>the devil's</em> next turn" is the creature that imposed it. Getting them
+/// the wrong way round changes how long the condition lasts by most of a round.
+/// </remarks>
+public enum ConditionDurationOwner
+{
+    /// <summary>"its next turn" — the creature carrying the condition.</summary>
+    Bearer,
+
+    /// <summary>"the devil's next turn" — whoever imposed it.</summary>
+    Source,
+}
+
+/// <summary>
+/// How long a condition lasts: "until the start of the devil's next turn".
+/// </summary>
+/// <remarks>
+/// Only the two turn-boundary shapes are modelled, because they are the only ones a fight
+/// can resolve. The SRD also prints "until the grapple ends" (which needs the grapple),
+/// "until the web is destroyed" (which needs an object with hit points) and "for 1 minute"
+/// (which outlasts most fights) — those stay in
+/// <see cref="AppliedCondition.UnmodelledRequirement"/> rather than being rounded to
+/// something close.
+/// </remarks>
+/// <param name="Clock">Which boundary of the turn it ends on.</param>
+/// <param name="Owner">Whose next turn is counted.</param>
+public sealed record ConditionDuration(ConditionClock Clock, ConditionDurationOwner Owner);
+
 /// <summary>
 /// A condition an entry imposes — "If the target is a Large or smaller creature, it has
 /// the Grappled condition (escape DC 13)".
@@ -129,16 +170,23 @@ public sealed record SaveEffect(
 /// The largest target the condition can be imposed on, from "If the target is a Large or
 /// smaller creature". Null when the printed text gates on no size.
 /// </param>
+/// <param name="Duration">
+/// How long it lasts, from "until the start of the devil's next turn". Null when the
+/// printed text gives no duration at all, which is its own answer — Prone lasts until
+/// you stand up, Grappled until you escape.
+/// </param>
 /// <param name="UnmodelledRequirement">
-/// What was printed alongside the condition that the model cannot express — a duration
-/// ("until the start of the devil's next turn"), a further requirement ("and the gorgon
-/// moved 20+ feet straight toward it"), or a trailing clause carrying its own rule.
-/// Null when the rider is nothing but the condition and a size gate.
+/// What was printed alongside the condition that the model cannot express — a further
+/// requirement ("and the gorgon moved 20+ feet straight toward it"), a duration shape
+/// outside the two modelled here ("until the grapple ends", "for 1 minute"), or a
+/// trailing clause carrying its own rule. Null when the rider is nothing but the
+/// condition, a size gate and a modelled duration.
 /// </param>
 public sealed record AppliedCondition(
     ConditionType Condition,
     int? EscapeDifficultyClass = null,
     CreatureSize? MaximumTargetSize = null,
+    ConditionDuration? Duration = null,
     string? UnmodelledRequirement = null)
 {
     /// <summary>

@@ -158,6 +158,133 @@ public class ConditionRiderTests
         Assert.False(Target(encounter).HasCondition(ConditionType.Prone));
     }
 
+    [Fact]
+    public void ADurationOnTheSourceRunsOutAtTheStartOfTheSourcesNextTurn()
+    {
+        // "... until the start of the devil's next turn." Applied on the attacker's own
+        // turn, so it has to survive the victim's whole turn and end when the attacker
+        // comes round again — a full round, not until the end of the current one.
+        var encounter = Fight(
+            new AppliedCondition(
+                ConditionType.Poisoned,
+                Duration: new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source)),
+            CreatureSize.Medium);
+
+        var victim = Target(encounter);
+
+        Assert.Null(encounter.Attack("Slam", victim));
+        Assert.True(victim.HasCondition(ConditionType.Poisoned));
+
+        encounter.EndTurn();
+        Assert.True(victim.HasCondition(ConditionType.Poisoned));
+
+        // The victim's own turn passes and it is still Poisoned.
+        encounter.EndTurn();
+        Assert.False(victim.HasCondition(ConditionType.Poisoned));
+    }
+
+    [Fact]
+    public void ADurationOnTheBearerRunsOutAtTheEndOfTheBearersNextTurn()
+    {
+        // "... until the end of its next turn" — the creature carrying it, not the one
+        // that imposed it.
+        var encounter = Fight(
+            new AppliedCondition(
+                ConditionType.Poisoned,
+                Duration: new ConditionDuration(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer)),
+            CreatureSize.Medium);
+
+        var victim = Target(encounter);
+
+        Assert.Null(encounter.Attack("Slam", victim));
+        encounter.EndTurn();
+
+        // The victim's turn is now running, and the condition lasts through it.
+        Assert.Same(victim, encounter.ActiveCombatant);
+        Assert.True(victim.HasCondition(ConditionType.Poisoned));
+
+        encounter.EndTurn();
+        Assert.False(victim.HasCondition(ConditionType.Poisoned));
+    }
+
+    [Fact]
+    public void TheClockTicksThroughATurnTheOwnerCannotTake()
+    {
+        // The trap this guards: a condition timed against a creature that is Unconscious
+        // when its turn arrives. Its turn still happens — it just cannot act — so the
+        // clock has to run, or the condition never ends at all.
+        var encounter = Fight(
+            new AppliedCondition(
+                ConditionType.Poisoned,
+                Duration: new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source)),
+            CreatureSize.Medium);
+
+        var brute = encounter.Combatants.Single(combatant => combatant.Id == "brute");
+        var victim = Target(encounter);
+
+        Assert.Null(encounter.Attack("Slam", victim));
+        Assert.True(victim.HasCondition(ConditionType.Poisoned));
+
+        // The attacker is put out of the fight before its next turn comes round.
+        brute.AddCondition(ConditionType.Incapacitated);
+
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        Assert.False(brute.CanAct);
+        Assert.False(victim.HasCondition(ConditionType.Poisoned));
+    }
+
+    [Fact]
+    public void ExpiryIsNarrated()
+    {
+        var encounter = Fight(
+            new AppliedCondition(
+                ConditionType.Poisoned,
+                Duration: new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source)),
+            CreatureSize.Medium);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration == "victim has the Poisoned condition until the start of brute's next turn.");
+
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        Assert.Contains(encounter.Log, step => step.Narration == "victim is no longer Poisoned.");
+    }
+
+    [Fact]
+    public void ARiderWithATimerNeverShortensOneWithout()
+    {
+        // A wolf knocking an already-Prone creature Prone again must not hand it an
+        // expiry it did not have, or the second bite stands the target up for free.
+        var victim = CombatTestData.Combatant("v");
+        var expiry = new ConditionExpiry("brute", ConditionClock.StartOfTurn, 1);
+
+        Assert.True(victim.AddCondition(ConditionType.Prone));
+        Assert.False(victim.AddCondition(ConditionType.Prone, "brute", expiry));
+
+        Assert.Null(victim.ConditionState(ConditionType.Prone)?.Expiry);
+    }
+
+    [Fact]
+    public void AnImposedConditionRemembersWhoImposedIt()
+    {
+        // Not used by anything today. It is here because the grapple needs it — a grapple
+        // ends when its grappler does — and adding it later would mean reopening every
+        // call site that applies a condition.
+        var encounter = Fight(
+            new AppliedCondition(ConditionType.Prone, MaximumTargetSize: CreatureSize.Large),
+            CreatureSize.Medium);
+
+        Assert.Null(encounter.Attack("Slam", Target(encounter)));
+
+        Assert.Equal("brute", Target(encounter).ConditionState(ConditionType.Prone)?.SourceId);
+    }
+
     private static Combatant Target(Encounter encounter) =>
         encounter.Combatants.Single(combatant => combatant.Id == "victim");
 

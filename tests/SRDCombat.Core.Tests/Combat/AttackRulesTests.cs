@@ -91,6 +91,7 @@ public class AttackRulesTests
             TargetIsProne: true,
             TargetIsUnconscious: false,
             AttackerIsProne: false,
+            AttackerIsPoisoned: false,
             AtLongRange: false);
 
         Assert.Equal(expected, AttackRules.ResolveRollMode(circumstances, distance));
@@ -107,6 +108,7 @@ public class AttackRulesTests
             TargetIsProne: true,
             TargetIsUnconscious: true,
             AttackerIsProne: false,
+            AttackerIsPoisoned: false,
             AtLongRange: false);
 
         Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 15));
@@ -135,9 +137,34 @@ public class AttackRulesTests
     [Fact]
     public void AProneAttacker_HasDisadvantage()
     {
-        var circumstances = new AttackCircumstances(false, false, false, AttackerIsProne: true, false);
+        var circumstances = new AttackCircumstances(false, false, false, AttackerIsProne: true, false, false);
 
         Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void APoisonedAttacker_HasDisadvantage()
+    {
+        var circumstances = new AttackCircumstances(false, false, false, false, AttackerIsPoisoned: true, false);
+
+        Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void PoisonedCancelsAgainstAdvantageRatherThanOverridingIt()
+    {
+        // Poisoned is Disadvantage like any other, so it cancels with Advantage instead
+        // of winning. Worth pinning because a "poisoned creatures roll badly" shortcut
+        // would look right and be wrong exactly here.
+        var circumstances = new AttackCircumstances(
+            TargetIsDodging: false,
+            TargetIsProne: false,
+            TargetIsUnconscious: true,
+            AttackerIsProne: false,
+            AttackerIsPoisoned: true,
+            AtLongRange: false);
+
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
     }
 
     [Fact]
