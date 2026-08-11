@@ -26,9 +26,12 @@ These were decided with the user on 2026-08-11 and are not open questions.
 | Party size | **4** | What makes 5e tactical combat work: action economy, roles, positioning. |
 | Level range | **1–5** | Tier 1. Covers Extra Attack, 3rd-level spells, a subclass for every class, and a real difficulty curve — without high-tier spells that are non-combat or engine-breaking. Tables are authored to extend. |
 
-### Two scope calls not yet made — see "Open questions" at the bottom
+### Decided the same day, after the table above
 
-Class roster at launch, and whether the repo carries a code licence.
+| Decision | Choice | Why |
+| --- | --- | --- |
+| Launch class roster | **Six: Fighter, Rogue, Cleric, Wizard, Barbarian, Ranger** | Covers every mechanical *shape* the engine must handle — weapon mastery, sneak attack, prepared divine casting, prepared arcane casting, rage, half-casting. The other six SRD classes then become content rather than engineering. |
+| Code licence | **None for now** | The repository is public with no `LICENSE`, so all rights are reserved by default. Deliberate, not an oversight. The SRD's CC-BY-4.0 obligation is separate and satisfied by `NOTICE.md`. |
 
 ## Why SRD 5.2.1 is a better rulebase than 5.1
 
@@ -78,11 +81,27 @@ loading into `Application`. The reason is the extraction pipeline — content he
 so the DTO layer, the schema, and the validators are a real subsystem with their own
 test surface rather than a corner of the orchestration layer.
 
-**The trap GoldBox documented twice and paid for twice, inherited here as a rule:**
-adding a field to a `Core` definition does nothing until the versioned `Content` DTO
-mirrors it, because unmapped JSON properties are *dropped, not rejected*. Every
-definition change lands in both layers in the same commit, and the regenerated schema
-is checked for the new field before moving on.
+**Correction, made while building Phase 0: there is no versioned DTO mirror, and that
+is deliberate.** This document originally specified one, copying GoldBox. Building the
+extractor showed the reasoning does not carry over.
+
+A DTO mirror exists to keep an on-disk format stable while runtime types churn — worth
+its cost when content is hand-authored and must survive refactors. SRD content here is
+*generated*: change a definition, re-run the extractor, every file is rewritten. The
+mirror would protect nothing, while importing the exact failure GoldBox hit twice — an
+unmapped property is dropped **silently** rather than rejected, so a field added to the
+runtime type simply never arrives.
+
+Content is therefore serialized straight from the `Core` definitions, with two guards
+that are louder than the mirror was:
+
+- `UnmappedMemberHandling.Disallow` — an unknown property in a content file is an
+  error, not something skipped. This is strictly stricter than the mirror's default.
+- `ContentSerializerTests` pins the serialized shape, so a change to the on-disk format
+  fails a test naming the field that moved.
+
+Hand-authored game content — encounter ladders, pregenerated characters, loot tables —
+is a separate question and may well earn a DTO layer when it arrives.
 
 ### What lives in Core
 
@@ -153,9 +172,27 @@ extractor improvement shows exactly what it changed.
 
 Each phase ends somewhere real: something playable, or something provable.
 
-**Phase 0 — Repo and pipeline.** Solution skeleton, CI, the extractor, monsters and
-equipment extracted and validated. *Ends when:* `data/` holds real SRD monsters and
-weapons that load clean.
+**Phase 0 — Repo and pipeline. Complete, 2026-08-11.** Solution skeleton, CI, the
+extractor, monsters and equipment extracted and validated. `data/srd/` holds **330
+monsters, all 38 weapons and all 13 armor entries**, loading clean with zero validation
+errors. What the extraction actually cost, recorded because the next section will pay
+the same kind of tax:
+
+- **Five source-format variances, none of them guessable in advance**, all found by
+  running the extractor rather than by reading the PDF: distances written both
+  `5 ft.` and `5 feet`; `CR 3 (700 XP; PB +2)` with the fields flipped in 4 of 331
+  blocks; flat damage printed as `Hit: 1 Piercing damage` with no dice; `Melee or
+  Ranged Attack Roll` on 19 attacks; and page 364 holding content past where the
+  Animals section appeared to end.
+- **One genuine SRD inconsistency, preserved rather than corrected:** the Archmage
+  prints `CR 12 (XP 8,000)` where the SRD's own CR table says 8,400. The printed value
+  ships and the validator reports it as a warning. Silently overriding the source would
+  be worse than carrying the discrepancy.
+- **One extraction artifact, corrected through an auditable list:** the Young White
+  Dragon's Intelligence save loses its minus glyph in the PDF's text layer.
+  `KnownCorrections` repairs it, states why the correct value is certain from the rules,
+  and *reports rather than applies* a correction whose expected value no longer matches
+  — so a parser improvement that makes a correction unnecessary surfaces loudly.
 
 **Phase 1 — The combat engine.** Core, headless. Grid, initiative, action economy,
 attacks, damage, conditions, saves, death saves, opportunity attacks. Driven by tests
@@ -209,16 +246,14 @@ Carried over from GoldBox because they earned it there:
 
 ## Open questions
 
-1. **Which classes ship at launch?** All 12 SRD classes at levels 1–5 is a very large
-   authoring job — 12 subclasses, 8 spell lists, and every class feature through
-   level 5. **Recommendation: start with six** — Fighter, Rogue, Cleric, Wizard,
-   Barbarian, Ranger. That covers weapon mastery, sneak attack, prepared divine
-   casting, prepared arcane casting, rage, and half-casting, so the engine has to
-   handle every mechanical *shape* rather than every class. The remaining six are
-   then content, not engineering. Needs a decision before Phase 2.
-2. **Does the repo carry a code licence?** The repository is public with no `LICENSE`
-   file, which means all rights reserved by default. That is a valid choice; it is
-   just worth making deliberately. The SRD content obligation is separate and already
-   satisfied by `NOTICE.md`.
-3. **Is there an economy?** Gold, and a shop between fights, or is loot the only
+1. **Is there an economy?** Gold, and a shop between fights, or is loot the only
    source of equipment? Affects Phase 4, not before.
+2. **How much of a monster's prose becomes mechanics?** Phase 0 extracts attacks
+   structurally and keeps everything else — saving-throw effects, recharge abilities,
+   riders like "the target has the Prone condition" — as text. Turning those into
+   executable effects is a real, separate scoping question, and the answer probably
+   differs between "every CR 0–4 creature the ladder actually uses" and "all 330".
+   Needs an answer during Phase 1, not before.
+3. **Which monsters does the ladder draw from?** 330 is far more than a tier-1 game
+   needs. Curating a subset the encounter builder is allowed to pick from is likely
+   better than exposing all of them; that is a Phase 4 decision.

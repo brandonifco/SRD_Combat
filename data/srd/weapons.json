@@ -1,0 +1,544 @@
+{
+  "formatVersion": 1,
+  "content": "weapons",
+  "source": "SRD 5.2.1, CC-BY-4.0. See NOTICE.md.",
+  "items": [
+    {
+      "id": "weapon.club",
+      "name": "Club",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d4",
+      "damageType": "Bludgeoning",
+      "properties": "Light",
+      "mastery": "Slow",
+      "weightPounds": 2,
+      "costCopper": 10
+    },
+    {
+      "id": "weapon.dagger",
+      "name": "Dagger",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d4",
+      "damageType": "Piercing",
+      "properties": "Finesse, Light, Thrown",
+      "range": {
+        "normalFeet": 20,
+        "longFeet": 60
+      },
+      "mastery": "Nick",
+      "weightPounds": 1,
+      "costCopper": 200
+    },
+    {
+      "id": "weapon.greatclub",
+      "name": "Greatclub",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Bludgeoning",
+      "properties": "TwoHanded",
+      "mastery": "Push",
+      "weightPounds": 10,
+      "costCopper": 20
+    },
+    {
+      "id": "weapon.handaxe",
+      "name": "Handaxe",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Slashing",
+      "properties": "Light, Thrown",
+      "range": {
+        "normalFeet": 20,
+        "longFeet": 60
+      },
+      "mastery": "Vex",
+      "weightPounds": 2,
+      "costCopper": 500
+    },
+    {
+      "id": "weapon.javelin",
+      "name": "Javelin",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Piercing",
+      "properties": "Thrown",
+      "range": {
+        "normalFeet": 30,
+        "longFeet": 120
+      },
+      "mastery": "Slow",
+      "weightPounds": 2,
+      "costCopper": 50
+    },
+    {
+      "id": "weapon.light-hammer",
+      "name": "Light Hammer",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d4",
+      "damageType": "Bludgeoning",
+      "properties": "Light, Thrown",
+      "range": {
+        "normalFeet": 20,
+        "longFeet": 60
+      },
+      "mastery": "Nick",
+      "weightPounds": 2,
+      "costCopper": 200
+    },
+    {
+      "id": "weapon.mace",
+      "name": "Mace",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Bludgeoning",
+      "properties": "None",
+      "mastery": "Sap",
+      "weightPounds": 4,
+      "costCopper": 500
+    },
+    {
+      "id": "weapon.quarterstaff",
+      "name": "Quarterstaff",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Bludgeoning",
+      "properties": "Versatile",
+      "versatileDamage": "1d8",
+      "mastery": "Topple",
+      "weightPounds": 4,
+      "costCopper": 20
+    },
+    {
+      "id": "weapon.sickle",
+      "name": "Sickle",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d4",
+      "damageType": "Slashing",
+      "properties": "Light",
+      "mastery": "Nick",
+      "weightPounds": 2,
+      "costCopper": 100
+    },
+    {
+      "id": "weapon.spear",
+      "name": "Spear",
+      "category": "Simple",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Piercing",
+      "properties": "Thrown, Versatile",
+      "versatileDamage": "1d8",
+      "range": {
+        "normalFeet": 20,
+        "longFeet": 60
+      },
+      "mastery": "Sap",
+      "weightPounds": 3,
+      "costCopper": 100
+    },
+    {
+      "id": "weapon.dart",
+      "name": "Dart",
+      "category": "Simple",
+      "kind": "Ranged",
+      "damage": "1d4",
+      "damageType": "Piercing",
+      "properties": "Finesse, Thrown",
+      "range": {
+        "normalFeet": 20,
+        "longFeet": 60
+      },
+      "mastery": "Vex",
+      "weightPounds": 0.25,
+      "costCopper": 5
+    },
+    {
+      "id": "weapon.light-crossbow",
+      "name": "Light Crossbow",
+      "category": "Simple",
+      "kind": "Ranged",
+      "damage": "1d8",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Loading, TwoHanded",
+      "range": {
+        "normalFeet": 80,
+        "longFeet": 320
+      },
+      "ammunitionKind": "Bolt",
+      "mastery": "Slow",
+      "weightPounds": 5,
+      "costCopper": 2500
+    },
+    {
+      "id": "weapon.shortbow",
+      "name": "Shortbow",
+      "category": "Simple",
+      "kind": "Ranged",
+      "damage": "1d6",
+      "damageType": "Piercing",
+      "properties": "Ammunition, TwoHanded",
+      "range": {
+        "normalFeet": 80,
+        "longFeet": 320
+      },
+      "ammunitionKind": "Arrow",
+      "mastery": "Vex",
+      "weightPounds": 2,
+      "costCopper": 2500
+    },
+    {
+      "id": "weapon.sling",
+      "name": "Sling",
+      "category": "Simple",
+      "kind": "Ranged",
+      "damage": "1d4",
+      "damageType": "Bludgeoning",
+      "properties": "Ammunition",
+      "range": {
+        "normalFeet": 30,
+        "longFeet": 120
+      },
+      "ammunitionKind": "Bullet",
+      "mastery": "Slow",
+      "weightPounds": 0,
+      "costCopper": 10
+    },
+    {
+      "id": "weapon.battleaxe",
+      "name": "Battleaxe",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Slashing",
+      "properties": "Versatile",
+      "versatileDamage": "1d10",
+      "mastery": "Topple",
+      "weightPounds": 4,
+      "costCopper": 1000
+    },
+    {
+      "id": "weapon.flail",
+      "name": "Flail",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Bludgeoning",
+      "properties": "None",
+      "mastery": "Sap",
+      "weightPounds": 2,
+      "costCopper": 1000
+    },
+    {
+      "id": "weapon.glaive",
+      "name": "Glaive",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d10",
+      "damageType": "Slashing",
+      "properties": "Heavy, Reach, TwoHanded",
+      "mastery": "Graze",
+      "weightPounds": 6,
+      "costCopper": 2000
+    },
+    {
+      "id": "weapon.greataxe",
+      "name": "Greataxe",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d12",
+      "damageType": "Slashing",
+      "properties": "Heavy, TwoHanded",
+      "mastery": "Cleave",
+      "weightPounds": 7,
+      "costCopper": 3000
+    },
+    {
+      "id": "weapon.greatsword",
+      "name": "Greatsword",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "2d6",
+      "damageType": "Slashing",
+      "properties": "Heavy, TwoHanded",
+      "mastery": "Graze",
+      "weightPounds": 6,
+      "costCopper": 5000
+    },
+    {
+      "id": "weapon.halberd",
+      "name": "Halberd",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d10",
+      "damageType": "Slashing",
+      "properties": "Heavy, Reach, TwoHanded",
+      "mastery": "Cleave",
+      "weightPounds": 6,
+      "costCopper": 2000
+    },
+    {
+      "id": "weapon.lance",
+      "name": "Lance",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d10",
+      "damageType": "Piercing",
+      "properties": "Heavy, Reach, TwoHanded",
+      "mastery": "Topple",
+      "weightPounds": 6,
+      "costCopper": 1000,
+      "propertyNote": "Two-Handed (unless mounted)"
+    },
+    {
+      "id": "weapon.longsword",
+      "name": "Longsword",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Slashing",
+      "properties": "Versatile",
+      "versatileDamage": "1d10",
+      "mastery": "Sap",
+      "weightPounds": 3,
+      "costCopper": 1500
+    },
+    {
+      "id": "weapon.maul",
+      "name": "Maul",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "2d6",
+      "damageType": "Bludgeoning",
+      "properties": "Heavy, TwoHanded",
+      "mastery": "Topple",
+      "weightPounds": 10,
+      "costCopper": 1000
+    },
+    {
+      "id": "weapon.morningstar",
+      "name": "Morningstar",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Piercing",
+      "properties": "None",
+      "mastery": "Sap",
+      "weightPounds": 4,
+      "costCopper": 1500
+    },
+    {
+      "id": "weapon.pike",
+      "name": "Pike",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d10",
+      "damageType": "Piercing",
+      "properties": "Heavy, Reach, TwoHanded",
+      "mastery": "Push",
+      "weightPounds": 18,
+      "costCopper": 500
+    },
+    {
+      "id": "weapon.rapier",
+      "name": "Rapier",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Piercing",
+      "properties": "Finesse",
+      "mastery": "Vex",
+      "weightPounds": 2,
+      "costCopper": 2500
+    },
+    {
+      "id": "weapon.scimitar",
+      "name": "Scimitar",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Slashing",
+      "properties": "Finesse, Light",
+      "mastery": "Nick",
+      "weightPounds": 3,
+      "costCopper": 2500
+    },
+    {
+      "id": "weapon.shortsword",
+      "name": "Shortsword",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d6",
+      "damageType": "Piercing",
+      "properties": "Finesse, Light",
+      "mastery": "Vex",
+      "weightPounds": 2,
+      "costCopper": 1000
+    },
+    {
+      "id": "weapon.trident",
+      "name": "Trident",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Piercing",
+      "properties": "Thrown, Versatile",
+      "versatileDamage": "1d10",
+      "range": {
+        "normalFeet": 20,
+        "longFeet": 60
+      },
+      "mastery": "Topple",
+      "weightPounds": 4,
+      "costCopper": 500
+    },
+    {
+      "id": "weapon.warhammer",
+      "name": "Warhammer",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Bludgeoning",
+      "properties": "Versatile",
+      "versatileDamage": "1d10",
+      "mastery": "Push",
+      "weightPounds": 5,
+      "costCopper": 1500
+    },
+    {
+      "id": "weapon.war-pick",
+      "name": "War Pick",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d8",
+      "damageType": "Piercing",
+      "properties": "Versatile",
+      "versatileDamage": "1d10",
+      "mastery": "Sap",
+      "weightPounds": 2,
+      "costCopper": 500
+    },
+    {
+      "id": "weapon.whip",
+      "name": "Whip",
+      "category": "Martial",
+      "kind": "Melee",
+      "damage": "1d4",
+      "damageType": "Slashing",
+      "properties": "Finesse, Reach",
+      "mastery": "Slow",
+      "weightPounds": 3,
+      "costCopper": 200
+    },
+    {
+      "id": "weapon.blowgun",
+      "name": "Blowgun",
+      "category": "Martial",
+      "kind": "Ranged",
+      "damage": "1",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Loading",
+      "range": {
+        "normalFeet": 25,
+        "longFeet": 100
+      },
+      "ammunitionKind": "Needle",
+      "mastery": "Vex",
+      "weightPounds": 1,
+      "costCopper": 1000
+    },
+    {
+      "id": "weapon.hand-crossbow",
+      "name": "Hand Crossbow",
+      "category": "Martial",
+      "kind": "Ranged",
+      "damage": "1d6",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Light, Loading",
+      "range": {
+        "normalFeet": 30,
+        "longFeet": 120
+      },
+      "ammunitionKind": "Bolt",
+      "mastery": "Vex",
+      "weightPounds": 3,
+      "costCopper": 7500
+    },
+    {
+      "id": "weapon.heavy-crossbow",
+      "name": "Heavy Crossbow",
+      "category": "Martial",
+      "kind": "Ranged",
+      "damage": "1d10",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Heavy, Loading, TwoHanded",
+      "range": {
+        "normalFeet": 100,
+        "longFeet": 400
+      },
+      "ammunitionKind": "Bolt",
+      "mastery": "Push",
+      "weightPounds": 18,
+      "costCopper": 5000
+    },
+    {
+      "id": "weapon.longbow",
+      "name": "Longbow",
+      "category": "Martial",
+      "kind": "Ranged",
+      "damage": "1d8",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Heavy, TwoHanded",
+      "range": {
+        "normalFeet": 150,
+        "longFeet": 600
+      },
+      "ammunitionKind": "Arrow",
+      "mastery": "Slow",
+      "weightPounds": 2,
+      "costCopper": 5000
+    },
+    {
+      "id": "weapon.musket",
+      "name": "Musket",
+      "category": "Martial",
+      "kind": "Ranged",
+      "damage": "1d12",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Loading, TwoHanded",
+      "range": {
+        "normalFeet": 40,
+        "longFeet": 120
+      },
+      "ammunitionKind": "Bullet",
+      "mastery": "Slow",
+      "weightPounds": 10,
+      "costCopper": 50000
+    },
+    {
+      "id": "weapon.pistol",
+      "name": "Pistol",
+      "category": "Martial",
+      "kind": "Ranged",
+      "damage": "1d10",
+      "damageType": "Piercing",
+      "properties": "Ammunition, Loading",
+      "range": {
+        "normalFeet": 30,
+        "longFeet": 90
+      },
+      "ammunitionKind": "Bullet",
+      "mastery": "Vex",
+      "weightPounds": 3,
+      "costCopper": 25000
+    }
+  ]
+}

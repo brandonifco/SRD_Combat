@@ -1,0 +1,145 @@
+{
+  "formatVersion": 1,
+  "content": "armor",
+  "source": "SRD 5.2.1, CC-BY-4.0. See NOTICE.md.",
+  "items": [
+    {
+      "id": "armor.padded-armor",
+      "name": "Padded Armor",
+      "category": "Light",
+      "baseArmorClass": 11,
+      "addsDexterityModifier": true,
+      "stealthDisadvantage": true,
+      "weightPounds": 8,
+      "costCopper": 500
+    },
+    {
+      "id": "armor.leather-armor",
+      "name": "Leather Armor",
+      "category": "Light",
+      "baseArmorClass": 11,
+      "addsDexterityModifier": true,
+      "stealthDisadvantage": false,
+      "weightPounds": 10,
+      "costCopper": 1000
+    },
+    {
+      "id": "armor.studded-leather-armor",
+      "name": "Studded Leather Armor",
+      "category": "Light",
+      "baseArmorClass": 12,
+      "addsDexterityModifier": true,
+      "stealthDisadvantage": false,
+      "weightPounds": 13,
+      "costCopper": 4500
+    },
+    {
+      "id": "armor.hide-armor",
+      "name": "Hide Armor",
+      "category": "Medium",
+      "baseArmorClass": 12,
+      "addsDexterityModifier": true,
+      "maximumDexterityModifier": 2,
+      "stealthDisadvantage": false,
+      "weightPounds": 12,
+      "costCopper": 1000
+    },
+    {
+      "id": "armor.chain-shirt",
+      "name": "Chain Shirt",
+      "category": "Medium",
+      "baseArmorClass": 13,
+      "addsDexterityModifier": true,
+      "maximumDexterityModifier": 2,
+      "stealthDisadvantage": false,
+      "weightPounds": 20,
+      "costCopper": 5000
+    },
+    {
+      "id": "armor.scale-mail",
+      "name": "Scale Mail",
+      "category": "Medium",
+      "baseArmorClass": 14,
+      "addsDexterityModifier": true,
+      "maximumDexterityModifier": 2,
+      "stealthDisadvantage": true,
+      "weightPounds": 45,
+      "costCopper": 5000
+    },
+    {
+      "id": "armor.breastplate",
+      "name": "Breastplate",
+      "category": "Medium",
+      "baseArmorClass": 14,
+      "addsDexterityModifier": true,
+      "maximumDexterityModifier": 2,
+      "stealthDisadvantage": false,
+      "weightPounds": 20,
+      "costCopper": 40000
+    },
+    {
+      "id": "armor.half-plate-armor",
+      "name": "Half Plate Armor",
+      "category": "Medium",
+      "baseArmorClass": 15,
+      "addsDexterityModifier": true,
+      "maximumDexterityModifier": 2,
+      "stealthDisadvantage": true,
+      "weightPounds": 40,
+      "costCopper": 75000
+    },
+    {
+      "id": "armor.ring-mail",
+      "name": "Ring Mail",
+      "category": "Heavy",
+      "baseArmorClass": 14,
+      "addsDexterityModifier": false,
+      "stealthDisadvantage": true,
+      "weightPounds": 40,
+      "costCopper": 3000
+    },
+    {
+      "id": "armor.chain-mail",
+      "name": "Chain Mail",
+      "category": "Heavy",
+      "baseArmorClass": 16,
+      "addsDexterityModifier": false,
+      "minimumStrength": 13,
+      "stealthDisadvantage": true,
+      "weightPounds": 55,
+      "costCopper": 7500
+    },
+    {
+      "id": "armor.splint-armor",
+      "name": "Splint Armor",
+      "category": "Heavy",
+      "baseArmorClass": 17,
+      "addsDexterityModifier": false,
+      "minimumStrength": 15,
+      "stealthDisadvantage": true,
+      "weightPounds": 60,
+      "costCopper": 20000
+    },
+    {
+      "id": "armor.plate-armor",
+      "name": "Plate Armor",
+      "category": "Heavy",
+      "baseArmorClass": 18,
+      "addsDexterityModifier": false,
+      "minimumStrength": 15,
+      "stealthDisadvantage": true,
+      "weightPounds": 65,
+      "costCopper": 150000
+    },
+    {
+      "id": "armor.shield",
+      "name": "Shield",
+      "category": "Shield",
+      "baseArmorClass": 2,
+      "addsDexterityModifier": false,
+      "stealthDisadvantage": false,
+      "weightPounds": 6,
+      "costCopper": 1000
+    }
+  ]
+}

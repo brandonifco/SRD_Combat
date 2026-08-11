@@ -11,15 +11,31 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 ## Where things stand
 
-**2026-08-11 — kickoff.** Repo initialised: build config, hygiene files, CI, the
-design doc, `NOTICE.md` with the required SRD attribution. **No code yet, nothing
-playable.** Phase 0 (solution skeleton + `tools/SrdExtract` + monsters and equipment
-extracted) is next.
+**2026-08-11 — Phase 0 complete.** The content pipeline works end to end.
+`data/srd/` holds **330 monsters, all 38 weapons and all 13 armor entries**, extracted
+from the SRD PDF by `tools/SrdExtract` and loading with **zero validation errors**.
+Debug and Release both build 0 warnings; 79 tests pass.
 
-Two decisions are still open and are flagged at the bottom of the design doc: the
-**launch class roster** (recommendation: six classes, needed before Phase 2) and
-whether the repo carries a **code licence** (public repo, currently no `LICENSE`, so
-all rights reserved by default).
+**Nothing is playable** — there is no combat engine yet. Phase 1 (the headless combat
+engine: grid, initiative, action economy, attacks, damage, conditions, saves) is next.
+
+Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
+Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
+and **no code licence for now** (public repo, no `LICENSE`, all rights reserved by
+default — deliberate).
+
+Three things a Phase 1 author should know before starting:
+
+- **There is no versioned DTO mirror, deliberately.** Content serializes straight from
+  the `Core` definitions. The design doc explains why this diverges from 5eGoldBox, and
+  what guards replace the mirror. Don't "restore" it without reading that section.
+- **Monster prose is not yet mechanics.** Attacks are structured; saving-throw effects,
+  recharge abilities and riders ("the target has the Prone condition") are still text
+  on `MonsterEntry.Text`. Turning those into executable effects is an open scoping
+  question, flagged in the design doc.
+- **`ChallengeRatingRules` already exists** in `Core.Rules` with the full XP and
+  proficiency-bonus tables, and the SRD's per-character encounter XP budget is on
+  printed page 202 — the encounter builder implements a published table, not a guess.
 
 ## Related projects on this machine — context, not dependencies
 
@@ -72,8 +88,35 @@ blocks into nonsense.** Crop each column separately — the page is 594pt wide:
 pdftotext -f 262 -l 262 -x 0 -y 0 -W 297 -H 783 /home/brandon/Downloads/SRD_CC_v5.2.1.pdf -
 ```
 
-The ability-score table inside a stat block needs finer sub-column cropping still; it
-renders as three side-by-side MOD/SAVE pairs and comes out scrambled otherwise.
+That command is for eyeballing a page. **The real pipeline does not use `pdftotext` at
+all** — `tools/SrdExtract` reads the PDF with PdfPig, which gives per-word coordinates
+and font names. Regenerate the content with:
+
+```bash
+dotnet run --project tools/SrdExtract -- --out data/srd
+```
+
+It refuses to write when validation reports errors (`--force` overrides). A clean run
+reports 330 monsters, 38 weapons, 13 armor, 0 errors, and exactly one warning — the
+Archmage's XP, which is a real SRD inconsistency and is expected.
+
+**Why fonts matter more than text here.** The SRD's typography is a reliable parsing
+signal, and the parser is built on it (`StatBlockFonts`): `GillSans-SemiBold` at ~10.2pt
+is a monster name while the *same font* at ~12.3pt is the A–Z group heading above it;
+`Optima-Bold` is a stat line; `GillSans` at ~8.3pt is a section header while the same
+font at ~4.2pt is the `MOD SAVE` column label; `Optima-BoldItalic` opens an entry, and
+that font boundary is the only thing separating an entry's name from its prose on the
+same visual line. Match these names **exactly** — `GillSans`, `GillSans-SemiBold` and
+`GillSans-SemiBold-SC700` are three different signals and a substring test conflates
+them.
+
+**Source-format variances already handled** — check here before assuming a new one is a
+parser bug: distances appear as both `5 ft.` and `5 feet`; four blocks print
+`CR 3 (700 XP; PB +2)` with the fields flipped; some damage is flat (`Hit: 1 Piercing
+damage`, no dice); 19 attacks are `Melee or Ranged Attack Roll` (the regex alternation
+must list that **first**, or it matches `Melee` and then fails on the `or`); and the
+ability table renders as three side-by-side MOD/SAVE pairs with names split oddly
+(`De x 12 +1 +1`), so triples are matched positionally rather than by name.
 
 Useful page ranges (printed page numbers, which match the PDF's own indices):
 classes 28–82, character origins 83–86, feats 87–88, equipment 89–103, spells

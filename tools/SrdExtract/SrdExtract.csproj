@@ -4,6 +4,10 @@
     <ProjectReference Include="..\..\src\SRDCombat.Content\SRDCombat.Content.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="PdfPig" Version="0.1.15" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
