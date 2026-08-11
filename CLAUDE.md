@@ -36,7 +36,16 @@ all rights reserved by default).
 
 - **.NET is snap-confined.** Use `DOTNET_ROLL_FORWARD=LatestMajor /snap/bin/dotnet`
   rather than bare `dotnet` if the bare command misbehaves. SDKs present: 8.0.129 and
-  10.0.110; `global.json` pins 8 with `latestMajor` roll-forward.
+  10.0.110; `global.json` pins 8 with `latestMajor` roll-forward, which in practice
+  means **SDK 10 is what actually runs locally** while CI installs 8.0.x. Both build
+  the `net8.0` targets fine, but the version gap is real — see the next point.
+- **`dotnet new sln` under SDK 10 produces a `.slnx`, which .NET 8 cannot read.** Hit
+  during setup: the solution has to be `SRDCombat.sln` in the classic format, or CI
+  (pinned to 8.0.x) fails to find a project file at all. `dotnet new sln --format sln`
+  forces it. The same version gap means **templates default to `net10.0`** and write
+  `TargetFramework`/`Nullable`/`ImplicitUsings` into each new `.csproj`, silently
+  overriding `Directory.Build.props` — strip those three lines from any project
+  created by a template.
 - **Godot 4.7 stable mono** at `~/.local/bin/godot`. Not used until Phase 7.
 - **`pdftotext`** (poppler) is installed and is the extraction workhorse.
 - **A real X11 display exists** (`DISPLAY=:1`, Xorg — not headless), but no
