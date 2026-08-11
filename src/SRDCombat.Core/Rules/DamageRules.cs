@@ -41,7 +41,17 @@ public static class DamageRules
     };
 
     /// <summary>Applies one damage component to a creature.</summary>
-    public static DamageResult Apply(Combatant target, int amount, DamageType type, bool fromCriticalHit = false)
+    /// <param name="additionalHalvings">
+    /// Halvings from sources outside the creature's own damage responses — a Barbarian's
+    /// Rage, or a Rogue's Uncanny Dodge. Applied in turn, each rounding down, because
+    /// two separate effects that each halve damage do just that.
+    /// </param>
+    public static DamageResult Apply(
+        Combatant target,
+        int amount,
+        DamageType type,
+        bool fromCriticalHit = false,
+        int additionalHalvings = 0)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
@@ -50,6 +60,11 @@ public static class DamageRules
         var hasResponse = target.Stats.DamageResponses.ContainsKey(type);
 
         var effective = ApplyResponse(amount, hasResponse ? response : null);
+
+        for (var halving = 0; halving < additionalHalvings; halving++)
+        {
+            effective /= 2;
+        }
 
         // Damage taken while already at 0 hit points does not reduce hit points further;
         // it inflicts Death Saving Throw failures instead — two from a Critical Hit.

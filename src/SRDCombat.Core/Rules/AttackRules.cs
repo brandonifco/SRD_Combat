@@ -84,11 +84,19 @@ public static class AttackRules
     }
 
     /// <summary>Rolls one attack.</summary>
+    /// <param name="extraAdvantage">
+    /// Advantage from a source this method does not know about, such as a Barbarian's
+    /// Reckless Attack. Combined with the rest, so it still cancels against Disadvantage
+    /// rather than overriding it.
+    /// </param>
+    /// <param name="extraDisadvantage">Disadvantage from such a source.</param>
     public static AttackRoll Resolve(
         IRandomSource random,
         Combatant attacker,
         CombatAttack attack,
-        Combatant target)
+        Combatant target,
+        bool extraAdvantage = false,
+        bool extraDisadvantage = false)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(attacker);
@@ -97,7 +105,7 @@ public static class AttackRules
 
         var distance = attacker.Position.DistanceFeetTo(target.Position);
         var circumstances = DescribeCircumstances(attacker, attack, target);
-        var mode = ResolveRollMode(circumstances, distance);
+        var mode = D20Test.Combine(ResolveRollMode(circumstances, distance), extraAdvantage, extraDisadvantage);
 
         var roll = D20Test.Roll(random, attack.AttackBonus, mode);
 

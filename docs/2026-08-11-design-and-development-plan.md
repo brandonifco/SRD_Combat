@@ -284,9 +284,33 @@ level 1–5.
      `Slot Level` columns rather than nine per-level ones. It correctly reports no spell
      slots and keeps Pact Magic's real columns, rather than being forced into a shape
      the SRD does not use.
-- **Slice 3 — Resolution.** Draft → sheet: AC, hit points, proficiency, saves, skills,
-  attacks from equipped weapons, at every level 1–5.
-- **Slice 4 — Pregens**, and characters as combatants in a real fight.
+- **Slice 3 — Resolution and class feature mechanics. Done.** `CharacterDraft` →
+  `CharacterResolver` → `CharacterSheet`: ability scores with the background's
+  increases, hit points, AC, saves, all 18 skills, weapon attacks, spell slots, and
+  features — at every level 1–5. Characters become combatants and fight.
+
+  **Nine class features are now implemented**, not merely extracted: Extra Attack, Rage
+  (bonus action, physical resistance, bonus damage, and the sustain-or-end rule),
+  Unarmored Defense, Reckless Attack, Sneak Attack (once per turn, with the
+  Advantage-or-adjacent-ally condition), Cunning Action, Uncanny Dodge, Second Wind and
+  Action Surge.
+
+  Two design points worth keeping:
+
+  - **Everything on a sheet is derived.** Nothing is stored independently of the rules
+    that produce it, so a character's AC and their armour cannot drift apart. Where the
+    SRD offers a choice the engine cannot make — how the background's increases were
+    spent, which skills were taken — the draft supplies it and nothing else.
+  - **The gap is on the object.** `CharacterSheet.UnimplementedFeatures` lists the
+    printed features this engine does not do, so a level 5 Cleric's sheet says outright
+    that Spellcasting, Divine Order, Channel Divinity and Sear Undead have no effect.
+    Same rule as the content model: never an absence nobody can see.
+
+  **The largest remaining gap is spellcasting**, and it is a content gap before it is an
+  engine one — spells are not extracted yet. A Cleric or Wizard currently resolves to a
+  correct sheet with correct slots and no way to spend them.
+
+- **Slice 4 — Pregens**, and the four pre-made characters the game ships with.
 
 **A parsing trap this phase found**, recorded because it will recur in every remaining
 chapter: the player-facing chapters are set in **Cambria** while the bestiary uses

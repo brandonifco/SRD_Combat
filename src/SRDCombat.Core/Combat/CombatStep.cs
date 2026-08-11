@@ -17,6 +17,9 @@ public enum CombatStepKind
     Dash,
     Disengage,
     OpportunityAttack,
+
+    /// <summary>A class feature being used or expiring.</summary>
+    Feature,
     TurnEnded,
     EncounterEnded,
 }

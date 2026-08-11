@@ -26,7 +26,7 @@ public sealed record ActionRefusal(string Code, string Message)
 /// player a choice needs to be able to ask "can I?" and get an answer it can show.
 /// </para>
 /// </remarks>
-public sealed class Encounter
+public sealed partial class Encounter
 {
     private readonly List<Combatant> _combatants;
     private readonly List<CombatStep> _log = [];
@@ -140,7 +140,13 @@ public sealed class Encounter
             return new ActionRefusal("combatant.cannot_act", $"{attacker.Name} cannot act.");
         }
 
-        if (!attacker.Turn.HasAction)
+        // Extra Attack is modelled as one action buying several attacks, rather than as
+        // several actions: the SRD grants "two attacks instead of one" on the Attack
+        // action, and treating it as extra actions would also wrongly allow a second
+        // Dodge or Dash.
+        var attacksLeft = attacker.Features.AttacksRemainingThisAction;
+
+        if (attacksLeft <= 0 && !attacker.Turn.HasAction)
         {
             return new ActionRefusal("action.spent", $"{attacker.Name} has already used its action.");
         }
@@ -166,7 +172,17 @@ public sealed class Encounter
                 $"{target.Name} is {distance} ft. away, beyond {attack.Name}'s reach.");
         }
 
-        attacker.Turn.SpendAction();
+        if (attacksLeft > 0)
+        {
+            attacker.Features.AttacksRemainingThisAction--;
+        }
+        else
+        {
+            attacker.Turn.SpendAction();
+            attacker.Features.AttacksRemainingThisAction =
+                Math.Max(0, (attacker.Stats.Character?.AttacksPerAction ?? 1) - 1);
+        }
+
         ResolveAttack(attacker, attack, target, isOpportunityAttack: false);
         CheckForCompletion();
         return null;
@@ -235,6 +251,7 @@ public sealed class Encounter
             return;
         }
 
+        EndRageIfUnsustained(combatant);
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
         AdvanceTurn();
     }
@@ -359,6 +376,7 @@ public sealed class Encounter
             }
 
             combatant.Turn.BeginTurn(combatant.Stats.SpeedFeet);
+            combatant.Features.BeginTurn();
             Add(CombatStepKind.TurnStarted, $"{combatant.Name}'s turn begins.", combatant);
             return;
         }
@@ -489,7 +507,17 @@ public sealed class Encounter
 
     private void ResolveAttack(Combatant attacker, CombatAttack attack, Combatant target, bool isOpportunityAttack)
     {
-        var result = AttackRules.Resolve(_random, attacker, attack, target);
+        // Reckless Attack cuts both ways: Advantage on the Barbarian's own melee attacks
+        // this turn, and Advantage to anyone attacking the Barbarian until its next turn.
+        var recklessAdvantage = attacker.Features.IsRecklessThisTurn && attack.Kind == AttackKind.Melee;
+        var targetIsReckless = target.Features.IsRecklessThisTurn;
+
+        var result = AttackRules.Resolve(
+            _random,
+            attacker,
+            attack,
+            target,
+            extraAdvantage: recklessAdvantage || targetIsReckless);
 
         var modeNote = result.Roll.Mode switch
         {
@@ -522,16 +550,61 @@ public sealed class Encounter
             attacker,
             target);
 
-        foreach (var (component, roll) in AttackRules.RollDamage(_random, attack, result))
+        attacker.Features.AttackedThisTurn = true;
+
+        // Uncanny Dodge is decided once for the attack, not once per damage component.
+        var halvings = TryUncannyDodge(target) ? 1 : 0;
+
+        var components = AttackRules.RollDamage(_random, attack, result).ToList();
+
+        // Rage adds its bonus to Strength melee attacks. Applied to the first component
+        // only: it is one bonus on the attack, not one per damage type.
+        var rageBonus = attacker.Features.IsRaging && attack.Kind == AttackKind.Melee
+            ? attacker.Stats.Character?.RageDamageBonus ?? 0
+            : 0;
+
+        if (SneakAttackApplies(attacker, attack, target, result))
         {
-            var applied = DamageRules.Apply(target, roll.Total, component.Type, result.Critical);
+            attacker.Features.SneakAttackUsedThisTurn = true;
+
+            var sneak = DiceRoller.Roll(
+                _random,
+                attacker.Stats.Character!.SneakAttackDamage!,
+                result.Critical);
+
+            components.Add((
+                new AttackDamage(attacker.Stats.Character.SneakAttackDamage!, attack.Damage[0].Type, sneak.Total),
+                sneak));
+
+            Add(
+                CombatStepKind.Feature,
+                $"{attacker.Name} lands a Sneak Attack for an extra {sneak.Total} damage [{sneak}].",
+                attacker,
+                target);
+        }
+
+        var first = true;
+
+        foreach (var (component, roll) in components)
+        {
+            var raw = roll.Total + (first ? rageBonus : 0);
+            first = false;
+
+            var rageHalving = RageResists(target, component.Type) ? 1 : 0;
+
+            var applied = DamageRules.Apply(
+                target,
+                raw,
+                component.Type,
+                result.Critical,
+                halvings + rageHalving);
 
             var responseNote = applied.Response switch
             {
                 DamageResponse.Resistance => $" (halved by Resistance from {applied.Raw})",
                 DamageResponse.Vulnerability => $" (doubled by Vulnerability from {applied.Raw})",
                 DamageResponse.Immunity => " (Immune)",
-                _ => string.Empty,
+                _ => RageResists(target, component.Type) ? " (halved by Rage)" : string.Empty,
             };
 
             Add(
