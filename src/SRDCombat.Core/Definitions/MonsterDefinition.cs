@@ -40,16 +40,50 @@ public enum MonsterEntrySection
 /// <param name="Text">The entry's full prose, with line breaks joined.</param>
 /// <param name="Attack">
 /// Structured attack data when the entry uses the SRD's attack grammar
-/// (<c>Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage.</c>),
-/// otherwise null. Entries that resolve through a saving throw, and entries with no
-/// mechanical payload at all, both leave this null and keep their prose in
-/// <paramref name="Text"/>.
+/// (<c>Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage.</c>).
+/// </param>
+/// <param name="Mechanics">
+/// What kind of mechanics this entry carries. Never absent: an entry the model cannot
+/// express is <see cref="EntryMechanics.Unmodelled"/> and is counted, rather than
+/// passing as ordinary prose.
+/// </param>
+/// <param name="Save">The saving-throw effect, when the entry resolves through one.</param>
+/// <param name="Multiattack">The Multiattack, when the entry is one.</param>
+/// <param name="Reaction">The Trigger/Response pair, when the entry is a reaction.</param>
+/// <param name="Usage">How often the entry can be used, from "(Recharge 5-6)" or "(3/Day)".</param>
+/// <param name="AppliedConditions">
+/// Conditions the entry imposes — the riders that hang off an attack or a failed save.
+/// </param>
+/// <param name="UnmodelledClauses">
+/// The sentences whose mechanics were recognised as real but could not be expressed.
+/// Empty for anything fully modelled. This is what makes the gap countable.
 /// </param>
 public sealed record MonsterEntry(
     string Name,
     MonsterEntrySection Section,
     string Text,
-    MonsterAttack? Attack = null);
+    MonsterAttack? Attack = null,
+    EntryMechanics Mechanics = EntryMechanics.Unmodelled,
+    SaveEffect? Save = null,
+    MultiattackEffect? Multiattack = null,
+    ReactionEffect? Reaction = null,
+    UsageLimit? Usage = null,
+    IReadOnlyList<AppliedCondition>? AppliedConditions = null,
+    IReadOnlyList<string>? UnmodelledClauses = null)
+{
+    /// <summary>Conditions this entry imposes. Never null.</summary>
+    public IReadOnlyList<AppliedCondition> AppliedConditions { get; init; } = AppliedConditions ?? [];
+
+    /// <summary>Clauses recognised as mechanical but not expressible by the model. Never null.</summary>
+    public IReadOnlyList<string> UnmodelledClauses { get; init; } = UnmodelledClauses ?? [];
+
+    /// <summary>
+    /// True when every mechanical clause in this entry is captured by the model. False
+    /// means the engine will not do everything the stat block says.
+    /// </summary>
+    public bool IsFullyModelled =>
+        Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;
+}
 
 /// <summary>Whether an attack is made in melee or at range.</summary>
 public enum AttackKind

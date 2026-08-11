@@ -1,4 +1,5 @@
 using System.Globalization;
+using SRDCombat.Core.Definitions;
 using SRDCombat.Content;
 using SRDCombat.Content.Validation;
 using SrdExtract;
@@ -56,6 +57,8 @@ Report(
         .Concat(correctionDiagnostics)
         .Select(d => d.ToString()));
 
+ReportMechanicsCoverage(monsters);
+
 var validation = new List<ValidationIssue>();
 validation.AddRange(MonsterValidator.Validate(monsters).Issues);
 validation.AddRange(EquipmentValidator.ValidateWeapons(equipmentResult.Weapons).Issues);
@@ -86,6 +89,53 @@ Console.WriteLine();
 Console.WriteLine($"Wrote content to {Path.GetFullPath(options.OutputDirectory)}");
 
 return errorCount > 0 ? 1 : 0;
+
+/// <summary>
+/// Prints how much of the bestiary's mechanics the model actually expresses.
+/// </summary>
+/// <remarks>
+/// The tier-1 breakdown is separate because that is the band the gauntlet spends its
+/// encounter budget in, so it is the number that decides whether the game plays
+/// correctly. A gap here is not a warning to be silenced — it is the work remaining,
+/// stated as a number instead of hidden inside prose the engine ignores.
+/// </remarks>
+static void ReportMechanicsCoverage(IReadOnlyList<MonsterDefinition> monsters)
+{
+    void Summarise(string label, IReadOnlyList<MonsterDefinition> subject)
+    {
+        var entries = subject.SelectMany(monster => monster.Entries).ToList();
+
+        if (entries.Count == 0)
+        {
+            return;
+        }
+
+        var modelled = entries.Count(entry => entry.IsFullyModelled);
+
+        Console.WriteLine();
+        Console.WriteLine(
+            $"{label}: {modelled}/{entries.Count} entries fully modelled " +
+            $"({modelled * 100.0 / entries.Count:F0}%)");
+
+        foreach (var group in entries
+                     .GroupBy(entry => entry.Mechanics)
+                     .OrderByDescending(group => group.Count()))
+        {
+            var partial = group.Count(entry => !entry.IsFullyModelled);
+            var note = partial > 0 && group.Key != EntryMechanics.Unmodelled
+                ? $"  ({partial} carry clauses the model cannot express)"
+                : string.Empty;
+
+            Console.WriteLine($"  {group.Count(),5}  {group.Key}{note}");
+        }
+
+    }
+
+    Summarise("Mechanics coverage, whole bestiary", monsters);
+    Summarise(
+        "Mechanics coverage, CR 0-4 (the gauntlet's band)",
+        monsters.Where(monster => monster.ChallengeRating <= 4m).ToList());
+}
 
 static void Report(string heading, IEnumerable<string> messages)
 {

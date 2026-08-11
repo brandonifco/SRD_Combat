@@ -462,7 +462,8 @@ public static partial class MonsterParser
         {
             var text = _text.ToString().Trim();
 
-            return new MonsterEntry(name, section, text, StatBlockLineGrammar.ParseAttack(text));
+            // Every entry goes through classification, so none can pass as plain prose.
+            return EntryMechanicsParser.Classify(name, section, text);
         }
     }
 

@@ -284,16 +284,70 @@ Carried over from GoldBox because they earned it there:
 - When a decision in this document turns out to be wrong, **correct it here in the
   same commit as the code** — not as a follow-up pass that never happens.
 
+## The effect model — prose *is* mechanics
+
+**Added 2026-08-11, replacing an open question that turned out not to be one.** This
+document previously asked "how much of a monster's prose becomes mechanics", as though
+fidelity were a dial. It isn't. A stat block's action entries contain no flavour text:
+`it has the Grappled condition (escape DC 13)` is a rule, and calling it prose only
+describes the format it is printed in.
+
+**The failure this prevents, which had already happened.** The Goblin Warrior's scimitar
+deals "plus 2 (1d4) Slashing damage *if the attack roll had Advantage*". The extractor
+captured the dice and dropped the qualifier, so every goblin hit dealt it. Nothing
+failed, because the attack *looked* implemented. **A partly-structured entry is more
+dangerous than an unstructured one** — the missing part is invisible rather than merely
+absent.
+
+So the rule is not "implement more". It is **nothing may hold unimplemented rules
+silently**:
+
+- Every entry is classified — `Attack`, `SavingThrow`, `Multiattack`, `Reaction`,
+  `Narrative`, or `Unmodelled`. There is no "just prose" state to fall into.
+- Any clause the model cannot express is recorded on `MonsterEntry.UnmodelledClauses`
+  and counted, including on entries that are otherwise structured.
+- `Narrative` — "this genuinely does nothing in a fight" — is only ever set from a
+  **curated list**, never inferred. It currently holds three names.
+
+**A heuristic was tried for that last point and had to be removed, which is the lesson
+worth keeping.** An earlier version screened sentences through a "does this look
+mechanical?" keyword test. The data showed exactly why that fails: Flyby ("doesn't
+provoke Opportunity Attacks"), Nimble Escape ("takes the Disengage or Hide action") and
+Shape-Shift all came through as apparently inert. A keyword list will always have false
+negatives, and here a false negative silently loses a rule. Unfiltered reporting gives a
+worse-looking number and a true one.
+
+**Where coverage actually stands** — printed by the extractor on every run, and floored
+by a test so it cannot regress:
+
+| | CR 0–4 (the band the gauntlet uses) |
+| --- | --- |
+| entries fully modelled | **342 / 611 (56%)** |
+| attacks, of which 62 carry clauses the model cannot express | 264 |
+| unmodelled entirely | 176 |
+| Multiattack | 70 |
+| saving-throw effects, 26 with clauses beyond the model | 62 |
+| reactions, 5 with clauses beyond the model | 12 |
+| confirmed inert | 27 |
+
+**Captured but deliberately not executed yet.** Conditions imposed by an entry are
+extracted, including escape DCs — but the engine does not apply them, because the gates
+on them are not modelled. `If the target is a Large or smaller creature, it has the
+Grappled condition` would, if applied ungated, impose the condition in more cases than
+the SRD allows: the goblin bug again, in a new place. The condition data is there for
+when size comparison exists; until then the clause is reported as unmodelled and a test
+pins that it stays that way.
+
 ## Open questions
 
 1. **Is there an economy?** Gold, and a shop between fights, or is loot the only
    source of equipment? Affects Phase 4, not before.
-2. **How much of a monster's prose becomes mechanics?** Phase 0 extracts attacks
-   structurally and keeps everything else — saving-throw effects, recharge abilities,
-   riders like "the target has the Prone condition" — as text. Turning those into
-   executable effects is a real, separate scoping question, and the answer probably
-   differs between "every CR 0–4 creature the ladder actually uses" and "all 330".
-   Needs an answer during Phase 1, not before.
-3. **Which monsters does the ladder draw from?** 330 is far more than a tier-1 game
-   needs. Curating a subset the encounter builder is allowed to pick from is likely
-   better than exposing all of them; that is a Phase 4 decision.
+2. **Which monsters does the ladder draw from?** 330 is far more than a tier-1 game
+   needs, and coverage is uneven — a creature whose entries are largely unmodelled is a
+   poor choice for an authored encounter regardless of its CR. Curating the pool the
+   encounter builder may pick from, weighted by coverage, is a Phase 4 decision.
+3. **What closes the remaining 44%?** Roughly in value order: condition gates (size
+   comparison), executing saving-throw effects (needs area geometry — Cone, Line,
+   Emanation), Multiattack execution, recharge tracking, and the long tail of passive
+   traits (Pack Tactics, Magic Resistance, Bloodied Frenzy). Each is a discrete piece of
+   work against a number that now moves visibly.

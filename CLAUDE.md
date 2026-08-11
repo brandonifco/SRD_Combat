@@ -24,14 +24,38 @@ narration **pinned byte-for-byte** in `tests/SRDCombat.Core.Tests/Fixtures/`.
 
 Debug and Release both build 0 warnings; **172 tests pass**, 1 skipped by design.
 
-**A bug worth knowing about, because its shape will recur.** The extractor read the
-Goblin Warrior's "plus 2 (1d4) Slashing damage *if the attack roll had Advantage*" as a
-second unconditional damage component, so every goblin hit dealt it. Nothing failed —
-the attack looked implemented. `AttackDamage.Condition` now carries the qualifier and
-`AttackRules.RollDamage` evaluates it. **The general lesson: an entry that is partly
-structured is more dangerous than one that is not structured at all**, because the
-unstructured part is invisible rather than merely absent. That is what the effect model
-below exists to prevent.
+**The effect model, added the same day, and the rule behind it.** A stat block's action
+entries contain no flavour text — `it has the Grappled condition (escape DC 13)` is a
+rule. So **nothing may hold unimplemented rules silently**:
+
+- Every entry is classified (`MonsterEntry.Mechanics`): `Attack`, `SavingThrow`,
+  `Multiattack`, `Reaction`, `Narrative`, or `Unmodelled`. There is no "just prose"
+  state to fall into.
+- Anything the model cannot express lands in `UnmodelledClauses` and is **counted**,
+  including on entries that are otherwise structured. `IsFullyModelled` is the test.
+- `Narrative` means "confirmed to do nothing in a fight" and is **only ever set from the
+  curated list** in `EntryMechanicsParser`. Never infer it. Pack Tactics, Sunlight
+  Sensitivity and Flyby all look inert and all change how a fight goes.
+- The extractor prints coverage on every run; `TierOneCoverageDoesNotRegress` floors it.
+  Currently **342/611 (56%)** of CR 0–4 entries are fully modelled.
+
+**Two bugs that produced this rule, both worth knowing before touching the parser:**
+
+1. The Goblin Warrior's "plus 2 (1d4) damage *if the attack roll had Advantage*" was
+   read as a second unconditional component, so every goblin hit dealt it. Nothing
+   failed — the attack *looked* implemented. **A partly-structured entry is more
+   dangerous than an unstructured one**, because the missing part is invisible.
+2. An earlier version of the classifier screened sentences through a "does this look
+   mechanical?" keyword test before reporting them. Flyby, Nimble Escape and Shape-Shift
+   all slipped through as inert. **The heuristic was removed rather than tuned** — a
+   keyword list will always have false negatives, and here a false negative silently
+   loses a rule.
+
+**Conditions are captured but deliberately not executed.** Escape DCs and all, they sit
+on `MonsterEntry.AppliedConditions` — but the engine does not apply them, because the
+gates ("if the target is a Large or smaller creature") are not modelled and applying
+them ungated would repeat bug 1 in a new place. Don't wire them up until size comparison
+exists.
 
 **Still not playable by a person** — there is no client and no character model. Phase 2
 (species/class/background resolution, levels 1–5, spell slots, equipment, four pregens)
