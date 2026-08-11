@@ -9,63 +9,77 @@ It is the governing design document: the kickoff decisions, the architecture and
 it diverges from `5eGoldBox`, the content pipeline, the phase plan, and the open
 questions. Everything below is operational detail that doc doesn't carry.
 
-## Where things stand
+## Current state — read this first
 
-**2026-08-11 — Phases 0 and 1 complete.**
+**As of 2026-08-11.** All numbers here are verified, not estimated.
 
-Phase 0, the content pipeline: `data/srd/` holds **330 monsters, all 38 weapons and all
-13 armor entries**, extracted from the SRD PDF by `tools/SrdExtract` and loading with
-**zero validation errors**.
+| | |
+| --- | --- |
+| Branch | `main` at PR #12 (spells). **PR #13 (casting) is open and unmerged.** |
+| Tests | **314 passing**, 1 skipped by design (the transcript fixture writer) |
+| Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
+| Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
+| Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
 
-Phase 1, the combat engine: a headless fight runs end to end. Grid movement, initiative,
-action economy, attacks, damage, death saves and opportunity attacks all work, and a
-three-adventurer / four-raider skirmish resolves over eight rounds with its 156-line
-narration **pinned byte-for-byte** in `tests/SRDCombat.Core.Tests/Fixtures/`.
+**What works today.** A fight runs end to end, headless. Grid movement, initiative, the
+action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
+from real content — species, class, background, levels 1–5 — and fight alongside
+monsters, with nine implemented class features and working spellcasting (attack spells,
+save spells with areas, slots, Concentration). A frozen transcript pins one whole
+eight-round fight byte-for-byte.
 
-Debug and Release both build 0 warnings; **172 tests pass**, 1 skipped by design.
+**What does not exist yet.** No client of any kind — nothing is playable by a person.
+No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
+characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
+melee and swings.
 
-**The effect model, added the same day, and the rule behind it.** A stat block's action
-entries contain no flavour text — `it has the Grappled condition (escape DC 13)` is a
-rule. So **nothing may hold unimplemented rules silently**:
+**Picking up cold:** merge or review PR #13 first, then take a GitHub issue.
+`gh issue list`. The two highest-value are **#7 Multiattack** (70 tier-1 entries are
+structured and unused, so every multiattacking monster hits once instead of two or three
+times) and **#5 condition gates** (62 attacks capture a condition the engine will not
+apply until creature-size comparison exists).
 
-- Every entry is classified (`MonsterEntry.Mechanics`): `Attack`, `SavingThrow`,
-  `Multiattack`, `Reaction`, `Narrative`, or `Unmodelled`. There is no "just prose"
-  state to fall into.
+## The rule this project runs on
+
+**Nothing may hold unimplemented rules silently.** A stat block's action entries contain
+no flavour text — `it has the Grappled condition (escape DC 13)` is a rule, and calling
+it prose only describes the format it is printed in. So:
+
+- Every entry, trait, class feature and spell is **classified**. There is no "just prose"
+  state to fall into. `EntryMechanics` is the enum; `IsFullyModelled` is the test.
 - Anything the model cannot express lands in `UnmodelledClauses` and is **counted**,
-  including on entries that are otherwise structured. `IsFullyModelled` is the test.
-- `Narrative` means "confirmed to do nothing in a fight" and is **only ever set from the
-  curated list** in `EntryMechanicsParser`. Never infer it. Pack Tactics, Sunlight
-  Sensitivity and Flyby all look inert and all change how a fight goes.
-- The extractor prints coverage on every run; `TierOneCoverageDoesNotRegress` floors it.
-  Currently **342/611 (56%)** of CR 0–4 entries are fully modelled.
+  including on entries that are otherwise structured.
+- `Narrative` — "confirmed to do nothing in a fight" — is **only ever set from a curated
+  list**, never inferred. Pack Tactics, Sunlight Sensitivity and Flyby all look inert and
+  all change how a fight goes.
+- An action the engine cannot resolve is **refused with a named code**, not silently
+  skipped. See `spell.not_implemented`, `spell.area_not_modelled`.
+- Where a rule is a judgement call rather than a derivation, **write the reading down**.
+  `AreaTargeting` is the model for this.
 
-**Two bugs that produced this rule, both worth knowing before touching the parser:**
+**Three bugs produced that rule. Read them before touching a parser:**
 
-1. The Goblin Warrior's "plus 2 (1d4) damage *if the attack roll had Advantage*" was
+1. **The Goblin Warrior's "plus 2 (1d4) damage *if the attack roll had Advantage*"** was
    read as a second unconditional component, so every goblin hit dealt it. Nothing
    failed — the attack *looked* implemented. **A partly-structured entry is more
    dangerous than an unstructured one**, because the missing part is invisible.
-2. An earlier version of the classifier screened sentences through a "does this look
-   mechanical?" keyword test before reporting them. Flyby, Nimble Escape and Shape-Shift
-   all slipped through as inert. **The heuristic was removed rather than tuned** — a
-   keyword list will always have false negatives, and here a false negative silently
-   loses a rule.
+2. **A "does this look mechanical?" keyword filter** let Flyby, Nimble Escape and
+   Shape-Shift through as inert. The heuristic was **removed rather than tuned**: a
+   keyword list will always have false negatives, and here a false negative loses a rule.
+3. **Reusing the stat block classifier on spells** read every metadata field correctly
+   and found **zero of 300 saving throws** — a monster prints an explicit DC and a
+   precomputed average, a spell prints neither. Silent, and visible only because the
+   extractor counts what it modelled.
 
-**Conditions are captured but deliberately not executed.** Escape DCs and all, they sit
-on `MonsterEntry.AppliedConditions` — but the engine does not apply them, because the
-gates ("if the target is a Large or smaller creature") are not modelled and applying
-them ungated would repeat bug 1 in a new place. Don't wire them up until size comparison
-exists.
+**Conditions are captured but deliberately not executed.** Escape DCs and all, on
+`MonsterEntry.AppliedConditions`. The gates ("if the target is a Large or smaller
+creature") are not modelled, and applying them ungated would repeat bug 1 in a new place.
+Issue #5. Don't wire them up until size comparison exists.
 
-**Phase 2 is in progress, sliced into small PRs.** Landed so far: **9 species,
-4 backgrounds, all 12 classes and 300 spells** in `data/srd/`; `AdvancementRules`;
-and **character resolution with nine implemented class features**. A real party built
-from real content now fights real monsters.
+**Coverage numbers are an internal check, not project status.** The extractor prints them
+so *it* can tell what is left; they do not belong in a status report.
 
-**Work remaining is tracked in GitHub issues, not in this file or in chat.** Coverage
-numbers are printed by the extractor as an internal check; they are not project status.
-
-### Working on characters
+## Working on characters and spells
 
 - **`CharacterResolver` derives everything.** No number on a `CharacterSheet` is stored
   independently of the rules that make it, so AC and armour cannot drift apart. Only
@@ -89,17 +103,12 @@ numbers are printed by the extractor as an internal check; they are not project 
 - **`SpellcastingRules.AbilityFor` is a curated map, not Primary Ability.** A Paladin's
   primary abilities are Strength *and* Charisma and it casts on Charisma — reading it
   from the Core Traits table would be right for six classes and quietly wrong for two.
-- **Spells need their own effect grammar, not the stat block one.** A monster prints
-  `Dexterity Saving Throw: DC 12` and `14 (4d6) Acid damage`; a spell prints
-  `must succeed on a Dexterity saving throw` and `8d6 Fire damage` — no DC (it is the
-  caster's) and no precomputed average. Reusing the monster classifier found every
-  metadata field and **zero of 300 saving throws**, silently. See `SpellEffectParser`.
+- **Spells need their own effect grammar, not the stat block one** — see bug 3 above.
+  `SpellEffectParser`, not `EntryMechanicsParser`.
 - **Extra Attack is one action buying several attacks**, not several actions — modelling
   it as extra actions would also wrongly allow a second Dodge or Dash.
 
-**Still not playable by a person** — there is no client and no character model yet.
-
-### Traps the character-content extraction hit — read before parsing another chapter
+## Extraction traps — read before parsing another SRD chapter
 
 Every one of these failed **silently** and was caught by a validator or by checking
 output against the book, never by the parser complaining.
@@ -129,7 +138,7 @@ Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must 
 and **no code licence for now** (public repo, no `LICENSE`, all rights reserved by
 default — deliberate).
 
-### Working on the combat engine
+## Working on the combat engine
 
 - **The frozen transcript is the most valuable test here.** It pins the exact narrated
   sequence of a whole fight, so it catches interaction bugs no unit test reaches. When
@@ -269,16 +278,23 @@ dotnet test SRDCombat.sln -c Debug
 - **One narrowly-scoped branch per concern; branch → push → open a PR → wait for CI →
   then stop.** The user reviews the diff and merges. Do not merge your own PR, and do
   not push to `main`.
-  **This was not followed for the first six commits** — Phases 0 and 1 went straight to
-  `main` unreviewed, contradicting this very section. Confirmed with the user 2026-08-11
-  that branch-and-PR is the workflow from Phase 2 onward. Large changes especially need
-  a diff someone can read before it lands.
+  (The first six commits went straight to `main` before this was being followed, which
+  is why early history has no PRs. From PR #1 onward it is the workflow.)
+- **Merging intermittently returns HTTP 504 while succeeding.** Re-check with
+  `gh pr view <n> --json state,mergedAt` after a merge error rather than assuming it
+  failed, and always confirm a PR really is merged before branching from `main` — a
+  stale base silently drops the previous slice's work from the working tree.
+- **File found-but-deferred work as a GitHub issue**, not in this file and not in chat.
+  `gh issue list` is the work queue.
 - Gate before merge: focused tests → full suite → Debug **and** Release build, both
   0 warnings → `git diff --check` clean.
-- **Content changes land in both layers in one commit.** Adding a field to a `Core`
-  definition does nothing until the versioned `Content` DTO mirrors it — unmapped
-  JSON properties are dropped silently, not rejected. Check the regenerated schema
-  actually contains the new field before moving on. This bit GoldBox twice.
+- **There is no versioned DTO mirror and no generated schema in this project.** Content
+  serializes straight from the `Core` definitions. This is a deliberate divergence from
+  5eGoldBox — the design doc explains why — and the guards that replace it are
+  `UnmappedMemberHandling.Disallow` (an unknown property is an error, not skipped) and
+  `ContentSerializerTests`, which pins the on-disk shape. **Adding a field to a `Core`
+  definition is enough; re-run the extractor and the files rewrite.** Don't go looking
+  for a DTO layer to update, and don't reintroduce one without reading that section.
 - **Frozen transcript tests for combat**: a scripted fight's exact narrated step
   sequence, diffed byte-for-byte. These require the RNG to be seeded and injectable,
   which is why `Core` owns its randomness behind an abstraction.
