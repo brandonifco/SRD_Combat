@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SRDCombat.Core\SRDCombat.Core.csproj" />
+    <ProjectReference Include="..\SRDCombat.Content\SRDCombat.Content.csproj" />
+  </ItemGroup>
+
+</Project>
