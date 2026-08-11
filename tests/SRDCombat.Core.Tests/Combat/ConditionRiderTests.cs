@@ -75,20 +75,20 @@ public class ConditionRiderTests
     [Fact]
     public void AConditionTheEngineDoesNotExecuteIsNeverImposed()
     {
-        // Grappled is completely modelled — a size gate and an escape DC, nothing else —
-        // and still must not land. Nothing in the engine gives it an effect, so a
-        // Grappled creature would walk away at full speed while its sheet said otherwise.
+        // Charmed is completely modelled — a size gate, a duration, nothing else — and
+        // still must not land. Nothing in the engine gives it an effect, so a Charmed
+        // creature would keep attacking its charmer while its sheet said otherwise.
         var rider = new AppliedCondition(
-            ConditionType.Grappled,
-            EscapeDifficultyClass: 13,
-            MaximumTargetSize: CreatureSize.Large);
+            ConditionType.Charmed,
+            MaximumTargetSize: CreatureSize.Large,
+            Duration: new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source));
 
         var encounter = Fight(rider, CreatureSize.Medium);
 
         Assert.True(rider.IsFullyModelled);
-        Assert.False(ConditionRules.IsExecutable(ConditionType.Grappled));
+        Assert.False(ConditionRules.IsExecutable(ConditionType.Charmed));
         Assert.Null(encounter.Attack("Slam", Target(encounter)));
-        Assert.False(Target(encounter).HasCondition(ConditionType.Grappled));
+        Assert.False(Target(encounter).HasCondition(ConditionType.Charmed));
     }
 
     [Fact]

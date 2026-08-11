@@ -260,7 +260,13 @@ public sealed partial class Encounter
 
         foreach (var victim in affected)
         {
-            var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability));
+            // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
+            // else — the ability matters, not just the condition.
+            var mode = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained)
+                ? RollMode.Disadvantage
+                : RollMode.Normal;
+
+            var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
             var succeeded = roll.Total >= difficultyClass;
 
             Add(

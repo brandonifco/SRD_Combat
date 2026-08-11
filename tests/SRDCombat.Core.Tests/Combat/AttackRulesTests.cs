@@ -90,9 +90,7 @@ public class AttackRulesTests
             TargetIsDodging: false,
             TargetIsProne: true,
             TargetIsUnconscious: false,
-            AttackerIsProne: false,
-            AttackerIsPoisoned: false,
-            AtLongRange: false);
+            AttackerIsProne: false);
 
         Assert.Equal(expected, AttackRules.ResolveRollMode(circumstances, distance));
     }
@@ -107,9 +105,7 @@ public class AttackRulesTests
             TargetIsDodging: false,
             TargetIsProne: true,
             TargetIsUnconscious: true,
-            AttackerIsProne: false,
-            AttackerIsPoisoned: false,
-            AtLongRange: false);
+            AttackerIsProne: false);
 
         Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 15));
         Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
@@ -137,7 +133,7 @@ public class AttackRulesTests
     [Fact]
     public void AProneAttacker_HasDisadvantage()
     {
-        var circumstances = new AttackCircumstances(false, false, false, AttackerIsProne: true, false, false);
+        var circumstances = new AttackCircumstances(AttackerIsProne: true);
 
         Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
     }
@@ -145,7 +141,7 @@ public class AttackRulesTests
     [Fact]
     public void APoisonedAttacker_HasDisadvantage()
     {
-        var circumstances = new AttackCircumstances(false, false, false, false, AttackerIsPoisoned: true, false);
+        var circumstances = new AttackCircumstances(AttackerIsPoisoned: true);
 
         Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
     }
@@ -160,9 +156,7 @@ public class AttackRulesTests
             TargetIsDodging: false,
             TargetIsProne: false,
             TargetIsUnconscious: true,
-            AttackerIsProne: false,
-            AttackerIsPoisoned: true,
-            AtLongRange: false);
+            AttackerIsPoisoned: true);
 
         Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
     }

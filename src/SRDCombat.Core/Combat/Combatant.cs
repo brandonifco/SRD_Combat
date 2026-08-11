@@ -131,6 +131,18 @@ public sealed record CombatantStats(
     public CombatantFeatures? Character { get; init; }
 
     /// <summary>
+    /// Skill bonuses by SRD skill name, for the ability checks a fight asks for.
+    /// </summary>
+    /// <remarks>
+    /// Only skills the creature is actually better at appear. Anything absent falls back
+    /// to the bare ability modifier, which is what an unproficient check is — see
+    /// <see cref="Rules.SkillRules.BonusFor"/>. A monster's stat block prints only the
+    /// skills it has a bonus in, so storing the absences would be inventing them.
+    /// </remarks>
+    public IReadOnlyDictionary<string, int> SkillBonuses { get; init; } =
+        new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The creature's Multiattack, when its stat block has one. Null for a character —
     /// a character's several attacks come from Extra Attack instead.
     /// </summary>
@@ -210,6 +222,11 @@ public sealed record CombatantStats(
             sheet.Attacks,
             DiesAtZeroHitPoints: false)
         {
+            SkillBonuses = sheet.Skills.ToDictionary(
+                skill => skill.Skill,
+                skill => skill.Bonus,
+                StringComparer.OrdinalIgnoreCase),
+
             Character = new CombatantFeatures(
                 sheet.Features.Select(granted => granted.Feature).ToArray(),
                 sheet.AttacksPerAction,
@@ -270,6 +287,11 @@ public sealed record CombatantStats(
             // spell, and letting those through would hand out swings the creature has no
             // way to make.
             Multiattack = UsableMultiattack(monster, attacks),
+
+            SkillBonuses = monster.Skills.ToDictionary(
+                skill => skill.Key,
+                skill => skill.Value,
+                StringComparer.OrdinalIgnoreCase),
         };
     }
 
@@ -435,10 +457,21 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// the Unconscious a creature gets from dropping to 0 hit points.
 /// </param>
 /// <param name="Expiry">When it ends on its own. Null when only the rules can end it.</param>
+/// <param name="EscapeDifficultyClass">
+/// The DC to escape. Only Grappled prints one, and the SRD prints it as part of the
+/// condition rather than of the creature, so it is carried here.
+/// </param>
+/// <param name="GrappleRangeFeet">
+/// The grapple's range — the reach of the attack that made it. The SRD ends a grapple
+/// when "the distance between the Grappled target and the grappler exceeds the grapple's
+/// range", so that distance has to be remembered. Only set for Grappled.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
-    ConditionExpiry? Expiry = null);
+    ConditionExpiry? Expiry = null,
+    int? EscapeDifficultyClass = null,
+    int? GrappleRangeFeet = null);
 
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>
 public sealed class Combatant
@@ -550,8 +583,16 @@ public sealed class Combatant
     /// again would hand it an expiry it did not have and stand it up for free.
     /// </remarks>
     /// <returns>True when the creature did not already have the condition.</returns>
-    public bool AddCondition(ConditionType condition, string? sourceId = null, ConditionExpiry? expiry = null)
+    public bool AddCondition(ConditionType condition, string? sourceId = null, ConditionExpiry? expiry = null) =>
+        AddCondition(new ActiveCondition(condition, sourceId, expiry));
+
+    /// <inheritdoc cref="AddCondition(ConditionType, string?, ConditionExpiry?)"/>
+    public bool AddCondition(ActiveCondition active)
     {
+        ArgumentNullException.ThrowIfNull(active);
+
+        var condition = active.Condition;
+
         if (Stats.ConditionImmunities.Contains(condition))
         {
             return false;
@@ -561,14 +602,18 @@ public sealed class Combatant
         {
             _conditions[condition] = existing with
             {
-                SourceId = sourceId ?? existing.SourceId,
-                Expiry = existing.Expiry is null ? null : expiry,
+                SourceId = active.SourceId ?? existing.SourceId,
+                Expiry = existing.Expiry is null ? null : active.Expiry,
+                EscapeDifficultyClass = active.EscapeDifficultyClass ?? existing.EscapeDifficultyClass,
+                GrappleRangeFeet = active.GrappleRangeFeet ?? existing.GrappleRangeFeet,
             };
 
             return false;
         }
 
-        _conditions[condition] = new ActiveCondition(condition, sourceId, expiry);
+        _conditions[condition] = active;
+        var sourceId = active.SourceId;
+        var expiry = active.Expiry;
 
         // Unconscious brings Incapacitated and Prone with it, per the condition's own
         // definition. Modelling that here means nothing else has to remember it. They

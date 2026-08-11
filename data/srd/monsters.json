@@ -818,9 +818,7 @@
               "maximumTargetSize": "Large"
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13)."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Acid Spray",
@@ -6482,9 +6480,7 @@
               "maximumTargetSize": "Medium"
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12)."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Light Hammer",
@@ -22469,7 +22465,6 @@
             }
           ],
           "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13)",
             "Ability checks made to escape this grapple have Disadvantage."
           ]
         },
@@ -32163,7 +32158,6 @@
             }
           ],
           "unmodelledClauses": [
-            "Melee Attack Roll: +19, reach 15 ft. Hit: 36 (4d12 + 10) Piercing damage, and the target has the Grappled condition (escape DC 20)",
             "Until the grapple ends, the target has the Restrained condition and can't teleport."
           ]
         },
@@ -38751,7 +38745,6 @@
             }
           ],
           "unmodelledClauses": [
-            "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12)",
             "While Grappled, the target has the Restrained condition."
           ]
         }
@@ -40367,7 +40360,6 @@
             }
           ],
           "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 15)",
             "While Grappled, the target has the Restrained condition and can't be targeted by the crocodile's Tail."
           ]
         },
@@ -40803,9 +40795,7 @@
               "maximumTargetSize": "Medium"
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11)."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Swallow",
@@ -42024,9 +42014,7 @@
               "maximumTargetSize": "Medium"
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12)."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Swallow",
@@ -46300,7 +46288,6 @@
             }
           ],
           "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17)",
             "While Grappled, the target has the Restrained condition and can't be targeted by the tyrannosaurus's Tail."
           ]
         },

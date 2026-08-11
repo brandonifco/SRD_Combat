@@ -10,14 +10,30 @@ namespace SRDCombat.Core.Rules;
 /// <param name="TargetIsUnconscious">The target is Unconscious.</param>
 /// <param name="AttackerIsProne">The attacker is Prone.</param>
 /// <param name="AttackerIsPoisoned">The attacker is Poisoned.</param>
+/// <param name="AttackerIsRestrained">The attacker is Restrained.</param>
+/// <param name="TargetIsRestrained">The target is Restrained.</param>
+/// <param name="AttackerIsGrappledByAnother">
+/// The attacker is Grappled and this is not its grappler. Grappled imposes Disadvantage
+/// only on attacks against someone <em>other</em> than the creature holding you, so this
+/// is the one circumstance that depends on who is being attacked rather than on the
+/// attacker alone.
+/// </param>
 /// <param name="AtLongRange">The target is beyond the attack's normal range.</param>
+/// <remarks>
+/// Every one defaults to false, because false is "nothing unusual is true" for all of
+/// them. That keeps a caller naming only the circumstance it cares about, and means the
+/// next condition to be implemented adds a parameter without breaking anyone.
+/// </remarks>
 public sealed record AttackCircumstances(
-    bool TargetIsDodging,
-    bool TargetIsProne,
-    bool TargetIsUnconscious,
-    bool AttackerIsProne,
-    bool AttackerIsPoisoned,
-    bool AtLongRange);
+    bool TargetIsDodging = false,
+    bool TargetIsProne = false,
+    bool TargetIsUnconscious = false,
+    bool AttackerIsProne = false,
+    bool AttackerIsPoisoned = false,
+    bool AttackerIsRestrained = false,
+    bool TargetIsRestrained = false,
+    bool AttackerIsGrappledByAnother = false,
+    bool AtLongRange = false);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
 /// <param name="Roll">The d20 roll.</param>
@@ -54,7 +70,31 @@ public static class AttackRules
             TargetIsUnconscious: target.HasCondition(ConditionType.Unconscious),
             AttackerIsProne: attacker.HasCondition(ConditionType.Prone),
             AttackerIsPoisoned: attacker.HasCondition(ConditionType.Poisoned),
+            AttackerIsRestrained: attacker.HasCondition(ConditionType.Restrained),
+            TargetIsRestrained: target.HasCondition(ConditionType.Restrained),
+            AttackerIsGrappledByAnother: IsGrappledBySomeoneElse(attacker, target),
             AtLongRange: attack.IsAtLongRange(distance));
+    }
+
+    /// <summary>
+    /// Whether the attacker is Grappled by a creature other than the one it is attacking.
+    /// </summary>
+    /// <remarks>
+    /// "You have Disadvantage on attack rolls against any target other than the grappler."
+    /// Hitting back at whatever has hold of you is the one attack a grapple does not
+    /// hamper, and reading the condition as a blanket penalty would quietly take that
+    /// away.
+    /// </remarks>
+    private static bool IsGrappledBySomeoneElse(Combatant attacker, Combatant target)
+    {
+        if (attacker.ConditionState(ConditionType.Grappled) is not { } grapple)
+        {
+            return false;
+        }
+
+        // A grapple with no recorded grappler cannot be aimed out of, so it hampers
+        // everything — the safe direction when the source is unknown.
+        return !string.Equals(grapple.SourceId, target.Id, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -75,12 +115,15 @@ public static class AttackRules
 
         var advantage =
             circumstances.TargetIsUnconscious
+            || circumstances.TargetIsRestrained
             || (circumstances.TargetIsProne && withinFiveFeet);
 
         var disadvantage =
             circumstances.TargetIsDodging
             || circumstances.AttackerIsProne
             || circumstances.AttackerIsPoisoned
+            || circumstances.AttackerIsRestrained
+            || circumstances.AttackerIsGrappledByAnother
             || circumstances.AtLongRange
             || (circumstances.TargetIsProne && !withinFiveFeet);
 

@@ -37,7 +37,16 @@ public static class SimpleTacticsPolicy
             return;
         }
 
-        if (actor.HasCondition(ConditionType.Prone))
+        // Escaping comes first and costs the whole action, which is a real choice being
+        // made crudely: a grappled creature could instead hit its grappler at no penalty.
+        // Getting free is the better default, and without it a grapple would never end,
+        // since nothing else in this policy can lift one.
+        if (actor.HasCondition(ConditionType.Grappled))
+        {
+            encounter.Escape();
+        }
+
+        if (actor.HasCondition(ConditionType.Prone) && !ConditionRules.IsImmobile(actor))
         {
             encounter.StandUp();
         }

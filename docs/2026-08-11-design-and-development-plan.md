@@ -450,8 +450,8 @@ by a test so it cannot regress:
 
 | | CR 0–4 (the band the gauntlet uses) |
 | --- | --- |
-| entries fully modelled | **328 / 611 (54%)** |
-| attacks, of which 54 carry clauses the model cannot express | 264 |
+| entries fully modelled | **332 / 611 (54%)** |
+| attacks, of which 50 carry clauses the model cannot express | 264 |
 | unmodelled entirely | 182 |
 | Multiattack | 64 |
 | saving-throw effects, 42 with clauses beyond the model | 62 |
@@ -474,20 +474,21 @@ requirement, a pull, a chained second condition or a duration of any other shape
 whole clause in `AppliedCondition.UnmodelledRequirement`, which makes the rider unusable
 rather than approximate. The engine then asks whether it executes the condition at all,
 from `ConditionRules.Executable`, a curated allowlist in the same spirit as
-`ClassFeatureRegistry`. Thirty-three attacks across the bestiary satisfy both: twenty
-Prone, twelve Poisoned, one Incapacitated.
+`ClassFeatureRegistry`. Forty-two attacks across the bestiary satisfy both: twenty Prone,
+twelve Poisoned, nine Grappled, one Incapacitated.
 
 **The Phase Spider is the case that shows the two questions are independent.** Its bite
 poisons "for 1 hour". Poisoned is a condition the engine executes, and the rider still
 cannot be imposed, because an hour is not a turn boundary and there is nothing to round it
 to that would not be a different rule.
 
-**Grappled is the instructive absence.** Its riders are completely modelled — a size gate
-and a printed escape DC, nothing else — and it still must not be imposed, because nothing
-in the engine gives it an effect. A Grappled creature would walk away at full speed while
-its sheet said otherwise, which is a quieter failure than never applying it. It needs a
-speed of 0, an Escape action against the printed DC, and the grapple to end with its
-grappler.
+**Grappled was the instructive absence, and is now implemented.** For two slices its
+riders were completely modelled and still refused, because nothing in the engine gave the
+condition an effect and a Grappled creature would have walked away at full speed while its
+sheet said otherwise. It took a Speed of 0, an Escape action against the printed DC, and
+the grapple ending with its grappler. Charmed and Frightened now hold that place: fully
+modelled riders on the Sprite and the Oni, refused because the engine does not execute
+them.
 
 **The clock, and why the condition record carries a source nothing reads yet.** A
 condition is held as an `ActiveCondition` — the condition, who imposed it, and a
@@ -544,11 +545,24 @@ on the allowlist in the same branch: it is Disadvantage on attack rolls, five li
 condition would need. That is the difference between a duration model and a duration model
 anyone can see working.
 
-**2. Grappled and Restrained (#16).** Immediately after, while that model is still soft.
-It is the smallest real consumer of it and so the best test that it is shaped right:
-Restrained exercises the expiry, the grapple exercises the source, and the Escape action
-exercises removal by something other than a timer. Thirteen already-modelled riders start
-landing the moment it is done.
+**2. Grappled and Restrained (#16) — done.** It was the smallest real consumer of the
+condition model and it did its job as a test of it: the grapple used the source, the
+Escape action used removal-by-something-other-than-a-timer, and nothing in the record had
+to change to support either. Nine riders started landing.
+
+Reading the printed rules rather than working from memory corrected two things that would
+have shipped wrong. **Grappled gives Disadvantage on attack rolls "against any target
+other than the grappler"** — not a blanket penalty, so hitting back at whatever has hold
+of you is the one attack a grapple does not hamper, and it is the only circumstance in
+`AttackCircumstances` that depends on who is being attacked rather than on the attacker
+alone. And **there is no generic Escape action in this SRD**: escaping is a Strength
+(Athletics) *or* Dexterity (Acrobatics) check — the creature's choice, so the engine takes
+the better and says so — against a flat DC rather than a contest.
+
+That is also the first ability check the engine has ever rolled in a fight, which retired
+a caveat written down one slice earlier: Poisoned went on the allowlist noted as "complete
+for every roll the engine makes today, and the one entry to revisit the moment an
+in-combat ability check exists". Escaping while Poisoned now rolls with Disadvantage.
 
 *Conditions are the most-reopened type in the whole queue — saving-throw effects impose
 them on a failure, passive traits reference them, Cunning Strike applies them. Settling

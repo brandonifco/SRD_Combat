@@ -1,3 +1,4 @@
+using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 
 namespace SRDCombat.Core.Rules;
@@ -47,6 +48,23 @@ public static class SkillRules
 
     /// <summary>True when the name is one of the SRD's skills.</summary>
     public static bool IsSkill(string name) => AbilityBySkill.ContainsKey(name);
+
+    /// <summary>
+    /// A creature's bonus on a check with this skill.
+    /// </summary>
+    /// <remarks>
+    /// Falls back to the bare ability modifier when the creature has no listed bonus,
+    /// which is exactly what an unproficient check is. A monster's stat block prints only
+    /// the skills it is good at, so an absence is a real answer rather than missing data.
+    /// </remarks>
+    public static int BonusFor(Combatant combatant, string skill)
+    {
+        ArgumentNullException.ThrowIfNull(combatant);
+
+        return combatant.Stats.SkillBonuses.TryGetValue(skill, out var bonus)
+            ? bonus
+            : combatant.Stats.ModifierFor(AbilityFor(skill));
+    }
 
     /// <summary>The ability a skill check uses.</summary>
     public static Ability AbilityFor(string skill) =>

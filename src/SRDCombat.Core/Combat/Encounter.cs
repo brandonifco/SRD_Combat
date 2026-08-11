@@ -111,6 +111,13 @@ public sealed partial class Encounter
             return new ActionRefusal("combatant.prone", $"{mover.Name} is Prone and must stand up first.");
         }
 
+        if (ConditionRules.ImmobilisedBy(mover) is { } holding)
+        {
+            return new ActionRefusal(
+                "combatant.speed_zero",
+                $"{mover.Name} is {holding} and has a Speed of 0.");
+        }
+
         var path = MovementRules.FindPath(Battlefield, mover, destination, mover.Turn.MovementFeet, _combatants);
 
         if (path is null)
@@ -121,6 +128,9 @@ public sealed partial class Encounter
         }
 
         WalkPath(mover, path);
+
+        // Walking away from a grappled creature can be what ends the grapple.
+        EndBrokenGrapples();
         CheckForCompletion();
         return null;
     }
@@ -236,6 +246,15 @@ public sealed partial class Encounter
             return new ActionRefusal("combatant.not_prone", $"{combatant.Name} is not Prone.");
         }
 
+        // Standing up costs half your Speed, and half of 0 is 0 — so without this the
+        // arithmetic would let a grappled creature stand for free.
+        if (ConditionRules.ImmobilisedBy(combatant) is { } holding)
+        {
+            return new ActionRefusal(
+                "combatant.speed_zero",
+                $"{combatant.Name} is {holding} and has a Speed of 0.");
+        }
+
         var cost = MovementRules.StandUpCostFeet(combatant);
 
         if (combatant.Turn.MovementFeet < cost)
@@ -251,6 +270,71 @@ public sealed partial class Encounter
         return null;
     }
 
+    /// <summary>
+    /// Escapes a grapple: an action, and a Strength (Athletics) or Dexterity (Acrobatics)
+    /// check against the grapple's escape DC.
+    /// </summary>
+    /// <remarks>
+    /// The SRD lets the creature choose which of the two checks to make, so the engine
+    /// takes the better one — the choice a player would always make, and stating it here
+    /// beats leaving a coin-flip in the rules. This is the first ability check the engine
+    /// rolls in a fight, which is why Poisoned's Disadvantage on ability checks finally
+    /// has somewhere to apply.
+    /// </remarks>
+    public ActionRefusal? Escape()
+    {
+        if (ActiveCombatant is not { } combatant)
+        {
+            return new ActionRefusal("encounter.complete", "The encounter is over.");
+        }
+
+        if (!combatant.CanAct)
+        {
+            return new ActionRefusal("combatant.cannot_act", $"{combatant.Name} cannot act.");
+        }
+
+        if (combatant.ConditionState(ConditionType.Grappled) is not { } grapple)
+        {
+            return new ActionRefusal("combatant.not_grappled", $"{combatant.Name} is not Grappled.");
+        }
+
+        if (grapple.EscapeDifficultyClass is not { } difficultyClass)
+        {
+            return new ActionRefusal(
+                "grapple.no_escape_dc",
+                $"The grapple on {combatant.Name} prints no escape DC, so it cannot be escaped.");
+        }
+
+        if (!combatant.Turn.HasAction)
+        {
+            return new ActionRefusal("action.spent", $"{combatant.Name} has already used its action.");
+        }
+
+        combatant.Turn.SpendAction();
+
+        var athletics = SkillRules.BonusFor(combatant, "Athletics");
+        var acrobatics = SkillRules.BonusFor(combatant, "Acrobatics");
+        var useAthletics = athletics >= acrobatics;
+
+        var mode = combatant.HasCondition(ConditionType.Poisoned) ? RollMode.Disadvantage : RollMode.Normal;
+        var roll = D20Test.Roll(_random, Math.Max(athletics, acrobatics), mode);
+        var escaped = roll.Total >= difficultyClass;
+
+        Add(
+            CombatStepKind.Condition,
+            $"{combatant.Name} tries to escape the grapple with " +
+            $"{(useAthletics ? "Strength (Athletics)" : "Dexterity (Acrobatics)")}: {roll} vs DC " +
+            $"{difficultyClass} — {(escaped ? "free!" : "still held.")}",
+            combatant);
+
+        if (escaped)
+        {
+            EndGrapple(combatant, "escapes");
+        }
+
+        return null;
+    }
+
     /// <summary>Ends the current turn and begins the next one, rolling any Death Saving Throws due.</summary>
     public void EndTurn()
     {
@@ -261,6 +345,7 @@ public sealed partial class Encounter
 
         EndRageIfUnsustained(combatant);
         ExpireConditions(combatant, ConditionClock.EndOfTurn);
+        EndBrokenGrapples();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
         AdvanceTurn();
     }
@@ -286,6 +371,76 @@ public sealed partial class Encounter
                     bearer);
             }
         }
+    }
+
+    /// <summary>
+    /// Ends every grapple the SRD says has stopped holding: the grappler is Incapacitated
+    /// or dead, or the two have been pulled further apart than the grapple's range.
+    /// </summary>
+    /// <remarks>
+    /// Swept rather than raised as an event, and called from every point where either
+    /// could have changed — a turn boundary, a blow landing, a creature walking away. A
+    /// grapple that survives its grappler is the failure this exists to prevent, and it
+    /// would be invisible: the victim simply never moves again.
+    /// </remarks>
+    private void EndBrokenGrapples()
+    {
+        foreach (var victim in _combatants)
+        {
+            if (victim.ConditionState(ConditionType.Grappled) is not { SourceId: { } grapplerId } grapple)
+            {
+                continue;
+            }
+
+            var grappler = _combatants.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, grapplerId, StringComparison.Ordinal));
+
+            if (grappler is null)
+            {
+                continue;
+            }
+
+            var reason =
+                grappler.IsDead || grappler.HasCondition(ConditionType.Incapacitated)
+                    ? $"{grappler.Name} can no longer hold on"
+                    : grapple.GrappleRangeFeet is { } range
+                      && victim.Position.DistanceFeetTo(grappler.Position) > range
+                        ? $"{grappler.Name} is too far away"
+                        : null;
+
+            if (reason is not null)
+            {
+                EndGrapple(victim, "is free", reason);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Releases a grapple and everything the SRD hangs off it lasting.
+    /// </summary>
+    /// <remarks>
+    /// Restrained goes with it. Several stat blocks read "it has the Grappled condition
+    /// ... and it has the Restrained condition until the grapple ends", so a grapple that
+    /// ends while leaving the target Restrained would be worse than never grappling.
+    /// </remarks>
+    private void EndGrapple(Combatant victim, string verb, string? reason = null)
+    {
+        var grapplerId = victim.ConditionState(ConditionType.Grappled)?.SourceId;
+
+        victim.RemoveCondition(ConditionType.Grappled);
+
+        if (victim.ConditionState(ConditionType.Restrained) is { } restrained
+            && string.Equals(restrained.SourceId, grapplerId, StringComparison.Ordinal))
+        {
+            victim.RemoveCondition(ConditionType.Restrained);
+        }
+
+        Add(
+            CombatStepKind.Condition,
+            reason is null
+                ? $"{victim.Name} {verb} the grapple."
+                : $"{victim.Name} {verb}: {reason}.",
+            victim);
     }
 
     private ActionRefusal? SpendActionOn(Action<Combatant> apply)
@@ -363,6 +518,7 @@ public sealed partial class Encounter
             // in no state to take that turn, or it never ends at all.
             combatant.BeginTurnClock();
             ExpireConditions(combatant, ConditionClock.StartOfTurn);
+            EndBrokenGrapples();
 
             if (combatant.IsDead)
             {
@@ -688,6 +844,9 @@ public sealed partial class Encounter
         }
 
         ImposeRiders(attacker, attack, target);
+
+        // The blow may have dropped a grappler, in this fight or another one.
+        EndBrokenGrapples();
     }
 
     /// <summary>
@@ -718,14 +877,26 @@ public sealed partial class Encounter
 
             var expiry = ConditionRules.ExpiryFor(rider.Duration, attacker, target);
 
-            if (!target.AddCondition(rider.Condition, attacker.Id, expiry))
+            // The grapple's range is the reach of the attack that made it, which is what
+            // the SRD measures against when it asks whether the two have come apart.
+            var imposed = new ActiveCondition(
+                rider.Condition,
+                attacker.Id,
+                expiry,
+                rider.EscapeDifficultyClass,
+                rider.Condition == ConditionType.Grappled ? attack.MaximumRangeFeet : null);
+
+            if (!target.AddCondition(imposed))
             {
                 continue;
             }
 
+            var escape = rider.EscapeDifficultyClass is { } dc ? $" (escape DC {dc})" : string.Empty;
+
             Add(
                 CombatStepKind.Condition,
-                $"{target.Name} has the {rider.Condition} condition{DescribeDuration(rider.Duration, attacker, target)}.",
+                $"{target.Name} has the {rider.Condition} condition{escape}" +
+                $"{DescribeDuration(rider.Duration, attacker, target)}.",
                 attacker,
                 target);
         }
