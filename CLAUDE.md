@@ -57,20 +57,38 @@ gates ("if the target is a Large or smaller creature") are not modelled and appl
 them ungated would repeat bug 1 in a new place. Don't wire them up until size comparison
 exists.
 
-**Phase 2 is in progress, sliced into small PRs.** First slice — Character Origins —
-adds all **9 species and 4 backgrounds** to `data/srd/`, structurally detected rather
-than matched against a list of expected names. Still to come: class core traits and
-level tables; character resolution (levels 1–5); pregens and wiring characters into
-combat.
+**Phase 2 is in progress, sliced into small PRs.** Landed so far: **9 species,
+4 backgrounds, and all 12 classes** in `data/srd/` — Core Traits, the full 1–20 level
+table, and every feature's prose. `AdvancementRules` carries the XP thresholds and the
+proficiency-bonus-by-level table. Still to come: character resolution (levels 1–5);
+pregens and wiring characters into combat.
 
 **Still not playable by a person** — there is no client and no character model yet.
 
-**A trap the origins extraction hit, worth knowing before parsing any other chapter:**
-the player-facing chapters set body text and trait names in **Cambria**, while the
-bestiary uses **Optima**. Matching a full font name works within one chapter and fails
-silently across chapters — the first run produced nine species with zero traits between
-them, caught only because a validator required every species to have at least one.
-Match the **style suffix** (`BoldItalic`) rather than the whole font name.
+### Traps the character-content extraction hit — read before parsing another chapter
+
+Every one of these failed **silently** and was caught by a validator or by checking
+output against the book, never by the parser complaining.
+
+- **Typeface differs by chapter.** The player-facing chapters use **Cambria**; the
+  bestiary uses **Optima**. Match the *style suffix* (`BoldItalic`), not the whole font
+  name. The first origins run produced nine species with zero traits between them.
+- **Weight differs within a table.** Core Traits keys are semi-bold and their wrapped
+  values are lighter. Matching only the bold face truncated the Barbarian's six-skill
+  list to one. Match the family (`GillSans`), not the face.
+- **A class page mixes two layouts** — two-column body plus a full-width table at the
+  bottom. `ClassParser` reads each page twice for exactly this reason.
+- **Don't split key from value on a gap.** `Weapon Proficiencies` overflows its column,
+  so its value starts after an ordinary word gap; the split was missed and the row was
+  swallowed into the list above. Match against the closed set of known keys instead.
+- **Table header columns are 12pt+ apart; words within a column are 2–5pt.** The margin
+  is narrower than it looks — a 20pt threshold merged the Cleric's `Level` and `Bonus`.
+- **Not every caster uses the same table.** The Warlock has `Spell Slots`/`Slot Level`
+  columns, not nine per-level ones, and must not be forced into the common shape.
+
+**The general lesson: write the validator that asserts the shape of what should have
+been found.** Every one of these was caught that way — "every species has at least one
+trait", "every class table has 20 rows with the advancement table's proficiency bonus".
 
 Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
 Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
