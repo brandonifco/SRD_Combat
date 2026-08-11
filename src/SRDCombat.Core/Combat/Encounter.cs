@@ -183,12 +183,19 @@ public sealed partial class Encounter
         }
 
         // A Multiattack names which attacks it is made of; anything else is a separate
-        // action the creature does not have left.
+        // action, reached through UseEntry rather than here.
         if (!attacker.Stats.AllowsInMultiattack(attack.Name))
         {
             return new ActionRefusal(
                 "attack.not_in_multiattack",
                 $"{attack.Name} is not part of {attacker.Name}'s Multiattack.");
+        }
+
+        // "(Recharge 5-6)" and "(3/Day)" gate an attack wherever it is used from — the
+        // Minotaur's Gore is a plain attack with a recharge printed on it.
+        if (CheckUsage(attacker, attack.Name) is { } unavailable)
+        {
+            return unavailable;
         }
 
         if (attacksLeft > 0)
@@ -201,6 +208,7 @@ public sealed partial class Encounter
             attacker.Features.AttacksRemainingThisAction = Math.Max(0, attacker.Stats.AttacksPerAction - 1);
         }
 
+        attacker.Uses.Spend(attack.Name);
         ResolveAttack(attacker, attack, target, isOpportunityAttack: false);
         CheckForCompletion();
         return null;
@@ -520,6 +528,14 @@ public sealed partial class Encounter
             ExpireConditions(combatant, ConditionClock.StartOfTurn);
             EndBrokenGrapples();
 
+            // "At the start of each of the monster's turns, roll 1d6" — its turn starts
+            // even when it cannot act, so the roll comes before those branches. A dead
+            // creature's skipped turn rolls nothing: it will never use the ability again.
+            if (!combatant.IsDead)
+            {
+                RollRecharges(combatant);
+            }
+
             if (combatant.IsDead)
             {
                 // A skipped turn begins and ends in the same instant.
@@ -687,6 +703,7 @@ public sealed partial class Encounter
     {
         var attack = attacker.Stats.Attacks
             .Where(candidate => candidate.Kind == AttackKind.Melee)
+            .Where(candidate => attacker.Uses.IsAvailable(candidate.Name))
             .OrderByDescending(candidate => candidate.Damage.Sum(damage => damage.Amount.Average))
             .FirstOrDefault();
 
@@ -696,6 +713,7 @@ public sealed partial class Encounter
         }
 
         attacker.Turn.SpendReaction();
+        attacker.Uses.Spend(attack.Name);
 
         Add(
             CombatStepKind.OpportunityAttack,

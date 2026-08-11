@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #23 (condition durations). **PR #25 (grapple) is open and unmerged.** |
-| Tests | **369 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #26 (monster entry actions + usage limits) |
+| Tests | **380 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **9 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **8 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -27,14 +27,17 @@ from real content — species, class, background, levels 1–5 — and fight alo
 monsters, with nine implemented class features and working spellcasting (attack spells,
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
-centipede's next turn and no longer, and a Giant Frog's grapple holds a bandit until it
-rolls Acrobatics against the printed escape DC — all from the stat blocks' own words. A
-frozen transcript pins one whole eight-round fight byte-for-byte.
+centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
+rolls Acrobatics against the printed escape DC, and an Ape throws its Rock once and then
+waits on the recharge die — all from the stat blocks' own words. A frozen transcript
+pins one whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
 No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
 characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
-melee and swings.
+melee and swings, reaching for a limited-use attack entry only when nothing else reaches.
+Saving-throw entries — every breath weapon among them — still refuse with a named code;
+executing them is #6.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -54,17 +57,22 @@ governing plan doc carries the same list with the reasoning; this is the short f
    printed rules corrected two things memory had wrong: Grappled is Disadvantage only
    **against targets other than the grappler**, and there is **no generic Escape action**
    — escaping is a Strength (Athletics) or Dexterity (Acrobatics) check against a flat DC.
-3. **#19 a way for a monster to use a stat-block entry, together with #8 recharge.** The
-   prerequisite nothing had filed. `UsageLimit` is never read in `Core`,
-   `MonsterEntry.Save` is never read in `Core`, and every `Encounter` action is either
-   hardcoded (`Dodge`, `Dash`) or gated on `Stats.Character` (`CastSpell`, `Rage`) — so
-   **there is no path for a monster to use an entry at all**, and `SimpleTacticsPolicy`
-   has no concept of choosing between attacking and doing something else. Build the
-   "can I use this?" and "should I use it now?" branches together or write them twice.
-4. **#6 saving-throw effects.** Only now does it land with nothing left to invent: the
-   area geometry already existed, durations come from step 1, recharge gates the breath
-   weapons, and step 3 is what invokes it. `AreaTargeting` and `Encounter.ResolveSpellSave`
-   are the working reference for the geometry and the roll-and-halve loop.
+3. **#19 monster entry actions, with #8 recharge — done, in one branch as argued.**
+   `Encounter.UseEntry` resolves a named Action entry or refuses with a named code, and
+   one `UsageState` per combatant gates every path by entry name. Two shapes needed the
+   gate in two places: the Ape's Rock (Recharge 6) is locked *out* of its Fist
+   Multiattack, so `UseEntry` is its only road, while the Minotaur's Gore (Recharge 5)
+   is a plain attack the `Attack` path had to gate. The tactics policy reaches only for
+   **limited-use** entries — the other locked-out attacks are the lycanthropes'
+   form-gated ones, and choosing one would silently decide the creature's form.
+4. **#6 saving-throw effects — next.** Only now does it land with nothing left to
+   invent: the area geometry already existed, durations come from step 1, recharge gates
+   the breath weapons, and `entry.save_not_implemented` in `Encounter.UseEntry` is the
+   exact seam it replaces. `AreaTargeting` and `Encounter.ResolveSpellSave` are the
+   working reference for the geometry and the roll-and-halve loop. The issues filed
+   since the ordering was written slot around it: #21 (execute Blinded, Charmed,
+   Frightened, Paralyzed, Stunned) mostly rides on #6's entries, and #22 (timed
+   durations) and #24 (grapple-end durations) are small follow-ons to step 1.
 5. **#9 passive monster traits.** Several reference machinery that has to exist first —
    Magic Resistance is Advantage on saves and is worth nothing before #6. Best
    repetition in the queue once unblocked: Pack Tactics ×18, Spider Climb ×10, Magic
@@ -266,10 +274,10 @@ Three things a Phase 2 author should know before starting:
 - **There is no versioned DTO mirror, deliberately.** Content serializes straight from
   the `Core` definitions. The design doc explains why this diverges from 5eGoldBox, and
   what guards replace the mirror. Don't "restore" it without reading that section.
-- **Monster prose is not yet mechanics.** Attacks are structured; saving-throw effects,
-  recharge abilities and riders ("the target has the Prone condition") are still text
-  on `MonsterEntry.Text`. Turning those into executable effects is an open scoping
-  question, flagged in the design doc.
+- **Most monster prose is mechanics now.** Attacks, Multiattack, usage limits and the
+  gated riders all execute; saving-throw effects are extracted and structured but
+  refuse with `entry.save_not_implemented` until #6 lands. What remains text on
+  `MonsterEntry.Text` is counted in `UnmodelledClauses`, never silently held.
 - **`ChallengeRatingRules` already exists** in `Core.Rules` with the full XP and
   proficiency-bonus tables, and the SRD's per-character encounter XP budget is on
   printed page 202 — the encounter builder implements a published table, not a guess.

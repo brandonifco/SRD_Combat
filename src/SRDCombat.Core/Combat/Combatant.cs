@@ -149,6 +149,18 @@ public sealed record CombatantStats(
     public MultiattackEffect? Multiattack { get; init; }
 
     /// <summary>
+    /// The creature's stat block entries, exactly as extracted. Empty for a character.
+    /// </summary>
+    /// <remarks>
+    /// Carried whole rather than filtered, for the same reason the extractor reads all
+    /// twelve classes: what is usable is decided where it is used —
+    /// <c>Encounter.UseEntry</c> refuses an entry it cannot resolve with a named code,
+    /// and <see cref="Combatant"/> builds its usage state from the limits printed here.
+    /// A client listing what a monster can do reads this, not a curated subset.
+    /// </remarks>
+    public IReadOnlyList<MonsterEntry> Entries { get; init; } = [];
+
+    /// <summary>
     /// How many attacks one Attack action buys.
     /// </summary>
     /// <remarks>
@@ -287,6 +299,8 @@ public sealed record CombatantStats(
             // spell, and letting those through would hand out swings the creature has no
             // way to make.
             Multiattack = UsableMultiattack(monster, attacks),
+
+            Entries = monster.Entries,
 
             SkillBonuses = monster.Skills.ToDictionary(
                 skill => skill.Key,
@@ -429,6 +443,101 @@ public sealed class FeatureState
 }
 
 /// <summary>
+/// Per-fight state of a combatant's limited-use stat block entries: what is left of
+/// each "(Recharge 5-6)", "(3/Day)" or "(Recharge after a Short or Long Rest)".
+/// </summary>
+/// <remarks>
+/// <para>
+/// The monster-side sibling of <see cref="FeatureState"/>, keyed by entry name because
+/// that is how both <c>Encounter.Attack</c> and <c>Encounter.UseEntry</c> address an
+/// entry — one dictionary, so an attack-shaped entry and any other entry with the same
+/// limit are gated by the same state rather than two copies of it.
+/// </para>
+/// <para>
+/// The SRD's three limits, read for a combat-only game where rests happen between
+/// fights: Recharge starts charged and rolls a d6 at the start of each of the
+/// creature's turns while spent; X/Day grants X uses (a Long Rest restores them, and no
+/// fight contains one); Recharge after a Short or Long Rest grants one. What a rest
+/// restores between fights is the gauntlet's concern, not this type's.
+/// </para>
+/// <para>
+/// An entry with no printed limit is not tracked at all, and
+/// <see cref="IsAvailable"/> answers true for it — unlimited is the common case and
+/// storing it would be inventing state.
+/// </para>
+/// </remarks>
+public sealed class UsageState
+{
+    private sealed class TrackedEntry
+    {
+        public required UsageLimit Limit { get; init; }
+
+        public int UsesRemaining { get; set; }
+    }
+
+    private readonly Dictionary<string, TrackedEntry> _entries = new(StringComparer.OrdinalIgnoreCase);
+
+    internal UsageState(IEnumerable<MonsterEntry> entries)
+    {
+        foreach (var entry in entries)
+        {
+            if (entry.Usage is not { } limit)
+            {
+                continue;
+            }
+
+            _entries.TryAdd(entry.Name, new TrackedEntry
+            {
+                Limit = limit,
+                UsesRemaining = limit.Kind == UsageLimitKind.PerDay ? limit.UsesPerDay ?? 1 : 1,
+            });
+        }
+    }
+
+    /// <summary>True when the entry carries a printed usage limit at all.</summary>
+    public bool Tracks(string entryName) => _entries.ContainsKey(entryName);
+
+    /// <summary>True when the entry can be used right now. Untracked entries always can.</summary>
+    public bool IsAvailable(string entryName) =>
+        !_entries.TryGetValue(entryName, out var tracked) || tracked.UsesRemaining > 0;
+
+    /// <summary>The printed limit on an entry, or null when it has none.</summary>
+    public UsageLimit? LimitFor(string entryName) =>
+        _entries.TryGetValue(entryName, out var tracked) ? tracked.Limit : null;
+
+    /// <summary>Uses left of a tracked entry, or null when the entry is not limited.</summary>
+    public int? UsesRemaining(string entryName) =>
+        _entries.TryGetValue(entryName, out var tracked) ? tracked.UsesRemaining : null;
+
+    internal void Spend(string entryName)
+    {
+        if (_entries.TryGetValue(entryName, out var tracked))
+        {
+            tracked.UsesRemaining = Math.Max(0, tracked.UsesRemaining - 1);
+        }
+    }
+
+    /// <summary>
+    /// The spent Recharge entries waiting on a d6, with the roll that brings each back.
+    /// Ordered by name so the dice are consumed in a reproducible order.
+    /// </summary>
+    internal IEnumerable<(string Name, int Minimum)> AwaitingRecharge() =>
+        _entries
+            .Where(pair => pair.Value.Limit is { Kind: UsageLimitKind.Recharge, RechargeMinimum: not null }
+                && pair.Value.UsesRemaining == 0)
+            .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => (pair.Key, pair.Value.Limit.RechargeMinimum!.Value));
+
+    internal void Recharge(string entryName)
+    {
+        if (_entries.TryGetValue(entryName, out var tracked))
+        {
+            tracked.UsesRemaining = 1;
+        }
+    }
+}
+
+/// <summary>
 /// When a condition ends, resolved against a particular creature's turn counter.
 /// </summary>
 /// <remarks>
@@ -491,6 +600,7 @@ public sealed class Combatant
         Stats = stats;
         Position = position;
         CurrentHitPoints = stats.MaximumHitPoints;
+        Uses = new UsageState(stats.Entries);
 
         if (stats.Character is { } character)
         {
@@ -528,6 +638,9 @@ public sealed class Combatant
 
     /// <summary>Class feature state for this fight.</summary>
     public FeatureState Features { get; } = new();
+
+    /// <summary>Limited-use entry state for this fight — recharges and uses per day.</summary>
+    public UsageState Uses { get; }
 
     public IReadOnlyCollection<ConditionType> Conditions => _conditions.Keys;
 

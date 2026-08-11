@@ -67,6 +67,15 @@ public static class SimpleTacticsPolicy
             return;
         }
 
+        // "Should I use it now?" — the branch that stops a monster always attacking. If
+        // the Attack action reached nothing, a limited-use entry that does reach — the
+        // Ape's Rock at 25 feet — is used instead of closing empty-handed.
+        if (TryUseLimitedEntry(encounter, actor, target))
+        {
+            encounter.EndTurn();
+            return;
+        }
+
         MoveTowards(encounter, actor, target);
 
         // The move may have provoked an Opportunity Attack that dropped us, or ended the
@@ -140,11 +149,55 @@ public static class SimpleTacticsPolicy
         var attack = actor.Stats.Attacks
             .Where(candidate => candidate.CanReach(distance))
             .Where(candidate => actor.Stats.AllowsInMultiattack(candidate.Name))
+            // A spent "(Recharge 5-6)" attack would be refused, and the refusal would
+            // abort the whole attack loop — filter it out so the next-best attack swings.
+            .Where(candidate => actor.Uses.IsAvailable(candidate.Name))
             .OrderByDescending(candidate => candidate.Damage.Sum(damage => damage.Amount.Average))
             .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
             .FirstOrDefault();
 
         return attack is not null && encounter.Attack(attack.Name, target) is null;
+    }
+
+    /// <summary>
+    /// Uses the hardest-hitting limited-use attack entry that reaches the target, when
+    /// the Attack action cannot reach anything.
+    /// </summary>
+    /// <remarks>
+    /// Only entries with a printed usage limit are considered, deliberately. The other
+    /// entries locked out of a Multiattack are the lycanthropes' form-gated attacks —
+    /// "Bite (Wolf or Hybrid Form Only)" — and the engine has no concept of form, so
+    /// choosing one here would be this policy silently deciding what shape the creature
+    /// fights in. A client may make that call through <c>UseEntry</c>; this policy does
+    /// not. Saving-throw entries will join the candidates when issue #6 lets the
+    /// encounter resolve them.
+    /// </remarks>
+    private static bool TryUseLimitedEntry(Encounter encounter, Combatant actor, Combatant target)
+    {
+        if (!actor.Turn.HasAction)
+        {
+            return false;
+        }
+
+        var distance = actor.Position.DistanceFeetTo(target.Position);
+
+        var entry = actor.Stats.Entries
+            .Where(candidate => candidate.Section == MonsterEntrySection.Action
+                && candidate.Mechanics == EntryMechanics.Attack
+                && actor.Uses.Tracks(candidate.Name)
+                && actor.Uses.IsAvailable(candidate.Name))
+            .Select(candidate => new
+            {
+                candidate.Name,
+                Attack = actor.Stats.Attacks.FirstOrDefault(attack =>
+                    string.Equals(attack.Name, candidate.Name, StringComparison.OrdinalIgnoreCase)),
+            })
+            .Where(candidate => candidate.Attack is not null && candidate.Attack.CanReach(distance))
+            .OrderByDescending(candidate => candidate.Attack!.Damage.Sum(damage => damage.Amount.Average))
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .FirstOrDefault();
+
+        return entry is not null && encounter.UseEntry(entry.Name, target) is null;
     }
 
     /// <summary>
