@@ -310,7 +310,30 @@ level 1–5.
   engine one — spells are not extracted yet. A Cleric or Wizard currently resolves to a
   correct sheet with correct slots and no way to spend them.
 
-- **Slice 4 — Pregens**, and the four pre-made characters the game ships with.
+- **Slice 4 — Spells extracted. Done.** All **300** SRD spells with level, school,
+  class lists, casting time, range, components, duration, concentration, ritual flag and
+  description. 121 saving-throw effects and 21 attack spells are structured, with areas
+  and damage; **140 of 300 are fully modelled**.
+
+  Two things worth recording:
+
+  - **Spells need their own effect grammar.** Reusing the stat block classifier read
+    every metadata field correctly and detected **zero of 300 saving throws** — a monster
+    prints an explicit DC and a precomputed average, a spell prints neither. The failure
+    was silent and only visible because the extraction report counts what it modelled.
+  - **Six spells are truncated in the source.** Barkskin, Contagion, Divine Smite, Find
+    Steed, Guidance and Resistance each sit at the foot of a column with their Components
+    and Duration lines simply absent from the PDF's text layer — confirmed with two
+    independent extractors. Reported as warnings rather than invented, the same call made
+    for the Archmage's XP.
+
+  Upcasting is kept as text rather than structured, because it is not implemented and
+  structuring it would imply otherwise.
+
+- **Slice 5 — Pregens**, and the four pre-made characters the game ships with.
+
+**Everything still outstanding is tracked as GitHub issues** rather than in this
+document. The open-questions list below is for genuine product decisions only.
 
 **A parsing trap this phase found**, recorded because it will recur in every remaining
 chapter: the player-facing chapters are set in **Cambria** while the bestiary uses

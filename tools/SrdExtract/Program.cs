@@ -64,6 +64,12 @@ var classTableLines = PageTextReader.Read(
 var monsterResult = MonsterParser.Parse(monsterLines);
 var originResult = OriginParser.Parse(originLines);
 var classResult = ClassParser.Parse(classColumnLines, classTableLines);
+
+var spellResult = SpellParser.Parse(PageTextReader.Read(
+    options.PdfPath,
+    SrdPages.SpellsFirstPage,
+    SrdPages.SpellsLastPage,
+    PageLayout.TwoColumn));
 var equipmentResult = EquipmentParser.Parse(weaponLines, armorLines);
 
 var (monsters, correctionDiagnostics) = KnownCorrections.Apply(monsterResult.Monsters);
@@ -72,7 +78,7 @@ Console.WriteLine();
 Console.WriteLine($"Parsed {monsters.Count} monsters, " +
                   $"{equipmentResult.Weapons.Count} weapons, {equipmentResult.Armor.Count} armor, " +
                   $"{originResult.Species.Count} species, {originResult.Backgrounds.Count} backgrounds, " +
-                  $"{classResult.Classes.Count} classes.");
+                  $"{classResult.Classes.Count} classes, {spellResult.Spells.Count} spells.");
 
 Report(
     "Parse diagnostics",
@@ -81,6 +87,7 @@ Report(
         .Concat(correctionDiagnostics)
         .Concat(originResult.Diagnostics)
         .Concat(classResult.Diagnostics)
+        .Concat(spellResult.Diagnostics)
         .Select(d => d.ToString()));
 
 ReportMechanicsCoverage(monsters);
@@ -94,6 +101,7 @@ validation.AddRange(EquipmentValidator.ValidateArmor(equipmentResult.Armor).Issu
 validation.AddRange(OriginValidator.ValidateSpecies(originResult.Species).Issues);
 validation.AddRange(OriginValidator.ValidateBackgrounds(originResult.Backgrounds).Issues);
 validation.AddRange(ClassValidator.Validate(classResult.Classes).Issues);
+validation.AddRange(SpellValidator.Validate(spellResult.Spells).Issues);
 
 Report("Validation errors", validation
     .Where(issue => issue.Severity == ValidationSeverity.Error)
@@ -122,6 +130,7 @@ ContentLoader.WritePack(
     "backgrounds",
     originResult.Backgrounds);
 ContentLoader.WritePack(options.OutputDirectory, ContentLoader.ClassesFileName, "classes", classResult.Classes);
+ContentLoader.WritePack(options.OutputDirectory, ContentLoader.SpellsFileName, "spells", spellResult.Spells);
 
 Console.WriteLine();
 Console.WriteLine($"Wrote content to {Path.GetFullPath(options.OutputDirectory)}");
@@ -273,6 +282,11 @@ namespace SrdExtract
         public const int ClassesFirstPage = 28;
 
         public const int ClassesLastPage = 82;
+
+        /// <summary>Spell Descriptions, before the Rules Glossary begins on 176.</summary>
+        public const int SpellsFirstPage = 107;
+
+        public const int SpellsLastPage = 175;
     }
 
     internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force)
