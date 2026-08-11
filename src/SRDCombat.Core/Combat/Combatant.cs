@@ -55,6 +55,11 @@ public sealed record CombatAttack(
 /// <param name="SecondWindUses">Second Wind uses per rest.</param>
 /// <param name="ActionSurgeUses">Action Surge uses per rest.</param>
 /// <param name="Level">Character level, which several features scale on.</param>
+/// <param name="Spells">Spells the character can cast, by id.</param>
+/// <param name="SpellSlots">Spell slots by spell level, as the class table grants them.</param>
+/// <param name="SpellcastingAbility">The ability the character casts with. Null for a non-caster.</param>
+/// <param name="SpellSaveDifficultyClass">The DC a target must beat to resist this caster's spells.</param>
+/// <param name="SpellAttackBonus">The bonus added to this caster's spell attack rolls.</param>
 public sealed record CombatantFeatures(
     IReadOnlyList<ClassFeature> Features,
     int AttacksPerAction,
@@ -63,9 +68,24 @@ public sealed record CombatantFeatures(
     int RageUses,
     int SecondWindUses,
     int ActionSurgeUses,
-    int Level)
+    int Level,
+    IReadOnlyList<SpellDefinition>? Spells = null,
+    IReadOnlyDictionary<int, int>? SpellSlots = null,
+    Ability? SpellcastingAbility = null,
+    int SpellSaveDifficultyClass = 0,
+    int SpellAttackBonus = 0)
 {
     public bool Has(ClassFeature feature) => Features.Contains(feature);
+
+    /// <summary>Spells the character can cast. Never null.</summary>
+    public IReadOnlyList<SpellDefinition> Spells { get; init; } = Spells ?? [];
+
+    /// <summary>Slots the class table grants at this level. Never null.</summary>
+    public IReadOnlyDictionary<int, int> SpellSlots { get; init; } =
+        SpellSlots ?? new Dictionary<int, int>();
+
+    /// <summary>True when the character can cast at all.</summary>
+    public bool CanCast => SpellcastingAbility is not null && Spells.Count > 0;
 }
 
 /// <summary>
@@ -127,7 +147,9 @@ public sealed record CombatantStats(
         int rageDamageBonus = 0,
         int rageUses = 0,
         int secondWindUses = 0,
-        int actionSurgeUses = 0)
+        int actionSurgeUses = 0,
+        IReadOnlyList<SpellDefinition>? spells = null,
+        Ability? spellcastingAbility = null)
     {
         ArgumentNullException.ThrowIfNull(sheet);
 
@@ -156,7 +178,16 @@ public sealed record CombatantStats(
                 rageUses,
                 secondWindUses,
                 actionSurgeUses,
-                sheet.Level),
+                sheet.Level,
+                spells,
+                sheet.SpellSlots,
+                spellcastingAbility,
+                spellcastingAbility is { } ability
+                    ? Rules.SpellcastingRules.SaveDifficultyClass(sheet.ProficiencyBonus, sheet.Modifier(ability))
+                    : 0,
+                spellcastingAbility is { } attackAbility
+                    ? Rules.SpellcastingRules.AttackBonus(sheet.ProficiencyBonus, sheet.Modifier(attackAbility))
+                    : 0),
         };
     }
 
@@ -283,6 +314,15 @@ public sealed class FeatureState
     /// </summary>
     public int AttacksRemainingThisAction { get; internal set; }
 
+    /// <summary>Spell slots left this rest, by spell level.</summary>
+    public Dictionary<int, int> SpellSlotsRemaining { get; } = [];
+
+    /// <summary>
+    /// The spell this creature is concentrating on, if any. A creature can concentrate
+    /// on only one spell at a time.
+    /// </summary>
+    public string? ConcentratingOn { get; internal set; }
+
     internal void BeginTurn()
     {
         SneakAttackUsedThisTurn = false;
@@ -316,6 +356,11 @@ public sealed class Combatant
             Features.RagesRemaining = character.RageUses;
             Features.SecondWindRemaining = character.SecondWindUses;
             Features.ActionSurgeRemaining = character.ActionSurgeUses;
+
+            foreach (var (level, slots) in character.SpellSlots)
+            {
+                Features.SpellSlotsRemaining[level] = slots;
+            }
         }
     }
 
