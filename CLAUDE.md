@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **343 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **8 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -51,8 +51,8 @@ governing plan doc carries the same list with the reasoning; this is the short f
    smallest real consumer of it and therefore the best proof it is shaped right:
    Restrained exercises the expiry, the grapple exercises the source, and Escape
    exercises removal by something that is not a timer.
-3. **A way for a monster to use a stat-block entry, together with #8 recharge.** This is
-   the prerequisite nothing has filed. `UsageLimit` is never read in `Core`,
+3. **#19 a way for a monster to use a stat-block entry, together with #8 recharge.** The
+   prerequisite nothing had filed. `UsageLimit` is never read in `Core`,
    `MonsterEntry.Save` is never read in `Core`, and every `Encounter` action is either
    hardcoded (`Dodge`, `Dash`) or gated on `Stats.Character` (`CastSpell`, `Rage`) — so
    **there is no path for a monster to use an entry at all**, and `SimpleTacticsPolicy`
@@ -60,8 +60,8 @@ governing plan doc carries the same list with the reasoning; this is the short f
    "can I use this?" and "should I use it now?" branches together or write them twice.
 4. **#6 saving-throw effects.** Only now does it land with nothing left to invent: the
    area geometry already existed, durations come from step 1, recharge gates the breath
-   weapons, and step 3 is what invokes it. Its title still says "needs area geometry";
-   that stopped being true when the spells work merged.
+   weapons, and step 3 is what invokes it. `AreaTargeting` and `Encounter.ResolveSpellSave`
+   are the working reference for the geometry and the roll-and-halve loop.
 5. **#9 passive monster traits.** Several reference machinery that has to exist first —
    Magic Resistance is Advantage on saves and is worth nothing before #6. Best
    repetition in the queue once unblocked: Pack Tactics ×18, Spider Climb ×10, Magic

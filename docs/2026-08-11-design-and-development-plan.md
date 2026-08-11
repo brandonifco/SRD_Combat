@@ -521,8 +521,8 @@ landing the moment it is done.
 them on a failure, passive traits reference them, Cunning Strike applies them. Settling
 them once, first, is the whole argument for this ordering.*
 
-**3. A way for a monster to use a stat-block entry, together with recharge tracking
-(#8).** This is the prerequisite no issue had named. `UsageLimit` is never read in `Core`;
+**3. A way for a monster to use a stat-block entry (#19), together with recharge tracking
+(#8).** The prerequisite no issue had named. `UsageLimit` is never read in `Core`;
 `MonsterEntry.Save` is never read in `Core`; every `Encounter` action is either hardcoded
 (`Dodge`, `Dash`) or gated on `Stats.Character` (`CastSpell`, `Rage`). **A monster has no
 way to use an entry at all**, and `SimpleTacticsPolicy` has no concept of choosing between
