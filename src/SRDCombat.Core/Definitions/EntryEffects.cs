@@ -84,14 +84,17 @@ public enum SaveSuccessOutcome
 /// Acid damage. Success: Half damage.</c>
 /// </summary>
 /// <param name="Ability">The ability the save is made with.</param>
-/// <param name="DifficultyClass">The DC to beat.</param>
+/// <param name="DifficultyClass">
+/// The DC to beat. Null for a spell, whose DC comes from the caster's spell save DC
+/// rather than from the printed text — a monster's stat block always prints one.
+/// </param>
 /// <param name="Area">The area, when the effect has one. Null when it targets one creature.</param>
 /// <param name="FailureDamage">Damage dealt on a failed save.</param>
 /// <param name="SuccessOutcome">What a successful save achieves.</param>
 /// <param name="AppliedConditions">Conditions imposed on a failed save.</param>
 public sealed record SaveEffect(
     Ability Ability,
-    int DifficultyClass,
+    int? DifficultyClass,
     EffectArea? Area,
     IReadOnlyList<AttackDamage> FailureDamage,
     SaveSuccessOutcome SuccessOutcome,

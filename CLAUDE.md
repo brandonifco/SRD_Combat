@@ -58,10 +58,12 @@ them ungated would repeat bug 1 in a new place. Don't wire them up until size co
 exists.
 
 **Phase 2 is in progress, sliced into small PRs.** Landed so far: **9 species,
-4 backgrounds, and all 12 classes** in `data/srd/`; `AdvancementRules` (XP thresholds,
-proficiency bonus by level); and **character resolution with nine implemented class
-features**. A real party built from real content now fights real monsters. Still to
-come: the four pregenerated characters.
+4 backgrounds, all 12 classes and 300 spells** in `data/srd/`; `AdvancementRules`;
+and **character resolution with nine implemented class features**. A real party built
+from real content now fights real monsters.
+
+**Work remaining is tracked in GitHub issues, not in this file or in chat.** Coverage
+numbers are printed by the extractor as an internal check; they are not project status.
 
 ### Working on characters
 
@@ -76,9 +78,14 @@ come: the four pregenerated characters.
   really does the thing. **Add a name here only alongside the code that implements it** —
   everything absent is reported on `CharacterSheet.UnimplementedFeatures` and stays
   visible.
-- **Spellcasting is the big gap, and it is content before engine.** Spells are not
-  extracted. A Cleric or Wizard resolves correctly, gets correct slots, and has no way
-  to spend them; the sheet says so.
+- **Spells are extracted; casting is not implemented.** A Cleric or Wizard resolves
+  correctly, gets correct slots, and has 300 spells available in content — but nothing
+  spends a slot yet. The sheet still reports Spellcasting as unimplemented.
+- **Spells need their own effect grammar, not the stat block one.** A monster prints
+  `Dexterity Saving Throw: DC 12` and `14 (4d6) Acid damage`; a spell prints
+  `must succeed on a Dexterity saving throw` and `8d6 Fire damage` — no DC (it is the
+  caster's) and no precomputed average. Reusing the monster classifier found every
+  metadata field and **zero of 300 saving throws**, silently. See `SpellEffectParser`.
 - **Extra Attack is one action buying several attacks**, not several actions — modelling
   it as extra actions would also wrongly allow a second Dodge or Dash.
 
