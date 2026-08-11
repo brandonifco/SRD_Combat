@@ -78,9 +78,17 @@ numbers are printed by the extractor as an internal check; they are not project 
   really does the thing. **Add a name here only alongside the code that implements it** —
   everything absent is reported on `CharacterSheet.UnimplementedFeatures` and stays
   visible.
-- **Spells are extracted; casting is not implemented.** A Cleric or Wizard resolves
-  correctly, gets correct slots, and has 300 spells available in content — but nothing
-  spends a slot yet. The sheet still reports Spellcasting as unimplemented.
+- **Casting works.** Attack spells roll a spell attack against AC; save spells make
+  every creature in the area roll against the caster's DC, halving on a success. Slots
+  are spent (cantrips are free), Concentration is tracked and broken by damage, and a
+  spell whose effect is not modelled is **refused with a reason** rather than silently
+  doing nothing.
+- **Area geometry is a stated interpretation, not a derivation.** The SRD describes
+  areas for a table with a ruler; `AreaTargeting` documents how each becomes squares.
+  Cylinder is not modelled and a spell using one is refused.
+- **`SpellcastingRules.AbilityFor` is a curated map, not Primary Ability.** A Paladin's
+  primary abilities are Strength *and* Charisma and it casts on Charisma — reading it
+  from the Core Traits table would be right for six classes and quietly wrong for two.
 - **Spells need their own effect grammar, not the stat block one.** A monster prints
   `Dexterity Saving Throw: DC 12` and `14 (4d6) Acid damage`; a spell prints
   `must succeed on a Dexterity saving throw` and `8d6 Fire damage` — no DC (it is the

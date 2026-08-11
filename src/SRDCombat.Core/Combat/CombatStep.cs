@@ -20,6 +20,9 @@ public enum CombatStepKind
 
     /// <summary>A class feature being used or expiring.</summary>
     Feature,
+
+    /// <summary>A spell being cast, resisted, or lost.</summary>
+    Spell,
     TurnEnded,
     EncounterEnded,
 }

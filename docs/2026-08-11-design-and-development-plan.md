@@ -330,7 +330,19 @@ level 1–5.
   Upcasting is kept as text rather than structured, because it is not implemented and
   structuring it would imply otherwise.
 
-- **Slice 5 — Pregens**, and the four pre-made characters the game ships with.
+- **Slice 5 — Casting. Done.** Attack spells roll a spell attack against AC; save
+  spells make every creature in the area roll against the caster's DC and halve on a
+  success. Slots are spent and cantrips are free, Concentration is tracked and broken by
+  damage (DC 10 or half the damage), and a spell whose effect the model cannot express is
+  **refused with a named reason** rather than silently doing nothing.
+
+  **Area geometry is a stated interpretation.** The SRD describes areas for a table with
+  a ruler, and its grid rules do not say how to square them. `AreaTargeting` writes down
+  the reading used for each shape — a Cone is squares within 45° of the direction cast, a
+  Line is length-along by width-across — so the choice is auditable rather than implicit.
+  Cylinder needs a height this engine has no concept of and is refused.
+
+- **Slice 6 — Pregens**, and the four pre-made characters the game ships with.
 
 **Everything still outstanding is tracked as GitHub issues** rather than in this
 document. The open-questions list below is for genuine product decisions only.

@@ -2,6 +2,7 @@ using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Content.Tests;
 
@@ -140,6 +141,65 @@ public class RealCharacterTests
         Assert.True(wizard.HasCondition(ConditionType.Unconscious));
     }
 
+    [Fact]
+    public void ARealWizardCastsRealSpellsAtRealMonsters()
+    {
+        var sheet = Build("class.wizard", "species.gnome", "background.sage", 5, armorId: null);
+
+        var spells = new[]
+        {
+            Content.SpellsById["spell.fire-bolt"],
+            Content.SpellsById["spell.fireball"],
+        };
+
+        var wizard = Combatant("Wizard", sheet, 0, 4, spells);
+
+        var goblins = Enumerable.Range(0, 3)
+            .Select(index => Spawn($"goblin-{index}", "monster.goblin-warrior", 8 + index, 4))
+            .ToArray();
+
+        var encounter = Encounter.Start(
+            new Battlefield(16, 10),
+            goblins.Prepend(wizard),
+            new SeededRandomSource(99));
+
+        // Initiative is rolled, so wait for the wizard's turn rather than assuming it
+        // acts first.
+        while (encounter.ActiveCombatant?.Id != wizard.Id && !encounter.IsComplete)
+        {
+            SimpleTacticsPolicy.TakeTurn(encounter);
+        }
+
+        // A Fireball centred on the middle goblin catches all three.
+        Assert.Null(encounter.CastSpell("spell.fireball", new GridPosition(9, 4)));
+
+        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Spell);
+        Assert.All(goblins, goblin =>
+            Assert.True(goblin.CurrentHitPoints < goblin.Stats.MaximumHitPoints || goblin.IsDead));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Fireball fills a 20-foot Sphere", StringComparison.Ordinal));
+
+        // A level 3 slot was spent; the wizard has 4/3/2 at level 5.
+        Assert.Equal(1, wizard.Features.SpellSlotsRemaining[3]);
+    }
+
+    [Fact]
+    public void ARealWizardsSaveDifficultyClassMatchesTheRules()
+    {
+        var sheet = Build("class.wizard", "species.gnome", "background.sage", 5, armorId: null);
+        var wizard = Combatant("Wizard", sheet, 0, 0, [Content.SpellsById["spell.fire-bolt"]]);
+
+        // 8 + proficiency + Intelligence modifier.
+        var expected = 8 + sheet.ProficiencyBonus + sheet.Modifier(Ability.Intelligence);
+
+        Assert.Equal(expected, wizard.Stats.Character!.SpellSaveDifficultyClass);
+        Assert.Equal(
+            sheet.ProficiencyBonus + sheet.Modifier(Ability.Intelligence),
+            wizard.Stats.Character.SpellAttackBonus);
+    }
+
     private static CharacterSheet Build(
         string classId,
         string speciesId,
@@ -183,7 +243,12 @@ public class RealCharacterTests
                 Content.ArmorById));
     }
 
-    private static Combatant Combatant(string name, CharacterSheet sheet, int x, int y)
+    private static Combatant Combatant(
+        string name,
+        CharacterSheet sheet,
+        int x,
+        int y,
+        IReadOnlyList<SpellDefinition>? spells = null)
     {
         var classLevel = Content.ClassesById["class." + sheet.ClassName.ToLowerInvariant()].AtLevel(sheet.Level)!;
 
@@ -201,7 +266,12 @@ public class RealCharacterTests
                 sneakAttack,
                 classLevel.ResourceCount("Rage Damage") ?? 0,
                 classLevel.ResourceCount("Rages") ?? 0,
-                classLevel.ResourceCount("Second Wind") ?? 0),
+                classLevel.ResourceCount("Second Wind") ?? 0,
+                actionSurgeUses: 0,
+                spells,
+                spells is null
+                    ? null
+                    : SpellcastingRules.AbilityFor("class." + sheet.ClassName.ToLowerInvariant())),
             new GridPosition(x, y));
     }
 

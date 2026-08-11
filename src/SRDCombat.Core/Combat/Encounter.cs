@@ -614,6 +614,8 @@ public sealed partial class Encounter
                 attacker,
                 target);
 
+            CheckConcentration(target, applied.Effective);
+
             if (applied.DeathSaveFailures > 0)
             {
                 Add(
