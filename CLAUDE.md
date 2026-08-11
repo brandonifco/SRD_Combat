@@ -22,7 +22,16 @@ action economy, attacks, damage, death saves and opportunity attacks all work, a
 three-adventurer / four-raider skirmish resolves over eight rounds with its 156-line
 narration **pinned byte-for-byte** in `tests/SRDCombat.Core.Tests/Fixtures/`.
 
-Debug and Release both build 0 warnings; **169 tests pass**, 1 skipped by design.
+Debug and Release both build 0 warnings; **172 tests pass**, 1 skipped by design.
+
+**A bug worth knowing about, because its shape will recur.** The extractor read the
+Goblin Warrior's "plus 2 (1d4) Slashing damage *if the attack roll had Advantage*" as a
+second unconditional damage component, so every goblin hit dealt it. Nothing failed —
+the attack looked implemented. `AttackDamage.Condition` now carries the qualifier and
+`AttackRules.RollDamage` evaluates it. **The general lesson: an entry that is partly
+structured is more dangerous than one that is not structured at all**, because the
+unstructured part is invisible rather than merely absent. That is what the effect model
+below exists to prevent.
 
 **Still not playable by a person** — there is no client and no character model. Phase 2
 (species/class/background resolution, levels 1–5, spell slots, equipment, four pregens)

@@ -10057,7 +10057,8 @@
               {
                 "amount": "1d4",
                 "type": "Slashing",
-                "printedAverage": 2
+                "printedAverage": 2,
+                "condition": "AttackRollHadAdvantage"
               }
             ]
           }
@@ -10080,7 +10081,8 @@
               {
                 "amount": "1d4",
                 "type": "Piercing",
-                "printedAverage": 2
+                "printedAverage": 2,
+                "condition": "AttackRollHadAdvantage"
               }
             ]
           }
@@ -10184,7 +10186,8 @@
               {
                 "amount": "1d4",
                 "type": "Slashing",
-                "printedAverage": 2
+                "printedAverage": 2,
+                "condition": "AttackRollHadAdvantage"
               }
             ]
           }
@@ -10207,7 +10210,8 @@
               {
                 "amount": "1d4",
                 "type": "Piercing",
-                "printedAverage": 2
+                "printedAverage": 2,
+                "condition": "AttackRollHadAdvantage"
               }
             ]
           }

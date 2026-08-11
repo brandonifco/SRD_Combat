@@ -156,6 +156,44 @@ public class AttackRulesTests
     }
 
     [Fact]
+    public void ConditionalDamage_IsOnlyDealtWhenItsConditionHolds()
+    {
+        // The Goblin Warrior's "plus 2 (1d4) Slashing damage if the attack roll had
+        // Advantage". Treating this as unconditional silently makes the creature hit for
+        // half again as much as the SRD says on every ordinary swing.
+        var attack = new CombatAttack(
+            "Scimitar",
+            AttackKind.Melee,
+            4,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [
+                new AttackDamage(DiceExpression.Parse("1d6 + 2"), DamageType.Slashing, 5),
+                new AttackDamage(
+                    DiceExpression.Parse("1d4"),
+                    DamageType.Slashing,
+                    2,
+                    AttackDamageCondition.AttackRollHadAdvantage),
+            ]);
+
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        // An ordinary hit: only the base component is rolled.
+        var plain = AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target);
+        Assert.True(plain.Hit);
+        Assert.Equal(RollMode.Normal, plain.Roll.Mode);
+        Assert.Single(AttackRules.RollDamage(new ScriptedRandomSource(3), attack, plain));
+
+        // The same hit with Advantage: both components are rolled.
+        target.AddCondition(ConditionType.Prone);
+        var advantaged = AttackRules.Resolve(new ScriptedRandomSource(15, 9), attacker, attack, target);
+        Assert.Equal(RollMode.Advantage, advantaged.Roll.Mode);
+        Assert.Equal(2, AttackRules.RollDamage(new ScriptedRandomSource(3, 2), attack, advantaged).Count);
+    }
+
+    [Fact]
     public void ADualModeAttackUsedInMelee_IsNotAtLongRange()
     {
         // Nineteen SRD attacks are "Melee or Ranged". Used in melee they carry both a

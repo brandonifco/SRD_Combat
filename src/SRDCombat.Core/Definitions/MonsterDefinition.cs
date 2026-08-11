@@ -81,6 +81,20 @@ public sealed record MonsterAttack(
     IReadOnlyList<AttackDamage> Damage);
 
 /// <summary>
+/// A condition that must hold for a damage component to apply at all.
+/// </summary>
+/// <remarks>
+/// Most extra damage is unconditional — a Flame Whip simply deals Force damage plus
+/// Fire damage. A few attacks qualify theirs, and treating those as unconditional makes
+/// the creature hit measurably harder than the SRD says it does.
+/// </remarks>
+public enum AttackDamageCondition
+{
+    /// <summary>The goblins' "plus 2 (1d4) damage if the attack roll had Advantage".</summary>
+    AttackRollHadAdvantage,
+}
+
+/// <summary>
 /// One damage component of an attack. An attack may have several — a Flame Whip deals
 /// Force damage "plus" Fire damage, and each is rolled separately.
 /// </summary>
@@ -91,7 +105,15 @@ public sealed record MonsterAttack(
 /// best check that the dice were extracted correctly — it must equal
 /// <see cref="DiceExpression.Average"/>.
 /// </param>
-public sealed record AttackDamage(DiceExpression Amount, DamageType Type, int PrintedAverage);
+/// <param name="Condition">
+/// What must be true for this component to be dealt at all. Null — the overwhelmingly
+/// common case — means it always applies.
+/// </param>
+public sealed record AttackDamage(
+    DiceExpression Amount,
+    DamageType Type,
+    int PrintedAverage,
+    AttackDamageCondition? Condition = null);
 
 /// <summary>A special sense and how far it reaches.</summary>
 public sealed record MonsterSense(SenseType Type, int RangeFeet);

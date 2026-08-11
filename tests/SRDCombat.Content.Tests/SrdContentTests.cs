@@ -96,6 +96,41 @@ public class SrdContentTests
     }
 
     [Fact]
+    public void Monsters_MarkConditionalDamageAsConditional()
+    {
+        // "Hit: 5 (1d6 + 2) Slashing damage, plus 2 (1d4) Slashing damage if the attack
+        // roll had Advantage." The qualifier belongs to the second component only —
+        // attaching it to both, or to neither, are the two ways to get this wrong, and
+        // both are silent at runtime.
+        var scimitar = Content
+            .MonstersById["monster.goblin-warrior"]
+            .Entries
+            .Single(entry => entry.Name == "Scimitar");
+
+        var damage = Assert.IsType<MonsterAttack>(scimitar.Attack).Damage;
+
+        Assert.Equal(2, damage.Count);
+        Assert.Null(damage[0].Condition);
+        Assert.Equal(AttackDamageCondition.AttackRollHadAdvantage, damage[1].Condition);
+    }
+
+    [Fact]
+    public void Monsters_DoNotTreatAFollowingSentenceAsADamageCondition()
+    {
+        // The Mummy reads "... plus 10 (3d6) Necrotic damage. If the target is a
+        // creature, it is cursed." That "If" opens a new sentence describing a rider, not
+        // a condition on the damage, so the necrotic damage must stay unconditional.
+        var fist = Content
+            .MonstersById["monster.mummy"]
+            .Entries
+            .Single(entry => entry.Name == "Rotting Fist");
+
+        Assert.All(
+            Assert.IsType<MonsterAttack>(fist.Attack).Damage,
+            component => Assert.Null(component.Condition));
+    }
+
+    [Fact]
     public void Monsters_UseThe2024Taxonomy()
     {
         // A Goblin is Fey in the 2024 rules, not Humanoid as it was in 5.1. This is the

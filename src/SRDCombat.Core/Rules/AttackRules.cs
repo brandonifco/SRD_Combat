@@ -117,17 +117,41 @@ public static class AttackRules
         return new AttackRoll(roll, hit, critical, target.Stats.ArmorClass, circumstances);
     }
 
-    /// <summary>Rolls an attack's damage, doubling the dice on a Critical Hit.</summary>
+    /// <summary>
+    /// Rolls an attack's damage, doubling the dice on a Critical Hit and skipping any
+    /// component whose condition is not met.
+    /// </summary>
+    /// <remarks>
+    /// The conditional case is rare but real, and getting it wrong is invisible: a
+    /// Goblin Warrior deals "plus 2 (1d4) Slashing damage if the attack roll had
+    /// Advantage", and applying that unconditionally makes it hit for half again as much
+    /// as the SRD says on every ordinary swing.
+    /// </remarks>
     public static IReadOnlyList<(AttackDamage Component, DiceRollResult Result)> RollDamage(
         IRandomSource random,
         CombatAttack attack,
-        bool critical)
+        AttackRoll roll)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(roll);
 
         return attack.Damage
-            .Select(component => (component, DiceRoller.Roll(random, component.Amount, critical)))
+            .Where(component => Applies(component.Condition, roll))
+            .Select(component => (component, DiceRoller.Roll(random, component.Amount, roll.Critical)))
             .ToArray();
+    }
+
+    /// <summary>Whether a damage component's condition is satisfied by the roll that hit.</summary>
+    public static bool Applies(AttackDamageCondition? condition, AttackRoll roll)
+    {
+        ArgumentNullException.ThrowIfNull(roll);
+
+        return condition switch
+        {
+            null => true,
+            AttackDamageCondition.AttackRollHadAdvantage => roll.Roll.Mode == RollMode.Advantage,
+            _ => throw new NotSupportedException($"Unhandled damage condition '{condition}'."),
+        };
     }
 }

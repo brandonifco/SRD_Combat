@@ -224,9 +224,19 @@ internal static partial class StatBlockLineGrammar
                 dice = DiceExpression.Flat(average);
             }
 
-            damage.Add(new AttackDamage(dice, type, average));
+            var componentEnd = match.Index + match.Length;
 
-            searchFrom = match.Index + match.Length;
+            // A component's qualifier runs from the end of the component to whichever
+            // comes first: the end of the sentence, or the start of the next component.
+            // Without the second bound, "5 (1d6 + 2) Slashing damage, plus 2 (1d4)
+            // Slashing damage if the attack roll had Advantage" marks *both* components
+            // conditional, because the first one's scan swallows the second one's clause.
+            var next = DamagePattern().Match(text, componentEnd);
+            var limit = next.Success ? next.Index : text.Length;
+
+            damage.Add(new AttackDamage(dice, type, average, ReadCondition(text, componentEnd, limit)));
+
+            searchFrom = componentEnd;
         }
 
         return damage;
@@ -234,6 +244,33 @@ internal static partial class StatBlockLineGrammar
 
     private static bool LooksLikeContinuation(string text, int from, int matchIndex) =>
         text[from..matchIndex].Contains("plus", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Reads a qualifier attached to a damage component, such as the goblins'
+    /// "plus 2 (1d4) Slashing damage <em>if the attack roll had Advantage</em>".
+    /// </summary>
+    /// <remarks>
+    /// Deliberately looks only as far as the end of the component's own sentence. The
+    /// Mummy's Rotting Fist is why: it reads "... plus 10 (3d6) Necrotic damage. If the
+    /// target is a creature, it is cursed." That "If" opens a new sentence describing a
+    /// rider, and treating it as a condition on the damage would wrongly make the
+    /// necrotic damage conditional.
+    /// </remarks>
+    private static AttackDamageCondition? ReadCondition(string text, int from, int limit)
+    {
+        if (from >= limit)
+        {
+            return null;
+        }
+
+        var sentenceEnd = text.IndexOf('.', from);
+        var clauseEnd = sentenceEnd < 0 ? limit : Math.Min(sentenceEnd, limit);
+        var clause = text[from..clauseEnd];
+
+        return clause.Contains("if the attack roll had Advantage", StringComparison.OrdinalIgnoreCase)
+            ? AttackDamageCondition.AttackRollHadAdvantage
+            : null;
+    }
 
     private static int ParseSigned(string value) =>
         int.Parse(value.Replace(" ", string.Empty), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);

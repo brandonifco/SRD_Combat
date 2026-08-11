@@ -522,7 +522,7 @@ public sealed class Encounter
             attacker,
             target);
 
-        foreach (var (component, roll) in AttackRules.RollDamage(_random, attack, result.Critical))
+        foreach (var (component, roll) in AttackRules.RollDamage(_random, attack, result))
         {
             var applied = DamageRules.Apply(target, roll.Total, component.Type, result.Critical);
 
