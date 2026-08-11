@@ -156,11 +156,12 @@ public class RealMonsterCombatTests
     [Fact]
     public void ARiderTheEngineWillNotImposeNeverReachesACombatant()
     {
-        // The Ankheg's Grappled and the Giant Centipede's Poisoned are both extracted,
-        // and neither may travel any further: one is a condition the engine does not
-        // execute, the other prints a duration nothing can end. They stay counted on the
-        // stat block entry instead.
-        foreach (var id in new[] { "monster.ankheg", "monster.giant-centipede" })
+        // The two independent reasons a rider is refused, one of each. The Ankheg's
+        // Grappled is completely modelled and the engine does not execute the condition;
+        // the Phase Spider's Poisoned is a condition the engine does execute, printed
+        // with a duration ("for 1 hour") that is not a turn boundary. Both stay counted
+        // on the stat block entry rather than travelling into a fight.
+        foreach (var id in new[] { "monster.ankheg", "monster.phase-spider" })
         {
             var monster = Content.MonstersById[id];
             var stats = CombatantStats.FromMonster(monster);
@@ -168,6 +169,44 @@ public class RealMonsterCombatTests
             Assert.Contains(monster.Entries, entry => entry.AppliedConditions.Count > 0);
             Assert.All(stats.Attacks, attack => Assert.Empty(attack.AppliedConditions));
         }
+    }
+
+    [Fact]
+    public void ARealCentipedePoisonsAndThePoisonWearsOff()
+    {
+        // "Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition
+        // until the start of the centipede's next turn." The whole loop against real
+        // content: extracted duration, imposed with an expiry, and ended by the clock at
+        // the boundary the stat block names.
+        var centipede = Content.MonstersById["monster.giant-centipede"];
+
+        var rider = Assert.Single(
+            CombatantStats.FromMonster(centipede).Attacks.Single(attack => attack.Name == "Bite").AppliedConditions);
+
+        Assert.Equal(ConditionType.Poisoned, rider.Condition);
+        Assert.Equal(
+            new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source),
+            rider.Duration);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(centipede, "centipede", "vermin", new GridPosition(0, 4)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(9, 4)),
+            ],
+            new SeededRandomSource(9));
+
+        SimpleTacticsPolicy.RunToCompletion(encounter);
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition
+                && step.Narration.Contains("has the Poisoned condition until", StringComparison.Ordinal));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition
+                && step.Narration.Contains("is no longer Poisoned", StringComparison.Ordinal));
     }
 
     [Fact]

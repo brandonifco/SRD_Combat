@@ -445,9 +445,9 @@ internal static partial class EntryMechanicsParser
                     ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
                     : null;
 
-                var (size, unmodelled) = ReadRider(sentence, match);
+                var (size, duration, unmodelled) = ReadRider(sentence, match);
 
-                conditions.Add(new AppliedCondition(condition, escapeDc, size, unmodelled));
+                conditions.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
             }
         }
 
@@ -473,13 +473,19 @@ internal static partial class EntryMechanicsParser
     /// instead of on a charge.
     /// </para>
     /// </remarks>
-    private static (CreatureSize? Size, string? Unmodelled) ReadRider(string sentence, Match condition)
+    private static (CreatureSize? Size, ConditionDuration? Duration, string? Unmodelled) ReadRider(
+        string sentence,
+        Match condition)
     {
         var trailing = sentence[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
+        var duration = ParseDuration(trailing);
 
-        if (trailing.Length > 0)
+        // Anything after the condition that is not a duration this engine can run — "from
+        // one of two claws", "until the grapple ends", "at which point it repeats the
+        // save" — is a rule of its own, and the rider is unusable until it is modelled.
+        if (trailing.Length > 0 && duration is null)
         {
-            return (null, sentence);
+            return (null, null, sentence);
         }
 
         var leading = StripAttackPreamble(sentence[..condition.Index]);
@@ -487,13 +493,43 @@ internal static partial class EntryMechanicsParser
 
         if (!gate.Success)
         {
-            return (null, sentence);
+            return (null, null, sentence);
         }
 
         return gate.Groups["size"].Success
             && Enum.TryParse<CreatureSize>(gate.Groups["size"].Value, ignoreCase: true, out var size)
-                ? (size, null)
-                : (null, null);
+                ? (size, duration, null)
+                : (null, duration, null);
+    }
+
+    /// <summary>
+    /// Parses "until the start of its next turn" and "until the end of the devil's next
+    /// turn".
+    /// </summary>
+    /// <remarks>
+    /// The possessive is the whole of the distinction. "its" is the creature carrying the
+    /// condition; a name is the creature that imposed it, and every printed name in the
+    /// bestiary is the stat block's own creature. Reading one as the other moves the end
+    /// of the condition by most of a round.
+    /// </remarks>
+    private static ConditionDuration? ParseDuration(string trailing)
+    {
+        var match = TurnBoundaryDurationPattern().Match(trailing);
+
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var clock = match.Groups["when"].Value.Equals("start", StringComparison.OrdinalIgnoreCase)
+            ? ConditionClock.StartOfTurn
+            : ConditionClock.EndOfTurn;
+
+        var owner = match.Groups["bearer"].Success
+            ? ConditionDurationOwner.Bearer
+            : ConditionDurationOwner.Source;
+
+        return new ConditionDuration(clock, owner);
     }
 
     /// <summary>
@@ -588,6 +624,14 @@ internal static partial class EntryMechanicsParser
         @"(?:the\s+target|it)\s+has\s+$",
         RegexOptions.IgnoreCase)]
     private static partial Regex RiderLeadInPattern();
+
+    // Anchored at both ends: "until the end of its next turn, at which point it repeats
+    // the save" carries a rule this engine has no answer for, and must not match the part
+    // that looks familiar.
+    [GeneratedRegex(
+        @"^until\s+the\s+(?<when>start|end)\s+of\s+(?:(?<bearer>its)|the\s+[\w' ]+?'s)\s+next\s+turn$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex TurnBoundaryDurationPattern();
 
     [GeneratedRegex(@"the\s+(?<condition>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+condition(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex ConditionPattern();

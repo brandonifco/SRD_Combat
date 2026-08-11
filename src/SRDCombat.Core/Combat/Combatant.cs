@@ -406,10 +406,44 @@ public sealed class FeatureState
     }
 }
 
+/// <summary>
+/// When a condition ends, resolved against a particular creature's turn counter.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The turn number is what makes "next" unambiguous. A rider applied during the devil's
+/// own turn and one applied during somebody else's — on an Opportunity Attack, say —
+/// both read "until the start of the devil's next turn", and they mean different moments.
+/// Recording <see cref="OwnerTurnNumber"/> as the owner's turn count <em>at the moment of
+/// application, plus one</em> resolves both without the expiry needing to know which case
+/// it was.
+/// </para>
+/// <para>
+/// The owner is often not the creature carrying the condition, which is why this is not
+/// simply a countdown on the bearer.
+/// </para>
+/// </remarks>
+/// <param name="OwnerId">The combatant whose turns are counted.</param>
+/// <param name="Clock">Which boundary of that turn ends it.</param>
+/// <param name="OwnerTurnNumber">The owner's turn number at which it ends.</param>
+public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int OwnerTurnNumber);
+
+/// <summary>A condition a creature currently has, and everything that governs its end.</summary>
+/// <param name="Condition">The condition.</param>
+/// <param name="SourceId">
+/// The combatant that imposed it, when one did. Null for a condition with no author —
+/// the Unconscious a creature gets from dropping to 0 hit points.
+/// </param>
+/// <param name="Expiry">When it ends on its own. Null when only the rules can end it.</param>
+public sealed record ActiveCondition(
+    ConditionType Condition,
+    string? SourceId = null,
+    ConditionExpiry? Expiry = null);
+
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>
 public sealed class Combatant
 {
-    private readonly HashSet<ConditionType> _conditions = [];
+    private readonly Dictionary<ConditionType, ActiveCondition> _conditions = [];
 
     public Combatant(string id, string name, string sideId, CombatantStats stats, GridPosition position)
     {
@@ -462,7 +496,16 @@ public sealed class Combatant
     /// <summary>Class feature state for this fight.</summary>
     public FeatureState Features { get; } = new();
 
-    public IReadOnlyCollection<ConditionType> Conditions => _conditions;
+    public IReadOnlyCollection<ConditionType> Conditions => _conditions.Keys;
+
+    /// <summary>Every condition the creature has, with its source and expiry.</summary>
+    public IReadOnlyCollection<ActiveCondition> ActiveConditions => _conditions.Values;
+
+    /// <summary>
+    /// How many turns this creature has begun. The clock every condition duration is
+    /// measured against; see <see cref="ConditionExpiry"/>.
+    /// </summary>
+    public int TurnsBegun { get; private set; }
 
     /// <summary>True once the creature is dead and out of the fight for good.</summary>
     public bool IsDead { get; private set; }
@@ -491,27 +534,52 @@ public sealed class Combatant
     /// <summary>True when the creature is still a threat — alive, conscious and able to act.</summary>
     public bool IsActive => CanAct;
 
-    public bool HasCondition(ConditionType condition) => _conditions.Contains(condition);
+    public bool HasCondition(ConditionType condition) => _conditions.ContainsKey(condition);
 
-    /// <summary>Adds a condition unless the creature is immune to it.</summary>
-    public bool AddCondition(ConditionType condition)
+    /// <summary>The condition with its source and expiry, or null if the creature has not got it.</summary>
+    public ActiveCondition? ConditionState(ConditionType condition) =>
+        _conditions.TryGetValue(condition, out var active) ? active : null;
+
+    /// <summary>
+    /// Adds a condition unless the creature is immune to it.
+    /// </summary>
+    /// <remarks>
+    /// Re-applying a condition the creature already has refreshes it rather than being
+    /// ignored, but never shortens it: an application that ends on a timer cannot displace
+    /// one that only the rules can end. Otherwise a wolf knocking a Prone creature Prone
+    /// again would hand it an expiry it did not have and stand it up for free.
+    /// </remarks>
+    /// <returns>True when the creature did not already have the condition.</returns>
+    public bool AddCondition(ConditionType condition, string? sourceId = null, ConditionExpiry? expiry = null)
     {
         if (Stats.ConditionImmunities.Contains(condition))
         {
             return false;
         }
 
-        var added = _conditions.Add(condition);
-
-        // Unconscious brings Incapacitated and Prone with it, per the condition's own
-        // definition. Modelling that here means nothing else has to remember it.
-        if (added && condition == ConditionType.Unconscious)
+        if (_conditions.TryGetValue(condition, out var existing))
         {
-            _conditions.Add(ConditionType.Incapacitated);
-            _conditions.Add(ConditionType.Prone);
+            _conditions[condition] = existing with
+            {
+                SourceId = sourceId ?? existing.SourceId,
+                Expiry = existing.Expiry is null ? null : expiry,
+            };
+
+            return false;
         }
 
-        return added;
+        _conditions[condition] = new ActiveCondition(condition, sourceId, expiry);
+
+        // Unconscious brings Incapacitated and Prone with it, per the condition's own
+        // definition. Modelling that here means nothing else has to remember it. They
+        // inherit its expiry, so an Unconscious that wears off does not leave them behind.
+        if (condition == ConditionType.Unconscious)
+        {
+            _conditions.TryAdd(ConditionType.Incapacitated, new ActiveCondition(ConditionType.Incapacitated, sourceId, expiry));
+            _conditions.TryAdd(ConditionType.Prone, new ActiveCondition(ConditionType.Prone, sourceId, expiry));
+        }
+
+        return true;
     }
 
     public bool RemoveCondition(ConditionType condition)
@@ -525,6 +593,31 @@ public sealed class Combatant
 
         return removed;
     }
+
+    /// <summary>
+    /// Ends every condition due to expire at this boundary of the owner's turn, and says
+    /// which ones ended.
+    /// </summary>
+    internal IReadOnlyList<ConditionType> ExpireConditions(string ownerId, ConditionClock clock, int ownerTurnNumber)
+    {
+        var due = _conditions.Values
+            .Where(active => active.Expiry is { } expiry
+                && expiry.Clock == clock
+                && string.Equals(expiry.OwnerId, ownerId, StringComparison.Ordinal)
+                && ownerTurnNumber >= expiry.OwnerTurnNumber)
+            .Select(active => active.Condition)
+            .OrderBy(condition => condition)
+            .ToArray();
+
+        foreach (var condition in due)
+        {
+            RemoveCondition(condition);
+        }
+
+        return due;
+    }
+
+    internal void BeginTurnClock() => TurnsBegun++;
 
     internal void SetInitiative(int value) => Initiative = value;
 

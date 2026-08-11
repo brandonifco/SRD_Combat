@@ -979,12 +979,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +7, reach 5 ft. Hit: 7 (1d6 + 4) Piercing damage plus 17 (5d6) Poison damage, and the target has the Poisoned condition until the start of the assassin's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +7, reach 5 ft. Hit: 7 (1d6 + 4) Piercing damage plus 17 (5d6) Poison damage, and the target has the Poisoned condition until the start of the assassin's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Light Crossbow",
@@ -2281,11 +2282,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the target has the Poisoned condition until the start of the devil's next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
           "unmodelledClauses": [
-            "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the target has the Poisoned condition until the start of the devil's next turn",
             "Until this poison ends, the target can't regain Hit Points."
           ]
         },
@@ -4456,11 +4459,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +8, reach 10 ft. Hit: 15 (2d10 + 4) Piercing damage plus 18 (4d8) Poison damage, and the target has the Poisoned condition until the start of the devil's next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
           "unmodelledClauses": [
-            "Melee Attack Roll: +8, reach 10 ft. Hit: 15 (2d10 + 4) Piercing damage plus 18 (4d8) Poison damage, and the target has the Poisoned condition until the start of the devil's next turn",
             "While Poisoned, the target can't regain Hit Points."
           ]
         }
@@ -7851,12 +7856,13 @@
           "appliedConditions": [
             {
               "condition": "Incapacitated",
-              "unmodelledRequirement": "Ranged Attack Roll: +12, range 240 ft. Hit: 18 (3d6 + 8) Thunder damage, and the target has the Incapacitated condition until the end of its next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Ranged Attack Roll: +12, range 240 ft. Hit: 18 (3d6 + 8) Thunder damage, and the target has the Incapacitated condition until the end of its next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -8948,12 +8954,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (1d12 + 5) Piercing damage, and the target has the Poisoned condition until the end of the couatl's next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (1d12 + 5) Piercing damage, and the target has the Poisoned condition until the end of the couatl's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Constrict",
@@ -11515,12 +11522,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 2 (1d4) Poison damage, and the target has the Poisoned condition until the start of the ettercap's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 2 (1d4) Poison damage, and the target has the Poisoned condition until the start of the ettercap's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -17750,12 +17758,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 298
@@ -20380,7 +20389,10 @@
           "appliedConditions": [
             {
               "condition": "Paralyzed",
-              "unmodelledRequirement": "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
           "unmodelledClauses": [
@@ -22270,12 +22282,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned condition until the end of the merrow's next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned condition until the end of the merrow's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -23977,7 +23990,10 @@
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Ranged Attack Roll: +5, range 60 ft. Hit: 9 (2d6 + 2) Psychic damage, and the target has the Frightened condition until the start of the oni's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
           "unmodelledClauses": [
@@ -24119,11 +24135,8 @@
             }
           ],
           "unmodelledClauses": [
-            "Melee Attack Roll: +6, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage, and the target has the Poisoned condition",
             "Whenever the Poisoned target finishes a Long Rest, it is subjected to the following effect",
-            "Constitution Saving Throw: DC 15",
-            "Failure: The target's Hit Point maximum decreases by 5 (1d10) and doesn't return to normal until the Poisoned condition ends on the target",
-            "Success: The Poisoned condition ends."
+            "Constitution Saving Throw: DC 15"
           ]
         },
         {
@@ -26007,12 +26020,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned condition until the start of the quasit's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned condition until the start of the quasit's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Invisibility",
@@ -31075,7 +31089,10 @@
           "appliedConditions": [
             {
               "condition": "Charmed",
-              "unmodelledRequirement": "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
           "unmodelledClauses": [
@@ -36782,12 +36799,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern's next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 343
@@ -39998,12 +40016,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition until the start of the centipede's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition until the start of the centipede's next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 349
@@ -42220,12 +42239,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Piercing damage, and the target has the Poisoned condition until the end of its next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Piercing damage, and the target has the Poisoned condition until the end of its next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 354

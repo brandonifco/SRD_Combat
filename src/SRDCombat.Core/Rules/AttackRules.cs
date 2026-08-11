@@ -9,12 +9,14 @@ namespace SRDCombat.Core.Rules;
 /// <param name="TargetIsProne">The target is Prone.</param>
 /// <param name="TargetIsUnconscious">The target is Unconscious.</param>
 /// <param name="AttackerIsProne">The attacker is Prone.</param>
+/// <param name="AttackerIsPoisoned">The attacker is Poisoned.</param>
 /// <param name="AtLongRange">The target is beyond the attack's normal range.</param>
 public sealed record AttackCircumstances(
     bool TargetIsDodging,
     bool TargetIsProne,
     bool TargetIsUnconscious,
     bool AttackerIsProne,
+    bool AttackerIsPoisoned,
     bool AtLongRange);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
@@ -51,6 +53,7 @@ public static class AttackRules
             TargetIsProne: target.HasCondition(ConditionType.Prone),
             TargetIsUnconscious: target.HasCondition(ConditionType.Unconscious),
             AttackerIsProne: attacker.HasCondition(ConditionType.Prone),
+            AttackerIsPoisoned: attacker.HasCondition(ConditionType.Poisoned),
             AtLongRange: attack.IsAtLongRange(distance));
     }
 
@@ -77,6 +80,7 @@ public static class AttackRules
         var disadvantage =
             circumstances.TargetIsDodging
             || circumstances.AttackerIsProne
+            || circumstances.AttackerIsPoisoned
             || circumstances.AtLongRange
             || (circumstances.TargetIsProne && !withinFiveFeet);
 
