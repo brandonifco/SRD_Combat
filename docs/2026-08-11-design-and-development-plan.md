@@ -194,10 +194,50 @@ the same kind of tax:
   and *reports rather than applies* a correction whose expected value no longer matches
   — so a parser improvement that makes a correction unnecessary surfaces loudly.
 
-**Phase 1 — The combat engine.** Core, headless. Grid, initiative, action economy,
-attacks, damage, conditions, saves, death saves, opportunity attacks. Driven by tests
-and a frozen transcript of a scripted fight. *Ends when:* two authored sides fight to
-a conclusion, deterministically, with no client.
+**Phase 1 — The combat engine. Complete, 2026-08-11.** Core, headless. Grid,
+initiative, action economy, attacks, damage, conditions, death saves, opportunity
+attacks. A three-adventurer / four-raider skirmish now fights to a conclusion over
+eight rounds with no client, and its 156-line narration is pinned byte-for-byte.
+
+What the engine does, all of it verified against the printed SRD rather than from
+memory:
+
+- **The grid** as the SRD defines it — 5-foot squares where a diagonal step costs the
+  same as an orthogonal one, so distance is Chebyshev, not Euclidean and not 1.5×.
+  Difficult terrain, blocked squares, pathing around them, and the rule that you may
+  cross an ally's square but never finish your move on one.
+- **Attack rolls** with Advantage and Disadvantage that *cancel* rather than stack, a
+  natural 20 that hits and crits regardless of AC, a natural 1 that always misses, and
+  Critical Hits that double the damage **dice** while adding the modifier once.
+- **Damage** with resistance halving and rounding down, vulnerability, immunity,
+  temporary hit points that absorb first and never stack, and massive damage.
+- **Dying properly**: a monster dies the instant it hits 0, a character falls
+  Unconscious and rolls Death Saving Throws — three successes to stabilise, three
+  failures to die, a natural 1 costing two failures, a natural 20 restoring a hit
+  point, and damage taken at 0 costing a failure (two from a crit).
+- **Opportunity Attacks** that fire only when reach is genuinely left, resolve *before*
+  the mover vacates the square, cost the attacker its Reaction, and are avoided by
+  Disengage.
+
+Two rules interactions worth recording, because both are easy to implement wrongly and
+both are now pinned by tests:
+
+- **Attacking an Unconscious creature from more than 5 feet away is a normal roll.**
+  Unconscious grants Advantage, but Unconscious also imposes Prone, and Prone gives an
+  attacker further than 5 feet Disadvantage. They cancel exactly.
+- **Dodge lasts until the start of the dodger's *next* turn**, not until the end of
+  their current one, so it has to survive every intervening combatant's turn.
+
+**Deliberately not built, and none of it is an oversight:** spells and concentration,
+cover, areas of effect, Multiattack (the SRD states it as prose, so it is part of the
+open question below), weapon mastery effects, the Help/Hide/Ready actions, conditions
+beyond the set the engine actually applies, and the size rule that lets a creature move
+through a much larger or smaller hostile's space.
+
+**One divergence from the SRD, taken knowingly:** initiative ties are broken by
+initiative bonus and then by combatant id, rather than by a reroll or player choice.
+The order has to be reproducible from the seed alone or the frozen transcripts mean
+nothing.
 
 **Phase 2 — Characters.** Species/class/background resolution, levels 1–5, spell
 slots, prepared spells, equipment and attunement. Four pre-made characters authored.

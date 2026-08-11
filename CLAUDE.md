@@ -11,20 +11,51 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 ## Where things stand
 
-**2026-08-11 — Phase 0 complete.** The content pipeline works end to end.
-`data/srd/` holds **330 monsters, all 38 weapons and all 13 armor entries**, extracted
-from the SRD PDF by `tools/SrdExtract` and loading with **zero validation errors**.
-Debug and Release both build 0 warnings; 79 tests pass.
+**2026-08-11 — Phases 0 and 1 complete.**
 
-**Nothing is playable** — there is no combat engine yet. Phase 1 (the headless combat
-engine: grid, initiative, action economy, attacks, damage, conditions, saves) is next.
+Phase 0, the content pipeline: `data/srd/` holds **330 monsters, all 38 weapons and all
+13 armor entries**, extracted from the SRD PDF by `tools/SrdExtract` and loading with
+**zero validation errors**.
+
+Phase 1, the combat engine: a headless fight runs end to end. Grid movement, initiative,
+action economy, attacks, damage, death saves and opportunity attacks all work, and a
+three-adventurer / four-raider skirmish resolves over eight rounds with its 156-line
+narration **pinned byte-for-byte** in `tests/SRDCombat.Core.Tests/Fixtures/`.
+
+Debug and Release both build 0 warnings; **169 tests pass**, 1 skipped by design.
+
+**Still not playable by a person** — there is no client and no character model. Phase 2
+(species/class/background resolution, levels 1–5, spell slots, equipment, four pregens)
+is next, then Phase 3's console client.
 
 Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
 Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
 and **no code licence for now** (public repo, no `LICENSE`, all rights reserved by
 default — deliberate).
 
-Three things a Phase 1 author should know before starting:
+### Working on the combat engine
+
+- **The frozen transcript is the most valuable test here.** It pins the exact narrated
+  sequence of a whole fight, so it catches interaction bugs no unit test reaches. When
+  it fails, **read the diff before touching the fixture** — a change to the transcript
+  is a change to how the game plays. Regenerate only once the new behaviour is intended:
+  un-skip `TranscriptWriter`, run it, re-skip it, review.
+- **It uses hand-authored combatants, not SRD monsters, on purpose** — so it fails when
+  the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
+  `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
+  every CR 0–4 monster can take a turn without throwing.
+- **All randomness goes through `IRandomSource`.** Never reach for `Random.Shared`
+  anywhere in `Core`; determinism is what the transcripts rest on. `ScriptedRandomSource`
+  throws when a test rolls more dice than it scripted — if that fires, the test's premise
+  changed (an Advantage roll consumes two dice, not one).
+- **Rules verified against the printed SRD, not memory** — and the non-obvious ones are
+  pinned by tests: Advantage and Disadvantage cancel rather than stack; a Critical Hit
+  doubles the *dice* and adds the modifier once; a monster dies at 0 hit points while a
+  character rolls Death Saves; Dodge lasts until the start of the dodger's *next* turn;
+  and attacking an Unconscious creature from beyond 5 feet is a *normal* roll, because
+  Unconscious grants Advantage while the Prone it carries imposes Disadvantage.
+
+Three things a Phase 2 author should know before starting:
 
 - **There is no versioned DTO mirror, deliberately.** Content serializes straight from
   the `Core` definitions. The design doc explains why this diverges from 5eGoldBox, and
