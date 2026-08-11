@@ -41,28 +41,40 @@ var armorLines = PageTextReader.Read(
     SrdPages.ArmorTablePage,
     PageLayout.FullWidth);
 
+var originLines = PageTextReader.Read(
+    options.PdfPath,
+    SrdPages.OriginsFirstPage,
+    SrdPages.OriginsLastPage,
+    PageLayout.TwoColumn);
+
 var monsterResult = MonsterParser.Parse(monsterLines);
+var originResult = OriginParser.Parse(originLines);
 var equipmentResult = EquipmentParser.Parse(weaponLines, armorLines);
 
 var (monsters, correctionDiagnostics) = KnownCorrections.Apply(monsterResult.Monsters);
 
 Console.WriteLine();
 Console.WriteLine($"Parsed {monsters.Count} monsters, " +
-                  $"{equipmentResult.Weapons.Count} weapons, {equipmentResult.Armor.Count} armor.");
+                  $"{equipmentResult.Weapons.Count} weapons, {equipmentResult.Armor.Count} armor, " +
+                  $"{originResult.Species.Count} species, {originResult.Backgrounds.Count} backgrounds.");
 
 Report(
     "Parse diagnostics",
     monsterResult.Diagnostics
         .Concat(equipmentResult.Diagnostics)
         .Concat(correctionDiagnostics)
+        .Concat(originResult.Diagnostics)
         .Select(d => d.ToString()));
 
 ReportMechanicsCoverage(monsters);
+ReportTraitCoverage(originResult.Species);
 
 var validation = new List<ValidationIssue>();
 validation.AddRange(MonsterValidator.Validate(monsters).Issues);
 validation.AddRange(EquipmentValidator.ValidateWeapons(equipmentResult.Weapons).Issues);
 validation.AddRange(EquipmentValidator.ValidateArmor(equipmentResult.Armor).Issues);
+validation.AddRange(OriginValidator.ValidateSpecies(originResult.Species).Issues);
+validation.AddRange(OriginValidator.ValidateBackgrounds(originResult.Backgrounds).Issues);
 
 Report("Validation errors", validation
     .Where(issue => issue.Severity == ValidationSeverity.Error)
@@ -84,6 +96,12 @@ if (errorCount > 0 && !options.Force)
 ContentLoader.WritePack(options.OutputDirectory, ContentLoader.MonstersFileName, "monsters", monsters);
 ContentLoader.WritePack(options.OutputDirectory, ContentLoader.WeaponsFileName, "weapons", equipmentResult.Weapons);
 ContentLoader.WritePack(options.OutputDirectory, ContentLoader.ArmorFileName, "armor", equipmentResult.Armor);
+ContentLoader.WritePack(options.OutputDirectory, ContentLoader.SpeciesFileName, "species", originResult.Species);
+ContentLoader.WritePack(
+    options.OutputDirectory,
+    ContentLoader.BackgroundsFileName,
+    "backgrounds",
+    originResult.Backgrounds);
 
 Console.WriteLine();
 Console.WriteLine($"Wrote content to {Path.GetFullPath(options.OutputDirectory)}");
@@ -137,6 +155,33 @@ static void ReportMechanicsCoverage(IReadOnlyList<MonsterDefinition> monsters)
         monsters.Where(monster => monster.ChallengeRating <= 4m).ToList());
 }
 
+/// <summary>
+/// Prints how much of the species traits the model expresses, on the same terms as the
+/// bestiary. Species traits are mechanics too — Dwarven Resilience is Poison resistance
+/// plus Advantage on a save — so they are counted rather than assumed to be flavour.
+/// </summary>
+static void ReportTraitCoverage(IReadOnlyList<SpeciesDefinition> species)
+{
+    var traits = species.SelectMany(entry => entry.Traits).ToList();
+
+    if (traits.Count == 0)
+    {
+        return;
+    }
+
+    var modelled = traits.Count(trait => trait.IsFullyModelled);
+
+    Console.WriteLine();
+    Console.WriteLine(
+        $"Species trait coverage: {modelled}/{traits.Count} fully modelled " +
+        $"({modelled * 100.0 / traits.Count:F0}%)");
+
+    foreach (var group in traits.GroupBy(trait => trait.Mechanics).OrderByDescending(group => group.Count()))
+    {
+        Console.WriteLine($"  {group.Count(),5}  {group.Key}");
+    }
+}
+
 static void Report(string heading, IEnumerable<string> messages)
 {
     var lines = messages.ToList();
@@ -179,6 +224,12 @@ namespace SrdExtract
         public const int WeaponsTablePage = 91;
 
         public const int ArmorTablePage = 92;
+
+        /// <summary>Character Origins: backgrounds, then the species descriptions.</summary>
+        public const int OriginsFirstPage = 83;
+
+        /// <summary>The last species page, before Feats begins on 87.</summary>
+        public const int OriginsLastPage = 86;
     }
 
     internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force)
