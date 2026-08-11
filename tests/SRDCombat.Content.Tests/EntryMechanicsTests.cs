@@ -56,7 +56,13 @@ public class EntryMechanicsTests
     {
         // A floor, not a target. Raise it when coverage improves; a failure here means
         // either real progress worth recording or a parser regression worth finding.
-        const int Floor = 340;
+        //
+        // Lowered from 340 to 330 when Multiattack parsing was corrected. The number went
+        // *down* while correctness went *up*: six entries had been recorded as one-attack
+        // Multiattacks, which is not a Multiattack at all, and are now honestly reported
+        // as not understood. Worth remembering that this metric can move the wrong way
+        // for the right reason.
+        const int Floor = 330;
 
         var modelled = TierOneEntries.Count(entry => entry.IsFullyModelled);
 

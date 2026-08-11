@@ -231,16 +231,11 @@
           "name": "Lash",
           "section": "LegendaryAction",
           "text": "The aboleth makes one Tentacle attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Tentacle"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The aboleth makes one Tentacle attack."
+          ]
         },
         {
           "name": "Psychic Drain",
@@ -1511,11 +1506,12 @@
           "text": "The balor makes one Flame Whip attack and one Lightning Blade attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Flame Whip"
+              "Flame Whip",
+              "Lightning Blade"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -1939,11 +1935,13 @@
           "text": "The devil makes one Claws attack and one Tail attack, or it makes two Hurl Flame attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 4,
             "attackNames": [
-              "Claws"
+              "Claws",
+              "Tail",
+              "Hurl Flame"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -2232,11 +2230,12 @@
           "text": "The devil makes one Beard attack and one Infernal Glaive attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Beard"
+              "Beard",
+              "Infernal Glaive"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -2366,16 +2365,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The behir makes one Bite attack and uses Constrict.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Bite"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The behir makes one Bite attack and uses Constrict."
+          ]
         },
         {
           "name": "Bite",
@@ -3110,16 +3104,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 264
@@ -3334,16 +3323,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 265
@@ -4080,16 +4064,11 @@
           "name": "Tail Swipe",
           "section": "LegendaryAction",
           "text": "The dragon makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 266
@@ -4286,16 +4265,11 @@
           "name": "Tail Swipe",
           "section": "LegendaryAction",
           "text": "The dragon makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 267
@@ -4398,11 +4372,12 @@
           "text": "The devil makes two Claw attacks and one Infernal Sting attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 2,
+            "attackCount": 3,
             "attackNames": [
-              "Claw"
+              "Claw",
+              "Infernal Sting"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -5018,16 +4993,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         },
         {
           "name": "Scorching Sands",
@@ -5271,16 +5241,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         },
         {
           "name": "Scorching Sands",
@@ -5874,16 +5839,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         },
         {
           "name": "Thunderclap",
@@ -6133,16 +6093,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         },
         {
           "name": "Thunderclap",
@@ -6263,9 +6218,10 @@
           "multiattack": {
             "attackCount": 2,
             "attackNames": [
-              "Javelin or Morningstar"
+              "Javelin",
+              "Morningstar"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -7038,11 +6994,13 @@
           "text": "The chimera makes one Ram attack, one Bite attack, and one Claw attack. It can replace the Claw attack with a use of Fire Breath if available.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 3,
             "attackNames": [
-              "Ram"
+              "Ram",
+              "Bite",
+              "Claw"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -7431,7 +7389,7 @@
           "text": "The golem makes two Slam attacks, or it makes three Slam attacks if it used Hasten this turn.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 2,
+            "attackCount": 5,
             "attackNames": [
               "Slam"
             ],
@@ -7564,11 +7522,12 @@
           "text": "The cloaker makes one Attach attack and two Tail attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 3,
             "attackNames": [
-              "Attach"
+              "Attach",
+              "Tail"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -8538,16 +8497,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 276
@@ -8778,16 +8732,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 277
@@ -10726,16 +10675,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The dryad makes one Vine Lash or Thorn Burst attack, and it can use Spellcasting to cast Charm Monster.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Vine Lash or Thorn Burst"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dryad makes one Vine Lash or Thorn Burst attack, and it can use Spellcasting to cast Charm Monster."
+          ]
         },
         {
           "name": "Vine Lash",
@@ -11409,11 +11353,12 @@
           "text": "The ettercap makes one Bite attack and one Claw attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Claw"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -11585,11 +11530,12 @@
           "text": "The ettin makes one Battleaxe attack and one Morningstar attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Battleaxe"
+              "Battleaxe",
+              "Morningstar"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -13764,20 +13710,15 @@
           "name": "Rampage",
           "section": "BonusAction",
           "text": "Immediately after dealing damage to a creature that is already Bloodied, the gnoll moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "usage": {
             "kind": "PerDay",
             "usesPerDay": 1
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Immediately after dealing damage to a creature that is already Bloodied, the gnoll moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 289
@@ -14765,16 +14706,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 291
@@ -15020,16 +14956,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 292
@@ -15840,16 +15771,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 294
@@ -16066,16 +15992,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 294
@@ -16298,11 +16219,12 @@
           "text": "The grick makes one Beak attack and one Tentacles attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Beak"
+              "Beak",
+              "Tentacles"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -21139,11 +21061,13 @@
           "text": "The medusa makes two Claw attacks and one Snake Hair attack, or it makes three Poison Ray attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 2,
+            "attackCount": 6,
             "attackNames": [
-              "Claw"
+              "Claw",
+              "Snake Hair",
+              "Poison Ray"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -22689,16 +22613,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack, and it uses Dreadful Glare.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rotting Fist or Channel Negative Energy"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The mummy makes one Rotting Fist or Channel Negative Energy attack, and it uses Dreadful Glare."
+          ]
         },
         {
           "name": "Rotting Fist",
@@ -22835,16 +22754,11 @@
           "name": "Necrotic Strike",
           "section": "LegendaryAction",
           "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rotting Fist or Channel Negative Energy"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The mummy makes one Rotting Fist or Channel Negative Energy attack."
+          ]
         }
       ],
       "sourcePage": 309
@@ -23762,9 +23676,10 @@
           "multiattack": {
             "attackCount": 2,
             "attackNames": [
-              "Claw or Nightmare Ray"
+              "Claw",
+              "Nightmare Ray"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -23920,11 +23835,12 @@
           "text": "The otyugh makes one Bite attack and two Tentacle attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 3,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Tentacle"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -24783,11 +24699,13 @@
           "text": "The pit fiend makes one Bite attack, two Devilish Claw attacks, and one Fiery Mace attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 4,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Devilish Claw",
+              "Fiery Mace"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -25592,11 +25510,12 @@
           "text": "The worm makes one Bite attack and one Tail Stinger attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Tail Stinger"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -26512,16 +26431,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 318
@@ -26717,16 +26631,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 319
@@ -27100,11 +27009,12 @@
           "text": "The roper makes two Tentacle attacks, uses Reel, and makes two Bite attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 2,
+            "attackCount": 4,
             "attackNames": [
-              "Tentacle"
+              "Tentacle",
+              "Bite"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -27239,16 +27149,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The rust monster makes one Bite attack and uses Antennae twice.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Bite"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The rust monster makes one Bite attack and uses Antennae twice."
+          ]
         },
         {
           "name": "Bite",
@@ -29070,16 +28975,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 324
@@ -29327,16 +29227,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 325
@@ -30350,16 +30245,11 @@
           "name": "Arcane Prowl",
           "section": "LegendaryAction",
           "text": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Claw"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack."
+          ]
         },
         {
           "name": "Weight of Years",
@@ -30557,16 +30447,11 @@
           "name": "Arcane Prowl",
           "section": "LegendaryAction",
           "text": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Claw"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack."
+          ]
         },
         {
           "name": "Weight of Years",
@@ -31679,16 +31564,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The succubus makes one Fiendish Touch attack and uses Charm or Draining Kiss.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Fiendish Touch"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The succubus makes one Fiendish Touch attack and uses Charm or Draining Kiss."
+          ]
         },
         {
           "name": "Fiendish Touch",
@@ -31881,16 +31761,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The tarrasque makes one Bite attack and three other attacks, using Claw or Tail in any combination.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Bite"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The tarrasque makes one Bite attack and three other attacks, using Claw or Tail in any combination."
+          ]
         },
         {
           "name": "Bite",
@@ -32043,16 +31918,11 @@
           "name": "Onslaught",
           "section": "LegendaryAction",
           "text": "The tarrasque moves up to half its Speed, and it makes one Claw or Tail attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Claw or Tail"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The tarrasque moves up to half its Speed, and it makes one Claw or Tail attack."
+          ]
         },
         {
           "name": "World-Shaking Movement",
@@ -32819,11 +32689,12 @@
           "text": "The unicorn makes one Hooves attack and one Radiant Horn attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Hooves"
+              "Hooves",
+              "Radiant Horn"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -32899,16 +32770,11 @@
           "name": "Charging Horn",
           "section": "LegendaryAction",
           "text": "The unicorn moves up to half its Speed without provoking Opportunity Attacks, and it makes one Radiant Horn attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Radiant Horn"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The unicorn moves up to half its Speed without provoking Opportunity Attacks, and it makes one Radiant Horn attack."
+          ]
         },
         {
           "name": "Shimmering Shield",
@@ -33494,16 +33360,11 @@
           "name": "Deathless Strike",
           "section": "LegendaryAction",
           "text": "The vampire moves up to half its Speed, and it makes one Grave Strike attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Grave Strike"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The vampire moves up to half its Speed, and it makes one Grave Strike attack."
+          ]
         }
       ],
       "sourcePage": 335
@@ -33881,9 +33742,10 @@
           "multiattack": {
             "attackCount": 2,
             "attackNames": [
-              "Greatsword or Heavy Crossbow"
+              "Greatsword",
+              "Heavy Crossbow"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -35499,16 +35361,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 340
@@ -35718,16 +35575,11 @@
           "name": "Pounce",
           "section": "LegendaryAction",
           "text": "The dragon moves up to half its Speed, and it makes one Rend attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Rend"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The dragon moves up to half its Speed, and it makes one Rend attack."
+          ]
         }
       ],
       "sourcePage": 341
@@ -36491,11 +36343,12 @@
           "text": "The wyvern makes one Bite attack and one Sting attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Sting"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -36653,11 +36506,12 @@
           "text": "The xorn makes one Bite attack and three Claw attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 4,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Claw"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -37948,11 +37802,12 @@
           "text": "The bear makes one Bite attack and one Claw attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Claw"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -39811,16 +39666,11 @@
           "name": "Multiattack",
           "section": "Action",
           "text": "The snake makes one Bite attack and uses Constrict.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Bite"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "The snake makes one Bite attack and uses Constrict."
+          ]
         },
         {
           "name": "Bite",
@@ -40047,11 +39897,12 @@
           "text": "The crocodile makes one Bite attack and one Tail attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Tail"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -40717,20 +40568,15 @@
           "name": "Rampage",
           "section": "BonusAction",
           "text": "Immediately after dealing damage to a creature that was already Bloodied, the hyena can move up to half its Speed, and it makes one Bite attack.",
-          "mechanics": "Multiattack",
-          "multiattack": {
-            "attackCount": 1,
-            "attackNames": [
-              "Bite"
-            ],
-            "anyCombination": false
-          },
+          "mechanics": "Unmodelled",
           "usage": {
             "kind": "PerDay",
             "usesPerDay": 1
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Immediately after dealing damage to a creature that was already Bloodied, the hyena can move up to half its Speed, and it makes one Bite attack."
+          ]
         }
       ],
       "sourcePage": 352
@@ -41224,11 +41070,12 @@
           "text": "The scorpion makes two Claw attacks and one Sting attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 2,
+            "attackCount": 3,
             "attackNames": [
-              "Claw"
+              "Claw",
+              "Sting"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -45948,11 +45795,12 @@
           "text": "The tyrannosaurus makes one Bite attack and one Tail attack.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 1,
+            "attackCount": 2,
             "attackNames": [
-              "Bite"
+              "Bite",
+              "Tail"
             ],
-            "anyCombination": false
+            "anyCombination": true
           },
           "appliedConditions": [],
           "unmodelledClauses": []

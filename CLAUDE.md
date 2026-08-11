@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #12 (spells). **PR #13 (casting) is open and unmerged.** |
-| Tests | **314 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #13 (casting). **PR #14 (Multiattack) is open and unmerged.** |
+| Tests | **324 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
@@ -33,11 +33,11 @@ No gauntlet, no XP awards, no levelling in play, no loot, no save files, no preg
 characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings.
 
-**Picking up cold:** merge or review PR #13 first, then take a GitHub issue.
-`gh issue list`. The two highest-value are **#7 Multiattack** (70 tier-1 entries are
-structured and unused, so every multiattacking monster hits once instead of two or three
-times) and **#5 condition gates** (62 attacks capture a condition the engine will not
-apply until creature-size comparison exists).
+**Picking up cold:** merge or review PR #14 first, then take a GitHub issue.
+`gh issue list`. The highest-value remaining is **#5 condition gates** — 62 attacks
+capture a condition the engine will not apply until creature-size comparison exists.
+Then **#6 saving-throw effects for monsters**, which now has the area geometry it needed
+(`AreaTargeting`, built for spells).
 
 ## The rule this project runs on
 
@@ -105,8 +105,13 @@ so *it* can tell what is left; they do not belong in a status report.
   from the Core Traits table would be right for six classes and quietly wrong for two.
 - **Spells need their own effect grammar, not the stat block one** — see bug 3 above.
   `SpellEffectParser`, not `EntryMechanicsParser`.
-- **Extra Attack is one action buying several attacks**, not several actions — modelling
-  it as extra actions would also wrongly allow a second Dodge or Dash.
+- **Extra Attack and Multiattack are the same rule to the engine**: the Attack action
+  buys several attacks rather than several actions. `CombatantStats.AttacksPerAction`
+  resolves both. Modelling them as extra actions would also wrongly allow a second Dodge
+  or Dash.
+- **A Multiattack constrains which attacks it is made of.** `AllowsInMultiattack` refuses
+  a swing the stat block does not license, and a Multiattack naming an attack the
+  creature does not have is **dropped entirely** rather than granting phantom swings.
 
 ## Extraction traps — read before parsing another SRD chapter
 

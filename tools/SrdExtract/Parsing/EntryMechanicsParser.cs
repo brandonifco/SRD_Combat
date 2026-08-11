@@ -255,25 +255,63 @@ internal static partial class EntryMechanicsParser
     /// </summary>
     private static MultiattackEffect? ParseMultiattack(string text)
     {
-        var named = NamedMultiattackPattern().Match(text);
-        if (named.Success && WordToNumber(named.Groups["count"].Value) is { } namedCount)
-        {
-            return new MultiattackEffect(namedCount, [named.Groups["attack"].Value.Trim()], AnyCombination: false);
-        }
-
+        // "... makes two attacks, using Scimitar and Pistol in any combination."
         var combination = CombinationMultiattackPattern().Match(text);
         if (combination.Success && WordToNumber(combination.Groups["count"].Value) is { } count)
         {
-            var names = combination.Groups["attacks"].Value
-                .Split([" and ", " or ", ","], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(candidate => candidate.Length > 0)
-                .ToArray();
-
-            return new MultiattackEffect(count, names, AnyCombination: true);
+            return new MultiattackEffect(count, SplitAttackNames(combination.Groups["attacks"].Value), true);
         }
 
-        return null;
+        // Every "<count> <Name> attack(s)" clause, summed.
+        //
+        // Matching only the first was wrong twice over: the Bearded Devil "makes one
+        // Beard attack and one Infernal Glaive attack", which is two attacks and not
+        // one, and the Bugbear Stalker "makes two Javelin or Morningstar attacks", whose
+        // name is a choice rather than a weapon called "Javelin or Morningstar".
+        // Anchored on the entry actually describing attacks being made, because the
+        // clause pattern below deliberately does not require "makes" — the Bearded Devil
+        // "makes one Beard attack and one Infernal Glaive attack", and the second clause
+        // has no verb of its own.
+        if (!text.Contains("makes", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var total = 0;
+        var names = new List<string>();
+
+        foreach (Match match in NamedMultiattackPattern().Matches(text))
+        {
+            if (WordToNumber(match.Groups["count"].Value) is not { } clauseCount)
+            {
+                continue;
+            }
+
+            total += clauseCount;
+
+            foreach (var name in SplitAttackNames(match.Groups["attack"].Value))
+            {
+                if (!names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                {
+                    names.Add(name);
+                }
+            }
+        }
+
+        if (total < 2 || names.Count == 0)
+        {
+            return null;
+        }
+
+        // Several named attacks means the creature picks between them, whether the text
+        // said "in any combination" or listed them as alternatives.
+        return new MultiattackEffect(total, names, names.Count > 1);
     }
+
+    private static IReadOnlyList<string> SplitAttackNames(string text) => text
+        .Split([" and ", " or ", ","], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(candidate => candidate.Length > 0)
+        .ToArray();
 
     /// <summary>
     /// Parses "Dexterity Saving Throw: DC 12, each creature in a 30-foot Cone.
@@ -400,7 +438,10 @@ internal static partial class EntryMechanicsParser
     [GeneratedRegex(@"Trigger:\s*(?<trigger>.+?)\s*Response:\s*(?<response>.+)$", RegexOptions.Singleline)]
     private static partial Regex ReactionPattern();
 
-    [GeneratedRegex(@"makes\s+(?<count>one|two|three|four|five|six|\d+)\s+(?<attack>[A-Z][\w' ]*?)\s+attacks?\b")]
+    // Deliberately does not require "makes" on each clause: the Bearded Devil "makes one
+    // Beard attack and one Infernal Glaive attack", and the second clause has no verb of
+    // its own. The caller anchors on the entry containing "makes" at all.
+    [GeneratedRegex(@"\b(?<count>one|two|three|four|five|six|\d+)\s+(?<attack>[A-Z][\w' ]*?)\s+attacks?\b")]
     private static partial Regex NamedMultiattackPattern();
 
     [GeneratedRegex(@"makes\s+(?<count>one|two|three|four|five|six|\d+)\s+attacks?,\s*using\s+(?<attacks>[^.]+?)\s+in any combination")]
