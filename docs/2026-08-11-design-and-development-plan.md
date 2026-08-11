@@ -239,9 +239,31 @@ initiative bonus and then by combatant id, rather than by a reroll or player cho
 The order has to be reproducible from the seed alone or the frozen transcripts mean
 nothing.
 
-**Phase 2 — Characters.** Species/class/background resolution, levels 1–5, spell
-slots, prepared spells, equipment and attunement. Four pre-made characters authored.
-*Ends when:* a real party resolves to correct sheets at every level 1–5.
+**Phase 2 — Characters. In progress, sliced into small PRs.** Species/class/background
+resolution, levels 1–5, spell slots, prepared spells, equipment. Four pre-made
+characters authored. *Ends when:* a real party resolves to correct sheets at every
+level 1–5.
+
+- **Slice 1 — Character Origins. Done.** All 9 species and 4 backgrounds extracted and
+  validated. Both are found structurally — a species is a heading followed by a
+  `Creature Type:` line, a background one followed by `Ability Scores:` — rather than
+  matched against a list of expected names, so content the SRD adds is picked up rather
+  than silently missed. Species traits go through the same classification as stat block
+  entries, and **0 of 33 are fully modelled**: every one is real mechanics (Darkvision,
+  Poison resistance, Advantage grants) that the effect model has no vocabulary for yet.
+  Counted, not hidden.
+- **Slice 2 — Classes.** Core traits tables and level tables for the six launch classes.
+- **Slice 3 — Resolution.** Draft → sheet: AC, hit points, proficiency, saves, skills,
+  attacks from equipped weapons, at every level 1–5.
+- **Slice 4 — Pregens**, and characters as combatants in a real fight.
+
+**A parsing trap this phase found**, recorded because it will recur in every remaining
+chapter: the player-facing chapters are set in **Cambria** while the bestiary uses
+**Optima**. Matching a whole font name works within one chapter and fails *silently*
+across chapters. The first origins run produced nine species with zero traits between
+them, and nothing would have reported it had a validator not required every species to
+have at least one trait. Match the style suffix, and keep writing validators that
+assert the shape of what should have been found.
 
 **Phase 3 — First playable fight.** Console client: initiative display, a grid you
 can read, move/attack/cast/end-turn, a scrolling combat log that narrates every roll.

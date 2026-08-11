@@ -41,6 +41,42 @@ internal static partial class EntryMechanicsParser
         "Illumination",
     };
 
+    /// <summary>
+    /// Classifies a species trait or other named rules text, applying the same rule as
+    /// stat block entries: nothing passes as prose.
+    /// </summary>
+    public static TraitEntry ClassifyTrait(string name, string text)
+    {
+        var usage = ParseUsageLimit(name);
+        var bareName = StripUsage(name);
+        var conditions = ParseAppliedConditions(text);
+
+        if (ParseSave(text, conditions) is { } save)
+        {
+            return new TraitEntry(
+                bareName,
+                text,
+                EntryMechanics.SavingThrow,
+                save,
+                usage,
+                conditions,
+                LeftoverMechanicalSentences(text, EntryMechanics.SavingThrow));
+        }
+
+        if (KnownInertEntries.Contains(bareName))
+        {
+            return new TraitEntry(bareName, text, EntryMechanics.Narrative, Usage: usage);
+        }
+
+        return new TraitEntry(
+            bareName,
+            text,
+            EntryMechanics.Unmodelled,
+            Usage: usage,
+            AppliedConditions: conditions,
+            UnmodelledClauses: MechanicalSentences(text));
+    }
+
     /// <summary>Examines one entry and returns it classified, with whatever could be extracted.</summary>
     public static MonsterEntry Classify(string name, MonsterEntrySection section, string text)
     {

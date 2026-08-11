@@ -57,9 +57,20 @@ gates ("if the target is a Large or smaller creature") are not modelled and appl
 them ungated would repeat bug 1 in a new place. Don't wire them up until size comparison
 exists.
 
-**Still not playable by a person** — there is no client and no character model. Phase 2
-(species/class/background resolution, levels 1–5, spell slots, equipment, four pregens)
-is next, then Phase 3's console client.
+**Phase 2 is in progress, sliced into small PRs.** First slice — Character Origins —
+adds all **9 species and 4 backgrounds** to `data/srd/`, structurally detected rather
+than matched against a list of expected names. Still to come: class core traits and
+level tables; character resolution (levels 1–5); pregens and wiring characters into
+combat.
+
+**Still not playable by a person** — there is no client and no character model yet.
+
+**A trap the origins extraction hit, worth knowing before parsing any other chapter:**
+the player-facing chapters set body text and trait names in **Cambria**, while the
+bestiary uses **Optima**. Matching a full font name works within one chapter and fails
+silently across chapters — the first run produced nine species with zero traits between
+them, caught only because a validator required every species to have at least one.
+Match the **style suffix** (`BoldItalic`) rather than the whole font name.
 
 Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
 Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
@@ -203,7 +214,13 @@ dotnet test SRDCombat.sln -c Debug
 ## Standing conventions
 
 - **`git add` specific paths, never `-A` or `.`**
-- One narrowly-scoped branch per concern; branch → PR → wait for CI → merge.
+- **One narrowly-scoped branch per concern; branch → push → open a PR → wait for CI →
+  then stop.** The user reviews the diff and merges. Do not merge your own PR, and do
+  not push to `main`.
+  **This was not followed for the first six commits** — Phases 0 and 1 went straight to
+  `main` unreviewed, contradicting this very section. Confirmed with the user 2026-08-11
+  that branch-and-PR is the workflow from Phase 2 onward. Large changes especially need
+  a diff someone can read before it lands.
 - Gate before merge: focused tests → full suite → Debug **and** Release build, both
   0 warnings → `git diff --check` clean.
 - **Content changes land in both layers in one commit.** Adding a field to a `Core`

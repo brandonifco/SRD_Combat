@@ -7,7 +7,9 @@ namespace SRDCombat.Content;
 public sealed record SrdContent(
     IReadOnlyList<MonsterDefinition> Monsters,
     IReadOnlyList<WeaponDefinition> Weapons,
-    IReadOnlyList<ArmorDefinition> Armor)
+    IReadOnlyList<ArmorDefinition> Armor,
+    IReadOnlyList<SpeciesDefinition> Species,
+    IReadOnlyList<BackgroundDefinition> Backgrounds)
 {
     public IReadOnlyDictionary<string, MonsterDefinition> MonstersById { get; } =
         Monsters.ToDictionary(monster => monster.Id, StringComparer.Ordinal);
@@ -17,6 +19,12 @@ public sealed record SrdContent(
 
     public IReadOnlyDictionary<string, ArmorDefinition> ArmorById { get; } =
         Armor.ToDictionary(armor => armor.Id, StringComparer.Ordinal);
+
+    public IReadOnlyDictionary<string, SpeciesDefinition> SpeciesById { get; } =
+        Species.ToDictionary(species => species.Id, StringComparer.Ordinal);
+
+    public IReadOnlyDictionary<string, BackgroundDefinition> BackgroundsById { get; } =
+        Backgrounds.ToDictionary(background => background.Id, StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -30,6 +38,10 @@ public static class ContentLoader
     public const string MonstersFileName = "monsters.json";
     public const string WeaponsFileName = "weapons.json";
     public const string ArmorFileName = "armor.json";
+
+    public const string SpeciesFileName = "species.json";
+
+    public const string BackgroundsFileName = "backgrounds.json";
 
     /// <summary>Loads and validates every content file under <paramref name="directory"/>.</summary>
     /// <exception cref="DirectoryNotFoundException">The directory does not exist.</exception>
@@ -46,12 +58,16 @@ public static class ContentLoader
         var monsters = ReadPack<MonsterDefinition>(directory, MonstersFileName, "monsters");
         var weapons = ReadPack<WeaponDefinition>(directory, WeaponsFileName, "weapons");
         var armor = ReadPack<ArmorDefinition>(directory, ArmorFileName, "armor");
+        var species = ReadPack<SpeciesDefinition>(directory, SpeciesFileName, "species");
+        var backgrounds = ReadPack<BackgroundDefinition>(directory, BackgroundsFileName, "backgrounds");
 
         MonsterValidator.Validate(monsters).ThrowIfInvalid(MonstersFileName);
         EquipmentValidator.ValidateWeapons(weapons).ThrowIfInvalid(WeaponsFileName);
         EquipmentValidator.ValidateArmor(armor).ThrowIfInvalid(ArmorFileName);
+        OriginValidator.ValidateSpecies(species).ThrowIfInvalid(SpeciesFileName);
+        OriginValidator.ValidateBackgrounds(backgrounds).ThrowIfInvalid(BackgroundsFileName);
 
-        return new SrdContent(monsters, weapons, armor);
+        return new SrdContent(monsters, weapons, armor, species, backgrounds);
     }
 
     /// <summary>
@@ -71,6 +87,10 @@ public static class ContentLoader
             .ValidateWeapons(ReadPack<WeaponDefinition>(directory, WeaponsFileName, "weapons")).Issues);
         issues.AddRange(EquipmentValidator
             .ValidateArmor(ReadPack<ArmorDefinition>(directory, ArmorFileName, "armor")).Issues);
+        issues.AddRange(OriginValidator
+            .ValidateSpecies(ReadPack<SpeciesDefinition>(directory, SpeciesFileName, "species")).Issues);
+        issues.AddRange(OriginValidator
+            .ValidateBackgrounds(ReadPack<BackgroundDefinition>(directory, BackgroundsFileName, "backgrounds")).Issues);
 
         return new ValidationResult(issues);
     }
