@@ -47,8 +47,23 @@ var originLines = PageTextReader.Read(
     SrdPages.OriginsLastPage,
     PageLayout.TwoColumn);
 
+var classColumnLines = PageTextReader.Read(
+    options.PdfPath,
+    SrdPages.ClassesFirstPage,
+    SrdPages.ClassesLastPage,
+    PageLayout.TwoColumn);
+
+// A class page mixes both layouts: the Core Traits table and the feature prose sit in
+// two columns, while the Features table spans the full width at the bottom.
+var classTableLines = PageTextReader.Read(
+    options.PdfPath,
+    SrdPages.ClassesFirstPage,
+    SrdPages.ClassesLastPage,
+    PageLayout.FullWidth);
+
 var monsterResult = MonsterParser.Parse(monsterLines);
 var originResult = OriginParser.Parse(originLines);
+var classResult = ClassParser.Parse(classColumnLines, classTableLines);
 var equipmentResult = EquipmentParser.Parse(weaponLines, armorLines);
 
 var (monsters, correctionDiagnostics) = KnownCorrections.Apply(monsterResult.Monsters);
@@ -56,7 +71,8 @@ var (monsters, correctionDiagnostics) = KnownCorrections.Apply(monsterResult.Mon
 Console.WriteLine();
 Console.WriteLine($"Parsed {monsters.Count} monsters, " +
                   $"{equipmentResult.Weapons.Count} weapons, {equipmentResult.Armor.Count} armor, " +
-                  $"{originResult.Species.Count} species, {originResult.Backgrounds.Count} backgrounds.");
+                  $"{originResult.Species.Count} species, {originResult.Backgrounds.Count} backgrounds, " +
+                  $"{classResult.Classes.Count} classes.");
 
 Report(
     "Parse diagnostics",
@@ -64,10 +80,12 @@ Report(
         .Concat(equipmentResult.Diagnostics)
         .Concat(correctionDiagnostics)
         .Concat(originResult.Diagnostics)
+        .Concat(classResult.Diagnostics)
         .Select(d => d.ToString()));
 
 ReportMechanicsCoverage(monsters);
 ReportTraitCoverage(originResult.Species);
+ReportClassFeatureCoverage(classResult.Classes);
 
 var validation = new List<ValidationIssue>();
 validation.AddRange(MonsterValidator.Validate(monsters).Issues);
@@ -75,6 +93,7 @@ validation.AddRange(EquipmentValidator.ValidateWeapons(equipmentResult.Weapons).
 validation.AddRange(EquipmentValidator.ValidateArmor(equipmentResult.Armor).Issues);
 validation.AddRange(OriginValidator.ValidateSpecies(originResult.Species).Issues);
 validation.AddRange(OriginValidator.ValidateBackgrounds(originResult.Backgrounds).Issues);
+validation.AddRange(ClassValidator.Validate(classResult.Classes).Issues);
 
 Report("Validation errors", validation
     .Where(issue => issue.Severity == ValidationSeverity.Error)
@@ -102,6 +121,7 @@ ContentLoader.WritePack(
     ContentLoader.BackgroundsFileName,
     "backgrounds",
     originResult.Backgrounds);
+ContentLoader.WritePack(options.OutputDirectory, ContentLoader.ClassesFileName, "classes", classResult.Classes);
 
 Console.WriteLine();
 Console.WriteLine($"Wrote content to {Path.GetFullPath(options.OutputDirectory)}");
@@ -182,6 +202,24 @@ static void ReportTraitCoverage(IReadOnlyList<SpeciesDefinition> species)
     }
 }
 
+/// <summary>Class features are mechanics too, and are counted on the same terms.</summary>
+static void ReportClassFeatureCoverage(IReadOnlyList<ClassDefinition> classes)
+{
+    var features = classes.SelectMany(definition => definition.Features).ToList();
+
+    if (features.Count == 0)
+    {
+        return;
+    }
+
+    var modelled = features.Count(feature => feature.IsFullyModelled);
+
+    Console.WriteLine();
+    Console.WriteLine(
+        $"Class feature coverage: {modelled}/{features.Count} fully modelled " +
+        $"({modelled * 100.0 / features.Count:F0}%)");
+}
+
 static void Report(string heading, IEnumerable<string> messages)
 {
     var lines = messages.ToList();
@@ -230,6 +268,11 @@ namespace SrdExtract
 
         /// <summary>The last species page, before Feats begins on 87.</summary>
         public const int OriginsLastPage = 86;
+
+        /// <summary>The Classes chapter, Barbarian through Wizard.</summary>
+        public const int ClassesFirstPage = 28;
+
+        public const int ClassesLastPage = 82;
     }
 
     internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force)

@@ -252,7 +252,38 @@ level 1–5.
   entries, and **0 of 33 are fully modelled**: every one is real mechanics (Darkvision,
   Poison resistance, Advantage grants) that the effect model has no vocabulary for yet.
   Counted, not hidden.
-- **Slice 2 — Classes.** Core traits tables and level tables for the six launch classes.
+- **Slice 2 — Classes. Done.** All **12** SRD classes extracted: Core Traits, the full
+  1–20 level table, and every class feature's prose. The extractor deliberately reads
+  all twelve rather than only the six the game launches with — it has no reason to know
+  which the game uses, and filtering there would mean editing the extractor whenever
+  that decision changes. **0 of 232 class features are fully modelled**, the same
+  honest count as species traits.
+
+  The check that makes this trustworthy is the **proficiency bonus**: the Character
+  Advancement table fixes it by level independently of any class, so a Features table
+  that disagrees was misread. It plays the role hit-points-versus-hit-dice plays for
+  monsters. New `AdvancementRules` carries that table plus the XP thresholds, which the
+  gauntlet needs anyway.
+
+  Four parsing lessons, all found by checking output against the book rather than by the
+  parser complaining:
+
+  1. **A class page mixes two layouts.** Core Traits and feature prose are in the two
+     text columns; the Features table spans the full width at the bottom. Each page is
+     read twice, because either mode alone gets one of them wrong.
+  2. **`Weapon Proficiencies` is wide enough to overflow its column**, so its value
+     begins after an ordinary word gap rather than a wide one. A gap heuristic missed
+     the split and swallowed the whole row into the skill list above it. Matching
+     against the closed set of known keys has no such failure mode.
+  3. **Header columns are told apart by gap size, and the margin is narrow.** Words
+     within a column sit 2–5pt apart, separate columns 12pt or more. A 20pt threshold
+     merged the Cleric's `Level` and `Bonus` (13pt); the Rogue's `Sneak Attack` is
+     printed side by side with no stacked row, so "only Class Features merges" was too
+     narrow too.
+  4. **The Warlock is not an ordinary caster.** Its table has `Spell Slots` and
+     `Slot Level` columns rather than nine per-level ones. It correctly reports no spell
+     slots and keeps Pact Magic's real columns, rather than being forced into a shape
+     the SRD does not use.
 - **Slice 3 — Resolution.** Draft → sheet: AC, hit points, proficiency, saves, skills,
   attacks from equipped weapons, at every level 1–5.
 - **Slice 4 — Pregens**, and characters as combatants in a real fight.
