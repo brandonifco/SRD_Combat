@@ -342,6 +342,22 @@ level 1–5.
   Line is length-along by width-across — so the choice is auditable rather than implicit.
   Cylinder needs a height this engine has no concept of and is refused.
 
+- **Multiattack executed (issue #7). Done.** 63 tier-1 monsters now make the attacks
+  their stat block says they do, instead of one. Modelled as the Attack action buying
+  several swings, exactly as Extra Attack already was, so the two share one code path.
+  A Multiattack naming an attack the creature has no way to make is dropped rather than
+  granting phantom swings.
+
+  Fixing this also fixed the parser twice over: "makes one Beard attack **and one
+  Infernal Glaive attack**" had been read as a single attack because the second clause
+  has no verb of its own, and "two **Javelin or Morningstar** attacks" had kept the
+  choice inside one weapon name. Usable tier-1 Multiattacks went 56 → 63.
+
+  **Coverage fell 342 → 336 while correctness rose**, because six entries previously
+  recorded as one-attack Multiattacks — which is not a Multiattack — are now honestly
+  reported as not understood. Worth remembering that the metric can move the wrong way
+  for the right reason.
+
 - **Slice 6 — Pregens**, and the four pre-made characters the game ships with.
 
 **Everything still outstanding is tracked as GitHub issues** rather than in this

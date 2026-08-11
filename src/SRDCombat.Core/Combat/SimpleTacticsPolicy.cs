@@ -53,6 +53,7 @@ public static class SimpleTacticsPolicy
         // Attack from where we stand if anything reaches.
         if (TryAttack(encounter, actor, target))
         {
+            SpendRemainingAttacks(encounter, actor);
             encounter.EndTurn();
             return;
         }
@@ -69,9 +70,9 @@ public static class SimpleTacticsPolicy
 
         var closest = NearestEnemy(encounter, actor);
 
-        if (closest is not null)
+        if (closest is not null && TryAttack(encounter, actor, closest))
         {
-            TryAttack(encounter, actor, closest);
+            SpendRemainingAttacks(encounter, actor);
         }
 
         encounter.EndTurn();
@@ -93,6 +94,23 @@ public static class SimpleTacticsPolicy
         }
     }
 
+    /// <summary>
+    /// Uses the rest of the swings an Attack action bought, from Extra Attack or a
+    /// Multiattack. Retargets between swings, so a creature that kills its target does
+    /// not waste the remainder on a corpse.
+    /// </summary>
+    private static void SpendRemainingAttacks(Encounter encounter, Combatant actor)
+    {
+        while (!encounter.IsComplete
+               && actor.CanAct
+               && actor.Features.AttacksRemainingThisAction > 0
+               && NearestEnemy(encounter, actor) is { } next
+               && TryAttack(encounter, actor, next))
+        {
+            // TryAttack consumes one swing per call.
+        }
+    }
+
     private static Combatant? NearestEnemy(Encounter encounter, Combatant actor) =>
         encounter.EnemiesOf(actor)
             .OrderBy(enemy => actor.Position.DistanceFeetTo(enemy.Position))
@@ -103,7 +121,7 @@ public static class SimpleTacticsPolicy
     /// <summary>Attacks with the hardest-hitting attack that can reach the target.</summary>
     private static bool TryAttack(Encounter encounter, Combatant actor, Combatant target)
     {
-        if (!actor.Turn.HasAction)
+        if (!actor.Turn.HasAction && actor.Features.AttacksRemainingThisAction <= 0)
         {
             return false;
         }
@@ -112,6 +130,7 @@ public static class SimpleTacticsPolicy
 
         var attack = actor.Stats.Attacks
             .Where(candidate => candidate.CanReach(distance))
+            .Where(candidate => actor.Stats.AllowsInMultiattack(candidate.Name))
             .OrderByDescending(candidate => candidate.Damage.Sum(damage => damage.Amount.Average))
             .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
             .FirstOrDefault();

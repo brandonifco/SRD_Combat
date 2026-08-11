@@ -140,10 +140,10 @@ public sealed partial class Encounter
             return new ActionRefusal("combatant.cannot_act", $"{attacker.Name} cannot act.");
         }
 
-        // Extra Attack is modelled as one action buying several attacks, rather than as
-        // several actions: the SRD grants "two attacks instead of one" on the Attack
-        // action, and treating it as extra actions would also wrongly allow a second
-        // Dodge or Dash.
+        // Extra Attack and Multiattack are both modelled as one action buying several
+        // attacks, rather than as several actions: the SRD grants "two attacks instead of
+        // one" on the Attack action, and treating them as extra actions would also
+        // wrongly allow a second Dodge or Dash.
         var attacksLeft = attacker.Features.AttacksRemainingThisAction;
 
         if (attacksLeft <= 0 && !attacker.Turn.HasAction)
@@ -172,6 +172,15 @@ public sealed partial class Encounter
                 $"{target.Name} is {distance} ft. away, beyond {attack.Name}'s reach.");
         }
 
+        // A Multiattack names which attacks it is made of; anything else is a separate
+        // action the creature does not have left.
+        if (!attacker.Stats.AllowsInMultiattack(attack.Name))
+        {
+            return new ActionRefusal(
+                "attack.not_in_multiattack",
+                $"{attack.Name} is not part of {attacker.Name}'s Multiattack.");
+        }
+
         if (attacksLeft > 0)
         {
             attacker.Features.AttacksRemainingThisAction--;
@@ -179,8 +188,7 @@ public sealed partial class Encounter
         else
         {
             attacker.Turn.SpendAction();
-            attacker.Features.AttacksRemainingThisAction =
-                Math.Max(0, (attacker.Stats.Character?.AttacksPerAction ?? 1) - 1);
+            attacker.Features.AttacksRemainingThisAction = Math.Max(0, attacker.Stats.AttacksPerAction - 1);
         }
 
         ResolveAttack(attacker, attack, target, isOpportunityAttack: false);

@@ -98,6 +98,47 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void RealMultiattacksGrantRealExtraSwings()
+    {
+        // "The bandit makes two attacks, using Scimitar and Pistol in any combination."
+        var captain = CombatantStats.FromMonster(Content.MonstersById["monster.bandit-captain"]);
+
+        Assert.Equal(2, captain.AttacksPerAction);
+        Assert.True(captain.AllowsInMultiattack("Scimitar"));
+        Assert.True(captain.AllowsInMultiattack("Pistol"));
+
+        // "The armor makes two Slam attacks" names one attack to repeat.
+        var armor = CombatantStats.FromMonster(Content.MonstersById["monster.animated-armor"]);
+        Assert.Equal(2, armor.AttacksPerAction);
+        Assert.Equal(["Slam"], armor.Multiattack?.AttackNames);
+    }
+
+    [Fact]
+    public void AMultiattackSpanningTwoClausesCountsBoth()
+    {
+        // "The devil makes one Beard attack and one Infernal Glaive attack." Reading only
+        // the first clause gave one attack instead of two, and dropped the Glaive.
+        var devil = CombatantStats.FromMonster(Content.MonstersById["monster.bearded-devil"]);
+
+        Assert.Equal(2, devil.AttacksPerAction);
+        Assert.True(devil.AllowsInMultiattack("Beard"));
+        Assert.True(devil.AllowsInMultiattack("Infernal Glaive"));
+    }
+
+    [Fact]
+    public void MostTierOneMultiattacksResolveToUsableSwings()
+    {
+        // A floor, not a target. A Multiattack naming an attack the creature has no way
+        // to make is deliberately dropped rather than granting phantom swings.
+        var withMultiattack = Content.Monsters
+            .Where(monster => monster.ChallengeRating <= 4m)
+            .Select(CombatantStats.FromMonster)
+            .Count(stats => stats.Multiattack is not null);
+
+        Assert.True(withMultiattack >= 55, $"Only {withMultiattack} tier-one Multiattacks are usable.");
+    }
+
+    [Fact]
     public void AMonsterWithNoParsedAttacksStillTakesItsTurn()
     {
         // The Shrieker Fungus genuinely has no attack in the SRD — it shrieks, and that

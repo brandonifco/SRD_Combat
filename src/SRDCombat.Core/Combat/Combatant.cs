@@ -122,6 +122,38 @@ public sealed record CombatantStats(
     /// <summary>Class features and their numbers. Null for a monster.</summary>
     public CombatantFeatures? Character { get; init; }
 
+    /// <summary>
+    /// The creature's Multiattack, when its stat block has one. Null for a character —
+    /// a character's several attacks come from Extra Attack instead.
+    /// </summary>
+    public MultiattackEffect? Multiattack { get; init; }
+
+    /// <summary>
+    /// How many attacks one Attack action buys.
+    /// </summary>
+    /// <remarks>
+    /// Extra Attack and Multiattack are the same shape of rule from the engine's point
+    /// of view — the action buys several attacks rather than several actions — so they
+    /// resolve to one number here rather than being handled twice.
+    /// </remarks>
+    public int AttacksPerAction =>
+        Character?.AttacksPerAction
+        ?? Multiattack?.AttackCount
+        ?? 1;
+
+    /// <summary>
+    /// Whether an attack may be used for the nth swing of a Multiattack.
+    /// </summary>
+    /// <remarks>
+    /// A stat block either names one attack to repeat ("makes two Slam attacks") or
+    /// offers a choice ("makes two attacks, using Scimitar and Pistol in any
+    /// combination"). Anything not named is not part of the Multiattack, and a creature
+    /// with no Multiattack is unconstrained.
+    /// </remarks>
+    public bool AllowsInMultiattack(string attackName) =>
+        Multiattack is not { AttackNames.Count: > 0 } multiattack
+        || multiattack.AttackNames.Contains(attackName, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>True when this combatant has the given implemented class feature.</summary>
     public bool Has(ClassFeature feature) => Character?.Has(feature) == true;
 
@@ -219,7 +251,37 @@ public sealed record CombatantStats(
             monster.DamageResponses,
             monster.ConditionImmunities,
             attacks,
-            DiesAtZeroHitPoints: true);
+            DiesAtZeroHitPoints: true)
+        {
+            // Only a Multiattack whose named attacks the creature actually has is worth
+            // carrying: several stat blocks name an attack granted by a trait or a
+            // spell, and letting those through would hand out swings the creature has no
+            // way to make.
+            Multiattack = UsableMultiattack(monster, attacks),
+        };
+    }
+
+    private static MultiattackEffect? UsableMultiattack(
+        MonsterDefinition monster,
+        IReadOnlyList<CombatAttack> attacks)
+    {
+        var multiattack = monster.Entries
+            .Select(entry => entry.Multiattack)
+            .FirstOrDefault(effect => effect is not null);
+
+        if (multiattack is null || multiattack.AttackCount < 2)
+        {
+            return null;
+        }
+
+        var usable = multiattack.AttackNames
+            .Where(name => attacks.Any(attack =>
+                string.Equals(attack.Name, name, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        // A named-attack Multiattack whose attack does not exist is dropped entirely; a
+        // free-combination one keeps whichever of its options are real.
+        return usable.Length == 0 ? null : multiattack with { AttackNames = usable };
     }
 }
 
