@@ -493,8 +493,63 @@ Poisoned that never wears off is not a smaller error than one that never lands.
    needs, and coverage is uneven — a creature whose entries are largely unmodelled is a
    poor choice for an authored encounter regardless of its CR. Curating the pool the
    encounter builder may pick from, weighted by coverage, is a Phase 4 decision.
-3. **What closes the remaining 47%?** Roughly in value order: executing saving-throw
-   effects (the area geometry it needed now exists), condition durations, executing
-   Grappled and Restrained, recharge tracking, and the long tail of passive traits (Pack
-   Tactics, Magic Resistance, Bloodied Frenzy). Each is a discrete piece of work against
-   a number that now moves visibly — in both directions, as condition gates showed.
+3. **What closes the remaining 47%?** Answered — see *The order the remaining engine work
+   goes in*, below. Kept in this list because it is the question a reader arrives with.
+
+## The order the remaining engine work goes in
+
+**Ordered by what each piece rests on, not by how much it is worth on its own.** An
+earlier draft of this section listed saving-throw effects first, because 62 tier-1
+entries is the largest single block of dead mechanics in the bestiary. That was the wrong
+answer: it is the item with the most unbuilt prerequisites, and starting there would have
+meant building the condition model and the monster action economy incidentally, inside a
+branch about something else, and then reopening both.
+
+**1. Condition durations (#15), designed wider than the issue asks.** The condition
+record gets **an expiry and the combatant who imposed it, in the same pass**. Expiry is
+all #15 needs on its own; the source is what Grappled needs for "the grapple ends with
+its grappler". They are the same field on the same type, and splitting them reopens
+`Combatant`, the condition collection and every call site twice.
+
+**2. Grappled and Restrained (#16).** Immediately after, while that model is still soft.
+It is the smallest real consumer of it and so the best test that it is shaped right:
+Restrained exercises the expiry, the grapple exercises the source, and the Escape action
+exercises removal by something other than a timer. Thirteen already-modelled riders start
+landing the moment it is done.
+
+*Conditions are the most-reopened type in the whole queue — saving-throw effects impose
+them on a failure, passive traits reference them, Cunning Strike applies them. Settling
+them once, first, is the whole argument for this ordering.*
+
+**3. A way for a monster to use a stat-block entry, together with recharge tracking
+(#8).** This is the prerequisite no issue had named. `UsageLimit` is never read in `Core`;
+`MonsterEntry.Save` is never read in `Core`; every `Encounter` action is either hardcoded
+(`Dodge`, `Dash`) or gated on `Stats.Character` (`CastSpell`, `Rage`). **A monster has no
+way to use an entry at all**, and `SimpleTacticsPolicy` has no concept of choosing between
+attacking and doing anything else. "Can I use this?" and "should I use it now?" are the
+same branch at the same decision point; building them apart writes it twice.
+
+**4. Saving-throw effects (#6).** Only here does it land with nothing left to invent.
+`AreaTargeting` already exists, durations arrive with step 1, recharge gates the breath
+weapons, and step 3 is what invokes it. Sixty-two tier-1 entries, thirty-three with an
+area, thirty-one imposing a condition on a failure.
+
+**5. Passive monster traits (#9).** Held until after step 4 because several of them
+reference machinery that has to exist first — Magic Resistance is Advantage on saving
+throws and is worth nothing while no monster rolls one. Best repetition in the queue once
+unblocked: Pack Tactics appears 18 times in the tier-1 band, Spider Climb 10, Magic
+Resistance 7, Swarm 7, Flyby 7.
+
+**6. Class features (#10).** Same argument, weaker: Danger Sense wants saving throws
+executed and Cunning Strike imposes conditions. The least architectural item on the list
+and the only one on the character rather than the monster side, which makes it the safest
+work to interleave when a lower-stakes branch is wanted.
+
+**7. Curating the monster pool (#11) — last, deliberately.** Weighting the pool by how
+completely a creature's mechanics are implemented means nothing until coverage stops
+moving, and every step above moves it. Doing it earlier guarantees doing it twice.
+
+**Steps 1, 3 and 4 all touch the turn loop**, so the frozen transcript may churn. It uses
+hand-authored combatants carrying no riders and may well survive untouched — but if it
+diffs, that diff is a change to how the game plays and gets read before the fixture is
+regenerated.
