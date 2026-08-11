@@ -264,23 +264,40 @@ public class EntryMechanicsTests
     [Fact]
     public void ACompleteRiderTheEngineCannotExecuteIsStillReportedAsIncomplete()
     {
+        // "... the target has the Charmed condition until the start of the sprite's next
+        // turn." Every word of that is modelled — the duration included — and Charmed is
+        // still not a condition the engine executes, so imposing it would put a label on
+        // the target that changes nothing. That is the quietest possible way to be wrong,
+        // so the entry reports itself incomplete instead.
+        var bow = Content.MonstersById["monster.sprite"].Entries.Single(entry => entry.Name == "Enchanting Bow");
+
+        var charmed = Assert.Single(bow.AppliedConditions);
+
+        Assert.Equal(EntryMechanics.Attack, bow.Mechanics);
+        Assert.True(charmed.IsFullyModelled);
+        Assert.NotNull(charmed.Duration);
+        Assert.False(ConditionRules.IsExecutable(ConditionType.Charmed));
+        Assert.False(ConditionRules.CanBeImposed(charmed));
+
+        Assert.False(bow.IsFullyModelled);
+        Assert.Contains(bow.UnmodelledClauses, clause => clause.Contains("Charmed", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AGrappleRiderCarriesItsEscapeDifficultyClass()
+    {
         // "If the target is a Large or smaller creature, it has the Grappled condition
-        // (escape DC 13)." Every word of that is now modelled — but Grappled needs a
-        // speed of 0 and an Escape action against the printed DC, and the engine has
-        // neither. Imposing it would put a condition on the target that changes nothing,
-        // which is the quietest possible way to be wrong, so the entry reports itself
-        // incomplete instead.
+        // (escape DC 13)." The DC is part of the condition rather than of the creature,
+        // and without it the grapple would be inescapable.
         var bite = Content.MonstersById["monster.ankheg"].Entries.Single(entry => entry.Name == "Bite");
 
         var grappled = Assert.Single(bite.AppliedConditions);
 
-        Assert.Equal(EntryMechanics.Attack, bite.Mechanics);
+        Assert.Equal(ConditionType.Grappled, grappled.Condition);
+        Assert.Equal(13, grappled.EscapeDifficultyClass);
         Assert.Equal(CreatureSize.Large, grappled.MaximumTargetSize);
-        Assert.True(grappled.IsFullyModelled);
-        Assert.False(ConditionRules.CanBeImposed(grappled));
-
-        Assert.False(bite.IsFullyModelled);
-        Assert.Contains(bite.UnmodelledClauses, clause => clause.Contains("Grappled", StringComparison.Ordinal));
+        Assert.True(ConditionRules.CanBeImposed(grappled));
+        Assert.True(bite.IsFullyModelled);
     }
 
     [Fact]

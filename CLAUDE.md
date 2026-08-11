@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #20 (docs). **PR #23 (condition durations) is open and unmerged.** |
-| Tests | **354 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #23 (condition durations). **PR #25 (grapple) is open and unmerged.** |
+| Tests | **369 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **9 open GitHub issues.** Not in this file, not in chat. |
@@ -26,9 +26,10 @@ action economy, attacks, damage, death saves and opportunity attacks. Characters
 from real content — species, class, background, levels 1–5 — and fight alongside
 monsters, with nine implemented class features and working spellcasting (attack spells,
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
-Prone and a Huge one not, and a Giant Centipede's poison lasts until the start of the
-centipede's next turn and no longer — both from the stat block's own words. A frozen
-transcript pins one whole eight-round fight byte-for-byte.
+Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
+centipede's next turn and no longer, and a Giant Frog's grapple holds a bandit until it
+rolls Acrobatics against the printed escape DC — all from the stat blocks' own words. A
+frozen transcript pins one whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
 No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
@@ -49,10 +50,10 @@ governing plan doc carries the same list with the reasoning; this is the short f
    became modellable, only one was on a condition the engine executes, so **the clock
    would have shipped with nothing running on it**. Eleven were Poisoned, and Poisoned is
    five lines in `AttackRules`.
-2. **#16 Grappled and Restrained.** Straight after, while that model is fresh. It is the
-   smallest real consumer of it and therefore the best proof it is shaped right:
-   Restrained exercises the expiry, the grapple exercises the source, and Escape
-   exercises removal by something that is not a timer.
+2. **#16 Grappled and Restrained — done.** Nine riders started landing. Reading the
+   printed rules corrected two things memory had wrong: Grappled is Disadvantage only
+   **against targets other than the grappler**, and there is **no generic Escape action**
+   — escaping is a Strength (Athletics) or Dexterity (Acrobatics) check against a flat DC.
 3. **#19 a way for a monster to use a stat-block entry, together with #8 recharge.** The
    prerequisite nothing had filed. `UsageLimit` is never read in `Core`,
    `MonsterEntry.Save` is never read in `Core`, and every `Encounter` action is either
@@ -120,15 +121,16 @@ duration, and anything else printed with the condition (a charge requirement, a 
 chained second condition, a duration of another shape) goes to
 `AppliedCondition.UnmodelledRequirement` and makes the rider unusable rather than
 approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a curated
-allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Poisoned, Incapacitated
-and Unconscious. **Add a condition there only alongside the code that gives it effects.**
-Thirty-three attacks satisfy both checks: 20 Prone, 12 Poisoned, 1 Incapacitated.
+allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Poisoned, Grappled,
+Restrained, Incapacitated and Unconscious. **Add a condition there only alongside the code
+that gives it effects.** Forty-two attacks satisfy both checks: 20 Prone, 12 Poisoned,
+9 Grappled, 1 Incapacitated.
 
 **The two questions are independent, and the Phase Spider proves it** — its bite poisons
 "for 1 hour", Poisoned *is* executable, and the rider still cannot be imposed, because an
-hour is not a turn boundary. Grappled is the mirror image: completely modelled, and
-refused because a Grappled creature would walk away at full speed while its sheet said
-otherwise.
+hour is not a turn boundary. The Sprite is the mirror image: its Charmed rider is
+completely modelled, duration and all, and refused because the engine does not execute
+Charmed.
 
 **Durations hang off a turn counter, not a countdown.** An `ActiveCondition` carries who
 imposed it and a `ConditionExpiry` — whose turns are counted, which boundary, and at which
@@ -142,6 +144,18 @@ measured against a creature that never acts again still has to end.
 **Read the possessive.** "until the end of *its* next turn" is the creature carrying the
 condition; "until the start of *the devil's* next turn" is the creature that imposed it.
 Both are common, and swapping them changes the duration by most of a round.
+
+**Two grapple rules that memory gets wrong — both were caught by reading the glossary.**
+Grappled is Disadvantage on attack rolls "against any target **other than the grappler**",
+not a blanket penalty, so hitting back at whatever has hold of you is the one attack a
+grapple does not hamper — and it is the only entry in `AttackCircumstances` that depends
+on *who* is being attacked. And **this SRD has no generic Escape action**: escaping is a
+Strength (Athletics) *or* Dexterity (Acrobatics) check, the creature's choice, against a
+flat DC rather than a contest. A grapple also ends on its own when the grappler is
+Incapacitated or dead, or when the two are further apart than the grapple's range —
+`Encounter.EndBrokenGrapples` sweeps for all of that, from every point where either could
+have changed. A grapple that outlives its grappler is invisible: the victim simply never
+moves again.
 
 **When you touch `ConditionRules.Executable`, re-run the extractor.** The entry accounting
 calls `CanBeImposed`, so which conditions are executable decides what lands in

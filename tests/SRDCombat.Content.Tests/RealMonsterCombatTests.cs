@@ -156,12 +156,13 @@ public class RealMonsterCombatTests
     [Fact]
     public void ARiderTheEngineWillNotImposeNeverReachesACombatant()
     {
-        // The two independent reasons a rider is refused, one of each. The Ankheg's
-        // Grappled is completely modelled and the engine does not execute the condition;
-        // the Phase Spider's Poisoned is a condition the engine does execute, printed
-        // with a duration ("for 1 hour") that is not a turn boundary. Both stay counted
-        // on the stat block entry rather than travelling into a fight.
-        foreach (var id in new[] { "monster.ankheg", "monster.phase-spider" })
+        // The two independent reasons a rider is refused, one of each. The Sprite's
+        // Charmed is completely modelled, duration and all, and the engine does not
+        // execute the condition; the Phase Spider's Poisoned is a condition the engine
+        // does execute, printed with a duration ("for 1 hour") that is not a turn
+        // boundary. Both stay counted on the stat block entry rather than travelling
+        // into a fight.
+        foreach (var id in new[] { "monster.sprite", "monster.phase-spider" })
         {
             var monster = Content.MonstersById[id];
             var stats = CombatantStats.FromMonster(monster);
@@ -207,6 +208,48 @@ public class RealMonsterCombatTests
             encounter.Log,
             step => step.Kind == CombatStepKind.Condition
                 && step.Narration.Contains("is no longer Poisoned", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ARealGiantFrogGrapplesWithItsPrintedEscapeDifficultyClass()
+    {
+        // "If the target is a Medium or smaller creature, it has the Grappled condition
+        // (escape DC 11)." The escape DC has to survive extraction and reach the
+        // combatant, or the grapple would be inescapable.
+        var frog = CombatantStats.FromMonster(Content.MonstersById["monster.giant-frog"]);
+
+        var rider = Assert.Single(frog.Attacks.Single(attack => attack.Name == "Bite").AppliedConditions);
+
+        Assert.Equal(ConditionType.Grappled, rider.Condition);
+        Assert.Equal(11, rider.EscapeDifficultyClass);
+        Assert.Equal(CreatureSize.Medium, rider.MaximumTargetSize);
+    }
+
+    [Fact]
+    public void AGrappleIsImposedAndEscapedInARealFight()
+    {
+        // End to end against real content: the frog bites, the bandit is held, and the
+        // grapple ends — either escaped or broken when one of them drops. A grapple that
+        // could be imposed but never lifted would be worse than none at all.
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(Content.MonstersById["monster.giant-frog"], "frog", "vermin", new GridPosition(0, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(11, 5)),
+            ],
+            new SeededRandomSource(2));
+
+        SimpleTacticsPolicy.RunToCompletion(encounter);
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition
+                && step.Narration.Contains("has the Grappled condition", StringComparison.Ordinal));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition
+                && step.Narration.Contains("escape the grapple", StringComparison.Ordinal));
     }
 
     [Fact]
