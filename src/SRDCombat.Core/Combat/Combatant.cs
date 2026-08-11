@@ -1,6 +1,7 @@
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Core.Combat;
 
@@ -16,8 +17,15 @@ public sealed record CombatAttack(
     int? ReachFeet,
     int? NormalRangeFeet,
     int? LongRangeFeet,
-    IReadOnlyList<AttackDamage> Damage)
+    IReadOnlyList<AttackDamage> Damage,
+    IReadOnlyList<AppliedCondition>? AppliedConditions = null)
 {
+    /// <summary>
+    /// Conditions a hit imposes. Never null, and usually empty — a weapon attack has no
+    /// rider, and a monster's is only carried here when the model expresses all of it.
+    /// </summary>
+    public IReadOnlyList<AppliedCondition> AppliedConditions { get; init; } = AppliedConditions ?? [];
+
     /// <summary>The furthest this attack can reach at all, in feet.</summary>
     public int MaximumRangeFeet =>
         Math.Max(ReachFeet ?? 0, LongRangeFeet ?? NormalRangeFeet ?? 0);
@@ -237,7 +245,11 @@ public sealed record CombatantStats(
                 entry.Attack.ReachFeet,
                 entry.Attack.NormalRangeFeet,
                 entry.Attack.LongRangeFeet,
-                entry.Attack.Damage))
+                entry.Attack.Damage,
+                // The rider hangs off the entry rather than off the attack grammar, so it
+                // is joined to the attack here. Only the ones the engine can impose to the
+                // letter come across; the rest stay counted in UnmodelledClauses.
+                entry.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray()))
             .ToArray();
 
         return new CombatantStats(

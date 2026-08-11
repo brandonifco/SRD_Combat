@@ -1,4 +1,5 @@
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Content.Tests;
 
@@ -62,7 +63,17 @@ public class EntryMechanicsTests
         // Multiattacks, which is not a Multiattack at all, and are now honestly reported
         // as not understood. Worth remembering that this metric can move the wrong way
         // for the right reason.
-        const int Floor = 330;
+        //
+        // Lowered again from 330 to 320 when condition riders were gated. Nine entries
+        // gained — the size-gated Prone riders the engine now imposes — and twenty-three
+        // were lost, every one of them an entry that had been claiming to be fully
+        // modelled while carrying a condition nothing would ever apply. Thirteen were
+        // attacks whose whole entry is a single sentence containing "Attack Roll:", so
+        // "and the target has the Poisoned condition until the start of its next turn"
+        // was accounted for by a clause that says nothing about it. The rest were
+        // saving-throw entries whose Failure line imposes a condition; that is issue #6's
+        // work, and until it lands the entries say so.
+        const int Floor = 320;
 
         var modelled = TierOneEntries.Count(entry => entry.IsFullyModelled);
 
@@ -157,21 +168,100 @@ public class EntryMechanicsTests
     }
 
     [Fact]
-    public void ACapturedConditionWithAnUnmodelledGateIsStillReportedAsIncomplete()
+    public void ASizeGateIsReadOffTheRider()
     {
-        // The condition is extracted, but "if the target is a Large or smaller creature"
-        // is a gate the engine cannot evaluate. Applying the condition anyway would
-        // impose it in more cases than the SRD allows — the same shape of bug as the
-        // goblin's conditional damage. So the entry must report itself incomplete.
-        var bite = Content
-            .MonstersById["monster.ankheg"]
-            .Entries
-            .Single(entry => entry.Name == "Bite");
+        // "If the target is a Medium or smaller creature, it has the Prone condition."
+        // The gate is the whole qualifier, so the rider is complete and the engine can
+        // impose it on exactly the creatures the SRD names.
+        var bite = Content.MonstersById["monster.wolf"].Entries.Single(entry => entry.Name == "Bite");
+
+        var prone = Assert.Single(bite.AppliedConditions);
+
+        Assert.Equal(ConditionType.Prone, prone.Condition);
+        Assert.Equal(CreatureSize.Medium, prone.MaximumTargetSize);
+        Assert.True(prone.IsFullyModelled);
+        Assert.True(bite.IsFullyModelled);
+
+        Assert.True(prone.AllowsTargetSize(CreatureSize.Small));
+        Assert.True(prone.AllowsTargetSize(CreatureSize.Medium));
+        Assert.False(prone.AllowsTargetSize(CreatureSize.Large));
+    }
+
+    [Fact]
+    public void AGateWithMoreThanSizeInItIsNotReducedToASizeGate()
+    {
+        // "If the target is a Large or smaller creature and the allosaurus moved 30+ feet
+        // straight toward it immediately before the hit ..." — reading the size and
+        // discarding the charge would knock targets Prone on every hit instead of on a
+        // charge, which is the goblin conditional-damage bug in a new place. So the whole
+        // sentence comes back as unmodelled and no gate is claimed at all.
+        var claws = Content.MonstersById["monster.allosaurus"].Entries.Single(entry => entry.Name == "Claws");
+
+        var prone = Assert.Single(claws.AppliedConditions);
+
+        Assert.Equal(ConditionType.Prone, prone.Condition);
+        Assert.Null(prone.MaximumTargetSize);
+        Assert.False(prone.IsFullyModelled);
+        Assert.Contains("moved 30+ feet", prone.UnmodelledRequirement!, StringComparison.Ordinal);
+        Assert.False(claws.IsFullyModelled);
+    }
+
+    [Fact]
+    public void APrintedDurationIsAnUnmodelledRequirement()
+    {
+        // "... and the target has the Poisoned condition until the start of the
+        // centipede's next turn." The engine has no clock to end a condition on, so the
+        // duration makes the rider unusable rather than approximate — a Poisoned that
+        // never wears off is not a smaller error than one that never lands.
+        //
+        // This entry is a single sentence containing "Attack Roll:", which is why it read
+        // as fully modelled before the rider was examined at all.
+        var bite = Content.MonstersById["monster.giant-centipede"].Entries.Single(entry => entry.Name == "Bite");
+
+        var poisoned = Assert.Single(bite.AppliedConditions);
+
+        Assert.Equal(ConditionType.Poisoned, poisoned.Condition);
+        Assert.False(poisoned.IsFullyModelled);
+        Assert.Contains("until the start of", poisoned.UnmodelledRequirement!, StringComparison.Ordinal);
+        Assert.False(bite.IsFullyModelled);
+    }
+
+    [Fact]
+    public void ACompleteRiderTheEngineCannotExecuteIsStillReportedAsIncomplete()
+    {
+        // "If the target is a Large or smaller creature, it has the Grappled condition
+        // (escape DC 13)." Every word of that is now modelled — but Grappled needs a
+        // speed of 0 and an Escape action against the printed DC, and the engine has
+        // neither. Imposing it would put a condition on the target that changes nothing,
+        // which is the quietest possible way to be wrong, so the entry reports itself
+        // incomplete instead.
+        var bite = Content.MonstersById["monster.ankheg"].Entries.Single(entry => entry.Name == "Bite");
+
+        var grappled = Assert.Single(bite.AppliedConditions);
 
         Assert.Equal(EntryMechanics.Attack, bite.Mechanics);
-        Assert.NotEmpty(bite.AppliedConditions);
+        Assert.Equal(CreatureSize.Large, grappled.MaximumTargetSize);
+        Assert.True(grappled.IsFullyModelled);
+        Assert.False(ConditionRules.CanBeImposed(grappled));
+
         Assert.False(bite.IsFullyModelled);
         Assert.Contains(bite.UnmodelledClauses, clause => clause.Contains("Grappled", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EveryImposableRiderIsAConditionTheEngineExecutes()
+    {
+        // The gap between "the model expresses this" and "the engine does this" is the
+        // one that has to stay countable. Everything that survives both checks must be on
+        // ConditionRules' curated list — nothing reaches a fight by another route.
+        var imposable = Content.Monsters
+            .SelectMany(monster => monster.Entries)
+            .SelectMany(entry => entry.AppliedConditions)
+            .Where(ConditionRules.CanBeImposed)
+            .ToList();
+
+        Assert.NotEmpty(imposable);
+        Assert.All(imposable, condition => Assert.True(ConditionRules.IsExecutable(condition.Condition)));
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 
 namespace SrdExtract.Parsing;
 
@@ -60,7 +61,7 @@ internal static partial class EntryMechanicsParser
                 save,
                 usage,
                 conditions,
-                LeftoverMechanicalSentences(text, EntryMechanics.SavingThrow));
+                LeftoverMechanicalSentences(text, EntryMechanics.SavingThrow, conditions));
         }
 
         if (KnownInertEntries.Contains(bareName))
@@ -151,7 +152,7 @@ internal static partial class EntryMechanicsParser
             reaction,
             usage,
             conditions,
-            LeftoverMechanicalSentences(text, mechanics));
+            LeftoverMechanicalSentences(text, mechanics, conditions));
 
     /// <summary>
     /// Finds sentences carrying mechanics that the entry's own structured form does not
@@ -161,12 +162,15 @@ internal static partial class EntryMechanicsParser
     /// This is what catches the partly-structured case. An attack entry's header and its
     /// Hit clause are covered by <see cref="MonsterAttack"/>; a rider sentence after them
     /// ("If the target is a Large or smaller creature, it has the Grappled condition") is
-    /// not, and is reported even though the condition itself was extracted, because the
-    /// gate on it was not.
+    /// covered only when the engine will really impose that condition on exactly the
+    /// targets the SRD names.
     /// </remarks>
-    private static IReadOnlyList<string> LeftoverMechanicalSentences(string text, EntryMechanics mechanics) =>
+    private static IReadOnlyList<string> LeftoverMechanicalSentences(
+        string text,
+        EntryMechanics mechanics,
+        IReadOnlyList<AppliedCondition> conditions) =>
         SplitSentences(text)
-            .Where(sentence => !IsAccountedFor(sentence, mechanics))
+            .Where(sentence => !IsAccountedFor(sentence, mechanics, conditions))
             .ToArray();
 
     /// <summary>
@@ -185,7 +189,33 @@ internal static partial class EntryMechanicsParser
     private static IReadOnlyList<string> MechanicalSentences(string text) => SplitSentences(text).ToArray();
 
     /// <summary>Whether a sentence is already captured by the entry's structured form.</summary>
-    private static bool IsAccountedFor(string sentence, EntryMechanics mechanics) => mechanics switch
+    /// <remarks>
+    /// A sentence carrying a condition the engine will not impose is never accounted for,
+    /// however well the rest of it is structured. That is the same lesson as the goblin's
+    /// conditional damage, found again in the same data: thirteen attacks read as fully
+    /// modelled because their whole entry was one sentence containing "Attack Roll:", and
+    /// the "and the target has the Poisoned condition until ..." hanging off the end was
+    /// invisible.
+    /// </remarks>
+    private static bool IsAccountedFor(
+        string sentence,
+        EntryMechanics mechanics,
+        IReadOnlyList<AppliedCondition> conditions)
+    {
+        var carried = ConditionsIn(sentence, conditions).ToArray();
+
+        if (carried.Any(condition => !ConditionRules.CanBeImposed(condition)))
+        {
+            return false;
+        }
+
+        // A sentence that is nothing but an imposable rider is now fully expressed, even
+        // though the attack grammar itself says nothing about it.
+        return MatchesStructuredForm(sentence, mechanics)
+            || (mechanics == EntryMechanics.Attack && carried.Length > 0);
+    }
+
+    private static bool MatchesStructuredForm(string sentence, EntryMechanics mechanics) => mechanics switch
     {
         EntryMechanics.Attack =>
             sentence.Contains("Attack Roll:", StringComparison.Ordinal)
@@ -387,30 +417,121 @@ internal static partial class EntryMechanicsParser
         return damage;
     }
 
-    /// <summary>Finds every condition the entry imposes, with its escape DC where printed.</summary>
+    /// <summary>
+    /// Finds every condition the entry imposes, with its escape DC, its size gate, and
+    /// whatever else was printed with it that the model cannot express.
+    /// </summary>
     private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(string text)
     {
         var conditions = new List<AppliedCondition>();
 
-        foreach (Match match in ConditionPattern().Matches(text))
+        // Sentence by sentence, because the rider's gate and its duration are the words
+        // on either side of the condition within its own sentence, and nowhere else.
+        foreach (var sentence in SplitSentences(text))
         {
-            if (!Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: true, out var condition))
+            foreach (Match match in ConditionPattern().Matches(sentence))
             {
-                continue;
-            }
+                if (!Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: true, out var condition))
+                {
+                    continue;
+                }
 
-            int? escapeDc = match.Groups["escape"].Success
-                ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
-                : null;
+                if (conditions.Any(existing => existing.Condition == condition))
+                {
+                    continue;
+                }
 
-            if (!conditions.Any(existing => existing.Condition == condition))
-            {
-                conditions.Add(new AppliedCondition(condition, escapeDc));
+                int? escapeDc = match.Groups["escape"].Success
+                    ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
+                    : null;
+
+                var (size, unmodelled) = ReadRider(sentence, match);
+
+                conditions.Add(new AppliedCondition(condition, escapeDc, size, unmodelled));
             }
         }
 
         return conditions;
     }
+
+    /// <summary>
+    /// Reads what is printed on either side of a condition: the size gate in front of it,
+    /// and whatever is left over.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Deliberately strict, and strict in the safe direction. The clause leading into the
+    /// condition has to reduce to nothing more than an optional size gate, and nothing may
+    /// follow the condition at all. Everything else — a charge requirement, a duration, a
+    /// pull, a second condition chained onto the first — comes back as the whole sentence,
+    /// which stops the rider being imposed and keeps it counted.
+    /// </para>
+    /// <para>
+    /// Recognising these approximately is the failure to avoid. "If the target is a Large
+    /// or smaller creature <b>and the gorgon moved 20+ feet straight toward it</b>" is not
+    /// a size gate with decoration; treating it as one knocks targets Prone on every hit
+    /// instead of on a charge.
+    /// </para>
+    /// </remarks>
+    private static (CreatureSize? Size, string? Unmodelled) ReadRider(string sentence, Match condition)
+    {
+        var trailing = sentence[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
+
+        if (trailing.Length > 0)
+        {
+            return (null, sentence);
+        }
+
+        var leading = StripAttackPreamble(sentence[..condition.Index]);
+        var gate = RiderLeadInPattern().Match(leading);
+
+        if (!gate.Success)
+        {
+            return (null, sentence);
+        }
+
+        return gate.Groups["size"].Success
+            && Enum.TryParse<CreatureSize>(gate.Groups["size"].Value, ignoreCase: true, out var size)
+                ? (size, null)
+                : (null, null);
+    }
+
+    /// <summary>
+    /// Drops the part of a sentence the attack grammar has already accounted for, so what
+    /// is examined is the rider alone.
+    /// </summary>
+    /// <remarks>
+    /// A rider is often joined to its attack by a comma rather than a full stop — "Hit: 7
+    /// (1d8 + 3) Piercing damage, and the target has the Poisoned condition ..." — so the
+    /// sentence splitter cannot separate them and this has to. Cutting after the last
+    /// printed damage leaves exactly the words between the attack and the condition.
+    /// </remarks>
+    private static string StripAttackPreamble(string leading)
+    {
+        var hit = leading.LastIndexOf("Hit:", StringComparison.Ordinal);
+
+        if (hit < 0)
+        {
+            return leading;
+        }
+
+        var afterHit = leading[(hit + "Hit:".Length)..];
+        var lastDamage = afterHit.LastIndexOf("damage", StringComparison.Ordinal);
+
+        return lastDamage < 0 ? afterHit : afterHit[(lastDamage + "damage".Length)..];
+    }
+
+    /// <summary>The conditions a sentence carries, out of those parsed from the whole entry.</summary>
+    private static IEnumerable<AppliedCondition> ConditionsIn(
+        string sentence,
+        IReadOnlyList<AppliedCondition> conditions) =>
+        ConditionPattern()
+            .Matches(sentence)
+            .Select(match => match.Groups["condition"].Value)
+            .Select(name => conditions.FirstOrDefault(candidate =>
+                string.Equals(candidate.Condition.ToString(), name, StringComparison.OrdinalIgnoreCase)))
+            .Where(condition => condition is not null)
+            .Select(condition => condition!);
 
     private static int? WordToNumber(string word) => word.ToLowerInvariant() switch
     {
@@ -455,6 +576,18 @@ internal static partial class EntryMechanicsParser
 
     [GeneratedRegex(@"(?<average>\d+)\s*(?:\((?<dice>\d+d\d+(?:\s*[+-]\s*\d+)?)\))?\s*(?<type>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)\s+damage")]
     private static partial Regex SaveDamagePattern();
+
+    // What may stand between the attack's structured part and the condition: nothing, a
+    // conjunction, or a size gate — and then the subject that receives it. Anchored at
+    // both ends on purpose, so a clause carrying anything more fails to match rather than
+    // matching the part that looks familiar.
+    [GeneratedRegex(
+        @"^\s*(?:[,.]?\s*and\s+)?" +
+        @"(?:If\s+(?:the\s+)?target\s+is\s+(?:a\s+)?" +
+        @"(?<size>Tiny|Small|Medium|Large|Huge|Gargantuan)\s+or\s+smaller(?:\s+creature)?\s*,\s*)?" +
+        @"(?:the\s+target|it)\s+has\s+$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex RiderLeadInPattern();
 
     [GeneratedRegex(@"the\s+(?<condition>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+condition(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex ConditionPattern();

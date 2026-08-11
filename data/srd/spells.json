@@ -143,14 +143,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -389,20 +391,24 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Frightened"
+            "condition": "Frightened",
+            "unmodelledRequirement": "The creature has the Frightened condition"
           },
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "The creature has the Charmed condition"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "The creature has the Frightened condition"
         },
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "The creature has the Charmed condition"
         }
       ],
       "isSpellAttack": false,
@@ -472,7 +478,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Grappled"
+            "condition": "Grappled",
+            "unmodelledRequirement": "The target must succeed on a Dexterity saving throw, or the target has the Grappled condition, with an escape DC equal to your spell save DC"
           }
         ]
       },
@@ -485,7 +492,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Grappled"
+          "condition": "Grappled",
+          "unmodelledRequirement": "The target must succeed on a Dexterity saving throw, or the target has the Grappled condition, with an escape DC equal to your spell save DC"
         }
       ],
       "isSpellAttack": true,
@@ -604,7 +612,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Unconscious"
+          "condition": "Unconscious",
+          "unmodelledRequirement": "Each target's body is left behind in a state of suspended animation; it has the Unconscious condition, doesn't need food or air, and doesn't age"
         }
       ],
       "isSpellAttack": false,
@@ -703,7 +712,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "The GM chooses statistics appropriate for the awakened Plant, such as the statistics for the Awakened Shrub or Awakened Tree in \"Monsters.\" The awakened target has the Charmed condition for 30 days or until you or your allies deal damage to it"
         }
       ],
       "isSpellAttack": false,
@@ -926,7 +936,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "On a failed save, it takes 3d6 Bludgeoning damage, and it has the Restrained condition until the spell ends"
           }
         ]
       },
@@ -939,7 +950,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "On a failed save, it takes 3d6 Bludgeoning damage, and it has the Restrained condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -1530,14 +1542,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Blinded"
+            "condition": "Blinded",
+            "unmodelledRequirement": "Each creature in a 15-foot Cone originating from you must succeed on a Constitution saving throw or have the Blinded condition until the end of your next turn."
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "Each creature in a 15-foot Cone originating from you must succeed on a Constitution saving throw or have the Blinded condition until the end of your next turn."
         }
       ],
       "isSpellAttack": false,
@@ -1570,14 +1584,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Prone"
+            "condition": "Prone",
+            "unmodelledRequirement": "The target has the Prone condition and then ends its turn"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "The target has the Prone condition and then ends its turn"
         }
       ],
       "isSpellAttack": false,
@@ -1702,14 +1718,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "Each creature of your choice that you can see within range must succeed on a Wisdom saving throw or have the Charmed condition until the spell ends"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "Each creature of your choice that you can see within range must succeed on a Wisdom saving throw or have the Charmed condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -1916,14 +1934,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "On failed save, the target takes 8d8 damage of the spirit's type, and the target has the Restrained condition until the spell ends"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "On failed save, the target takes 8d8 damage of the spirit's type, and the target has the Restrained condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -1952,7 +1972,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "On a hit, the target takes Psychic damage equal to 3d12 plus your spellcasting ability modifier, and the target has the Frightened condition until the start of your next turn, with both you and the spirit as the source of the fear"
         }
       ],
       "isSpellAttack": true,
@@ -2067,7 +2088,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Incapacitated"
+            "condition": "Incapacitated",
+            "unmodelledRequirement": "On a failed save, you take 6d6 Psychic damage and have the Incapacitated condition until you finish a Long Rest"
           }
         ]
       },
@@ -2080,7 +2102,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Incapacitated"
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "On a failed save, you take 6d6 Psychic damage and have the Incapacitated condition until you finish a Long Rest"
         }
       ],
       "isSpellAttack": false,
@@ -2117,7 +2140,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Poisoned"
+            "condition": "Poisoned",
+            "unmodelledRequirement": "The target must succeed on a Constitution saving throw or take 11d8 Necrotic damage and have the Poisoned condition"
           }
         ]
       },
@@ -2130,7 +2154,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Poisoned"
+          "condition": "Poisoned",
+          "unmodelledRequirement": "The target must succeed on a Constitution saving throw or take 11d8 Necrotic damage and have the Poisoned condition"
         }
       ],
       "isSpellAttack": false,
@@ -2608,7 +2633,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "Any creatures inside also remain unless they opt to be shunted through the door as it vanishes, landing with the Prone condition in the unoccupied spaces closest to the door's former space"
         }
       ],
       "isSpellAttack": false,
@@ -3015,14 +3041,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Deafened"
+            "condition": "Deafened",
+            "unmodelledRequirement": "41-50 The target has the Deafened condition for 1 minute."
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Deafened"
+          "condition": "Deafened",
+          "unmodelledRequirement": "41-50 The target has the Deafened condition for 1 minute."
         }
       ],
       "isSpellAttack": false,
@@ -3055,14 +3083,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "One Beast you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "One Beast you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -3096,14 +3126,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "One Humanoid you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "One Humanoid you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -3261,7 +3293,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Prone"
+            "condition": "Prone",
+            "unmodelledRequirement": "On a failed save, a creature has the Prone condition, and its Concentration is broken"
           }
         ]
       },
@@ -3274,7 +3307,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "On a failed save, a creature has the Prone condition, and its Concentration is broken"
         }
       ],
       "isSpellAttack": false,
@@ -3420,7 +3454,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "On a failed save, the target has the Restrained condition until the spell ends"
           }
         ]
       },
@@ -3433,7 +3468,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "On a failed save, the target has the Restrained condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -3466,14 +3502,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -3652,14 +3690,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Invisible"
+            "condition": "Invisible",
+            "unmodelledRequirement": "For the duration, objects and affected creatures shed Dim Light in a 10-foot radius and can't benefit from the Invisible condition"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "For the duration, objects and affected creatures shed Dim Light in a 10-foot radius and can't benefit from the Invisible condition"
         }
       ],
       "isSpellAttack": false,
@@ -3768,14 +3808,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Frightened"
+            "condition": "Frightened",
+            "unmodelledRequirement": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -3881,7 +3923,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Incapacitated"
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "If you have the Incapacitated condition, the steed takes its turn immediately after yours and acts independently, focusing on protecting you"
         }
       ],
       "isSpellAttack": false,
@@ -4322,20 +4365,24 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "On a failed save, it has the Restrained condition for the duration"
           },
           {
-            "condition": "Petrified"
+            "condition": "Petrified",
+            "unmodelledRequirement": "If it fails its saves three times, it is turned to stone and has the Petrified condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "On a failed save, it has the Restrained condition for the duration"
         },
         {
-          "condition": "Petrified"
+          "condition": "Petrified",
+          "unmodelledRequirement": "If it fails its saves three times, it is turned to stone and has the Petrified condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -4561,7 +4608,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Grappled"
+          "condition": "Grappled",
+          "unmodelledRequirement": "In addition, the target can spend 5 feet of movement to automatically escape from nonmagical restraints, such as manacles or a creature imposing the Grappled condition on it."
         }
       ],
       "isSpellAttack": false,
@@ -4610,7 +4658,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "Creatures that were swimming on the surface of frozen water are trapped in the ice and have the Restrained condition"
           }
         ]
       },
@@ -4623,7 +4672,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "Creatures that were swimming on the surface of frozen water are trapped in the ice and have the Restrained condition"
         }
       ],
       "isSpellAttack": false,
@@ -4654,7 +4704,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advantage on Strength, Dexterity, and Constitution saving throws"
         }
       ],
       "isSpellAttack": false,
@@ -4704,7 +4755,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
         ]
       },
@@ -4717,7 +4769,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -4938,14 +4991,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Prone"
+            "condition": "Prone",
+            "unmodelledRequirement": "When the grease appears, each creature standing in its area must succeed on a Dexterity saving throw or have the Prone condition"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "When the grease appears, each creature standing in its area must succeed on a Dexterity saving throw or have the Prone condition"
         }
       ],
       "isSpellAttack": false,
@@ -4974,7 +5029,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "A creature you touch has the Invisible condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -5170,7 +5226,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "Creatures of any types you choose can't gain the Frightened condition while in the area"
         }
       ],
       "isSpellAttack": false,
@@ -5516,7 +5573,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns."
         }
       ],
       "isSpellAttack": false,
@@ -5592,14 +5650,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Prone"
+            "condition": "Prone",
+            "unmodelledRequirement": "During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself"
         }
       ],
       "isSpellAttack": false,
@@ -5635,14 +5695,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Blinded"
+            "condition": "Blinded",
+            "unmodelledRequirement": "In addition, when a Fiend or an Undead hits an affected creature with a melee attack roll, the attacker must succeed on a Constitution saving throw or have the Blinded condition until the end of its next turn."
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "In addition, when a Fiend or an Undead hits an affected creature with a melee attack roll, the attacker must succeed on a Constitution saving throw or have the Blinded condition until the end of its next turn."
         }
       ],
       "isSpellAttack": false,
@@ -5717,20 +5779,24 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "Each creature in the area who can see the pattern must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           },
           {
-            "condition": "Incapacitated"
+            "condition": "Incapacitated",
+            "unmodelledRequirement": "While Charmed, the creature has the Incapacitated condition and a Speed of 0"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "Each creature in the area who can see the pattern must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
         },
         {
-          "condition": "Incapacitated"
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "While Charmed, the creature has the Incapacitated condition and a Speed of 0"
         }
       ],
       "isSpellAttack": false,
@@ -5937,20 +6003,24 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "The target has the Restrained condition and can't be moved by any means"
           },
           {
-            "condition": "Unconscious"
+            "condition": "Unconscious",
+            "unmodelledRequirement": "The target has the Unconscious condition and can't be awoken"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "The target has the Restrained condition and can't be moved by any means"
         },
         {
-          "condition": "Unconscious"
+          "condition": "Unconscious",
+          "unmodelledRequirement": "The target has the Unconscious condition and can't be awoken"
         }
       ],
       "isSpellAttack": false,
@@ -6153,14 +6223,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "On a failed save, the target has the Charmed condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "On a failed save, the target has the Charmed condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -6191,7 +6263,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "A creature you touch has the Invisible condition until the spell ends"
         }
       ],
       "isSpellAttack": false,
@@ -6849,14 +6922,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "Drop your weapons, and dance! Stop in an hour.\" Each target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "Drop your weapons, and dance! Stop in an hour.\" Each target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target"
         }
       ],
       "isSpellAttack": false,
@@ -6925,7 +7000,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "If expelled, you move into an unoccupied space closest to where you first entered and have the Prone condition"
         }
       ],
       "isSpellAttack": false,
@@ -7028,7 +7104,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "Until the spell ends, one willing creature you touch has Immunity to Psychic damage and the Charmed condition"
         }
       ],
       "isSpellAttack": false,
@@ -7070,7 +7147,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Invisible"
+            "condition": "Invisible",
+            "unmodelledRequirement": "While you have this knowledge, the target can't become hidden from you, and if it has the Invisible condition, it gains no benefit from that condition against you."
           }
         ]
       },
@@ -7083,7 +7161,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "While you have this knowledge, the target can't become hidden from you, and if it has the Invisible condition, it gains no benefit from that condition against you."
         }
       ],
       "isSpellAttack": false,
@@ -7190,7 +7269,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "A creature is unaffected by this spell if it has the Blinded condition, Blindsight, or Truesight."
         }
       ],
       "isSpellAttack": false,
@@ -7227,7 +7307,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "You gain the Invisible condition at the same time that an illusory double of you appears where you are standing"
         }
       ],
       "isSpellAttack": false,
@@ -7292,20 +7373,24 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "On a failed save, the target has the Charmed condition for the duration"
           },
           {
-            "condition": "Incapacitated"
+            "condition": "Incapacitated",
+            "unmodelledRequirement": "While Charmed in this way, the target also has the Incapacitated condition and is unaware of its surroundings, though it can hear you"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "On a failed save, the target has the Charmed condition for the duration"
         },
         {
-          "condition": "Incapacitated"
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "While Charmed in this way, the target also has the Incapacitated condition and is unaware of its surroundings, though it can hear you"
         }
       ],
       "isSpellAttack": false,
@@ -7738,10 +7823,12 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Prone"
+            "condition": "Prone",
+            "unmodelledRequirement": "If the creature has the Prone condition, it can use its Reaction to stand up"
           },
           {
-            "condition": "Stunned"
+            "condition": "Stunned",
+            "unmodelledRequirement": "If the target has 150 Hit Points or fewer, it has the Stunned condition"
           }
         ]
       },
@@ -7754,10 +7841,12 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "If the creature has the Prone condition, it can use its Reaction to stand up"
         },
         {
-          "condition": "Stunned"
+          "condition": "Stunned",
+          "unmodelledRequirement": "If the target has 150 Hit Points or fewer, it has the Stunned condition"
         }
       ],
       "isSpellAttack": false,
@@ -7848,13 +7937,16 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "Failed Save: The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns"
           },
           {
-            "condition": "Petrified"
+            "condition": "Petrified",
+            "unmodelledRequirement": "If it fails three times, it has the Petrified condition until it is freed by an effect like the Greater Restoration spell"
           },
           {
-            "condition": "Blinded"
+            "condition": "Blinded",
+            "unmodelledRequirement": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn"
           }
         ]
       },
@@ -7887,13 +7979,16 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "Failed Save: The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns"
         },
         {
-          "condition": "Petrified"
+          "condition": "Petrified",
+          "unmodelledRequirement": "If it fails three times, it has the Petrified condition until it is freed by an effect like the Greater Restoration spell"
         },
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn"
         }
       ],
       "isSpellAttack": false,
@@ -7951,13 +8046,16 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Blinded"
+            "condition": "Blinded",
+            "unmodelledRequirement": "If another creature that can see the wall moves within 20 feet of it or starts its turn there, the creature must succeed on a Constitution saving throw or have the Blinded condition for 1 minute"
           },
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "Failed Save: The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns"
           },
           {
-            "condition": "Petrified"
+            "condition": "Petrified",
+            "unmodelledRequirement": "If it fails three times, it has the Petrified condition until it is freed by an effect like the Greater Restoration spell"
           }
         ]
       },
@@ -7990,13 +8088,16 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "If another creature that can see the wall moves within 20 feet of it or starts its turn there, the creature must succeed on a Constitution saving throw or have the Blinded condition for 1 minute"
         },
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "Failed Save: The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns"
         },
         {
-          "condition": "Petrified"
+          "condition": "Petrified",
+          "unmodelledRequirement": "If it fails three times, it has the Petrified condition until it is freed by an effect like the Greater Restoration spell"
         }
       ],
       "isSpellAttack": false,
@@ -8167,7 +8268,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Poisoned"
+          "condition": "Poisoned",
+          "unmodelledRequirement": "You touch a creature and end the Poisoned condition on it"
         }
       ],
       "isSpellAttack": false,
@@ -8359,7 +8461,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Poisoned"
+          "condition": "Poisoned",
+          "unmodelledRequirement": "On a hit, the target takes 2d8 Poison damage and has the Poisoned condition until the end of your next turn."
         }
       ],
       "isSpellAttack": true,
@@ -8817,7 +8920,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "For the duration, you see creatures and objects that have the Invisible condition as if they were visible, and you can see into the Ethereal Plane"
         }
       ],
       "isSpellAttack": false,
@@ -8913,10 +9017,12 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "For the duration, the target has the Invisible condition and can't be targeted by Divination spells, detected by magic, or viewed remotely with magic"
         },
         {
-          "condition": "Unconscious"
+          "condition": "Unconscious",
+          "unmodelledRequirement": "If the target is a creature, it enters a state of suspended animation; it has the Unconscious condition, doesn't age, and doesn't need food, water, or air"
         }
       ],
       "isSpellAttack": false,
@@ -9125,7 +9231,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "Until the spell ends, the target sheds Bright Light in a 5-foot radius, attack rolls against it have Advantage, and it can't benefit from the Invisible condition."
         }
       ],
       "isSpellAttack": false,
@@ -9190,7 +9297,8 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Deafened"
+          "condition": "Deafened",
+          "unmodelledRequirement": "Any creature or object entirely inside the Sphere has Immunity to Thunder damage, and creatures have the Deafened condition while entirely inside it"
         }
       ],
       "isSpellAttack": false,
@@ -9303,20 +9411,24 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Incapacitated"
+            "condition": "Incapacitated",
+            "unmodelledRequirement": "Each creature of your choice in a 5-foot-radius Sphere centered on a point within range must succeed on a Wisdom saving throw or have the Incapacitated condition until the end of its next turn, at which point it must repeat the save"
           },
           {
-            "condition": "Unconscious"
+            "condition": "Unconscious",
+            "unmodelledRequirement": "If the target fails the second save, the target has the Unconscious condition for the duration"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Incapacitated"
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "Each creature of your choice in a 5-foot-radius Sphere centered on a point within range must succeed on a Wisdom saving throw or have the Incapacitated condition until the end of its next turn, at which point it must repeat the save"
         },
         {
-          "condition": "Unconscious"
+          "condition": "Unconscious",
+          "unmodelledRequirement": "If the target fails the second save, the target has the Unconscious condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -9354,14 +9466,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Prone"
+            "condition": "Prone",
+            "unmodelledRequirement": "When a creature enters the Cylinder for the first time on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration."
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "When a creature enters the Cylinder for the first time on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration."
         }
       ],
       "isSpellAttack": false,
@@ -9734,7 +9848,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Invisible"
+          "condition": "Invisible",
+          "unmodelledRequirement": "On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition."
         }
       ],
       "isSpellAttack": true,
@@ -9773,14 +9888,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Poisoned"
+            "condition": "Poisoned",
+            "unmodelledRequirement": "Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the current turn"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Poisoned"
+          "condition": "Poisoned",
+          "unmodelledRequirement": "Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the current turn"
         }
       ],
       "isSpellAttack": false,
@@ -9869,10 +9986,12 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Deafened"
+            "condition": "Deafened",
+            "unmodelledRequirement": "Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration"
           },
           {
-            "condition": "Charmed"
+            "condition": "Charmed",
+            "unmodelledRequirement": "For example, you could say, \"Fetch the key to the cult's treasure vault, and give the key to me.\" Or you could say, \"Stop fighting, leave this library peacefully, and don't return.\" The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target"
           }
         ]
       },
@@ -9905,10 +10024,12 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Deafened"
+          "condition": "Deafened",
+          "unmodelledRequirement": "Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration"
         },
         {
-          "condition": "Charmed"
+          "condition": "Charmed",
+          "unmodelledRequirement": "For example, you could say, \"Fetch the key to the cult's treasure vault, and give the key to me.\" Or you could say, \"Stop fighting, leave this library peacefully, and don't return.\" The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target"
         }
       ],
       "isSpellAttack": false,
@@ -9981,7 +10102,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Blinded"
+            "condition": "Blinded",
+            "unmodelledRequirement": "On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn"
           }
         ]
       },
@@ -9994,7 +10116,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn"
         }
       ],
       "isSpellAttack": false,
@@ -10039,7 +10162,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Blinded"
+            "condition": "Blinded",
+            "unmodelledRequirement": "On a failed save, a creature takes 12d6 Radiant damage and has the Blinded condition for 1 minute"
           }
         ]
       },
@@ -10052,7 +10176,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Blinded"
+          "condition": "Blinded",
+          "unmodelledRequirement": "On a failed save, a creature takes 12d6 Radiant damage and has the Blinded condition for 1 minute"
         }
       ],
       "isSpellAttack": false,
@@ -10095,16 +10220,20 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Frightened"
+            "condition": "Frightened",
+            "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute"
           },
           {
-            "condition": "Incapacitated"
+            "condition": "Incapacitated",
+            "unmodelledRequirement": "Each target must succeed on a Constitution saving throw or have the Incapacitated condition for 1 minute"
           },
           {
-            "condition": "Unconscious"
+            "condition": "Unconscious",
+            "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Unconscious condition for 10 minutes"
           },
           {
-            "condition": "Stunned"
+            "condition": "Stunned",
+            "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Stunned condition for 1 minute."
           }
         ]
       },
@@ -10117,16 +10246,20 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute"
         },
         {
-          "condition": "Incapacitated"
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "Each target must succeed on a Constitution saving throw or have the Incapacitated condition for 1 minute"
         },
         {
-          "condition": "Unconscious"
+          "condition": "Unconscious",
+          "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Unconscious condition for 10 minutes"
         },
         {
-          "condition": "Stunned"
+          "condition": "Stunned",
+          "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Stunned condition for 1 minute."
         }
       ],
       "isSpellAttack": false,
@@ -10158,14 +10291,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "Until the end of your next turn, the creature has the Restrained condition, and if you lift it into the air, it is suspended there"
           }
         ]
       },
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "Until the end of your next turn, the creature has the Restrained condition, and if you lift it into the air, it is suspended there"
         }
       ],
       "isSpellAttack": false,
@@ -11154,7 +11289,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Restrained"
+            "condition": "Restrained",
+            "unmodelledRequirement": "The first time a creature enters the webs on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained condition while in the webs or until it breaks free"
           }
         ]
       },
@@ -11167,7 +11303,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Restrained"
+          "condition": "Restrained",
+          "unmodelledRequirement": "The first time a creature enters the webs on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained condition while in the webs or until it breaks free"
         }
       ],
       "isSpellAttack": false,
@@ -11214,7 +11351,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [
           {
-            "condition": "Frightened"
+            "condition": "Frightened",
+            "unmodelledRequirement": "On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration"
           }
         ]
       },
@@ -11232,7 +11370,8 @@
       ],
       "appliedConditions": [
         {
-          "condition": "Frightened"
+          "condition": "Frightened",
+          "unmodelledRequirement": "On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration"
         }
       ],
       "isSpellAttack": false,
@@ -11261,10 +11400,12 @@
       "damage": [],
       "appliedConditions": [
         {
-          "condition": "Prone"
+          "condition": "Prone",
+          "unmodelledRequirement": "While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage"
         },
         {
-          "condition": "Stunned"
+          "condition": "Stunned",
+          "unmodelledRequirement": "Reverting takes 1 minute, during which the target has the Stunned condition"
         }
       ],
       "isSpellAttack": false,

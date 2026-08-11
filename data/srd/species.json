@@ -62,7 +62,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Incapacitated"
+              "condition": "Incapacitated",
+              "unmodelledRequirement": "As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition"
             }
           ],
           "unmodelledClauses": [
@@ -100,7 +101,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Poisoned"
+              "condition": "Poisoned",
+              "unmodelledRequirement": "You also have Advantage on saving throws you make to avoid or end the Poisoned condition."
             }
           ],
           "unmodelledClauses": [
@@ -177,7 +179,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Charmed"
+              "condition": "Charmed",
+              "unmodelledRequirement": "You have Advantage on saving throws you make to avoid or end the Charmed condition."
             }
           ],
           "unmodelledClauses": [
@@ -273,7 +276,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Prone"
+              "condition": "Prone",
+              "unmodelledRequirement": "When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition"
             }
           ],
           "unmodelledClauses": [
@@ -311,7 +315,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Grappled"
+              "condition": "Grappled",
+              "unmodelledRequirement": "You have Advantage on any ability check you make to end the Grappled condition"
             }
           ],
           "unmodelledClauses": [
@@ -337,7 +342,8 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
-              "condition": "Frightened"
+              "condition": "Frightened",
+              "unmodelledRequirement": "You have Advantage on saving throws you make to avoid or end the Frightened condition."
             }
           ],
           "unmodelledClauses": [

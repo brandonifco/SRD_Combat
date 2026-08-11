@@ -649,6 +649,42 @@ public sealed partial class Encounter
                 break;
             }
         }
+
+        ImposeRiders(attacker, attack, target);
+    }
+
+    /// <summary>
+    /// Applies the conditions a hit imposes — "If the target is a Large or smaller
+    /// creature, it has the Prone condition."
+    /// </summary>
+    /// <remarks>
+    /// Only riders the model expresses in full reach this far: <see cref="CombatantStats"/>
+    /// filters the rest out when it builds the attack, so what is left is a condition the
+    /// engine executes and, at most, a size gate. The gate is checked here because it is
+    /// the only part that depends on who was hit.
+    /// </remarks>
+    private void ImposeRiders(Combatant attacker, CombatAttack attack, Combatant target)
+    {
+        // A creature already down takes nothing further from the blow; Unconscious has
+        // brought Prone with it already.
+        if (attack.AppliedConditions.Count == 0 || !target.IsActive)
+        {
+            return;
+        }
+
+        foreach (var rider in attack.AppliedConditions)
+        {
+            if (!ConditionRules.CanImpose(rider, target) || !target.AddCondition(rider.Condition))
+            {
+                continue;
+            }
+
+            Add(
+                CombatStepKind.Condition,
+                $"{target.Name} has the {rider.Condition} condition.",
+                attacker,
+                target);
+        }
     }
 
     private static string DescribeHealth(Combatant combatant) =>
