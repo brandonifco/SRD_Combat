@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #38 (grapple-tied condition durations) |
-| Tests | **439 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #39 (the Emanation's excluded origin) |
+| Tests | **445 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **3 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **2 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -77,9 +77,9 @@ governing plan doc carries the same list with the reasoning; this is the short f
    weapon caught its breather); a Grappled rider from a save carries **no range**, so an
    engulf-style grapple ends only by escape or the grappler's incapacity; and the save
    path now sweeps `EndBrokenGrapples`, which the spell path had silently never done.
-   Whether an **Emanation** includes its origin is *unverified against print* and
-   unchanged — the policy refuses to breathe on the user's own square meanwhile. Of the
-   follow-ons that slotted around it, **#21 (execute Blinded, Charmed, Frightened,
+   Whether an **Emanation** includes its origin was left *unverified against print* here
+   and is now settled — see #29 below; the reading the engine shipped with was wrong. Of
+   the follow-ons that slotted around it, **#21 (execute Blinded, Charmed, Frightened,
    Paralyzed, Stunned) is done** — the conditions section below carries what the
    glossary corrected — **#22 (timed durations) is done**: "for 1 minute" is ten of
    the bearer's turns on the same clock, "for 1 hour" outlasts the fight, and the
@@ -108,7 +108,16 @@ governing plan doc carries the same list with the reasoning; this is the short f
    Explorer need *draft choices* the resolver does not yet carry, Cunning Strike's
    Poison rider hangs on #22's timed durations, Favored Enemy on a Hunter's Mark effect
    the spell grammar does not model.
-7. **#11 curate the monster pool — last, deliberately.** Weighting the pool by mechanical
+7. **#29 the Emanation's origin — done, and the engine was wrong.** The glossary is
+   explicit: "An Emanation's origin (creature or object) isn't included in the area of
+   effect unless its creator decides otherwise" (printed page 181). The engine had
+   covered the origin square for 21 monster Emanation entries and every emanation spell.
+   **This is the one geometry rule in `AreaTargeting` that is printed rather than
+   interpreted** — and it went unverified for two slices only because the source PDF was
+   off the machine, which is the argument for checking the book the moment it is
+   reachable. A Sphere deliberately keeps its centre: it is centred on a point, not
+   extending from a creature.
+8. **#11 curate the monster pool — last, deliberately.** Weighting the pool by mechanical
    coverage means nothing until coverage stops moving, and every step above moves it.
 
 **Conditions are the most-reopened type in that list** — #6 imposes them on a failed
@@ -300,9 +309,12 @@ so *it* can tell what is left; they do not belong in a status report.
   are spent (cantrips are free), Concentration is tracked and broken by damage, and a
   spell whose effect is not modelled is **refused with a reason** rather than silently
   doing nothing.
-- **Area geometry is a stated interpretation, not a derivation.** The SRD describes
-  areas for a table with a ruler; `AreaTargeting` documents how each becomes squares.
-  Cylinder is not modelled and a spell using one is refused.
+- **Area geometry is a stated interpretation, not a derivation — with one exception.**
+  The SRD describes areas for a table with a ruler; `AreaTargeting` documents how each
+  becomes squares. Cylinder is not modelled and a spell using one is refused. The
+  exception is the **Emanation's excluded origin square, which is printed** (glossary,
+  page 181) — the Cone's and Line's exclusions are the inferred ones. Do not "tidy" the
+  three into one rule: they agree today by different authority.
 - **`SpellcastingRules.AbilityFor` is a curated map, not Primary Ability.** A Paladin's
   primary abilities are Strength *and* Charisma and it casts on Charisma — reading it
   from the Core Traits table would be right for six classes and quietly wrong for two.

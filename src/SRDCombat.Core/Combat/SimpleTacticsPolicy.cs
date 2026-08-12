@@ -176,10 +176,11 @@ public static class SimpleTacticsPolicy
     /// <para>
     /// An area entry is skipped when its area would catch the user's own side — the one
     /// piece of judgement this placeholder allows itself, because a wolf breathing on its
-    /// own pack reads as a bug in every transcript it appears in. The check includes the
-    /// user: an Emanation covers its user's own square under this engine's geometry, so
-    /// Emanation entries stay unchosen here until that reading is verified against the
-    /// printed glossary.
+    /// own pack reads as a bug in every transcript it appears in. The check still counts
+    /// the user among its own side, which now costs nothing: the printed glossary excludes
+    /// an Emanation's origin from its area (see <c>AreaTargeting</c>), so no shape this
+    /// engine resolves covers its own user, and Emanation entries became choosable when
+    /// that reading was verified.
     /// </para>
     /// </remarks>
     private static bool TryUseLimitedEntry(Encounter encounter, Combatant actor, Combatant target)
