@@ -371,12 +371,67 @@ public sealed partial class Encounter
             $"{difficultyClass} — {(escaped ? "free!" : "still held.")}",
             combatant);
 
+        // Tactical Mind turns a failed ability check around, and this is the only
+        // ability check a fight rolls.
+        if (!escaped)
+        {
+            escaped = TryTacticalMind(combatant, roll.Total, difficultyClass);
+        }
+
         if (escaped)
         {
             EndGrapple(combatant, "escapes");
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Fighter Tactical Mind: spend a use of Second Wind to add 1d10 to a failed ability
+    /// check, keeping the use if it still fails.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the
+    /// ability check, potentially turning it into a success. If the check still fails,
+    /// this use of Second Wind isn't expended." That last sentence is the whole feature —
+    /// a use is only spent on a success — and it is why the die is rolled before the
+    /// resource is touched.
+    /// </para>
+    /// <para>
+    /// Taken automatically rather than offered, like Uncanny Dodge: a failed escape with
+    /// a spare Second Wind is never a case where a player would decline, and the use
+    /// costs nothing when it does not work. Narrow by construction — the engine rolls
+    /// exactly one ability check in combat, and this hooks it. Any future check should
+    /// call this too.
+    /// </para>
+    /// </remarks>
+    private bool TryTacticalMind(Combatant combatant, int checkTotal, int difficultyClass)
+    {
+        if (!combatant.Stats.Has(ClassFeature.TacticalMind) || combatant.Features.SecondWindRemaining <= 0)
+        {
+            return false;
+        }
+
+        var boost = DiceRoller.Roll(_random, new DiceExpression(1, 10, 0));
+        var total = checkTotal + boost.Total;
+        var succeeded = total >= difficultyClass;
+
+        if (succeeded)
+        {
+            combatant.Features.SecondWindRemaining--;
+        }
+
+        Add(
+            CombatStepKind.Feature,
+            $"{combatant.Name} uses Tactical Mind: {boost} takes the check to {total} vs DC " +
+            $"{difficultyClass} — " +
+            (succeeded
+                ? $"success ({combatant.Features.SecondWindRemaining} Second Wind use(s) left)."
+                : "still short, so the Second Wind use is not expended."),
+            combatant);
+
+        return succeeded;
     }
 
     /// <summary>Ends the current turn and begins the next one, rolling any Death Saving Throws due.</summary>
@@ -881,22 +936,26 @@ public sealed partial class Encounter
             ? attacker.Stats.Character?.RageDamageBonus ?? 0
             : 0;
 
+        var cunningStrike = false;
+
         if (SneakAttackApplies(attacker, attack, target, result))
         {
             attacker.Features.SneakAttackUsedThisTurn = true;
 
-            var sneak = DiceRoller.Roll(
-                _random,
-                attacker.Stats.Character!.SneakAttackDamage!,
-                result.Critical);
+            // A declared Cunning Strike is paid for in dice removed before rolling, so
+            // the reduced expression is what gets rolled — never the full one with the
+            // cost taken off the total afterwards.
+            cunningStrike = attacker.Features.CunningStrike != CunningStrikeEffect.None;
+            var damage = SneakAttackDamageAfterCunningStrike(attacker);
 
-            components.Add((
-                new AttackDamage(attacker.Stats.Character.SneakAttackDamage!, attack.Damage[0].Type, sneak.Total),
-                sneak));
+            var sneak = DiceRoller.Roll(_random, damage, result.Critical);
+
+            components.Add((new AttackDamage(damage, attack.Damage[0].Type, sneak.Total), sneak));
 
             Add(
                 CombatStepKind.Feature,
-                $"{attacker.Name} lands a Sneak Attack for an extra {sneak.Total} damage [{sneak}].",
+                $"{attacker.Name} lands a Sneak Attack for an extra {sneak.Total} damage [{sneak}]" +
+                (cunningStrike ? " (reduced by Cunning Strike)" : string.Empty) + ".",
                 attacker,
                 target);
         }
@@ -961,6 +1020,13 @@ public sealed partial class Encounter
         }
 
         ImposeRiders(attacker, attack, target);
+
+        // "The effect occurs immediately after the attack's damage is dealt" — after the
+        // riders, which are part of the attack itself.
+        if (cunningStrike)
+        {
+            ResolveCunningStrike(attacker, target);
+        }
 
         // The blow may have dropped a grappler, in this fight or another one.
         EndBrokenGrapples();

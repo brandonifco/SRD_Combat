@@ -214,6 +214,148 @@ public sealed partial class Encounter
         return null;
     }
 
+    /// <summary>
+    /// Rogue Cunning Strike: declares an effect to add to this turn's Sneak Attack,
+    /// paid for with Sneak Attack dice.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Declared rather than chosen at the moment of the hit, because the SRD pays for it
+    /// in dice removed <em>before</em> rolling — "You remove the die before rolling" — so
+    /// the choice has to exist by the time damage is rolled. It costs nothing to declare
+    /// and is only spent if a Sneak Attack actually lands, which matches "when you deal
+    /// Sneak Attack damage, you can add one of the following".
+    /// </para>
+    /// <para>
+    /// Only Trip is executed; <see cref="CunningStrikeEffect"/> records why each of the
+    /// others is not. Declaring it costs no action of any kind — it is a rider on the
+    /// attack, not an action.
+    /// </para>
+    /// </remarks>
+    public ActionRefusal? CunningStrike(CunningStrikeEffect effect)
+    {
+        if (ActiveCombatant is not { } combatant)
+        {
+            return new ActionRefusal("encounter.complete", "The encounter is over.");
+        }
+
+        if (!combatant.Stats.Has(ClassFeature.CunningStrike))
+        {
+            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Cunning Strike.");
+        }
+
+        if (effect == CunningStrikeEffect.None)
+        {
+            combatant.Features.CunningStrike = CunningStrikeEffect.None;
+            return null;
+        }
+
+        if (combatant.Features.SneakAttackUsedThisTurn)
+        {
+            return new ActionRefusal(
+                "feature.cunning_strike.sneak_attack_spent",
+                $"{combatant.Name} has already dealt Sneak Attack damage this turn.");
+        }
+
+        // One die is forgone, so there has to be more than one to forgo it from — a
+        // level 5 Rogue's 3d6 can spend one and still deal 2d6.
+        if (SneakAttackDice(combatant) <= CunningStrikeCostDice)
+        {
+            return new ActionRefusal(
+                "feature.cunning_strike.too_few_dice",
+                $"{combatant.Name} has too few Sneak Attack dice to pay for {effect}.");
+        }
+
+        combatant.Features.CunningStrike = effect;
+
+        Add(
+            CombatStepKind.Feature,
+            $"{combatant.Name} prepares a Cunning Strike ({effect}), forgoing " +
+            $"{CunningStrikeCostDice}d6 of Sneak Attack damage.",
+            combatant);
+
+        return null;
+    }
+
+    /// <summary>Every printed Cunning Strike effect this engine executes costs one die.</summary>
+    private const int CunningStrikeCostDice = 1;
+
+    /// <summary>How many Sneak Attack dice this combatant rolls.</summary>
+    private static int SneakAttackDice(Combatant combatant) =>
+        combatant.Stats.Character?.SneakAttackDamage?.Count ?? 0;
+
+    /// <summary>
+    /// The Sneak Attack damage actually rolled, with any declared Cunning Strike's cost
+    /// already removed.
+    /// </summary>
+    /// <remarks>
+    /// "You remove the die before rolling" — the cost comes off the dice, not off the
+    /// total, so a spent die never contributes and never gets doubled by a Critical Hit.
+    /// </remarks>
+    private static DiceExpression SneakAttackDamageAfterCunningStrike(Combatant attacker)
+    {
+        var damage = attacker.Stats.Character!.SneakAttackDamage!;
+
+        return attacker.Features.CunningStrike == CunningStrikeEffect.None
+            ? damage
+            : damage with { Count = Math.Max(1, damage.Count - CunningStrikeCostDice) };
+    }
+
+    /// <summary>
+    /// Resolves a declared Cunning Strike effect, immediately after the attack's damage.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If a Cunning Strike effect requires a saving throw, the DC equals 8 plus your
+    /// Dexterity modifier and Proficiency Bonus." Trip is gated on size — "<b>If the
+    /// target is Large or smaller</b>, it must succeed on a Dexterity saving throw" —
+    /// which is the same gate a monster's printed rider uses, so the rider goes through
+    /// the same <c>AppliedCondition</c> machinery rather than a second path that could
+    /// disagree with it.
+    /// </para>
+    /// <para>
+    /// The gate is read <em>before</em> the save, because the sentence puts it there: a
+    /// Huge target does not roll and fail, it is never asked. Rolling first and filtering
+    /// after would give the same visible outcome and consume a die that the rules never
+    /// call for — which the scripted-dice tests treat as the bug it is.
+    /// </para>
+    /// </remarks>
+    private void ResolveCunningStrike(Combatant attacker, Combatant target)
+    {
+        if (attacker.Features.CunningStrike != CunningStrikeEffect.Trip)
+        {
+            return;
+        }
+
+        attacker.Features.CunningStrike = CunningStrikeEffect.None;
+
+        var rider = new AppliedCondition(ConditionType.Prone, MaximumTargetSize: CreatureSize.Large);
+
+        if (!target.IsActive || !rider.AllowsTargetSize(target.Stats.Size))
+        {
+            return;
+        }
+
+        var difficultyClass = 8
+            + attacker.Stats.ModifierFor(Ability.Dexterity)
+            + attacker.Stats.ProficiencyBonus;
+
+        var roll = D20Test.Roll(_random, target.Stats.SaveBonusFor(Ability.Dexterity));
+        var succeeded = roll.Total >= difficultyClass;
+
+        Add(
+            CombatStepKind.Feature,
+            $"{target.Name} makes a Dexterity saving throw against {attacker.Name}'s Trip: " +
+            $"{roll} vs DC {difficultyClass} — {(succeeded ? "stays up." : "goes down.")}",
+            attacker,
+            target);
+
+        if (!succeeded)
+        {
+            ImposeConditions(attacker, [rider], target, grappleRangeFeet: null);
+        }
+    }
+
     /// <summary>Rogue Cunning Action: Dash or Disengage as a Bonus Action.</summary>
     public ActionRefusal? CunningAction(CunningActionKind kind)
     {

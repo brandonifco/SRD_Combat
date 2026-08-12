@@ -69,6 +69,51 @@ public enum ClassFeature
 
     /// <summary>Fighter, Ranger: a Fighting Style feat. Archery and Defense are executed.</summary>
     FightingStyle,
+
+    /// <summary>
+    /// Rogue: spend Sneak Attack dice on an added effect. Only Trip is executed; the
+    /// other printed effects are listed on <c>CunningStrikeEffect</c> with their reasons.
+    /// </summary>
+    CunningStrike,
+
+    /// <summary>
+    /// Fighter: spend a use of Second Wind to add 1d10 to a failed ability check, and
+    /// keep the use if it still fails.
+    /// </summary>
+    TacticalMind,
+}
+
+/// <summary>
+/// The Cunning Strike effects this engine executes.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Only <see cref="Trip"/>, and the absences are the point. <b>Poison</b> reads "the
+/// target has the Poisoned condition for 1 minute. At the end of each of its turns, the
+/// Poisoned target repeats the save, ending the effect on itself on a success" — the
+/// minute is modellable since timed durations landed, but the repeated save is an early
+/// out the condition model does not express, so imposing it would hold the target a full
+/// minute the book lets them escape. It also requires a Poisoner's Kit, which no
+/// inventory models. <b>Withdraw</b> moves the Rogue half its Speed without provoking,
+/// which needs movement resolved mid-attack. Daze, Knock Out and Obscure are level 14
+/// and out of this game's range entirely.
+/// </para>
+/// <para>
+/// Each printed effect costs Sneak Attack dice, and the SRD is precise that "you remove
+/// the die before rolling" — so the cost is subtracted from the dice count, never from
+/// the rolled total.
+/// </para>
+/// </remarks>
+public enum CunningStrikeEffect
+{
+    /// <summary>No Cunning Strike effect added to this Sneak Attack.</summary>
+    None,
+
+    /// <summary>
+    /// "Trip (Cost: 1d6). If the target is Large or smaller, it must succeed on a
+    /// Dexterity saving throw or have the Prone condition."
+    /// </summary>
+    Trip,
 }
 
 /// <summary>A class feature a character has, and the level it came from.</summary>
@@ -108,6 +153,8 @@ public static class ClassFeatureRegistry
             // fight, so mapping the name claims only what the engine does at levels 1-5.
             ["Deft Explorer"] = ClassFeature.Expertise,
             ["Fighting Style"] = ClassFeature.FightingStyle,
+            ["Cunning Strike"] = ClassFeature.CunningStrike,
+            ["Tactical Mind"] = ClassFeature.TacticalMind,
         };
 
     /// <summary>The implemented feature for a printed name, or null when not implemented.</summary>

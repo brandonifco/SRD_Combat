@@ -15,16 +15,16 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #41 (draft choices: Fighting Style and Expertise) |
-| Tests | **471 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #42 (Cunning Strike and Tactical Mind) |
+| Tests | **482 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **1 open GitHub issue.** Not in this file, not in chat. |
+| Work remaining | **0 open GitHub issues.** The Phase 2–4 rules backlog is closed; next is a client. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
-monsters, with fourteen implemented class features and working spellcasting (attack spells,
+monsters, with sixteen implemented class features and working spellcasting (attack spells,
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
@@ -104,10 +104,16 @@ governing plan doc carries the same list with the reasoning; this is the short f
    Resistance), Fast Movement (+10 feet derived in `CharacterResolver`, gated on Heavy
    armour), and Steady Aim (a Bonus Action; "haven't moved" is read as "has spent no
    movement", so standing up counts, and forfeited Speed stays 0 through a later Dash).
-   The rest are refiled as #32 with one named blocker each: Fighting Style and Deft
-   Explorer need *draft choices* the resolver does not yet carry, Cunning Strike's
-   Poison rider hangs on #22's timed durations, Favored Enemy on a Hunter's Mark effect
-   the spell grammar does not model.
+   The rest were refiled as #32 and are **now done bar one**: Fighting Style (Archery,
+   Defense) and Expertise ride the draft choices described below, Cunning Strike's Trip
+   executes, and Tactical Mind hooks the one ability check a fight rolls. **Favored
+   Enemy stays blocked** on a Hunter's Mark effect the spell grammar does not model, and
+   the sheet keeps reporting it. Worth correcting the issue's own premise: **Cunning
+   Strike's Poison did *not* become implementable when #22 landed** — it prints "for 1
+   minute" *and* "the Poisoned target repeats the save", and the repeated save is an
+   early out the condition model still cannot express, so imposing it would hold a
+   target for a minute the book lets them escape. It also needs a Poisoner's Kit, which
+   no inventory models.
 7. **#29 the Emanation's origin — done, and the engine was wrong.** The glossary is
    explicit: "An Emanation's origin (creature or object) isn't included in the area of
    effect unless its creator decides otherwise" (printed page 181). The engine had
@@ -316,6 +322,17 @@ so *it* can tell what is left; they do not belong in a status report.
   everything absent is reported on `CharacterSheet.UnimplementedFeatures` and stays
   visible. Two printed names may map to *one* feature when they are the same rule: the
   Rogue's `Expertise` and the Ranger's `Deft Explorer` both grant `ClassFeature.Expertise`.
+- **A feature that spends a resource on a *conditional* success must roll before it
+  spends.** Tactical Mind adds 1d10 to a failed ability check and "if the check still
+  fails, this use of Second Wind isn't expended" — so the die is rolled, the total
+  compared, and only then is the use decremented. It hooks `Encounter.Escape`, the one
+  ability check a fight rolls; any future check should call it too.
+- **Cunning Strike pays in dice removed *before* rolling**, never deducted from the
+  total afterwards — a spent die must never be rolled and never doubled by a Critical
+  Hit. Only Trip is executed, and it reads its size gate before calling for the save,
+  because the printed sentence puts the gate first: a Huge target is never asked to roll
+  rather than rolling and being filtered. `ScriptedRandomSource` caught that as a
+  surplus die, which is exactly what it is for.
 - **The draft carries the choices the rules cannot make, and the resolver refuses ones
   the character was never granted.** `FightingStyle` and `ExpertiseSkills` are the first
   two; both are validated against the *granted features*, not the class name, so the
