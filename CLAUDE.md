@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #90 (the Sorcerer's wrapped rows, closing #78) |
+| Branch | `main` at PR #91 (Cleave and Slow, closing #81) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **1 open GitHub issue** — #81, the unexecuted masteries. |
+| Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -140,7 +140,9 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-One issue.
+**Nothing.** Phases 1–4 are done; the next work is Phase 5 (character creation), Phase 6
+proper (separate monster tactics from party tactics — one policy still plays both sides),
+or Phase 7 (the Godot client). And no human has yet played a run to its end.
 
 - **#83 — the party is a fraction of its printed self.** The successor to #79, and the
   most valuable thing in the queue: the encounter budget prices a fight assuming both
@@ -432,7 +434,7 @@ so *it* can tell what is left; they do not belong in a status report.
   which skills were taken — come from the draft.
 - **Ability increases come from the *background*, not the species.** A 2024 change; a
   species grants no ability scores at all.
-- **Weapon Mastery is the fifth curated allowlist, and only half of it executes.** A
+- **Weapon Mastery is the fifth curated allowlist, and six of the eight execute.** A
   weapon's mastery property reaches the attack **only when the wielder has unlocked that
   kind of weapon** — the printed rule is "usable only by a character who has a feature
   ... that unlocks the property" — so `CombatAttack.Mastery` is null for everyone else.
@@ -442,9 +444,16 @@ so *it* can tell what is left; they do not belong in a status report.
   swap them by most of a round), **Topple** (a Constitution save at 8 + the attack's
   ability modifier + proficiency, which is why `CombatAttack` carries its
   `AbilityModifier`) and **Graze** (the modifier as damage on a miss, no dice rolled).
-  Cleave, Push, Slow and Nick are refused by name — a draft mastering a Greataxe throws —
-  and their reasons are on `WeaponMasteryRules` and in #81. **The Barbarian pregen
-  therefore has the feature and cannot use it**, since Cleave is the Greataxe's.
+  #81 added **Cleave** — its own second attack roll against an enemy beside the first
+  and within reach, whose damage subtracts the *positive* ability modifier ("unless that
+  modifier is negative"), once per turn, chosen by the engine because declining a free
+  swing is never right — and **Slow** (10 feet off the victim's Speed until the start of
+  the author's next turn, capped at 10 however many Slows land, and a Slowed Dash gains
+  the reduced Speed). The Barbarian's Greataxe finally does what its stat block says.
+  **Push and Nick stay refused with reasons on `WeaponMasteryRules`**: Push is a real
+  choice a player would sometimes decline (pushing an enemy out of your own reach) and
+  the engine models no way to decline, and Nick needs two-weapon fighting, which does
+  not exist.
 - **Subclasses need no draft choice, and the split is derived, not curated.** The SRD
   prints exactly one subclass per class, so a level 3+ character simply *has* it — the
   Champion, the Berserker, the Thief, the Life Domain. The extraction split rests on the

@@ -149,21 +149,20 @@ public class WeaponMasteryTests
     }
 
     [Fact]
-    public void OnlyFourOfTheEightPropertiesAreExecuted()
+    public void SixOfTheEightPropertiesAreExecuted()
     {
-        // The allowlist, stated: the other four need machinery that does not exist, and
-        // the reasons are on WeaponMasteryRules.
+        // The allowlist, stated. The two absences have their reasons on
+        // WeaponMasteryRules: Push is a real choice a player would sometimes decline and
+        // the engine models no way to decline, and Nick needs two-weapon fighting.
         Assert.Equal(
-            [WeaponMastery.Graze, WeaponMastery.Sap, WeaponMastery.Topple, WeaponMastery.Vex],
+            [
+                WeaponMastery.Cleave, WeaponMastery.Graze, WeaponMastery.Sap,
+                WeaponMastery.Slow, WeaponMastery.Topple, WeaponMastery.Vex,
+            ],
             WeaponMasteryRules.Executed.OrderBy(mastery => mastery));
 
-        foreach (var absent in new[]
-                 {
-                     WeaponMastery.Cleave, WeaponMastery.Nick, WeaponMastery.Push, WeaponMastery.Slow,
-                 })
-        {
-            Assert.False(WeaponMasteryRules.Executes(absent));
-        }
+        Assert.False(WeaponMasteryRules.Executes(WeaponMastery.Push));
+        Assert.False(WeaponMasteryRules.Executes(WeaponMastery.Nick));
     }
 
     /// <summary>
