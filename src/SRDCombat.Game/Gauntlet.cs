@@ -168,6 +168,51 @@ public sealed class GauntletRun
         return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)]);
     }
 
+    /// <summary>
+    /// Resumes a saved run: each draft re-resolved at the level its experience has
+    /// earned, never at the level the file claims.
+    /// </summary>
+    /// <remarks>
+    /// The party comes back exactly as strong as the rules make it from what was saved —
+    /// a save holds no derived numbers, so there is nothing on disk for the rules to
+    /// disagree with. Validation of the file itself is <see cref="RunSave.FromJson"/>'s;
+    /// this trusts its argument the way <see cref="Start"/> trusts the content.
+    /// </remarks>
+    public static GauntletRun Resume(SrdContent content, SavedRun saved)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(saved);
+
+        var party = saved.Members
+            .Select((member, index) =>
+                PregeneratedParty.Resolve(content, member.Draft, member.State.Level, x: 0, y: index))
+            .ToArray();
+
+        var run = new GauntletRun(content, saved.Ladder, party, [.. saved.Members.Select(member => member.State)])
+        {
+            Cleared = saved.Cleared,
+        };
+
+        run._casualties.AddRange(saved.Casualties);
+
+        if (saved.Cleared >= saved.Ladder.Count)
+        {
+            run.Outcome = RunOutcome.Survived;
+        }
+
+        return run;
+    }
+
+    /// <summary>The saveable snapshot of this run: drafts plus progress, nothing derived.</summary>
+    public SavedRun ToSave() => new()
+    {
+        FormatVersion = RunSave.CurrentFormatVersion,
+        Ladder = Ladder,
+        Cleared = Cleared,
+        Members = [.. Party.Zip(_states, (member, state) => new SavedMember(member.Draft, state))],
+        Casualties = [.. _casualties],
+    };
+
     /// <summary>The rungs, in order.</summary>
     public IReadOnlyList<LadderStep> Ladder { get; }
 

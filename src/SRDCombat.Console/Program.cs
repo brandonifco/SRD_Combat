@@ -44,9 +44,42 @@ if (SingleFightRequested(args))
     return PlayFight(only, random) is FightResult.Won or FightResult.Lost ? 0 : 0;
 }
 
-var run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1);
+// The gauntlet is persistent: the run autosaves after every cleared fight, and defeat
+// means reload rather than reset — the file is deliberately left holding the state
+// after the last fight the party won.
+var savePath = SavePathFrom(args) ?? "srdcombat-save.json";
 
-Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
+GauntletRun run;
+
+if (ContinueRequested(args))
+{
+    if (!File.Exists(savePath))
+    {
+        Console.Error.WriteLine($"No save at '{savePath}'. Pass --save <path> or start a new run.");
+        return 1;
+    }
+
+    try
+    {
+        run = GauntletRun.Resume(content, RunSave.FromJson(File.ReadAllText(savePath)));
+    }
+    catch (Exception failure) when (failure is System.Text.Json.JsonException or InvalidDataException)
+    {
+        // A refusal is the format explaining itself; show it rather than swallowing it.
+        Console.Error.WriteLine($"Cannot load '{savePath}': {failure.Message}");
+        return 1;
+    }
+
+    Console.WriteLine($"SRD_Combat — continuing after fight {run.Cleared} of {run.Ladder.Count} (seed {seed})");
+}
+else
+{
+    run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1);
+
+    Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
+}
+
+Console.WriteLine($"Autosaves to '{savePath}' after each cleared fight; --continue resumes it.");
 Console.WriteLine("Type 'help' during a fight for commands.");
 
 while (run.Next is { } step)
@@ -105,12 +138,24 @@ while (run.Next is { } step)
     {
         Console.WriteLine(levelUp + "!");
     }
+
+    // Saved only after a cleared fight, never after the defeat itself — the file keeps
+    // the last state worth returning to, which is what makes reloading a retry.
+    if (run.Outcome != RunOutcome.Defeated)
+    {
+        File.WriteAllText(savePath, RunSave.ToJson(run));
+    }
 }
 
 Console.WriteLine();
 Console.WriteLine(run.Outcome == RunOutcome.Survived
     ? $"The gauntlet is beaten — {run.Ladder.Count} fights cleared."
     : $"The run ends after {run.Cleared} fight(s).");
+
+if (run.Outcome == RunOutcome.Defeated && run.Cleared > 0)
+{
+    Console.WriteLine($"Run --continue to retry from after fight {run.Cleared}.");
+}
 
 var fallen = run.Fallen.ToArray();
 
@@ -184,6 +229,15 @@ static int? SeedFrom(string[] args)
         : null;
 }
 
+static bool ContinueRequested(string[] args) => args.Contains("--continue");
+
+static string? SavePathFrom(string[] args)
+{
+    var index = Array.FindIndex(args, argument => argument is "--save");
+
+    return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+}
+
 /// <summary>
 /// Arguments that are not options and not an option's value.
 /// </summary>
@@ -196,7 +250,7 @@ static int? SeedFrom(string[] args)
 /// </remarks>
 static IEnumerable<string> PositionalArguments(string[] args)
 {
-    string[] takesAValue = ["--seed", "--level", "--difficulty"];
+    string[] takesAValue = ["--seed", "--level", "--difficulty", "--save"];
 
     for (var i = 0; i < args.Length; i++)
     {

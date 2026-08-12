@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #69 (the ladder's shape, closing #65) |
+| Branch | `main` at PR #70 (save and load a run, closing #49) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **2 open GitHub issues**, both against the plan doc's Phase 4. |
+| Work remaining | **1 open GitHub issue**, against the plan doc's Phase 4. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -42,7 +42,10 @@ thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with 
 spent resources and the dead carried between fights, rests restoring exactly what the
 printed rules say, **levels earned by experience rather than handed out on a schedule**,
 and a fallen character rejoining at the next Long Rest.
-`--seed <n>` makes a fight reproducible, which is a complete bug repro. The client is
+`--seed <n>` makes a fight reproducible, which is a complete bug repro. The run is
+**persistent**: it autosaves after every cleared fight, `--continue` resumes it, and
+defeat means reload rather than reset — the save deliberately keeps the state after the
+last fight the party *won*. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
@@ -57,7 +60,7 @@ where runs routinely end. **Nothing has ever cleared the ladder**, but that is n
 the curve's doing: a pure Low/Moderate ladder also went 0-for-40, and every figure here
 is a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
 
-**What does not exist yet.** No loot and no save files. `SimpleTacticsPolicy` is still a placeholder, but no longer a
+**What does not exist yet.** No loot. `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
 rages, spends Second Wind, casts when its weapon cannot reach, and reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
@@ -92,11 +95,8 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-Two issues, both Phase 4.
+One issue, Phase 4.
 
-- **#49 — save and load a run.** Save the *drafts plus run progress*, never resolved
-  sheets, or a save can drift from the rules that made it. Levelling uses average hit
-  points precisely so a reload cannot reroll history.
 - **#48 — loot.** The magic items chapter (printed pages 204–253) has never been parsed,
   so the first question is whether loot draws only from mundane equipment.
 
@@ -710,6 +710,16 @@ dotnet run --project src/SRDCombat.Console
 `--difficulty low|moderate|high`; the seed is printed at the start of every
 run, so *"it happened on seed 12345"* is a complete bug report. The content directory is
 found by walking up for `data/srd`, so it runs from anywhere in the repo.
+
+**The run autosaves** to `srdcombat-save.json` (or `--save <path>`) after every cleared
+fight, and `--continue` resumes it. **A save is drafts plus progress, never resolved
+sheets** — `RunSave` serializes through `ContentSerializer`, so an unknown property or
+another format version is refused with a reason, and `RunSaveTests` pins the shape.
+Loading re-resolves every draft at the level its *experience* has earned, so a
+hand-edited save cannot smuggle in a level, and levelling uses average hit points
+precisely so a reload cannot reroll history. **Defeat does not touch the save** — the
+file keeps the state after the last fight the party won, which is what the design doc's
+"defeat means reload, not reset" turns out to mean in practice.
 
 **The client holds no rules.** It calls the engine's public actions, prints
 `CombatStep.Narration`, and shows a refusal with its named code rather than hiding it —
