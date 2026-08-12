@@ -306,6 +306,51 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void TheRealWolvesHuntWithPackTactics()
+    {
+        // "The wolf has Advantage on an attack roll against a creature if at least one
+        // of the wolf's allies is within 5 feet of the creature..." — the ×18 trait in
+        // the tier-1 band, straight from the printed name.
+        var wolf = Content.MonstersById["monster.wolf"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(wolf, "wolf-1", "pack", new GridPosition(0, 5)),
+                Spawn(wolf, "wolf-2", "pack", new GridPosition(1, 4)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(1, 5)),
+            ],
+            new ScriptedRandomSource(20, 1, 1, 10, 3, 1));
+
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.Attack("Bite", bandit));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Attack
+                && step.Narration.Contains("with Advantage", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheRealGargoyleFliesOutOfReachWithoutProvoking()
+    {
+        // Flyby, from the printed trait name: leaving the bandit's reach provokes no
+        // Opportunity Attack.
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(Content.MonstersById["monster.gargoyle"], "gargoyle", "stone", new GridPosition(1, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(0, 5)),
+            ],
+            new ScriptedRandomSource(20, 1));
+
+        Assert.Null(encounter.Move(new GridPosition(5, 5)));
+
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.OpportunityAttack);
+    }
+
+    [Fact]
     public void TheRealWaterElementalWhelmGrapplesButCannotRestrain()
     {
         // Whelm's failed save imposes two printed riders. Grappled (escape DC 14) is

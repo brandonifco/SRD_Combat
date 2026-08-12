@@ -147,6 +147,14 @@ public static class MovementRules
             return [];
         }
 
+        // Flyby: "doesn't provoke Opportunity Attacks when it flies out of an enemy's
+        // reach." The engine has no movement modes, so a creature printed with Flyby is
+        // read as flying whenever it moves — the reading is on MonsterTraitRegistry.
+        if (mover.HasTrait(MonsterTrait.Flyby))
+        {
+            return [];
+        }
+
         return combatants
             .Where(enemy => enemy.SideId != mover.SideId)
             .Where(enemy => enemy.IsActive && enemy.Turn.HasReaction)

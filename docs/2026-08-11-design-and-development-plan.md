@@ -633,11 +633,35 @@ Five decisions doing it recorded:
   `IsAccountedFor` forces a content regeneration and the PDF is absent. The accounting
   change and its regeneration belong in one commit; filed as its own issue.
 
-**5. Passive monster traits (#9).** Held until after step 4 because several of them
-reference machinery that has to exist first — Magic Resistance is Advantage on saving
-throws and is worth nothing while no monster rolls one. Best repetition in the queue once
-unblocked: Pack Tactics appears 18 times in the tier-1 band, Spider Climb 10, Magic
-Resistance 7, Swarm 7, Flyby 7.
+**5. Passive monster traits (#9) — done for what the engine can express.** The holding
+argument was right: Magic Resistance landed the day after saves did. The vocabulary is
+`MonsterTraitRegistry`, the project's fourth curated allowlist — a printed trait name
+maps to a `MonsterTrait` the engine executes, added only alongside the implementing
+code, resolved once per combatant from its entries. Three traits landed, covering 32 of
+the tier-1 band's repetitions:
+
+- **Pack Tactics ×18** — Advantage when an ally able to fight stands within 5 feet of
+  the target. The engine asks `IsActive` of the ally rather than only "not
+  Incapacitated" (a dying ally is no help), and the Advantage applies to Opportunity
+  Attacks too — the printed rule names the attack roll, not the Attack action. Combined
+  through `D20Test.Combine`, so it cancels against Disadvantage rather than overriding.
+- **Magic Resistance ×7** — Advantage on saving throws against *spells only*. The SRD
+  says "spells and other magical effects", but the model captures no marker for which
+  stat block entries are magical, so a breath weapon is read as not one — narrower than
+  print, deliberately, and recorded on the registry to revisit if the extractor ever
+  captures a magical marker.
+- **Flyby ×7** — no Opportunity Attacks provoked by moving, gated in
+  `MovementRules.FindOpportunityAttackers` beside the Disengage exit. The engine has no
+  movement modes, so a creature printed with Flyby is read as flying whenever it moves —
+  every one of them has a fly Speed it would have no reason not to use.
+
+Deliberately absent, each for want of a model rather than of effort: Spider Climb and
+Incorporeal Movement (verticality, wall-passing), Swarm (space-sharing, hit-point-gated
+damage), Sunlight Sensitivity (light). **Undead Fortitude is the best next addition** —
+it needs only a hook at the moment damage would drop the creature, machinery
+`DamageRules` nearly has. The registry works off printed names, so these entries stay
+`Unmodelled` in content until the #28 regeneration teaches the extractor which names are
+executed.
 
 **6. Class features (#10).** Same argument, weaker: Danger Sense wants saving throws
 executed and Cunning Strike imposes conditions. The least architectural item on the list
