@@ -1,6 +1,7 @@
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Content.Tests;
 
@@ -156,20 +157,23 @@ public class RealMonsterCombatTests
     [Fact]
     public void ARiderTheEngineWillNotImposeNeverReachesACombatant()
     {
-        // The two independent reasons a rider is refused, one of each. The Sprite's
-        // Charmed is completely modelled, duration and all, and the engine does not
-        // execute the condition; the Phase Spider's Poisoned is a condition the engine
-        // does execute, printed with a duration ("for 1 hour") that is not a turn
-        // boundary. Both stay counted on the stat block entry rather than travelling
-        // into a fight.
-        foreach (var id in new[] { "monster.sprite", "monster.phase-spider" })
-        {
-            var monster = Content.MonstersById[id];
-            var stats = CombatantStats.FromMonster(monster);
+        // The Phase Spider's Poisoned is a condition the engine executes, printed with
+        // a duration ("for 1 hour") that is not a turn boundary — so it stays counted
+        // on the stat block entry rather than travelling into a fight. The Sprite,
+        // which once sat beside it as the other refusal (Charmed, completely modelled,
+        // not executable), is now the mirror image: its rider rides the bow.
+        var spider = Content.MonstersById["monster.phase-spider"];
+        var spiderStats = CombatantStats.FromMonster(spider);
 
-            Assert.Contains(monster.Entries, entry => entry.AppliedConditions.Count > 0);
-            Assert.All(stats.Attacks, attack => Assert.Empty(attack.AppliedConditions));
-        }
+        Assert.Contains(spider.Entries, entry => entry.AppliedConditions.Count > 0);
+        Assert.All(spiderStats.Attacks, attack => Assert.Empty(attack.AppliedConditions));
+
+        var sprite = CombatantStats.FromMonster(Content.MonstersById["monster.sprite"]);
+        var bow = sprite.Attacks.Single(attack => attack.Name == "Enchanting Bow");
+        var charmed = Assert.Single(bow.AppliedConditions);
+
+        Assert.Equal(ConditionType.Charmed, charmed.Condition);
+        Assert.True(ConditionRules.CanBeImposed(charmed));
     }
 
     [Fact]

@@ -75,20 +75,20 @@ public class ConditionRiderTests
     [Fact]
     public void AConditionTheEngineDoesNotExecuteIsNeverImposed()
     {
-        // Charmed is completely modelled — a size gate, a duration, nothing else — and
-        // still must not land. Nothing in the engine gives it an effect, so a Charmed
-        // creature would keep attacking its charmer while its sheet said otherwise.
+        // Deafened is completely modelled — a size gate, a duration, nothing else — and
+        // still must not land. Nothing in the engine gives it an effect, so a Deafened
+        // creature would carry a label that changes nothing in a fight.
         var rider = new AppliedCondition(
-            ConditionType.Charmed,
+            ConditionType.Deafened,
             MaximumTargetSize: CreatureSize.Large,
             Duration: new ConditionDuration(ConditionClock.StartOfTurn, ConditionDurationOwner.Source));
 
         var encounter = Fight(rider, CreatureSize.Medium);
 
         Assert.True(rider.IsFullyModelled);
-        Assert.False(ConditionRules.IsExecutable(ConditionType.Charmed));
+        Assert.False(ConditionRules.IsExecutable(ConditionType.Deafened));
         Assert.Null(encounter.Attack("Slam", Target(encounter)));
-        Assert.False(Target(encounter).HasCondition(ConditionType.Charmed));
+        Assert.False(Target(encounter).HasCondition(ConditionType.Deafened));
     }
 
     [Fact]

@@ -622,6 +622,18 @@ public sealed record ActiveCondition(
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>
 public sealed class Combatant
 {
+    /// <summary>
+    /// Conditions whose printed text includes "You have the Incapacitated condition".
+    /// Adding one brings Incapacitated with it; removing the last of them takes the
+    /// Incapacitated it brought back out.
+    /// </summary>
+    private static readonly ConditionType[] BringsIncapacitated =
+    [
+        ConditionType.Paralyzed,
+        ConditionType.Stunned,
+        ConditionType.Unconscious,
+    ];
+
     private readonly Dictionary<ConditionType, ActiveCondition> _conditions = [];
 
     public Combatant(string id, string name, string sideId, CombatantStats stats, GridPosition position)
@@ -774,12 +786,18 @@ public sealed class Combatant
         var sourceId = active.SourceId;
         var expiry = active.Expiry;
 
-        // Unconscious brings Incapacitated and Prone with it, per the condition's own
-        // definition. Modelling that here means nothing else has to remember it. They
-        // inherit its expiry, so an Unconscious that wears off does not leave them behind.
-        if (condition == ConditionType.Unconscious)
+        // Paralyzed, Stunned and Unconscious bring Incapacitated with them, and
+        // Unconscious brings Prone too, per each condition's own definition. Modelling
+        // that here means nothing else has to remember it. The brought conditions
+        // inherit the source and expiry, so a Stunned that wears off does not leave its
+        // Incapacitated behind — and TryAdd never displaces one imposed in its own right.
+        if (BringsIncapacitated.Contains(condition))
         {
             _conditions.TryAdd(ConditionType.Incapacitated, new ActiveCondition(ConditionType.Incapacitated, sourceId, expiry));
+        }
+
+        if (condition == ConditionType.Unconscious)
+        {
             _conditions.TryAdd(ConditionType.Prone, new ActiveCondition(ConditionType.Prone, sourceId, expiry));
         }
 
@@ -788,14 +806,26 @@ public sealed class Combatant
 
     public bool RemoveCondition(ConditionType condition)
     {
-        var removed = _conditions.Remove(condition);
+        if (!_conditions.Remove(condition, out var removed))
+        {
+            return false;
+        }
 
-        if (removed && condition == ConditionType.Unconscious)
+        // Removing the last Incapacitated-bringer takes the Incapacitated it brought
+        // back out — recognised by the source and expiry it inherited, so an
+        // Incapacitated imposed in its own right (a Ghast's Claw, with its own clock)
+        // survives its bearer being knocked out and healed. Prone is deliberately left
+        // behind: "When this condition ends, you remain Prone."
+        if (BringsIncapacitated.Contains(condition)
+            && !BringsIncapacitated.Any(HasCondition)
+            && _conditions.TryGetValue(ConditionType.Incapacitated, out var incapacitated)
+            && string.Equals(incapacitated.SourceId, removed.SourceId, StringComparison.Ordinal)
+            && Equals(incapacitated.Expiry, removed.Expiry))
         {
             _conditions.Remove(ConditionType.Incapacitated);
         }
 
-        return removed;
+        return true;
     }
 
     /// <summary>

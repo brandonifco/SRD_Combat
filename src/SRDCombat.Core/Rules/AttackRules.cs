@@ -19,6 +19,16 @@ namespace SRDCombat.Core.Rules;
 /// attacker alone.
 /// </param>
 /// <param name="AtLongRange">The target is beyond the attack's normal range.</param>
+/// <param name="AttackerIsBlinded">The attacker is Blinded.</param>
+/// <param name="TargetIsBlinded">The target is Blinded.</param>
+/// <param name="AttackerIsFrightened">
+/// The attacker is Frightened. The printed Disadvantage applies "while the source of
+/// fear is within line of sight", and the engine has no model of sight — the source is
+/// read as always visible while it is on the field. The reading is recorded on
+/// <c>ConditionRules</c>.
+/// </param>
+/// <param name="TargetIsParalyzed">The target is Paralyzed.</param>
+/// <param name="TargetIsStunned">The target is Stunned.</param>
 /// <remarks>
 /// Every one defaults to false, because false is "nothing unusual is true" for all of
 /// them. That keeps a caller naming only the circumstance it cares about, and means the
@@ -33,7 +43,12 @@ public sealed record AttackCircumstances(
     bool AttackerIsRestrained = false,
     bool TargetIsRestrained = false,
     bool AttackerIsGrappledByAnother = false,
-    bool AtLongRange = false);
+    bool AtLongRange = false,
+    bool AttackerIsBlinded = false,
+    bool TargetIsBlinded = false,
+    bool AttackerIsFrightened = false,
+    bool TargetIsParalyzed = false,
+    bool TargetIsStunned = false);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
 /// <param name="Roll">The d20 roll.</param>
@@ -73,7 +88,12 @@ public static class AttackRules
             AttackerIsRestrained: attacker.HasCondition(ConditionType.Restrained),
             TargetIsRestrained: target.HasCondition(ConditionType.Restrained),
             AttackerIsGrappledByAnother: IsGrappledBySomeoneElse(attacker, target),
-            AtLongRange: attack.IsAtLongRange(distance));
+            AtLongRange: attack.IsAtLongRange(distance),
+            AttackerIsBlinded: attacker.HasCondition(ConditionType.Blinded),
+            TargetIsBlinded: target.HasCondition(ConditionType.Blinded),
+            AttackerIsFrightened: attacker.HasCondition(ConditionType.Frightened),
+            TargetIsParalyzed: target.HasCondition(ConditionType.Paralyzed),
+            TargetIsStunned: target.HasCondition(ConditionType.Stunned));
     }
 
     /// <summary>
@@ -116,6 +136,9 @@ public static class AttackRules
         var advantage =
             circumstances.TargetIsUnconscious
             || circumstances.TargetIsRestrained
+            || circumstances.TargetIsBlinded
+            || circumstances.TargetIsParalyzed
+            || circumstances.TargetIsStunned
             || (circumstances.TargetIsProne && withinFiveFeet);
 
         var disadvantage =
@@ -125,6 +148,8 @@ public static class AttackRules
             || circumstances.AttackerIsRestrained
             || circumstances.AttackerIsGrappledByAnother
             || circumstances.AtLongRange
+            || circumstances.AttackerIsBlinded
+            || circumstances.AttackerIsFrightened
             || (circumstances.TargetIsProne && !withinFiveFeet);
 
         return D20Test.Combine(advantage, disadvantage);
@@ -165,9 +190,13 @@ public static class AttackRules
 
         var hit = roll.IsNatural20 || roll.Total >= target.Stats.ArmorClass;
 
-        // Any hit on an Unconscious creature from within 5 feet is a Critical Hit.
+        // Unconscious and Paralyzed print the same clause: any hit from within 5 feet
+        // is a Critical Hit. Stunned deliberately does not — the glossary gives it
+        // Advantage against and nothing more.
         var critical = roll.IsNatural20
-            || (hit && circumstances.TargetIsUnconscious && distance <= Battlefield.FeetPerSquare);
+            || (hit
+                && (circumstances.TargetIsUnconscious || circumstances.TargetIsParalyzed)
+                && distance <= Battlefield.FeetPerSquare);
 
         return new AttackRoll(roll, hit, critical, target.Stats.ArmorClass, circumstances);
     }

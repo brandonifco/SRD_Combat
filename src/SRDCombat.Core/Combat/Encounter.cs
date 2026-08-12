@@ -119,6 +119,20 @@ public sealed partial class Encounter
                 $"{mover.Name} is {holding} and has a Speed of 0.");
         }
 
+        // "You can't willingly move closer to the source of fear." Judged at the
+        // destination — nearer the source than the square the mover stands in — not
+        // along the path between them. The source is read as always within line of
+        // sight; the reading is on ConditionRules.
+        if (mover.ConditionState(ConditionType.Frightened) is { SourceId: { } fearSourceId }
+            && _combatants.FirstOrDefault(combatant =>
+                string.Equals(combatant.Id, fearSourceId, StringComparison.Ordinal)) is { } fearSource
+            && destination.DistanceFeetTo(fearSource.Position) < mover.Position.DistanceFeetTo(fearSource.Position))
+        {
+            return new ActionRefusal(
+                "movement.frightened",
+                $"{mover.Name} is Frightened of {fearSource.Name} and cannot willingly move closer.");
+        }
+
         var path = MovementRules.FindPath(Battlefield, mover, destination, mover.Turn.MovementFeet, _combatants);
 
         if (path is null)
@@ -175,6 +189,13 @@ public sealed partial class Encounter
         if (target.IsDead)
         {
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
+        }
+
+        if (CharmedBy(attacker, target))
+        {
+            return new ActionRefusal(
+                "attack.charmed",
+                $"{attacker.Name} is Charmed by {target.Name} and cannot attack them.");
         }
 
         var distance = attacker.Position.DistanceFeetTo(target.Position);
@@ -252,6 +273,13 @@ public sealed partial class Encounter
             return new ActionRefusal("encounter.complete", "The encounter is over.");
         }
 
+        // Without this a Prone creature that is Paralyzed — Incapacitated, but carrying
+        // its own movement — could stand up while unable to act.
+        if (!combatant.CanAct)
+        {
+            return new ActionRefusal("combatant.cannot_act", $"{combatant.Name} cannot act.");
+        }
+
         if (!combatant.HasCondition(ConditionType.Prone))
         {
             return new ActionRefusal("combatant.not_prone", $"{combatant.Name} is not Prone.");
@@ -327,7 +355,12 @@ public sealed partial class Encounter
         var acrobatics = SkillRules.BonusFor(combatant, "Acrobatics");
         var useAthletics = athletics >= acrobatics;
 
-        var mode = combatant.HasCondition(ConditionType.Poisoned) ? RollMode.Disadvantage : RollMode.Normal;
+        // Poisoned and Frightened both impose Disadvantage on ability checks —
+        // Frightened's "while the source of fear is within line of sight", which the
+        // engine reads as always; the reading is on ConditionRules.
+        var hampered = combatant.HasCondition(ConditionType.Poisoned)
+            || combatant.HasCondition(ConditionType.Frightened);
+        var mode = hampered ? RollMode.Disadvantage : RollMode.Normal;
         var roll = D20Test.Roll(_random, Math.Max(athletics, acrobatics), mode);
         var escaped = roll.Total >= difficultyClass;
 
@@ -702,8 +735,57 @@ public sealed partial class Encounter
         _ = travelled;
     }
 
+    /// <summary>Whether this creature is Charmed by that one, off the condition's source.</summary>
+    private static bool CharmedBy(Combatant creature, Combatant other) =>
+        creature.ConditionState(ConditionType.Charmed) is { SourceId: { } charmerId }
+        && string.Equals(charmerId, other.Id, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Refuses a damaging effect that would catch the actor's charmer — "you can't ...
+    /// target the charmer with damaging abilities or magical effects". The clause
+    /// heading is "Can't Harm the Charmer", so a non-damaging effect is allowed; the
+    /// reading is on <c>ConditionRules</c>. A creature in a save's area is a target —
+    /// the glossary defines a target as, among other things, a creature "forced to make
+    /// a saving throw by an effect".
+    /// </summary>
+    private ActionRefusal? CharmedHarmRefusal(
+        Combatant actor,
+        string code,
+        string effectName,
+        SaveEffect save,
+        GridPosition aim,
+        Combatant? target)
+    {
+        if (save.FailureDamage.Count == 0
+            || actor.ConditionState(ConditionType.Charmed) is not { SourceId: { } charmerId })
+        {
+            return null;
+        }
+
+        var victims = save.Area is { } area
+            ? CreaturesIn(AreaTargeting.Cover(area, actor.Position, aim, Battlefield))
+            : target is null ? [] : [target];
+
+        var charmer = victims.FirstOrDefault(victim =>
+            string.Equals(victim.Id, charmerId, StringComparison.Ordinal));
+
+        return charmer is null
+            ? null
+            : new ActionRefusal(
+                code,
+                $"{actor.Name} is Charmed by {charmer.Name} and cannot catch them with {effectName}.");
+    }
+
     private void MakeOpportunityAttack(Combatant attacker, Combatant mover)
     {
+        // "You can't attack the charmer" — the printed rule names the attack, not the
+        // action, so it forbids the Opportunity Attack too. The charmer walks away
+        // unswung-at rather than the attack being refused: nothing was asked for.
+        if (CharmedBy(attacker, mover))
+        {
+            return;
+        }
+
         var attack = attacker.Stats.Attacks
             .Where(candidate => candidate.Kind == AttackKind.Melee)
             .Where(candidate => attacker.Uses.IsAvailable(candidate.Name))
@@ -1000,28 +1082,46 @@ public sealed partial class Encounter
 
         foreach (var victim in affected)
         {
-            // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
-            // else — the ability matters, not just the condition. Magic Resistance is
-            // Advantage against spells only: a stat block's save entry is read as not
-            // magical, a reading recorded on MonsterTraitRegistry. Danger Sense is
-            // Advantage on Dexterity saves unless the Barbarian is Incapacitated.
-            // Combined, so Advantage and Disadvantage cancel rather than either winning.
-            var restrained = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained);
-            var magicResistance = kind == CombatStepKind.Spell && victim.HasTrait(MonsterTrait.MagicResistance);
-            var dangerSense = save.Ability == Ability.Dexterity
-                && victim.Stats.Has(ClassFeature.DangerSense)
-                && !victim.HasCondition(ConditionType.Incapacitated);
-            var mode = D20Test.Combine(magicResistance || dangerSense, restrained);
+            bool succeeded;
 
-            var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
-            var succeeded = roll.Total >= difficultyClass;
+            // Paralyzed, Stunned and Unconscious print "You automatically fail Strength
+            // and Dexterity saving throws". No die is rolled and none is consumed — the
+            // clause replaces the roll rather than penalising it.
+            if (ConditionRules.AutoFailingSaveCondition(victim, save.Ability) is { } autoFailing)
+            {
+                succeeded = false;
 
-            Add(
-                kind,
-                $"{victim.Name} makes a {save.Ability} saving throw: {roll} vs DC {difficultyClass} — " +
-                (succeeded ? "success." : "failure."),
-                source,
-                victim);
+                Add(
+                    kind,
+                    $"{victim.Name} automatically fails the {save.Ability} saving throw ({autoFailing}).",
+                    source,
+                    victim);
+            }
+            else
+            {
+                // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
+                // else — the ability matters, not just the condition. Magic Resistance is
+                // Advantage against spells only: a stat block's save entry is read as not
+                // magical, a reading recorded on MonsterTraitRegistry. Danger Sense is
+                // Advantage on Dexterity saves unless the Barbarian is Incapacitated.
+                // Combined, so Advantage and Disadvantage cancel rather than either winning.
+                var restrained = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained);
+                var magicResistance = kind == CombatStepKind.Spell && victim.HasTrait(MonsterTrait.MagicResistance);
+                var dangerSense = save.Ability == Ability.Dexterity
+                    && victim.Stats.Has(ClassFeature.DangerSense)
+                    && !victim.HasCondition(ConditionType.Incapacitated);
+                var mode = D20Test.Combine(magicResistance || dangerSense, restrained);
+
+                var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
+                succeeded = roll.Total >= difficultyClass;
+
+                Add(
+                    kind,
+                    $"{victim.Name} makes a {save.Ability} saving throw: {roll} vs DC {difficultyClass} — " +
+                    (succeeded ? "success." : "failure."),
+                    source,
+                    victim);
+            }
 
             if (succeeded && save.SuccessOutcome == SaveSuccessOutcome.NoEffect)
             {

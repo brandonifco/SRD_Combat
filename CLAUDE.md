@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #34 (extractor accounting + regeneration) |
-| Tests | **409 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #36 (execute the five remaining rider conditions) |
+| Tests | **429 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **6 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **5 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -30,8 +30,11 @@ Prone and a Huge one not, a Giant Centipede's poison lasts until the start of th
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
 rolls Acrobatics against the printed escape DC, an Ape throws its Rock once and then
 waits on the recharge die, an Ankheg's Acid Spray fills its printed 30-foot Line and
-makes everyone caught roll against DC 12, and a Wolf bites with Advantage while its
-packmate stands beside the target — all from the stat blocks' own words. A frozen
+makes everyone caught roll against DC 12, a Wolf bites with Advantage while its
+packmate stands beside the target, a Sprite's arrow leaves its victim unable to shoot
+back at the Sprite, and an Otyugh's Tentacle Slam stuns until the start of the Otyugh's
+next turn — while a Ghoul's paralysis stays where the book put it, behind an embedded
+save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
@@ -75,10 +78,11 @@ governing plan doc carries the same list with the reasoning; this is the short f
    engulf-style grapple ends only by escape or the grappler's incapacity; and the save
    path now sweeps `EndBrokenGrapples`, which the spell path had silently never done.
    Whether an **Emanation** includes its origin is *unverified against print* and
-   unchanged — the policy refuses to breathe on the user's own square meanwhile. The
-   remaining follow-ons slot around it: #21 (execute Blinded, Charmed, Frightened,
-   Paralyzed, Stunned) mostly rides on these entries, and #22 (timed durations) and
-   #24 (grapple-end durations) are small follow-ons to step 1.
+   unchanged — the policy refuses to breathe on the user's own square meanwhile. Of the
+   follow-ons that slotted around it, **#21 (execute Blinded, Charmed, Frightened,
+   Paralyzed, Stunned) is done** — the conditions section below carries what the
+   glossary corrected — while #22 (timed durations) and #24 (grapple-end durations)
+   stay open as small follow-ons to step 1.
 5. **#9 passive monster traits — done for what the engine can express.**
    `MonsterTraitRegistry` is the fourth curated allowlist: a printed *trait name* maps to
    an executed effect only alongside the code. Three landed — Pack Tactics ×18 (ally
@@ -148,20 +152,54 @@ duration, and anything else printed with the condition (a charge requirement, a 
 chained second condition, a duration of another shape) goes to
 `AppliedCondition.UnmodelledRequirement` and makes the rider unusable rather than
 approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a curated
-allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Poisoned, Grappled,
-Restrained, Incapacitated and Unconscious. **Add a condition there only alongside the code
-that gives it effects.** Forty-two attacks satisfy both checks: 20 Prone, 12 Poisoned,
-9 Grappled, 1 Incapacitated. Saving-throw entries answer the same two questions on their
-failed saves — three in the whole book pass both today (the Gladiator's and Giant Ape's
-Prone, the Water Elemental's Grappled), and the Water Elemental's Whelm is the working
-example of the split: its Grappled lands while its "Restrained until the grapple ends"
-is refused on the same failed save.
+allowlist, exactly like `ClassFeatureRegistry`, and holds eleven conditions: Prone,
+Poisoned, Grappled, Restrained, Incapacitated, Unconscious, Blinded, Charmed, Frightened,
+Paralyzed and Stunned. Deliberately absent: Deafened, Invisible and Petrified, each
+needing a model (hearing, sight, objects) that does not exist. **Add a condition there
+only alongside the code that gives it effects.** Forty-five attacks satisfy both checks —
+20 Prone, 12 Poisoned, 9 Grappled, and one each of Charmed, Frightened, Paralyzed and
+Incapacitated — and twenty-one failed-save riders land: 6 Frightened, 3 Blinded,
+3 Poisoned, 2 each of Charmed, Prone and Stunned, one each of Grappled, Incapacitated
+and Paralyzed. The Water Elemental's Whelm is still the working example of the split:
+its Grappled lands while its "Restrained until the grapple ends" is refused on the same
+failed save.
 
 **The two questions are independent, and the Phase Spider proves it** — its bite poisons
 "for 1 hour", Poisoned *is* executable, and the rider still cannot be imposed, because an
-hour is not a turn boundary. The Sprite is the mirror image: its Charmed rider is
-completely modelled, duration and all, and refused because the engine does not execute
-Charmed.
+hour is not a turn boundary. The Swarm of Ravens is the mirror image: its Cacophony
+Deafened rider is completely modelled, duration and all, and refused because the engine
+does not execute Deafened. (The Sprite's Charmed held that role until #21; today its
+rider rides the bow, and the Sprite is instead the reason `Encounter` knows a Charmed
+creature cannot attack its charmer.)
+
+**What the glossary corrected when the five landed, worth not re-learning from memory:**
+**Stunned has no Speed 0 and no automatic-crit clause** — memory adds both, the print has
+neither; Paralyzed has both, and its crit-within-5-feet clause is the same one Unconscious
+carries. **Paralyzed, Stunned and Unconscious all auto-fail Strength and Dexterity saving
+throws, and the auto-failure consumes no die** — the clause replaces the roll, which the
+scripted-dice tests depend on. **Charmed's clause heading is "Can't Harm the Charmer"**,
+so "damaging" is read as qualifying both "abilities" and "magical effects": attacks on
+the charmer are refused outright (Opportunity Attacks included — the rule names the
+attack, not the action), damaging spells and entries that would catch the charmer are
+refused before anything is spent, and non-damaging effects are allowed. **Frightened
+rests on two written-down readings**: sight is unmodelled, so the source is always
+"within line of sight" while on the field, dead or alive; and "can't willingly move
+closer" is judged at the destination square, not along the path. All of it is on
+`ConditionRules`' doc comments.
+
+**A rider printed in a "Failure:" sentence carries two extra extraction rules** — the
+fourth occurrence of bug 1's shape found them. In a *saving-throw* entry the rider must
+state its end within its own sentence: the Quasit's "Failure: The target has the
+Frightened condition." puts the way out ("repeats the save at the end of each of its
+turns") in the *next* sentence, where sentence-scoped parsing cannot attach it, and
+imposing the rider without it would make the condition permanent. And in an *attack*
+entry a "Failure:" sentence belongs to an embedded saving throw — the Ghast's Claw rolls
+a DC 10 Constitution save gated on "non-Undead creature", both printed in sentences of
+their own — so riding the attack with it would paralyze on every hit with no save
+rolled. Both refusals are in `EntryMechanicsParser.ReadRider`, with the safe direction
+chosen; duration-less riders in sentences of their own (the Gladiator's Prone, the Water
+Elemental's Grappled, the Otyugh Bite's Poisoned disease) are untouched, because those
+conditions carry their own printed way out.
 
 **Durations hang off a turn counter, not a countdown.** An `ActiveCondition` carries who
 imposed it and a `ConditionExpiry` — whose turns are counted, which boundary, and at which
@@ -418,8 +456,9 @@ dotnet test SRDCombat.sln -c Debug
 
 - **`git add` specific paths, never `-A` or `.`**
 - **One narrowly-scoped branch per concern; branch → push → open a PR → wait for CI →
-  then stop.** The user reviews the diff and merges. Do not merge your own PR, and do
-  not push to `main`.
+  merge it yourself once CI is green** (`gh pr merge <n> --merge`, merge commits, not
+  squash). Confirmed with the user 2026-08-12 — an earlier version of this line said the
+  user merges, and it was stale. Never push to `main` directly.
   (The first six commits went straight to `main` before this was being followed, which
   is why early history has no PRs. From PR #1 onward it is the workflow.)
 - **Merging intermittently returns HTTP 504 while succeeding.** Re-check with
