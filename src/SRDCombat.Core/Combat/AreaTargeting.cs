@@ -15,7 +15,13 @@ namespace SRDCombat.Core.Combat;
 /// <item>
 /// <b>Emanation and Sphere</b> — every square within the radius, measured the same way
 /// every other distance in this engine is measured. An Emanation is centred on the
-/// caster, a Sphere on a chosen point.
+/// caster, a Sphere on a chosen point. <b>An Emanation excludes its origin square</b>,
+/// and that one is not an interpretation: the glossary says "An Emanation's origin
+/// (creature or object) isn't included in the area of effect unless its creator decides
+/// otherwise" (printed page 181). The trailing clause is a choice the creator makes, and
+/// nothing in this engine offers it, so the exclusion is unconditional here. A Sphere
+/// keeps its centre square — it is centred on a point rather than extending from a
+/// creature, and the glossary gives it no such exclusion.
 /// </item>
 /// <item>
 /// <b>Cone</b> — squares within the cone's length of the origin whose direction from the
@@ -26,7 +32,9 @@ namespace SRDCombat.Core.Combat;
 /// <b>Line</b> — squares within the line's length along the direction cast and within
 /// half its width perpendicular to it. The origin square itself is excluded, as it is
 /// for a Cone: both extend <em>from</em> their user, and a breath weapon that caught
-/// the breather would be read as a bug at any table.
+/// the breather would be read as a bug at any table. With the Emanation exclusion
+/// verified above, all three shapes that extend from a creature now agree — and only
+/// the Emanation's exclusion is printed rather than inferred.
 /// </item>
 /// <item>
 /// <b>Cube</b> — an axis-aligned square of the given side, centred on the chosen point.
@@ -75,7 +83,9 @@ public static class AreaTargeting
     private static bool Covers(EffectArea area, GridPosition origin, GridPosition target, GridPosition square) =>
         area.Shape switch
         {
-            AreaShape.Emanation => square.DistanceFeetTo(origin) <= area.SizeFeet,
+            // "An Emanation's origin (creature or object) isn't included in the area of
+            // effect unless its creator decides otherwise" — glossary, printed page 181.
+            AreaShape.Emanation => square != origin && square.DistanceFeetTo(origin) <= area.SizeFeet,
             AreaShape.Sphere => square.DistanceFeetTo(target) <= area.SizeFeet,
             AreaShape.Cube => square.DistanceFeetTo(target) <= area.SizeFeet / 2,
             AreaShape.Cone => InCone(area, origin, target, square),
