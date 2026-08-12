@@ -67,6 +67,31 @@ public sealed record SpellDefinition
     /// <summary>The range in feet where the text gives one. Null for Self, Touch, Sight and Unlimited.</summary>
     public int? RangeFeet { get; init; }
 
+    /// <summary>
+    /// The distance a target may be at, reading the two printed bands that carry no
+    /// number.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>"Touch" and "Self" both parse to no distance at all</b>, and a null range means
+    /// "no limit" everywhere it is checked — so before this existed, Inflict Wounds, a
+    /// Touch spell, could be cast across the room. Touch is read as 5 feet, the reach
+    /// every other touch-shaped rule in this engine uses.
+    /// </para>
+    /// <para>
+    /// <b>Self stays null on purpose.</b> A Self spell is not aimed at anybody: its area
+    /// is centred on the caster and covers what it covers, so there is no target distance
+    /// to check. <see cref="IsSelfRanged"/> is how a caller tells that apart from
+    /// genuinely unlimited.
+    /// </para>
+    /// </remarks>
+    public int? TargetRangeFeet => RangeFeet
+        ?? (RangeText.StartsWith("Touch", StringComparison.OrdinalIgnoreCase) ? 5 : null);
+
+    /// <summary>True when the spell is cast on the caster rather than aimed at a target.</summary>
+    public bool IsSelfRanged =>
+        RangeText.StartsWith("Self", StringComparison.OrdinalIgnoreCase);
+
     public required SpellComponents Components { get; init; }
 
     /// <summary>The material component in parentheses, when there is one.</summary>

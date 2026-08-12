@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #86 (spells that forced a save and did nothing) |
+| Branch | `main` at PR #87 (the policy casts on value, closing #85) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **4 open GitHub issues** — #85 and #83 (the important two), #81 and #78. |
+| Work remaining | **3 open GitHub issues** — #83 (the important one), #81 and #78. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -139,11 +139,6 @@ per concern, and the gate before merge.
 
 Two issues, both found by measuring rather than by reading code.
 
-- **#85 — the tactics policy casts only as a fallback**, so a caster's list is mostly
-  unreachable: Touch spells can never fire and self-centred areas are refused whenever an
-  ally is adjacent. **Do this before measuring any more character-side work**, because
-  everything new will be measured through this filter and will look worthless — adding
-  the Cleric's whole executable spell list moved the median not at all.
 - **#83 — the party is a fraction of its printed self.** The successor to #79, and the
   most valuable thing in the queue: the encounter budget prices a fight assuming both
   sides are whole, the monster side is, and the party is not. In order of what the
@@ -500,15 +495,31 @@ so *it* can tell what is left; they do not belong in a status report.
   damage, healing, or a condition `ConditionRules` can impose; the rest are refused.
   **Extraction knew all along**: Hold Person's Paralyzed rider was extracted with an
   `UnmodelledRequirement` and the casting path simply never looked at conditions.
+- **The policy casts on value now, not as a last resort (#85), and two bugs were hiding
+  under the old rule.** "Cast only when the weapon cannot reach" made Touch spells
+  unreachable by construction. Fixing it exposed that **"Touch" and "Self" both parse to
+  no range at all**, and a null range means *unlimited* everywhere it is checked — so
+  Inflict Wounds was legally castable across the room. `SpellDefinition.TargetRangeFeet`
+  reads Touch as 5 feet; **Self stays null on purpose** and `IsSelfRanged` is how a caller
+  tells "cast on myself" apart from "no limit". A spell is now weighed against the swing
+  it replaces — a cantrip only has to be better, a slot has to be **1.5×** better — and an
+  area that catches an ally is **a trade rather than a veto**, scored as damage times
+  (enemies − friends).
+- **A healer holds its slots, and that is measured.** Reserving slots the moment anybody
+  is badly hurt clears a median of **6.5** fights; reserving them only once somebody is
+  already at 0 clears **5**; the first version of this change, with no reserve at all,
+  clears **4** and burned the Cleric's slots on damage while the party bled. The cautious
+  healer wins because a slot spent on damage is gone when the character who needed it
+  drops. Median over the whole change: **4 → 6.5**.
 - **The pregen Cleric prepares six of its printed nine, and the shortfall is not a
   choice.** Of the 109 spells on the Cleric list, six have an effect the engine executes:
   Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds and Spirit
   Guardians. **Two of those six the tactics policy can never cast** — Inflict Wounds is
   Touch and the policy only casts when its weapon *cannot* reach, and Spirit Guardians is
-  a self-centred Emanation that `SpellAreaIsSafe` refuses whenever an ally stands beside
-  the caster. That is #85, and it caps how much party power any future work can express:
-  measured over 60 runs the Cleric cast Sacred Flame 682 times and Spirit Guardians
-  **zero**.
+  a self-centred Emanation. #85 fixed the first — Inflict Wounds now casts, correctly
+  limited to 5 feet — and **Spirit Guardians is still never cast**, because the healer's
+  reserve holds every slot whenever anybody is badly hurt, which is nearly always. That is
+  the honest state: the mechanism to cast it exists and the priorities never choose it.
 - **Area geometry is a stated interpretation, not a derivation — with one exception.**
   The SRD describes areas for a table with a ruler; `AreaTargeting` documents how each
   becomes squares. Cylinder is not modelled and a spell using one is refused. The

@@ -57,7 +57,9 @@ public sealed partial class Encounter
             return refusal;
         }
 
-        if (target is not null && spell.RangeFeet is { } range
+        // A Self spell is not aimed at anybody — its area is centred on the caster — so
+        // only a spell with a real target range is checked against the target.
+        if (target is not null && !spell.IsSelfRanged && spell.TargetRangeFeet is { } range
             && caster.Position.DistanceFeetTo(target.Position) > range)
         {
             return new ActionRefusal(
