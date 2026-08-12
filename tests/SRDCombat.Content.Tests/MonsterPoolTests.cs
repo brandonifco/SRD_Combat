@@ -34,14 +34,15 @@ public class MonsterPoolTests
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 120,
-            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 131 when the rule was written.");
+            pool.Count >= 115,
+            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 123 when the rule was written. " +
+            "It was 131 before #52 dropped the creatures the SRD prices as equipment.");
     }
 
     [Fact]
     public void EveryChallengeRatingInTheBandHasSomethingToDrawFrom()
     {
-        // A pool of 131 would still be useless if it were all CR 0. The gauntlet needs a
+        // A pool of 123 would still be useless if it were all CR 0. The gauntlet needs a
         // choice at every step of the ladder, so the floor is per band, not overall.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 

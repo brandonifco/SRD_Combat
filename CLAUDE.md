@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #74 (Potions of Healing, closing #72) |
+| Branch | `main` at PR #76 (plausible foes, closing #52) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **1 open GitHub issue** — #52, plausible foes. |
+| Work remaining | **1 open GitHub issue** — #75, aquatic creatures in dry-land fights. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -67,9 +67,8 @@ naive one: it focuses fire on the weakest enemy already in reach, heals a fallen
 rages, spends Second Wind, drinks and administers potions, casts when its weapon cannot
 reach, and reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
-whose area would catch its own side. And
-**encounters can contain livestock** — a Camel is mechanically `Complete` and narratively
-absurd as a foe — which is #52 and a third axis neither the pool nor the budget owns.
+whose area would catch its own side. And **encounters can still contain a beached
+shark** — #75, the environment axis, found while fixing the property one.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -100,13 +99,14 @@ per concern, and the gate before merge.
 
 One issue.
 
-- **#52 — encounters contain livestock.** Reopened 2026-08-12: it had been closed with no
-  fix in the code. The user's reading, worth keeping: **livestock are not made for
-  fighting and are not aggressive under normal circumstances**, so a Camel as a foe is
-  wrong on the fiction rather than merely odd, however `Complete` its stat block grades.
-  Coverage is not plausibility and neither is cost, so this is a third axis nothing owns;
-  a curated list rather than a heuristic, and `EncounterBuilder` needs no change because
-  it already takes any candidate sequence.
+- **#75 — aquatic creatures in dry-land fights.** Found while verifying #52: with
+  equipment gone, a Low fight still drew a Giant Seahorse. **Not a data or engine bug** —
+  the SRD gives aquatic creatures a 5-foot Walk speed exactly so they can be fought out
+  of water, so they flop one square per turn and the fight merely looks ridiculous. The
+  missing notion is *environment*, which neither the pool, the budget nor `PlausibleFoes`
+  owns. Note the tempting derivation (Swim ≫ Walk means aquatic) is the same shape of
+  heuristic as the keyword filter in bug 2 below, and the Archelon — walks 20, swims 80,
+  and is not absurd ashore — is the counterexample to check it against.
 
 **A caution before tuning anything against numbers:** the party in an automated run is
 played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
@@ -631,10 +631,24 @@ cost real time:
   combatants from `CharacterState` through `CombatantCarryOver` and reads them back when
   the fight ends. Nothing about a run leaks into `Encounter`, which stays one
   self-contained fight — exactly what the frozen transcripts need it to be.
-- **Coverage is not appropriateness either — a third axis, and nothing owns it yet.** The
-  builder happily fields a Camel: mechanically `Complete`, narratively absurd. See #52;
-  the fix is expected to be a curated list rather than a heuristic, and `EncounterBuilder`
-  needs no change because it already takes any candidate sequence.
+- **Coverage is not appropriateness either — that is `PlausibleFoes`, the third axis.**
+  The builder used to field a Camel: mechanically `Complete`, narratively absurd. **Most
+  of the fix is derived rather than judged**, which is why it is worth knowing about: the
+  Equipment chapter's *Mounts and Other Animals* table (printed page 100) prices eight
+  animals with a carrying capacity and a cost in gold, and says a mount's "primary purpose
+  is to carry gear" — the SRD naming its own equipment. Only Cat and Goat are a judgement,
+  and the reading is on the class. Nothing else is excluded on temperament, deliberately:
+  **a weak wild animal is a poor fight, not an absurd one**, so the Rat, the Raven and the
+  Deer stay in and this never becomes a model of which animals are cross. Elephant and
+  Mastiff were argued over and left excluded because the line is the printed table rather
+  than a per-animal debate, and **excluding them costs nothing since this governs only the
+  random draw** — `MonsterPool.Draw` takes `plausibleFoesOnly: false`, and
+  `EncounterBuilder` takes any authored sequence. Names are matched **exactly**: a Giant
+  Goat is a wild charging creature and a substring test would take it out with the farm
+  animal. The pool went 131 → 123, and the guard that the list cannot outlive a renamed
+  stat block is a content test, **not** `MonsterValidator` — that validates whatever list
+  it is handed, single stat blocks included, so a whole-corpus check there fails on every
+  partial list.
 
 ## Related projects on this machine — context, not dependencies
 

@@ -33,6 +33,10 @@ public static class MonsterValidator
                 $"{duplicate.Count()} monsters share this id."));
         }
 
+        // Deliberately no whole-corpus checks here. This validates whatever list it is
+        // handed — a single stat block in a test as readily as all 330 — so "every name
+        // PlausibleFoes excludes exists" would fail on every partial list. That guard
+        // lives in PlausibleFoeTests, which runs against the committed content.
         foreach (var monster in monsters)
         {
             ValidateOne(monster, issues);
