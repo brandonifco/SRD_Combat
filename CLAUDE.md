@@ -45,7 +45,7 @@ evidence points away from tactics and at **encounter shape**: a Low fight for fo
 characters buys **5.4 monsters on average and hits the eight cap a quarter of the time**,
 because the builder picks uniformly among whatever is affordable and cheap creatures are
 always affordable. Four characters against eight creatures is an action-economy problem no
-policy solves. That is #63, and it is the next thing to measure against.
+policy solves. That is #62, and it is the next thing to measure against.
 
  `dotnet run --project src/SRDCombat.Console` climbs a
 thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
