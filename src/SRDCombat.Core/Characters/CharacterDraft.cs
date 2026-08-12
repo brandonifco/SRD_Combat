@@ -17,6 +17,39 @@ public enum AbilityIncreaseChoice
     OneEach,
 }
 
+/// <summary>
+/// A Fighting Style feat, taken by a Fighter at level 1 and a Ranger at level 2.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Only the two the engine executes are named here, and for the usual reason: a style
+/// this list offered but did not apply would be a choice that silently did nothing. The
+/// rest of the printed styles reference machinery that does not exist — Great Weapon
+/// Fighting needs per-die rerolls, Two-Weapon Fighting needs off-hand attacks, Blind
+/// Fighting needs Blindsight — and a character wanting one takes
+/// <see cref="Unspecified"/> and carries the printed feature as unimplemented, exactly
+/// as it did before this choice existed.
+/// </para>
+/// <para>
+/// The SRD lets a Fighter swap this feat on gaining a level. Nothing here models
+/// levelling in play, so the choice is fixed at build time.
+/// </para>
+/// </remarks>
+public enum FightingStyle
+{
+    /// <summary>No style chosen, or one the engine does not execute.</summary>
+    Unspecified,
+
+    /// <summary>"You gain a +2 bonus to attack rolls you make with Ranged weapons."</summary>
+    Archery,
+
+    /// <summary>
+    /// "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to
+    /// Armor Class."
+    /// </summary>
+    Defense,
+}
+
 /// <summary>Everything the player chose, before any rules are applied.</summary>
 /// <remarks>
 /// Deliberately just choices — no derived numbers. Every AC, hit point total and attack
@@ -50,6 +83,30 @@ public sealed record CharacterDraft
 
     /// <summary>Skills chosen from the class's list.</summary>
     public IReadOnlyList<string> ChosenSkills { get; init; } = [];
+
+    /// <summary>
+    /// Skills taken with Expertise, which doubles the proficiency bonus on them.
+    /// </summary>
+    /// <remarks>
+    /// One list for every source of Expertise, because the rule is the same wherever it
+    /// comes from and the sources differ only in how many picks they grant — a Rogue's
+    /// two at level 1 and two more at 6, a Ranger's one from Deft Explorer. How many the
+    /// character is entitled to is checked against the class and level by
+    /// <see cref="CharacterResolver"/>; Expertise on a skill the character is not
+    /// proficient in is refused there too, since the SRD grants it "in your skill
+    /// proficiencies".
+    /// </remarks>
+    public IReadOnlyList<string> ExpertiseSkills { get; init; } = [];
+
+    /// <summary>
+    /// The Fighting Style feat taken, for classes that grant one.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="FightingStyle.Unspecified"/> is the honest default: a character may
+    /// legitimately have taken a printed style the engine does not execute, and the
+    /// feature then stays reported on <c>CharacterSheet.UnimplementedFeatures</c>.
+    /// </remarks>
+    public FightingStyle FightingStyle { get; init; } = FightingStyle.Unspecified;
 
     /// <summary>Ids of weapons the character is carrying.</summary>
     public IReadOnlyList<string> WeaponIds { get; init; } = [];

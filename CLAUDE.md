@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #40 (the derived monster pool) |
-| Tests | **455 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #41 (draft choices: Fighting Style and Expertise) |
+| Tests | **471 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **1 open GitHub issue.** Not in this file, not in chat. |
@@ -24,7 +24,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
-monsters, with twelve implemented class features and working spellcasting (attack spells,
+monsters, with fourteen implemented class features and working spellcasting (attack spells,
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
@@ -314,7 +314,15 @@ so *it* can tell what is left; they do not belong in a status report.
   list. A printed feature name maps to an implemented `ClassFeature` only if the engine
   really does the thing. **Add a name here only alongside the code that implements it** —
   everything absent is reported on `CharacterSheet.UnimplementedFeatures` and stays
-  visible.
+  visible. Two printed names may map to *one* feature when they are the same rule: the
+  Rogue's `Expertise` and the Ranger's `Deft Explorer` both grant `ClassFeature.Expertise`.
+- **The draft carries the choices the rules cannot make, and the resolver refuses ones
+  the character was never granted.** `FightingStyle` and `ExpertiseSkills` are the first
+  two; both are validated against the *granted features*, not the class name, so the
+  Rogue's two picks at level 1 and the Ranger's one from Deft Explorer need no special
+  case. `FightingStyle.Unspecified` is the honest default — a character may have taken a
+  printed style the engine does not execute (Great Weapon Fighting, Two-Weapon Fighting),
+  and the feature then stays reported as unimplemented rather than silently doing nothing.
 - **Casting works.** Attack spells roll a spell attack against AC; save spells make
   every creature in the area roll against the caster's DC, halving on a success. Slots
   are spent (cantrips are free), Concentration is tracked and broken by damage, and a
