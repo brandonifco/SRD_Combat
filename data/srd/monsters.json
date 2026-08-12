@@ -1508,11 +1508,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The balor has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The balor has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -1938,11 +1936,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The devil has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The devil has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -2238,11 +2234,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The devil has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The devil has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -4390,11 +4384,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The devil has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The devil has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -6901,11 +6893,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The devil has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The devil has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -7477,11 +7467,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The golem has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The golem has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -9663,11 +9651,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The deva has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The deva has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -9815,11 +9801,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The djinni has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The djinni has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Wishes",
@@ -10782,11 +10766,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The dryad has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The dryad has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Speak with Beasts and Plants",
@@ -11107,11 +11089,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The efreeti has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The efreeti has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Wishes",
@@ -11286,11 +11266,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The erinyes has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The erinyes has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Magic Rope",
@@ -12129,11 +12107,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The golem has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The golem has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -12573,11 +12549,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The gargoyle doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The gargoyle doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -13535,11 +13509,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The glabrezu has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The glabrezu has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -13747,9 +13719,7 @@
               "maximumTargetSize": "Medium"
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Medium or smaller creature, it has the Prone condition."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Parry",
@@ -17379,16 +17349,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The hound has Advantage on an attack roll against a creature if at least one of the hound's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The hound has Advantage on an attack roll against a creature if at least one of the hound's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The hound has Advantage on an attack roll against a creature if at least one of the hound's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -17545,11 +17508,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The hezrou has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The hezrou has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Stench",
@@ -17825,11 +17786,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The hippogriff doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The hippogriff doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -17940,16 +17899,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The hobgoblin has Advantage on an attack roll against a creature if at least one of the hobgoblin's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The hobgoblin has Advantage on an attack roll against a creature if at least one of the hobgoblin's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The hobgoblin has Advantage on an attack roll against a creature if at least one of the hobgoblin's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Longsword",
@@ -18347,11 +18299,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The devil has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The devil has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -18664,11 +18614,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The devil has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The devil has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -18834,11 +18782,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The imp has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The imp has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Sting",
@@ -19330,11 +19276,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The golem has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The golem has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -19640,16 +19584,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The kobold has Advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Sunlight Sensitivity",
@@ -20676,11 +20613,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The archmage has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The archmage has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -21091,11 +21026,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The marilith has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The marilith has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Reactive",
@@ -22838,11 +22771,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The mummy has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The mummy has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Undead Restoration",
@@ -23100,11 +23031,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The nalfeshnee has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The nalfeshnee has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -23300,11 +23229,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The hag has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The hag has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Soul Bag",
@@ -24967,11 +24894,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The pit fiend has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The pit fiend has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -25178,11 +25103,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The planetar has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The planetar has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -25633,11 +25556,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The pseudodragon has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The pseudodragon has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -25989,11 +25910,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The quasit has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The quasit has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Rend",
@@ -27916,11 +27835,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The satyr has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The satyr has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Hooves",
@@ -30011,11 +29928,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The solar has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The solar has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -30362,11 +30277,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The sphinx has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The sphinx has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Rend",
@@ -31571,11 +31484,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The golem has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The golem has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -32092,11 +32003,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The tarrasque has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The tarrasque has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Reflective Carapace",
@@ -32379,16 +32288,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The tough has Advantage on an attack roll against a creature if at least one of the tough's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The tough has Advantage on an attack roll against a creature if at least one of the tough's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The tough has Advantage on an attack roll against a creature if at least one of the tough's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Mace",
@@ -32498,16 +32400,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The tough has Advantage on an attack roll against a creature if at least one of the tough's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The tough has Advantage on an attack roll against a creature if at least one of the tough's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The tough has Advantage on an attack roll against a creature if at least one of the tough's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -33050,11 +32945,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The unicorn has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The unicorn has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -33834,11 +33727,9 @@
           "name": "Magic Resistance",
           "section": "Trait",
           "text": "The vrock has Advantage on saving throws against spells and other magical effects.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The vrock has Advantage on saving throws against spells and other magical effects."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -34024,16 +33915,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The warrior has Advantage on an attack roll against a creature if at least one of the warrior's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The warrior has Advantage on an attack roll against a creature if at least one of the warrior's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The warrior has Advantage on an attack roll against a creature if at least one of the warrior's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Spear",
@@ -34373,7 +34257,6 @@
             }
           ],
           "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14)",
             "Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental's turns",
             "The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with Whelm",
             "As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check"
@@ -35128,16 +35011,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The werewolf has Advantage on an attack roll against a creature if at least one of the werewolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The werewolf has Advantage on an attack roll against a creature if at least one of the werewolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The werewolf has Advantage on an attack roll against a creature if at least one of the werewolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -36378,16 +36254,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -37648,16 +37517,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The baboon has Advantage on an attack roll against a creature if at least one of the baboon's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The baboon has Advantage on an attack roll against a creature if at least one of the baboon's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The baboon has Advantage on an attack roll against a creature if at least one of the baboon's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -38010,16 +37872,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The hawk has Advantage on an attack roll against a creature if at least one of the hawk's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The hawk has Advantage on an attack roll against a creature if at least one of the hawk's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The hawk has Advantage on an attack roll against a creature if at least one of the hawk's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Beak",
@@ -38909,16 +38764,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The wolf has Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -39388,11 +39236,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The snake doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The snake doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -39652,8 +39498,7 @@
             }
           ],
           "unmodelledClauses": [
-            "The ape hurls a boulder at a point it can see within 90 feet",
-            "If the target is a Large or smaller creature, it has the Prone condition"
+            "The ape hurls a boulder at a point it can see within 90 feet"
           ]
         },
         {
@@ -41297,11 +41142,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The owl doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The owl doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Talons",
@@ -41401,16 +41244,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The rat has Advantage on an attack roll against a creature if at least one of the rat's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The rat has Advantage on an attack roll against a creature if at least one of the rat's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The rat has Advantage on an attack roll against a creature if at least one of the rat's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -42196,16 +42032,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The vulture has Advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Gouge",
@@ -42296,11 +42125,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The wasp doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The wasp doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Sting",
@@ -42943,16 +42770,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The hyena has Advantage on an attack roll against a creature if at least one of the hyena's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The hyena has Advantage on an attack roll against a creature if at least one of the hyena's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The hyena has Advantage on an attack roll against a creature if at least one of the hyena's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -43221,16 +43041,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The lion has Advantage on an attack roll against a creature if at least one of the lion's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The lion has Advantage on an attack roll against a creature if at least one of the lion's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The lion has Advantage on an attack roll against a creature if at least one of the lion's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Running Leap",
@@ -43891,11 +43704,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The owl doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The owl doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Talons",
@@ -44435,11 +44246,9 @@
           "name": "Flyby",
           "section": "Trait",
           "text": "The pteranodon doesn't provoke an Opportunity Attack when it flies out of an enemy's reach.",
-          "mechanics": "Unmodelled",
+          "mechanics": "Passive",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The pteranodon doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -44713,16 +44522,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The shark has Advantage on an attack roll against a creature if at least one of the shark's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The shark has Advantage on an attack roll against a creature if at least one of the shark's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The shark has Advantage on an attack roll against a creature if at least one of the shark's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Water Breathing",
@@ -46466,16 +46268,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The vulture has Advantage on an attack roll against a creature if at least one of the vulture's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Beak",
@@ -46734,16 +46529,9 @@
           "name": "Pack Tactics",
           "section": "Trait",
           "text": "The wolf has Advantage on attack rolls against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.",
-          "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Incapacitated",
-              "unmodelledRequirement": "The wolf has Advantage on attack rolls against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-            }
-          ],
-          "unmodelledClauses": [
-            "The wolf has Advantage on attack rolls against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
-          ]
+          "mechanics": "Passive",
+          "appliedConditions": [],
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",

@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #33 (class features: Danger Sense, Fast Movement, Steady Aim) |
+| Branch | `main` at PR #34 (extractor accounting + regeneration) |
 | Tests | **409 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **6 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -89,7 +89,7 @@ governing plan doc carries the same list with the reasoning; this is the short f
    stay deliberately absent — each needs a model (verticality, space-sharing, light)
    that does not exist; Undead Fortitude is the best next one, needing only a hook where
    damage would drop the creature. The registry works off entry *names*, so content
-   still counts these entries `Unmodelled` until #28's regeneration reclassifies them.
+   counted these entries `Unmodelled` until #28 reclassified them `Passive` and regenerated.
 6. **#10 class features — done for what needs no new machinery.** Danger Sense
    (Advantage on Dexterity saves, folded into the shared save loop beside Magic
    Resistance), Fast Movement (+10 feet derived in `CharacterResolver`, gated on Heavy
@@ -298,12 +298,11 @@ Three things a Phase 2 author should know before starting:
   the `Core` definitions. The design doc explains why this diverges from 5eGoldBox, and
   what guards replace the mirror. Don't "restore" it without reading that section.
 - **Most monster prose is mechanics now.** Attacks, Multiattack, usage limits,
-  saving-throw effects and the gated riders all execute. What remains text on
-  `MonsterEntry.Text` is counted in `UnmodelledClauses`, never silently held — though
-  the accounting currently *over*-reports for save entries: an imposable rider on one
-  still lands in `UnmodelledClauses`, because tightening the extractor's accounting
-  requires regenerating content and the source PDF is not on this machine. The open
-  issue for it has the details.
+  saving-throw effects, the gated riders and the registry's passive traits all
+  execute, and since #28 the accounting agrees with the engine: an imposable rider on
+  a save entry is credited, and a registry-implemented trait is
+  `EntryMechanics.Passive` rather than counted. What remains text on
+  `MonsterEntry.Text` is in `UnmodelledClauses`, never silently held.
 - **`ChallengeRatingRules` already exists** in `Core.Rules` with the full XP and
   proficiency-bonus tables, and the SRD's per-character encounter XP budget is on
   printed page 202 — the encounter builder implements a published table, not a guess.
@@ -327,9 +326,9 @@ Three things a Phase 2 author should know before starting:
   anything present). 8.0.129 now builds the whole tree — its early C# 12 compiler
   rejected a collection-expression `Split` call in `MonsterParser` that CI's newer
   8.0.x accepted (#27), which is why that call is written as an explicit array.
-- **The source PDF is also absent from this machine.** `~/Downloads/SRD_CC_v5.2.1.pdf`
-  has to be restored to that exact path before any extraction work; nothing else in
-  build or test needs it.
+- **The source PDF is back at `~/Downloads/SRD_CC_v5.2.1.pdf`** (restored for #28's
+  regeneration). Only extraction needs it; nothing in build or test does. If it goes
+  missing again, extraction work is blocked until it is restored to that exact path.
 - **`dotnet new sln` under SDK 10 produces a `.slnx`, which .NET 8 cannot read.** Hit
   during setup: the solution has to be `SRDCombat.sln` in the classic format, or CI
   (pinned to 8.0.x) fails to find a project file at all. `dotnet new sln --format sln`
