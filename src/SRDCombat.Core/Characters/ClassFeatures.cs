@@ -96,6 +96,21 @@ public enum ClassFeature
     /// is refused rather than granted silently.
     /// </summary>
     WeaponMastery,
+
+    /// <summary>Champion Fighter: weapon attacks score a Critical Hit on a 19 or 20.</summary>
+    ImprovedCritical,
+
+    /// <summary>
+    /// Berserker Barbarian: extra d6s equal to the Rage Damage bonus on the first
+    /// Strength-based hit each turn while Raging and Reckless.
+    /// </summary>
+    Frenzy,
+
+    /// <summary>
+    /// Life Cleric: a spell cast with a slot that restores hit points restores 2 plus
+    /// the slot's level more.
+    /// </summary>
+    DiscipleOfLife,
 }
 
 /// <summary>
@@ -172,6 +187,13 @@ public static class ClassFeatureRegistry
             ["Tactical Mind"] = ClassFeature.TacticalMind,
             ["Ability Score Improvement"] = ClassFeature.AbilityScoreImprovement,
             ["Weapon Mastery"] = ClassFeature.WeaponMastery,
+
+            // Subclass features. The SRD prints exactly one subclass per class, so a
+            // level 3+ character simply has it — there is no choice for a draft to
+            // carry, and the reading is on CharacterResolver.ResolveFeatures.
+            ["Improved Critical"] = ClassFeature.ImprovedCritical,
+            ["Frenzy"] = ClassFeature.Frenzy,
+            ["Disciple of Life"] = ClassFeature.DiscipleOfLife,
         };
 
     /// <summary>The implemented feature for a printed name, or null when not implemented.</summary>

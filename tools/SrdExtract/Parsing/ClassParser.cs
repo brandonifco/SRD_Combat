@@ -398,7 +398,7 @@ public static partial class ClassParser
     private sealed class ClassBuilder(string name, int page)
     {
         private readonly Dictionary<string, StringBuilder> _traits = new(StringComparer.Ordinal);
-        private readonly List<(string Name, StringBuilder Text)> _features = [];
+        private readonly List<(string Name, int Level, StringBuilder Text)> _features = [];
         private string? _currentTrait;
         private double? _valueColumnLeft;
 
@@ -415,7 +415,10 @@ public static partial class ClassParser
                 && FeatureHeading().Match(text) is { Success: true } feature)
             {
                 _currentTrait = null;
-                _features.Add((feature.Groups["name"].Value.Trim(), new StringBuilder()));
+                _features.Add((
+                    feature.Groups["name"].Value.Trim(),
+                    int.Parse(feature.Groups["level"].Value, CultureInfo.InvariantCulture),
+                    new StringBuilder()));
                 return;
             }
 
@@ -505,16 +508,52 @@ public static partial class ClassParser
                 ArmorTraining = Value("Armor Training"),
                 StartingEquipment = Value("Starting Equipment"),
                 Levels = levels.OrderBy(level => level.Level).ToArray(),
-                Features = _features
-                    .Select(feature => EntryMechanicsParser.ClassifyTrait(
-                        feature.Name,
-                        feature.Text.ToString().Trim()))
-                    .ToArray(),
+                Features = Classify(_features.Take(SubclassStart(_features))),
+                SubclassFeatures = Classify(_features.Skip(SubclassStart(_features))),
                 SourcePage = page,
             };
 
             reason = string.Empty;
             return true;
+        }
+
+        private static IReadOnlyList<TraitEntry> Classify(
+            IEnumerable<(string Name, int Level, StringBuilder Text)> features) =>
+            features
+                .Select(feature => EntryMechanicsParser.ClassifyTrait(
+                    feature.Name,
+                    feature.Text.ToString().Trim()) with { GrantedAtLevel = feature.Level })
+                .ToArray();
+
+        /// <summary>
+        /// Where the class's own features end and its subclass's begin.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>The printed levels are the boundary, and they are unambiguous.</b> A class's
+        /// features climb from level 1 to 20 and then the subclass starts over — the
+        /// Fighter runs to "Level 20: Three Extra Attacks" and the Champion's first
+        /// heading is "Level 3: Improved Critical". A single backwards step in an
+        /// otherwise rising sequence is the split, and there is exactly one per class.
+        /// </para>
+        /// <para>
+        /// Derived rather than curated on purpose: the alternative is a hand-written list
+        /// of which features belong to which subclass, which would go stale the moment
+        /// the source changed. <c>ClassValidator</c> asserts the shape this relies on —
+        /// every class has one reset and every feature carries a level.
+        /// </para>
+        /// </remarks>
+        private static int SubclassStart(List<(string Name, int Level, StringBuilder Text)> features)
+        {
+            for (var index = 1; index < features.Count; index++)
+            {
+                if (features[index].Level < features[index - 1].Level)
+                {
+                    return index;
+                }
+            }
+
+            return features.Count;
         }
 
         private string Value(string key) => _traits.TryGetValue(key, out var value) ? value.ToString().Trim() : string.Empty;
@@ -580,7 +619,7 @@ public static partial class ClassParser
     [GeneratedRegex(@"^(?<name>[A-Z][A-Za-z]+)\s+Features$")]
     private static partial Regex FeaturesHeading();
 
-    [GeneratedRegex(@"^Level\s+\d+:\s*(?<name>.+)$")]
+    [GeneratedRegex(@"^Level\s+(?<level>\d+):\s*(?<name>.+)$")]
     private static partial Regex FeatureHeading();
 
     [GeneratedRegex(@"^[dD](?<sides>\d+)")]

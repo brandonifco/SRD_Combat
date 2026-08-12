@@ -1059,6 +1059,31 @@ public sealed partial class Encounter
             ? attacker.Stats.Character?.RageDamageBonus ?? 0
             : 0;
 
+        // Frenzy: "If you use Reckless Attack while your Rage is active, you deal extra
+        // damage to the first target you hit on your turn with a Strength-based attack
+        // ... a number of d6s equal to your Rage Damage bonus ... the same type as the
+        // weapon". A melee weapon attack is the Strength-based case this engine has —
+        // the same reading Rage's own damage bonus uses.
+        if (attacker.Stats.Has(ClassFeature.Frenzy)
+            && attacker.Features.IsRaging
+            && attacker.Features.IsRecklessThisTurn
+            && !attacker.Features.FrenzyUsedThisTurn
+            && attack.Kind == AttackKind.Melee)
+        {
+            attacker.Features.FrenzyUsedThisTurn = true;
+
+            var dice = new DiceExpression(attacker.Stats.Character!.RageDamageBonus, 6, 0);
+            var frenzy = DiceRoller.Roll(_random, dice, result.Critical);
+
+            components.Add((new AttackDamage(dice, attack.Damage[0].Type, frenzy.Total), frenzy));
+
+            Add(
+                CombatStepKind.Feature,
+                $"{attacker.Name}'s Frenzy adds {frenzy.Total} damage [{frenzy}].",
+                attacker,
+                target);
+        }
+
         var cunningStrike = false;
 
         if (SneakAttackApplies(attacker, attack, target, result))

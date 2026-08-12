@@ -15,7 +15,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #87 (the policy casts on value, closing #85) |
+| Branch | `main` at PR #88 (subclasses: the split and the first three features) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
@@ -64,6 +64,8 @@ over the same 40 seeds throughout, median fights cleared of 30:
 | #75 aquatics excluded | **4** | 19 | 1/40 |
 | ASI implemented | 4 | 19 | 1/40 |
 | Weapon Mastery | 4 | **30 — cleared** | 1/40 |
+| #85 policy casts on value | 6.5 | 29 | — |
+| Subclasses (first three features) | 6.5 | 30 — cleared | 6/60 at L4 |
 
 **Two runs of forty have now cleared all thirty rungs**, which nothing had ever done
 before Weapon Mastery landed: Sap and Vex fired 879 and 838 times across those forty runs,
@@ -446,6 +448,18 @@ so *it* can tell what is left; they do not belong in a status report.
   Cleave, Push, Slow and Nick are refused by name — a draft mastering a Greataxe throws —
   and their reasons are on `WeaponMasteryRules` and in #81. **The Barbarian pregen
   therefore has the feature and cannot use it**, since Cleave is the Greataxe's.
+- **Subclasses need no draft choice, and the split is derived, not curated.** The SRD
+  prints exactly one subclass per class, so a level 3+ character simply *has* it — the
+  Champion, the Berserker, the Thief, the Life Domain. The extraction split rests on the
+  printed levels: a class's feature headings climb "Level 1:" to "Level 20:" and the
+  subclass's start over at "Level 3:", so **the single backwards step in the sequence is
+  the boundary**, with `SubclassTests` asserting the shape (every class ≥ 4 subclass
+  features, all carrying levels, minimum 3). Three subclass features execute — **Improved
+  Critical** (crits on 19, and the 19 must still beat AC because only the 20 auto-hits),
+  **Frenzy** (Rage-Damage-bonus d6s on the first Reckless melee hit each turn), and
+  **Disciple of Life** (+2 + slot level on every slot-cast heal). The Thief's level 3
+  features genuinely do nothing in a fight — Fast Hands picks locks, Second-Story Work
+  climbs — and stay on `UnimplementedFeatures`, with a test asserting exactly that.
 - **The Ability Score Improvement is a draft choice, and the count comes from the class
   table.** "+2 to one ability, or +1 to two, never above 20", taken at level 4 by every
   class. Two readings are written down on the resolver: **how many the character is

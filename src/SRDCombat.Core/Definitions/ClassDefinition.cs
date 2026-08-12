@@ -102,6 +102,18 @@ public sealed record ClassDefinition
     /// </summary>
     public required IReadOnlyList<TraitEntry> Features { get; init; }
 
+    /// <summary>
+    /// The prose of the subclass's features, split from the class's own by the printed
+    /// levels starting over.
+    /// </summary>
+    /// <remarks>
+    /// The SRD prints exactly one subclass per class — the Champion for the Fighter, the
+    /// Berserker for the Barbarian — so this needs no name to disambiguate it yet. A
+    /// second subclass would need one, and would need the split to become a heading test
+    /// rather than a level test.
+    /// </remarks>
+    public IReadOnlyList<TraitEntry> SubclassFeatures { get; init; } = [];
+
     /// <summary>True when any level grants spell slots.</summary>
     public bool IsSpellcaster => Levels.Any(level => level.HasSpellSlots);
 
