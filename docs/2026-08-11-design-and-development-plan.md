@@ -131,11 +131,13 @@ gauntlet's position on the ladder, XP total, loot awarded, the save file. Also t
 against the SRD's XP budget.
 
 **Rests are a real design problem in a combat-only game** and are decided here rather
-than deferred: a **short rest after every fight**, a **long rest at camp milestones**
-every third fight. Without this, spell slots and hit dice make the ladder unplayable
-by the fourth encounter; with unlimited rests, resource management — most of what
-makes 5e classes differ — stops mattering. The interval is content, not code, so it
-can be tuned.
+than deferred: a **short rest between routine fights**, with **long rests bracketing
+each High milestone** — the fifth fight of every cycle, entered fresh and recovered
+from (the cadence was every third fight until #65 measured that shape ending nearly
+every run). Without rests, spell slots and hit dice make the ladder unplayable by the
+fourth encounter; with unlimited rests, resource management — most of what makes 5e
+classes differ — stops mattering. The interval is content, not code, so it can be
+tuned.
 
 **XP is awarded per-character, not party-wide.** GoldBox pooled it party-wide as a
 deliberate simplification mirroring its shared purse. That reasoning does not carry

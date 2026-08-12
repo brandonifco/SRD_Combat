@@ -20,17 +20,24 @@ public class GauntletTests
     private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
 
     [Fact]
-    public void TheDefaultLadderRisesInCycles()
+    public void TheDefaultLadderKeepsHighForTheMilestoneRung()
     {
         var ladder = GauntletLadder.Default();
 
         Assert.True(ladder.Count >= 30, "The default run is too short to reach level 5.");
 
-        // Rising within each cycle, so a run has a shape rather than a flat grind.
+        // Routine fights alternate Low and Moderate; High is the set piece closing each
+        // cycle, never a routine rung. The decision and its measurement are #65.
         Assert.Equal(EncounterDifficulty.Low, ladder[0].Difficulty);
         Assert.Equal(EncounterDifficulty.Moderate, ladder[1].Difficulty);
+        Assert.Equal(EncounterDifficulty.Low, ladder[2].Difficulty);
+        Assert.Equal(EncounterDifficulty.Moderate, ladder[3].Difficulty);
         Assert.Equal(EncounterDifficulty.High, ladder[GauntletLadder.FightsPerCycle - 1].Difficulty);
         Assert.Equal(EncounterDifficulty.Low, ladder[GauntletLadder.FightsPerCycle].Difficulty);
+
+        Assert.All(
+            ladder.Where((_, index) => index % GauntletLadder.FightsPerCycle != GauntletLadder.FightsPerCycle - 1),
+            step => Assert.NotEqual(EncounterDifficulty.High, step.Difficulty));
     }
 
     [Fact]
@@ -45,12 +52,16 @@ public class GauntletTests
     }
 
     [Fact]
-    public void TheFirstFightOffersNoRestAndEachNewLevelOffersALongOne()
+    public void TheFirstFightOffersNoRestAndLongRestsBracketTheMilestone()
     {
         var ladder = GauntletLadder.Default();
 
         Assert.Null(ladder[0].RestBefore);
         Assert.Equal(RestKind.Short, ladder[1].RestBefore);
+
+        // The High milestone is entered fresh, and the next cycle opens rested — which
+        // is also where anyone who fell to the set piece rejoins.
+        Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerCycle - 1].RestBefore);
         Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerCycle].RestBefore);
     }
 
@@ -393,7 +404,8 @@ public class GauntletTests
     public void AShortRestDoesNotBringAnybodyBack()
     {
         // The cost has to be real: a fallen character misses every fight until the next
-        // Long Rest, which is a whole cycle of the ladder.
+        // Long Rest, which on the default ladder is up to half a cycle of routine fights
+        // or the High milestone itself.
         var member = PregeneratedParty.Build(Content, level: 2).First();
         var dead = CharacterState.Fresh(member) with { CurrentHitPoints = 0, IsDead = true };
 

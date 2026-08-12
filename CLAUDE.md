@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **3 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Work remaining | **2 open GitHub issues**, both against the plan doc's Phase 4. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -46,16 +46,16 @@ and a fallen character rejoining at the next Long Rest.
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
-**Automated runs still lose, and the ladder is why.** Measured over 20-40 runs at each
-step, median fights cleared of 30: **1** at the start, **2** once the policy used the
-party's features and focused fire, **3** once encounters stopped buying five to eight
-monsters at a time — and **still 3** once fallen characters could return, because a party
-usually wipes within a cycle before reaching the Long Rest that would bring anybody back.
-**Nothing has ever cleared the ladder.** What decides where a run ends is the curve's own
-shape: **38 of 40 runs end on a Moderate or High rung, 23 of them on High**, and a ladder
-of Low and Moderate fights alone reaches a median of 7 and a best of 27. That is #65, a
-design decision about a curve this project invented rather than a bug. Every figure here
-is also a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
+**Automated runs still lose, but the ladder no longer decides where.** The curve was
+this project's invention, so #65 chose it deliberately: High is a **set piece closing
+each cycle of five** — four routine fights alternating Low and Moderate, then the
+milestone, entered fresh off a Long Rest and recovered from with another. Measured over
+the same 40 seeds, the old every-third-fight-is-High shape cleared a median of **2.5**
+with **23 of 40 deaths on a High rung**; the milestone shape clears a median of **4**,
+a best of **23**, and only **7 of 40 deaths land on High** — the set piece stopped being
+where runs routinely end. **Nothing has ever cleared the ladder**, but that is no longer
+the curve's doing: a pure Low/Moderate ladder also went 0-for-40, and every figure here
+is a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
 
 **What does not exist yet.** No loot and no save files. `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
@@ -92,12 +92,8 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-Three issues, and the first is a decision rather than a task.
+Two issues, both Phase 4.
 
-- **#65 — the ladder's difficulty curve.** Measurement says this is what ends runs: 38 of
-  40 end on a Moderate or High rung, 23 on High, and a ladder of Low and Moderate fights
-  alone more than doubles how far a party gets. The curve is this project's invention, not
-  the SRD's, so somebody has to choose it. The issue lays out four options.
 - **#49 — save and load a run.** Save the *drafts plus run progress*, never resolved
   sheets, or a save can drift from the rules that made it. Levelling uses average hit
   points precisely so a reload cannot reroll history.
