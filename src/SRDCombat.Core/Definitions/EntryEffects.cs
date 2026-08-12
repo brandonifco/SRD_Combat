@@ -34,6 +34,9 @@ public enum EntryMechanics
     /// <summary>A reaction, stated as a Trigger and a Response.</summary>
     Reaction,
 
+    /// <summary>Restores hit points. See <see cref="SpellDefinition.Heal"/>.</summary>
+    Healing,
+
     /// <summary>
     /// Examined and confirmed to have no effect on a fight — Amphibious, Illumination,
     /// and the like. Only ever set from a curated list.
@@ -106,6 +109,33 @@ public sealed record SaveEffect(
     IReadOnlyList<AttackDamage> FailureDamage,
     SaveSuccessOutcome SuccessOutcome,
     IReadOnlyList<AppliedCondition> AppliedConditions);
+
+/// <summary>
+/// An effect that restores hit points: "regains a number of Hit Points equal to 2d8 plus
+/// your spellcasting ability modifier".
+/// </summary>
+/// <remarks>
+/// <para>
+/// The third effect shape a spell can have, after an attack roll and a saving throw. Its
+/// absence was not a small gap: with no healing at all, a character who dropped could
+/// never be brought back up, and a run through the gauntlet died out within a few fights
+/// however easy the fights were.
+/// </para>
+/// <para>
+/// Only <b>single-target</b> healing is modelled. The mass spells — Mass Cure Wounds,
+/// Mass Healing Word, Prayer of Healing — say "choose up to six creatures", which is a
+/// chosen set rather than an area and needs a casting call that takes several targets;
+/// Prayer of Healing also grants the benefits of a Short Rest, which is a second rule
+/// again. They stay <see cref="EntryMechanics.Unmodelled"/> and counted, rather than
+/// being approximated as single-target spells that quietly heal one creature of six.
+/// </para>
+/// </remarks>
+/// <param name="Dice">The dice rolled, before the caster's modifier.</param>
+/// <param name="AddsSpellcastingModifier">
+/// True when the printed text adds "your spellcasting ability modifier" — Cure Wounds and
+/// Healing Word both do, and Prayer of Healing's flat 2d8 does not.
+/// </param>
+public sealed record SpellHeal(DiceExpression Dice, bool AddsSpellcastingModifier);
 
 /// <summary>Which turn boundary a condition ends on.</summary>
 public enum ConditionClock

@@ -102,7 +102,11 @@ public sealed partial class Encounter
             StartConcentrating(caster, spell);
         }
 
-        if (spell.IsSpellAttack && target is not null)
+        if (spell.Heal is { } heal && target is not null)
+        {
+            ResolveHeal(caster, spell, heal, target, character);
+        }
+        else if (spell.IsSpellAttack && target is not null)
         {
             ResolveSpellAttack(caster, spell, target, character);
         }
@@ -118,6 +122,13 @@ public sealed partial class Encounter
     /// <summary>Whether the spell has a shape this engine can resolve at all.</summary>
     private static ActionRefusal? ResolveSpellShape(SpellDefinition spell, Combatant? target)
     {
+        if (spell.Heal is not null)
+        {
+            return target is null
+                ? new ActionRefusal("spell.needs_target", $"{spell.Name} needs a creature to heal.")
+                : null;
+        }
+
         if (spell.IsSpellAttack)
         {
             return target is null
@@ -142,6 +153,60 @@ public sealed partial class Encounter
         return save.Area is null && target is null
             ? new ActionRefusal("spell.needs_target", $"{spell.Name} needs a creature to target.")
             : null;
+    }
+
+    /// <summary>
+    /// Restores hit points: "regains a number of Hit Points equal to 2d8 plus your
+    /// spellcasting ability modifier".
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Healing a creature at 0 hit points brings it back up.</b>
+    /// <c>Combatant.RegainHitPoints</c> already clears the dying state, resets Death
+    /// Saving Throws and removes Unconscious, so the rule that matters most for a run —
+    /// a dropped character can be brought back into the fight — falls out of the
+    /// existing model rather than needing a special case here.
+    /// </para>
+    /// <para>
+    /// The dead stay dead. The SRD's healing spells restore hit points, and none of them
+    /// says anything about a creature that has died; raising the dead is its own spell
+    /// and its own piece of work.
+    /// </para>
+    /// </remarks>
+    private void ResolveHeal(
+        Combatant caster,
+        SpellDefinition spell,
+        SpellHeal heal,
+        Combatant target,
+        CombatantFeatures character)
+    {
+        if (target.IsDead)
+        {
+            Add(
+                CombatStepKind.Spell,
+                $"{spell.Name} cannot help {target.Name}, who is dead.",
+                caster,
+                target);
+            return;
+        }
+
+        var rolled = DiceRoller.Roll(_random, heal.Dice);
+
+        var modifier = heal.AddsSpellcastingModifier && character.SpellcastingAbility is { } ability
+            ? caster.Stats.ModifierFor(ability)
+            : 0;
+
+        var wasDown = target.CurrentHitPoints == 0;
+        var restored = DamageRules.Heal(target, rolled.Total + modifier);
+
+        Add(
+            CombatStepKind.Spell,
+            $"{target.Name} regains {restored} hit points [{rolled}" +
+            (modifier != 0 ? $" {(modifier > 0 ? "+" : "-")} {Math.Abs(modifier)}" : string.Empty) +
+            $"] — {DescribeHealth(target)}." +
+            (wasDown && target.CurrentHitPoints > 0 ? $" {target.Name} is back on their feet." : string.Empty),
+            caster,
+            target);
     }
 
     private static ActionRefusal? CheckCastingCost(Combatant caster, SpellDefinition spell)

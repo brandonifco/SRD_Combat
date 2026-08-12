@@ -76,7 +76,9 @@ public class PregeneratedPartyTests
     [Fact]
     public void TheCasterKnowsOneSpellOfEachShape()
     {
-        // A save spell and an attack spell, so playing exercises both casting paths.
+        // All three casting paths, so playing exercises each: an attack roll, a saving
+        // throw, and healing. The party had no healing at all until it was modelled, and
+        // a run died out within a few fights however easy they were.
         var caster = PregeneratedParty.Build(Content)
             .Single(member => member.Combatant.Stats.Character is { CanCast: true });
 
@@ -84,9 +86,45 @@ public class PregeneratedPartyTests
 
         Assert.Contains(spells, spell => spell.IsSpellAttack);
         Assert.Contains(spells, spell => spell.Save is not null);
+        Assert.Contains(spells, spell => spell.Heal is not null);
         Assert.All(spells, spell => Assert.True(
-            spell.IsSpellAttack || spell.Save is not null,
+            spell.IsSpellAttack || spell.Save is not null || spell.Heal is not null,
             $"{spell.Name} would be refused at the point of casting."));
+    }
+
+    [Fact]
+    public void TheClericCanHealAFallenPartyMemberBackIntoTheFight()
+    {
+        // The end-to-end proof with real content: real spell, real character, real
+        // encounter. A downed character was unrecoverable until healing existed, and a
+        // run died out within a few fights however easy they were.
+        var party = PregeneratedParty.Build(Content, level: 1);
+        var cleric = party.Single(member => member.Combatant.Stats.Character is { CanCast: true });
+        var fallen = party.Single(member => member.Draft.Name == "Sable");
+
+        var encounter = Encounter.Start(
+            new Battlefield(8, 8),
+            [.. party.Select(member => member.Combatant)],
+            new SeededRandomSource(1));
+
+        DamageRules.Apply(
+            fallen.Combatant,
+            fallen.Sheet.MaximumHitPoints,
+            DamageType.Bludgeoning);
+
+        Assert.Equal(0, fallen.Combatant.CurrentHitPoints);
+        Assert.False(fallen.Combatant.CanAct);
+
+        // Whoever the encounter gave the first turn to, put the Cleric on their feet.
+        while (encounter.ActiveCombatant != cleric.Combatant)
+        {
+            encounter.EndTurn();
+        }
+
+        Assert.Null(encounter.CastSpell("spell.cure-wounds", fallen.Combatant));
+
+        Assert.True(fallen.Combatant.CurrentHitPoints > 0);
+        Assert.True(fallen.Combatant.CanAct);
     }
 
     [Fact]

@@ -268,11 +268,18 @@ public static partial class SpellParser
             var isSpellAttack = SpellAttackPattern().IsMatch(body);
             var save = SpellEffectParser.ParseSave(body, classified.AppliedConditions);
 
+            // Healing is read only when the spell neither attacks nor forces a save, so
+            // a spell that damages on a save and heals on a success cannot be mistaken
+            // for a healing spell.
+            var heal = save is null && !isSpellAttack ? SpellEffectParser.ParseHeal(body) : null;
+
             var mechanics = save is not null
                 ? EntryMechanics.SavingThrow
                 : isSpellAttack
                     ? EntryMechanics.Attack
-                    : classified.Mechanics;
+                    : heal is not null
+                        ? EntryMechanics.Healing
+                        : classified.Mechanics;
 
             spell = new SpellDefinition
             {
@@ -295,6 +302,7 @@ public static partial class SpellParser
                 Text = body,
                 Mechanics = mechanics,
                 Save = save,
+                Heal = heal,
                 Damage = SpellEffectParser.ParseDamage(body),
                 AppliedConditions = classified.AppliedConditions,
                 IsSpellAttack = isSpellAttack,

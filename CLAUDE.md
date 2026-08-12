@@ -15,18 +15,17 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #60 (the 39 missing spells) |
-| Tests | **556 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #61 (healing spells) |
+| Tests | **563 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **6 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Work remaining | **5 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
 monsters, with sixteen implemented class features and working spellcasting (attack spells,
-save spells with areas, slots, Concentration — but **no healing of any kind**, which is
-#57 and is not a small gap: it makes a run unwinnable). A wolf's bite knocks a Medium creature
+save spells with areas, slots, Concentration, and **healing**). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
 rolls Acrobatics against the printed escape DC, an Ape throws its Rock once and then
@@ -38,12 +37,14 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**A whole run is playable, and losing.** Measured over 20 automated runs: none survived
-the 30-fight ladder and the median cleared one fight. The causes are filed — no healing
-exists (#57), the tactics policy driving the party uses none of its features or spells
-(#50), and a permanent casualty compounds into a death spiral (#58) — and the
-measurement itself is a floor rather than a verdict for the second of those reasons.
-**Do not tune difficulty against automated runs until the policy can play a party.**
+**A whole run is playable, and automated runs still lose.** Measured over 20 runs both
+before and after healing landed: none survived the 30-fight ladder, median one fight
+cleared, **and the numbers did not move at all** — because `SimpleTacticsPolicy` never
+casts, so the Cleric's Cure Wounds and Healing Word go unused in any automated run. That
+is the clearest possible statement of the measurement's limit: **automated runs measure
+the policy, not the game.** Do not tune difficulty against them until #50 lands. The
+death spiral itself (#58) is still open, though a human player now has the tool that
+addresses it.
 
  `dotnet run --project src/SRDCombat.Console` climbs a
 thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
@@ -373,6 +374,16 @@ so *it* can tell what is left; they do not belong in a status report.
   from the Core Traits table would be right for six classes and quietly wrong for two.
 - **Spells need their own effect grammar, not the stat block one** — see bug 3 above.
   `SpellEffectParser`, not `EntryMechanicsParser`.
+- **A spell has three effect shapes: an attack roll, a saving throw, and healing.**
+  Healing was missing until 2026-08-12 and its absence was not small — with nothing able
+  to restore hit points, a character who dropped was gone for good and a run died out
+  within a few fights however easy they were. Only **single-target** healing is modelled;
+  the mass spells say "choose up to six creatures", which is a chosen set rather than an
+  area and needs a casting call taking several targets, so they stay `Unmodelled` and
+  counted rather than being approximated as healing one creature of six. Healing a
+  character at 0 hit points brings them back up for free, because
+  `Combatant.RegainHitPoints` already clears the dying state, the Death Saving Throws and
+  Unconscious.
 - **Extra Attack and Multiattack are the same rule to the engine**: the Attack action
   buys several attacks rather than several actions. `CombatantStats.AttacksPerAction`
   resolves both. Modelling them as extra actions would also wrongly allow a second Dodge
