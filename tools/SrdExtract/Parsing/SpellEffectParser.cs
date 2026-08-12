@@ -107,6 +107,56 @@ internal static partial class SpellEffectParser
     // "must succeed on a Dexterity saving throw", "makes a Constitution saving throw",
     // "must make a Wisdom saving throw". Deliberately case-sensitive on the ability so it
     // cannot match prose about a "dexterity" score.
+    /// <summary>
+    /// Reads a single-target healing sentence: "regains a number of Hit Points equal to
+    /// 2d8 plus your spellcasting ability modifier".
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Deliberately narrow. It matches only where <em>one</em> creature regains hit
+    /// points, because the mass spells choose several and the engine's casting call takes
+    /// one target; approximating "up to six creatures" as one would heal a sixth of what
+    /// the page promises and say nothing about it.
+    /// </para>
+    /// <para>
+    /// The plural forms are excluded by requiring the singular verb "regains" preceded by
+    /// no "creatures", which is how the printed sentences actually differ: Cure Wounds
+    /// says "A creature you touch regains", Mass Cure Wounds says "Each target regains"
+    /// after choosing six.
+    /// </para>
+    /// </remarks>
+    public static SpellHeal? ParseHeal(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        if (MultipleTargetsPattern().IsMatch(text))
+        {
+            return null;
+        }
+
+        var match = HealPattern().Match(text);
+
+        if (!match.Success || !DiceExpression.TryParse(match.Groups["dice"].Value, out var dice))
+        {
+            return null;
+        }
+
+        return new SpellHeal(dice, match.Groups["modifier"].Success);
+    }
+
+    // "regains a number of Hit Points equal to 2d8 plus your spellcasting ability
+    // modifier", and the same sentence without the modifier.
+    [GeneratedRegex(
+        @"regains?\s+(?:a\s+number\s+of\s+)?Hit\s+Points(?:\s+equal\s+to)?\s+(?<dice>\d+d\d+)" +
+        @"(?<modifier>\s+plus\s+your\s+spellcasting\s+ability\s+modifier)?",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex HealPattern();
+
+    // "Choose up to six creatures", "Up to five creatures of your choice" — a chosen set
+    // the single-target casting call cannot express.
+    [GeneratedRegex(@"\b(?:up\s+to\s+\w+\s+creatures|each\s+target)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex MultipleTargetsPattern();
+
     [GeneratedRegex(@"\b(?<ability>Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+saving\s+throw\b")]
     private static partial Regex SavePattern();
 

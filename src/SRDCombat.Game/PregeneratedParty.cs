@@ -165,14 +165,24 @@ public static class PregeneratedParty
     /// The spells the pregenerated caster knows.
     /// </summary>
     /// <remarks>
-    /// Deliberately one of each shape the engine resolves — Sacred Flame forces a save,
-    /// Guiding Bolt rolls a spell attack — so playing exercises both casting paths.
-    /// A spell the engine cannot resolve would be refused with a reason at the point of
-    /// casting, which is honest but makes for a poor first fight.
+    /// One of each shape the engine resolves, so playing exercises every casting path:
+    /// Sacred Flame forces a save, Guiding Bolt rolls a spell attack, and Cure Wounds
+    /// and Healing Word restore hit points. A spell the engine cannot resolve would be
+    /// refused with a reason at the point of casting, which is honest but makes for a
+    /// poor fight.
     /// </remarks>
     private static IReadOnlyList<string> SpellIdsFor(string classId) => classId switch
     {
-        "class.cleric" => ["spell.sacred-flame", "spell.guiding-bolt"],
+        // Both healing spells, deliberately: Cure Wounds heals more, Healing Word is a
+        // Bonus Action at 60 feet, and the choice between them — get someone up now, or
+        // heal harder next turn — is the most interesting one a party has in a fight.
+        "class.cleric" =>
+        [
+            "spell.sacred-flame",
+            "spell.guiding-bolt",
+            "spell.cure-wounds",
+            "spell.healing-word",
+        ],
         _ => [],
     };
 

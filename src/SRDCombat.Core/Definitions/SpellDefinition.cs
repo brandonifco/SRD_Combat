@@ -120,6 +120,11 @@ public sealed record SpellDefinition
 
     public required int SourcePage { get; init; }
 
+    /// <summary>
+    /// The hit points this spell restores, when it heals. Null for every other spell.
+    /// </summary>
+    public SpellHeal? Heal { get; init; }
+
     /// <summary>True when every mechanical clause is captured by the model.</summary>
     public bool IsFullyModelled =>
         Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;

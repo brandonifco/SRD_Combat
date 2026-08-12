@@ -2761,15 +2761,17 @@
       "durationText": "Instantaneous",
       "requiresConcentration": false,
       "text": "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier.",
-      "mechanics": "Unmodelled",
+      "mechanics": "Healing",
       "damage": [],
       "appliedConditions": [],
       "isSpellAttack": false,
-      "unmodelledClauses": [
-        "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier."
-      ],
+      "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 2d8 for each spell slot level above 1.",
-      "sourcePage": 121
+      "sourcePage": 121,
+      "heal": {
+        "dice": "2d8",
+        "addsSpellcastingModifier": true
+      }
     },
     {
       "id": "spell.dancing-lights",
@@ -6027,15 +6029,17 @@
       "durationText": "Instantaneous",
       "requiresConcentration": false,
       "text": "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier.",
-      "mechanics": "Unmodelled",
+      "mechanics": "Healing",
       "damage": [],
       "appliedConditions": [],
       "isSpellAttack": false,
-      "unmodelledClauses": [
-        "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier."
-      ],
+      "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 2d4 for each spell slot level above 1.",
-      "sourcePage": 139
+      "sourcePage": 139,
+      "heal": {
+        "dice": "2d4",
+        "addsSpellcastingModifier": true
+      }
     },
     {
       "id": "spell.heat-metal",
