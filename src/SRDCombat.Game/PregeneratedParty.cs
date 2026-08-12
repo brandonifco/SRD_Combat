@@ -177,12 +177,26 @@ public static class PregeneratedParty
         // Both healing spells, deliberately: Cure Wounds heals more, Healing Word is a
         // Bonus Action at 60 feet, and the choice between them — get someone up now, or
         // heal harder next turn — is the most interesting one a party has in a fight.
+        //
+        // The rest are every Cleric spell the engine actually executes at levels 1-3.
+        // The class table prepares nine at level 5 and this is six, and the shortfall is
+        // not a choice: of the 109 spells on the printed Cleric list, these are the ones
+        // whose effect is modelled. Everything else either has no effect the engine can
+        // express — Bane, Command, Hold Person, and the rest of the sixty-six that were
+        // silently doing nothing until `spell.save_effect_not_modelled` started refusing
+        // them — or needs machinery that does not exist yet.
         "class.cleric" =>
         [
             "spell.sacred-flame",
             "spell.guiding-bolt",
             "spell.cure-wounds",
             "spell.healing-word",
+
+            // Inflict Wounds is the level 1 nuke, and Spirit Guardians is the reason a
+            // level 5 Cleric is frightening: 3d8 Radiant in a 15-foot Emanation, which
+            // is the first thing this party has that punishes a crowd.
+            "spell.inflict-wounds",
+            "spell.spirit-guardians",
         ],
         _ => [],
     };

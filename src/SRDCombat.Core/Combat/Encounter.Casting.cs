@@ -150,6 +150,22 @@ public sealed partial class Encounter
                 $"{spell.Name} uses a {area.Shape}, which is not modelled.");
         }
 
+        // Forcing a save is not an effect. Sixty-six of the book's spells make a target
+        // roll and then do something this engine cannot express — Hold Person paralyses,
+        // Bane subtracts a d4, Sanctuary redirects attacks — and until this check existed
+        // every one of them spent its slot, printed a failed save, and did nothing at
+        // all. That is bug 1's shape at spell scale: the structured half (the save) made
+        // the missing half (the effect) invisible.
+        if (spell.Damage.Count == 0
+            && save.FailureDamage.Count == 0
+            && !spell.AppliedConditions.Any(ConditionRules.CanBeImposed)
+            && !save.AppliedConditions.Any(ConditionRules.CanBeImposed))
+        {
+            return new ActionRefusal(
+                "spell.save_effect_not_modelled",
+                $"{spell.Name} forces a saving throw, but what a failure does is not modelled.");
+        }
+
         return save.Area is null && target is null
             ? new ActionRefusal("spell.needs_target", $"{spell.Name} needs a creature to target.")
             : null;

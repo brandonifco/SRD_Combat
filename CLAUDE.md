@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #84 (why runs die: the measurement that closed #79) |
+| Branch | `main` at PR #86 (spells that forced a save and did nothing) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **3 open GitHub issues** — #83 (the important one), #81 and #78. |
+| Work remaining | **4 open GitHub issues** — #85 and #83 (the important two), #81 and #78. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -139,6 +139,11 @@ per concern, and the gate before merge.
 
 Two issues, both found by measuring rather than by reading code.
 
+- **#85 — the tactics policy casts only as a fallback**, so a caster's list is mostly
+  unreachable: Touch spells can never fire and self-centred areas are refused whenever an
+  ally is adjacent. **Do this before measuring any more character-side work**, because
+  everything new will be measured through this filter and will look worthless — adding
+  the Cleric's whole executable spell list moved the median not at all.
 - **#83 — the party is a fraction of its printed self.** The successor to #79, and the
   most valuable thing in the queue: the encounter budget prices a fight assuming both
   sides are whole, the monster side is, and the party is not. In order of what the
@@ -486,6 +491,24 @@ so *it* can tell what is left; they do not belong in a status report.
   are spent (cantrips are free), Concentration is tracked and broken by damage, and a
   spell whose effect is not modelled is **refused with a reason** rather than silently
   doing nothing.
+- **"Refused rather than silently doing nothing" was untrue for 66 of the 339 spells
+  until `spell.save_effect_not_modelled` existed**, and it is the best example in the
+  project of bug 1's shape. A spell that *forces a save* was treated as understood, so
+  Hold Person, Bane, Sanctuary, Sleep, Command and sixty-one others spent their slot,
+  printed a failed saving throw, and **did nothing whatever** — the structured half hid
+  the missing half, and the log read like it had worked. A save spell now has to have
+  damage, healing, or a condition `ConditionRules` can impose; the rest are refused.
+  **Extraction knew all along**: Hold Person's Paralyzed rider was extracted with an
+  `UnmodelledRequirement` and the casting path simply never looked at conditions.
+- **The pregen Cleric prepares six of its printed nine, and the shortfall is not a
+  choice.** Of the 109 spells on the Cleric list, six have an effect the engine executes:
+  Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds and Spirit
+  Guardians. **Two of those six the tactics policy can never cast** — Inflict Wounds is
+  Touch and the policy only casts when its weapon *cannot* reach, and Spirit Guardians is
+  a self-centred Emanation that `SpellAreaIsSafe` refuses whenever an ally stands beside
+  the caster. That is #85, and it caps how much party power any future work can express:
+  measured over 60 runs the Cleric cast Sacred Flame 682 times and Spirit Guardians
+  **zero**.
 - **Area geometry is a stated interpretation, not a derivation — with one exception.**
   The SRD describes areas for a table with a ruler; `AreaTargeting` documents how each
   becomes squares. Cylinder is not modelled and a spell using one is refused. The
