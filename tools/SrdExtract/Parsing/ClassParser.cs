@@ -120,6 +120,8 @@ public static partial class ClassParser
 
         string? currentClass = null;
         IReadOnlyList<TableColumn> columns = [];
+        var lastRowLineIndex = -2;
+        var lastRawFeatures = string.Empty;
 
         for (var index = 0; index < lines.Count; index++)
         {
@@ -143,13 +145,79 @@ public static partial class ClassParser
                 unreadableRows.Add($"{currentClass}: could not resolve columns for '{line.Text}'.");
                 continue;
             }
-            else if (ReadLevelRow(line, columns) is { } resolved)
+            else if (ReadLevelRow(line, columns, out var raw) is { } resolved)
             {
                 tables[currentClass].Add(resolved);
+                lastRowLineIndex = index;
+                lastRawFeatures = raw;
+            }
+            else if (index == lastRowLineIndex + 1
+                && TryJoinWrappedFeatureName(line, columns, tables[currentClass], ref lastRawFeatures))
+            {
+                // The Sorcerer's Class Features column is the narrowest in the chapter —
+                // its table carries two extra columns — and it is the only one whose
+                // cells wrap: "4 +2 Ability Score 4" then "Improvement" on a line of its
+                // own. Skipping that line truncated the feature to "Ability Score", and
+                // the Sorcerer never got its feat (#78). The fourth appearance of the
+                // wrapped-line trap, silent like the other three. Only the line directly
+                // under a parsed row may join, and joins may chain for a cell wrapping
+                // twice — which is why the index advances here too.
+                lastRowLineIndex = index;
             }
         }
 
         return tables;
+    }
+
+    /// <summary>
+    /// Joins a wrapped Class Features cell onto the row above it, when a line is one.
+    /// </summary>
+    /// <remarks>
+    /// The discriminator is geometric: every word of the continuation must sit inside
+    /// the Class Features column's span, which body prose never does — the class pages
+    /// mix two layouts, and a prose line crosses the whole page. Belt and braces, the
+    /// line must also follow a parsed row of the same table and be short.
+    /// </remarks>
+    private static bool TryJoinWrappedFeatureName(
+        SourceLine line,
+        IReadOnlyList<TableColumn> columns,
+        List<ClassLevel> rows,
+        ref string rawFeatures)
+    {
+        if (rows.Count == 0 || line.Words.Count == 0 || line.Text.Length > 40 || rawFeatures.Length == 0)
+        {
+            return false;
+        }
+
+        var features = columns.FirstOrDefault(column =>
+            column.Name.Contains("Features", StringComparison.Ordinal));
+
+        if (features is null)
+        {
+            return false;
+        }
+
+        // The column's span runs from its own left edge to the next column's.
+        var next = columns
+            .Where(column => column.Left > features.Left)
+            .OrderBy(column => column.Left)
+            .FirstOrDefault();
+
+        var rightEdge = next?.Left ?? double.MaxValue;
+
+        if (!line.Words.All(word => word.Left >= features.Left - 8 && word.Left < rightEdge - 8))
+        {
+            return false;
+        }
+
+        // The join happens on the raw cell and re-splits, because the comma deciding
+        // whether the continuation is a suffix or a new feature lives at the end of the
+        // first line and the split has already eaten it: "Spellcasting," + "Innate
+        // Sorcery" is two features, "Ability Score" + "Improvement" is one.
+        rawFeatures = rawFeatures + " " + line.Text.Trim();
+        rows[^1] = rows[^1] with { FeatureNames = SplitFeatures(rawFeatures).ToArray() };
+
+        return true;
     }
 
     /// <summary>
@@ -259,8 +327,19 @@ public static partial class ClassParser
     }
 
     /// <summary>Reads one data row, or null when the line is not one.</summary>
-    private static ClassLevel? ReadLevelRow(SourceLine line, IReadOnlyList<TableColumn> columns)
+    private static ClassLevel? ReadLevelRow(SourceLine line, IReadOnlyList<TableColumn> columns) =>
+        ReadLevelRow(line, columns, out _);
+
+    /// <summary>
+    /// Reads one data row, keeping the raw Class Features cell so a wrapped
+    /// continuation can be joined and re-split with its commas intact.
+    /// </summary>
+    private static ClassLevel? ReadLevelRow(
+        SourceLine line,
+        IReadOnlyList<TableColumn> columns,
+        out string rawFeatures)
     {
+        rawFeatures = string.Empty;
         if (line.Words.Count < 2)
         {
             return null;
@@ -319,6 +398,7 @@ public static partial class ClassParser
 
             if (name.Contains("Features", StringComparison.Ordinal))
             {
+                rawFeatures = value;
                 features.AddRange(SplitFeatures(value));
                 continue;
             }

@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #89 (upcasting and cantrip upgrades, closing #83) |
+| Branch | `main` at PR #90 (the Sorcerer's wrapped rows, closing #78) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **2 open GitHub issues** — #81 and #78. |
+| Work remaining | **1 open GitHub issue** — #81, the unexecuted masteries. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -140,7 +140,7 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-Two issues, both found by measuring rather than by reading code.
+One issue.
 
 - **#83 — the party is a fraction of its printed self.** The successor to #79, and the
   most valuable thing in the queue: the encounter budget prices a fight assuming both
@@ -149,10 +149,6 @@ Two issues, both found by measuring rather than by reading code.
   spendable, 4 spells known of 109 available, and no new subsystem needed), then
   **subclasses** (nobody has one), then the rest of the class features. **Anything gated
   at level 4+ is still unmeasurable in a run**, which is the part of #79 that was true.
-- **#78 — the Sorcerer's level table truncates wrapped feature names.** Five rows, all
-  Sorcerer: its Features table has two extra columns, so the Class Features column wraps
-  and loses the second half — "Ability Score" for "Ability Score Improvement". The fourth
-  appearance of the wrapped-line trap. Pinned by a test that fails when it is fixed.
 
 Beyond those the next work is a phase, not a fix: Phases 1–4 are done, Phase 6 is done for
 monsters and open-ended for the party, and Phases 5 and 7 have never been started. **Do not
@@ -636,6 +632,18 @@ output against the book, never by the parser complaining.
   is narrower than it looks — a 20pt threshold merged the Cleric's `Level` and `Bonus`.
 - **Not every caster uses the same table.** The Warlock has `Spell Slots`/`Slot Level`
   columns, not nine per-level ones, and must not be forced into the common shape.
+- **The Sorcerer's Class Features column wraps, and it was worse than it looked.** Its
+  table carries two extra columns, so its cells are the chapter's narrowest and the only
+  ones that wrap. #78 was filed for five visibly broken rows ("Ability Score" for
+  "Ability Score Improvement"); fixing it revealed levels 1 and 2 were *also* wrapped
+  and silently missing Innate Sorcery and Metamagic — invisible because "Spellcasting"
+  alone still matched a heading. Two rules in the fix: **the join happens on the raw
+  cell and re-splits**, because the comma deciding whether a continuation is a suffix or
+  a new feature lives at the end of the first line and the split has already eaten it;
+  and **only the line directly under a parsed row may join** — the first version had no
+  adjacency check and gobbled body prose into ten other classes' rows. The validator
+  that should have existed all along is `class.feature.no_heading`: every level-table
+  name must match a feature heading in the class's own prose.
 
 **The general lesson: write the validator that asserts the shape of what should have
 been found.** Every one of these was caught that way — "every species has at least one

@@ -162,12 +162,12 @@ public class RealDraftChoiceTests
     }
 
     [Fact]
-    public void EveryClassGrantsTheImprovementAtLevelFour_ExceptTheSorcerersBrokenRow()
+    public void EveryClassGrantsTheImprovementAtLevelFour()
     {
-        // The SRD grants this to all twelve classes at level 4. Eleven of them extract
-        // correctly; the Sorcerer's table is narrower than the rest, wraps the name onto
-        // a second line, and loses the second half — #78.
-        foreach (var definition in Content.Classes.Where(c => c.Id != "class.sorcerer"))
+        // The SRD grants this to all twelve classes at level 4 — the Sorcerer included,
+        // since #78 taught the parser to join its table's wrapped cells. The exception
+        // this test used to carry is gone, exactly as its comment promised.
+        foreach (var definition in Content.Classes)
         {
             var atFour = definition.Levels
                 .Single(row => row.Level == 4)
@@ -176,16 +176,6 @@ public class RealDraftChoiceTests
 
             Assert.True(atFour, $"{definition.Name} has no Ability Score Improvement at level 4.");
         }
-
-        // The defect, pinned rather than hidden: when #78 is fixed this assertion fails,
-        // which is the point — it forces the exception above to be removed in the same
-        // change rather than leaving a class quietly without its feat forever.
-        Assert.Contains(
-            "Ability Score",
-            Content.ClassesById["class.sorcerer"].Levels.Single(row => row.Level == 4).FeatureNames);
-        Assert.DoesNotContain(
-            "Ability Score Improvement",
-            Content.ClassesById["class.sorcerer"].Levels.Single(row => row.Level == 4).FeatureNames);
     }
 
     [Fact]
