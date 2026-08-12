@@ -50,6 +50,28 @@ public enum FightingStyle
     Defense,
 }
 
+/// <summary>
+/// One magic item the character has equipped: which printed item, which tier of a
+/// variant item, and — for a weapon enchantment — which carried weapon it is bound to.
+/// </summary>
+/// <remarks>
+/// A choice, not a number: what the item does comes from <c>MagicItemRegistry</c> at
+/// resolve time, so a save carrying one of these cannot hold an effect that disagrees
+/// with the rules. The resolver refuses an item the registry does not execute, a variant
+/// the item does not print, and a binding to a weapon the draft does not carry.
+/// </remarks>
+public sealed record EquippedMagicItem
+{
+    /// <summary>The item's definition id — <c>magic-item.ring-of-protection</c>.</summary>
+    public required string ItemId { get; init; }
+
+    /// <summary>The tier of a variant item — "+2" of "Weapon, +1, +2, or +3".</summary>
+    public string? Variant { get; init; }
+
+    /// <summary>For a weapon item: the carried weapon it enchants.</summary>
+    public string? BoundWeaponId { get; init; }
+}
+
 /// <summary>Everything the player chose, before any rules are applied.</summary>
 /// <remarks>
 /// Deliberately just choices — no derived numbers. Every AC, hit point total and attack
@@ -116,6 +138,9 @@ public sealed record CharacterDraft
 
     /// <summary>Whether a Shield is held. Tracked separately because it stacks with armour.</summary>
     public bool HasShield { get; init; }
+
+    /// <summary>Magic items equipped, in the order they were found.</summary>
+    public IReadOnlyList<EquippedMagicItem> MagicItems { get; init; } = [];
 }
 
 /// <summary>How hit points are determined on levelling.</summary>

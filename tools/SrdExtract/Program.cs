@@ -1,5 +1,6 @@
 using System.Globalization;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 using SRDCombat.Content;
 using SRDCombat.Content.Validation;
 using SrdExtract;
@@ -72,13 +73,20 @@ var spellResult = SpellParser.Parse(PageTextReader.Read(
     PageLayout.TwoColumn));
 var equipmentResult = EquipmentParser.Parse(weaponLines, armorLines);
 
+var magicItemResult = MagicItemParser.Parse(PageTextReader.Read(
+    options.PdfPath,
+    SrdPages.MagicItemsFirstPage,
+    SrdPages.MagicItemsLastPage,
+    PageLayout.TwoColumn));
+
 var (monsters, correctionDiagnostics) = KnownCorrections.Apply(monsterResult.Monsters);
 
 Console.WriteLine();
 Console.WriteLine($"Parsed {monsters.Count} monsters, " +
                   $"{equipmentResult.Weapons.Count} weapons, {equipmentResult.Armor.Count} armor, " +
                   $"{originResult.Species.Count} species, {originResult.Backgrounds.Count} backgrounds, " +
-                  $"{classResult.Classes.Count} classes, {spellResult.Spells.Count} spells.");
+                  $"{classResult.Classes.Count} classes, {spellResult.Spells.Count} spells, " +
+                  $"{magicItemResult.Items.Count} magic items.");
 
 Report(
     "Parse diagnostics",
@@ -88,11 +96,19 @@ Report(
         .Concat(originResult.Diagnostics)
         .Concat(classResult.Diagnostics)
         .Concat(spellResult.Diagnostics)
+        .Concat(magicItemResult.Diagnostics)
         .Select(d => d.ToString()));
 
 ReportMechanicsCoverage(monsters);
 ReportTraitCoverage(originResult.Species);
 ReportClassFeatureCoverage(classResult.Classes);
+
+// The registry split, so what the loot pool may draw from stays visible: an item the
+// engine executes is usable, everything else is extracted and counted.
+Console.WriteLine();
+Console.WriteLine(
+    $"Magic items: {magicItemResult.Items.Count(MagicItemRegistry.Executes)} executed by the registry, " +
+    $"{magicItemResult.Items.Count(item => !MagicItemRegistry.Executes(item))} extracted and counted as unmodelled.");
 
 var validation = new List<ValidationIssue>();
 validation.AddRange(MonsterValidator.Validate(monsters).Issues);
@@ -102,6 +118,7 @@ validation.AddRange(OriginValidator.ValidateSpecies(originResult.Species).Issues
 validation.AddRange(OriginValidator.ValidateBackgrounds(originResult.Backgrounds).Issues);
 validation.AddRange(ClassValidator.Validate(classResult.Classes).Issues);
 validation.AddRange(SpellValidator.Validate(spellResult.Spells).Issues);
+validation.AddRange(MagicItemValidator.Validate(magicItemResult.Items).Issues);
 
 Report("Validation errors", validation
     .Where(issue => issue.Severity == ValidationSeverity.Error)
@@ -131,6 +148,11 @@ ContentLoader.WritePack(
     originResult.Backgrounds);
 ContentLoader.WritePack(options.OutputDirectory, ContentLoader.ClassesFileName, "classes", classResult.Classes);
 ContentLoader.WritePack(options.OutputDirectory, ContentLoader.SpellsFileName, "spells", spellResult.Spells);
+ContentLoader.WritePack(
+    options.OutputDirectory,
+    ContentLoader.MagicItemsFileName,
+    "magic items",
+    magicItemResult.Items);
 
 Console.WriteLine();
 Console.WriteLine($"Wrote content to {Path.GetFullPath(options.OutputDirectory)}");
@@ -287,6 +309,15 @@ namespace SrdExtract
         public const int SpellsFirstPage = 107;
 
         public const int SpellsLastPage = 175;
+
+        /// <summary>
+        /// Magic Items A–Z. Deliberately starts after the category and rarity rules
+        /// (204–208), whose section headers would otherwise need excluding one by one.
+        /// </summary>
+        public const int MagicItemsFirstPage = 209;
+
+        /// <summary>The last item page, before the Monsters chapter begins on 254.</summary>
+        public const int MagicItemsLastPage = 253;
     }
 
     internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force)

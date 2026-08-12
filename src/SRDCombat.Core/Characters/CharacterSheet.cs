@@ -81,6 +81,15 @@ public sealed record CharacterSheet
     /// </remarks>
     public required IReadOnlyList<string> UnimplementedFeatures { get; init; }
 
+    /// <summary>Equipped magic items, for display. Their numbers are already folded in.</summary>
+    public IReadOnlyList<string> MagicItemNames { get; init; } = [];
+
+    /// <summary>Item bonus to spell attack rolls — the Wand of the War Mage.</summary>
+    public int SpellAttackItemBonus { get; init; }
+
+    /// <summary>"Any Critical Hit against you becomes a normal hit" — Adamantine Armor.</summary>
+    public bool CriticalHitsAgainstBecomeNormal { get; init; }
+
     /// <summary>The ability modifier for an ability score.</summary>
     public int Modifier(Ability ability) => AbilityRules.ModifierFor(AbilityScores[ability]);
 

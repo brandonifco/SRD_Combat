@@ -131,6 +131,12 @@ public sealed record CombatantStats(
     public CombatantFeatures? Character { get; init; }
 
     /// <summary>
+    /// "While you're wearing it, any Critical Hit against you becomes a normal hit" —
+    /// Adamantine Armor. The hit still lands; only the dice-doubling is denied.
+    /// </summary>
+    public bool CriticalHitsAgainstBecomeNormal { get; init; }
+
+    /// <summary>
     /// Skill bonuses by SRD skill name, for the ability checks a fight asks for.
     /// </summary>
     /// <remarks>
@@ -234,6 +240,8 @@ public sealed record CombatantStats(
             sheet.Attacks,
             DiesAtZeroHitPoints: false)
         {
+            CriticalHitsAgainstBecomeNormal = sheet.CriticalHitsAgainstBecomeNormal,
+
             SkillBonuses = sheet.Skills.ToDictionary(
                 skill => skill.Skill,
                 skill => skill.Bonus,
@@ -256,6 +264,7 @@ public sealed record CombatantStats(
                     : 0,
                 spellcastingAbility is { } attackAbility
                     ? Rules.SpellcastingRules.AttackBonus(sheet.ProficiencyBonus, sheet.Modifier(attackAbility))
+                        + sheet.SpellAttackItemBonus
                     : 0),
         };
     }

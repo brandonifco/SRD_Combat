@@ -24,6 +24,28 @@ public class AttackRulesTests
     }
 
     [Fact]
+    public void AdamantineArmor_DemotesEveryCriticalToANormalHit()
+    {
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [CombatTestData.MeleeAttack(bonus: 5)]));
+        var target = CombatTestData.Combatant(
+            "b",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(armorClass: 12) with { CriticalHitsAgainstBecomeNormal = true },
+            x: 1);
+
+        // "any Critical Hit against you becomes a normal hit" — the natural 20 still
+        // hits (that rule is about hitting), but the dice-doubling is denied.
+        var result = AttackRules.Resolve(
+            new ScriptedRandomSource(20),
+            attacker,
+            attacker.Stats.Attacks[0],
+            target);
+
+        Assert.True(result.Hit);
+        Assert.False(result.Critical);
+    }
+
+    [Fact]
     public void ANatural1_MissesEvenAgainstAHopelesslyLowArmorClass()
     {
         var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [CombatTestData.MeleeAttack(bonus: 20)]));
