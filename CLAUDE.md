@@ -11,7 +11,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 ## Current state — read this first
 
-**As of 2026-08-11.** All numbers here are verified, not estimated.
+**As of 2026-08-12.** All numbers here are verified, not estimated.
 
 | | |
 | --- | --- |
@@ -320,15 +320,18 @@ Three things a Phase 2 author should know before starting:
 
 ## Environment
 
-- **The machine changed under this file once already — verify before trusting this
-  section.** As of PR #30 the only .NET is **SDK 8.0.129 at `/usr/bin/dotnet`** (no
-  snap install; the earlier snap-confined description with SDK 10 no longer matches
-  anything present). 8.0.129 now builds the whole tree — its early C# 12 compiler
-  rejected a collection-expression `Split` call in `MonsterParser` that CI's newer
-  8.0.x accepted (#27), which is why that call is written as an explicit array.
-- **The source PDF is back at `~/Downloads/SRD_CC_v5.2.1.pdf`** (restored for #28's
-  regeneration). Only extraction needs it; nothing in build or test does. If it goes
-  missing again, extraction work is blocked until it is restored to that exact path.
+- **The machine changes under this file — verify before trusting this section.** It has
+  flipped twice already: snap-confined .NET at kickoff, apt-only SDK 8 at PR #30, and as
+  of 2026-08-12 **snap again**. Bare `dotnet` resolves through `/usr/local/bin/dotnet` to
+  the snap, which carries SDKs 8.0.129 and 10.0.110; `global.json` pins 8 with
+  `latestMajor` roll-forward, so **SDK 10 is what actually runs locally** while CI
+  installs 8.0.x. The apt `/usr/bin/dotnet` is a bare host with **no SDKs** — don't
+  reach for it. One lesson from the apt era survives any flip (#27): SDK 8.0.129's
+  early C# 12 compiler rejected a collection-expression `Split` call in `MonsterParser`
+  that CI's newer 8.0.x accepted, which is why that call is written as an explicit array
+  — local success on SDK 10 does not prove CI's compiler agrees.
+- **The source PDF is present again** at `~/Downloads/SRD_CC_v5.2.1.pdf`, so extraction
+  work is unblocked. Nothing in build or test needs it — only `tools/SrdExtract`.
 - **`dotnet new sln` under SDK 10 produces a `.slnx`, which .NET 8 cannot read.** Hit
   during setup: the solution has to be `SRDCombat.sln` in the classic format, or CI
   (pinned to 8.0.x) fails to find a project file at all. `dotnet new sln --format sln`
