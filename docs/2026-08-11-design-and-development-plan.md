@@ -628,10 +628,10 @@ Five decisions doing it recorded:
   grapple holding its victim forever, invisibly. Sharing the loop fixed the gap rather
   than duplicating it.
 - **The extractor's rider accounting was deliberately *not* extended in the same
-  branch.** An imposable rider sentence on a save entry still lands in
+  branch.** An imposable rider sentence on a save entry kept landing in
   `UnmodelledClauses` — over-reporting, the safe direction — because tightening
-  `IsAccountedFor` forces a content regeneration and the PDF is absent. The accounting
-  change and its regeneration belong in one commit; filed as its own issue.
+  `IsAccountedFor` forces a content regeneration and the PDF was absent. The accounting
+  change and its regeneration landed together in #28 once the PDF was restored.
 
 **5. Passive monster traits (#9) — done for what the engine can express.** The holding
 argument was right: Magic Resistance landed the day after saves did. The vocabulary is
@@ -659,9 +659,9 @@ Deliberately absent, each for want of a model rather than of effort: Spider Clim
 Incorporeal Movement (verticality, wall-passing), Swarm (space-sharing, hit-point-gated
 damage), Sunlight Sensitivity (light). **Undead Fortitude is the best next addition** —
 it needs only a hook at the moment damage would drop the creature, machinery
-`DamageRules` nearly has. The registry works off printed names, so these entries stay
-`Unmodelled` in content until the #28 regeneration teaches the extractor which names are
-executed.
+`DamageRules` nearly has. The registry works off printed names; #28's regeneration taught the extractor the same
+names, so these entries are now `EntryMechanics.Passive` in content rather than counted
+unmodelled.
 
 **6. Class features (#10) — done for what needs no new machinery.** Three landed the day
 saves did, which was the argument for the ordering: **Danger Sense** is Advantage on

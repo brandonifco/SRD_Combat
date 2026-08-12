@@ -41,6 +41,13 @@ public enum EntryMechanics
     Narrative,
 
     /// <summary>
+    /// A passive trait the engine executes by its printed name — Pack Tactics, Magic
+    /// Resistance, Flyby. Only ever set from <c>MonsterTraitRegistry</c>, where the
+    /// reading each name rests on is recorded.
+    /// </summary>
+    Passive,
+
+    /// <summary>
     /// Real mechanics the model has no vocabulary for yet. Counted and reported rather
     /// than quietly ignored; <see cref="MonsterEntry.UnmodelledClauses"/> says what was
     /// not understood.

@@ -113,6 +113,14 @@ internal static partial class EntryMechanicsParser
             return Build(bareName, section, text, EntryMechanics.SavingThrow, usage, conditions, save: save);
         }
 
+        if (section == MonsterEntrySection.Trait && MonsterTraitRegistry.Implements(bareName))
+        {
+            // The engine executes this trait by its printed name. MonsterTraitRegistry
+            // is the curated list, and the reading each name rests on — including where
+            // it is deliberately narrower than the printed sentence — is recorded there.
+            return new MonsterEntry(bareName, section, text, Mechanics: EntryMechanics.Passive, Usage: usage);
+        }
+
         if (KnownInertEntries.Contains(bareName))
         {
             // No unmodelled clauses by definition — this is a recorded decision that the
@@ -210,9 +218,11 @@ internal static partial class EntryMechanicsParser
         }
 
         // A sentence that is nothing but an imposable rider is now fully expressed, even
-        // though the attack grammar itself says nothing about it.
+        // though the attack or saving-throw grammar itself says nothing about it. Save
+        // entries joined attacks here when the engine began imposing their riders on a
+        // failed save (#6).
         return MatchesStructuredForm(sentence, mechanics)
-            || (mechanics == EntryMechanics.Attack && carried.Length > 0);
+            || (mechanics is EntryMechanics.Attack or EntryMechanics.SavingThrow && carried.Length > 0);
     }
 
     private static bool MatchesStructuredForm(string sentence, EntryMechanics mechanics) => mechanics switch
