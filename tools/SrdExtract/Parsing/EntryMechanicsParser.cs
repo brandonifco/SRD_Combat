@@ -502,6 +502,15 @@ internal static partial class EntryMechanicsParser
         var beforeCondition = sentence[..condition.Index];
         var failure = beforeCondition.LastIndexOf("Failure:", StringComparison.Ordinal);
 
+        // "Second Failure: The target has the Unconscious condition for 1 minute." — a
+        // save outcome tier the save model does not express. The engine imposes riders
+        // on the plain failure, so a rider printed behind a deeper tier would land a
+        // whole tier early — the Brass Dragon Wyrmling's sleep on a first failed save.
+        if (TieredFailurePattern().IsMatch(sentence))
+        {
+            return (null, null, sentence);
+        }
+
         if (failure >= 0)
         {
             // A "Failure:" sentence inside an attack entry belongs to an embedded
@@ -546,33 +555,52 @@ internal static partial class EntryMechanicsParser
     }
 
     /// <summary>
-    /// Parses "until the start of its next turn" and "until the end of the devil's next
-    /// turn".
+    /// Parses "until the start of its next turn", "until the end of the devil's next
+    /// turn", "for 1 minute" and "for 1 hour".
     /// </summary>
     /// <remarks>
-    /// The possessive is the whole of the distinction. "its" is the creature carrying the
-    /// condition; a name is the creature that imposed it, and every printed name in the
-    /// bestiary is the stat block's own creature. Reading one as the other moves the end
-    /// of the condition by most of a round.
+    /// <para>
+    /// The possessive is the whole of the turn-boundary distinction. "its" is the
+    /// creature carrying the condition; a name is the creature that imposed it, and
+    /// every printed name in the bestiary is the stat block's own creature. Reading one
+    /// as the other moves the end of the condition by most of a round.
+    /// </para>
+    /// <para>
+    /// A timed duration must be the whole of the trailing text, exactly like a
+    /// turn-boundary one: "for 1 minute, until it takes damage, or ..." carries an early
+    /// out the model cannot express, and the anchored pattern refuses it rather than
+    /// matching the part that looks familiar.
+    /// </para>
     /// </remarks>
     private static ConditionDuration? ParseDuration(string trailing)
     {
-        var match = TurnBoundaryDurationPattern().Match(trailing);
+        var boundary = TurnBoundaryDurationPattern().Match(trailing);
 
-        if (!match.Success)
+        if (boundary.Success)
+        {
+            var clock = boundary.Groups["when"].Value.Equals("start", StringComparison.OrdinalIgnoreCase)
+                ? ConditionClock.StartOfTurn
+                : ConditionClock.EndOfTurn;
+
+            var owner = boundary.Groups["bearer"].Success
+                ? ConditionDurationOwner.Bearer
+                : ConditionDurationOwner.Source;
+
+            return new ConditionDuration(clock, owner);
+        }
+
+        var timed = TimedDurationPattern().Match(trailing);
+
+        if (!timed.Success)
         {
             return null;
         }
 
-        var clock = match.Groups["when"].Value.Equals("start", StringComparison.OrdinalIgnoreCase)
-            ? ConditionClock.StartOfTurn
-            : ConditionClock.EndOfTurn;
+        var count = int.Parse(timed.Groups["count"].Value, CultureInfo.InvariantCulture);
 
-        var owner = match.Groups["bearer"].Success
-            ? ConditionDurationOwner.Bearer
-            : ConditionDurationOwner.Source;
-
-        return new ConditionDuration(clock, owner);
+        return timed.Groups["unit"].Value.StartsWith("minute", StringComparison.OrdinalIgnoreCase)
+            ? ConditionDuration.ForMinutes(count)
+            : ConditionDuration.BeyondTheFight;
     }
 
     /// <summary>
@@ -679,6 +707,16 @@ internal static partial class EntryMechanicsParser
         @"^until\s+the\s+(?<when>start|end)\s+of\s+(?:(?<bearer>its)|the\s+[\w' ]+?'s)\s+next\s+turn$",
         RegexOptions.IgnoreCase)]
     private static partial Regex TurnBoundaryDurationPattern();
+
+    // Anchored at both ends for the same reason: "for 1 minute, until it takes damage"
+    // is an early out the model cannot express, and must not match on the timer alone.
+    [GeneratedRegex(@"^for\s+(?<count>\d+)\s+(?<unit>minutes?|hours?|days?)$", RegexOptions.IgnoreCase)]
+    private static partial Regex TimedDurationPattern();
+
+    // "Second Failure:" and its kin — a save outcome tier the save model does not
+    // express, so a rider printed behind one must not ride the plain failure.
+    [GeneratedRegex(@"\b(?:First|Second|Third)\s+Failure:", RegexOptions.IgnoreCase)]
+    private static partial Regex TieredFailurePattern();
 
     [GeneratedRegex(@"the\s+(?<condition>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+condition(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex ConditionPattern();

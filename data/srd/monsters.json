@@ -979,7 +979,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -2276,7 +2278,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -4451,7 +4455,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -5924,7 +5930,9 @@
                 "condition": "Deafened",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -5934,7 +5942,9 @@
               "condition": "Deafened",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -6192,7 +6202,9 @@
                 "condition": "Deafened",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -6202,7 +6214,9 @@
               "condition": "Deafened",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -7702,7 +7716,9 @@
                 "condition": "Frightened",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -7712,7 +7728,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -7858,7 +7876,9 @@
               "condition": "Incapacitated",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -8956,7 +8976,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -10387,7 +10409,9 @@
                 "condition": "Poisoned",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -10401,7 +10425,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -11519,7 +11545,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -12848,7 +12876,9 @@
                 "condition": "Poisoned",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -12858,7 +12888,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -13094,7 +13126,9 @@
                 "condition": "Frightened",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -13104,7 +13138,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -13433,7 +13469,9 @@
                 "condition": "Blinded",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -13447,7 +13485,9 @@
               "condition": "Blinded",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -16804,7 +16844,9 @@
                 "condition": "Blinded",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -16814,7 +16856,9 @@
               "condition": "Blinded",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -17568,7 +17612,9 @@
                 "condition": "Poisoned",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -17578,7 +17624,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -17758,7 +17806,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -20365,7 +20415,9 @@
               "condition": "Paralyzed",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -21521,7 +21573,9 @@
                 "condition": "Blinded",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -21535,7 +21589,9 @@
               "condition": "Blinded",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -22256,7 +22312,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -22709,7 +22767,9 @@
                 "condition": "Frightened",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -22719,7 +22779,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -22914,7 +22976,9 @@
                 "condition": "Paralyzed",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -22924,7 +22988,9 @@
               "condition": "Paralyzed",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -23965,7 +24031,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -24159,7 +24227,9 @@
                 "condition": "Stunned",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -24169,7 +24239,9 @@
               "condition": "Stunned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -24633,7 +24705,9 @@
                 "condition": "Charmed",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -24643,7 +24717,9 @@
               "condition": "Charmed",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -24786,7 +24862,9 @@
                 "condition": "Charmed",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -24796,7 +24874,9 @@
               "condition": "Charmed",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -24920,7 +25000,9 @@
                 "condition": "Frightened",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -24934,7 +25016,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -25680,7 +25764,12 @@
             "appliedConditions": [
               {
                 "condition": "Poisoned",
-                "unmodelledRequirement": "Failure: 5 (2d4) Poison damage, and the target has the Poisoned condition for 1 hour"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": true
+                }
               },
               {
                 "condition": "Unconscious",
@@ -25691,7 +25780,12 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Failure: 5 (2d4) Poison damage, and the target has the Poisoned condition for 1 hour"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": true
+              }
             },
             {
               "condition": "Unconscious",
@@ -25699,7 +25793,6 @@
             }
           ],
           "unmodelledClauses": [
-            "Failure: 5 (2d4) Poison damage, and the target has the Poisoned condition for 1 hour",
             "Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it."
           ]
         }
@@ -26002,7 +26095,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -28173,7 +28268,9 @@
                 "condition": "Frightened",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Bearer"
+                  "owner": "Bearer",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -28183,7 +28280,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -30102,19 +30201,27 @@
             "appliedConditions": [
               {
                 "condition": "Blinded",
-                "unmodelledRequirement": "Failure: The target has the Blinded condition for 1 minute"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 10,
+                  "outlastsFight": false
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Blinded",
-              "unmodelledRequirement": "Failure: The target has the Blinded condition for 1 minute"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 10,
+                "outlastsFight": false
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Blinded condition for 1 minute"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Radiant Teleport",
@@ -30551,7 +30658,9 @@
                 "condition": "Incapacitated",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -30565,7 +30674,9 @@
               "condition": "Incapacitated",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -31073,7 +31184,9 @@
               "condition": "Charmed",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -33905,7 +34018,9 @@
                 "condition": "Stunned",
                 "duration": {
                   "clock": "EndOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -33919,7 +34034,9 @@
               "condition": "Stunned",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -36740,7 +36857,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -39932,7 +40051,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -42134,7 +42255,9 @@
               "condition": "Poisoned",
               "duration": {
                 "clock": "EndOfTurn",
-                "owner": "Bearer"
+                "owner": "Bearer",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -43181,7 +43304,9 @@
                 "condition": "Frightened",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -43191,7 +43316,9 @@
               "condition": "Frightened",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],
@@ -45745,7 +45872,9 @@
                 "condition": "Deafened",
                 "duration": {
                   "clock": "StartOfTurn",
-                  "owner": "Source"
+                  "owner": "Source",
+                  "turnsAhead": 1,
+                  "outlastsFight": false
                 }
               }
             ]
@@ -45759,7 +45888,9 @@
               "condition": "Deafened",
               "duration": {
                 "clock": "StartOfTurn",
-                "owner": "Source"
+                "owner": "Source",
+                "turnsAhead": 1,
+                "outlastsFight": false
               }
             }
           ],

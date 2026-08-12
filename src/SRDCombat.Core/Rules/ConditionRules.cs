@@ -201,25 +201,27 @@ public static class ConditionRules
     /// counter.
     /// </summary>
     /// <remarks>
-    /// The <c>+ 1</c> is the whole of "next". A rider applied during the devil's own turn
-    /// and one applied during somebody else's — on an Opportunity Attack — both read
-    /// "until the start of the devil's next turn" and mean different moments; counting
-    /// from the owner's turn count at the moment of application gets both right without
-    /// either case being special.
+    /// The <c>+ TurnsAhead</c> is the whole of "next" — and of "for 1 minute", which is
+    /// the same clock set ten turns out. A rider applied during the devil's own turn and
+    /// one applied during somebody else's — on an Opportunity Attack — both read "until
+    /// the start of the devil's next turn" and mean different moments; counting from the
+    /// owner's turn count at the moment of application gets both right without either
+    /// case being special. A duration that outlasts any fight gets no expiry at all: the
+    /// condition ends with the encounter, exactly like one printed with no duration.
     /// </remarks>
     public static ConditionExpiry? ExpiryFor(ConditionDuration? duration, Combatant source, Combatant bearer)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(bearer);
 
-        if (duration is null)
+        if (duration is null || duration.OutlastsFight)
         {
             return null;
         }
 
         var owner = duration.Owner == ConditionDurationOwner.Bearer ? bearer : source;
 
-        return new ConditionExpiry(owner.Id, duration.Clock, owner.TurnsBegun + 1);
+        return new ConditionExpiry(owner.Id, duration.Clock, owner.TurnsBegun + duration.TurnsAhead);
     }
 
     /// <summary>
