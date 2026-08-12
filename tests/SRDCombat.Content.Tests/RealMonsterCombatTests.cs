@@ -211,6 +211,58 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void TheRealApeThrowsItsRockOnceAndWaitsForTheRecharge()
+    {
+        // "Rock (Recharge 6)" sits under Actions but outside the Ape's "two Fist
+        // attacks" Multiattack, so before UseEntry existed the engine had no way to
+        // throw it at all — and without the usage gate it could be thrown every round.
+        var ape = Content.MonstersById["monster.ape"];
+        var stats = CombatantStats.FromMonster(ape);
+
+        Assert.Contains(stats.Entries, entry => entry.Name == "Rock" && entry.Usage is not null);
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(ape, "ape", "beasts", new GridPosition(0, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(4, 5)),
+            ],
+            new ScriptedRandomSource(20, 1, 10, 3, 4));
+
+        var thrower = encounter.Combatants.Single(combatant => combatant.Id == "ape");
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Equal("attack.not_in_multiattack", encounter.Attack("Rock", bandit)?.Code);
+
+        Assert.Null(encounter.UseEntry("Rock", bandit));
+
+        Assert.Contains(encounter.Log, step => step.Narration.Contains("with Rock", StringComparison.Ordinal));
+        Assert.False(thrower.Uses.IsAvailable("Rock"));
+        Assert.Equal("entry.not_recharged", encounter.UseEntry("Rock", bandit)?.Code);
+    }
+
+    [Fact]
+    public void ARealBreathWeaponIsRefusedByNameUntilSavesExecute()
+    {
+        // The Ankheg's "Acid Spray (Recharge 6)" is fully modelled — DC, Line, damage —
+        // and resolves through a saving throw, which is issue #6. Until then the
+        // refusal is the contract: a named code, never a silent nothing.
+        var ankheg = Content.MonstersById["monster.ankheg"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(ankheg, "ankheg", "vermin", new GridPosition(0, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(4, 5)),
+            ],
+            new ScriptedRandomSource(20, 1));
+
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Equal("entry.save_not_implemented", encounter.UseEntry("Acid Spray", bandit)?.Code);
+    }
+
+    [Fact]
     public void ARealGiantFrogGrapplesWithItsPrintedEscapeDifficultyClass()
     {
         // "If the target is a Medium or smaller creature, it has the Grappled condition

@@ -26,6 +26,9 @@ public enum CombatStepKind
 
     /// <summary>A spell being cast, resisted, or lost.</summary>
     Spell,
+
+    /// <summary>A spent Recharge ability rolling its d6 at the start of a turn.</summary>
+    Recharge,
     TurnEnded,
     EncounterEnded,
 }

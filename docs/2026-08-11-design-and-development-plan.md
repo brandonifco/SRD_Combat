@@ -569,12 +569,33 @@ them on a failure, passive traits reference them, Cunning Strike applies them. S
 them once, first, is the whole argument for this ordering.*
 
 **3. A way for a monster to use a stat-block entry (#19), together with recharge tracking
-(#8).** The prerequisite no issue had named. `UsageLimit` is never read in `Core`;
-`MonsterEntry.Save` is never read in `Core`; every `Encounter` action is either hardcoded
-(`Dodge`, `Dash`) or gated on `Stats.Character` (`CastSpell`, `Rage`). **A monster has no
-way to use an entry at all**, and `SimpleTacticsPolicy` has no concept of choosing between
-attacking and doing anything else. "Can I use this?" and "should I use it now?" are the
-same branch at the same decision point; building them apart writes it twice.
+(#8) — done.** The prerequisite no issue had named: `UsageLimit` was never read in `Core`,
+and every `Encounter` action was either hardcoded or gated on `Stats.Character`, so a
+monster had no way to use an entry at all. Now `Encounter.UseEntry` resolves a named
+Action entry — dispatching on `EntryMechanics` and refusing anything it cannot resolve
+with a named code, the same shape as `spell.not_implemented` — and one `UsageState` per
+combatant gates every path by entry name, with the Recharge d6 rolled and narrated at the
+start of the creature's turns while spent. Saving-throw entries refuse with
+`entry.save_not_implemented`; that refusal is the exact seam step 4 replaces.
+
+Three things doing it turned up:
+
+- **The two shapes of a limited attack need the gate in two places.** The Ape's Rock
+  (Recharge 6) sits under Actions but *outside* its "two Fist attacks" Multiattack, so
+  `Attack` refused it outright and `UseEntry` is its only road; the Minotaur's Gore
+  (Recharge 5) is a plain attack with no Multiattack in the way, so the gate had to hold
+  on the `Attack` path too. One state keyed by entry name serves both, which is the
+  "build them together or write them twice" argument having been right.
+- **The tactics policy chooses only among limited-use entries, deliberately.** The other
+  attacks locked out of a Multiattack are the lycanthropes' form-gated ones — "Bite (Wolf
+  or Hybrid Form Only)" — and the engine has no concept of form, so the policy choosing
+  one would silently decide what shape the creature fights in. A client may make that
+  call through `UseEntry`; the policy never does. Written down in
+  `SimpleTacticsPolicy.TryUseLimitedEntry`.
+- **The d6 is rolled only while the ability is spent.** The SRD says to roll at the start
+  of each of the monster's turns; a roll for a charged ability would change nothing and
+  still consume a die, and the dice stream is what the frozen transcripts pin. A stated
+  interpretation, recorded on `Encounter.RollRecharges`.
 
 **4. Saving-throw effects (#6).** Only here does it land with nothing left to invent.
 `AreaTargeting` already exists, durations arrive with step 1, recharge gates the breath
