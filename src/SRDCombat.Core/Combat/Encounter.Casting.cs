@@ -72,6 +72,23 @@ public sealed partial class Encounter
             return resolution;
         }
 
+        // "Can't Harm the Charmer": an attack spell aimed at the charmer is an attack,
+        // and a damaging save spell whose area catches the charmer targets them — the
+        // glossary's definition of a target includes a creature forced to make a saving
+        // throw. Checked before anything is spent.
+        if (spell.IsSpellAttack && target is not null && spell.Damage.Count > 0 && CharmedBy(caster, target))
+        {
+            return new ActionRefusal(
+                "spell.charmed",
+                $"{caster.Name} is Charmed by {target.Name} and cannot attack them.");
+        }
+
+        if (spell.Save is { } saveShape
+            && CharmedHarmRefusal(caster, "spell.charmed", spell.Name, saveShape, point, target) is { } charmed)
+        {
+            return charmed;
+        }
+
         SpendCastingCost(caster, spell);
 
         Add(

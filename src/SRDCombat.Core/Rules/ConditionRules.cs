@@ -16,7 +16,7 @@ namespace SRDCombat.Core.Rules;
 /// failure, and the one this project is built to avoid.
 /// </para>
 /// <para>
-/// Six conditions are on it today.
+/// Eleven conditions are on it today.
 /// </para>
 /// <list type="bullet">
 /// <item>
@@ -52,34 +52,92 @@ namespace SRDCombat.Core.Rules;
 /// actions, and a Dodge it had running stops helping.
 /// </item>
 /// <item>
-/// <b>Unconscious</b> — brings Incapacitated and Prone with it, and any hit from within
-/// 5 feet is a Critical Hit.
+/// <b>Unconscious</b> — brings Incapacitated and Prone with it, auto-fails Strength and
+/// Dexterity saving throws, and any hit from within 5 feet is a Critical Hit.
+/// </item>
+/// <item>
+/// <b>Blinded</b> — Advantage on attack rolls against it, Disadvantage on its own, in
+/// <c>AttackRules</c>. Its "automatically fail any ability check that requires sight" is
+/// complete by vacancy: the only check the engine rolls in a fight is the grapple
+/// Escape, which does not require sight. Revisit alongside Poisoned's note above the
+/// moment a sight-based check exists.
+/// </item>
+/// <item>
+/// <b>Charmed</b> — cannot attack the charmer or target it with a damaging effect. The
+/// printed clause heading is "Can't Harm the Charmer", so "damaging" is read as
+/// qualifying both "abilities" and "magical effects": a non-damaging effect aimed at the
+/// charmer is allowed. Attacks are refused outright, Opportunity Attacks included; the
+/// charmer's "Advantage on any ability check to interact with you socially" has nothing
+/// to apply to in a fight. Enforced in <c>Encounter</c>'s attack, entry and casting
+/// paths, off the condition's <c>SourceId</c>.
+/// </item>
+/// <item>
+/// <b>Frightened</b> — Disadvantage on attack rolls and ability checks "while the source
+/// of fear is within line of sight", and no willing movement closer to the source. The
+/// engine has no model of sight, so the source is read as always within line of sight
+/// while it is on the field, dead or alive — sight does not require the source to be
+/// breathing, and the hampering direction is the safe one while sight is unmodelled.
+/// "Closer" is judged at the destination: <c>Encounter.Move</c> refuses a destination
+/// nearer the source than the square the creature stands in, and does not judge the
+/// path between them.
+/// </item>
+/// <item>
+/// <b>Paralyzed</b> — brings Incapacitated, Speed 0, auto-fails Strength and Dexterity
+/// saving throws, Advantage on attack rolls against it, and any hit from within 5 feet
+/// is a Critical Hit — the same clause Unconscious prints.
+/// </item>
+/// <item>
+/// <b>Stunned</b> — brings Incapacitated, auto-fails Strength and Dexterity saving
+/// throws, and Advantage on attack rolls against it. Note what it does not print: no
+/// Speed 0 and no automatic Critical Hits — memory adds both, the glossary has neither.
 /// </item>
 /// </list>
 /// <para>
-/// Everything else is deliberately absent, and the absences are the point. Frightened
-/// needs line of sight to the source, which this engine has no concept of. Charmed,
-/// Blinded, Paralyzed and Stunned are each a small piece of work that nobody has done.
-/// Until it is done the rider is reported as not modelled rather than imposed as scenery.
+/// Everything else is deliberately absent, and the absences are the point. Deafened,
+/// Invisible and Petrified each need a model (hearing, sight, objects) that does not
+/// exist. Until one does the rider is reported as not modelled rather than imposed as
+/// scenery.
 /// </para>
 /// </remarks>
 public static class ConditionRules
 {
     private static readonly HashSet<ConditionType> Executable =
     [
-        ConditionType.Prone,
-        ConditionType.Poisoned,
+        ConditionType.Blinded,
+        ConditionType.Charmed,
+        ConditionType.Frightened,
         ConditionType.Grappled,
-        ConditionType.Restrained,
         ConditionType.Incapacitated,
+        ConditionType.Paralyzed,
+        ConditionType.Poisoned,
+        ConditionType.Prone,
+        ConditionType.Restrained,
+        ConditionType.Stunned,
         ConditionType.Unconscious,
     ];
 
-    /// <summary>Conditions that set a creature's Speed to 0.</summary>
+    /// <summary>
+    /// Conditions that set a creature's Speed to 0. Paralyzed and Unconscious print the
+    /// same clause, and are listed for fidelity even though their Incapacitated already
+    /// stops the creature acting before Speed is consulted.
+    /// </summary>
     private static readonly ConditionType[] SpeedZero =
     [
         ConditionType.Grappled,
         ConditionType.Restrained,
+        ConditionType.Paralyzed,
+        ConditionType.Unconscious,
+    ];
+
+    /// <summary>
+    /// Conditions printing "You automatically fail Strength and Dexterity saving throws"
+    /// — Paralyzed, Stunned and Unconscious carry the clause word for word.
+    /// </summary>
+    private static readonly ConditionType[] AutoFailsStrengthAndDexteritySaves =
+    [
+        ConditionType.Paralyzed,
+        ConditionType.Stunned,
+        ConditionType.Unconscious,
     ];
 
     /// <summary>True when the engine gives this condition its rules effects.</summary>
@@ -106,6 +164,25 @@ public static class ConditionRules
         ArgumentNullException.ThrowIfNull(combatant);
 
         return SpeedZero.Cast<ConditionType?>().FirstOrDefault(condition => combatant.HasCondition(condition!.Value));
+    }
+
+    /// <summary>
+    /// The condition making this creature automatically fail a saving throw with this
+    /// ability, or null when the save is rolled normally. No die is consumed by an
+    /// automatic failure — the printed clause replaces the roll rather than penalising it.
+    /// </summary>
+    public static ConditionType? AutoFailingSaveCondition(Combatant combatant, Ability ability)
+    {
+        ArgumentNullException.ThrowIfNull(combatant);
+
+        if (ability is not (Ability.Strength or Ability.Dexterity))
+        {
+            return null;
+        }
+
+        return AutoFailsStrengthAndDexteritySaves
+            .Cast<ConditionType?>()
+            .FirstOrDefault(condition => combatant.HasCondition(condition!.Value));
     }
 
     /// <summary>

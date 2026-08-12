@@ -84,7 +84,7 @@ internal static partial class EntryMechanicsParser
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
         var attack = StatBlockLineGrammar.ParseAttack(text);
-        var conditions = ParseAppliedConditions(text);
+        var conditions = ParseAppliedConditions(text, attackEntry: attack is not null);
 
         if (attack is not null)
         {
@@ -431,7 +431,7 @@ internal static partial class EntryMechanicsParser
     /// Finds every condition the entry imposes, with its escape DC, its size gate, and
     /// whatever else was printed with it that the model cannot express.
     /// </summary>
-    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(string text)
+    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(string text, bool attackEntry = false)
     {
         var conditions = new List<AppliedCondition>();
 
@@ -455,7 +455,7 @@ internal static partial class EntryMechanicsParser
                     ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
                     : null;
 
-                var (size, duration, unmodelled) = ReadRider(sentence, match);
+                var (size, duration, unmodelled) = ReadRider(sentence, match, attackEntry);
 
                 conditions.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
             }
@@ -485,7 +485,8 @@ internal static partial class EntryMechanicsParser
     /// </remarks>
     private static (CreatureSize? Size, ConditionDuration? Duration, string? Unmodelled) ReadRider(
         string sentence,
-        Match condition)
+        Match condition,
+        bool attackEntry)
     {
         var trailing = sentence[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
         var duration = ParseDuration(trailing);
@@ -498,7 +499,39 @@ internal static partial class EntryMechanicsParser
             return (null, null, sentence);
         }
 
-        var leading = StripAttackPreamble(sentence[..condition.Index]);
+        var beforeCondition = sentence[..condition.Index];
+        var failure = beforeCondition.LastIndexOf("Failure:", StringComparison.Ordinal);
+
+        if (failure >= 0)
+        {
+            // A "Failure:" sentence inside an attack entry belongs to an embedded
+            // saving throw — the Ghast's Claw carries "Constitution Saving Throw: DC
+            // 10. Failure: The target has the Paralyzed condition ..." — and its DC and
+            // its "non-Undead creature" gate live in sentences of their own. Riding the
+            // attack with it would paralyze on every hit with no save rolled.
+            if (attackEntry)
+            {
+                return (null, null, sentence);
+            }
+
+            // And a "Failure:" rider must state its end within its own sentence. When
+            // it does not, the end is almost always printed separately — the Quasit's
+            // "Failure: The target has the Frightened condition." is followed by "At
+            // the end of each of its turns, the target repeats the save ..." — and
+            // sentence-scoped parsing cannot attach it, so imposing the rider would
+            // make the condition permanent. A duration-less rider in a sentence of its
+            // own — the Gladiator's "If the target is a Medium or smaller creature, it
+            // has the Prone condition." — is untouched by this: those conditions carry
+            // their own printed way out.
+            if (duration is null)
+            {
+                return (null, null, sentence);
+            }
+        }
+
+        var leading = failure >= 0
+            ? StripDamage(beforeCondition[(failure + "Failure:".Length)..])
+            : StripAttackPreamble(beforeCondition);
         var gate = RiderLeadInPattern().Match(leading);
 
         if (!gate.Success)
@@ -556,15 +589,19 @@ internal static partial class EntryMechanicsParser
     {
         var hit = leading.LastIndexOf("Hit:", StringComparison.Ordinal);
 
-        if (hit < 0)
-        {
-            return leading;
-        }
+        return hit < 0 ? leading : StripDamage(leading[(hit + "Hit:".Length)..]);
+    }
 
-        var afterHit = leading[(hit + "Hit:".Length)..];
-        var lastDamage = afterHit.LastIndexOf("damage", StringComparison.Ordinal);
+    /// <summary>
+    /// Cuts after the last printed damage, leaving exactly the words between the effect
+    /// and the condition — shared by the "Hit:" and "Failure:" preambles, whose damage
+    /// reads the same: "Failure: 10 (2d6 + 3) Psychic damage, and the target has ...".
+    /// </summary>
+    private static string StripDamage(string afterLabel)
+    {
+        var lastDamage = afterLabel.LastIndexOf("damage", StringComparison.Ordinal);
 
-        return lastDamage < 0 ? afterHit : afterHit[(lastDamage + "damage".Length)..];
+        return lastDamage < 0 ? afterLabel : afterLabel[(lastDamage + "damage".Length)..];
     }
 
     /// <summary>The conditions a sentence carries, out of those parsed from the whole entry.</summary>

@@ -5922,14 +5922,20 @@
             "appliedConditions": [
               {
                 "condition": "Deafened",
-                "unmodelledRequirement": "Failure: 10 (3d6) Thunder damage, and the target has the Deafened condition until the end of its next turn."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Deafened",
-              "unmodelledRequirement": "Failure: 10 (3d6) Thunder damage, and the target has the Deafened condition until the end of its next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
           "unmodelledClauses": [
@@ -6184,14 +6190,20 @@
             "appliedConditions": [
               {
                 "condition": "Deafened",
-                "unmodelledRequirement": "Failure: 13 (3d8) Thunder damage, and the target has the Deafened condition until the end of its next turn."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Deafened",
-              "unmodelledRequirement": "Failure: 13 (3d8) Thunder damage, and the target has the Deafened condition until the end of its next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
           "unmodelledClauses": [
@@ -7688,19 +7700,23 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition until the end of the cloaker's next turn"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition until the end of the cloaker's next turn"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Frightened condition until the end of the cloaker's next turn"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Phantasms",
@@ -10369,7 +10385,10 @@
             "appliedConditions": [
               {
                 "condition": "Poisoned",
-                "unmodelledRequirement": "Failure: The target has the Poisoned condition until the end of its next turn"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
@@ -10380,11 +10399,13 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Failure: The target has the Poisoned condition until the end of its next turn"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
           "unmodelledClauses": [
-            "Failure: The target has the Poisoned condition until the end of its next turn",
             "While Poisoned, the creature can take either an action or a Bonus Action on its turn, not both, and it can't take Reactions."
           ]
         }
@@ -12825,19 +12846,23 @@
             "appliedConditions": [
               {
                 "condition": "Poisoned",
-                "unmodelledRequirement": "Failure: The target has the Poisoned condition until the start of its next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Failure: The target has the Poisoned condition until the start of its next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Poisoned condition until the start of its next turn"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
@@ -13067,19 +13092,23 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: 10 (2d6 + 3) Psychic damage, and the target has the Frightened condition until the start of the ghost's next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: 10 (2d6 + 3) Psychic damage, and the target has the Frightened condition until the start of the ghost's next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 10 (2d6 + 3) Psychic damage, and the target has the Frightened condition until the start of the ghost's next turn"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Possession",
@@ -13402,7 +13431,10 @@
             "appliedConditions": [
               {
                 "condition": "Blinded",
-                "unmodelledRequirement": "Failure: 7 (2d6) Radiant damage, and the target has the Blinded condition until the end of the mouther's next turn."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
@@ -13413,12 +13445,13 @@
           "appliedConditions": [
             {
               "condition": "Blinded",
-              "unmodelledRequirement": "Failure: 7 (2d6) Radiant damage, and the target has the Blinded condition until the end of the mouther's next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 7 (2d6) Radiant damage, and the target has the Blinded condition until the end of the mouther's next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 288
@@ -16769,19 +16802,23 @@
             "appliedConditions": [
               {
                 "condition": "Blinded",
-                "unmodelledRequirement": "Failure: 31 (7d8) Poison damage, and the target has the Blinded condition until the start of the naga's next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Blinded",
-              "unmodelledRequirement": "Failure: 31 (7d8) Poison damage, and the target has the Blinded condition until the start of the naga's next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 31 (7d8) Poison damage, and the target has the Blinded condition until the start of the naga's next turn"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -17529,19 +17566,23 @@
             "appliedConditions": [
               {
                 "condition": "Poisoned",
-                "unmodelledRequirement": "Failure: The target has the Poisoned condition until the start of its next turn."
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Failure: The target has the Poisoned condition until the start of its next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Poisoned condition until the start of its next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Multiattack",
@@ -20328,9 +20369,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -21480,7 +21519,10 @@
             "appliedConditions": [
               {
                 "condition": "Blinded",
-                "unmodelledRequirement": "Failure: The target has the Blinded condition until the end of the mephit's next turn."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
@@ -21491,12 +21533,13 @@
           "appliedConditions": [
             {
               "condition": "Blinded",
-              "unmodelledRequirement": "Failure: The target has the Blinded condition until the end of the mephit's next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Blinded condition until the end of the mephit's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Sleep",
@@ -22664,19 +22707,23 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition until the end of the mummy's next turn"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition until the end of the mummy's next turn"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Frightened condition until the end of the mummy's next turn"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 309
@@ -22865,19 +22912,23 @@
             "appliedConditions": [
               {
                 "condition": "Paralyzed",
-                "unmodelledRequirement": "Failure: 25 (6d6 + 4) Psychic damage, and the target has the Paralyzed condition until the end of the mummy's next turn."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Paralyzed",
-              "unmodelledRequirement": "Failure: 25 (6d6 + 4) Psychic damage, and the target has the Paralyzed condition until the end of the mummy's next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 25 (6d6 + 4) Psychic damage, and the target has the Paralyzed condition until the end of the mummy's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -23918,9 +23969,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "Ranged Attack Roll: +5, range 60 ft. Hit: 9 (2d6 + 2) Psychic damage, and the target has the Frightened condition until the start of the oni's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Shape-Shift",
@@ -24108,19 +24157,23 @@
             "appliedConditions": [
               {
                 "condition": "Stunned",
-                "unmodelledRequirement": "Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh's next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Stunned",
-              "unmodelledRequirement": "Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh's next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh's next turn"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 313
@@ -24578,19 +24631,23 @@
             "appliedConditions": [
               {
                 "condition": "Charmed",
-                "unmodelledRequirement": "Failure: The target has the Charmed condition until the start of the pirate's next turn."
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Charmed",
-              "unmodelledRequirement": "Failure: The target has the Charmed condition until the start of the pirate's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Charmed condition until the start of the pirate's next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 314
@@ -24727,19 +24784,23 @@
             "appliedConditions": [
               {
                 "condition": "Charmed",
-                "unmodelledRequirement": "Failure: The target has the Charmed condition until the start of the pirate's next turn."
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Charmed",
-              "unmodelledRequirement": "Failure: The target has the Charmed condition until the start of the pirate's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Charmed condition until the start of the pirate's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Riposte",
@@ -24857,7 +24918,10 @@
               },
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition until the start of its next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
@@ -24868,12 +24932,14 @@
             },
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition until the start of its next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
           "unmodelledClauses": [
-            "The pit fiend emanates an aura in a 20foot Emanation while it doesn't have the Incapacitated condition",
-            "Failure: The target has the Frightened condition until the start of its next turn"
+            "The pit fiend emanates an aura in a 20foot Emanation while it doesn't have the Incapacitated condition"
           ]
         },
         {
@@ -28105,19 +28171,23 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition until the start of its next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Bearer"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition until the start of its next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Bearer"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Frightened condition until the start of its next turn"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -30479,7 +30549,10 @@
             "appliedConditions": [
               {
                 "condition": "Incapacitated",
-                "unmodelledRequirement": "Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx's next turn."
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
@@ -30490,12 +30563,13 @@
           "appliedConditions": [
             {
               "condition": "Incapacitated",
-              "unmodelledRequirement": "Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -31003,9 +31077,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite's next turn."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Heart Sight",
@@ -33831,7 +33903,10 @@
             "appliedConditions": [
               {
                 "condition": "Stunned",
-                "unmodelledRequirement": "Failure: 10 (3d6) Thunder damage, and the target has the Stunned condition until the end of the vrock's next turn."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
@@ -33842,12 +33917,13 @@
           "appliedConditions": [
             {
               "condition": "Stunned",
-              "unmodelledRequirement": "Failure: 10 (3d6) Thunder damage, and the target has the Stunned condition until the end of the vrock's next turn."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: 10 (3d6) Thunder damage, and the target has the Stunned condition until the end of the vrock's next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 336
@@ -43103,19 +43179,23 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition until the start of the lion's next turn."
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition until the start of the lion's next turn."
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Frightened condition until the start of the lion's next turn."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 356
@@ -45663,7 +45743,10 @@
             "appliedConditions": [
               {
                 "condition": "Deafened",
-                "unmodelledRequirement": "Failure: The target has the Deafened condition until the start of the swarm's next turn"
+                "duration": {
+                  "clock": "StartOfTurn",
+                  "owner": "Source"
+                }
               }
             ]
           },
@@ -45674,7 +45757,10 @@
           "appliedConditions": [
             {
               "condition": "Deafened",
-              "unmodelledRequirement": "Failure: The target has the Deafened condition until the start of the swarm's next turn"
+              "duration": {
+                "clock": "StartOfTurn",
+                "owner": "Source"
+              }
             }
           ],
           "unmodelledClauses": [

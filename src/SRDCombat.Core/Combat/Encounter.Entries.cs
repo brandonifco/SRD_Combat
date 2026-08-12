@@ -132,6 +132,14 @@ public sealed partial class Encounter
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
         }
 
+        // "You can't attack the charmer" — an attack-shaped entry is still an attack.
+        if (CharmedBy(actor, target))
+        {
+            return new ActionRefusal(
+                "entry.charmed",
+                $"{actor.Name} is Charmed by {target.Name} and cannot attack them.");
+        }
+
         var distance = actor.Position.DistanceFeetTo(target.Position);
 
         if (!attack.CanReach(distance))
@@ -201,6 +209,11 @@ public sealed partial class Encounter
             return new ActionRefusal(
                 "entry.needs_target",
                 $"{entry.Name} needs a creature or a point to aim at.");
+        }
+
+        if (CharmedHarmRefusal(actor, "entry.charmed", entry.Name, save, aim, target) is { } charmed)
+        {
+            return charmed;
         }
 
         if (!actor.Turn.HasAction)

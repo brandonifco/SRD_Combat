@@ -108,7 +108,7 @@ public class EntrySaveTests
     [Fact]
     public void AnUnexecutableRiderIsSkippedWhileTheDamageStillLands()
     {
-        // Frightened is not on ConditionRules.Executable, so the rider is refused as
+        // Deafened is not on ConditionRules.Executable, so the rider is refused as
         // scenery — but the printed damage is fully modelled and lands anyway, exactly
         // as a Phase Spider's bite still bites.
         var roar = new SaveEffect(
@@ -117,7 +117,7 @@ public class EntrySaveTests
             null,
             [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Thunder, 2)],
             SaveSuccessOutcome.NoEffect,
-            [new AppliedCondition(ConditionType.Frightened)]);
+            [new AppliedCondition(ConditionType.Deafened)]);
 
         var encounter = Fight(
             new ScriptedRandomSource(20, 1, 1, 1),
@@ -128,7 +128,7 @@ public class EntrySaveTests
 
         Assert.Null(encounter.UseEntry("Roar", victim));
 
-        Assert.False(victim.HasCondition(ConditionType.Frightened));
+        Assert.False(victim.HasCondition(ConditionType.Deafened));
         Assert.True(victim.CurrentHitPoints < victim.Stats.MaximumHitPoints);
         Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Condition);
     }

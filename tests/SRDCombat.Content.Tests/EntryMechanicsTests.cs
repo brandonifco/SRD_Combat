@@ -264,23 +264,25 @@ public class EntryMechanicsTests
     [Fact]
     public void ACompleteRiderTheEngineCannotExecuteIsStillReportedAsIncomplete()
     {
-        // "... the target has the Charmed condition until the start of the sprite's next
-        // turn." Every word of that is modelled — the duration included — and Charmed is
-        // still not a condition the engine executes, so imposing it would put a label on
-        // the target that changes nothing. That is the quietest possible way to be wrong,
-        // so the entry reports itself incomplete instead.
-        var bow = Content.MonstersById["monster.sprite"].Entries.Single(entry => entry.Name == "Enchanting Bow");
+        // "... the target has the Deafened condition until the start of the swarm's
+        // next turn." Every word of that is modelled — the duration included — and
+        // Deafened is still not a condition the engine executes, so imposing it would
+        // put a label on the target that changes nothing. That is the quietest possible
+        // way to be wrong, so the entry reports itself incomplete instead. (The Sprite's
+        // Charmed held this role until Charmed joined the allowlist.)
+        var cacophony = Content.MonstersById["monster.swarm-of-ravens"].Entries
+            .Single(entry => entry.Name == "Cacophony");
 
-        var charmed = Assert.Single(bow.AppliedConditions);
+        var deafened = Assert.Single(cacophony.AppliedConditions);
 
-        Assert.Equal(EntryMechanics.Attack, bow.Mechanics);
-        Assert.True(charmed.IsFullyModelled);
-        Assert.NotNull(charmed.Duration);
-        Assert.False(ConditionRules.IsExecutable(ConditionType.Charmed));
-        Assert.False(ConditionRules.CanBeImposed(charmed));
+        Assert.Equal(EntryMechanics.SavingThrow, cacophony.Mechanics);
+        Assert.True(deafened.IsFullyModelled);
+        Assert.NotNull(deafened.Duration);
+        Assert.False(ConditionRules.IsExecutable(ConditionType.Deafened));
+        Assert.False(ConditionRules.CanBeImposed(deafened));
 
-        Assert.False(bow.IsFullyModelled);
-        Assert.Contains(bow.UnmodelledClauses, clause => clause.Contains("Charmed", StringComparison.Ordinal));
+        Assert.False(cacophony.IsFullyModelled);
+        Assert.Contains(cacophony.UnmodelledClauses, clause => clause.Contains("Deafened", StringComparison.Ordinal));
     }
 
     [Fact]
