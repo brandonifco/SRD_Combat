@@ -134,19 +134,52 @@ public enum ConditionDurationOwner
 }
 
 /// <summary>
-/// How long a condition lasts: "until the start of the devil's next turn".
+/// How long a condition lasts: "until the start of the devil's next turn", or
+/// "for 1 minute".
 /// </summary>
 /// <remarks>
-/// Only the two turn-boundary shapes are modelled, because they are the only ones a fight
-/// can resolve. The SRD also prints "until the grapple ends" (which needs the grapple),
-/// "until the web is destroyed" (which needs an object with hit points) and "for 1 minute"
-/// (which outlasts most fights) — those stay in
-/// <see cref="AppliedCondition.UnmodelledRequirement"/> rather than being rounded to
-/// something close.
+/// <para>
+/// Three shapes are modelled, all riding the same turn counter. The two turn-boundary
+/// shapes are <see cref="TurnsAhead"/> = 1. A timed duration is a stated interpretation,
+/// recorded here the way <c>AreaTargeting</c> records geometry: <b>"for 1 minute" ends
+/// at the end of the bearer's tenth turn counting from application</b> — a minute is ten
+/// rounds, and the bearer's own turn is the boundary the SRD's repeated-save wordings
+/// measure against. <b>"for 1 hour" and anything longer outlasts any fight</b>
+/// (<see cref="OutlastsFight"/>), so the condition ends only with the encounter; the
+/// printed duration is still recorded rather than rounded to a number no fight reaches.
+/// </para>
+/// <para>
+/// Still unmodelled and staying in <see cref="AppliedCondition.UnmodelledRequirement"/>:
+/// "until the grapple ends" (which needs the grapple), "until the web is destroyed"
+/// (which needs an object with hit points), and any duration printed with an early out —
+/// "until it takes damage", a repeated save — because imposing the timer without the way
+/// out would hold the condition longer than the book says.
+/// </para>
 /// </remarks>
-/// <param name="Clock">Which boundary of the turn it ends on.</param>
-/// <param name="Owner">Whose next turn is counted.</param>
-public sealed record ConditionDuration(ConditionClock Clock, ConditionDurationOwner Owner);
+/// <param name="Clock">Which boundary of the owner's turn it ends on.</param>
+/// <param name="Owner">Whose turn is counted.</param>
+/// <param name="TurnsAhead">
+/// How many of the owner's turns ahead the boundary lies. 1 is "next turn"; 10 is
+/// "for 1 minute". Not consulted when <paramref name="OutlastsFight"/> is set.
+/// </param>
+/// <param name="OutlastsFight">
+/// True for a printed duration no fight reaches — "for 1 hour", "for 24 hours". The
+/// condition gets no expiry and ends with the encounter.
+/// </param>
+public sealed record ConditionDuration(
+    ConditionClock Clock,
+    ConditionDurationOwner Owner,
+    int TurnsAhead = 1,
+    bool OutlastsFight = false)
+{
+    /// <summary>"for N minutes": ten of the bearer's turns per minute, ending at the end of a turn.</summary>
+    public static ConditionDuration ForMinutes(int minutes) =>
+        new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, minutes * 10);
+
+    /// <summary>"for 1 hour" and longer: printed time no fight reaches.</summary>
+    public static ConditionDuration BeyondTheFight { get; } =
+        new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, 0, OutlastsFight: true);
+}
 
 /// <summary>
 /// A condition an entry imposes — "If the target is a Large or smaller creature, it has

@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #36 (execute the five remaining rider conditions) |
-| Tests | **429 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #37 (timed condition durations) |
+| Tests | **434 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **5 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **4 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -81,8 +81,10 @@ governing plan doc carries the same list with the reasoning; this is the short f
    unchanged — the policy refuses to breathe on the user's own square meanwhile. Of the
    follow-ons that slotted around it, **#21 (execute Blinded, Charmed, Frightened,
    Paralyzed, Stunned) is done** — the conditions section below carries what the
-   glossary corrected — while #22 (timed durations) and #24 (grapple-end durations)
-   stay open as small follow-ons to step 1.
+   glossary corrected — and **#22 (timed durations) is done**: "for 1 minute" is ten of
+   the bearer's turns on the same clock, "for 1 hour" outlasts the fight, and the
+   Failure-tier rule below decides which printed timers may actually ride. #24
+   (grapple-end durations) stays open as the last small follow-on to step 1.
 5. **#9 passive monster traits — done for what the engine can express.**
    `MonsterTraitRegistry` is the fourth curated allowlist: a printed *trait name* maps to
    an executed effect only alongside the code. Three landed — Pack Tactics ×18 (ally
@@ -158,19 +160,24 @@ Paralyzed and Stunned. Deliberately absent: Deafened, Invisible and Petrified, e
 needing a model (hearing, sight, objects) that does not exist. **Add a condition there
 only alongside the code that gives it effects.** Forty-five attacks satisfy both checks —
 20 Prone, 12 Poisoned, 9 Grappled, and one each of Charmed, Frightened, Paralyzed and
-Incapacitated — and twenty-one failed-save riders land: 6 Frightened, 3 Blinded,
-3 Poisoned, 2 each of Charmed, Prone and Stunned, one each of Grappled, Incapacitated
+Incapacitated — and twenty-three failed-save riders land: 6 Frightened, 4 Blinded,
+4 Poisoned, 2 each of Charmed, Prone and Stunned, one each of Grappled, Incapacitated
 and Paralyzed. The Water Elemental's Whelm is still the working example of the split:
 its Grappled lands while its "Restrained until the grapple ends" is refused on the same
 failed save.
 
-**The two questions are independent, and the Phase Spider proves it** — its bite poisons
-"for 1 hour", Poisoned *is* executable, and the rider still cannot be imposed, because an
-hour is not a turn boundary. The Swarm of Ravens is the mirror image: its Cacophony
-Deafened rider is completely modelled, duration and all, and refused because the engine
-does not execute Deafened. (The Sprite's Charmed held that role until #21; today its
-rider rides the bow, and the Sprite is instead the reason `Encounter` knows a Charmed
-creature cannot attack its charmer.)
+**The two questions are independent, and the Phase Spider still proves it — but read its
+sentence before citing it.** Its bite poisons "for 1 hour", Poisoned *is* executable, and
+the rider still cannot be imposed — not because of the hour (timed durations are
+modelled since #22) but because the sentence opens with "If this damage reduces the
+target to 0 Hit Points" and chains "While Poisoned, the target also has the Paralyzed
+condition": a gate and a chained condition the model has no vocabulary for. Until #22
+this entry was described as refused on the duration alone; the gate was always there
+too. The Swarm of Ravens is the mirror image: its Cacophony Deafened rider is completely
+modelled, duration and all, and refused because the engine does not execute Deafened.
+(The Sprite's Charmed held that role until #21; today its rider rides the bow, and the
+Sprite is instead the reason `Encounter` knows a Charmed creature cannot attack its
+charmer.)
 
 **What the glossary corrected when the five landed, worth not re-learning from memory:**
 **Stunned has no Speed 0 and no automatic-crit clause** — memory adds both, the print has
@@ -196,19 +203,31 @@ imposing the rider without it would make the condition permanent. And in an *att
 entry a "Failure:" sentence belongs to an embedded saving throw — the Ghast's Claw rolls
 a DC 10 Constitution save gated on "non-Undead creature", both printed in sentences of
 their own — so riding the attack with it would paralyze on every hit with no save
-rolled. Both refusals are in `EntryMechanicsParser.ReadRider`, with the safe direction
-chosen; duration-less riders in sentences of their own (the Gladiator's Prone, the Water
-Elemental's Grappled, the Otyugh Bite's Poisoned disease) are untouched, because those
-conditions carry their own printed way out.
+rolled. A third rule joined with #22: **a rider behind a deeper failure tier — "Second
+Failure: The target has the Unconscious condition for 1 minute" — is refused whatever
+its duration**, because the save model rolls one failure and the rider would land a
+whole tier early: a wyrmling's breath putting targets to sleep on the first failed save.
+That rule is what separates the timers that ride (the Solar's "Blinded for 1 minute",
+the Pseudodragon's "Poisoned for 1 hour" — checked by hand against their follow-on
+sentences) from the ones that must not (every Sleep Breath). All three refusals are in
+`EntryMechanicsParser.ReadRider`, with the safe direction chosen; duration-less riders
+in sentences of their own (the Gladiator's Prone, the Water Elemental's Grappled, the
+Otyugh Bite's Poisoned disease) are untouched, because those conditions carry their own
+printed way out.
 
 **Durations hang off a turn counter, not a countdown.** An `ActiveCondition` carries who
 imposed it and a `ConditionExpiry` — whose turns are counted, which boundary, and at which
-turn number, fixed at application as *the owner's count plus one*. That is the whole of
-"next", and it is why one wording works in both places it appears: applied on the devil's
-own turn, or during someone else's on an Opportunity Attack, "until the start of the
-devil's next turn" means different moments and needs no special case. **The clock ticks
-for every creature whose turn comes round, dead or Unconscious included** — a duration
-measured against a creature that never acts again still has to end.
+turn number, fixed at application as *the owner's count plus `TurnsAhead`*. One is the
+whole of "next", and it is why one wording works in both places it appears: applied on the
+devil's own turn, or during someone else's on an Opportunity Attack, "until the start of
+the devil's next turn" means different moments and needs no special case. **A timed
+duration is the same clock set further out**: "for 1 minute" is ten of the *bearer's*
+turns ending at an end of turn (`ConditionDuration.ForMinutes`), and "for 1 hour" or
+longer is `BeyondTheFight` — imposable, recorded, and expiring with the encounter rather
+than being rounded to a number no fight reaches. Both are stated interpretations on
+`ConditionDuration`'s doc comments. **The clock ticks for every creature whose turn comes
+round, dead or Unconscious included** — a duration measured against a creature that never
+acts again still has to end.
 
 **Read the possessive.** "until the end of *its* next turn" is the creature carrying the
 condition; "until the start of *the devil's* next turn" is the creature that imposed it.

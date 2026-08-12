@@ -244,12 +244,15 @@ public class EntryMechanicsTests
     }
 
     [Fact]
-    public void ADurationShapeOutsideTheTwoModelledIsStillARequirement()
+    public void AGatedRiderIsStillARequirementWhateverItsDuration()
     {
-        // The Phase Spider's bite poisons "for 1 hour". Poisoned is a condition the engine
-        // executes and this rider still cannot be imposed, because an hour is not a turn
-        // boundary and there is nothing to round it to that would not be a different rule.
-        // This is the case that shows the two checks are independent.
+        // The Phase Spider's bite poisons "for 1 hour" — a duration the model now
+        // expresses — and the rider still cannot be imposed, because its sentence opens
+        // with "If this damage reduces the target to 0 Hit Points" and closes into
+        // "While Poisoned, the target also has the Paralyzed condition": a gate and a
+        // chained condition the model has no vocabulary for. (Until timed durations
+        // landed, this entry was described as refused on the duration alone; the gate
+        // was always there too, and it is what still holds the rider.)
         var bite = Content.MonstersById["monster.phase-spider"].Entries.Single(entry => entry.Name == "Bite");
 
         var poisoned = bite.AppliedConditions.Single(applied => applied.Condition == ConditionType.Poisoned);
@@ -259,6 +262,43 @@ public class EntryMechanicsTests
         Assert.False(poisoned.IsFullyModelled);
         Assert.False(ConditionRules.CanBeImposed(poisoned));
         Assert.False(bite.IsFullyModelled);
+    }
+
+    [Fact]
+    public void TimedDurationsLandWhereTheSentenceIsComplete()
+    {
+        // The two riders a timed duration unlocks, one of each shape. The Solar's
+        // Blinding Gaze blinds "for 1 minute" — ten of the bearer's turns — and the
+        // Pseudodragon's Sting poisons "for 1 hour", which no fight reaches, so the
+        // rider lands with no expiry at all.
+        var gaze = Content.MonstersById["monster.solar"].Entries.Single(entry => entry.Name == "Blinding Gaze");
+        var blinded = gaze.Save!.AppliedConditions.Single(applied => applied.Condition == ConditionType.Blinded);
+
+        Assert.Equal(ConditionDuration.ForMinutes(1), blinded.Duration);
+        Assert.True(ConditionRules.CanBeImposed(blinded));
+
+        var sting = Content.MonstersById["monster.pseudodragon"].Entries.Single(entry => entry.Name == "Sting");
+        var poisoned = sting.Save!.AppliedConditions.Single(applied => applied.Condition == ConditionType.Poisoned);
+
+        Assert.Equal(ConditionDuration.BeyondTheFight, poisoned.Duration);
+        Assert.True(ConditionRules.CanBeImposed(poisoned));
+    }
+
+    [Fact]
+    public void ARiderBehindADeeperFailureTierIsRefused()
+    {
+        // "Second Failure: The target has the Unconscious condition for 1 minute." The
+        // save model rolls one failure, so a rider printed behind a deeper tier would
+        // land a whole tier early — a wyrmling's breath putting targets to sleep on the
+        // first failed save. The duration alone would parse; the tier is why it must not.
+        var breath = Content.MonstersById["monster.brass-dragon-wyrmling"].Entries
+            .Single(entry => entry.Name == "Sleep Breath");
+        var unconscious = breath.Save!.AppliedConditions
+            .Single(applied => applied.Condition == ConditionType.Unconscious);
+
+        Assert.False(unconscious.IsFullyModelled);
+        Assert.False(ConditionRules.CanBeImposed(unconscious));
+        Assert.Contains("Second Failure", unconscious.UnmodelledRequirement, StringComparison.Ordinal);
     }
 
     [Fact]

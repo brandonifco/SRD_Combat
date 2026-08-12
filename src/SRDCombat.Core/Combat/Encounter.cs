@@ -1178,10 +1178,18 @@ public sealed partial class Encounter
 
     /// <summary>Narrates a duration the way the SRD prints it.</summary>
     private static string DescribeDuration(ConditionDuration? duration, Combatant source, Combatant bearer) =>
-        duration is null
-            ? string.Empty
-            : $" until the {(duration.Clock == ConditionClock.StartOfTurn ? "start" : "end")} of " +
-              $"{(duration.Owner == ConditionDurationOwner.Bearer ? bearer.Name : source.Name)}'s next turn";
+        duration switch
+        {
+            null => string.Empty,
+            { OutlastsFight: true } => " for the rest of the fight",
+            { TurnsAhead: 1 } =>
+                $" until the {(duration.Clock == ConditionClock.StartOfTurn ? "start" : "end")} of " +
+                $"{(duration.Owner == ConditionDurationOwner.Bearer ? bearer.Name : source.Name)}'s next turn",
+            // Only ConditionDuration.ForMinutes produces the multi-turn shape, so the
+            // printed wording is recoverable from the count.
+            { TurnsAhead: 10 } => " for 1 minute",
+            _ => $" for {duration.TurnsAhead / 10} minutes",
+        };
 
     private static string DescribeHealth(Combatant combatant) =>
         combatant.IsDead
