@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #64 (encounter shape) |
-| Tests | **567 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #65 (fallen characters return) |
+| Tests | **571 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **3 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |

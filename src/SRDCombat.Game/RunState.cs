@@ -69,6 +69,35 @@ public sealed record CharacterState(
     /// <summary>True when this character can still be put in a fight.</summary>
     public bool CanFight => !IsDead;
 
+    /// <summary>
+    /// Whether a fallen character rejoins the party, and when.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is a house rule, not a rule and not a reading of one.</b> The SRD has
+    /// nothing to say about it: recovering the dead means Revivify or Raise Dead, which
+    /// need diamonds, a caster of the right level and a world outside the fight, none of
+    /// which this game has. Everywhere else in this project a decision is either printed
+    /// or a documented interpretation of something printed; this one is neither, and is
+    /// marked so nobody later mistakes it for the book.
+    /// </para>
+    /// <para>
+    /// The reason it exists is measured rather than felt. With death permanent, a run
+    /// died out with a median of three fights cleared of thirty across every combination
+    /// of tactics and encounter shape tried — not because the party wore down, but
+    /// because a fight it won still cost a character, and a party of three then lost the
+    /// next one. Death as an ending made the ladder unplayable; death as a setback keeps
+    /// the cost real, because a fallen character misses every fight until the next Long
+    /// Rest and earns no experience while down, so they come back a level behind.
+    /// </para>
+    /// <para>
+    /// They return at <b>1 hit point</b> and then take the rest normally, which restores
+    /// them — the Long Rest is doing the healing, and the rule here only decides that
+    /// there is somebody there to heal.
+    /// </para>
+    /// </remarks>
+    public const RestKind ReturnsFromTheDead = RestKind.Long;
+
     /// <summary>Reads the state back off a combatant once a fight has ended.</summary>
     public CharacterState AfterFight(Combatant combatant)
     {
@@ -103,23 +132,30 @@ public sealed record CharacterState(
         ArgumentNullException.ThrowIfNull(member);
         ArgumentNullException.ThrowIfNull(random);
 
-        if (IsDead || !RestRules.CanRest(CurrentHitPoints))
+        // A fallen character rejoins the party on a Long Rest, and then takes the rest
+        // like anyone else. See ReturnsFromTheDead for why this is a house rule rather
+        // than a reading of anything printed.
+        var state = IsDead && rest == RestKind.Long
+            ? this with { IsDead = false, CurrentHitPoints = 1 }
+            : this;
+
+        if (state.IsDead || !RestRules.CanRest(state.CurrentHitPoints))
         {
-            return this;
+            return state;
         }
 
         var character = member.Combatant.Stats.Character;
         var maximumHitPoints = member.Sheet.MaximumHitPoints;
 
-        var rested = this with
+        var rested = state with
         {
-            RagesRemaining = RestRules.OneOnShortAllOnLong(rest, RagesRemaining, character?.RageUses ?? 0),
+            RagesRemaining = RestRules.OneOnShortAllOnLong(rest, state.RagesRemaining, character?.RageUses ?? 0),
             SecondWindRemaining = RestRules.OneOnShortAllOnLong(
                 rest,
-                SecondWindRemaining,
+                state.SecondWindRemaining,
                 character?.SecondWindUses ?? 0),
             ActionSurgeRemaining = RestRules.AllOnEitherRest(rest, character?.ActionSurgeUses ?? 0),
-            HitDiceRemaining = RestRules.HitDiceAfter(rest, HitDiceRemaining, member.Sheet.Level),
+            HitDiceRemaining = RestRules.HitDiceAfter(rest, state.HitDiceRemaining, member.Sheet.Level),
         };
 
         if (rest == RestKind.Long)

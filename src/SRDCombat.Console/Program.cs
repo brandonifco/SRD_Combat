@@ -51,6 +51,7 @@ Console.WriteLine("Type 'help' during a fight for commands.");
 
 while (run.Next is { } step)
 {
+    var returnsBefore = run.Returns.Count;
     var rest = run.PrepareForNext(random);
 
     Console.WriteLine();
@@ -62,6 +63,11 @@ while (run.Next is { } step)
     if (rest is { } taken)
     {
         Console.WriteLine($"The party takes a {taken} Rest.");
+    }
+
+    foreach (var returned in run.Returns.Skip(returnsBefore))
+    {
+        Console.WriteLine(returned + ".");
     }
 
     foreach (var (member, state) in run.Party.Zip(run.States))
@@ -106,9 +112,15 @@ Console.WriteLine(run.Outcome == RunOutcome.Survived
     ? $"The gauntlet is beaten — {run.Ladder.Count} fights cleared."
     : $"The run ends after {run.Cleared} fight(s).");
 
-if (run.Casualties.Count > 0)
+var fallen = run.Fallen.ToArray();
+
+if (fallen.Length > 0)
 {
-    Console.WriteLine("Fallen: " + string.Join(", ", run.Casualties) + ".");
+    Console.WriteLine("Fallen: " + string.Join(", ", fallen) + ".");
+}
+else if (run.Casualties.Count > 0)
+{
+    Console.WriteLine($"Everyone made it, though {run.Casualties.Count} went down along the way.");
 }
 
 return 0;
