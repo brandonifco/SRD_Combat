@@ -82,11 +82,118 @@ public class RealDraftChoiceTests
         Assert.Contains("Favored Enemy", ranger.UnimplementedFeatures);
     }
 
+    [Fact]
+    public void TheImprovementArrivesAtLevelFourAndNotBefore()
+    {
+        var plus2 = new AbilityScoreImprovement { First = Ability.Strength };
+
+        // The class tables grant it at 4. A draft that names it earlier is describing a
+        // choice the character has not reached, so the score is untouched.
+        var three = Build("class.fighter", level: 3, improvements: [plus2]);
+        var four = Build("class.fighter", level: 4, improvements: [plus2]);
+
+        Assert.Equal(17, three.AbilityScores[Ability.Strength]);
+        Assert.Equal(19, four.AbilityScores[Ability.Strength]);
+
+        // And it is worth exactly what the arithmetic says: +1 to hit.
+        Assert.Equal(
+            Build("class.fighter", level: 4).Attacks[0].AttackBonus + 1,
+            four.Attacks[0].AttackBonus);
+    }
+
+    [Fact]
+    public void TheOtherPrintedShapeRaisesTwoScoresByOne()
+    {
+        var split = Build("class.fighter", level: 4, improvements:
+        [
+            new AbilityScoreImprovement { First = Ability.Strength, Second = Ability.Constitution },
+        ]);
+
+        Assert.Equal(18, split.AbilityScores[Ability.Strength]);
+        Assert.Equal(15, split.AbilityScores[Ability.Constitution]);
+    }
+
+    [Fact]
+    public void AnImprovementCannotPushAScorePastTwenty()
+    {
+        // "This feat can't increase an ability score above 20." The Soldier's +2 already
+        // took Strength to 17, so a 19 base would be 21 without the cap.
+        var capped = Build("class.fighter", level: 4, improvements:
+        [
+            new AbilityScoreImprovement { First = Ability.Strength },
+            new AbilityScoreImprovement { First = Ability.Strength },
+        ]);
+
+        // Only one is earned at level 4, so this is 17 + 2 rather than 17 + 4 anyway...
+        Assert.Equal(19, capped.AbilityScores[Ability.Strength]);
+
+        // ...and at level 6 a Fighter has earned two, which the cap then holds at 20.
+        var fighterAtSix = Build("class.fighter", level: 5, improvements:
+        [
+            new AbilityScoreImprovement { First = Ability.Strength },
+            new AbilityScoreImprovement { First = Ability.Strength },
+        ]);
+
+        Assert.Equal(19, fighterAtSix.AbilityScores[Ability.Strength]);
+    }
+
+    [Fact]
+    public void NamingOneAbilityTwiceIsRefused()
+    {
+        // That would be a +2 wearing the +1/+1 shape.
+        Assert.Throws<ArgumentException>(() => Build("class.fighter", level: 4, improvements:
+        [
+            new AbilityScoreImprovement { First = Ability.Strength, Second = Ability.Strength },
+        ]));
+    }
+
+    [Fact]
+    public void AnEarnedChoiceNobodySpentStaysVisible()
+    {
+        // "the Ability Score Improvement feat or another feat of your choice" - taking
+        // another feat is legal and no other feat is modelled, so the shortfall is
+        // reported rather than forgotten.
+        Assert.Equal(0, Build("class.fighter", level: 3).UnspentFeatChoices);
+        Assert.Equal(1, Build("class.fighter", level: 4).UnspentFeatChoices);
+        Assert.Equal(
+            0,
+            Build("class.fighter", level: 4, improvements:
+                [new AbilityScoreImprovement { First = Ability.Strength }]).UnspentFeatChoices);
+    }
+
+    [Fact]
+    public void EveryClassGrantsTheImprovementAtLevelFour_ExceptTheSorcerersBrokenRow()
+    {
+        // The SRD grants this to all twelve classes at level 4. Eleven of them extract
+        // correctly; the Sorcerer's table is narrower than the rest, wraps the name onto
+        // a second line, and loses the second half — #78.
+        foreach (var definition in Content.Classes.Where(c => c.Id != "class.sorcerer"))
+        {
+            var atFour = definition.Levels
+                .Single(row => row.Level == 4)
+                .FeatureNames
+                .Any(name => ClassFeatureRegistry.Resolve(name) == ClassFeature.AbilityScoreImprovement);
+
+            Assert.True(atFour, $"{definition.Name} has no Ability Score Improvement at level 4.");
+        }
+
+        // The defect, pinned rather than hidden: when #78 is fixed this assertion fails,
+        // which is the point — it forces the exception above to be removed in the same
+        // change rather than leaving a class quietly without its feat forever.
+        Assert.Contains(
+            "Ability Score",
+            Content.ClassesById["class.sorcerer"].Levels.Single(row => row.Level == 4).FeatureNames);
+        Assert.DoesNotContain(
+            "Ability Score Improvement",
+            Content.ClassesById["class.sorcerer"].Levels.Single(row => row.Level == 4).FeatureNames);
+    }
+
     private static CharacterSheet Build(
         string classId,
         int level,
         FightingStyle style = FightingStyle.Unspecified,
-        IReadOnlyList<string>? expertise = null)
+        IReadOnlyList<string>? expertise = null,
+        IReadOnlyList<AbilityScoreImprovement>? improvements = null)
     {
         const string backgroundId = "background.soldier";
         var background = Content.BackgroundsById[backgroundId];
@@ -114,6 +221,7 @@ public class RealDraftChoiceTests
             ChosenSkills = ["Stealth", "Acrobatics"],
             ExpertiseSkills = expertise ?? [],
             FightingStyle = style,
+            AbilityScoreImprovements = improvements ?? [],
             WeaponIds = ["weapon.longsword"],
             ArmorId = "armor.chain-mail",
         };

@@ -199,6 +199,7 @@ public static class PregeneratedParty
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Athletics", "Perception"],
         FightingStyle = FightingStyle.Defense,
+        AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
         WeaponIds = ["weapon.longsword"],
         ArmorId = "armor.chain-mail",
         HasShield = true,
@@ -215,6 +216,7 @@ public static class PregeneratedParty
         PrimaryIncrease = Ability.Strength,
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Athletics", "Survival"],
+        AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
         WeaponIds = ["weapon.greataxe"],
         // No armour: Unarmored Defense is the Barbarian's own AC rule, and putting them
         // in Chain Mail would quietly switch it off.
@@ -233,6 +235,7 @@ public static class PregeneratedParty
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Stealth", "Acrobatics"],
         ExpertiseSkills = ["Stealth", "Acrobatics"],
+        AbilityScoreImprovements = ImprovementsAt(level, Ability.Dexterity),
         WeaponIds = ["weapon.shortsword", "weapon.shortbow"],
         ArmorId = "armor.leather-armor",
     };
@@ -250,10 +253,32 @@ public static class PregeneratedParty
         // the resolver refuses outright rather than quietly dropping.
         SecondaryIncrease = Ability.Intelligence,
         ChosenSkills = ["Insight", "Religion"],
+        AbilityScoreImprovements = ImprovementsAt(level, Ability.Wisdom),
         WeaponIds = ["weapon.mace"],
         ArmorId = "armor.chain-shirt",
         HasShield = true,
     };
+
+    /// <summary>
+    /// The pregens' Ability Score Improvement, taken at level 4 on the ability the
+    /// character already lives by.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// +2 to the primary rather than +1/+1: these four are single-ability characters —
+    /// the Fighter and Barbarian attack and damage on Strength, the Rogue on Dexterity,
+    /// the Cleric's spell save DC and attack bonus both come off Wisdom — so the whole
+    /// feat into one score is what a player would take, and it is worth exactly +1 to
+    /// hit and +1 damage from level 4 on.
+    /// </para>
+    /// <para>
+    /// Gated on the level here rather than in the resolver so the draft always describes
+    /// a character who has actually earned it, which keeps <c>Resolve</c> honest when
+    /// levelling re-resolves this same draft further up the ladder.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<AbilityScoreImprovement> ImprovementsAt(int level, Ability ability) =>
+        level >= 4 ? [new AbilityScoreImprovement { First = ability }] : [];
 
     private static Dictionary<Ability, int> Scores(
         int strength,

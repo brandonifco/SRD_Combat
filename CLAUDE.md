@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #77 (aquatic foes, closing #75) |
+| Branch | `main` at PR #80 (Ability Score Improvement) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **No open GitHub issues.** The next work is a phase, not a fix — see the plan doc. |
+| Work remaining | **2 open GitHub issues** — #78 (a truncated Sorcerer row) and #79 (runs die before level 4). |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -52,15 +52,27 @@ Moderate rung drops a Potion of Healing**, handed to whoever carries the fewest.
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
-**Automated runs still lose, but they get much further than they did.** Measured over the
-same 40 seeds throughout: the old every-third-fight-is-High ladder cleared a median of
-**2.5** with 23 of 40 deaths on a High rung; #65's milestone shape — four routine fights
-alternating Low and Moderate, then a High set piece entered fresh off a Long Rest — took
-that to **4** with only 7 of 40 deaths on High; and **potions took it to 7.5, best 29**,
-which is the largest single jump anything has produced. **68 of the 110 potions used were
-administered to a fallen ally**, so it is the cheap way back off the floor doing the work
-rather than the self-heal. **Nothing has yet cleared all thirty**, and every figure here is
-a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
+**Automated runs still lose, and the pacing history is worth reading as a whole.** Measured
+over the same 40 seeds throughout, median fights cleared of 30:
+
+| After | Median | Best | Runs reaching level 4 |
+| --- | --- | --- | --- |
+| the old every-third-fight-is-High ladder | 2.5 | 14 | — |
+| #65's milestone shape | 4 | 23 | — |
+| #72 potions | **7.5** | **29** | 5/40 |
+| #52 livestock excluded | 6 | 18 | 0/40 |
+| #75 aquatics excluded | **4** | 19 | 1/40 |
+| ASI implemented | 4 | 19 | 1/40 |
+
+Two things in that table are worth more than the numbers. **The two plausibility fixes cost
+as much pacing as potions bought** — 7.5 back down to 4 — and neither PR measured it,
+because both looked cosmetic. They are not: a Camel or a flopping Piranha was *XP the
+budget spent on something that could not hurt anybody*, so removing the chaff means every
+encounter's full budget now goes to creatures that fight. **A pool change is a balance
+change.** And **the Ability Score Improvement moved nothing at all**, because a run
+essentially never reaches level 4 — which is #79, and the reason half this tier's content
+has never been seen in play. Every figure is still a floor rather than a verdict, because
+`SimpleTacticsPolicy` is playing the party.
 
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
@@ -96,12 +108,23 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**Nothing.** The issue queue is empty for the first time since it was opened, so
-`gh issue list` will not tell you what to do next — the plan doc's phase list will.
-Phases 1–4 are done, Phase 6 is done for monsters and open-ended for the party, and
-Phases 5 and 7 have never been started. **Do not read an empty queue as "the project is
-finished":** nobody has ever cleared the thirty-rung ladder, and no human has played more
-than a few rungs by hand.
+Two issues, both found by measuring rather than by reading code.
+
+- **#79 — runs die before level 4.** One run in 40 reaches it, so **half this tier is
+  unreachable in play**: the Ability Score Improvement, the Fighter's Extra Attack and the
+  Rare-tier loot are all implemented and effectively never seen. This is XP pacing, not
+  difficulty — nobody has checked whether thirty rungs at the printed budgets actually pay
+  out the 6,500 XP the ladder's own arithmetic assumes. **Decide this before any further
+  balance work**, because anything gated at level 4+ cannot be measured in a run today.
+- **#78 — the Sorcerer's level table truncates wrapped feature names.** Five rows, all
+  Sorcerer: its Features table has two extra columns, so the Class Features column wraps
+  and loses the second half — "Ability Score" for "Ability Score Improvement". The fourth
+  appearance of the wrapped-line trap. Pinned by a test that fails when it is fixed.
+
+Beyond those the next work is a phase, not a fix: Phases 1–4 are done, Phase 6 is done for
+monsters and open-ended for the party, and Phases 5 and 7 have never been started. **Do not
+read a short queue as "nearly finished":** nobody has ever cleared the thirty-rung ladder,
+and no human has played more than a few rungs by hand.
 
 **A caution before tuning anything against numbers:** the party in an automated run is
 played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
@@ -380,6 +403,17 @@ so *it* can tell what is left; they do not belong in a status report.
   which skills were taken — come from the draft.
 - **Ability increases come from the *background*, not the species.** A 2024 change; a
   species grants no ability scores at all.
+- **The Ability Score Improvement is a draft choice, and the count comes from the class
+  table.** "+2 to one ability, or +1 to two, never above 20", taken at level 4 by every
+  class. Two readings are written down on the resolver: **how many the character is
+  entitled to is counted from the printed rows**, because `ResolveFeatures` collapses
+  repeats and this is the feature the SRD grants most often (four times for most classes,
+  six for a Fighter); and **a draft may name more improvements than its level has earned**,
+  taking the first N, because one draft has to describe the character at every level —
+  that is what makes levelling a re-resolve rather than a sheet edit. A draft naming
+  *fewer* is legitimate too, since the printed feature is "the Ability Score Improvement
+  feat **or another feat of your choice**" and no other feat is modelled; the shortfall is
+  counted on `CharacterSheet.UnspentFeatChoices` rather than forgotten.
 - **`ClassFeatureRegistry` is a curated allowlist**, exactly like the extractor's inert
   list. A printed feature name maps to an implemented `ClassFeature` only if the engine
   really does the thing. **Add a name here only alongside the code that implements it** —
