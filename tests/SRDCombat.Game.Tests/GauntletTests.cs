@@ -373,6 +373,72 @@ public class GauntletTests
     }
 
     [Fact]
+    public void AFallenCharacterRejoinsOnALongRest()
+    {
+        // A house rule rather than anything the SRD prints, and the reason is measured:
+        // with death permanent a run died out within a few fights, because a fight the
+        // party won still cost a character and a party of three lost the next one.
+        var member = PregeneratedParty.Build(Content, level: 2).First();
+        var dead = CharacterState.Fresh(member) with { CurrentHitPoints = 0, IsDead = true };
+
+        Assert.False(dead.CanFight);
+
+        var afterLong = dead.AfterRest(member, RestKind.Long, new SeededRandomSource(1), hitDieSides: 10);
+
+        Assert.True(afterLong.CanFight);
+        Assert.Equal(member.Sheet.MaximumHitPoints, afterLong.CurrentHitPoints);
+    }
+
+    [Fact]
+    public void AShortRestDoesNotBringAnybodyBack()
+    {
+        // The cost has to be real: a fallen character misses every fight until the next
+        // Long Rest, which is a whole cycle of the ladder.
+        var member = PregeneratedParty.Build(Content, level: 2).First();
+        var dead = CharacterState.Fresh(member) with { CurrentHitPoints = 0, IsDead = true };
+
+        var afterShort = dead.AfterRest(member, RestKind.Short, new SeededRandomSource(1), hitDieSides: 10);
+
+        Assert.False(afterShort.CanFight);
+    }
+
+    [Fact]
+    public void ACharacterWhoDiesFallsBehindOnExperience()
+    {
+        // The other half of the cost, and it needs no new code: the dead earn nothing,
+        // and characters level individually, so somebody who misses a cycle comes back a
+        // level behind the party that kept fighting.
+        var member = PregeneratedParty.Build(Content).First();
+        var dead = CharacterState.Fresh(member) with { IsDead = true };
+
+        var missed = dead.Earning(500);
+
+        Assert.Equal(dead.ExperiencePoints, missed.ExperiencePoints);
+    }
+
+    [Fact]
+    public void ARunReportsWhoIsDeadNowRatherThanWhoHasEverFallen()
+    {
+        // Casualties is the history; Fallen is the state. They differ the moment a
+        // fallen character can come back, and a run's ending should report the latter.
+        var run = GauntletRun.Start(Content, GauntletLadder.Default(fights: 6));
+        var random = new SeededRandomSource(20250812);
+
+        while (run.Next is not null)
+        {
+            run.PrepareForNext(random);
+            var fight = run.BeginNext(random);
+            SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+            run.CompleteFight(fight);
+        }
+
+        Assert.All(run.Fallen, name => Assert.Contains(name, run.Casualties));
+
+        // Anyone who came back is in the history and not in the state.
+        Assert.Equal(run.Casualties.Count - run.Returns.Count, run.Fallen.Count());
+    }
+
+    [Fact]
     public void AnUnfinishedFightCannotBeRecorded()
     {
         var run = GauntletRun.Start(Content);

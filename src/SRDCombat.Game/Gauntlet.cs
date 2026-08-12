@@ -109,6 +109,7 @@ public sealed class GauntletRun
     private readonly List<CharacterState> _states;
     private readonly List<string> _casualties = [];
     private readonly List<string> _levelUps = [];
+    private readonly List<string> _returns = [];
 
     private GauntletRun(
         SrdContent content,
@@ -185,11 +186,18 @@ public sealed class GauntletRun
 
         for (var i = 0; i < _states.Count; i++)
         {
-            _states[i] = _states[i].AfterRest(
+            var before = _states[i];
+
+            _states[i] = before.AfterRest(
                 Party[i],
                 rest,
                 random,
                 _content.ClassesById[Party[i].Draft.ClassId].HitDieSides);
+
+            if (before.IsDead && !_states[i].IsDead)
+            {
+                _returns.Add($"{Party[i].Draft.Name} rejoins the party");
+            }
         }
 
         return rest;
@@ -330,4 +338,16 @@ public sealed class GauntletRun
 
     /// <summary>Level-ups in the order they happened, for a client to narrate.</summary>
     public IReadOnlyList<string> LevelUps => _levelUps;
+
+    /// <summary>Fallen characters rejoining the party, in the order they came back.</summary>
+    public IReadOnlyList<string> Returns => _returns;
+
+    /// <summary>Characters who are dead right now, as opposed to who has ever fallen.</summary>
+    /// <remarks>
+    /// <see cref="Casualties"/> is the history and this is the state; they differ once a
+    /// fallen character can come back, and a run's ending should report the latter.
+    /// </remarks>
+    public IEnumerable<string> Fallen => Party
+        .Where((_, index) => _states[index].IsDead)
+        .Select(member => member.Draft.Name);
 }
