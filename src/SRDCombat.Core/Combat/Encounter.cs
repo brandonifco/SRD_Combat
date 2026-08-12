@@ -733,12 +733,21 @@ public sealed partial class Encounter
         var recklessAdvantage = attacker.Features.IsRecklessThisTurn && attack.Kind == AttackKind.Melee;
         var targetIsReckless = target.Features.IsRecklessThisTurn;
 
+        // Pack Tactics: an ally able to fight within 5 feet of the target. On any attack
+        // roll, Opportunity Attacks included — the printed rule names the roll, not the
+        // action. Combined rather than overriding, so it still cancels Disadvantage.
+        var packTactics = attacker.HasTrait(MonsterTrait.PackTactics)
+            && _combatants.Any(ally => ally.SideId == attacker.SideId
+                && ally != attacker
+                && ally.IsActive
+                && ally.Position.DistanceFeetTo(target.Position) <= Battlefield.FeetPerSquare);
+
         var result = AttackRules.Resolve(
             _random,
             attacker,
             attack,
             target,
-            extraAdvantage: recklessAdvantage || targetIsReckless);
+            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics);
 
         var modeNote = result.Roll.Mode switch
         {
@@ -986,10 +995,13 @@ public sealed partial class Encounter
         foreach (var victim in affected)
         {
             // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
-            // else — the ability matters, not just the condition.
-            var mode = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained)
-                ? RollMode.Disadvantage
-                : RollMode.Normal;
+            // else — the ability matters, not just the condition. Magic Resistance is
+            // Advantage against spells only: a stat block's save entry is read as not
+            // magical, a reading recorded on MonsterTraitRegistry. Combined, so the two
+            // cancel rather than either winning.
+            var restrained = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained);
+            var magicResistance = kind == CombatStepKind.Spell && victim.HasTrait(MonsterTrait.MagicResistance);
+            var mode = D20Test.Combine(magicResistance, restrained);
 
             var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
             var succeeded = roll.Total >= difficultyClass;

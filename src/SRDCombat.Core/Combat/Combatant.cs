@@ -601,6 +601,7 @@ public sealed class Combatant
         Position = position;
         CurrentHitPoints = stats.MaximumHitPoints;
         Uses = new UsageState(stats.Entries);
+        _traits = Rules.MonsterTraitRegistry.TraitsOf(stats.Entries);
 
         if (stats.Character is { } character)
         {
@@ -641,6 +642,14 @@ public sealed class Combatant
 
     /// <summary>Limited-use entry state for this fight — recharges and uses per day.</summary>
     public UsageState Uses { get; }
+
+    private readonly IReadOnlyCollection<Rules.MonsterTrait> _traits;
+
+    /// <summary>
+    /// Whether this creature's stat block prints a trait the engine executes. Resolved
+    /// once from <c>MonsterTraitRegistry</c>; always false for a character.
+    /// </summary>
+    public bool HasTrait(Rules.MonsterTrait trait) => _traits.Contains(trait);
 
     public IReadOnlyCollection<ConditionType> Conditions => _conditions.Keys;
 

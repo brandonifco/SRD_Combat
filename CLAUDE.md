@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #30 (saving-throw effects) |
-| Tests | **391 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #31 (passive traits) |
+| Tests | **402 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **8 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -29,9 +29,10 @@ save spells with areas, slots, Concentration). A wolf's bite knocks a Medium cre
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
 rolls Acrobatics against the printed escape DC, an Ape throws its Rock once and then
-waits on the recharge die, and an Ankheg's Acid Spray fills its printed 30-foot Line
-and makes everyone caught roll against DC 12 — all from the stat blocks' own words. A
-frozen transcript pins one whole eight-round fight byte-for-byte.
+waits on the recharge die, an Ankheg's Acid Spray fills its printed 30-foot Line and
+makes everyone caught roll against DC 12, and a Wolf bites with Advantage while its
+packmate stands beside the target — all from the stat blocks' own words. A frozen
+transcript pins one whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
 No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
@@ -78,10 +79,17 @@ governing plan doc carries the same list with the reasoning; this is the short f
    remaining follow-ons slot around it: #21 (execute Blinded, Charmed, Frightened,
    Paralyzed, Stunned) mostly rides on these entries, and #22 (timed durations) and
    #24 (grapple-end durations) are small follow-ons to step 1.
-5. **#9 passive monster traits.** Several reference machinery that has to exist first —
-   Magic Resistance is Advantage on saves and is worth nothing before #6. Best
-   repetition in the queue once unblocked: Pack Tactics ×18, Spider Climb ×10, Magic
-   Resistance ×7, Swarm ×7, Flyby ×7 across the tier-1 band.
+5. **#9 passive monster traits — done for what the engine can express.**
+   `MonsterTraitRegistry` is the fourth curated allowlist: a printed *trait name* maps to
+   an executed effect only alongside the code. Three landed — Pack Tactics ×18 (ally
+   able to fight within 5 feet of the target, Opportunity Attacks included), Magic
+   Resistance ×7 (**spells only** — a stat block's save entry is read as not magical,
+   the reading is on the registry), Flyby ×7 (no movement modes exist, so a Flyby
+   creature is read as always flying). Spider Climb, Swarm, Sunlight Sensitivity et al.
+   stay deliberately absent — each needs a model (verticality, space-sharing, light)
+   that does not exist; Undead Fortitude is the best next one, needing only a hook where
+   damage would drop the creature. The registry works off entry *names*, so content
+   still counts these entries `Unmodelled` until #28's regeneration reclassifies them.
 6. **#10 class features.** Same argument, weaker — Danger Sense wants saves executed,
    Cunning Strike imposes conditions. The least architectural item here and on a
    different subsystem from #9, which makes it the safest work to interleave.
