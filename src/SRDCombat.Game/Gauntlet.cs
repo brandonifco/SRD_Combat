@@ -135,6 +135,7 @@ public sealed class GauntletRun
     private readonly List<string> _casualties = [];
     private readonly List<string> _levelUps = [];
     private readonly List<string> _returns = [];
+    private readonly List<string> _lootFound = [];
 
     private GauntletRun(
         SrdContent content,
@@ -299,9 +300,16 @@ public sealed class GauntletRun
     }
 
     /// <summary>
-    /// Records a finished fight: reads the survivors' state back and advances the ladder.
+    /// Records a finished fight: reads the survivors' state back, advances the ladder,
+    /// and — when the cleared rung was a High milestone and a random source is given —
+    /// rolls the milestone's loot.
     /// </summary>
-    public void CompleteFight(Fight fight)
+    /// <param name="fight">The finished fight.</param>
+    /// <param name="random">
+    /// The source loot is rolled on. Null means no loot, which keeps a caller that
+    /// wants only the bookkeeping — most tests — unchanged.
+    /// </param>
+    public void CompleteFight(Fight fight, IRandomSource? random = null)
     {
         ArgumentNullException.ThrowIfNull(fight);
 
@@ -344,12 +352,58 @@ public sealed class GauntletRun
         }
 
         AwardExperience(fight);
+
+        var step = Ladder[Cleared];
         Cleared++;
 
         if (Cleared >= Ladder.Count)
         {
             Outcome = RunOutcome.Survived;
         }
+
+        // The set piece pays out: one permanent item after each High milestone. The
+        // rate is a stated design choice — see the remarks on LootTable.
+        if (random is not null && step.Difficulty == EncounterDifficulty.High)
+        {
+            AwardLoot(random);
+        }
+    }
+
+    /// <summary>Rolls the milestone's drop and equips it, re-resolving the finder.</summary>
+    private void AwardLoot(IRandomSource random)
+    {
+        if (LootTable.Roll(_content, Party, _states, random) is not { } award)
+        {
+            return;
+        }
+
+        var party = Party.ToArray();
+        var index = award.MemberIndex;
+        var before = party[index].Sheet.MaximumHitPoints;
+
+        // Equipping is a draft change and a re-resolve, never a sheet edit — the same
+        // rule levelling follows, and for the same reason.
+        party[index] = PregeneratedParty.Resolve(
+            _content,
+            award.NewDraft,
+            _states[index].Level,
+            x: 0,
+            y: index);
+
+        // An item can raise the hit point maximum (the Amulet of Health); the extra
+        // arrives as extra hit points, not as healing, exactly like a level's.
+        var gained = Math.Max(0, party[index].Sheet.MaximumHitPoints - before);
+
+        if (gained > 0)
+        {
+            _states[index] = _states[index] with
+            {
+                CurrentHitPoints = _states[index].CurrentHitPoints + gained,
+            };
+        }
+
+        Party = party;
+        _lootFound.Add($"{party[index].Draft.Name} finds {award.Description}");
     }
 
     /// <summary>
@@ -411,6 +465,9 @@ public sealed class GauntletRun
 
     /// <summary>Fallen characters rejoining the party, in the order they came back.</summary>
     public IReadOnlyList<string> Returns => _returns;
+
+    /// <summary>Loot found, in the order it dropped, for a client to narrate.</summary>
+    public IReadOnlyList<string> LootFound => _lootFound;
 
     /// <summary>Characters who are dead right now, as opposed to who has ever fallen.</summary>
     /// <remarks>

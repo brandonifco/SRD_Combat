@@ -123,6 +123,7 @@ while (run.Next is { } step)
     }
 
     var levelUpsBefore = run.LevelUps.Count;
+    var lootBefore = run.LootFound.Count;
     var result = PlayFight(fight, random);
 
     if (result == FightResult.Quit)
@@ -132,11 +133,16 @@ while (run.Next is { } step)
         return 0;
     }
 
-    run.CompleteFight(fight);
+    run.CompleteFight(fight, random);
 
     foreach (var levelUp in run.LevelUps.Skip(levelUpsBefore))
     {
         Console.WriteLine(levelUp + "!");
+    }
+
+    foreach (var loot in run.LootFound.Skip(lootBefore))
+    {
+        Console.WriteLine(loot + "!");
     }
 
     // Saved only after a cleared fight, never after the defeat itself — the file keeps
