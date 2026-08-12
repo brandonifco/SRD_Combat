@@ -449,6 +449,16 @@ public sealed class FeatureState
     public bool SteadyAimedThisTurn { get; internal set; }
 
     /// <summary>
+    /// The Cunning Strike effect declared for this turn's Sneak Attack, if any.
+    /// </summary>
+    /// <remarks>
+    /// Declared ahead of the attack because its cost is paid in dice removed
+    /// <em>before</em> rolling, so the choice has to exist by the time damage is rolled.
+    /// Cleared when it is spent, and at the end of the turn.
+    /// </remarks>
+    public CunningStrikeEffect CunningStrike { get; internal set; }
+
+    /// <summary>
     /// Whether the creature attacked on its turn. Rage ends if a turn passes without
     /// the Barbarian attacking or forcing a saving throw.
     /// </summary>
@@ -476,6 +486,7 @@ public sealed class FeatureState
         SteadyAimedThisTurn = false;
         AttackedThisTurn = false;
         AttacksRemainingThisAction = 0;
+        CunningStrike = CunningStrikeEffect.None;
     }
 }
 
