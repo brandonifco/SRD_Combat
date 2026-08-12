@@ -65,6 +65,18 @@ public static class SimpleTacticsPolicy
             return;
         }
 
+        // Spells are weighed against the swing they would replace, rather than being a
+        // last resort. The old rule — cast only when the weapon cannot reach — made two
+        // whole categories unreachable by construction (#85): a Touch spell fails
+        // wherever the weapon already failed, and a self-centred Emanation is worth most
+        // in exactly the melee the old rule cast from.
+        if (TryCastDamagingSpell(encounter, actor, target))
+        {
+            SpendRemainingAttacks(encounter, actor);
+            encounter.EndTurn();
+            return;
+        }
+
         // Attack from where we stand if anything reaches.
         if (TryAttack(encounter, actor, target))
         {
@@ -77,13 +89,6 @@ public static class SimpleTacticsPolicy
         // the Attack action reached nothing, a limited-use entry that does reach — the
         // Ape's Rock at 25 feet — is used instead of closing empty-handed.
         if (TryUseLimitedEntry(encounter, actor, target))
-        {
-            encounter.EndTurn();
-            return;
-        }
-
-        // A caster whose weapon cannot reach still has something to do.
-        if (TryCastDamagingSpell(encounter, actor, target))
         {
             encounter.EndTurn();
             return;
@@ -319,30 +324,131 @@ public static class SimpleTacticsPolicy
         }
 
         var distance = actor.Position.DistanceFeetTo(target.Position);
+        var swing = WeaponValue(actor, distance);
+
+        // A healer's slots have another job. Burning them on damage while somebody is
+        // down is how a party loses a run it was winning, and it is a measured effect
+        // rather than a feeling: potions moved the median from 4 to 7.5 precisely
+        // because getting people off the floor is worth more than extra damage.
+        var slotsAreSpokenFor = NeedsHealing(encounter, actor) && CanHeal(character);
 
         var spells = character.Spells
-            .Where(spell => spell.Damage.Count > 0)
+            .Where(spell => spell.Damage.Count > 0 || spell.Save?.FailureDamage.Count > 0)
             .Where(spell => spell.CastingTime == SpellCastingTime.Action)
-            .Where(spell => spell.RangeFeet is null || spell.RangeFeet >= distance)
-            .Where(spell => spell.Save is not { Area: not null } || SpellAreaIsSafe(encounter, actor, target, spell))
-            .OrderByDescending(spell => spell.Damage.Sum(damage => damage.Amount.Average))
-            .ThenBy(spell => spell.Id, StringComparer.Ordinal);
+            .Where(spell => spell.IsCantrip || !slotsAreSpokenFor)
+            .Where(spell => spell.IsSelfRanged || spell.TargetRangeFeet is null || spell.TargetRangeFeet >= distance)
+            .Select(spell => (Spell: spell, Value: SpellValue(encounter, actor, target, spell)))
+            .Where(candidate => candidate.Value > 0)
+            .Where(candidate => IsWorthCasting(candidate.Spell, candidate.Value, swing))
+            .OrderByDescending(candidate => candidate.Value)
+            // A cantrip first among equals: it costs nothing.
+            .ThenBy(candidate => candidate.Spell.Level)
+            .ThenBy(candidate => candidate.Spell.Id, StringComparer.Ordinal);
 
-        return spells.Any(spell => encounter.CastSpell(spell.Id, target) is null);
+        return spells.Any(candidate => encounter.CastSpell(candidate.Spell.Id, target) is null);
     }
 
-    /// <summary>Whether a spell's area can be aimed at the target without catching a friend.</summary>
-    private static bool SpellAreaIsSafe(Encounter encounter, Combatant actor, Combatant target, SpellDefinition spell)
+    /// <summary>
+    /// Whether anybody on this creature's side needs the slots more than the enemy does.
+    /// </summary>
+    /// <remarks>
+    /// <b>Badly hurt counts, not just down</b>, and that is measured rather than assumed:
+    /// reserving slots only for a character already at 0 hit points clears a median of 5
+    /// fights, while holding them from the moment anybody is badly hurt clears 6.5. The
+    /// cautious healer wins, because a slot spent on damage is gone when the character
+    /// who needed it drops.
+    /// </remarks>
+    private static bool NeedsHealing(Encounter encounter, Combatant actor) =>
+        encounter.Combatants.Any(other => other.SideId == actor.SideId
+            && !other.IsDead
+            && (other.CurrentHitPoints == 0 || IsBadlyHurt(other)));
+
+    /// <summary>Whether this caster has anything to spend a slot healing with.</summary>
+    private static bool CanHeal(CombatantFeatures character) =>
+        character.Spells.Any(spell => spell.Heal is not null && !spell.IsCantrip);
+
+    /// <summary>
+    /// Whether a spell is worth casting instead of swinging.
+    /// </summary>
+    /// <remarks>
+    /// A cantrip only has to be better, because it costs nothing. A slot has to be
+    /// <em>clearly</em> better — the margin exists so a level 3 slot is not spent on
+    /// something a mace would have finished, which is the mistake a fallback rule could
+    /// never make and a value rule makes constantly.
+    /// </remarks>
+    private static bool IsWorthCasting(SpellDefinition spell, double spellValue, double weaponValue) =>
+        spell.IsCantrip ? spellValue > weaponValue : spellValue > weaponValue * SlotMargin;
+
+    /// <summary>How much clearer a slotted spell must be than a weapon swing.</summary>
+    private const double SlotMargin = 1.5;
+
+    /// <summary>Expected damage from this creature's best reaching attack, for one action.</summary>
+    private static double WeaponValue(Combatant actor, int distance)
     {
-        if (spell.Save?.Area is not { } area || !AreaTargeting.CanResolve(area.Shape))
+        var best = actor.Stats.Attacks
+            .Where(attack => attack.CanReach(distance))
+            .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
+            .Where(attack => actor.Uses.IsAvailable(attack.Name))
+            .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+            .DefaultIfEmpty(0)
+            .Max();
+
+        // An Attack action buys several swings, so the comparison is per action.
+        return best * Math.Max(1, actor.Stats.AttacksPerAction);
+    }
+
+    /// <summary>
+    /// What a spell is worth here: its damage against everything it would catch, less
+    /// what it would do to this creature's own side.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>An area that catches a friend is a trade, not a veto.</b> The old rule refused
+    /// any area covering an ally, which sounds prudent and made Spirit Guardians — a
+    /// 15-foot Emanation centred on the caster, in a party that fights in a huddle —
+    /// literally uncastable. Counting both sides lets the obvious good cast happen and
+    /// still refuses the obvious bad one.
+    /// </para>
+    /// <para>
+    /// Allies are weighed the same as enemies rather than more heavily. That is a
+    /// deliberate simplification and it is the crude part of this judgement: a real
+    /// player weighs the Cleric's own hit points differently from a goblin's.
+    /// </para>
+    /// </remarks>
+    private static double SpellValue(
+        Encounter encounter,
+        Combatant actor,
+        Combatant target,
+        SpellDefinition spell)
+    {
+        var damage = spell.Damage.Sum(component => component.Amount.Average)
+            + (spell.Save?.FailureDamage.Sum(component => component.Amount.Average) ?? 0);
+
+        if (damage <= 0)
         {
-            return false;
+            return 0;
         }
 
-        var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield).ToHashSet();
+        if (spell.Save?.Area is not { } area)
+        {
+            return damage;
+        }
 
-        return !encounter.Combatants.Any(combatant =>
-            combatant.IsActive && combatant.SideId == actor.SideId && covered.Contains(combatant.Position));
+        if (!AreaTargeting.CanResolve(area.Shape))
+        {
+            return 0;
+        }
+
+        var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
+            .ToHashSet();
+
+        var enemies = encounter.Combatants.Count(c =>
+            c.IsActive && c.SideId != actor.SideId && covered.Contains(c.Position));
+
+        var friends = encounter.Combatants.Count(c =>
+            c.IsActive && c.SideId == actor.SideId && covered.Contains(c.Position));
+
+        return damage * (enemies - friends);
     }
 
     /// <summary>
