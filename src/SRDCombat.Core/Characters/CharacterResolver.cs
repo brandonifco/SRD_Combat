@@ -74,7 +74,7 @@ public static class CharacterResolver
             MaximumHitPoints = ResolveHitPoints(content.Class, draft.Level, constitution, hitPointMethod, random),
             ArmorClass = armorClass,
             ArmorClassSource = armorSource,
-            SpeedFeet = content.Species.SpeedFeet,
+            SpeedFeet = ResolveSpeed(draft, content, features),
             Size = content.Species.Sizes.Count > 0 ? content.Species.Sizes[0] : CreatureSize.Medium,
             SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency),
             Skills = ResolveSkills(draft, content.Background, scores, proficiency),
@@ -176,6 +176,30 @@ public static class CharacterResolver
     /// Works out Armor Class from what the character is wearing, or from a feature that
     /// replaces armour.
     /// </summary>
+    /// <summary>
+    /// Fast Movement: Speed +10 feet "while you aren't wearing Heavy armor". The armour
+    /// gate is the printed one; nothing else this engine models changes a character's
+    /// Speed, so the species number plus this bonus is the whole derivation.
+    /// </summary>
+    private static int ResolveSpeed(
+        CharacterDraft draft,
+        CharacterBuildContent content,
+        IReadOnlyList<GrantedFeature> features)
+    {
+        var speed = content.Species.SpeedFeet;
+
+        var wearsHeavyArmor = draft.ArmorId is { } armorId
+            && content.Armor.TryGetValue(armorId, out var armor)
+            && armor.Category == ArmorCategory.Heavy;
+
+        if (features.Any(granted => granted.Feature == ClassFeature.FastMovement) && !wearsHeavyArmor)
+        {
+            speed += 10;
+        }
+
+        return speed;
+    }
+
     private static (int ArmorClass, string Source) ResolveArmorClass(
         CharacterDraft draft,
         CharacterBuildContent content,

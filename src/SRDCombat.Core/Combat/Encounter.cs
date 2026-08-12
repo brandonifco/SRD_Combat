@@ -1,4 +1,5 @@
 using System.Globalization;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
@@ -742,12 +743,17 @@ public sealed partial class Encounter
                 && ally.IsActive
                 && ally.Position.DistanceFeetTo(target.Position) <= Battlefield.FeetPerSquare);
 
+        // Steady Aim is Advantage on the next attack roll only, so it is consumed here
+        // whether the attack hits or not.
+        var steadyAim = attacker.Features.SteadyAimedThisTurn;
+        attacker.Features.SteadyAimedThisTurn = false;
+
         var result = AttackRules.Resolve(
             _random,
             attacker,
             attack,
             target,
-            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics);
+            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim);
 
         var modeNote = result.Roll.Mode switch
         {
@@ -997,11 +1003,15 @@ public sealed partial class Encounter
             // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
             // else — the ability matters, not just the condition. Magic Resistance is
             // Advantage against spells only: a stat block's save entry is read as not
-            // magical, a reading recorded on MonsterTraitRegistry. Combined, so the two
-            // cancel rather than either winning.
+            // magical, a reading recorded on MonsterTraitRegistry. Danger Sense is
+            // Advantage on Dexterity saves unless the Barbarian is Incapacitated.
+            // Combined, so Advantage and Disadvantage cancel rather than either winning.
             var restrained = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained);
             var magicResistance = kind == CombatStepKind.Spell && victim.HasTrait(MonsterTrait.MagicResistance);
-            var mode = D20Test.Combine(magicResistance, restrained);
+            var dangerSense = save.Ability == Ability.Dexterity
+                && victim.Stats.Has(ClassFeature.DangerSense)
+                && !victim.HasCondition(ConditionType.Incapacitated);
+            var mode = D20Test.Combine(magicResistance || dangerSense, restrained);
 
             var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
             var succeeded = roll.Total >= difficultyClass;
