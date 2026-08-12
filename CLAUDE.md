@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #53 (the encounter builder) |
-| Tests | **519 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #54 (the gauntlet: ladder, run state and rests) |
+| Tests | **534 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **6 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Work remaining | **5 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -37,15 +37,17 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**It is playable.** `dotnet run --project src/SRDCombat.Console` puts a pregenerated
-party of four in front of an encounter **built to the SRD's printed XP budget** and hands
-you their turns;
+**A whole run is playable.** `dotnet run --project src/SRDCombat.Console` climbs a
+fifteen-fight gauntlet from level 1 to 5, each rung **built to the SRD's printed XP
+budget**, with wounds, spent resources and the dead carried between fights and rests
+restoring exactly what the printed rules say;
 `--seed <n>` makes a fight reproducible, which is a complete bug repro. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
-**What does not exist yet.** No gauntlet, no XP awards, no levelling in play, no loot,
-no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
+**What does not exist yet.** No XP awards and no levelling *earned* in play — the ladder
+names the level each rung is fought at and the party is re-resolved to it, but nothing
+awards experience or decides when a level has been earned. No loot, no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings, reaching for a limited-use entry — a thrown Rock, a breath weapon —
 only when nothing else reaches, and never one whose area would catch its own side. And
 **encounters can contain livestock** — a Camel is mechanically `Complete` and narratively
@@ -449,6 +451,20 @@ Three things a Phase 2 author should know before starting:
   have opinions the book does not) and picks uniformly among everything affordable.
   Placement is the other: **the sides start 30 feet apart**, which is the number deciding
   whether ranged attacks and breath weapons matter at all.
+- **Rests differ per feature, so restoring them is a table and not a reset.** Verified
+  against print: Rage and Second Wind each return **one** use on a Short Rest and all on
+  a Long; Action Surge returns whole on **either**; spell slots on a Long Rest only. And
+  a 2024 change worth not re-learning — **a Long Rest restores *all* spent Hit Point
+  Dice**, where earlier editions returned half. `RestRules` holds each with its citation.
+- **Both rests need a hit point to start**, so a downed character cannot rest their way
+  back. That would strand a party, which is why the stated reading of "a Stable creature
+  regains 1 Hit Point after 1d4 hours" is that **the gap between two rungs is at least
+  four hours** — a survivor who went down is conscious at 1 hit point when the next
+  fight begins.
+- **A run owns its state; the engine owns the fight.** `GauntletRun` seeds fresh
+  combatants from `CharacterState` through `CombatantCarryOver` and reads them back when
+  the fight ends. Nothing about a run leaks into `Encounter`, which stays one
+  self-contained fight — exactly what the frozen transcripts need it to be.
 - **Coverage is not appropriateness either — a third axis, and nothing owns it yet.** The
   builder happily fields a Camel: mechanically `Complete`, narratively absurd. See #52;
   the fix is expected to be a curated list rather than a heuristic, and `EncounterBuilder`
@@ -554,8 +570,9 @@ budgets are on 202**), magic items 204–253, monsters 254–343, animals 344+.
 dotnet run --project src/SRDCombat.Console
 ```
 
-`--difficulty low|moderate|high` and `--level 1..5` pick the fight;
-`--seed 12345` replays one exactly; the seed is printed at the start of every
+`--seed 12345` replays a run exactly; `--level 1..5` starts partway up the ladder;
+`--one-fight` plays a single encounter instead of the run, with
+`--difficulty low|moderate|high`; the seed is printed at the start of every
 run, so *"it happened on seed 12345"* is a complete bug report. The content directory is
 found by walking up for `data/srd`, so it runs from anywhere in the repo.
 

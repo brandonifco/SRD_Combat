@@ -630,6 +630,27 @@ public sealed record ActiveCondition(
     int? EscapeDifficultyClass = null,
     int? GrappleRangeFeet = null);
 
+/// <summary>
+/// What a creature brings into a fight from an earlier one.
+/// </summary>
+/// <remarks>
+/// Every field beyond hit points is nullable and means "unchanged from full" when
+/// absent, so a caller carrying only wounds does not have to restate resources it does
+/// not track. A creature carried in at 0 hit points arrives down — dead if its stat
+/// block says so, Unconscious if it makes Death Saving Throws.
+/// </remarks>
+/// <param name="CurrentHitPoints">Hit points on arrival, clamped to the maximum.</param>
+/// <param name="RagesRemaining">Rages left, or null for all of them.</param>
+/// <param name="SecondWindRemaining">Second Wind uses left, or null for all.</param>
+/// <param name="ActionSurgeRemaining">Action Surge uses left, or null for all.</param>
+/// <param name="SpellSlotsRemaining">Slots left by level, or null for a full complement.</param>
+public sealed record CombatantCarryOver(
+    int CurrentHitPoints,
+    int? RagesRemaining = null,
+    int? SecondWindRemaining = null,
+    int? ActionSurgeRemaining = null,
+    IReadOnlyDictionary<int, int>? SpellSlotsRemaining = null);
+
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>
 public sealed class Combatant
 {
@@ -647,7 +668,17 @@ public sealed class Combatant
 
     private readonly Dictionary<ConditionType, ActiveCondition> _conditions = [];
 
-    public Combatant(string id, string name, string sideId, CombatantStats stats, GridPosition position)
+    /// <param name="carriedOver">
+    /// What this creature brings in from an earlier fight — wounds and spent resources.
+    /// Null starts it at full strength, which is every fight that stands alone.
+    /// </param>
+    public Combatant(
+        string id,
+        string name,
+        string sideId,
+        CombatantStats stats,
+        GridPosition position,
+        CombatantCarryOver? carriedOver = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -659,7 +690,6 @@ public sealed class Combatant
         SideId = sideId;
         Stats = stats;
         Position = position;
-        CurrentHitPoints = stats.MaximumHitPoints;
         Uses = new UsageState(stats.Entries);
         _traits = Rules.MonsterTraitRegistry.TraitsOf(stats.Entries);
 
@@ -672,6 +702,51 @@ public sealed class Combatant
             foreach (var (level, slots) in character.SpellSlots)
             {
                 Features.SpellSlotsRemaining[level] = slots;
+            }
+        }
+
+        // Full strength unless the creature is carrying wounds and spent resources in
+        // from an earlier fight, which is what makes a gauntlet a run rather than a
+        // series of unrelated encounters.
+        CurrentHitPoints = stats.MaximumHitPoints;
+
+        if (carriedOver is not null)
+        {
+            ApplyCarryOver(carriedOver);
+        }
+    }
+
+    /// <summary>Seeds this combatant from what it brought out of an earlier fight.</summary>
+    private void ApplyCarryOver(CombatantCarryOver carriedOver)
+    {
+        CurrentHitPoints = Math.Clamp(carriedOver.CurrentHitPoints, 0, Stats.MaximumHitPoints);
+
+        Features.RagesRemaining = carriedOver.RagesRemaining ?? Features.RagesRemaining;
+        Features.SecondWindRemaining = carriedOver.SecondWindRemaining ?? Features.SecondWindRemaining;
+        Features.ActionSurgeRemaining = carriedOver.ActionSurgeRemaining ?? Features.ActionSurgeRemaining;
+
+        if (carriedOver.SpellSlotsRemaining is { } slots)
+        {
+            Features.SpellSlotsRemaining.Clear();
+
+            foreach (var (level, remaining) in slots)
+            {
+                Features.SpellSlotsRemaining[level] = remaining;
+            }
+        }
+
+        // A creature brought in at 0 hit points is already down. Going through the same
+        // path a blow would take keeps Unconscious, Prone and the dying state consistent
+        // with how every other creature reaches 0.
+        if (CurrentHitPoints == 0)
+        {
+            if (Stats.DiesAtZeroHitPoints)
+            {
+                MarkDead();
+            }
+            else
+            {
+                AddCondition(ConditionType.Unconscious);
             }
         }
     }

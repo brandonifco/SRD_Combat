@@ -30,55 +30,109 @@ var content = ContentLoader.Load(contentDirectory);
 var random = new SeededRandomSource(seed);
 
 Console.WriteLine();
-Console.WriteLine($"SRD_Combat — a fight (seed {seed})");
 
-var difficulty = DifficultyFrom(args);
-var level = LevelFrom(args) ?? 1;
-
-var party = PregeneratedParty.Build(content, level);
 Display.PartySideId = PregeneratedParty.SideId;
 
-var fight = EncounterFactory.Build(content, party, difficulty, random);
-var encounter = fight.Encounter;
-
-if (fight.Built.Monsters.Count == 0)
+// A single fight is still available, because it is the quickest way to look at one
+// thing; the gauntlet is the game.
+if (SingleFightRequested(args))
 {
-    Console.Error.WriteLine("The budget bought nothing. Try a higher difficulty or level.");
-    return 1;
+    var level = LevelFrom(args) ?? 1;
+    var only = EncounterFactory.Build(content, PregeneratedParty.Build(content, level), DifficultyFrom(args), random);
+
+    Console.WriteLine($"SRD_Combat — one fight (seed {seed})");
+    return PlayFight(only, random) is FightResult.Won or FightResult.Lost ? 0 : 0;
 }
 
-Display.Labels = Labels.For(encounter.Combatants);
+var run = GauntletRun.Start(content, GauntletLadder.Default(LevelFrom(args) ?? 1, 5));
 
-var roster = fight.Built.Monsters
-    .GroupBy(monster => monster.Name)
-    .Select(group => group.Count() > 1 ? $"{group.Count()} {group.Key}s" : group.Key)
-    .ToArray();
+Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
+Console.WriteLine("Type 'help' during a fight for commands.");
 
-Console.WriteLine(
-    $"A {difficulty.ToString().ToLowerInvariant()}-difficulty fight for {party.Count} level {level} " +
-    $"characters: {string.Join(", ", roster)}.");
-Console.WriteLine(
-    $"Budget {fight.Built.Budget} XP, spent {fight.Built.Spent}, {fight.Built.Remaining} left over.");
-Console.WriteLine("Type 'help' for commands.");
+while (run.Next is { } step)
+{
+    var rest = run.PrepareForNext(random);
 
-var completed = new CommandLoop(encounter, PregeneratedParty.SideId).Run();
+    Console.WriteLine();
+    Console.WriteLine(new string('=', 60));
+    Console.WriteLine(
+        $"Fight {run.Cleared + 1} of {run.Ladder.Count} — level {step.Level}, " +
+        $"{step.Difficulty.ToString().ToLowerInvariant()} difficulty.");
+
+    if (rest is { } taken)
+    {
+        Console.WriteLine($"The party takes a {taken} Rest.");
+    }
+
+    foreach (var (member, state) in run.Party.Zip(run.States))
+    {
+        Console.WriteLine(
+            $"  {member.Draft.Name,-8} " +
+            (state.IsDead
+                ? "dead"
+                : $"{state.CurrentHitPoints}/{member.Sheet.MaximumHitPoints} hp, " +
+                  $"{state.HitDiceRemaining} hit {(state.HitDiceRemaining == 1 ? "die" : "dice")}"));
+    }
+
+    var fight = run.BeginNext(random);
+
+    if (fight.Built.Monsters.Count == 0)
+    {
+        Console.Error.WriteLine("The budget bought nothing; the ladder cannot continue.");
+        return 1;
+    }
+
+    var result = PlayFight(fight, random);
+
+    if (result == FightResult.Quit)
+    {
+        Console.WriteLine();
+        Console.WriteLine("Left the gauntlet.");
+        return 0;
+    }
+
+    run.CompleteFight(fight);
+}
 
 Console.WriteLine();
+Console.WriteLine(run.Outcome == RunOutcome.Survived
+    ? $"The gauntlet is beaten — {run.Ladder.Count} fights cleared."
+    : $"The run ends after {run.Cleared} fight(s).");
 
-if (!completed)
+if (run.Casualties.Count > 0)
 {
-    Console.WriteLine("Left the fight.");
-    return 0;
+    Console.WriteLine("Fallen: " + string.Join(", ", run.Casualties) + ".");
 }
 
-// Deliberately not echoing WinningSide: it is an internal identifier, and "monsters
-// holds the field" is the sort of line that tells a player they are reading a database.
-Console.WriteLine(
-    encounter.WinningSide == PregeneratedParty.SideId
+return 0;
+
+// Plays one fight to its end, drawing it first.
+FightResult PlayFight(Fight fight, IRandomSource dice)
+{
+    Display.Labels = Labels.For(fight.Encounter.Combatants);
+
+    var roster = fight.Built.Monsters
+        .GroupBy(monster => monster.Name)
+        .Select(group => group.Count() > 1 ? $"{group.Count()} {group.Key}s" : group.Key);
+
+    Console.WriteLine($"Against: {string.Join(", ", roster)}.");
+    Console.WriteLine(
+        $"Budget {fight.Built.Budget} XP, spent {fight.Built.Spent}, {fight.Built.Remaining} left over.");
+
+    if (!new CommandLoop(fight.Encounter, PregeneratedParty.SideId).Run())
+    {
+        return FightResult.Quit;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(fight.Encounter.WinningSide == PregeneratedParty.SideId
         ? "The party wins."
         : "The party falls.");
 
-return 0;
+    return fight.Encounter.WinningSide == PregeneratedParty.SideId ? FightResult.Won : FightResult.Lost;
+}
+
+static bool SingleFightRequested(string[] args) => args.Contains("--one-fight");
 
 static EncounterDifficulty DifficultyFrom(string[] args)
 {
@@ -115,21 +169,28 @@ static int? SeedFrom(string[] args)
 /// Arguments that are not options and not an option's value.
 /// </summary>
 /// <remarks>
-/// Written out rather than "the first argument that does not start with a dash", which
-/// reads the value of <c>--seed 12345</c> as a content path — caught on the first run.
+/// The options that take a value are named explicitly, and both cheaper rules were tried
+/// and failed on their first run. "The first argument without a dash" reads the value of
+/// <c>--seed 12345</c> as a content path; "every option takes one value" then swallowed
+/// <c>--difficulty</c> as if it belonged to the valueless <c>--one-fight</c>, handing the
+/// content loader "high". Argument shape is not guessable, so it is declared.
 /// </remarks>
 static IEnumerable<string> PositionalArguments(string[] args)
 {
+    string[] takesAValue = ["--seed", "--level", "--difficulty"];
+
     for (var i = 0; i < args.Length; i++)
     {
-        if (args[i].StartsWith('-'))
+        if (!args[i].StartsWith('-'))
         {
-            // Every option this client takes has exactly one value.
-            i++;
+            yield return args[i];
             continue;
         }
 
-        yield return args[i];
+        if (takesAValue.Contains(args[i], StringComparer.Ordinal))
+        {
+            i++;
+        }
     }
 }
 
@@ -152,4 +213,12 @@ static string? FindContentDirectory()
     }
 
     return null;
+}
+
+/// <summary>How a fight ended, from the client's point of view.</summary>
+internal enum FightResult
+{
+    Won,
+    Lost,
+    Quit,
 }
