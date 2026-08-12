@@ -981,7 +981,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -2280,7 +2281,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -2437,29 +2439,37 @@
             "appliedConditions": [
               {
                 "condition": "Grappled",
-                "escapeDifficultyClass": 16,
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 16), and it has the Restrained condition until the grapple ends."
+                "escapeDifficultyClass": 16
               },
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 16), and it has the Restrained condition until the grapple ends."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": true
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Grappled",
-              "escapeDifficultyClass": 16,
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 16), and it has the Restrained condition until the grapple ends."
+              "escapeDifficultyClass": 16
             },
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 16), and it has the Restrained condition until the grapple ends."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": false,
+                "whileGrappleHolds": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "The target has the Grappled condition (escape DC 16), and it has the Restrained condition until the grapple ends."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Lightning Breath",
@@ -4457,7 +4467,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -5932,7 +5943,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -5944,7 +5956,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -6204,7 +6217,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -6216,7 +6230,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -7718,7 +7733,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -7730,7 +7746,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -7878,7 +7895,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -8978,7 +8996,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -9003,29 +9022,37 @@
             "appliedConditions": [
               {
                 "condition": "Grappled",
-                "escapeDifficultyClass": 13,
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends."
+                "escapeDifficultyClass": 13
               },
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": true
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Grappled",
-              "escapeDifficultyClass": 13,
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends."
+              "escapeDifficultyClass": 13
             },
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": false,
+                "whileGrappleHolds": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "The target has the Grappled condition (escape DC 13), and it has the Restrained condition until the grapple ends."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -10411,7 +10438,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -10427,7 +10455,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -11547,7 +11576,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -12878,7 +12908,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -12890,7 +12921,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -13128,7 +13160,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -13140,7 +13173,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -13471,7 +13505,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -13487,7 +13522,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -16846,7 +16882,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -16858,7 +16895,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -17614,7 +17652,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -17626,7 +17665,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -17808,7 +17848,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -20417,7 +20458,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -21190,29 +21232,37 @@
             "appliedConditions": [
               {
                 "condition": "Grappled",
-                "escapeDifficultyClass": 14,
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+                "escapeDifficultyClass": 14
               },
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": true
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Grappled",
-              "escapeDifficultyClass": 14,
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+              "escapeDifficultyClass": 14
             },
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": false,
+                "whileGrappleHolds": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Teleport",
@@ -21575,7 +21625,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -21591,7 +21642,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -22314,7 +22366,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -22769,7 +22822,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -22781,7 +22835,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -22978,7 +23033,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -22990,7 +23046,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -24033,7 +24090,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -24229,7 +24287,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -24241,7 +24300,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -24707,7 +24767,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -24719,7 +24780,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -24864,7 +24926,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -24876,7 +24939,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -25002,7 +25066,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -25018,7 +25083,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -25768,7 +25834,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 0,
-                  "outlastsFight": true
+                  "outlastsFight": true,
+                  "whileGrappleHolds": false
                 }
               },
               {
@@ -25784,7 +25851,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 0,
-                "outlastsFight": true
+                "outlastsFight": true,
+                "whileGrappleHolds": false
               }
             },
             {
@@ -25909,16 +25977,20 @@
             {
               "condition": "Grappled",
               "escapeDifficultyClass": 19,
-              "unmodelledRequirement": "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 19), and it has the Restrained condition until the grapple ends."
+              "maximumTargetSize": "Large"
             },
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 19), and it has the Restrained condition until the grapple ends."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": false,
+                "whileGrappleHolds": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 19), and it has the Restrained condition until the grapple ends."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Tail Stinger",
@@ -26097,7 +26169,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -27126,16 +27199,20 @@
             {
               "condition": "Grappled",
               "escapeDifficultyClass": 17,
-              "unmodelledRequirement": "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17), and it has the Restrained condition until the grapple ends."
+              "maximumTargetSize": "Large"
             },
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17), and it has the Restrained condition until the grapple ends."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": false,
+                "whileGrappleHolds": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17), and it has the Restrained condition until the grapple ends."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Swallow",
@@ -27904,29 +27981,37 @@
             "appliedConditions": [
               {
                 "condition": "Grappled",
-                "escapeDifficultyClass": 14,
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+                "escapeDifficultyClass": 14
               },
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": true
+                }
               }
             ]
           },
           "appliedConditions": [
             {
               "condition": "Grappled",
-              "escapeDifficultyClass": 14,
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+              "escapeDifficultyClass": 14
             },
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": false,
+                "whileGrappleHolds": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 321
@@ -28270,7 +28355,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -28282,7 +28368,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -30205,7 +30292,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Bearer",
                   "turnsAhead": 10,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -30217,7 +30305,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 10,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -30660,7 +30749,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -30676,7 +30766,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -31186,7 +31277,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -34020,7 +34112,8 @@
                   "clock": "EndOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -34036,7 +34129,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -36859,7 +36953,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -40053,7 +40148,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -42257,7 +42353,8 @@
                 "clock": "EndOfTurn",
                 "owner": "Bearer",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -43306,7 +43403,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -43318,7 +43416,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],
@@ -45874,7 +45973,8 @@
                   "clock": "StartOfTurn",
                   "owner": "Source",
                   "turnsAhead": 1,
-                  "outlastsFight": false
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false
                 }
               }
             ]
@@ -45890,7 +45990,8 @@
                 "clock": "StartOfTurn",
                 "owner": "Source",
                 "turnsAhead": 1,
-                "outlastsFight": false
+                "outlastsFight": false,
+                "whileGrappleHolds": false
               }
             }
           ],

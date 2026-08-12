@@ -34,10 +34,12 @@ namespace SRDCombat.Core.Rules;
 /// <item>
 /// <b>Restrained</b> — Speed 0, Advantage on attack rolls against it, Disadvantage on its
 /// own, and Disadvantage on its Dexterity saving throws. Implemented alongside Grappled
-/// because the two share the immobility, and <em>no rider reaches it yet</em>: every
-/// printed Restrained rider hangs off "until the grapple ends", a duration shape the model
-/// does not express, so its sentence is unmodelled as a whole. It is here ready for
-/// saving-throw effects, which is where the rest of them live.
+/// because the two share the immobility. The riders that reach it hang off "until the
+/// grapple ends" — a duration that is no expiry at all but a tie to the sibling grapple,
+/// imposed only while the same creature's grapple holds the target and swept away with
+/// it by <c>Encounter.EndGrapple</c>. (The web-shaped Restrained riders — the Ettercap,
+/// the Giant Spider — stay refused: "until the web is destroyed" needs an object with
+/// hit points.)
 /// </item>
 /// <item>
 /// <b>Poisoned</b> — Disadvantage on the creature's attack rolls, in
@@ -207,14 +209,16 @@ public static class ConditionRules
     /// the start of the devil's next turn" and mean different moments; counting from the
     /// owner's turn count at the moment of application gets both right without either
     /// case being special. A duration that outlasts any fight gets no expiry at all: the
-    /// condition ends with the encounter, exactly like one printed with no duration.
+    /// condition ends with the encounter, exactly like one printed with no duration. And
+    /// "until the grapple ends" gets none either — <c>Encounter.EndGrapple</c> owns that
+    /// end, keyed on the condition's source being the grappler.
     /// </remarks>
     public static ConditionExpiry? ExpiryFor(ConditionDuration? duration, Combatant source, Combatant bearer)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(bearer);
 
-        if (duration is null || duration.OutlastsFight)
+        if (duration is null || duration.OutlastsFight || duration.WhileGrappleHolds)
         {
             return null;
         }

@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #37 (timed condition durations) |
-| Tests | **434 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #38 (grapple-tied condition durations) |
+| Tests | **439 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **4 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **3 open GitHub issues.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -81,10 +81,13 @@ governing plan doc carries the same list with the reasoning; this is the short f
    unchanged — the policy refuses to breathe on the user's own square meanwhile. Of the
    follow-ons that slotted around it, **#21 (execute Blinded, Charmed, Frightened,
    Paralyzed, Stunned) is done** — the conditions section below carries what the
-   glossary corrected — and **#22 (timed durations) is done**: "for 1 minute" is ten of
+   glossary corrected — **#22 (timed durations) is done**: "for 1 minute" is ten of
    the bearer's turns on the same clock, "for 1 hour" outlasts the fight, and the
-   Failure-tier rule below decides which printed timers may actually ride. #24
-   (grapple-end durations) stays open as the last small follow-on to step 1.
+   Failure-tier rule below decides which printed timers may actually ride — and **#24
+   ("until the grapple ends") is done**: a two-condition sentence splits into one
+   clause per rider, the tied condition lives and dies with its sibling grapple, and
+   the companion-clause rule below is what the split made necessary. Every follow-on
+   to step 1 is closed.
 5. **#9 passive monster traits — done for what the engine can express.**
    `MonsterTraitRegistry` is the fourth curated allowlist: a printed *trait name* maps to
    an executed effect only alongside the code. Three landed — Pack Tactics ×18 (ally
@@ -160,11 +163,13 @@ Paralyzed and Stunned. Deliberately absent: Deafened, Invisible and Petrified, e
 needing a model (hearing, sight, objects) that does not exist. **Add a condition there
 only alongside the code that gives it effects.** Forty-five attacks satisfy both checks —
 20 Prone, 12 Poisoned, 9 Grappled, and one each of Charmed, Frightened, Paralyzed and
-Incapacitated — and twenty-three failed-save riders land: 6 Frightened, 4 Blinded,
-4 Poisoned, 2 each of Charmed, Prone and Stunned, one each of Grappled, Incapacitated
-and Paralyzed. The Water Elemental's Whelm is still the working example of the split:
-its Grappled lands while its "Restrained until the grapple ends" is refused on the same
-failed save.
+Incapacitated and 2 Restrained tied to their grapples — and thirty-one failed-save
+riders land: 6 Frightened, 5 Grappled, 4 each of Blinded, Poisoned and Restrained,
+2 each of Charmed, Prone and Stunned, one each of Incapacitated and Paralyzed. The
+Water Elemental's Whelm is still the working example of the per-rider split — its
+Grappled lands while its Restrained sentence, which chains suffocation and recurring
+damage, is refused — and the Purple Worm's Bite is the counterpart where both halves
+ride: one sentence, Grappled plus a Restrained that ends when the grapple does.
 
 **The two questions are independent, and the Phase Spider still proves it — but read its
 sentence before citing it.** Its bite poisons "for 1 hour", Poisoned *is* executable, and
@@ -209,11 +214,22 @@ its duration**, because the save model rolls one failure and the rider would lan
 whole tier early: a wyrmling's breath putting targets to sleep on the first failed save.
 That rule is what separates the timers that ride (the Solar's "Blinded for 1 minute",
 the Pseudodragon's "Poisoned for 1 hour" — checked by hand against their follow-on
-sentences) from the ones that must not (every Sleep Breath). All three refusals are in
-`EntryMechanicsParser.ReadRider`, with the safe direction chosen; duration-less riders
-in sentences of their own (the Gladiator's Prone, the Water Elemental's Grappled, the
+sentences) from the ones that must not (every Sleep Breath). And a fourth rule came
+with #24's clause-splitting, caught the same day it was nearly shipped wrong: **a
+rider-free head clause must be fully accounted for by the entry's other grammar — a
+"Hit:" or "Failure:" damage statement — or every rider in the sentence is refused with
+it.** Splitting "the balor pulls the target up to 25 feet straight toward itself, and
+the target has the Prone condition" at the comma leaves a clean Prone clause, and
+imposing it without the pull fires part of a printed sentence; the Phase Spider's
+0-hit-point gate sits in a head clause the same way. The refusals are in
+`EntryMechanicsParser`, with the safe direction chosen; duration-less riders in
+sentences of their own (the Gladiator's Prone, the Water Elemental's Grappled, the
 Otyugh Bite's Poisoned disease) are untouched, because those conditions carry their own
-printed way out.
+printed way out. A grapple-tied rider is also **only as modelled as its sibling
+grapple**: the Chain Devil's "from one of two chains" refuses its Grappled, so the
+Restrained that would ride a grapple that can never land is refused with it — and at
+runtime `ImposeConditions` re-checks the tie, so a grapple refused by a size gate takes
+its dependent down with it there too.
 
 **Durations hang off a turn counter, not a countdown.** An `ActiveCondition` carries who
 imposed it and a `ConditionExpiry` — whose turns are counted, which boundary, and at which
@@ -224,7 +240,10 @@ the devil's next turn" means different moments and needs no special case. **A ti
 duration is the same clock set further out**: "for 1 minute" is ten of the *bearer's*
 turns ending at an end of turn (`ConditionDuration.ForMinutes`), and "for 1 hour" or
 longer is `BeyondTheFight` — imposable, recorded, and expiring with the encounter rather
-than being rounded to a number no fight reaches. Both are stated interpretations on
+than being rounded to a number no fight reaches. **"until the grapple ends" is a duration
+with no clock at all** (`UntilTheGrappleEnds`): the tied condition is imposed only while
+the same creature's grapple holds the target, and `Encounter.EndGrapple` sweeps it away
+with the grapple however it ended. All three are stated interpretations on
 `ConditionDuration`'s doc comments. **The clock ticks for every creature whose turn comes
 round, dead or Unconscious included** — a duration measured against a creature that never
 acts again still has to end.

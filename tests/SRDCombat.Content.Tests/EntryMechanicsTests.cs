@@ -285,6 +285,44 @@ public class EntryMechanicsTests
     }
 
     [Fact]
+    public void AGrappleTiedRiderIsOnlyAsModelledAsItsGrapple()
+    {
+        // The Purple Worm's one sentence imposes two conditions, and both ride: the
+        // Grappled with its escape DC and size gate, the Restrained tied to it. The
+        // Chain Devil prints the same pair with "from one of two chains" on the grapple
+        // — limb bookkeeping the model does not express — so its Grappled is refused,
+        // and the Restrained that would ride a grapple that can never land is refused
+        // with it.
+        var bite = Content.MonstersById["monster.purple-worm"].Entries.Single(entry => entry.Name == "Bite");
+        var grappled = bite.AppliedConditions.Single(applied => applied.Condition == ConditionType.Grappled);
+        var restrained = bite.AppliedConditions.Single(applied => applied.Condition == ConditionType.Restrained);
+
+        Assert.True(ConditionRules.CanBeImposed(grappled));
+        Assert.True(ConditionRules.CanBeImposed(restrained));
+        Assert.Equal(ConditionDuration.UntilTheGrappleEnds, restrained.Duration);
+
+        var chain = Content.MonstersById["monster.chain-devil"].Entries.Single(entry => entry.Name == "Chain");
+
+        Assert.All(
+            chain.AppliedConditions,
+            applied => Assert.False(ConditionRules.CanBeImposed(applied)));
+    }
+
+    [Fact]
+    public void ACompanionEffectInTheSentenceRefusesItsRiders()
+    {
+        // "If the target is a Huge or smaller creature, the balor pulls the target up
+        // to 25 feet straight toward itself, and the target has the Prone condition."
+        // The Prone clause alone is clean; the pull is not, and knocking the target
+        // Prone without pulling it would fire part of a printed sentence.
+        var whip = Content.MonstersById["monster.balor"].Entries.Single(entry => entry.Name == "Flame Whip");
+        var prone = whip.AppliedConditions.Single(applied => applied.Condition == ConditionType.Prone);
+
+        Assert.False(prone.IsFullyModelled);
+        Assert.Contains("pulls the target", prone.UnmodelledRequirement, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ARiderBehindADeeperFailureTierIsRefused()
     {
         // "Second Failure: The target has the Unconscious condition for 1 minute." The
