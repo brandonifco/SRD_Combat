@@ -1,3 +1,4 @@
+using SRDCombat.Core.Dice;
 namespace SRDCombat.Core.Definitions;
 
 /// <summary>The SRD's eight schools of magic.</summary>
@@ -142,6 +143,20 @@ public sealed record SpellDefinition
     /// Kept as text: upcasting is not implemented, and structuring it would imply it is.
     /// </summary>
     public string? ScalingText { get; init; }
+
+    /// <summary>
+    /// The dice one extra slot level buys — "The healing increases by 2d8 for each
+    /// spell slot level above 1" — structured only when the sentence has exactly that
+    /// shape, the printed "above N" is the spell's own level, and the die matches the
+    /// base effect's. Everything else stays on <see cref="ScalingText"/> as text.
+    /// </summary>
+    public DiceExpression? UpcastDicePerSlotLevel { get; init; }
+
+    /// <summary>
+    /// A cantrip's per-step growth — "increases by 1d8 when you reach levels 5, 11, and
+    /// 17", which is the one shape every printed Cantrip Upgrade uses.
+    /// </summary>
+    public DiceExpression? CantripUpgradeDice { get; init; }
 
     public required int SourcePage { get; init; }
 

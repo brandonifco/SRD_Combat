@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using SRDCombat.Core.Definitions;
 using SrdExtract.Pdf;
+using SRDCombat.Core.Dice;
 
 namespace SrdExtract.Parsing;
 
@@ -313,9 +314,58 @@ public static partial class SpellParser
                 SourcePage = page,
             };
 
+            spell = spell with
+            {
+                UpcastDicePerSlotLevel = ParseSlotScaling(spell),
+                CantripUpgradeDice = ParseCantripScaling(spell),
+            };
+
             reason = string.Empty;
             return true;
         }
+
+        /// <summary>
+        /// Structures "The healing increases by 2d8 for each spell slot level above 1",
+        /// refusing anything that does not line up exactly.
+        /// </summary>
+        /// <remarks>
+        /// Three checks, each because getting it wrong would misprice a slot: the shape
+        /// must match, the printed "above N" must be the spell's own level (it is for
+        /// all 42 spells that match, verified against the whole book), and the die must
+        /// be the same size as the base effect's so the two can roll as one expression.
+        /// A sentence failing any of them stays text on ScalingText, visible and inert.
+        /// </remarks>
+        private static DiceExpression? ParseSlotScaling(SpellDefinition definition)
+        {
+            if (definition.ScalingText is not { } text
+                || SlotScaling().Match(text) is not { Success: true } match
+                || int.Parse(match.Groups["above"].Value, CultureInfo.InvariantCulture) != definition.Level
+                || !DiceExpression.TryParse(match.Groups["dice"].Value, out var dice))
+            {
+                return null;
+            }
+
+            return BaseEffectSides(definition) == dice.Sides ? dice : null;
+        }
+
+        private static DiceExpression? ParseCantripScaling(SpellDefinition definition)
+        {
+            if (!definition.IsCantrip
+                || definition.ScalingText is not { } text
+                || CantripScaling().Match(text) is not { Success: true } match
+                || !DiceExpression.TryParse(match.Groups["dice"].Value, out var dice))
+            {
+                return null;
+            }
+
+            return BaseEffectSides(definition) == dice.Sides ? dice : null;
+        }
+
+        /// <summary>The die the spell's base effect rolls, whichever shape it has.</summary>
+        private static int? BaseEffectSides(SpellDefinition definition) =>
+            definition.Heal?.Dice.Sides
+            ?? (definition.Damage.Count > 0 ? definition.Damage[0].Amount.Sides : (int?)null)
+            ?? (definition.Save?.FailureDamage.Count > 0 ? definition.Save.FailureDamage[0].Amount.Sides : (int?)null);
 
         private string Value(string label) =>
             _labelled.TryGetValue(label, out var value) ? value.ToString().Trim() : string.Empty;
@@ -426,6 +476,12 @@ public static partial class SpellParser
 
     [GeneratedRegex(@"^(?<miles>\d+)\s*miles?")]
     private static partial Regex MilesPattern();
+
+    [GeneratedRegex(@"^Using a Higher-Level Spell Slot\. The (?:healing|damage) increases by (?<dice>\d+d\d+) for each spell slot level above (?<above>\d+)\.")]
+    private static partial Regex SlotScaling();
+
+    [GeneratedRegex(@"^Cantrip Upgrade\. The damage increases by (?<dice>\d+d\d+) when you reach levels 5\b")]
+    private static partial Regex CantripScaling();
 
     [GeneratedRegex(@"^(?:Using a Higher-Level Spell Slot|Cantrip Upgrade)\b")]
     private static partial Regex ScalingHeading();

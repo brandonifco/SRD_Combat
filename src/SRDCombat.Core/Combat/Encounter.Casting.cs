@@ -92,12 +92,15 @@ public sealed partial class Encounter
             return charmed;
         }
 
-        SpendCastingCost(caster, spell);
+        var slotUsed = SpendCastingCost(caster, spell);
 
+        // The narration names the slot actually spent, which is not always the spell's
+        // own level: when the level 1 slots are dry, Cure Wounds burns a level 2 slot —
+        // and as of upcasting, gets something for it.
         Add(
             CombatStepKind.Spell,
             $"{caster.Name} casts {spell.Name}" +
-            (spell.IsCantrip ? " (cantrip)." : $" (level {spell.Level} slot)."),
+            (spell.IsCantrip ? " (cantrip)." : $" (level {slotUsed} slot)."),
             caster);
 
         if (spell.RequiresConcentration)
@@ -105,17 +108,21 @@ public sealed partial class Encounter
             StartConcentrating(caster, spell);
         }
 
-        if (spell.Heal is { } heal && target is not null)
+        // Scaling grows the definition itself, so the resolvers never know it happened:
+        // an upcast Cure Wounds simply arrives with more dice.
+        var scaled = ApplyScaling(spell, slotUsed, character.Level);
+
+        if (scaled.Heal is { } heal && target is not null)
         {
-            ResolveHeal(caster, spell, heal, target, character);
+            ResolveHeal(caster, scaled, heal, target, character, slotUsed ?? scaled.Level);
         }
-        else if (spell.IsSpellAttack && target is not null)
+        else if (scaled.IsSpellAttack && target is not null)
         {
-            ResolveSpellAttack(caster, spell, target, character);
+            ResolveSpellAttack(caster, scaled, target, character);
         }
-        else if (spell.Save is { } save)
+        else if (scaled.Save is { } save)
         {
-            ResolveSpellSave(caster, spell, save, point, target, character);
+            ResolveSpellSave(caster, scaled, save, point, target, character);
         }
 
         CheckForCompletion();
@@ -197,7 +204,8 @@ public sealed partial class Encounter
         SpellDefinition spell,
         SpellHeal heal,
         Combatant target,
-        CombatantFeatures character)
+        CombatantFeatures character,
+        int slotLevel)
     {
         if (target.IsDead)
         {
@@ -216,12 +224,12 @@ public sealed partial class Encounter
             : 0;
 
         // Disciple of Life: "When a spell you cast with a spell slot restores Hit
-        // Points ... additional Hit Points equal 2 plus the spell slot's level." A
-        // cantrip is cast without a slot and gets nothing; the slot's level is the
-        // spell's own, upcasting being unimplemented.
+        // Points ... additional Hit Points equal 2 plus the spell slot's level." The
+        // slot's, not the spell's — an upcast Cure Wounds feeds it too. A cantrip is
+        // cast without a slot and gets nothing.
         if (!spell.IsCantrip && caster.Stats.Has(ClassFeature.DiscipleOfLife))
         {
-            modifier += 2 + spell.Level;
+            modifier += 2 + slotLevel;
         }
 
         var wasDown = target.CurrentHitPoints == 0;
@@ -268,7 +276,85 @@ public sealed partial class Encounter
             : null;
     }
 
-    private static void SpendCastingCost(Combatant caster, SpellDefinition spell)
+    /// <summary>
+    /// Grows a spell's dice for the slot it was actually cast from, and for a cantrip's
+    /// level steps.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Using a Higher-Level Spell Slot. The healing increases by 2d8 for each spell
+    /// slot level above 1." The extractor structures that sentence only when the extra
+    /// die matches the base effect's, so growing the expression's count is exactly the
+    /// printed arithmetic. A cantrip instead steps on the <em>caster's</em> level — 5,
+    /// 11 and 17, the thresholds every printed Cantrip Upgrade uses.
+    /// </para>
+    /// <para>
+    /// The definition is grown rather than the rolls patched, so every resolver —
+    /// attack, save, heal — sees an ordinary spell that happens to carry more dice, and
+    /// a Critical Hit doubles the upcast dice with the rest, as it should.
+    /// </para>
+    /// </remarks>
+    private static SpellDefinition ApplyScaling(SpellDefinition spell, int? slotUsed, int casterLevel)
+    {
+        if (spell.IsCantrip && spell.CantripUpgradeDice is { } perStep)
+        {
+            var steps = casterLevel >= 17 ? 3 : casterLevel >= 11 ? 2 : casterLevel >= 5 ? 1 : 0;
+
+            return steps > 0 ? Grown(spell, perStep.Count * steps) : spell;
+        }
+
+        if (spell.UpcastDicePerSlotLevel is { } perLevel && slotUsed is { } slot && slot > spell.Level)
+        {
+            return Grown(spell, perLevel.Count * (slot - spell.Level));
+        }
+
+        return spell;
+    }
+
+    /// <summary>The spell with its base effect's expression grown by extra dice of its own kind.</summary>
+    /// <remarks>
+    /// A save spell carries its damage in <em>both</em> <c>Damage</c> and
+    /// <c>Save.FailureDamage</c>, and the save resolver reads the second — so every
+    /// place the dice appear is grown, not just the first one found. Growing only
+    /// <c>Damage</c> was this method's first bug, caught by a cantrip that refused to
+    /// get bigger.
+    /// </remarks>
+    private static SpellDefinition Grown(SpellDefinition spell, int extraDice)
+    {
+        if (spell.Heal is { } heal)
+        {
+            spell = spell with { Heal = heal with { Dice = heal.Dice with { Count = heal.Dice.Count + extraDice } } };
+        }
+
+        if (spell.Damage.Count > 0)
+        {
+            var first = spell.Damage[0];
+            var grown = first.Amount with { Count = first.Amount.Count + extraDice };
+
+            spell = spell with
+            {
+                Damage = [first with { Amount = grown, PrintedAverage = grown.Average }, .. spell.Damage.Skip(1)],
+            };
+        }
+
+        if (spell.Save is { } save && save.FailureDamage.Count > 0)
+        {
+            var first = save.FailureDamage[0];
+            var grown = first.Amount with { Count = first.Amount.Count + extraDice };
+
+            spell = spell with
+            {
+                Save = save with
+                {
+                    FailureDamage = [first with { Amount = grown, PrintedAverage = grown.Average }, .. save.FailureDamage.Skip(1)],
+                },
+            };
+        }
+
+        return spell;
+    }
+
+    private static int? SpendCastingCost(Combatant caster, SpellDefinition spell)
     {
         switch (spell.CastingTime)
         {
@@ -287,15 +373,18 @@ public sealed partial class Encounter
 
         if (spell.IsCantrip)
         {
-            return;
+            return null;
         }
 
-        // Spend the lowest slot that will do. Upcasting is not implemented, so a higher
-        // slot would buy nothing and burning it would be strictly worse for the player.
+        // Spend the lowest slot that will do. A higher one is only burned when nothing
+        // smaller is left — and since upcasting, it buys the printed extra dice.
         if (HighestAvailableSlot(caster, spell.Level) is { } level)
         {
             caster.Features.SpellSlotsRemaining[level]--;
+            return level;
         }
+
+        return null;
     }
 
     /// <summary>The lowest slot level at or above the spell's own that still has a slot.</summary>
