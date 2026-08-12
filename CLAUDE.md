@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #59 (correcting claims a full run disproved) |
-| Tests | **553 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #60 (the 39 missing spells) |
+| Tests | **556 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
-| Content | 330 monsters · **300 spells, and the book has 339 — the extractor is dropping about 39 (#56)** · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **7 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
+| Work remaining | **6 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -407,12 +407,27 @@ been found.** Every one of these was caught that way — "every species has at l
 trait", "every class table has 20 rows with the advancement table's proficiency bonus".
 
 **And the one place that lesson was never applied is where the next bug was waiting.**
-There is no validator on the spell count, so the extractor has been dropping about 39 of
-the book's 339 spells since Phase 0 and reporting "300 spells" as though that settled it
-(#56). Cure Wounds, Detect Magic, Hold Person and Aid are all simply absent. **A number
-the pipeline prints about itself is not a check** — it agrees with the code by
-construction. The check that would have caught this on day one is the cross-reference:
-every spell named in a class's spell list must resolve to an extracted spell.
+There was no validator on the spell count, so the extractor dropped **39 of the book's
+339 spells from Phase 0 until 2026-08-12** — Cure Wounds, Detect Magic, Hold Person and
+Aid among them — while reporting "300 spells" as though that settled it. Two causes, both
+already warned about elsewhere in this file:
+
+- **38 spells whose class list wraps.** `Level 1 Abjuration (Bard, Cleric, Druid,
+  Paladin,` / `Ranger)`. The type grammar was anchored on its closing bracket, so a
+  wrapped line matched nothing and the spell was never detected at all — and **a spell
+  that is never detected raises no diagnostic**, which is why it was silent. Wrapped
+  lines are now rejoined before parsing.
+- **Acid Splash**, the one spell heading set in `GillSans-SemiBold-SC700`. Small caps
+  reach the text layer as `Ac i d Sp lASh`, letters split and case scrambled. Repaired
+  from a curated one-entry map keyed on that exact text, so a better reader stops
+  matching rather than being silently overridden.
+
+**Two lessons worth more than the fix.** *A number the pipeline prints about itself is
+not a check* — it agrees with the code by construction. And *a floor is the wrong shape
+for a count fixed by the source*: the test read `Spells.Count >= 300` for months and was
+satisfied by exactly the broken number. Floors belong on things that should grow as the
+engine models more, like the monster pool; the book's spell count is not one of them.
+`SpellValidator.ExpectedSpellCount` now asserts it exactly.
 
 Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
 Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
@@ -569,9 +584,8 @@ dotnet run --project tools/SrdExtract -- --out data/srd
 ```
 
 It refuses to write when validation reports errors (`--force` overrides). A clean run
-reports 330 monsters, 38 weapons, 13 armor, 0 errors, and **10 warnings, all expected**
-— but note it also reports **300 spells and should report about 339** (#56), which no
-validator checks:
+reports 330 monsters, **339 spells**, 38 weapons, 13 armor, 0 errors, and **10 warnings,
+all expected**:
 the Archmage's XP, which is a real SRD inconsistency, and nine spells whose component
 line is truncated at a column break in the source.
 
