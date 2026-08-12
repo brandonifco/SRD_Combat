@@ -166,11 +166,18 @@ public enum ConditionDurationOwner
 /// True for a printed duration no fight reaches — "for 1 hour", "for 24 hours". The
 /// condition gets no expiry and ends with the encounter.
 /// </param>
+/// <param name="WhileGrappleHolds">
+/// True for "until the grapple ends". The condition gets no expiry of its own: it is
+/// imposed only while the same creature's grapple holds the target, and
+/// <c>Encounter.EndGrapple</c> takes it away with the grapple, however the grapple
+/// ended — escape, incapacity or distance.
+/// </param>
 public sealed record ConditionDuration(
     ConditionClock Clock,
     ConditionDurationOwner Owner,
     int TurnsAhead = 1,
-    bool OutlastsFight = false)
+    bool OutlastsFight = false,
+    bool WhileGrappleHolds = false)
 {
     /// <summary>"for N minutes": ten of the bearer's turns per minute, ending at the end of a turn.</summary>
     public static ConditionDuration ForMinutes(int minutes) =>
@@ -179,6 +186,10 @@ public sealed record ConditionDuration(
     /// <summary>"for 1 hour" and longer: printed time no fight reaches.</summary>
     public static ConditionDuration BeyondTheFight { get; } =
         new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, 0, OutlastsFight: true);
+
+    /// <summary>"until the grapple ends": lives and dies with the sibling grapple.</summary>
+    public static ConditionDuration UntilTheGrappleEnds { get; } =
+        new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, 0, WhileGrappleHolds: true);
 }
 
 /// <summary>

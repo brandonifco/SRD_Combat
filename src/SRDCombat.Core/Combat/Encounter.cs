@@ -1013,6 +1013,20 @@ public sealed partial class Encounter
                 continue;
             }
 
+            // "until the grapple ends" rides only while the same creature's grapple
+            // holds this target. The Grappled rider is printed first and imposed first,
+            // so this sees it — and when the grapple itself was refused (a size gate, an
+            // immunity), the dependent condition never lands, exactly as a condition
+            // whose whole duration is the grapple should not.
+            if (rider.Duration is { WhileGrappleHolds: true }
+                && !string.Equals(
+                    target.ConditionState(ConditionType.Grappled)?.SourceId,
+                    source.Id,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             var expiry = ConditionRules.ExpiryFor(rider.Duration, source, target);
 
             var imposed = new ActiveCondition(
@@ -1182,6 +1196,7 @@ public sealed partial class Encounter
         {
             null => string.Empty,
             { OutlastsFight: true } => " for the rest of the fight",
+            { WhileGrappleHolds: true } => " until the grapple ends",
             { TurnsAhead: 1 } =>
                 $" until the {(duration.Clock == ConditionClock.StartOfTurn ? "start" : "end")} of " +
                 $"{(duration.Owner == ConditionDurationOwner.Bearer ? bearer.Name : source.Name)}'s next turn",

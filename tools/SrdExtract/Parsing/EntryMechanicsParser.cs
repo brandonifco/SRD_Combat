@@ -436,29 +436,70 @@ internal static partial class EntryMechanicsParser
         var conditions = new List<AppliedCondition>();
 
         // Sentence by sentence, because the rider's gate and its duration are the words
-        // on either side of the condition within its own sentence, and nowhere else.
+        // on either side of the condition within its own sentence, and nowhere else. A
+        // sentence imposing two conditions — "... it has the Grappled condition (escape
+        // DC 19), and it has the Restrained condition until the grapple ends" — is split
+        // into one clause per rider first, so each condition is judged on its own words
+        // rather than the first tripping over the second's clause as trailing text.
         foreach (var sentence in SplitSentences(text))
         {
-            foreach (Match match in ConditionPattern().Matches(sentence))
+            var added = new List<AppliedCondition>();
+            var clauses = RiderClausePattern().Split(sentence);
+
+            // A head clause carrying no rider may stand before the riders only when the
+            // entry's other grammar accounts for it in full — a "Hit:" or "Failure:"
+            // damage clause. Anything else — "the balor pulls the target up to 25 feet
+            // straight toward itself", "the target becomes Stable" — is a companion
+            // effect the model does not express, and imposing the riders without it
+            // would fire part of a printed sentence. Every rider in the sentence is
+            // refused with it.
+            var unmodelledCompanion = clauses.Length > 1
+                && !ConditionPattern().IsMatch(clauses[0])
+                && HasResidualEffect(clauses[0]);
+
+            foreach (var clause in clauses)
             {
-                if (!Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: true, out var condition))
+                foreach (Match match in ConditionPattern().Matches(clause))
                 {
-                    continue;
+                    if (!Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: true, out var condition))
+                    {
+                        continue;
+                    }
+
+                    if (conditions.Any(existing => existing.Condition == condition)
+                        || added.Any(existing => existing.Condition == condition))
+                    {
+                        continue;
+                    }
+
+                    int? escapeDc = match.Groups["escape"].Success
+                        ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
+                        : null;
+
+                    var (size, duration, unmodelled) = unmodelledCompanion
+                        ? (null, null, sentence)
+                        : ReadRider(sentence, clause, match, attackEntry);
+
+                    added.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
                 }
-
-                if (conditions.Any(existing => existing.Condition == condition))
-                {
-                    continue;
-                }
-
-                int? escapeDc = match.Groups["escape"].Success
-                    ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
-                    : null;
-
-                var (size, duration, unmodelled) = ReadRider(sentence, match, attackEntry);
-
-                conditions.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
             }
+
+            // "until the grapple ends" is a tie to the sibling grapple, so it is only as
+            // modelled as the grapple it hangs off. When the Grappled rider in the same
+            // sentence is refused — "from one of ten tentacles" is limb bookkeeping the
+            // model does not express — the dependent rider must not ride a grapple that
+            // can never land, and is refused whole-sentence with it.
+            var grappled = added.FirstOrDefault(rider => rider.Condition == ConditionType.Grappled);
+
+            for (var i = 0; i < added.Count; i++)
+            {
+                if (added[i].Duration is { WhileGrappleHolds: true } && grappled is not { IsFullyModelled: true })
+                {
+                    added[i] = added[i] with { Duration = null, UnmodelledRequirement = sentence };
+                }
+            }
+
+            conditions.AddRange(added);
         }
 
         return conditions;
@@ -485,22 +526,20 @@ internal static partial class EntryMechanicsParser
     /// </remarks>
     private static (CreatureSize? Size, ConditionDuration? Duration, string? Unmodelled) ReadRider(
         string sentence,
+        string clause,
         Match condition,
         bool attackEntry)
     {
-        var trailing = sentence[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
+        var trailing = clause[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
         var duration = ParseDuration(trailing);
 
         // Anything after the condition that is not a duration this engine can run — "from
-        // one of two claws", "until the grapple ends", "at which point it repeats the
+        // one of two claws", "until the web is destroyed", "at which point it repeats the
         // save" — is a rule of its own, and the rider is unusable until it is modelled.
         if (trailing.Length > 0 && duration is null)
         {
             return (null, null, sentence);
         }
-
-        var beforeCondition = sentence[..condition.Index];
-        var failure = beforeCondition.LastIndexOf("Failure:", StringComparison.Ordinal);
 
         // "Second Failure: The target has the Unconscious condition for 1 minute." — a
         // save outcome tier the save model does not express. The engine imposes riders
@@ -511,7 +550,9 @@ internal static partial class EntryMechanicsParser
             return (null, null, sentence);
         }
 
-        if (failure >= 0)
+        // The label rules look at the whole sentence, not the clause: a label always
+        // precedes the riders it governs, whichever clause they sit in.
+        if (sentence.Contains("Failure:", StringComparison.Ordinal))
         {
             // A "Failure:" sentence inside an attack entry belongs to an embedded
             // saving throw — the Ghast's Claw carries "Constitution Saving Throw: DC
@@ -537,6 +578,9 @@ internal static partial class EntryMechanicsParser
                 return (null, null, sentence);
             }
         }
+
+        var beforeCondition = clause[..condition.Index];
+        var failure = beforeCondition.LastIndexOf("Failure:", StringComparison.Ordinal);
 
         var leading = failure >= 0
             ? StripDamage(beforeCondition[(failure + "Failure:".Length)..])
@@ -591,16 +635,18 @@ internal static partial class EntryMechanicsParser
 
         var timed = TimedDurationPattern().Match(trailing);
 
-        if (!timed.Success)
+        if (timed.Success)
         {
-            return null;
+            var count = int.Parse(timed.Groups["count"].Value, CultureInfo.InvariantCulture);
+
+            return timed.Groups["unit"].Value.StartsWith("minute", StringComparison.OrdinalIgnoreCase)
+                ? ConditionDuration.ForMinutes(count)
+                : ConditionDuration.BeyondTheFight;
         }
 
-        var count = int.Parse(timed.Groups["count"].Value, CultureInfo.InvariantCulture);
-
-        return timed.Groups["unit"].Value.StartsWith("minute", StringComparison.OrdinalIgnoreCase)
-            ? ConditionDuration.ForMinutes(count)
-            : ConditionDuration.BeyondTheFight;
+        return GrappleEndDurationPattern().IsMatch(trailing)
+            ? ConditionDuration.UntilTheGrappleEnds
+            : null;
     }
 
     /// <summary>
@@ -630,6 +676,21 @@ internal static partial class EntryMechanicsParser
         var lastDamage = afterLabel.LastIndexOf("damage", StringComparison.Ordinal);
 
         return lastDamage < 0 ? afterLabel : afterLabel[(lastDamage + "damage".Length)..];
+    }
+
+    /// <summary>
+    /// Whether a rider-free clause carries anything beyond a "Hit:" or "Failure:" damage
+    /// statement — an effect of its own that the model does not express.
+    /// </summary>
+    private static bool HasResidualEffect(string clause)
+    {
+        var failure = clause.LastIndexOf("Failure:", StringComparison.Ordinal);
+
+        var reduced = failure >= 0
+            ? StripDamage(clause[(failure + "Failure:".Length)..])
+            : StripAttackPreamble(clause);
+
+        return reduced.Trim().TrimEnd('.', ',', ';').Trim().Length > 0;
     }
 
     /// <summary>The conditions a sentence carries, out of those parsed from the whole entry.</summary>
@@ -717,6 +778,17 @@ internal static partial class EntryMechanicsParser
     // express, so a rider printed behind one must not ride the plain failure.
     [GeneratedRegex(@"\b(?:First|Second|Third)\s+Failure:", RegexOptions.IgnoreCase)]
     private static partial Regex TieredFailurePattern();
+
+    // Anchored like every duration: the whole of the trailing text, or nothing.
+    [GeneratedRegex(@"^until\s+the\s+grapple\s+ends$", RegexOptions.IgnoreCase)]
+    private static partial Regex GrappleEndDurationPattern();
+
+    // Splits a two-condition sentence into one clause per rider: "... it has the
+    // Grappled condition (escape DC 19), and it has the Restrained condition until the
+    // grapple ends". The lookahead keeps "it has the ..." in the second clause, so each
+    // rider still carries its own subject for the lead-in check.
+    [GeneratedRegex(@",\s+and\s+(?=(?:the\s+target|it)\s+has\s+the\s+)", RegexOptions.IgnoreCase)]
+    private static partial Regex RiderClausePattern();
 
     [GeneratedRegex(@"the\s+(?<condition>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+condition(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex ConditionPattern();
