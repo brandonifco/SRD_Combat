@@ -81,6 +81,18 @@ public sealed record CharacterSheet
     /// </remarks>
     public required IReadOnlyList<string> UnimplementedFeatures { get; init; }
 
+    /// <summary>
+    /// Feat choices the character has earned and this draft did not spend.
+    /// </summary>
+    /// <remarks>
+    /// The printed feature is "the Ability Score Improvement feat <em>or another feat of
+    /// your choice for which you qualify</em>", and no other feat is modelled — so a
+    /// character who took one of those is legitimate and simply weaker here than at a
+    /// table. Counted rather than hidden, for the same reason
+    /// <see cref="UnimplementedFeatures"/> exists.
+    /// </remarks>
+    public int UnspentFeatChoices { get; init; }
+
     /// <summary>Equipped magic items, for display. Their numbers are already folded in.</summary>
     public IReadOnlyList<string> MagicItemNames { get; init; } = [];
 

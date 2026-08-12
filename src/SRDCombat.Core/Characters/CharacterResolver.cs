@@ -62,6 +62,13 @@ public static class CharacterResolver
 
         var magicItems = ResolveMagicItems(draft, content);
         var scores = ApplyBackgroundIncreases(draft, content.Background);
+
+        // Order matters and is the printed one: the background's increases make the
+        // starting character, the feat improves that character, and worn gear is worn
+        // last — an item that sets a score to 19 is a floor under whatever the rules
+        // already produced, not a replacement for them.
+        var improvementsTaken = ApplyAbilityScoreImprovements(draft, content.Class, scores);
+
         ApplyAbilitySettingItems(scores, magicItems);
 
         var proficiency = AdvancementRules.ProficiencyBonusForLevel(draft.Level);
@@ -98,6 +105,8 @@ public static class CharacterResolver
             ExpertiseSkills = expertise,
             SpellSlots = levelRow.SpellSlots,
             UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, draft.Level),
+            UnspentFeatChoices = GrantsOf(content.Class, draft.Level, ClassFeature.AbilityScoreImprovement)
+                - improvementsTaken,
             MagicItemNames = magicItems.Select(item => ItemDisplayName(item)).ToArray(),
             SpellAttackItemBonus = magicItems.Sum(item => item.Powers.SpellAttackBonus),
             CriticalHitsAgainstBecomeNormal = magicItems.Any(item => item.Powers.CriticalHitsAgainstBecomeNormal),
@@ -271,6 +280,75 @@ public static class CharacterResolver
                 nameof(draft));
         }
     }
+
+    /// <summary>
+    /// Applies the Ability Score Improvements this level has earned, and reports how
+    /// many were applied.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Increase one ability score of your choice by 2, or increase two ability scores
+    /// of your choice by 1. This feat can't increase an ability score above 20."
+    /// </para>
+    /// <para>
+    /// <b>How many the character is entitled to is counted from the class table</b>, not
+    /// from the resolved feature list: <see cref="ResolveFeatures"/> collapses repeats of
+    /// the same feature to one entry, and this is the feature the SRD grants most often —
+    /// four times for most classes, six for a Fighter. Counting the printed rows is the
+    /// only reading that stays right above level 5.
+    /// </para>
+    /// <para>
+    /// A draft carrying more choices than the level has earned takes the first N in
+    /// order rather than being refused: the same draft describes the character at every
+    /// level, which is what makes levelling a re-resolve. Only a malformed choice — the
+    /// same ability named twice, which would be a +2 wearing the +1/+1 shape — is
+    /// refused.
+    /// </para>
+    /// </remarks>
+    private static int ApplyAbilityScoreImprovements(
+        CharacterDraft draft,
+        ClassDefinition definition,
+        Dictionary<Ability, int> scores)
+    {
+        if (draft.AbilityScoreImprovements.Count == 0)
+        {
+            return 0;
+        }
+
+        var allowance = GrantsOf(definition, draft.Level, ClassFeature.AbilityScoreImprovement);
+        var taken = 0;
+
+        foreach (var improvement in draft.AbilityScoreImprovements.Take(allowance))
+        {
+            if (improvement.Second == improvement.First)
+            {
+                throw new ArgumentException(
+                    "An Ability Score Improvement raising two scores must name two different abilities.",
+                    nameof(draft));
+            }
+
+            foreach (var (ability, increase) in improvement.Second is { } second
+                         ? new[] { (improvement.First, 1), (second, 1) }
+                         : [(improvement.First, 2)])
+            {
+                scores[ability] = Math.Min(20, scores[ability] + increase);
+            }
+
+            taken++;
+        }
+
+        return taken;
+    }
+
+    /// <summary>
+    /// How many times the class table grants a feature at or below a level, counting
+    /// every printed row rather than the collapsed feature list.
+    /// </summary>
+    private static int GrantsOf(ClassDefinition definition, int level, ClassFeature feature) =>
+        definition.Levels
+            .Where(row => row.Level <= level)
+            .SelectMany(row => row.FeatureNames)
+            .Count(name => ClassFeatureRegistry.Resolve(name) == feature);
 
     /// <summary>
     /// "Your Strength is 19 while you wear these gauntlets. They have no effect on you

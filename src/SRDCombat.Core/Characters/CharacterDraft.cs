@@ -51,6 +51,25 @@ public enum FightingStyle
 }
 
 /// <summary>
+/// One taking of the Ability Score Improvement feat.
+/// </summary>
+/// <remarks>
+/// The printed benefit is "Increase one ability score of your choice by 2, or increase
+/// two ability scores of your choice by 1. This feat can't increase an ability score
+/// above 20." The shape is expressed so the illegal reading cannot be written down:
+/// <see cref="Second"/> absent is the +2, present is the +1/+1, and there is no way to
+/// spell "+2 to two abilities".
+/// </remarks>
+public sealed record AbilityScoreImprovement
+{
+    /// <summary>The ability raised — by 2 when <see cref="Second"/> is absent, otherwise by 1.</summary>
+    public required Ability First { get; init; }
+
+    /// <summary>The second ability raised by 1, when the +1/+1 shape was taken.</summary>
+    public Ability? Second { get; init; }
+}
+
+/// <summary>
 /// One magic item the character has equipped: which printed item, which tier of a
 /// variant item, and — for a weapon enchantment — which carried weapon it is bound to.
 /// </summary>
@@ -141,6 +160,22 @@ public sealed record CharacterDraft
 
     /// <summary>Magic items equipped, in the order they were found.</summary>
     public IReadOnlyList<EquippedMagicItem> MagicItems { get; init; } = [];
+
+    /// <summary>
+    /// Ability Score Improvements taken, in the order they were taken.
+    /// </summary>
+    /// <remarks>
+    /// <b>A draft is the character's choices, and resolving it at a level applies the
+    /// ones that level has earned.</b> A list longer than the level allows is not an
+    /// error — it is the plan for a character who has not got there yet — because the
+    /// same draft has to describe the character at every level: levelling in this game
+    /// is re-resolving the draft, not editing a sheet. A list shorter than the level
+    /// allows is not an error either, since the printed feature is "the Ability Score
+    /// Improvement feat <em>or another feat of your choice</em>", and no other feat is
+    /// modelled; the shortfall is reported on <c>CharacterSheet.UnspentFeatChoices</c>
+    /// rather than being silently forgotten.
+    /// </remarks>
+    public IReadOnlyList<AbilityScoreImprovement> AbilityScoreImprovements { get; init; } = [];
 }
 
 /// <summary>How hit points are determined on levelling.</summary>

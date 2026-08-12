@@ -81,6 +81,13 @@ public enum ClassFeature
     /// keep the use if it still fails.
     /// </summary>
     TacticalMind,
+
+    /// <summary>
+    /// Every class, from level 4: the Ability Score Improvement feat, "or another feat
+    /// of your choice" — the choice lives on the draft and the increase is applied by
+    /// <see cref="CharacterResolver"/>. No other feat is modelled.
+    /// </summary>
+    AbilityScoreImprovement,
 }
 
 /// <summary>
@@ -155,6 +162,7 @@ public static class ClassFeatureRegistry
             ["Fighting Style"] = ClassFeature.FightingStyle,
             ["Cunning Strike"] = ClassFeature.CunningStrike,
             ["Tactical Mind"] = ClassFeature.TacticalMind,
+            ["Ability Score Improvement"] = ClassFeature.AbilityScoreImprovement,
         };
 
     /// <summary>The implemented feature for a printed name, or null when not implemented.</summary>
