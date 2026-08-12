@@ -88,6 +88,14 @@ public enum ClassFeature
     /// <see cref="CharacterResolver"/>. No other feat is modelled.
     /// </summary>
     AbilityScoreImprovement,
+
+    /// <summary>
+    /// Fighter, Barbarian, Rogue, Ranger, Paladin: unlocks the mastery property of a
+    /// chosen number of kinds of weapon. Which properties execute is
+    /// <c>WeaponMasteryRules</c>, and a draft mastering a weapon whose property does not
+    /// is refused rather than granted silently.
+    /// </summary>
+    WeaponMastery,
 }
 
 /// <summary>
@@ -163,6 +171,7 @@ public static class ClassFeatureRegistry
             ["Cunning Strike"] = ClassFeature.CunningStrike,
             ["Tactical Mind"] = ClassFeature.TacticalMind,
             ["Ability Score Improvement"] = ClassFeature.AbilityScoreImprovement,
+            ["Weapon Mastery"] = ClassFeature.WeaponMastery,
         };
 
     /// <summary>The implemented feature for a printed name, or null when not implemented.</summary>

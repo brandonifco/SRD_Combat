@@ -26,6 +26,23 @@ public sealed record CombatAttack(
     /// </summary>
     public IReadOnlyList<AppliedCondition> AppliedConditions { get; init; } = AppliedConditions ?? [];
 
+    /// <summary>
+    /// The weapon's mastery property, when the wielder has unlocked it.
+    /// </summary>
+    /// <remarks>
+    /// Null unless the character both carries a weapon with a mastery and has taken
+    /// mastery of that kind of weapon — the property is "usable only by a character who
+    /// has a feature ... that unlocks the property", so a locked one never reaches the
+    /// attack at all.
+    /// </remarks>
+    public WeaponMastery? Mastery { get; init; }
+
+    /// <summary>
+    /// The ability modifier folded into this attack's bonus and damage, which Graze and
+    /// Topple both need in their own right.
+    /// </summary>
+    public int AbilityModifier { get; init; }
+
     /// <summary>The furthest this attack can reach at all, in feet.</summary>
     public int MaximumRangeFeet =>
         Math.Max(ReachFeet ?? 0, LongRangeFeet ?? NormalRangeFeet ?? 0);
@@ -481,6 +498,30 @@ public sealed class FeatureState
 
     /// <summary>Spell slots left this rest, by spell level.</summary>
     public Dictionary<int, int> SpellSlotsRemaining { get; } = [];
+
+    /// <summary>
+    /// Who sapped this creature, when a Sap mastery has left it with Disadvantage on its
+    /// next attack roll. Null when it is unsapped.
+    /// </summary>
+    /// <remarks>
+    /// Two things end it, exactly as printed: the creature's next attack roll consumes
+    /// it, and the start of the sapper's next turn clears it whether it was used or not
+    /// ("before the start of your next turn"). The sapper's id is stored because that
+    /// second clause is measured against <em>their</em> turn, not the victim's — the same
+    /// possessive trap the condition expiries carry.
+    /// </remarks>
+    public string? SappedBy { get; internal set; }
+
+    /// <summary>
+    /// The creature this one has Advantage against on its next attack roll, from a Vex
+    /// mastery. Null when there is none.
+    /// </summary>
+    /// <remarks>
+    /// "before the end of your next turn" — so unlike Sap this is cleared at the end of
+    /// the holder's own next turn, and it is target-specific: vexing a goblin buys
+    /// nothing against the goblin beside it.
+    /// </remarks>
+    public string? VexedTargetId { get; internal set; }
 
     /// <summary>
     /// The spell this creature is concentrating on, if any. A creature can concentrate

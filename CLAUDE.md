@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #80 (Ability Score Improvement) |
+| Branch | `main` at PR #82 (Weapon Mastery) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **2 open GitHub issues** — #78 (a truncated Sorcerer row) and #79 (runs die before level 4). |
+| Work remaining | **3 open GitHub issues** — #78, #79 and #81. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -63,8 +63,15 @@ over the same 40 seeds throughout, median fights cleared of 30:
 | #52 livestock excluded | 6 | 18 | 0/40 |
 | #75 aquatics excluded | **4** | 19 | 1/40 |
 | ASI implemented | 4 | 19 | 1/40 |
+| Weapon Mastery | 4 | **30 — cleared** | 1/40 |
 
-Two things in that table are worth more than the numbers. **The two plausibility fixes cost
+**Two runs of forty have now cleared all thirty rungs**, which nothing had ever done
+before Weapon Mastery landed: Sap and Vex fired 879 and 838 times across those forty runs,
+and a Rogue whose Vex feeds its own Sneak Attack is a different creature. The median is
+unmoved at 4 because the distribution is not a hump — most runs still die in the first
+cycle, and the ones that survive it now go all the way.
+
+Two more things in that table are worth more than the numbers. **The two plausibility fixes cost
 as much pacing as potions bought** — 7.5 back down to 4 — and neither PR measured it,
 because both looked cosmetic. They are not: a Camel or a flopping Piranha was *XP the
 budget spent on something that could not hurt anybody*, so removing the chaff means every
@@ -123,8 +130,8 @@ Two issues, both found by measuring rather than by reading code.
 
 Beyond those the next work is a phase, not a fix: Phases 1–4 are done, Phase 6 is done for
 monsters and open-ended for the party, and Phases 5 and 7 have never been started. **Do not
-read a short queue as "nearly finished":** nobody has ever cleared the thirty-rung ladder,
-and no human has played more than a few rungs by hand.
+read a short queue as "nearly finished":** the ladder has been cleared twice in forty
+seeded runs and never by a person, and no human has played more than a few rungs by hand.
 
 **A caution before tuning anything against numbers:** the party in an automated run is
 played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
@@ -403,6 +410,19 @@ so *it* can tell what is left; they do not belong in a status report.
   which skills were taken — come from the draft.
 - **Ability increases come from the *background*, not the species.** A 2024 change; a
   species grants no ability scores at all.
+- **Weapon Mastery is the fifth curated allowlist, and only half of it executes.** A
+  weapon's mastery property reaches the attack **only when the wielder has unlocked that
+  kind of weapon** — the printed rule is "usable only by a character who has a feature
+  ... that unlocks the property" — so `CombatAttack.Mastery` is null for everyone else.
+  Four of the eight execute: **Sap** and **Vex** (a per-creature flag consumed by the next
+  attack roll, with the printed expiries — Sap ends at the start of *the sapper's* next
+  turn, Vex at the end of *the vexer's*, and reading those possessives backwards would
+  swap them by most of a round), **Topple** (a Constitution save at 8 + the attack's
+  ability modifier + proficiency, which is why `CombatAttack` carries its
+  `AbilityModifier`) and **Graze** (the modifier as damage on a miss, no dice rolled).
+  Cleave, Push, Slow and Nick are refused by name — a draft mastering a Greataxe throws —
+  and their reasons are on `WeaponMasteryRules` and in #81. **The Barbarian pregen
+  therefore has the feature and cannot use it**, since Cleave is the Greataxe's.
 - **The Ability Score Improvement is a draft choice, and the count comes from the class
   table.** "+2 to one ability, or +1 to two, never above 20", taken at level 4 by every
   class. Two readings are written down on the resolver: **how many the character is

@@ -99,7 +99,14 @@ public static class CharacterResolver
             Size = content.Species.Sizes.Count > 0 ? content.Species.Sizes[0] : CreatureSize.Medium,
             SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency, magicItems),
             Skills = ResolveSkills(draft, content.Background, scores, proficiency, expertise),
-            Attacks = ResolveAttacks(draft, content, scores, proficiency, fightingStyle, magicItems),
+            Attacks = ResolveAttacks(
+                draft,
+                content,
+                scores,
+                proficiency,
+                fightingStyle,
+                magicItems,
+                ResolveWeaponMasteries(draft, content, features)),
             Features = features,
             FightingStyle = fightingStyle,
             ExpertiseSkills = expertise,
@@ -338,6 +345,97 @@ public static class CharacterResolver
         }
 
         return taken;
+    }
+
+    /// <summary>
+    /// The kinds of weapon whose mastery this character has unlocked, refusing anything
+    /// they were not granted or the engine does not execute.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>How many is the class table's number, not the feature prose's.</b> Fighter,
+    /// Barbarian and Rogue print a Weapon Mastery column that grows with level — a
+    /// Fighter has three at level 1 and four at level 4 — so the column is read when it
+    /// exists and the printed prose count is the fallback for classes without one.
+    /// </para>
+    /// <para>
+    /// A weapon whose mastery property the engine does not execute is <b>refused by
+    /// name</b>. Unlocking Cleave today would be a feature that silently does nothing,
+    /// which is the one outcome this project refuses everywhere else.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyDictionary<string, WeaponMastery> ResolveWeaponMasteries(
+        CharacterDraft draft,
+        CharacterBuildContent content,
+        IReadOnlyList<GrantedFeature> features)
+    {
+        if (draft.WeaponMasteryIds.Count == 0)
+        {
+            return new Dictionary<string, WeaponMastery>(StringComparer.Ordinal);
+        }
+
+        if (!features.Any(granted => granted.Feature == ClassFeature.WeaponMastery))
+        {
+            throw new ArgumentException(
+                "This character has no feature granting Weapon Mastery.",
+                nameof(draft));
+        }
+
+        var allowance = WeaponMasteryAllowance(content.Class, draft.Level);
+
+        if (draft.WeaponMasteryIds.Count > allowance)
+        {
+            throw new ArgumentException(
+                $"This character may master {allowance} kinds of weapon, not {draft.WeaponMasteryIds.Count}.",
+                nameof(draft));
+        }
+
+        if (draft.WeaponMasteryIds.Distinct(StringComparer.Ordinal).Count() != draft.WeaponMasteryIds.Count)
+        {
+            throw new ArgumentException("The same kind of weapon cannot be mastered twice.", nameof(draft));
+        }
+
+        var mastered = new Dictionary<string, WeaponMastery>(StringComparer.Ordinal);
+
+        foreach (var weaponId in draft.WeaponMasteryIds)
+        {
+            if (!content.Weapons.TryGetValue(weaponId, out var weapon))
+            {
+                throw new ArgumentException($"Unknown weapon '{weaponId}'.", nameof(draft));
+            }
+
+            var mastery = weapon.Mastery;
+
+            if (!WeaponMasteryRules.Executes(mastery))
+            {
+                throw new ArgumentException(
+                    $"The engine does not execute {weapon.Name}'s {mastery} mastery; " +
+                    "unlocking it would be a feature that does nothing.",
+                    nameof(draft));
+            }
+
+            mastered[weaponId] = mastery;
+        }
+
+        return mastered;
+    }
+
+    /// <summary>
+    /// How many kinds of weapon this class has mastery of at this level — the level
+    /// table's column where one is printed, and the feature's own count otherwise.
+    /// </summary>
+    private static int WeaponMasteryAllowance(ClassDefinition definition, int level)
+    {
+        var row = definition.AtLevel(level);
+
+        if (row?.ResourceCount("Weapon Mastery") is { } printed)
+        {
+            return printed;
+        }
+
+        // The Rogue, Ranger and Paladin print the count in the feature's prose rather
+        // than in a column, and all three say two.
+        return 2;
     }
 
     /// <summary>
@@ -726,7 +824,8 @@ public static class CharacterResolver
         IReadOnlyDictionary<Ability, int> scores,
         int proficiency,
         FightingStyle fightingStyle,
-        IReadOnlyList<ResolvedMagicItem> magicItems)
+        IReadOnlyList<ResolvedMagicItem> magicItems,
+        IReadOnlyDictionary<string, WeaponMastery> masteries)
     {
         var strength = AbilityRules.ModifierFor(scores[Ability.Strength]);
         var dexterity = AbilityRules.ModifierFor(scores[Ability.Dexterity]);
@@ -777,7 +876,14 @@ public static class CharacterResolver
                     : null,
                 weapon.Range?.NormalFeet,
                 weapon.Range?.LongFeet,
-                damageComponents));
+                damageComponents)
+            {
+                // The property is "usable only by a character who has a feature ... that
+                // unlocks the property", so an unmastered weapon carries None and the
+                // engine never sees it.
+                Mastery = masteries.TryGetValue(weaponId, out var mastered) ? mastered : null,
+                AbilityModifier = ability,
+            });
         }
 
         return attacks;

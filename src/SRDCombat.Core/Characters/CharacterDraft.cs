@@ -152,6 +152,18 @@ public sealed record CharacterDraft
     /// <summary>Ids of weapons the character is carrying.</summary>
     public IReadOnlyList<string> WeaponIds { get; init; } = [];
 
+    /// <summary>
+    /// Ids of the kinds of weapon whose mastery property the character has unlocked.
+    /// </summary>
+    /// <remarks>
+    /// "Your training with weapons allows you to use the mastery properties of N kinds of
+    /// weapons of your choice." A kind rather than an instance, so this names weapon ids
+    /// and not carried items — and the resolver refuses a kind the character has no
+    /// feature to unlock, more kinds than the class table grants, and any weapon whose
+    /// property <c>WeaponMasteryRules</c> does not execute.
+    /// </remarks>
+    public IReadOnlyList<string> WeaponMasteryIds { get; init; } = [];
+
     /// <summary>Id of the armour worn, if any.</summary>
     public string? ArmorId { get; init; }
 
