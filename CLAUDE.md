@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #62 (party tactics and focus fire) |
-| Tests | **565 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #64 (encounter shape) |
+| Tests | **567 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **5 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Work remaining | **3 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -37,15 +37,13 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**A whole run is playable, and automated runs still lose.** Measured over 20 runs at each
-step: before features, median 1 fight cleared of 30; with features and focus fire, median
-2 and deaths down from 17 to 13. **Better, and nowhere near enough** — none of 60 runs has
-ever survived the ladder. With the policy now using everything the party owns, the
-evidence points away from tactics and at **encounter shape**: a Low fight for four level 1
-characters buys **5.4 monsters on average and hits the eight cap a quarter of the time**,
-because the builder picks uniformly among whatever is affordable and cheap creatures are
-always affordable. Four characters against eight creatures is an action-economy problem no
-policy solves. That is #62, and it is the next thing to measure against.
+**A whole run is playable, and automated runs still lose — but far less badly.** Measured
+over 20 runs at each step, median fights cleared of 30: **1** at the start, **2** once the
+policy used the party's features and focused fire, **3** once encounters stopped buying
+five to eight monsters at a time, with the best run reaching fight 14 and level 3. **Still
+nothing has cleared the ladder.** Two things are known to remain: a casualty is permanent
+with no way to recover one (#58), and the party is played by `SimpleTacticsPolicy`, so
+these numbers are a floor rather than a verdict.
 
  `dotnet run --project src/SRDCombat.Console` climbs a
 thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
@@ -501,12 +499,18 @@ Three things a Phase 2 author should know before starting:
   encounter. **The XP spent is the creature's *printed* value, not one derived from its
   CR**, because step 3 says "every creature has an XP value in its stat block"; the two
   disagree once (the Archmage) and the printed number wins.
-- **Two encounter interpretations the page does not settle, both stated in code.** The
-  SRD caps neither the monster count nor the selection method — its examples run from one
-  Bugbear Warrior to nine Stirges — so the builder caps at eight (a grid and a turn loop
-  have opinions the book does not) and picks uniformly among everything affordable.
-  Placement is the other: **the sides start 30 feet apart**, which is the number deciding
-  whether ranged attacks and breath weapons matter at all.
+- **Three encounter interpretations the page does not settle, all stated in code.**
+  *How many creatures:* the SRD caps nothing, and every extra monster is another whole
+  turn of attacks each round, so `EncounterBuilder.MaximumFor` allows one more creature
+  than there are characters. *Which creatures:* **the count is chosen before them**, and
+  each slot is filled from the dearer end of what costs between half its share and all of
+  it. Both bounds earn their place — a floor alone produces a swarm of rats, a ceiling
+  alone produces a single monster every time, and the first version had neither, picking
+  uniformly among everything affordable. That sounds even-handed and is not: a cheap
+  creature is affordable at every step, so a low-difficulty fight for four level 1
+  characters came to **5.4 creatures, hitting the cap a quarter of the time**. It is 3.0
+  now, and reads like the book's own examples. *Placement:* **the sides start 30 feet
+  apart**, the number deciding whether ranged attacks and breath weapons matter at all.
 - **Rests differ per feature, so restoring them is a table and not a reset.** Verified
   against print: Rage and Second Wind each return **one** use on a Short Rest and all on
   a Long; Action Surge returns whole on **either**; spell slots on a Long Rest only. And

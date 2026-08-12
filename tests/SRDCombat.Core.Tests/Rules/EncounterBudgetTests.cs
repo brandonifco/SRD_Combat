@@ -99,38 +99,70 @@ public class EncounterBudgetTests
     }
 
     [Fact]
-    public void SpendingStopsOnlyWhenNothingAffordableIsLeft()
+    public void MostOfTheBudgetIsSpent()
     {
-        // "It's OK if you have a few unspent XP left over" — but not a lot: whatever is
-        // left must be less than the cheapest thing that could have been bought, or the
-        // builder gave up early.
+        // "Spend as much of your XP budget as you can without going over." The builder
+        // chooses how many creatures to field before choosing which, so it cannot spend
+        // to the last point the way a greedy fill would — but a fight well under its
+        // budget is an easy fight wearing a hard fight's label, so most of it must go.
         var candidates = new[] { Monster("a", 25), Monster("b", 50), Monster("c", 200) };
 
-        foreach (var seed in Enumerable.Range(1, 40))
-        {
-            var built = EncounterBuilder.Build(candidates, budget: 500, new SeededRandomSource(seed));
+        var spent = Enumerable.Range(1, 40)
+            .Select(seed => EncounterBuilder.Build(candidates, budget: 500, new SeededRandomSource(seed)))
+            .Average(built => (double)built.Spent / built.Budget);
 
-            if (built.Monsters.Count < EncounterBuilder.DefaultMaximumMonsters)
-            {
-                Assert.True(
-                    built.Remaining < 25,
-                    $"Seed {seed} left {built.Remaining} unspent with a 25 XP monster available.");
-            }
-        }
+        Assert.True(spent > 0.75, $"Only {spent:P0} of the budget was spent on average.");
+    }
+
+    [Fact]
+    public void TheCountIsChosenBeforeTheCreaturesAndVaries()
+    {
+        // The correction this replaced: picking uniformly among everything affordable
+        // sounds even-handed but fills the cap with cheap creatures, because a cheap
+        // creature is affordable at every step. A low-difficulty fight for four level 1
+        // characters came to 5.4 creatures on average that way.
+        var candidates = new[] { Monster("a", 25), Monster("b", 50), Monster("c", 200) };
+
+        var counts = Enumerable.Range(1, 60)
+            .Select(seed => EncounterBuilder.Build(candidates, 400, new SeededRandomSource(seed), maximumMonsters: 5))
+            .Select(built => built.Monsters.Count)
+            .ToArray();
+
+        Assert.True(counts.Distinct().Count() > 1, "Every encounter came out the same size.");
+        Assert.All(counts, count => Assert.InRange(count, 1, 5));
     }
 
     [Fact]
     public void TheCountCapIsRespected()
     {
         // A budget that could buy forty 10 XP creatures must not field forty of them.
-        var built = EncounterBuilder.Build(
-            [Monster("a", 10)],
-            budget: 400,
-            new SeededRandomSource(1),
-            maximumMonsters: 3);
+        // The cap is a ceiling on a count chosen up front rather than a target to fill,
+        // so the only thing guaranteed is that nothing exceeds it.
+        foreach (var seed in Enumerable.Range(1, 30))
+        {
+            var built = EncounterBuilder.Build(
+                [Monster("a", 10)],
+                budget: 400,
+                new SeededRandomSource(seed),
+                maximumMonsters: 3);
 
-        Assert.Equal(3, built.Monsters.Count);
-        Assert.Equal(30, built.Spent);
+            Assert.InRange(built.Monsters.Count, 1, 3);
+            Assert.Equal(built.Monsters.Count * 10, built.Spent);
+        }
+    }
+
+    [Fact]
+    public void APartyIsNeverBadlyOutnumbered()
+    {
+        // Every extra monster is another whole turn of attacks each round, so a party
+        // outnumbered two to one loses on the action economy however well it plays.
+        // The SRD caps nothing; this is a stated interpretation and the lever that
+        // matters most for whether a fight is survivable.
+        Assert.Equal(5, EncounterBuilder.MaximumFor(4));
+        Assert.Equal(2, EncounterBuilder.MaximumFor(1));
+        Assert.Equal(
+            EncounterBuilder.DefaultMaximumMonsters,
+            EncounterBuilder.MaximumFor(50));
     }
 
     [Fact]
