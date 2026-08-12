@@ -66,6 +66,13 @@ public enum MonsterCoverage
 /// table does the balancing. This decides only what belongs in the bag.
 /// </para>
 /// <para>
+/// <b>And coverage is not appropriateness.</b> A Camel is <see
+/// cref="MonsterCoverage.Complete"/> and absurd as a foe, which is a third axis owned by
+/// <see cref="PlausibleFoes"/> and applied in <see cref="Draw"/> — deliberately there
+/// rather than in <see cref="CoverageOf"/> or <see cref="Admits"/>, so that "how much of
+/// this creature does the engine execute" keeps exactly one answer.
+/// </para>
+/// <para>
 /// Two CR 0 creatures are <see cref="MonsterCoverage.Unusable"/>, and both are faithful
 /// readings rather than coverage gaps — checked against the printed blocks: the Shrieker
 /// Fungus has only a Reaction, and the Seahorse only a swim action. The SRD prints
@@ -138,16 +145,25 @@ public static class MonsterPool
     /// a party of four at levels 1–5 can be asked to fight.
     /// </param>
     /// <param name="floor">The least coverage accepted; see <see cref="Admits"/>.</param>
+    /// <param name="plausibleFoesOnly">
+    /// Whether to drop the creatures the SRD prints as property rather than as enemies —
+    /// see <see cref="PlausibleFoes"/>. True by default, because this is the bag a
+    /// <em>random</em> draw comes out of. An authored encounter that really does want a
+    /// stampeding elephant passes false, or simply hands <c>EncounterBuilder</c> its own
+    /// sequence.
+    /// </param>
     public static IReadOnlyList<MonsterDefinition> Draw(
         IEnumerable<MonsterDefinition> monsters,
         decimal maximumChallengeRating,
-        MonsterCoverage floor = MonsterCoverage.Playable)
+        MonsterCoverage floor = MonsterCoverage.Playable,
+        bool plausibleFoesOnly = true)
     {
         ArgumentNullException.ThrowIfNull(monsters);
 
         return monsters
             .Where(monster => monster.ChallengeRating <= maximumChallengeRating)
             .Where(monster => Admits(monster, floor))
+            .Where(monster => !plausibleFoesOnly || PlausibleFoes.Admits(monster))
             .OrderBy(monster => monster.ChallengeRating)
             .ThenBy(monster => monster.Name, StringComparer.Ordinal)
             .ToArray();
