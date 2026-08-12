@@ -44,11 +44,19 @@ public static class MovementRules
             return null;
         }
 
+        // Anyone still on the field occupies their square, conscious or not. Reading it
+        // as "active" let a creature end its move on a downed one — harmless until
+        // healing arrived, at which point the downed creature stood up inside somebody
+        // else and the next path finder found two combatants in one square.
+        //
+        // Keyed as a lookup rather than a dictionary for the same reason: two creatures
+        // sharing a square is a state this method must survive rather than throw on,
+        // whatever produced it. The one it reports is arbitrary, and both block equally.
         var blockers = combatants
-            .Where(other => other.Id != mover.Id && other.IsActive)
-            .ToDictionary(other => other.Position, other => other.SideId);
+            .Where(other => other.Id != mover.Id && !other.IsDead)
+            .ToLookup(other => other.Position, other => other.SideId);
 
-        if (blockers.ContainsKey(destination))
+        if (blockers.Contains(destination))
         {
             return null;
         }
@@ -77,17 +85,17 @@ public static class MovementRules
                     continue;
                 }
 
-                if (blockers.TryGetValue(next, out var sideId))
+                if (blockers.Contains(next))
                 {
                     // Never end on someone; only pass through an ally.
-                    if (next == destination || sideId != mover.SideId)
+                    if (next == destination || blockers[next].Any(sideId => sideId != mover.SideId))
                     {
                         continue;
                     }
                 }
 
                 // An occupied square costs the same as Difficult Terrain to cross.
-                var stepCost = blockers.ContainsKey(next)
+                var stepCost = blockers.Contains(next)
                     ? Battlefield.FeetPerSquare * 2
                     : field.EnterCostFeet(next);
 

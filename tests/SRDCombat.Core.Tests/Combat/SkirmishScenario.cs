@@ -25,8 +25,18 @@ namespace SRDCombat.Core.Tests.Combat;
 /// </remarks>
 internal static class SkirmishScenario
 {
-    /// <summary>The seed the frozen transcript was recorded with.</summary>
-    public const int Seed = 20260819;
+    /// <summary>
+    /// The seed the frozen transcript was recorded with.
+    /// </summary>
+    /// <remarks>
+    /// Chosen for <em>coverage</em>, not arbitrarily: the fight it produces has to reach
+    /// the interactions most likely to break, which <c>TheFightExercisesTheHardParts</c>
+    /// asserts. The original 20260819 stopped qualifying when the tactics policy learned
+    /// to focus fire — the adventurers began winning quickly enough that none of them
+    /// went down, so the fight covered no Death Saving Throws at all. The composition is
+    /// unchanged; only the dice moved.
+    /// </remarks>
+    public const int Seed = 20260869;
 
     public static Encounter Create(IRandomSource? random = null) =>
         Encounter.Start(Field(), Combatants(), random ?? new SeededRandomSource(Seed));
