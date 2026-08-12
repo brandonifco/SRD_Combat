@@ -485,6 +485,17 @@ public sealed class FeatureState
     /// <summary>Frenzy is "the first target you hit on your turn" — once, tracked here.</summary>
     public bool FrenzyUsedThisTurn { get; internal set; }
 
+    /// <summary>Cleave is "only once per turn", tracked here.</summary>
+    public bool CleaveUsedThisTurn { get; internal set; }
+
+    /// <summary>
+    /// Who has Slowed this creature. Non-empty means Speed is down 10 feet — exactly 10
+    /// however many entries there are, because "if the creature is hit more than once by
+    /// weapons that have this property, the Speed reduction doesn't exceed 10 feet".
+    /// Each entry expires at the start of its own author's next turn.
+    /// </summary>
+    public HashSet<string> SlowedBy { get; } = new(StringComparer.Ordinal);
+
     /// <summary>True after Steady Aim, until the next attack roll consumes it.</summary>
     public bool SteadyAimedThisTurn { get; internal set; }
 
@@ -548,6 +559,7 @@ public sealed class FeatureState
         SneakAttackUsedThisTurn = false;
         IsRecklessThisTurn = false;
         FrenzyUsedThisTurn = false;
+        CleaveUsedThisTurn = false;
         SteadyAimedThisTurn = false;
         AttackedThisTurn = false;
         AttacksRemainingThisAction = 0;

@@ -234,6 +234,10 @@ public static class PregeneratedParty
         ChosenSkills = ["Athletics", "Survival"],
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
         WeaponIds = ["weapon.greataxe"],
+        // The Greataxe's Cleave: the swing carries through into a second enemy beside
+        // the first. Refused until Cleave executed; the Barbarian held the feature
+        // unusable from the day masteries landed until #81 closed.
+        WeaponMasteryIds = ["weapon.greataxe"],
         // No armour: Unarmored Defense is the Barbarian's own AC rule, and putting them
         // in Chain Mail would quietly switch it off.
         ArmorId = null,

@@ -13,21 +13,19 @@ namespace SRDCombat.Core.Rules;
 /// than granting a feature that silently does nothing.
 /// </para>
 /// <para>
-/// <b>Executed:</b> Sap, Vex, Topple and Graze — four of the eight, covering 21 of the
-/// 38 printed weapons. Sap and Vex needed a per-creature flag with a turn-boundary
-/// expiry; Topple and Graze are riders on an attack that already resolves.
+/// <b>Executed:</b> Sap, Vex, Topple, Graze, Cleave and Slow — six of the eight,
+/// covering 33 of the 38 printed weapons. Sap, Vex and Slow share the per-creature flag
+/// with an author's-turn expiry; Topple and Graze ride the attack that already resolves;
+/// Cleave is its own second swing, whose damage subtracts the positive ability modifier
+/// <c>CombatAttack.AbilityModifier</c> carries for exactly this purpose.
 /// </para>
 /// <para>
-/// <b>Not executed, with reasons.</b> <b>Push</b> moves a creature 10 feet, and nothing
-/// in this engine moves a creature except on its own turn — forced movement is a model
-/// that does not exist. <b>Nick</b> is about "the extra attack of the Light property",
-/// and two-weapon fighting is not modelled at all, so there is no extra attack to move.
-/// <b>Slow</b> reduces Speed by 10 feet until the start of the attacker's next turn,
-/// which needs a speed modifier carrying a turn-boundary expiry — the condition model has
-/// expiries but Speed is not a condition. <b>Cleave</b> is the closest to reachable and
-/// the most missed, since it is the Greataxe's and therefore the Barbarian's: it needs a
-/// second attack whose damage omits the ability modifier, and <c>CombatAttack</c> folds
-/// that modifier into its damage where it cannot be taken back out.
+/// <b>Not executed, with reasons.</b> <b>Push</b> is mechanically reachable — forced
+/// movement over the grid — but "you can push" is a real choice a player would sometimes
+/// decline (pushing an enemy out of your own reach), and this engine models no way to
+/// decline; auto-pushing would fire part of a printed sentence wrongly often. <b>Nick</b>
+/// is about "the extra attack of the Light property", and two-weapon fighting is not
+/// modelled at all, so there is no extra attack to move.
 /// </para>
 /// </remarks>
 public static class WeaponMasteryRules
@@ -39,6 +37,8 @@ public static class WeaponMasteryRules
         WeaponMastery.Vex,
         WeaponMastery.Topple,
         WeaponMastery.Graze,
+        WeaponMastery.Cleave,
+        WeaponMastery.Slow,
     ];
 
     /// <summary>Whether the engine executes this property.</summary>

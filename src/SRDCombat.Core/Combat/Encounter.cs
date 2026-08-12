@@ -250,10 +250,12 @@ public sealed partial class Encounter
     public ActionRefusal? Dash() => SpendActionOn(
         combatant =>
         {
-            combatant.Turn.AddMovement(combatant.Stats.SpeedFeet);
+            // Dash grants "extra movement equal to your Speed", and a Slowed creature's
+            // Speed is the reduced one — so the mastery's 10 feet costs a Dasher 20.
+            combatant.Turn.AddMovement(EffectiveSpeedFeet(combatant));
             Add(
                 CombatStepKind.Dash,
-                $"{combatant.Name} Dashes, gaining {combatant.Stats.SpeedFeet} ft. of movement.",
+                $"{combatant.Name} Dashes, gaining {EffectiveSpeedFeet(combatant)} ft. of movement.",
                 combatant);
         });
 
@@ -661,7 +663,7 @@ public sealed partial class Encounter
                 // unconscious, so its turn is over.
                 if (combatant.CanAct)
                 {
-                    combatant.Turn.BeginTurn(combatant.Stats.SpeedFeet);
+                    combatant.Turn.BeginTurn(EffectiveSpeedFeet(combatant));
                     return;
                 }
 
@@ -688,7 +690,7 @@ public sealed partial class Encounter
                 continue;
             }
 
-            combatant.Turn.BeginTurn(combatant.Stats.SpeedFeet);
+            combatant.Turn.BeginTurn(EffectiveSpeedFeet(combatant));
             combatant.Features.BeginTurn();
             Add(CombatStepKind.TurnStarted, $"{combatant.Name}'s turn begins.", combatant);
             return;
@@ -880,6 +882,14 @@ public sealed partial class Encounter
     /// not damage when the modifier is not positive.
     /// </remarks>
     /// <summary>
+    /// The creature's Speed with any Slow mastery applied: down 10 feet while anybody's
+    /// Slow is on it, and exactly 10 however many are — "the Speed reduction doesn't
+    /// exceed 10 feet".
+    /// </summary>
+    private static int EffectiveSpeedFeet(Combatant combatant) =>
+        Math.Max(0, combatant.Stats.SpeedFeet - (combatant.Features.SlowedBy.Count > 0 ? 10 : 0));
+
+    /// <summary>
     /// Clears the Saps this creature inflicted: "Disadvantage on its next attack roll
     /// <em>before the start of your next turn</em>" — measured against the sapper's turn,
     /// not the victim's, which is why the victim remembers who sapped it.
@@ -889,6 +899,13 @@ public sealed partial class Encounter
         foreach (var victim in _combatants.Where(c => c.Features.SappedBy == sapper.Id))
         {
             victim.Features.SappedBy = null;
+        }
+
+        // Slow reads the same possessive — "until the start of your next turn" — so the
+        // author's turn coming round releases it wherever it landed.
+        foreach (var victim in _combatants.Where(c => c.Features.SlowedBy.Contains(sapper.Id)))
+        {
+            victim.Features.SlowedBy.Remove(sapper.Id);
         }
     }
 
@@ -1181,6 +1198,20 @@ public sealed partial class Encounter
                 target);
         }
 
+        // Slow shares Vex's trigger — "hit ... and deal damage to it" — and Sap's
+        // expiry, the author's next turn. The set caps itself: any number of entries is
+        // still one 10-foot reduction.
+        if (attack.Mastery == WeaponMastery.Slow && components.Any(pair => pair.Result.Total > 0))
+        {
+            target.Features.SlowedBy.Add(attacker.Id);
+
+            Add(
+                CombatStepKind.Feature,
+                $"{attack.Name}'s Slow cuts {target.Name}'s Speed by 10 feet.",
+                attacker,
+                target);
+        }
+
         ImposeRiders(attacker, attack, target);
 
         // "The effect occurs immediately after the attack's damage is dealt" — after the
@@ -1191,6 +1222,110 @@ public sealed partial class Encounter
         }
 
         // The blow may have dropped a grappler, in this fight or another one.
+        EndBrokenGrapples();
+
+        // Cleave last, once everything belonging to the first blow has landed — it is
+        // its own attack roll against a second creature, and it must not recurse.
+        TryCleave(attacker, attack, target);
+    }
+
+    /// <summary>
+    /// Cleave: "If you hit a creature with a melee attack roll using this weapon, you
+    /// can make a melee attack roll with the weapon against a second creature within 5
+    /// feet of the first that is also within your reach. On a hit, the second creature
+    /// takes the weapon's damage, but don't add your ability modifier to that damage
+    /// unless that modifier is negative. You can make this extra attack only once per
+    /// turn."
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The engine chooses the second creature</b>, because declining a free swing is
+    /// never right and the choice among candidates is the same judgement the policy
+    /// already makes everywhere: an enemy, the most wounded first. A future client
+    /// wanting the choice would add a parameter, not a rule.
+    /// </para>
+    /// <para>
+    /// The second swing is a plain attack roll with the weapon's full attack bonus —
+    /// the printed text adjusts only the damage — and it carries none of the first
+    /// blow's riders, Sneak Attack or Frenzy: those belong to an attack action's blow,
+    /// and this is the axe carrying through. It cannot Cleave again, by construction
+    /// rather than by flag: this method resolves the swing itself.
+    /// </para>
+    /// </remarks>
+    private void TryCleave(Combatant attacker, CombatAttack attack, Combatant target)
+    {
+        if (attack.Mastery != WeaponMastery.Cleave
+            || attack.Kind != AttackKind.Melee
+            || attacker.Features.CleaveUsedThisTurn
+            || !attacker.IsActive)
+        {
+            return;
+        }
+
+        var reach = attack.ReachFeet ?? Battlefield.FeetPerSquare;
+
+        var second = _combatants
+            .Where(candidate => candidate.IsActive
+                && candidate.SideId != attacker.SideId
+                && candidate.Id != target.Id
+                && candidate.Position.DistanceFeetTo(target.Position) <= Battlefield.FeetPerSquare
+                && candidate.Position.DistanceFeetTo(attacker.Position) <= reach)
+            .OrderBy(candidate => candidate.CurrentHitPoints)
+            .ThenBy(candidate => candidate.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+
+        if (second is null)
+        {
+            return;
+        }
+
+        attacker.Features.CleaveUsedThisTurn = true;
+
+        var result = AttackRules.Resolve(_random, attacker, attack, second);
+
+        var swing = result.Hit
+            ? $"hit{(result.Critical ? " — a Critical Hit!" : string.Empty)}"
+            : "miss";
+
+        Add(
+            CombatStepKind.Feature,
+            $"{attack.Name}'s Cleave carries through into {second.Name}: {result.Roll} vs AC " +
+            $"{result.TargetArmorClass} — {swing}.",
+            attacker,
+            second);
+
+        if (!result.Hit)
+        {
+            return;
+        }
+
+        // "The weapon's damage, but don't add your ability modifier ... unless that
+        // modifier is negative": the positive modifier alone comes back out, leaving
+        // any magic weapon bonus in.
+        var first = attack.Damage[0];
+        var amount = first.Amount with
+        {
+            Modifier = first.Amount.Modifier - Math.Max(0, attack.AbilityModifier),
+        };
+
+        var rolled = DiceRoller.Roll(_random, amount, result.Critical);
+        var applied = DamageRules.Apply(second, rolled.Total, first.Type, result.Critical);
+
+        Add(
+            CombatStepKind.Damage,
+            $"{second.Name} takes {applied.Effective} {first.Type} damage [{rolled}] — {DescribeHealth(second)}.",
+            attacker,
+            second);
+
+        if (applied.Died)
+        {
+            Add(CombatStepKind.Died, $"{second.Name} is dead.", second);
+        }
+        else if (applied.Downed)
+        {
+            Add(CombatStepKind.Downed, $"{second.Name} drops to 0 hit points and falls Unconscious.", second);
+        }
+
         EndBrokenGrapples();
     }
 

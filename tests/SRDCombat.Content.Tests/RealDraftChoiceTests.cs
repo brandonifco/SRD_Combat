@@ -196,13 +196,13 @@ public class RealDraftChoiceTests
     [Fact]
     public void AMasteryTheEngineDoesNotExecuteIsRefusedByName()
     {
-        // The Greataxe's Cleave needs a second attack whose damage omits the ability
-        // modifier, which CombatAttack cannot express. Unlocking it would be a feature
-        // that silently does nothing.
+        // The Dagger's Nick moves the extra attack of two-weapon fighting, which is not
+        // modelled at all. Unlocking it would be a feature that silently does nothing.
+        // (This test named the Greataxe's Cleave until #81 executed it.)
         var refusal = Assert.Throws<ArgumentException>(
-            () => Build("class.barbarian", level: 1, masteries: ["weapon.greataxe"]));
+            () => Build("class.rogue", level: 1, masteries: ["weapon.dagger"]));
 
-        Assert.Contains("Cleave", refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("Nick", refusal.Message, StringComparison.Ordinal);
     }
 
     [Fact]
