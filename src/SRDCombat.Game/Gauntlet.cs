@@ -40,44 +40,69 @@ public enum RunOutcome
 /// field a Camel.
 /// </para>
 /// <para>
-/// The default shape is a stated design choice rather than anything the SRD prints: each
-/// level gets three fights, rising Low → Moderate → High, with a Short Rest between them
-/// and a Long Rest before each new level. That gives the short-rest resources — a
-/// Barbarian's Rage, a Fighter's Second Wind — something to be scarce *for*, which a
-/// ladder of long rests would quietly remove.
+/// The default shape is a stated design choice rather than anything the SRD prints — the
+/// book defines difficulties, not sequences of them. The choice was measured before it
+/// was made (#65): with High in the routine rotation every third fight, 38 of 40 seeded
+/// runs died on a Moderate or High rung, 23 of them on High, at a median of three fights
+/// cleared of thirty, while a ladder of Low and Moderate alone reached a median of
+/// seven. High is exactly what the book says it is — "could be lethal for one or more
+/// characters" — so it is served as a set piece rather than a routine: four routine
+/// fights alternating Low and Moderate, then a High milestone closing each cycle of
+/// five, entered fresh off a Long Rest.
+/// </para>
+/// <para>
+/// Short Rests between the routine fights give the short-rest resources — a Barbarian's
+/// Rage, a Fighter's Second Wind — something to be scarce *for*, which a ladder of long
+/// rests would quietly remove. The two Long Rests per cycle bracket the milestone: one
+/// before it, so the lethal fight is fought at full strength rather than on a cycle's
+/// accumulated attrition (which is what the measurement showed was ending runs), and one
+/// after it, opening the next cycle — which is also where the fallen usually rejoin,
+/// since deaths cluster on the High rung and a Long Rest is what brings them back.
 /// </para>
 /// </remarks>
 public static class GauntletLadder
 {
-    /// <summary>Fights in one cycle of rising difficulty.</summary>
-    public const int FightsPerCycle = 3;
+    /// <summary>Fights in one cycle: four routine rungs and a High milestone.</summary>
+    public const int FightsPerCycle = 5;
 
     /// <summary>
-    /// The default ladder: cycles of Low, Moderate, High until the run is long enough to
-    /// carry a party from level 1 to level 5.
+    /// The default ladder: cycles of Low, Moderate, Low, Moderate and then a High
+    /// milestone, until the run is long enough to carry a party from level 1 to level 5.
     /// </summary>
     /// <remarks>
     /// The length is chosen against the arithmetic rather than picked: a cycle awards
-    /// each character the low, moderate and high per-character budgets added together,
-    /// and reaching level 5 costs 6,500 XP, so a run needs roughly thirty fights. Ending
-    /// a cycle on High and resting long afterwards gives the short-rest resources
-    /// something to be scarce for within a cycle.
+    /// each character two low, two moderate and one high per-character budget — at
+    /// level 1 that is 350 XP against the old three-fight cycle's 225, near enough the
+    /// same per fight — and reaching level 5 costs 6,500 XP, so a run still needs
+    /// roughly thirty fights, arriving at level 5 in the final cycle.
     /// </remarks>
     public static IReadOnlyList<LadderStep> Default(int fights = 30)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(fights, 1);
 
         return Enumerable.Range(0, fights)
-            .Select(index => new LadderStep(
-                (index % FightsPerCycle) switch
-                {
-                    0 => EncounterDifficulty.Low,
-                    1 => EncounterDifficulty.Moderate,
-                    _ => EncounterDifficulty.High,
-                },
-                // No rest before the first fight; a Long Rest at the start of each new
-                // cycle, a Short Rest between fights within one.
-                index == 0 ? null : index % FightsPerCycle == 0 ? RestKind.Long : RestKind.Short))
+            .Select(index =>
+            {
+                var slot = index % FightsPerCycle;
+
+                // No rest before the first fight; Long Rests bracket each High milestone
+                // — before it and at the start of the next cycle — with Short Rests
+                // between the routine fights.
+                RestKind? rest = index == 0
+                    ? null
+                    : slot == 0 || slot == FightsPerCycle - 1
+                        ? RestKind.Long
+                        : RestKind.Short;
+
+                return new LadderStep(
+                    slot switch
+                    {
+                        0 or 2 => EncounterDifficulty.Low,
+                        1 or 3 => EncounterDifficulty.Moderate,
+                        _ => EncounterDifficulty.High,
+                    },
+                    rest);
+            })
             .ToArray();
     }
 }
