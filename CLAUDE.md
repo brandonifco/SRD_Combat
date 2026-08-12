@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #66 (fallen characters return) |
-| Tests | **571 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #67 (status corrections) |
+| Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **3 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
@@ -68,10 +68,51 @@ absurd as a foe — which is #52 and a third axis neither the pool nor the budge
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
 
-### The order to do the open work in
+### Starting on a machine for the first time
 
-Ordered by what each piece rests on, not by how valuable it looks on its own. The
-governing plan doc carries the same list with the reasoning; this is the short form.
+Everything needed to build, test and play is committed. There is no setup step, no
+content to generate and no asset to fetch:
+
+```bash
+git clone https://github.com/brandonifco/SRD_Combat.git && cd SRD_Combat
+dotnet test SRDCombat.sln -c Debug     # expect 570 passing, 1 skipped by design
+dotnet run --project src/SRDCombat.Console
+```
+
+`data/srd` is in the repo, which is why none of that needs the SRD PDF. **The one thing
+that does is re-extracting content** (`tools/SrdExtract`), and the PDF is deliberately not
+in the repo and never will be — see the Environment section. If you are not re-extracting,
+its absence costs you nothing.
+
+Two things worth knowing before the first commit on a new machine: **CI installs .NET
+8.0.x while your machine probably runs something newer** through `global.json`'s
+roll-forward, so a green local build is not a green CI build (#27 is the standing example);
+and the conventions at the bottom of this file are not optional — narrow branches, a PR
+per concern, and the gate before merge.
+
+### What is open now
+
+Three issues, and the first is a decision rather than a task.
+
+- **#65 — the ladder's difficulty curve.** Measurement says this is what ends runs: 38 of
+  40 end on a Moderate or High rung, 23 on High, and a ladder of Low and Moderate fights
+  alone more than doubles how far a party gets. The curve is this project's invention, not
+  the SRD's, so somebody has to choose it. The issue lays out four options.
+- **#49 — save and load a run.** Save the *drafts plus run progress*, never resolved
+  sheets, or a save can drift from the rules that made it. Levelling uses average hit
+  points precisely so a reload cannot reroll history.
+- **#48 — loot.** The magic items chapter (printed pages 204–253) has never been parsed,
+  so the first question is whether loot draws only from mundane equipment.
+
+**A caution before tuning anything against numbers:** the party in an automated run is
+played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
+still a placeholder, so every pacing figure in this file is a floor rather than a verdict.
+
+### How the rules backlog was done, and why in that order
+
+Every item below is **closed**. It is kept because the reasoning is the expensive part —
+each entry records what the work turned out to rest on, and several correct a thing memory
+got wrong. Ordered by dependency rather than by how valuable each looked on its own.
 
 1. **#15 condition durations — done.** The condition record took an expiry *and* the
    combatant who imposed it in one pass, so #16 does not reopen it. Worth knowing why
@@ -159,13 +200,15 @@ governing plan doc carries the same list with the reasoning; this is the short f
    checked against print — the Shrieker Fungus has only a Reaction, the Seahorse only a
    swim action — so `Admits` refuses them at *any* floor.
 
-**Conditions are the most-reopened type in that list** — #6 imposes them on a failed
+**Conditions were the most-reopened type in that list** — #6 imposes them on a failed
 save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
-steps 1 and 2 come before anything else, and why they are worth doing as one design.
+steps 1 and 2 came before anything else, and why they were worth doing as one design.
 
-Steps 1, 3 and 4 all touch the turn loop, so **the frozen transcript may churn**. It uses
-hand-authored combatants carrying no riders, so it may well survive — but if it diffs,
-read the diff before regenerating.
+**The frozen transcript churned exactly once**, when the tactics policy learned to focus
+fire, and it caught the right thing when it did: not the byte-for-byte diff but
+`TheFightExercisesTheHardParts`, which noticed the adventurers now won quickly enough that
+nobody went down and the fight covered no Death Saving Throws at all. Read the diff before
+regenerating, every time.
 
 ## The rule this project runs on
 
@@ -483,7 +526,9 @@ default — deliberate).
   and attacking an Unconscious creature from beyond 5 feet is a *normal* roll, because
   Unconscious grants Advantage while the Prone it carries imposes Disadvantage.
 
-Three things a Phase 2 author should know before starting:
+Things worth knowing before touching the engine or the content pipeline. The list has
+outgrown the phase it was written for; each entry is here because getting it wrong once
+cost real time:
 
 - **There is no versioned DTO mirror, deliberately.** Content serializes straight from
   the `Core` definitions. The design doc explains why this diverges from 5eGoldBox, and
@@ -563,18 +608,29 @@ Three things a Phase 2 author should know before starting:
 
 ## Environment
 
-- **The machine changes under this file — verify before trusting this section.** It has
-  flipped twice already: snap-confined .NET at kickoff, apt-only SDK 8 at PR #30, and as
-  of 2026-08-12 **snap again**. Bare `dotnet` resolves through `/usr/local/bin/dotnet` to
-  the snap, which carries SDKs 8.0.129 and 10.0.110; `global.json` pins 8 with
-  `latestMajor` roll-forward, so **SDK 10 is what actually runs locally** while CI
-  installs 8.0.x. The apt `/usr/bin/dotnet` is a bare host with **no SDKs** — don't
-  reach for it. One lesson from the apt era survives any flip (#27): SDK 8.0.129's
-  early C# 12 compiler rejected a collection-expression `Split` call in `MonsterParser`
-  that CI's newer 8.0.x accepted, which is why that call is written as an explicit array
-  — local success on SDK 10 does not prove CI's compiler agrees.
-- **The source PDF is present again** at `~/Downloads/SRD_CC_v5.2.1.pdf`, so extraction
-  work is unblocked. Nothing in build or test needs it — only `tools/SrdExtract`.
+**Everything in this section describes one particular machine, and this project is
+developed on more than one.** Treat it as a record of what was true where it was written,
+not as a description of the machine you are on. Nothing below is needed to build, test or
+play — see "Starting on a machine for the first time" — so a mismatch is a nuisance rather
+than a blocker.
+
+- **Which .NET runs has flipped three times.** Snap-confined at kickoff, apt-only SDK 8 at
+  PR #30, snap again as of 2026-08-12. Where it was written, bare `dotnet` resolved
+  through `/usr/local/bin/dotnet` to the snap, carrying SDKs 8.0.129 and 10.0.110, with
+  the apt `/usr/bin/dotnet` a bare host holding **no SDKs at all**. `global.json` pins 8
+  with `latestMajor` roll-forward, so **whichever machine you are on, the newest installed
+  SDK is what actually runs** while CI installs 8.0.x. Check with `dotnet --list-sdks`
+  before believing any of that.
+- **One lesson survives every flip (#27).** SDK 8.0.129's early C# 12 compiler rejected a
+  collection-expression `Split` call in `MonsterParser` that CI's newer 8.0.x accepted,
+  which is why that call is written as an explicit array. **Building locally on a newer
+  SDK does not prove CI's compiler agrees** — this is the failure that gets caught in CI
+  rather than at the desk.
+- **The source PDF is not in the repo and never will be**, and neither is `reference/`;
+  both are gitignored. `~/Downloads/SRD_CC_v5.2.1.pdf` is where the tooling expects it.
+  **Only `tools/SrdExtract` needs it** — `data/srd` is committed, so build, test and play
+  all work on a machine that has never seen the PDF. If you mean to re-extract, fetch it
+  first; if you do not, ignore its absence.
 - **`dotnet new sln` under SDK 10 produces a `.slnx`, which .NET 8 cannot read.** Hit
   during setup: the solution has to be `SRDCombat.sln` in the classic format, or CI
   (pinned to 8.0.x) fails to find a project file at all. `dotnet new sln --format sln`
@@ -582,8 +638,10 @@ Three things a Phase 2 author should know before starting:
   `TargetFramework`/`Nullable`/`ImplicitUsings` into each new `.csproj`, silently
   overriding `Directory.Build.props` — strip those three lines from any project
   created by a template.
-- **Godot 4.7 stable mono** at `~/.local/bin/godot`. Not used until Phase 7.
-- **`pdftotext`** (poppler) is installed and is the extraction workhorse.
+- **Godot 4.7 stable mono** at `~/.local/bin/godot` on the machine this was written on.
+  Not used until Phase 7, so its absence elsewhere costs nothing yet.
+- **`pdftotext`** (poppler) is the extraction workhorse for eyeballing pages. Needed only
+  alongside the PDF.
 - **A real X11 display exists** (`DISPLAY=:1`, Xorg — not headless), but no
   `xdotool`. GoldBox's own notes describe driving a GUI via `python-xlib` + `XTest`
   in a throwaway venv, including the trap that window activation must go through the
