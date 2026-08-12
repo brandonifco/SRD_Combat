@@ -32,6 +32,9 @@ public enum CombatStepKind
 
     /// <summary>A stat block entry being used, and the saving throws it forces.</summary>
     Entry,
+
+    /// <summary>A carried consumable being used — a potion drunk or administered.</summary>
+    Item,
     TurnEnded,
     EncounterEnded,
 }

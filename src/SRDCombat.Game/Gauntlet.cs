@@ -293,7 +293,8 @@ public sealed class GauntletRun
                 pair.state.RagesRemaining,
                 pair.state.SecondWindRemaining,
                 pair.state.ActionSurgeRemaining,
-                pair.state.SpellSlotsRemaining)))
+                pair.state.SpellSlotsRemaining,
+                pair.state.Potions)))
             .ToArray();
 
         return EncounterFactory.Build(_content, survivors, step.Difficulty, random);
@@ -361,12 +362,52 @@ public sealed class GauntletRun
             Outcome = RunOutcome.Survived;
         }
 
-        // The set piece pays out: one permanent item after each High milestone. The
-        // rate is a stated design choice — see the remarks on LootTable.
-        if (random is not null && step.Difficulty == EncounterDifficulty.High)
+        // The set piece pays out a permanent item; a Moderate fight pays a potion. Both
+        // rates are stated design choices — see the remarks on LootTable.
+        if (random is null)
+        {
+            return;
+        }
+
+        if (step.Difficulty == EncounterDifficulty.High)
         {
             AwardLoot(random);
         }
+        else if (step.Difficulty == EncounterDifficulty.Moderate)
+        {
+            AwardPotion(random);
+        }
+    }
+
+    /// <summary>
+    /// Hands a Potion of Healing to whoever is carrying the fewest.
+    /// </summary>
+    /// <remarks>
+    /// Spread rather than rolled, deliberately: potions are only worth carrying if
+    /// somebody who can reach the wounded has one, and piling a run's whole supply on
+    /// one character is how a party ends up watching an ally bleed out three squares
+    /// from the potions. The roll breaks the tie, so the choice stays seed-reproducible.
+    /// </remarks>
+    private void AwardPotion(IRandomSource random)
+    {
+        var candidates = _states
+            .Select((state, index) => (state, index))
+            .Where(pair => pair.state.CanFight)
+            .GroupBy(pair => pair.state.Potions.Values.Sum())
+            .OrderBy(group => group.Key)
+            .First()
+            .ToArray();
+
+        if (candidates.Length == 0)
+        {
+            return;
+        }
+
+        var (_, chosen) = candidates[random.Roll(candidates.Length) - 1];
+        var potency = LootTable.PotionFor(_states[chosen].Level);
+
+        _states[chosen] = _states[chosen].Carrying(potency);
+        _lootFound.Add($"{Party[chosen].Draft.Name} finds a {PotionRules.PrintedName(potency)}");
     }
 
     /// <summary>Rolls the milestone's drop and equips it, re-resolving the finder.</summary>

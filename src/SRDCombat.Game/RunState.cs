@@ -37,8 +37,30 @@ public sealed record CharacterState(
     int ExperiencePoints,
     bool IsDead)
 {
+    /// <summary>
+    /// Potions of Healing carried, by potency.
+    /// </summary>
+    /// <remarks>
+    /// The one thing on this record that <b>no rest restores</b>: a spent potion is gone
+    /// for the rest of the run, which is what makes finding one worth anything. It rides
+    /// <c>AfterRest</c>'s <c>with</c> untouched for exactly that reason.
+    /// </remarks>
+    public IReadOnlyDictionary<HealingPotion, int> Potions { get; init; } =
+        new Dictionary<HealingPotion, int>();
+
     /// <summary>The level this character has earned.</summary>
     public int Level => ExperienceRules.LevelFor(ExperiencePoints);
+
+    /// <summary>The same state with one more potion of a potency in the pack.</summary>
+    public CharacterState Carrying(HealingPotion potency)
+    {
+        var potions = new Dictionary<HealingPotion, int>(Potions)
+        {
+            [potency] = Potions.GetValueOrDefault(potency) + 1,
+        };
+
+        return this with { Potions = potions };
+    }
 
     /// <summary>The same state with an award added. The dead earn nothing.</summary>
     public CharacterState Earning(int experience) =>
@@ -114,6 +136,8 @@ public sealed record CharacterState(
             SecondWindRemaining = combatant.Features.SecondWindRemaining,
             ActionSurgeRemaining = combatant.Features.ActionSurgeRemaining,
             SpellSlotsRemaining = new Dictionary<int, int>(combatant.Features.SpellSlotsRemaining),
+            // Drunk is drunk: what came out of the fight is what is left.
+            Potions = new Dictionary<HealingPotion, int>(combatant.Inventory.Potions),
             IsDead = combatant.IsDead,
         };
     }

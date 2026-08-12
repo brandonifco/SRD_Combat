@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #73 (loot drops at the milestones, closing #48) |
+| Branch | `main` at PR #74 (Potions of Healing, closing #72) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **1 open GitHub issue** — #72, Potions of Healing as consumables. |
+| Work remaining | **1 open GitHub issue** — #52, plausible foes. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -47,25 +47,25 @@ and a fallen character rejoining at the next Long Rest.
 defeat means reload rather than reset — the save deliberately keeps the state after the
 last fight the party *won*. **Each High milestone cleared drops one magic item** —
 chosen from what would actually improve somebody, equipped by re-resolving the finder's
-draft, riding the save for free because a draft is what a save holds. The client is
+draft, riding the save for free because a draft is what a save holds — and **each
+Moderate rung drops a Potion of Healing**, handed to whoever carries the fewest. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
-**Automated runs still lose, but the ladder no longer decides where.** The curve was
-this project's invention, so #65 chose it deliberately: High is a **set piece closing
-each cycle of five** — four routine fights alternating Low and Moderate, then the
-milestone, entered fresh off a Long Rest and recovered from with another. Measured over
-the same 40 seeds, the old every-third-fight-is-High shape cleared a median of **2.5**
-with **23 of 40 deaths on a High rung**; the milestone shape clears a median of **4**,
-a best of **23**, and only **7 of 40 deaths land on High** — the set piece stopped being
-where runs routinely end. **Nothing has ever cleared the ladder**, but that is no longer
-the curve's doing: a pure Low/Moderate ladder also went 0-for-40, and every figure here
-is a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
+**Automated runs still lose, but they get much further than they did.** Measured over the
+same 40 seeds throughout: the old every-third-fight-is-High ladder cleared a median of
+**2.5** with 23 of 40 deaths on a High rung; #65's milestone shape — four routine fights
+alternating Low and Moderate, then a High set piece entered fresh off a Long Rest — took
+that to **4** with only 7 of 40 deaths on High; and **potions took it to 7.5, best 29**,
+which is the largest single jump anything has produced. **68 of the 110 potions used were
+administered to a fallen ally**, so it is the cheap way back off the floor doing the work
+rather than the self-heal. **Nothing has yet cleared all thirty**, and every figure here is
+a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
 
-**What does not exist yet.** Potions as combat consumables (#72 — permanent loot drops,
-but nothing drinkable). `SimpleTacticsPolicy` is still a placeholder, but no longer a
+**What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
-rages, spends Second Wind, casts when its weapon cannot reach, and reaches for a
+rages, spends Second Wind, drinks and administers potions, casts when its weapon cannot
+reach, and reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
 whose area would catch its own side. And
 **encounters can contain livestock** — a Camel is mechanically `Complete` and narratively
@@ -100,11 +100,13 @@ per concern, and the gate before merge.
 
 One issue.
 
-- **#72 — Potions of Healing as consumables.** The permanent-loot half of #48 shipped;
-  potions need machinery no permanent item did — carried state, a Bonus Action drink
-  (administering to an Unconscious ally included, which is the interesting half), the
-  policy and the client using it, and routine rungs dropping them. The healing tiers
-  live in a body-text table, so they belong in a curated rules map, not the extractor.
+- **#52 — encounters contain livestock.** Reopened 2026-08-12: it had been closed with no
+  fix in the code. The user's reading, worth keeping: **livestock are not made for
+  fighting and are not aggressive under normal circumstances**, so a Camel as a foe is
+  wrong on the fiction rather than merely odd, however `Complete` its stat block grades.
+  Coverage is not plausibility and neither is cost, so this is a third axis nothing owns;
+  a curated list rather than a heuristic, and `EncounterBuilder` needs no change because
+  it already takes any candidate sequence.
 
 **A caution before tuning anything against numbers:** the party in an automated run is
 played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
@@ -454,6 +456,19 @@ so *it* can tell what is left; they do not belong in a status report.
   are on the registry's doc comments: the Wand's "ignore Half Cover" is vacuous while no
   cover model exists, and Elven Chain's training override is satisfied by construction
   because armour training is not modelled.
+- **A potion is the one thing a fight spends that no rest brings back**, which is why it
+  lives on `CharacterState` beside the resources rather than on the draft beside the
+  choices — and why `InventoryState` is a sibling of `FeatureState` rather than a field on
+  it. `PotionRules` is a **curated rules map, not extracted content**, deliberately: the
+  chapter prints one entry ("Potions of Healing", type line "Potion, Rarity Varies") whose
+  four potencies live in a table inside its body text, and a body-text table grammar with
+  one customer is worse than a transcription checked against print. Drinking and
+  **administering cost the same Bonus Action** (printed page 204), which is the whole
+  point — one Bonus Action puts an Unconscious ally back up without touching your Action,
+  and it is what moved the median run from 4 fights to 7.5. Reach is a *stated reading*:
+  the SRD sets no range on administering, and this engine requires 5 feet. Every refusal
+  fires **before the potion is spent**, because a consumable poured onto a corpse cannot
+  be given back the way a mis-declared Action can.
 - **Loot rates are this project's design; the items are the book's.** The SRD prints no
   award-rate table ("Adventures hold the promise—but not a guarantee—of finding magic
   items"), so `LootTable` states the choice: one permanent item after each High

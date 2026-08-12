@@ -174,10 +174,18 @@ public static class SimpleTacticsPolicy
             return;
         }
 
+        // A potion poured down a fallen ally's throat costs a Bonus Action and no slot,
+        // so it is tried before the spell that would spend one. Reach is the price: it
+        // only works on somebody adjacent, which a caster standing back cannot use.
+        if (actor.Turn.HasBonusAction && TryAdministerPotion(encounter, actor))
+        {
+            // Back on their feet for the cost of a Bonus Action.
+        }
+
         // Healing Word is a Bonus Action, so getting someone up can cost nothing but the
         // slot; Cure Wounds is an Action and is only worth it if nobody can be reached
         // the cheap way.
-        if (actor.Turn.HasBonusAction && TryHealFallenAlly(encounter, actor, SpellCastingTime.BonusAction))
+        else if (actor.Turn.HasBonusAction && TryHealFallenAlly(encounter, actor, SpellCastingTime.BonusAction))
         {
             // Healed with the Bonus Action; the Action is still free to fight with.
         }
@@ -195,6 +203,41 @@ public static class SimpleTacticsPolicy
         {
             encounter.SecondWind();
         }
+
+        // Last, because Second Wind is free and a potion is gone for the rest of the
+        // run: drink only when badly hurt and nothing cheaper was available.
+        if (actor.Turn.HasBonusAction
+            && IsBadlyHurt(actor)
+            && actor.Inventory.Weakest is { } potency)
+        {
+            encounter.DrinkPotion(potency);
+        }
+    }
+
+    /// <summary>
+    /// Pours a potion down the throat of an adjacent ally who is down but not dead.
+    /// </summary>
+    /// <remarks>
+    /// The nearest one, so a character standing between two casualties helps the one it
+    /// is actually beside. Refusals are the engine's to give — reach, the Bonus Action,
+    /// an empty pack — and a refusal costs nothing, so this never re-checks them.
+    /// </remarks>
+    private static bool TryAdministerPotion(Encounter encounter, Combatant actor)
+    {
+        if (actor.Inventory.Weakest is not { } potency)
+        {
+            return false;
+        }
+
+        var fallen = encounter.Combatants
+            .Where(other => other.SideId == actor.SideId
+                && !ReferenceEquals(other, actor)
+                && !other.IsDead
+                && other.CurrentHitPoints == 0)
+            .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
+            .FirstOrDefault();
+
+        return fallen is not null && encounter.DrinkPotion(potency, fallen) is null;
     }
 
     /// <summary>
