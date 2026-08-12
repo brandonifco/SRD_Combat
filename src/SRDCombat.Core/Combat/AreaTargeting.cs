@@ -24,7 +24,9 @@ namespace SRDCombat.Core.Combat;
 /// </item>
 /// <item>
 /// <b>Line</b> — squares within the line's length along the direction cast and within
-/// half its width perpendicular to it.
+/// half its width perpendicular to it. The origin square itself is excluded, as it is
+/// for a Cone: both extend <em>from</em> their user, and a breath weapon that caught
+/// the breather would be read as a bug at any table.
 /// </item>
 /// <item>
 /// <b>Cube</b> — an axis-aligned square of the given side, centred on the chosen point.
@@ -105,6 +107,13 @@ public static class AreaTargeting
 
     private static bool InLine(EffectArea area, GridPosition origin, GridPosition target, GridPosition square)
     {
+        // The line extends from its user, who is not standing in it — the same exclusion
+        // InCone makes explicitly.
+        if (square == origin)
+        {
+            return false;
+        }
+
         var (dirX, dirY) = Direction(origin, target);
         var toSquare = ((double)(square.X - origin.X), (double)(square.Y - origin.Y));
 

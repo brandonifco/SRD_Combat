@@ -575,8 +575,9 @@ monster had no way to use an entry at all. Now `Encounter.UseEntry` resolves a n
 Action entry — dispatching on `EntryMechanics` and refusing anything it cannot resolve
 with a named code, the same shape as `spell.not_implemented` — and one `UsageState` per
 combatant gates every path by entry name, with the Recharge d6 rolled and narrated at the
-start of the creature's turns while spent. Saving-throw entries refuse with
-`entry.save_not_implemented`; that refusal is the exact seam step 4 replaces.
+start of the creature's turns while spent. Saving-throw entries refused with
+`entry.save_not_implemented` at this point; that refusal was the exact seam step 4
+replaced.
 
 Three things doing it turned up:
 
@@ -597,10 +598,40 @@ Three things doing it turned up:
   still consume a die, and the dice stream is what the frozen transcripts pin. A stated
   interpretation, recorded on `Encounter.RollRecharges`.
 
-**4. Saving-throw effects (#6).** Only here does it land with nothing left to invent.
-`AreaTargeting` already exists, durations arrive with step 1, recharge gates the breath
-weapons, and step 3 is what invokes it. Sixty-two tier-1 entries, thirty-three with an
-area, thirty-one imposing a condition on a failure.
+**4. Saving-throw effects (#6) — done.** It landed with nothing left to invent, as
+predicted: `Encounter.UseEntry` dispatches a `SavingThrow` entry into the same loop that
+already resolved a save spell, now shared as `Encounter.ResolveSaveEffect`. The riders
+are a *parameter* of that loop rather than read from the effect: an entry imposes every
+rider the engine executes (on a failure, or either way for "Failure or Success"), while
+a spell still passes none — so sharing the loop changed no spell behaviour, and executing
+spell conditions remains its own undecided piece of work. Sixty-two tier-1 entries,
+thirty-three with an area, thirty-one imposing a condition on a failure.
+
+Five decisions doing it recorded:
+
+- **A Line no longer covers its own origin square.** `InCone` always excluded it
+  explicitly; `InLine` did not, so every breath weapon caught its breather. The stated
+  interpretation in `AreaTargeting` now excludes the origin for both self-originating
+  shapes. Nothing pinned the old reading — no test, no transcript line.
+- **Whether an Emanation includes its origin is left unverified and unchanged.** The
+  printed glossary rule could not be checked because the source PDF is absent from this
+  machine, and this project does not correct geometry from memory. The engine still
+  covers the origin square; the tactics policy meanwhile refuses any area that would
+  catch the user's own side — which keeps every Emanation entry unchosen until the
+  glossary is read. Filed as its own issue.
+- **A Grappled rider from a save carries no range.** The SRD ends a grapple when the two
+  are further apart than "the grapple's range"; an attack's grapple takes the attack's
+  reach, but a save effect prints no reach to measure. Whelm's engulf holds until the
+  escape check succeeds or the elemental is incapacitated, and never breaks by distance.
+- **The save path sweeps `EndBrokenGrapples`, and the spell path now does too.** The
+  spell save loop had never swept it — a Fireball that killed a grappler left the
+  grapple holding its victim forever, invisibly. Sharing the loop fixed the gap rather
+  than duplicating it.
+- **The extractor's rider accounting was deliberately *not* extended in the same
+  branch.** An imposable rider sentence on a save entry still lands in
+  `UnmodelledClauses` — over-reporting, the safe direction — because tightening
+  `IsAccountedFor` forces a content regeneration and the PDF is absent. The accounting
+  change and its regeneration belong in one commit; filed as its own issue.
 
 **5. Passive monster traits (#9).** Held until after step 4 because several of them
 reference machinery that has to exist first — Magic Resistance is Advantage on saving

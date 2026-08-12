@@ -245,80 +245,10 @@ public sealed partial class Encounter
     {
         var difficultyClass = save.DifficultyClass ?? character.SpellSaveDifficultyClass;
 
-        var affected = save.Area is { } area
-            ? CreaturesIn(AreaTargeting.Cover(area, caster.Position, point, Battlefield))
-            : target is null ? [] : [target];
-
-        if (save.Area is { } shape)
-        {
-            Add(
-                CombatStepKind.Spell,
-                $"{spell.Name} fills a {shape.SizeFeet}-foot {shape.Shape}, catching " +
-                $"{affected.Count} creature(s).",
-                caster);
-        }
-
-        foreach (var victim in affected)
-        {
-            // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
-            // else — the ability matters, not just the condition.
-            var mode = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained)
-                ? RollMode.Disadvantage
-                : RollMode.Normal;
-
-            var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
-            var succeeded = roll.Total >= difficultyClass;
-
-            Add(
-                CombatStepKind.Spell,
-                $"{victim.Name} makes a {save.Ability} saving throw: {roll} vs DC {difficultyClass} — " +
-                (succeeded ? "success." : "failure."),
-                caster,
-                victim);
-
-            if (succeeded && save.SuccessOutcome == SaveSuccessOutcome.NoEffect)
-            {
-                continue;
-            }
-
-            foreach (var component in save.FailureDamage)
-            {
-                var rolled = DiceRoller.Roll(_random, component.Amount);
-
-                // A successful save against a damaging spell halves it.
-                var halvings = succeeded && save.SuccessOutcome == SaveSuccessOutcome.HalfDamage ? 1 : 0;
-                var rageHalving = RageResists(victim, component.Type) ? 1 : 0;
-
-                var applied = DamageRules.Apply(
-                    victim,
-                    rolled.Total,
-                    component.Type,
-                    fromCriticalHit: false,
-                    halvings + rageHalving);
-
-                Add(
-                    CombatStepKind.Damage,
-                    $"{victim.Name} takes {applied.Effective} {component.Type} damage" +
-                    (halvings > 0 ? " (halved by a successful save)" : string.Empty) +
-                    $" [{rolled}] — {(victim.IsDead ? "dead" : $"{victim.CurrentHitPoints}/{victim.Stats.MaximumHitPoints} hit points")}.",
-                    caster,
-                    victim);
-
-                CheckConcentration(victim, applied.Effective);
-
-                if (applied.Died)
-                {
-                    Add(CombatStepKind.Died, $"{victim.Name} is dead.", victim);
-                    break;
-                }
-
-                if (applied.Downed)
-                {
-                    Add(CombatStepKind.Downed, $"{victim.Name} drops to 0 hit points and falls Unconscious.", victim);
-                    break;
-                }
-            }
-        }
+        // Spells pass no riders yet: executing the conditions a spell's save imposes is
+        // its own piece of work, and landing it as a side effect of sharing this loop
+        // would be a rules change nothing decided.
+        ResolveSaveEffect(caster, spell.Name, save, difficultyClass, point, target, CombatStepKind.Spell, []);
     }
 
     private IReadOnlyList<Combatant> CreaturesIn(IReadOnlyList<GridPosition> squares)

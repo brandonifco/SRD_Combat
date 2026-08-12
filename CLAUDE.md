@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #26 (monster entry actions + usage limits) |
-| Tests | **380 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #30 (saving-throw effects) |
+| Tests | **391 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **8 open GitHub issues.** Not in this file, not in chat. |
@@ -28,16 +28,16 @@ monsters, with nine implemented class features and working spellcasting (attack 
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
-rolls Acrobatics against the printed escape DC, and an Ape throws its Rock once and then
-waits on the recharge die — all from the stat blocks' own words. A frozen transcript
-pins one whole eight-round fight byte-for-byte.
+rolls Acrobatics against the printed escape DC, an Ape throws its Rock once and then
+waits on the recharge die, and an Ankheg's Acid Spray fills its printed 30-foot Line
+and makes everyone caught roll against DC 12 — all from the stat blocks' own words. A
+frozen transcript pins one whole eight-round fight byte-for-byte.
 
 **What does not exist yet.** No client of any kind — nothing is playable by a person.
 No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
 characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
-melee and swings, reaching for a limited-use attack entry only when nothing else reaches.
-Saving-throw entries — every breath weapon among them — still refuse with a named code;
-executing them is #6.
+melee and swings, reaching for a limited-use entry — a thrown Rock, a breath weapon —
+only when nothing else reaches, and never one whose area would catch its own side.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -65,14 +65,19 @@ governing plan doc carries the same list with the reasoning; this is the short f
    is a plain attack the `Attack` path had to gate. The tactics policy reaches only for
    **limited-use** entries — the other locked-out attacks are the lycanthropes'
    form-gated ones, and choosing one would silently decide the creature's form.
-4. **#6 saving-throw effects — next.** Only now does it land with nothing left to
-   invent: the area geometry already existed, durations come from step 1, recharge gates
-   the breath weapons, and `entry.save_not_implemented` in `Encounter.UseEntry` is the
-   exact seam it replaces. `AreaTargeting` and `Encounter.ResolveSpellSave` are the
-   working reference for the geometry and the roll-and-halve loop. The issues filed
-   since the ordering was written slot around it: #21 (execute Blinded, Charmed,
-   Frightened, Paralyzed, Stunned) mostly rides on #6's entries, and #22 (timed
-   durations) and #24 (grapple-end durations) are small follow-ons to step 1.
+4. **#6 saving-throw effects — done.** One loop (`Encounter.ResolveSaveEffect`) now
+   resolves both a spell's save and an entry's, and the riders are a *parameter*: an
+   entry imposes every rider the engine executes, a spell still passes none, so sharing
+   the loop changed no spell behaviour. Three things doing it decided: a Line no longer
+   covers its own origin square (the same exclusion `InCone` always made — a breath
+   weapon caught its breather); a Grappled rider from a save carries **no range**, so an
+   engulf-style grapple ends only by escape or the grappler's incapacity; and the save
+   path now sweeps `EndBrokenGrapples`, which the spell path had silently never done.
+   Whether an **Emanation** includes its origin is *unverified against print* and
+   unchanged — the policy refuses to breathe on the user's own square meanwhile. The
+   remaining follow-ons slot around it: #21 (execute Blinded, Charmed, Frightened,
+   Paralyzed, Stunned) mostly rides on these entries, and #22 (timed durations) and
+   #24 (grapple-end durations) are small follow-ons to step 1.
 5. **#9 passive monster traits.** Several reference machinery that has to exist first —
    Magic Resistance is Advantage on saves and is worth nothing before #6. Best
    repetition in the queue once unblocked: Pack Tactics ×18, Spider Climb ×10, Magic
@@ -132,7 +137,11 @@ approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a 
 allowlist, exactly like `ClassFeatureRegistry`, and holds Prone, Poisoned, Grappled,
 Restrained, Incapacitated and Unconscious. **Add a condition there only alongside the code
 that gives it effects.** Forty-two attacks satisfy both checks: 20 Prone, 12 Poisoned,
-9 Grappled, 1 Incapacitated.
+9 Grappled, 1 Incapacitated. Saving-throw entries answer the same two questions on their
+failed saves — three in the whole book pass both today (the Gladiator's and Giant Ape's
+Prone, the Water Elemental's Grappled), and the Water Elemental's Whelm is the working
+example of the split: its Grappled lands while its "Restrained until the grapple ends"
+is refused on the same failed save.
 
 **The two questions are independent, and the Phase Spider proves it** — its bite poisons
 "for 1 hour", Poisoned *is* executable, and the rider still cannot be imposed, because an
@@ -274,10 +283,13 @@ Three things a Phase 2 author should know before starting:
 - **There is no versioned DTO mirror, deliberately.** Content serializes straight from
   the `Core` definitions. The design doc explains why this diverges from 5eGoldBox, and
   what guards replace the mirror. Don't "restore" it without reading that section.
-- **Most monster prose is mechanics now.** Attacks, Multiattack, usage limits and the
-  gated riders all execute; saving-throw effects are extracted and structured but
-  refuse with `entry.save_not_implemented` until #6 lands. What remains text on
-  `MonsterEntry.Text` is counted in `UnmodelledClauses`, never silently held.
+- **Most monster prose is mechanics now.** Attacks, Multiattack, usage limits,
+  saving-throw effects and the gated riders all execute. What remains text on
+  `MonsterEntry.Text` is counted in `UnmodelledClauses`, never silently held — though
+  the accounting currently *over*-reports for save entries: an imposable rider on one
+  still lands in `UnmodelledClauses`, because tightening the extractor's accounting
+  requires regenerating content and the source PDF is not on this machine. The open
+  issue for it has the details.
 - **`ChallengeRatingRules` already exists** in `Core.Rules` with the full XP and
   proficiency-bonus tables, and the SRD's per-character encounter XP budget is on
   printed page 202 — the encounter builder implements a published table, not a guess.
@@ -295,11 +307,15 @@ Three things a Phase 2 author should know before starting:
 
 ## Environment
 
-- **.NET is snap-confined.** Use `DOTNET_ROLL_FORWARD=LatestMajor /snap/bin/dotnet`
-  rather than bare `dotnet` if the bare command misbehaves. SDKs present: 8.0.129 and
-  10.0.110; `global.json` pins 8 with `latestMajor` roll-forward, which in practice
-  means **SDK 10 is what actually runs locally** while CI installs 8.0.x. Both build
-  the `net8.0` targets fine, but the version gap is real — see the next point.
+- **The machine changed under this file once already — verify before trusting this
+  section.** As of PR #30 the only .NET is **SDK 8.0.129 at `/usr/bin/dotnet`** (no
+  snap install; the earlier snap-confined description with SDK 10 no longer matches
+  anything present). 8.0.129 now builds the whole tree — its early C# 12 compiler
+  rejected a collection-expression `Split` call in `MonsterParser` that CI's newer
+  8.0.x accepted (#27), which is why that call is written as an explicit array.
+- **The source PDF is also absent from this machine.** `~/Downloads/SRD_CC_v5.2.1.pdf`
+  has to be restored to that exact path before any extraction work; nothing else in
+  build or test needs it.
 - **`dotnet new sln` under SDK 10 produces a `.slnx`, which .NET 8 cannot read.** Hit
   during setup: the solution has to be `SRDCombat.sln` in the classic format, or CI
   (pinned to 8.0.x) fails to find a project file at all. `dotnet new sln --format sln`

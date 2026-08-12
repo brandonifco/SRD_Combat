@@ -160,17 +160,27 @@ public static class SimpleTacticsPolicy
     }
 
     /// <summary>
-    /// Uses the hardest-hitting limited-use attack entry that reaches the target, when
-    /// the Attack action cannot reach anything.
+    /// Uses the hardest-hitting limited-use entry that reaches the target — an attack
+    /// like the Ape's Rock, or a saving-throw effect like a breath weapon — when the
+    /// Attack action cannot reach anything.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Only entries with a printed usage limit are considered, deliberately. The other
     /// entries locked out of a Multiattack are the lycanthropes' form-gated attacks —
     /// "Bite (Wolf or Hybrid Form Only)" — and the engine has no concept of form, so
     /// choosing one here would be this policy silently deciding what shape the creature
     /// fights in. A client may make that call through <c>UseEntry</c>; this policy does
-    /// not. Saving-throw entries will join the candidates when issue #6 lets the
-    /// encounter resolve them.
+    /// not.
+    /// </para>
+    /// <para>
+    /// An area entry is skipped when its area would catch the user's own side — the one
+    /// piece of judgement this placeholder allows itself, because a wolf breathing on its
+    /// own pack reads as a bug in every transcript it appears in. The check includes the
+    /// user: an Emanation covers its user's own square under this engine's geometry, so
+    /// Emanation entries stay unchosen here until that reading is verified against the
+    /// printed glossary.
+    /// </para>
     /// </remarks>
     private static bool TryUseLimitedEntry(Encounter encounter, Combatant actor, Combatant target)
     {
@@ -183,21 +193,77 @@ public static class SimpleTacticsPolicy
 
         var entry = actor.Stats.Entries
             .Where(candidate => candidate.Section == MonsterEntrySection.Action
-                && candidate.Mechanics == EntryMechanics.Attack
                 && actor.Uses.Tracks(candidate.Name)
                 && actor.Uses.IsAvailable(candidate.Name))
             .Select(candidate => new
             {
                 candidate.Name,
-                Attack = actor.Stats.Attacks.FirstOrDefault(attack =>
-                    string.Equals(attack.Name, candidate.Name, StringComparison.OrdinalIgnoreCase)),
+                Damage = candidate.Mechanics switch
+                {
+                    EntryMechanics.Attack => AttackFor(actor, candidate.Name) is { } attack
+                        && attack.CanReach(distance)
+                            ? attack.Damage.Sum(damage => damage.Amount.Average)
+                            : (int?)null,
+                    EntryMechanics.SavingThrow => SaveReaches(encounter, actor, target, candidate.Save, distance)
+                        ? candidate.Save!.FailureDamage.Sum(damage => damage.Amount.Average)
+                        : null,
+                    _ => null,
+                },
             })
-            .Where(candidate => candidate.Attack is not null && candidate.Attack.CanReach(distance))
-            .OrderByDescending(candidate => candidate.Attack!.Damage.Sum(damage => damage.Amount.Average))
+            .Where(candidate => candidate.Damage is not null)
+            .OrderByDescending(candidate => candidate.Damage)
             .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
             .FirstOrDefault();
 
         return entry is not null && encounter.UseEntry(entry.Name, target) is null;
+    }
+
+    private static CombatAttack? AttackFor(Combatant actor, string name) =>
+        actor.Stats.Attacks.FirstOrDefault(attack =>
+            string.Equals(attack.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Whether a saving-throw entry can be aimed at the target from here without
+    /// catching a friend.
+    /// </summary>
+    private static bool SaveReaches(
+        Encounter encounter,
+        Combatant actor,
+        Combatant target,
+        SaveEffect? save,
+        int distance)
+    {
+        if (save is not { DifficultyClass: not null })
+        {
+            return false;
+        }
+
+        if (save.Area is not { } area)
+        {
+            // A single-target save entry models no range, so nothing gates the distance.
+            return true;
+        }
+
+        if (!AreaTargeting.CanResolve(area.Shape))
+        {
+            return false;
+        }
+
+        // Cone, Line and Emanation extend from the user; a target beyond their size is
+        // out of reach. Point-aimed shapes land wherever they are aimed.
+        if (area.Shape is AreaShape.Cone or AreaShape.Line or AreaShape.Emanation
+            && area.SizeFeet < distance)
+        {
+            return false;
+        }
+
+        var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
+            .ToHashSet();
+
+        return !encounter.Combatants.Any(combatant =>
+            combatant.IsActive
+            && combatant.SideId == actor.SideId
+            && covered.Contains(combatant.Position));
     }
 
     /// <summary>

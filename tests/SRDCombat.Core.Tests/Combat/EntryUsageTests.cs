@@ -176,29 +176,42 @@ public class EntryUsageTests
         Assert.Equal("entry.unknown", encounter.UseEntry("Wing Buffet", target)?.Code);
         Assert.Equal("entry.not_an_action", encounter.UseEntry("Keen Smell", target)?.Code);
         Assert.Equal("entry.is_attack_action", encounter.UseEntry("Multiattack", target)?.Code);
-        Assert.Equal("entry.save_not_implemented", encounter.UseEntry("Acid Breath", target)?.Code);
+        Assert.Equal("entry.area_not_modelled", encounter.UseEntry("Steam Blast", target)?.Code);
+        Assert.Equal("entry.save_missing_dc", encounter.UseEntry("Baleful Gaze", target)?.Code);
+        Assert.Equal("entry.needs_target", encounter.UseEntry("Acid Breath")?.Code);
         Assert.Equal("entry.not_implemented", encounter.UseEntry("Weird Aura", target)?.Code);
         Assert.Equal("entry.narrative", encounter.UseEntry("Illumination", target)?.Code);
         Assert.Equal("entry.needs_target", encounter.UseEntry("Rock")?.Code);
 
         // A refusal spends nothing: not the action, and not the entry's use.
         Assert.True(hurler.Turn.HasAction);
-        Assert.True(hurler.Uses.IsAvailable("Acid Breath"));
+        Assert.True(hurler.Uses.IsAvailable("Steam Blast"));
     }
 
     [Fact]
-    public void ThePolicyThrowsTheRockWhenNothingElseReaches()
+    public void ThePolicyThrowsTheRockThenBreathesThenClosesIn()
     {
-        // At 25 feet the Fists reach nothing and the Rock is the right choice — then,
-        // with the Rock spent and the d6 failed, the policy closes in and swings rather
-        // than stalling on the refused entry.
+        // At 25 feet the Fists reach nothing: the Rock (average 10) outranks the breath
+        // (average 3) and is thrown first. Next turn, with the Rock spent and its d6
+        // failed, the breath is the limited entry that still reaches. The turn after,
+        // with everything spent and no d6 coming up, the policy finally closes in and
+        // swings rather than stalling on a refused entry.
         var (encounter, hurler, _) = HurlerFight(
-            new ScriptedRandomSource(20, 1, 2, 2, 2, 2),
+            new ScriptedRandomSource(20, 1, 2, 2, 2, 2, 2, 2, 2, 2),
             targetDistanceSquares: 5);
 
         SimpleTacticsPolicy.TakeTurn(encounter);
 
         Assert.Contains(encounter.Log, step => step.Narration.Contains("with Rock", StringComparison.Ordinal));
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Move);
+
+        encounter.EndTurn();
+        SimpleTacticsPolicy.TakeTurn(encounter);
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Entry
+                && step.Narration.Contains("uses Acid Breath on victim", StringComparison.Ordinal));
         Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Move);
 
         encounter.EndTurn();
@@ -272,8 +285,27 @@ public class EntryUsageTests
                     Mechanics: EntryMechanics.Narrative),
                 new MonsterEntry("Acid Breath", MonsterEntrySection.Action, "Breathes acid.",
                     Mechanics: EntryMechanics.SavingThrow,
-                    Save: new SaveEffect(Ability.Dexterity, 12, null, [], SaveSuccessOutcome.HalfDamage, []),
+                    Save: new SaveEffect(
+                        Ability.Dexterity,
+                        12,
+                        null,
+                        [new AttackDamage(DiceExpression.Parse("1d6"), DamageType.Acid, 3)],
+                        SaveSuccessOutcome.HalfDamage,
+                        []),
                     Usage: new UsageLimit(UsageLimitKind.Recharge, RechargeMinimum: 6)),
+                new MonsterEntry("Steam Blast", MonsterEntrySection.Action, "Vents scalding steam.",
+                    Mechanics: EntryMechanics.SavingThrow,
+                    Save: new SaveEffect(
+                        Ability.Constitution,
+                        12,
+                        new EffectArea(AreaShape.Cylinder, 10),
+                        [new AttackDamage(DiceExpression.Parse("1d6"), DamageType.Fire, 3)],
+                        SaveSuccessOutcome.HalfDamage,
+                        []),
+                    Usage: new UsageLimit(UsageLimitKind.Recharge, RechargeMinimum: 6)),
+                new MonsterEntry("Baleful Gaze", MonsterEntrySection.Action, "Stares balefully.",
+                    Mechanics: EntryMechanics.SavingThrow,
+                    Save: new SaveEffect(Ability.Wisdom, null, null, [], SaveSuccessOutcome.NoEffect, [])),
                 new MonsterEntry("Weird Aura", MonsterEntrySection.Action, "Does something strange.",
                     Mechanics: EntryMechanics.Unmodelled),
                 new MonsterEntry("Illumination", MonsterEntrySection.Action, "Sheds light.",

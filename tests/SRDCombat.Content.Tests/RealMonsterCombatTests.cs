@@ -242,11 +242,11 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
-    public void ARealBreathWeaponIsRefusedByNameUntilSavesExecute()
+    public void TheRealAnkhegSpraysAcidThroughItsPrintedLine()
     {
-        // The Ankheg's "Acid Spray (Recharge 6)" is fully modelled — DC, Line, damage —
-        // and resolves through a saving throw, which is issue #6. Until then the
-        // refusal is the contract: a named code, never a silent nothing.
+        // "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide
+        // Line. Failure: 14 (4d6) Acid damage. Success: Half damage." — executed from
+        // the stat block's own words, and gated by its (Recharge 6).
         var ankheg = Content.MonstersById["monster.ankheg"];
 
         var encounter = Encounter.Start(
@@ -255,11 +255,82 @@ public class RealMonsterCombatTests
                 Spawn(ankheg, "ankheg", "vermin", new GridPosition(0, 5)),
                 Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(4, 5)),
             ],
-            new ScriptedRandomSource(20, 1));
+            new ScriptedRandomSource(20, 1, 1, 1, 1, 1, 1));
+
+        var sprayer = encounter.Combatants.Single(combatant => combatant.Id == "ankheg");
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.UseEntry("Acid Spray", bandit));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Entry
+                && step.Narration.Contains("Acid Spray fills a 30-foot Line, catching 1 creature(s)", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Bandit makes a Dexterity saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("vs DC 12 — failure", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Acid damage", StringComparison.Ordinal));
+
+        Assert.False(sprayer.Uses.IsAvailable("Acid Spray"));
+        Assert.Equal("entry.not_recharged", encounter.UseEntry("Acid Spray", bandit)?.Code);
+    }
+
+    [Fact]
+    public void TheRealGladiatorShieldBashKnocksProneOnAFailedSave()
+    {
+        // "Strength Saving Throw: DC 15, one creature within 5 feet ... Failure: 9
+        // (2d4 + 4) Bludgeoning damage. If the target is a Medium or smaller creature,
+        // it has the Prone condition." — the damage and the rider both from print.
+        var gladiator = Content.MonstersById["monster.gladiator"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(gladiator, "gladiator", "pit", new GridPosition(0, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(1, 5)),
+            ],
+            new ScriptedRandomSource(20, 1, 1, 1, 1));
 
         var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
 
-        Assert.Equal("entry.save_not_implemented", encounter.UseEntry("Acid Spray", bandit)?.Code);
+        Assert.Null(encounter.UseEntry("Shield Bash", bandit));
+
+        Assert.True(bandit.HasCondition(ConditionType.Prone));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition
+                && step.Narration.Contains("Bandit has the Prone condition", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheRealWaterElementalWhelmGrapplesButCannotRestrain()
+    {
+        // Whelm's failed save imposes two printed riders. Grappled (escape DC 14) is
+        // fully modelled and lands; Restrained hangs off "until the grapple ends", a
+        // duration the model does not express, so it is refused rather than
+        // approximated — the two-questions rule exercised on one entry.
+        var elemental = Content.MonstersById["monster.water-elemental"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(elemental, "elemental", "elementals", new GridPosition(0, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(1, 5)),
+            ],
+            new ScriptedRandomSource(20, 1, 1, 1, 1, 1, 1));
+
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.UseEntry("Whelm", bandit));
+
+        var grapple = bandit.ConditionState(ConditionType.Grappled);
+        Assert.NotNull(grapple);
+        Assert.Equal(14, grapple!.EscapeDifficultyClass);
+        Assert.Null(grapple.GrappleRangeFeet);
+        Assert.False(bandit.HasCondition(ConditionType.Restrained));
     }
 
     [Fact]
