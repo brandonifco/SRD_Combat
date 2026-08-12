@@ -15,10 +15,10 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #70 (save and load a run, closing #49) |
+| Branch | `main` at PR #71 (magic items extracted and executed) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
-| Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
+| Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Work remaining | **1 open GitHub issue**, against the plan doc's Phase 4. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -434,6 +434,20 @@ so *it* can tell what is left; they do not belong in a status report.
 - **A Multiattack constrains which attacks it is made of.** `AllowsInMultiattack` refuses
   a swing the stat block does not license, and a Multiattack naming an attack the
   creature does not have is **dropped entirely** rather than granting phantom swings.
+- **Magic items are the fifth curated allowlist.** The whole A–Z chapter (printed pages
+  209–253, 258 entries — the count is asserted exactly, cross-checked independently) is
+  extracted with name, category, rarity, variants and attunement; `MagicItemRegistry`
+  maps a printed name to executed powers **only alongside the code that does the thing**,
+  and the resolver *refuses* a draft equipping anything unregistered — a worn item doing
+  nothing would be an unimplemented rule holding silently. Thirteen names execute:
+  +1/+2/+3 weapons, armor and Shields, Ring and Cloak of Protection, Bracers of Defense,
+  Wand of the War Mage, the three ability-setters (a **floor**, not a bonus — "Your
+  Strength is 19"), Adamantine Armor (crits demoted in `AttackRules`), Vicious Weapon
+  and Elven Chain. Attunement is enforced from print — **no more than three, no
+  duplicate copies** — and read as happening at the rest between fights. Two readings
+  are on the registry's doc comments: the Wand's "ignore Half Cover" is vacuous while no
+  cover model exists, and Elven Chain's training override is satisfied by construction
+  because armour training is not modelled.
 
 ## Extraction traps — read before parsing another SRD chapter
 
@@ -671,10 +685,12 @@ dotnet run --project tools/SrdExtract -- --out data/srd
 ```
 
 It refuses to write when validation reports errors (`--force` overrides). A clean run
-reports 330 monsters, **339 spells**, 38 weapons, 13 armor, 0 errors, and **10 warnings,
-all expected**:
-the Archmage's XP, which is a real SRD inconsistency, and nine spells whose component
-line is truncated at a column break in the source.
+reports 330 monsters, 339 spells, 38 weapons, 13 armor, **258 magic items**, 0 errors,
+and **12 warnings, all expected**:
+the Archmage's XP, which is a real SRD inconsistency, nine spells whose component
+line is truncated at a column break in the source, and two magic items (Figurine of
+Wondrous Power, Ioun Stone) whose "Rarity Varies" tiers live in a table in the body
+rather than on the type line.
 
 **Why fonts matter more than text here.** The SRD's typography is a reliable parsing
 signal, and the parser is built on it (`StatBlockFonts`): `GillSans-SemiBold` at ~10.2pt

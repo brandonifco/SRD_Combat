@@ -198,6 +198,12 @@ public static class AttackRules
                 && (circumstances.TargetIsUnconscious || circumstances.TargetIsParalyzed)
                 && distance <= Battlefield.FeetPerSquare);
 
+        // Adamantine Armor: "any Critical Hit against you becomes a normal hit" — any,
+        // so a natural 20 still hits (that clause is about hitting, not the crit) but
+        // its dice are not doubled, and the condition-granted crits above are denied
+        // the same way.
+        critical &= !target.Stats.CriticalHitsAgainstBecomeNormal;
+
         return new AttackRoll(roll, hit, critical, target.Stats.ArmorClass, circumstances);
     }
 

@@ -11,8 +11,12 @@ public sealed record SrdContent(
     IReadOnlyList<SpeciesDefinition> Species,
     IReadOnlyList<BackgroundDefinition> Backgrounds,
     IReadOnlyList<ClassDefinition> Classes,
-    IReadOnlyList<SpellDefinition> Spells)
+    IReadOnlyList<SpellDefinition> Spells,
+    IReadOnlyList<MagicItemDefinition> MagicItems)
 {
+    public IReadOnlyDictionary<string, MagicItemDefinition> MagicItemsById { get; } =
+        MagicItems.ToDictionary(item => item.Id, StringComparer.Ordinal);
+
     public IReadOnlyDictionary<string, MonsterDefinition> MonstersById { get; } =
         Monsters.ToDictionary(monster => monster.Id, StringComparer.Ordinal);
 
@@ -55,6 +59,8 @@ public static class ContentLoader
 
     public const string SpellsFileName = "spells.json";
 
+    public const string MagicItemsFileName = "magic-items.json";
+
     /// <summary>Loads and validates every content file under <paramref name="directory"/>.</summary>
     /// <exception cref="DirectoryNotFoundException">The directory does not exist.</exception>
     /// <exception cref="ContentValidationException">Any file failed validation.</exception>
@@ -74,6 +80,7 @@ public static class ContentLoader
         var backgrounds = ReadPack<BackgroundDefinition>(directory, BackgroundsFileName, "backgrounds");
         var classes = ReadPack<ClassDefinition>(directory, ClassesFileName, "classes");
         var spells = ReadPack<SpellDefinition>(directory, SpellsFileName, "spells");
+        var magicItems = ReadPack<MagicItemDefinition>(directory, MagicItemsFileName, "magic items");
 
         MonsterValidator.Validate(monsters).ThrowIfInvalid(MonstersFileName);
         EquipmentValidator.ValidateWeapons(weapons).ThrowIfInvalid(WeaponsFileName);
@@ -82,8 +89,9 @@ public static class ContentLoader
         OriginValidator.ValidateBackgrounds(backgrounds).ThrowIfInvalid(BackgroundsFileName);
         ClassValidator.Validate(classes).ThrowIfInvalid(ClassesFileName);
         SpellValidator.Validate(spells).ThrowIfInvalid(SpellsFileName);
+        MagicItemValidator.Validate(magicItems).ThrowIfInvalid(MagicItemsFileName);
 
-        return new SrdContent(monsters, weapons, armor, species, backgrounds, classes, spells);
+        return new SrdContent(monsters, weapons, armor, species, backgrounds, classes, spells, magicItems);
     }
 
     /// <summary>
@@ -111,6 +119,8 @@ public static class ContentLoader
             .Validate(ReadPack<ClassDefinition>(directory, ClassesFileName, "classes")).Issues);
         issues.AddRange(SpellValidator
             .Validate(ReadPack<SpellDefinition>(directory, SpellsFileName, "spells")).Issues);
+        issues.AddRange(MagicItemValidator
+            .Validate(ReadPack<MagicItemDefinition>(directory, MagicItemsFileName, "magic items")).Issues);
 
         return new ValidationResult(issues);
     }

@@ -11,12 +11,20 @@ namespace SRDCombat.Core.Characters;
 /// <param name="Background">The chosen background.</param>
 /// <param name="Weapons">The weapons the draft names, by id.</param>
 /// <param name="Armor">The armour the draft names, by id. May be empty.</param>
+/// <param name="MagicItems">Magic item definitions, by id. Null when none are in play.</param>
 public sealed record CharacterBuildContent(
     SpeciesDefinition Species,
     ClassDefinition Class,
     BackgroundDefinition Background,
     IReadOnlyDictionary<string, WeaponDefinition> Weapons,
-    IReadOnlyDictionary<string, ArmorDefinition> Armor);
+    IReadOnlyDictionary<string, ArmorDefinition> Armor,
+    IReadOnlyDictionary<string, MagicItemDefinition>? MagicItems = null);
+
+/// <summary>An equipped item resolved against content and registry: what it is and what it does.</summary>
+internal sealed record ResolvedMagicItem(
+    EquippedMagicItem Equipped,
+    MagicItemDefinition Definition,
+    MagicItemPowers Powers);
 
 /// <summary>
 /// Turns a <see cref="CharacterDraft"/> into a <see cref="CharacterSheet"/>.
@@ -52,7 +60,10 @@ public static class CharacterResolver
             throw new ArgumentNullException(nameof(random), "Rolled hit points need a random source.");
         }
 
+        var magicItems = ResolveMagicItems(draft, content);
         var scores = ApplyBackgroundIncreases(draft, content.Background);
+        ApplyAbilitySettingItems(scores, magicItems);
+
         var proficiency = AdvancementRules.ProficiencyBonusForLevel(draft.Level);
         var levelRow = content.Class.AtLevel(draft.Level)
             ?? throw new InvalidOperationException($"{content.Class.Name} has no level {draft.Level} row.");
@@ -63,7 +74,7 @@ public static class CharacterResolver
         var expertise = ResolveExpertise(draft, content.Background, features);
         var fightingStyle = ResolveFightingStyle(draft, features);
 
-        var (armorClass, armorSource) = ResolveArmorClass(draft, content, scores, features, fightingStyle);
+        var (armorClass, armorSource) = ResolveArmorClass(draft, content, scores, features, fightingStyle, magicItems);
 
         return new CharacterSheet
         {
@@ -79,15 +90,205 @@ public static class CharacterResolver
             ArmorClassSource = armorSource,
             SpeedFeet = ResolveSpeed(draft, content, features),
             Size = content.Species.Sizes.Count > 0 ? content.Species.Sizes[0] : CreatureSize.Medium,
-            SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency),
+            SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency, magicItems),
             Skills = ResolveSkills(draft, content.Background, scores, proficiency, expertise),
-            Attacks = ResolveAttacks(draft, content, scores, proficiency, fightingStyle),
+            Attacks = ResolveAttacks(draft, content, scores, proficiency, fightingStyle, magicItems),
             Features = features,
             FightingStyle = fightingStyle,
             ExpertiseSkills = expertise,
             SpellSlots = levelRow.SpellSlots,
             UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, draft.Level),
+            MagicItemNames = magicItems.Select(item => ItemDisplayName(item)).ToArray(),
+            SpellAttackItemBonus = magicItems.Sum(item => item.Powers.SpellAttackBonus),
+            CriticalHitsAgainstBecomeNormal = magicItems.Any(item => item.Powers.CriticalHitsAgainstBecomeNormal),
         };
+    }
+
+    /// <summary>"Ring of Protection", or "Weapon, +1, +2, or +3 (+2, Longsword)".</summary>
+    private static string ItemDisplayName(ResolvedMagicItem item)
+    {
+        var qualifiers = new[] { item.Equipped.Variant, item.Equipped.BoundWeaponId }
+            .Where(part => part is not null)
+            .ToArray();
+
+        return qualifiers.Length == 0
+            ? item.Definition.Name
+            : $"{item.Definition.Name} ({string.Join(", ", qualifiers)})";
+    }
+
+    /// <summary>
+    /// Validates the draft's equipped magic items against the content, the registry and
+    /// the printed attunement rules, refusing anything the engine would silently fail to
+    /// honour.
+    /// </summary>
+    /// <remarks>
+    /// The same stance the resolver takes everywhere: an item the registry does not
+    /// execute is refused by name rather than equipped as decoration, because a worn
+    /// item doing nothing is an unimplemented rule holding silently. Attunement is
+    /// checked against print — no more than three attuned items, no more than one copy
+    /// of the same item — and attuning itself is read as happening at the rest between
+    /// fights, which every rung of the gauntlet provides.
+    /// </remarks>
+    private static IReadOnlyList<ResolvedMagicItem> ResolveMagicItems(
+        CharacterDraft draft,
+        CharacterBuildContent content)
+    {
+        if (draft.MagicItems.Count == 0)
+        {
+            return [];
+        }
+
+        if (content.MagicItems is null)
+        {
+            throw new ArgumentException(
+                "The draft equips magic items but the build content carries none.",
+                nameof(draft));
+        }
+
+        var resolved = new List<ResolvedMagicItem>();
+
+        foreach (var equipped in draft.MagicItems)
+        {
+            if (!content.MagicItems.TryGetValue(equipped.ItemId, out var definition))
+            {
+                throw new ArgumentException($"Unknown magic item '{equipped.ItemId}'.", nameof(draft));
+            }
+
+            if (equipped.Variant is { } variant
+                && !definition.Variants.Any(candidate => candidate.Suffix == variant))
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} has no '{variant}' variant.",
+                    nameof(draft));
+            }
+
+            if (definition.Variants.Count > 0 && equipped.Variant is null)
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} needs a variant — which tier was found?",
+                    nameof(draft));
+            }
+
+            var powers = MagicItemRegistry.PowersFor(definition.Name, equipped.Variant)
+                ?? throw new ArgumentException(
+                    $"The engine does not execute '{definition.Name}'; equipping it would be decoration.",
+                    nameof(draft));
+
+            ValidatePlacement(draft, content, definition, powers, equipped);
+
+            resolved.Add(new ResolvedMagicItem(equipped, definition, powers));
+        }
+
+        if (resolved.GroupBy(item => item.Definition.Id).Any(group => group.Count() > 1))
+        {
+            throw new ArgumentException(
+                "\"You can't attune to more than one copy of an item\" — and duplicates of an unattuned item stack nothing here.",
+                nameof(draft));
+        }
+
+        var attuned = resolved.Count(item => item.Definition.RequiresAttunement);
+
+        if (attuned > MagicItemRegistry.AttunementLimit)
+        {
+            throw new ArgumentException(
+                $"\"You can be attuned to no more than three magic items at a time\" — this draft attunes {attuned}.",
+                nameof(draft));
+        }
+
+        return resolved;
+    }
+
+    private static void ValidatePlacement(
+        CharacterDraft draft,
+        CharacterBuildContent content,
+        MagicItemDefinition definition,
+        MagicItemPowers powers,
+        EquippedMagicItem equipped)
+    {
+        if (powers.AppliesToWeapon)
+        {
+            if (equipped.BoundWeaponId is null)
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} enchants a weapon and must be bound to one.",
+                    nameof(draft));
+            }
+
+            if (!draft.WeaponIds.Contains(equipped.BoundWeaponId, StringComparer.Ordinal))
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} is bound to '{equipped.BoundWeaponId}', which this character does not carry.",
+                    nameof(draft));
+            }
+        }
+
+        if (powers.AppliesToArmor)
+        {
+            if (draft.ArmorId is not { } armorId)
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} is armour, and this character wears none.",
+                    nameof(draft));
+            }
+
+            var armor = content.Armor[armorId];
+
+            if (powers.AllowedArmorCategories.Count > 0
+                && !powers.AllowedArmorCategories.Contains(armor.Category))
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} is printed as \"({definition.AppliesTo})\", not {armor.Name}.",
+                    nameof(draft));
+            }
+
+            if (powers.AllowedArmorIds.Count > 0
+                && !powers.AllowedArmorIds.Contains(armorId, StringComparer.Ordinal))
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} is printed as \"({definition.AppliesTo})\", not {armor.Name}.",
+                    nameof(draft));
+            }
+
+            if (powers.ExcludedArmorIds.Contains(armorId, StringComparer.Ordinal))
+            {
+                throw new ArgumentException(
+                    $"{definition.Name} is printed as \"({definition.AppliesTo})\", not {armor.Name}.",
+                    nameof(draft));
+            }
+        }
+
+        if (powers.AppliesToShield && !draft.HasShield)
+        {
+            throw new ArgumentException(
+                $"{definition.Name} is a Shield, and this character carries none.",
+                nameof(draft));
+        }
+
+        if (powers.RequiresSpellcaster && SpellcastingRules.AbilityFor(draft.ClassId) is null)
+        {
+            throw new ArgumentException(
+                $"{definition.Name} requires attunement by a Spellcaster, and a {content.Class.Name} is not one.",
+                nameof(draft));
+        }
+    }
+
+    /// <summary>
+    /// "Your Strength is 19 while you wear these gauntlets. They have no effect on you
+    /// if your Strength is 19 or higher without them." — a floor, not an increase, and
+    /// applied after the background's increases because the printed sentence describes
+    /// the worn state of a finished character.
+    /// </summary>
+    private static void ApplyAbilitySettingItems(
+        Dictionary<Ability, int> scores,
+        IReadOnlyList<ResolvedMagicItem> magicItems)
+    {
+        foreach (var item in magicItems)
+        {
+            if (item.Powers.SetsAbility is { } ability)
+            {
+                scores[ability] = Math.Max(scores[ability], item.Powers.SetsAbilityTo);
+            }
+        }
     }
 
     /// <summary>
@@ -210,11 +411,24 @@ public static class CharacterResolver
         CharacterBuildContent content,
         IReadOnlyDictionary<Ability, int> scores,
         IReadOnlyList<GrantedFeature> features,
-        FightingStyle fightingStyle)
+        FightingStyle fightingStyle,
+        IReadOnlyList<ResolvedMagicItem> magicItems)
     {
         var dexterity = AbilityRules.ModifierFor(scores[Ability.Dexterity]);
         var shield = draft.HasShield ? ShieldBonus(content) : 0;
         var shieldNote = shield > 0 ? $" + {shield} (Shield)" : string.Empty;
+
+        // Always-on item bonuses: +N armour and Shields, the Ring and Cloak of
+        // Protection. The Bracers of Defense are the conditional one — "wearing no
+        // armor and using no Shield", both read off the draft.
+        var itemBonus = magicItems.Sum(item => item.Powers.ArmorClassBonus);
+
+        if (draft.ArmorId is null && !draft.HasShield)
+        {
+            itemBonus += magicItems.Sum(item => item.Powers.UnarmoredOnlyArmorClassBonus);
+        }
+
+        var itemNote = itemBonus > 0 ? $" + {itemBonus} (magic items)" : string.Empty;
 
         if (draft.ArmorId is { } armorId)
         {
@@ -237,11 +451,12 @@ public static class CharacterResolver
                     : 0;
 
             return (
-                armor.BaseArmorClass + dexterityPart + shield + defense,
+                armor.BaseArmorClass + dexterityPart + shield + defense + itemBonus,
                 $"{armor.Name} {armor.BaseArmorClass}" +
                 (armor.AddsDexterityModifier ? $" + {dexterityPart} (Dex)" : string.Empty) +
                 shieldNote +
-                (defense > 0 ? " + 1 (Defense)" : string.Empty));
+                (defense > 0 ? " + 1 (Defense)" : string.Empty) +
+                itemNote);
         }
 
         // Barbarian Unarmored Defense: 10 + Dexterity + Constitution, and a Shield still
@@ -251,11 +466,11 @@ public static class CharacterResolver
             var constitution = AbilityRules.ModifierFor(scores[Ability.Constitution]);
 
             return (
-                10 + dexterity + constitution + shield,
-                $"Unarmored Defense 10 + {dexterity} (Dex) + {constitution} (Con){shieldNote}");
+                10 + dexterity + constitution + shield + itemBonus,
+                $"Unarmored Defense 10 + {dexterity} (Dex) + {constitution} (Con){shieldNote}{itemNote}");
         }
 
-        return (10 + dexterity + shield, $"Unarmoured 10 + {dexterity} (Dex){shieldNote}");
+        return (10 + dexterity + shield + itemBonus, $"Unarmoured 10 + {dexterity} (Dex){shieldNote}{itemNote}");
     }
 
     private static int ShieldBonus(CharacterBuildContent content) =>
@@ -268,11 +483,19 @@ public static class CharacterResolver
     private static Dictionary<Ability, int> ResolveSavingThrows(
         ClassDefinition definition,
         IReadOnlyDictionary<Ability, int> scores,
-        int proficiency) =>
-        Enum.GetValues<Ability>().ToDictionary(
+        int proficiency,
+        IReadOnlyList<ResolvedMagicItem> magicItems)
+    {
+        // "+1 bonus to Armor Class and saving throws" — the Ring and Cloak of
+        // Protection print no ability list, so the bonus is on all six.
+        var itemBonus = magicItems.Sum(item => item.Powers.SavingThrowBonus);
+
+        return Enum.GetValues<Ability>().ToDictionary(
             ability => ability,
             ability => AbilityRules.ModifierFor(scores[ability])
-                + (definition.SavingThrowProficiencies.Contains(ability) ? proficiency : 0));
+                + (definition.SavingThrowProficiencies.Contains(ability) ? proficiency : 0)
+                + itemBonus);
+    }
 
     private static IReadOnlyList<SkillBonus> ResolveSkills(
         CharacterDraft draft,
@@ -424,7 +647,8 @@ public static class CharacterResolver
         CharacterBuildContent content,
         IReadOnlyDictionary<Ability, int> scores,
         int proficiency,
-        FightingStyle fightingStyle)
+        FightingStyle fightingStyle,
+        IReadOnlyList<ResolvedMagicItem> magicItems)
     {
         var strength = AbilityRules.ModifierFor(scores[Ability.Strength]);
         var dexterity = AbilityRules.ModifierFor(scores[Ability.Dexterity]);
@@ -446,10 +670,20 @@ public static class CharacterResolver
                     ? dexterity
                     : strength;
 
-            var damage = new AttackDamage(
-                weapon.Damage with { Modifier = weapon.Damage.Modifier + ability },
-                weapon.DamageType,
-                (weapon.Damage with { Modifier = weapon.Damage.Modifier + ability }).Average);
+            // The enchantments bound to this weapon: "+N to attack rolls and damage
+            // rolls made with this magic weapon", and the Vicious Weapon's extra dice
+            // "of the same type as the weapon's normal damage".
+            var bound = magicItems.Where(item => item.Equipped.BoundWeaponId == weaponId).ToArray();
+            var attackBonus = bound.Sum(item => item.Powers.AttackRollBonus);
+            var damageBonus = bound.Sum(item => item.Powers.DamageRollBonus);
+
+            var rolled = weapon.Damage with { Modifier = weapon.Damage.Modifier + ability + damageBonus };
+            var damageComponents = new List<AttackDamage> { new(rolled, weapon.DamageType, rolled.Average) };
+
+            foreach (var extra in bound.Select(item => item.Powers.ExtraWeaponDamageDice).OfType<DiceExpression>())
+            {
+                damageComponents.Add(new AttackDamage(extra, weapon.DamageType, extra.Average));
+            }
 
             // Archery: "+2 bonus to attack rolls you make with Ranged weapons." The
             // weapon's kind decides it, not the attack's range band — a thrown Dagger is
@@ -459,13 +693,13 @@ public static class CharacterResolver
             attacks.Add(new CombatAttack(
                 weapon.Name,
                 weapon.Kind == WeaponKind.Ranged ? AttackKind.Ranged : AttackKind.Melee,
-                ability + proficiency + archery,
+                ability + proficiency + archery + attackBonus,
                 weapon.Kind == WeaponKind.Melee
                     ? weapon.Properties.HasFlag(WeaponProperty.Reach) ? 10 : 5
                     : null,
                 weapon.Range?.NormalFeet,
                 weapon.Range?.LongFeet,
-                [damage]));
+                damageComponents));
         }
 
         return attacks;

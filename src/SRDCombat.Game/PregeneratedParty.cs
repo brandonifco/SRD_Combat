@@ -109,7 +109,8 @@ public static class PregeneratedParty
                 content.ClassesById[draft.ClassId],
                 content.BackgroundsById[draft.BackgroundId],
                 content.WeaponsById,
-                content.ArmorById));
+                content.ArmorById,
+                content.MagicItemsById));
 
         var spells = SpellIdsFor(draft.ClassId)
             .Where(content.SpellsById.ContainsKey)
