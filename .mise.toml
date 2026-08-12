@@ -1,0 +1,27 @@
+# The toolchain this repository builds with.
+#
+# This file exists because the development environment drifted four times across three
+# machines — snap, apt-only, snap again, and an apt install carrying no .NET 8 SDK at
+# all — and every drift was discovered by hand, late. A version pinned in a committed
+# file is checkable; a version described in prose is not.
+#
+# Run `mise install` once per machine, then `scripts/doctor.sh` to confirm.
+
+[tools]
+# Pinned to match CI exactly. `.github/workflows` installs 8.0.x, and `Directory.Build.props`
+# targets net8.0 — so building on anything else means the compiler and analyzers that
+# gate a merge are not the ones on your desk. That has already cost this project a
+# CI-only failure (#27), where SDK 8.0.129's compiler rejected a collection-expression
+# call that CI's newer 8.0.x accepted.
+#
+# `global.json` still pins 8.0.129 with `rollForward: latestMajor`, which is what lets a
+# machine with no .NET 8 installed silently build on .NET 10. mise removes the need for
+# that roll-forward to ever fire.
+#
+# NOTE: .NET 8 is LTS through November 2026. When the project moves to .NET 10, this
+# line, `global.json`, `Directory.Build.props` and the CI workflow all change together.
+dotnet = "8.0.129"
+
+# Godot is deliberately absent. Phase 7 has not started, no machine has it installed, and
+# an unresolvable pin here would break `mise install` for everyone to serve nobody. Add
+# it in the branch that starts the Godot client, alongside the code that needs it.

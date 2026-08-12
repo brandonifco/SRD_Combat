@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at PR #91 (Cleave and Slow, closing #81) |
-| Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **664 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
@@ -118,14 +118,21 @@ order the issues were filed in. Take the top of it.
 
 ### Starting on a machine for the first time
 
-Everything needed to build, test and play is committed. There is no setup step, no
-content to generate and no asset to fetch:
+Everything needed to build, test and play is committed. There is no content to generate
+and no asset to fetch:
 
 ```bash
 git clone https://github.com/brandonifco/SRD_Combat.git && cd SRD_Combat
-dotnet test SRDCombat.sln -c Debug     # expect 570 passing, 1 skipped by design
+mise install                           # pins the SDK to the one CI gates on
+./scripts/doctor.sh                     # confirms this machine agrees with CI
+dotnet test SRDCombat.sln -c Debug     # expect 664 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
+
+**The two middle lines are the only setup step, and skipping them is survivable but
+misleading** — the build will succeed on whatever SDK happens to be installed and tell you
+nothing about whether CI will agree. `doctor.sh` needs no tooling of its own and is worth
+running even without mise, because it reports what you *have* rather than what you assume.
 
 `data/srd` is in the repo, which is why none of that needs the SRD PDF. **The one thing
 that does is re-extracting content** (`tools/SrdExtract`), and the PDF is deliberately not
@@ -828,19 +835,31 @@ cost real time:
 
 ## Environment
 
-**Everything in this section describes one particular machine, and this project is
-developed on more than one.** Treat it as a record of what was true where it was written,
-not as a description of the machine you are on. Nothing below is needed to build, test or
-play — see "Starting on a machine for the first time" — so a mismatch is a nuisance rather
-than a blocker.
+**Do not read this section to find out what is on your machine — run the script.**
 
-- **Which .NET runs has flipped three times.** Snap-confined at kickoff, apt-only SDK 8 at
-  PR #30, snap again as of 2026-08-12. Where it was written, bare `dotnet` resolved
-  through `/usr/local/bin/dotnet` to the snap, carrying SDKs 8.0.129 and 10.0.110, with
-  the apt `/usr/bin/dotnet` a bare host holding **no SDKs at all**. `global.json` pins 8
-  with `latestMajor` roll-forward, so **whichever machine you are on, the newest installed
-  SDK is what actually runs** while CI installs 8.0.x. Check with `dotnet --list-sdks`
-  before believing any of that.
+```bash
+./scripts/doctor.sh
+```
+
+It reports the SDK this repository actually resolves to, whether that agrees with the one
+CI gates on, and what optional tooling is missing, exiting non-zero when something will
+bite you. It exists because **every environment problem this project has had was silent**,
+and because prose can only ever describe one machine at one moment — the entry below said
+"snap, SDKs 8.0.129 and 10.0.110" while the machine it was re-read on had apt, no .NET 8
+at all, and a green local build compiled by .NET 10. That is the extraction pipeline's own
+lesson ("write the validator that asserts the shape of what should have been found")
+pointed at the desk instead of the SRD. The rest of this section is *why* each check is
+there, which the script cannot tell you.
+
+- **Which .NET runs has flipped four times**, and the fourth flip is the instructive one.
+  Snap-confined at kickoff, apt-only SDK 8 at PR #30, snap again at PR #91, and then an
+  apt install at `/usr/bin/dotnet` carrying **SDKs 9 and 10 and no .NET 8 whatever**.
+  Because `global.json` pins 8 with `latestMajor` roll-forward, that machine did not
+  complain: it rolled forward and built clean, 0 warnings, **on a different major version
+  than the one gating the merge**. `TargetFramework` is `net8.0`, so `LangVersion` stays
+  at C# 12 and most syntax drift is caught — but the analyzers are not the same analyzers,
+  and `TreatWarningsAsErrors` is on. **`.mise.toml` pins the SDK so this stops happening**;
+  `mise install` on a new machine is the whole setup.
 - **One lesson survives every flip (#27).** SDK 8.0.129's early C# 12 compiler rejected a
   collection-expression `Split` call in `MonsterParser` that CI's newer 8.0.x accepted,
   which is why that call is written as an explicit array. **Building locally on a newer
@@ -858,8 +877,12 @@ than a blocker.
   `TargetFramework`/`Nullable`/`ImplicitUsings` into each new `.csproj`, silently
   overriding `Directory.Build.props` — strip those three lines from any project
   created by a template.
-- **Godot 4.7 stable mono** at `~/.local/bin/godot` on the machine this was written on.
-  Not used until Phase 7, so its absence elsewhere costs nothing yet.
+- **Godot 4.7 stable mono**, on `PATH` — `/usr/local/bin/godot` where this was last
+  checked, `~/.local/bin/godot` on another machine. Not used until Phase 7, so its absence
+  elsewhere costs nothing yet; `doctor.sh` looks it up rather than assuming a path, which
+  is how the stale one above was caught. It is deliberately **not** pinned in `.mise.toml`:
+  an unresolvable pin would break `mise install` for everyone to serve nobody, so it goes
+  in alongside the branch that starts the client.
 - **`pdftotext`** (poppler) is the extraction workhorse for eyeballing pages. Needed only
   alongside the PDF.
 - **A real X11 display exists** (`DISPLAY=:1`, Xorg — not headless), but no
