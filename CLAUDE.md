@@ -15,7 +15,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #67 (status corrections) |
+| Branch | `main` at PR #69 (the ladder's shape, closing #65) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
