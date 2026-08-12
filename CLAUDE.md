@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #82 (Weapon Mastery) |
+| Branch | `main` at PR #84 (why runs die: the measurement that closed #79) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **3 open GitHub issues** — #78, #79 and #81. |
+| Work remaining | **3 open GitHub issues** — #83 (the important one), #81 and #78. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -71,6 +71,28 @@ and a Rogue whose Vex feeds its own Sneak Attack is a different creature. The me
 unmoved at 4 because the distribution is not a hump — most runs still die in the first
 cycle, and the ones that survive it now go all the way.
 
+**Why runs end where they do was measured rather than guessed, and the answer is not the
+ladder.** Closing #79 meant testing its premises, and all three failed. The ladder's
+arithmetic is *correct* — walking it and awarding each rung's budget reaches level 2 at
+rung 5, level 3 at 10, level 4 at 18 and level 5 at rung 29, ending on 7,700 XP against
+the 6,500 needed. Reshaping it does nothing: a gentler opening, starting at level 2,
+starting at level 3 all land within half a fight of the median 4, and **starting higher is
+worse** (best run 30 → 14), because **the XP budget re-prices every encounter against the
+party's current level — the difficulty is scale-invariant and there is no pacing lever to
+pull.** What the deaths actually say: **109 of 200 runs die at level 1**, in the first
+cycle, and **Moderate rungs kill 120 to High's 33** — the routine fights, not the set
+pieces.
+
+**The cause is #83, and it is the one number that should worry a reader of this file.** The
+budget prices a fight assuming both sides are whole. **The monster side is** — `MonsterPool`
+admits a creature only when every Action entry is fully modelled — **and the party side is
+not**: the Cleric holds nine spell slots at level 5 and can spend four, knows 4 spells of
+the 109 on its list, and no character has a subclass at all. So a "fair" fight is priced
+for a party that does not exist. The corroboration is Weapon Mastery: one modest
+party-side feature took the best run from 19 to 30 and produced the first clears, while
+every ladder change measured did nothing. **Party power is the only lever that has ever
+moved this, so do not tune XP or the ladder against these numbers.**
+
 Two more things in that table are worth more than the numbers. **The two plausibility fixes cost
 as much pacing as potions bought** — 7.5 back down to 4 — and neither PR measured it,
 because both looked cosmetic. They are not: a Camel or a flopping Piranha was *XP the
@@ -117,12 +139,13 @@ per concern, and the gate before merge.
 
 Two issues, both found by measuring rather than by reading code.
 
-- **#79 — runs die before level 4.** One run in 40 reaches it, so **half this tier is
-  unreachable in play**: the Ability Score Improvement, the Fighter's Extra Attack and the
-  Rare-tier loot are all implemented and effectively never seen. This is XP pacing, not
-  difficulty — nobody has checked whether thirty rungs at the printed budgets actually pay
-  out the 6,500 XP the ladder's own arithmetic assumes. **Decide this before any further
-  balance work**, because anything gated at level 4+ cannot be measured in a run today.
+- **#83 — the party is a fraction of its printed self.** The successor to #79, and the
+  most valuable thing in the queue: the encounter budget prices a fight assuming both
+  sides are whole, the monster side is, and the party is not. In order of what the
+  evidence supports — **a real Cleric spell list or upcasting** (nine slots, four
+  spendable, 4 spells known of 109 available, and no new subsystem needed), then
+  **subclasses** (nobody has one), then the rest of the class features. **Anything gated
+  at level 4+ is still unmeasurable in a run**, which is the part of #79 that was true.
 - **#78 — the Sorcerer's level table truncates wrapped feature names.** Five rows, all
   Sorcerer: its Features table has two extra columns, so the Class Features column wraps
   and loses the second half — "Ability Score" for "Ability Score Improvement". The fourth
