@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #88 (subclasses: the split and the first three features) |
+| Branch | `main` at PR #89 (upcasting and cantrip upgrades, closing #83) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **3 open GitHub issues** — #83 (the important one), #81 and #78. |
+| Work remaining | **2 open GitHub issues** — #81 and #78. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -66,6 +66,7 @@ over the same 40 seeds throughout, median fights cleared of 30:
 | Weapon Mastery | 4 | **30 — cleared** | 1/40 |
 | #85 policy casts on value | 6.5 | 29 | — |
 | Subclasses (first three features) | 6.5 | 30 — cleared | 6/60 at L4 |
+| Upcasting + cantrip upgrades | 6.5 | 30 — cleared | 7/60 at L4 |
 
 **Two runs of forty have now cleared all thirty rungs**, which nothing had ever done
 before Weapon Mastery landed: Sap and Vex fired 879 and 838 times across those forty runs,
@@ -500,6 +501,21 @@ so *it* can tell what is left; they do not belong in a status report.
   are spent (cantrips are free), Concentration is tracked and broken by damage, and a
   spell whose effect is not modelled is **refused with a reason** rather than silently
   doing nothing.
+- **Upcasting is the definition growing, not the rolls being patched.** The two
+  dice-shaped scaling sentences are structured at extraction — "increases by 2d8 for
+  each spell slot level above 1" (32 spells) and the Cantrip Upgrade at levels 5/11/17
+  (10 cantrips) — with three guards keeping them honest: the shape must match exactly,
+  the printed "above N" must be the spell's own level, and the extra die must be the
+  same size as the base effect's. At casting time `ApplyScaling` returns the spell with
+  more dice, so every resolver sees an ordinary spell and a Critical Hit doubles the
+  upcast dice with the rest. **Two traps are pinned by tests**: a save spell carries its
+  damage in *both* `Damage` and `Save.FailureDamage` and the resolver reads the second,
+  so growing only the first silently un-upcasts every save spell; and Disciple of Life
+  reads "the spell slot's level" — **the slot spent, not the spell's own** — so an
+  upcast heal feeds it too. The narration now names the slot actually burned, which it
+  had always claimed was the spell's level even when it was not. The engine had been
+  quietly spending higher slots whenever the lower ones were dry; they simply bought
+  nothing until now, and a level 5 Sacred Flame was still 1d8.
 - **"Refused rather than silently doing nothing" was untrue for 66 of the 339 spells
   until `spell.save_effect_not_modelled` existed**, and it is the best example in the
   project of bug 1's shape. A spell that *forces a save* was treated as understood, so

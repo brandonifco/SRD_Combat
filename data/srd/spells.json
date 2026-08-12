@@ -86,6 +86,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).",
+      "cantripUpgradeDice": "1d6",
       "sourcePage": 107
     },
     {
@@ -1201,6 +1202,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 113
     },
     {
@@ -1342,6 +1344,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 114
     },
     {
@@ -1385,6 +1388,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 3.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 114
     },
     {
@@ -1587,6 +1591,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).",
+      "cantripUpgradeDice": "1d10",
       "sourcePage": 115
     },
     {
@@ -1663,6 +1668,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 2d8 for each spell slot level above 6.",
+      "upcastDicePerSlotLevel": "2d8",
       "sourcePage": 115
     },
     {
@@ -1775,6 +1781,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 116
     },
     {
@@ -2046,6 +2053,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 117
     },
     {
@@ -2129,6 +2137,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 3.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 117
     },
     {
@@ -2321,6 +2330,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 118
     },
     {
@@ -2767,6 +2777,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 2d8 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "2d8",
       "sourcePage": 121,
       "heal": {
         "dice": "2d8",
@@ -3344,6 +3355,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 124
     },
     {
@@ -3439,6 +3451,7 @@
         "The damage increases by 1d8 if the target is a Fiend or an Undead."
       ],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 125
     },
     {
@@ -3973,6 +3986,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 128
     },
     {
@@ -4624,6 +4638,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 131
     },
     {
@@ -4656,6 +4671,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).",
+      "cantripUpgradeDice": "1d10",
       "sourcePage": 132
     },
     {
@@ -4873,6 +4889,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 132
     },
     {
@@ -5216,6 +5233,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 6.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 134
     },
     {
@@ -5778,6 +5796,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 138
     },
     {
@@ -6035,6 +6054,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 2d4 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "2d4",
       "sourcePage": 139,
       "heal": {
         "dice": "2d4",
@@ -6084,6 +6104,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 139
     },
     {
@@ -6127,6 +6148,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 140
     },
     {
@@ -6816,6 +6838,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 143
     },
     {
@@ -6866,6 +6889,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 5.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 143
     },
     {
@@ -7212,6 +7236,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 144
     },
     {
@@ -8071,6 +8096,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 149
     },
     {
@@ -8343,6 +8369,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 2.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 150
     },
     {
@@ -8564,6 +8591,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 4.",
+      "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 152
     },
     {
@@ -8780,6 +8808,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d12 when you reach levels 5 (2d12), 11 (3d12), and 17 (4d12).",
+      "cantripUpgradeDice": "1d12",
       "sourcePage": 153
     },
     {
@@ -9287,6 +9316,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
+      "cantripUpgradeDice": "1d8",
       "sourcePage": 156
     },
     {
@@ -9582,6 +9612,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
+      "cantripUpgradeDice": "1d8",
       "sourcePage": 157
     },
     {
@@ -9648,6 +9679,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 158
     },
     {
@@ -9938,6 +9970,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
+      "cantripUpgradeDice": "1d8",
       "sourcePage": 159
     },
     {
@@ -10332,6 +10365,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 161
     },
     {
@@ -10455,6 +10489,7 @@
         "Until the spell ends, the target sheds Bright Light in a 5-foot radius, attack rolls against it have Advantage, and it can't benefit from the Invisible condition."
       ],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 162
     },
     {
@@ -10486,6 +10521,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
+      "cantripUpgradeDice": "1d8",
       "sourcePage": 162
     },
     {
@@ -11007,6 +11043,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 3.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 164
     },
     {
@@ -11069,6 +11106,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
+      "cantripUpgradeDice": "1d8",
       "sourcePage": 165
     },
     {
@@ -11793,6 +11831,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 169
     },
     {
@@ -12193,6 +12232,7 @@
       "isSpellAttack": true,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
+      "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 171
     },
     {
@@ -12236,6 +12276,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).",
+      "cantripUpgradeDice": "1d6",
       "sourcePage": 171
     },
     {
@@ -12341,6 +12382,7 @@
       "isSpellAttack": false,
       "unmodelledClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
+      "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 172
     },
     {
