@@ -23,6 +23,36 @@ public static class ClassValidator
 
         var issues = new List<ValidationIssue>();
 
+        // Every level-table feature name must match a feature heading in the class's
+        // own prose (subclass included). This is the validator whose absence let the
+        // Sorcerer's wrapped rows truncate silently for the chapter's whole life (#78):
+        // "Ability Score" is not a heading anywhere, and nothing said so. Written per
+        // the standing lesson — assert the shape of what should have been found.
+        foreach (var definition in classes)
+        {
+            var headings = definition.Features.Select(feature => feature.Name)
+                .Concat(definition.SubclassFeatures.Select(feature => feature.Name))
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (var name in definition.Levels.SelectMany(level => level.FeatureNames))
+            {
+                var bare = name.Split('(')[0].Trim();
+
+                if (headings.Contains(bare)
+                    || bare.Contains("Subclass", StringComparison.OrdinalIgnoreCase)
+                    || bare is "-" or "—")
+                {
+                    continue;
+                }
+
+                issues.Add(new ValidationIssue(
+                    ValidationSeverity.Error,
+                    "class.feature.no_heading",
+                    $"{definition.Name}: {name}",
+                    "A level-table feature name matches no feature heading — a wrapped or truncated cell."));
+            }
+        }
+
         foreach (var duplicate in classes
                      .GroupBy(definition => definition.Id, StringComparer.Ordinal)
                      .Where(group => group.Count() > 1))
