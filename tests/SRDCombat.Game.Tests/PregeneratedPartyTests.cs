@@ -1,0 +1,150 @@
+using SRDCombat.Content;
+using SRDCombat.Core.Characters;
+using SRDCombat.Core.Combat;
+using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
+
+namespace SRDCombat.Game.Tests;
+
+/// <summary>
+/// The pregenerated party, built from real extracted content.
+/// </summary>
+/// <remarks>
+/// These four exist so that sitting down to a fight exercises the breadth of what has
+/// been built rather than four variations on "hit it with a sword". That intent is only
+/// worth anything if it is checked, so these tests assert the *coverage* the party is
+/// supposed to provide, not just that it resolves.
+/// </remarks>
+public class PregeneratedPartyTests
+{
+    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+
+    [Fact]
+    public void ThePartyResolvesFromRealContent()
+    {
+        var party = PregeneratedParty.Build(Content);
+
+        Assert.Equal(4, party.Count);
+
+        Assert.All(party, member =>
+        {
+            Assert.True(member.Sheet.MaximumHitPoints > 0);
+            Assert.True(member.Sheet.ArmorClass > 0);
+            Assert.NotEmpty(member.Sheet.Attacks);
+            Assert.Equal(PregeneratedParty.SideId, member.Combatant.SideId);
+            Assert.True(member.Combatant.CanAct);
+        });
+    }
+
+    [Fact]
+    public void EveryMemberBringsADifferentMechanicalShape()
+    {
+        var party = PregeneratedParty.Build(Content);
+
+        var features = party
+            .SelectMany(member => member.Sheet.Features.Select(granted => granted.Feature))
+            .ToHashSet();
+
+        // One from each class, so a fight touches attacks, a resource, sneak damage and
+        // spellcasting rather than four sword swings.
+        Assert.Contains(ClassFeature.SecondWind, features);
+        Assert.Contains(ClassFeature.Rage, features);
+        Assert.Contains(ClassFeature.SneakAttack, features);
+        Assert.Contains(ClassFeature.Expertise, features);
+        Assert.Contains(ClassFeature.FightingStyle, features);
+
+        Assert.Contains(party, member => member.Combatant.Stats.Character is { CanCast: true });
+    }
+
+    [Fact]
+    public void TheRoguesSneakAttackAndTheBarbariansRageReachTheCombatant()
+    {
+        // The class table's per-level resource columns have to arrive on the combatant,
+        // or the features are granted and inert — the quietest possible failure.
+        var party = PregeneratedParty.Build(Content);
+
+        var rogue = party.Single(member => member.Sheet.ClassName == "Rogue");
+        var barbarian = party.Single(member => member.Sheet.ClassName == "Barbarian");
+        var fighter = party.Single(member => member.Sheet.ClassName == "Fighter");
+
+        Assert.NotNull(rogue.Combatant.Stats.Character!.SneakAttackDamage);
+        Assert.True(barbarian.Combatant.Features.RagesRemaining > 0);
+        Assert.True(fighter.Combatant.Features.SecondWindRemaining > 0);
+    }
+
+    [Fact]
+    public void TheCasterKnowsOneSpellOfEachShape()
+    {
+        // A save spell and an attack spell, so playing exercises both casting paths.
+        var caster = PregeneratedParty.Build(Content)
+            .Single(member => member.Combatant.Stats.Character is { CanCast: true });
+
+        var spells = caster.Combatant.Stats.Character!.Spells;
+
+        Assert.Contains(spells, spell => spell.IsSpellAttack);
+        Assert.Contains(spells, spell => spell.Save is not null);
+        Assert.All(spells, spell => Assert.True(
+            spell.IsSpellAttack || spell.Save is not null,
+            $"{spell.Name} would be refused at the point of casting."));
+    }
+
+    [Fact]
+    public void TheBarbarianIsUnarmouredSoUnarmoredDefenseApplies()
+    {
+        // Putting a Barbarian in Chain Mail would silently switch off its own AC rule.
+        var barbarian = PregeneratedParty.Build(Content)
+            .Single(member => member.Sheet.ClassName == "Barbarian");
+
+        Assert.Null(barbarian.Draft.ArmorId);
+        Assert.Contains("Unarmored Defense", barbarian.Sheet.ArmorClassSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ThePartyCanFightARealMonsterToAConclusion()
+    {
+        // The whole stack in one test: extracted content, resolved characters, the
+        // curated monster pool, and the engine running a fight to its end.
+        var party = PregeneratedParty.Build(Content, level: 1, x: 1);
+
+        var monster = MonsterPool.Draw(Content.Monsters, maximumChallengeRating: 0.5m)
+            .First(candidate => candidate.ChallengeRating >= 0.25m);
+
+        var enemy = new Combatant(
+            "enemy",
+            monster.Name,
+            "monsters",
+            CombatantStats.FromMonster(monster),
+            new GridPosition(6, 1));
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 6),
+            [.. party.Select(member => member.Combatant), enemy],
+            new SeededRandomSource(20250812));
+
+        SimpleTacticsPolicy.RunToCompletion(encounter);
+
+        Assert.True(encounter.IsComplete);
+        Assert.NotNull(encounter.WinningSide);
+        Assert.NotEmpty(encounter.Log);
+    }
+
+    [Fact]
+    public void LevellingIsReResolvingTheDraft()
+    {
+        // The property the draft/sheet split exists to protect: a level 5 party comes
+        // from the same drafts, not from edited sheets.
+        var first = PregeneratedParty.Build(Content, level: 1);
+        var fifth = PregeneratedParty.Build(Content, level: 5);
+
+        Assert.Equal(
+            first.Select(member => member.Draft.Name),
+            fifth.Select(member => member.Draft.Name));
+
+        Assert.All(
+            first.Zip(fifth),
+            pair => Assert.True(
+                pair.Second.Sheet.MaximumHitPoints > pair.First.Sheet.MaximumHitPoints,
+                $"{pair.First.Draft.Name} gained no hit points between levels 1 and 5."));
+    }
+}
