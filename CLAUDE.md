@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #76 (plausible foes, closing #52) |
+| Branch | `main` at PR #77 (aquatic foes, closing #75) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **1 open GitHub issue** — #75, aquatic creatures in dry-land fights. |
+| Work remaining | **No open GitHub issues.** The next work is a phase, not a fix — see the plan doc. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -67,8 +67,7 @@ naive one: it focuses fire on the weakest enemy already in reach, heals a fallen
 rages, spends Second Wind, drinks and administers potions, casts when its weapon cannot
 reach, and reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
-whose area would catch its own side. And **encounters can still contain a beached
-shark** — #75, the environment axis, found while fixing the property one.
+whose area would catch its own side.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -97,16 +96,12 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-One issue.
-
-- **#75 — aquatic creatures in dry-land fights.** Found while verifying #52: with
-  equipment gone, a Low fight still drew a Giant Seahorse. **Not a data or engine bug** —
-  the SRD gives aquatic creatures a 5-foot Walk speed exactly so they can be fought out
-  of water, so they flop one square per turn and the fight merely looks ridiculous. The
-  missing notion is *environment*, which neither the pool, the budget nor `PlausibleFoes`
-  owns. Note the tempting derivation (Swim ≫ Walk means aquatic) is the same shape of
-  heuristic as the keyword filter in bug 2 below, and the Archelon — walks 20, swims 80,
-  and is not absurd ashore — is the counterexample to check it against.
+**Nothing.** The issue queue is empty for the first time since it was opened, so
+`gh issue list` will not tell you what to do next — the plan doc's phase list will.
+Phases 1–4 are done, Phase 6 is done for monsters and open-ended for the party, and
+Phases 5 and 7 have never been started. **Do not read an empty queue as "the project is
+finished":** nobody has ever cleared the thirty-rung ladder, and no human has played more
+than a few rungs by hand.
 
 **A caution before tuning anything against numbers:** the party in an automated run is
 played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
@@ -645,10 +640,22 @@ cost real time:
   random draw** — `MonsterPool.Draw` takes `plausibleFoesOnly: false`, and
   `EncounterBuilder` takes any authored sequence. Names are matched **exactly**: a Giant
   Goat is a wild charging creature and a substring test would take it out with the farm
-  animal. The pool went 131 → 123, and the guard that the list cannot outlive a renamed
-  stat block is a content test, **not** `MonsterValidator` — that validates whatever list
-  it is handed, single stat blocks included, so a whole-corpus check there fails on every
-  partial list.
+  animal. The guard that the list cannot outlive a renamed stat block is a content test,
+  **not** `MonsterValidator` — that validates whatever list it is handed, single stat
+  blocks included, so a whole-corpus check there fails on every partial list.
+- **The second exclusion is a derived rule, and the obvious version of it is wrong.**
+  A creature with nowhere to fight — a Killer Whale on dry land — is caught by
+  `PlausibleFoes.IsAquatic`: **a token land speed (≤ 5 feet), a Swim speed, and no other
+  movement mode.** All three clauses earn their place, and the middle one is the whole
+  lesson: "walks 5 feet or less" *alone* also catches the Bat, the Owl, the Animated
+  Flying Sword, the Swarm of Bats, the Will-o'-Wisp, the Ghost, the Wraith and both
+  Fungi. A token land speed says only "not on foot"; what makes a creature aquatic is
+  that swimming is the only thing it has **instead**. Checked against all 330 before
+  being trusted — it catches exactly nine, with no false positive or negative — and the
+  boundary is the book's own, since the nearest creatures on the other side (Merfolk,
+  Merrow, Aboleth, Giant Octopus) all walk 10. **The pool went 131 → 123 → 116**, every
+  CR band still above its floor. This one is an exclusion for want of anywhere to put
+  them: a battlefield with water would make all nine playable and delete this rule.
 
 ## Related projects on this machine — context, not dependencies
 

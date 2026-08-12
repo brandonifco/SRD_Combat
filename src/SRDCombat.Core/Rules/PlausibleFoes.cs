@@ -15,6 +15,11 @@ namespace SRDCombat.Core.Rules;
 /// anybody. Coverage is not difficulty, and coverage is not appropriateness either.
 /// </para>
 /// <para>
+/// Two things are excluded here, for two unrelated reasons: creatures that are
+/// <b>property</b> rather than enemies, and creatures with nowhere to fight — a Killer
+/// Whale on dry land, which <see cref="IsAquatic"/> covers.
+/// </para>
+/// <para>
 /// <b>Most of this is derived rather than judged.</b> The Equipment chapter prices eight
 /// animals in its <i>Mounts and Other Animals</i> table (printed page 100) — with a
 /// carrying capacity and a cost in gold — and says of them that a mount's "primary
@@ -45,6 +50,13 @@ namespace SRDCombat.Core.Rules;
 /// charging Ram attack and belongs in the pool; a substring test would take it out with
 /// the farm animal. This is the same trap as <c>GillSans</c> versus
 /// <c>GillSans-SemiBold</c>, one layer up.
+/// </para>
+/// <para>
+/// <b>The second exclusion is a rule rather than a list</b>, and the difference is the
+/// point: an animal is equipment because the book prices it, which only a list can say,
+/// while a creature is aquatic because of numbers the stat block already carries. See
+/// <see cref="IsAquatic"/> — a derived rule needs no maintenance and covers creatures
+/// nobody has looked at yet.
 /// </para>
 /// </remarks>
 public static class PlausibleFoes
@@ -82,11 +94,67 @@ public static class PlausibleFoes
     /// <summary>Every name this rule excludes, for a validator to check against the content.</summary>
     public static IReadOnlyCollection<string> ExcludedNames => Excluded;
 
+    /// <summary>
+    /// The land speed at or below which the SRD is saying a creature does not get around
+    /// on foot at all.
+    /// </summary>
+    /// <remarks>
+    /// One square a turn. The book uses it for everything whose real movement is
+    /// something else — fish, bats, ghosts, a flying sword — and the gap below the next
+    /// speed up is wide: **no creature in the bestiary walks between 5 and 10 feet.**
+    /// </remarks>
+    public const int TokenLandSpeedFeet = 5;
+
+    /// <summary>
+    /// Whether this creature's only real mobility is swimming, so a dry-land fight would
+    /// have it flopping one square a turn.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Derived from the stat block, and checked against all 330 before being trusted.</b>
+    /// It catches exactly nine — Octopus, Piranha, Seahorse, Giant Seahorse, Reef Shark,
+    /// Swarm of Piranhas, Hunter Shark, Killer Whale, Giant Shark — with no false
+    /// positive and no false negative anywhere in the book.
+    /// </para>
+    /// <para>
+    /// <b>All three clauses earn their place, and the middle one is why the obvious
+    /// version is wrong.</b> A bare "walks 5 feet or less" also catches the Bat, the Owl,
+    /// the Animated Flying Sword, the Swarm of Bats, the Will-o'-Wisp, the Ghost, the
+    /// Wraith and both Fungi — every one a perfectly good land encounter, and several of
+    /// them staples. A token land speed says only "not on foot"; what makes a creature
+    /// aquatic is that <em>swimming is the only thing it has instead</em>.
+    /// </para>
+    /// <para>
+    /// <b>The boundary is the book's own, not a tuned threshold.</b> The nearest creatures
+    /// on the other side walk 10 feet — the Merfolk Skirmisher, the Merrow, the Aboleth
+    /// and the Giant Octopus — and all four are meant to be met ashore. The Giant Octopus
+    /// is the closest call in the bestiary and the SRD gave it twice the Octopus's land
+    /// speed on purpose; following that is following print rather than arbitrating.
+    /// </para>
+    /// <para>
+    /// This is an exclusion for want of anywhere to put them, not a claim that they are
+    /// bad monsters. A battlefield with water would make every one of them playable, and
+    /// this rule is what such a change would delete.
+    /// </para>
+    /// </remarks>
+    public static bool IsAquatic(MonsterDefinition monster)
+    {
+        ArgumentNullException.ThrowIfNull(monster);
+
+        if (monster.Speeds.GetValueOrDefault(MovementMode.Walk) > TokenLandSpeedFeet)
+        {
+            return false;
+        }
+
+        return monster.Speeds.ContainsKey(MovementMode.Swim)
+            && !monster.Speeds.Any(speed => speed.Key is not (MovementMode.Walk or MovementMode.Swim));
+    }
+
     /// <summary>Whether this creature may be drawn at random as an enemy.</summary>
     public static bool Admits(MonsterDefinition monster)
     {
         ArgumentNullException.ThrowIfNull(monster);
 
-        return !Excluded.Contains(monster.Name);
+        return !Excluded.Contains(monster.Name) && !IsAquatic(monster);
     }
 }
