@@ -79,6 +79,18 @@ public static class MonsterTraitRegistry
         ["Flyby"] = MonsterTrait.Flyby,
     };
 
+    /// <summary>
+    /// Whether a printed trait name is one the engine executes. The extractor asks this
+    /// to classify the entry <see cref="EntryMechanics.Passive"/> rather than counting
+    /// it unmodelled.
+    /// </summary>
+    public static bool Implements(string printedName)
+    {
+        ArgumentNullException.ThrowIfNull(printedName);
+
+        return Implemented.ContainsKey(printedName);
+    }
+
     /// <summary>The implemented traits among a stat block's entries.</summary>
     public static IReadOnlyCollection<MonsterTrait> TraitsOf(IEnumerable<MonsterEntry> entries)
     {
