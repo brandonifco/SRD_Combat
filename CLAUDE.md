@@ -15,17 +15,18 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #55 (XP awards and levelling) |
+| Branch | `main` at PR #59 (correcting claims a full run disproved) |
 | Tests | **553 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
-| Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **4 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Content | 330 monsters · **300 spells, and the book has 339 — the extractor is dropping about 39 (#56)** · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
+| Work remaining | **7 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
 monsters, with sixteen implemented class features and working spellcasting (attack spells,
-save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
+save spells with areas, slots, Concentration — but **no healing of any kind**, which is
+#57 and is not a small gap: it makes a run unwinnable). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
 rolls Acrobatics against the printed escape DC, an Ape throws its Rock once and then
@@ -37,7 +38,14 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**A whole run is playable.** `dotnet run --project src/SRDCombat.Console` climbs a
+**A whole run is playable, and losing.** Measured over 20 automated runs: none survived
+the 30-fight ladder and the median cleared one fight. The causes are filed — no healing
+exists (#57), the tactics policy driving the party uses none of its features or spells
+(#50), and a permanent casualty compounds into a death spiral (#58) — and the
+measurement itself is a floor rather than a verdict for the second of those reasons.
+**Do not tune difficulty against automated runs until the policy can play a party.**
+
+ `dotnet run --project src/SRDCombat.Console` climbs a
 thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
 spent resources and the dead carried between fights, rests restoring exactly what the
 printed rules say, and **levels earned by experience rather than handed out on a
@@ -398,6 +406,14 @@ output against the book, never by the parser complaining.
 been found.** Every one of these was caught that way — "every species has at least one
 trait", "every class table has 20 rows with the advancement table's proficiency bonus".
 
+**And the one place that lesson was never applied is where the next bug was waiting.**
+There is no validator on the spell count, so the extractor has been dropping about 39 of
+the book's 339 spells since Phase 0 and reporting "300 spells" as though that settled it
+(#56). Cure Wounds, Detect Magic, Hold Person and Aid are all simply absent. **A number
+the pipeline prints about itself is not a check** — it agrees with the code by
+construction. The check that would have caught this on day one is the cross-reference:
+every spell named in a class's spell list must resolve to an extracted spell.
+
 Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
 Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
 and **no code licence for now** (public repo, no `LICENSE`, all rights reserved by
@@ -553,7 +569,9 @@ dotnet run --project tools/SrdExtract -- --out data/srd
 ```
 
 It refuses to write when validation reports errors (`--force` overrides). A clean run
-reports 330 monsters, 38 weapons, 13 armor, 0 errors, and **10 warnings, all expected**:
+reports 330 monsters, 38 weapons, 13 armor, 0 errors, and **10 warnings, all expected**
+— but note it also reports **300 spells and should report about 339** (#56), which no
+validator checks:
 the Archmage's XP, which is a real SRD inconsistency, and nine spells whose component
 line is truncated at a column break in the source.
 
