@@ -1,3 +1,4 @@
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
@@ -213,6 +214,15 @@ public sealed partial class Encounter
         var modifier = heal.AddsSpellcastingModifier && character.SpellcastingAbility is { } ability
             ? caster.Stats.ModifierFor(ability)
             : 0;
+
+        // Disciple of Life: "When a spell you cast with a spell slot restores Hit
+        // Points ... additional Hit Points equal 2 plus the spell slot's level." A
+        // cantrip is cast without a slot and gets nothing; the slot's level is the
+        // spell's own, upcasting being unimplemented.
+        if (!spell.IsCantrip && caster.Stats.Has(ClassFeature.DiscipleOfLife))
+        {
+            modifier += 2 + spell.Level;
+        }
 
         var wasDown = target.CurrentHitPoints == 0;
         var restored = DamageRules.Heal(target, rolled.Total + modifier);

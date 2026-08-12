@@ -39,6 +39,15 @@ public sealed record TraitEntry(
 
     public IReadOnlyList<string> UnmodelledClauses { get; init; } = UnmodelledClauses ?? [];
 
+    /// <summary>
+    /// The level a class grants this feature, read from its printed "Level 3:" heading.
+    /// </summary>
+    /// <remarks>
+    /// Null for a species trait or a background feature, which are not granted by level.
+    /// A class feature always has one, and <c>ClassValidator</c> checks that.
+    /// </remarks>
+    public int? GrantedAtLevel { get; init; }
+
     /// <summary>True when every mechanical clause in this trait is captured by the model.</summary>
     public bool IsFullyModelled =>
         Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;

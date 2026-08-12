@@ -190,10 +190,13 @@ public static class AttackRules
 
         var hit = roll.IsNatural20 || roll.Total >= target.Stats.ArmorClass;
 
-        // Unconscious and Paralyzed print the same clause: any hit from within 5 feet
-        // is a Critical Hit. Stunned deliberately does not — the glossary gives it
-        // Advantage against and nothing more.
+        // Improved Critical widens the crit band and nothing else — a natural 19 still
+        // has to beat AC, because only the 20 auto-hits. Unconscious and Paralyzed print
+        // the same clause as each other: any hit from within 5 feet is a Critical Hit.
+        // Stunned deliberately grants neither — the glossary gives it Advantage against
+        // and nothing more.
         var critical = roll.IsNatural20
+            || (hit && roll.Natural >= attacker.Stats.CriticalHitThreshold)
             || (hit
                 && (circumstances.TargetIsUnconscious || circumstances.TargetIsParalyzed)
                 && distance <= Battlefield.FeetPerSquare);

@@ -890,16 +890,33 @@ public static class CharacterResolver
     }
 
     /// <summary>Every implemented feature the class grants at or below this level.</summary>
-    private static IReadOnlyList<GrantedFeature> ResolveFeatures(ClassDefinition definition, int level) =>
-        definition.Levels
+    /// <summary>Every implemented feature this character has at this level, subclass included.</summary>
+    /// <remarks>
+    /// <b>The subclass needs no choice on the draft</b>: the SRD prints exactly one per
+    /// class — the Champion for the Fighter, the Berserker for the Barbarian — so a
+    /// character of level 3 or higher simply has it, and its features arrive at the
+    /// printed level each one's own heading carries. If a source with a second subclass
+    /// ever exists, this is where the choice would go.
+    /// </remarks>
+    private static IReadOnlyList<GrantedFeature> ResolveFeatures(ClassDefinition definition, int level)
+    {
+        var fromTable = definition.Levels
             .Where(row => row.Level <= level)
-            .SelectMany(row => row.FeatureNames.Select(name => (row.Level, Feature: ClassFeatureRegistry.Resolve(name))))
+            .SelectMany(row => row.FeatureNames.Select(name => (row.Level, Feature: ClassFeatureRegistry.Resolve(name))));
+
+        var fromSubclass = definition.SubclassFeatures
+            .Where(feature => feature.GrantedAtLevel is { } granted && granted <= level)
+            .Select(feature => (Level: feature.GrantedAtLevel!.Value, Feature: ClassFeatureRegistry.Resolve(feature.Name)));
+
+        return fromTable
+            .Concat(fromSubclass)
             .Where(pair => pair.Feature is not null)
             .GroupBy(pair => pair.Feature!.Value)
             .Select(group => new GrantedFeature(group.Key, group.Min(pair => pair.Level)))
             .OrderBy(granted => granted.Level)
             .ThenBy(granted => granted.Feature)
             .ToArray();
+    }
 
     /// <summary>
     /// Printed features the class grants that this engine does not implement. The gap,
@@ -909,6 +926,9 @@ public static class CharacterResolver
         definition.Levels
             .Where(row => row.Level <= level)
             .SelectMany(row => row.FeatureNames)
+            .Concat(definition.SubclassFeatures
+                .Where(feature => feature.GrantedAtLevel is { } granted && granted <= level)
+                .Select(feature => feature.Name))
             .Where(name => ClassFeatureRegistry.Resolve(name) is null)
             // Subclass placeholders are not features in their own right.
             .Where(name => !name.Contains("Subclass", StringComparison.OrdinalIgnoreCase))

@@ -325,7 +325,8 @@
             "If your Rage is still active on your next turn, you can extend the Rage for another round by doing one of the following: • Make an attack roll against an enemy. • Force an enemy to make a saving throw. • Take a Bonus Action to extend your Rage",
             "Each time the Rage is extended, it lasts until the end of your next turn",
             "You can maintain a Rage for up to 10 minutes."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Unarmored Defense",
@@ -335,7 +336,8 @@
           "unmodelledClauses": [
             "While you aren't wearing any armor, your base Armor Class equals 10 plus your Dexterity and Constitution modifiers",
             "You can use a Shield and still gain this benefit."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Weapon Mastery",
@@ -346,7 +348,8 @@
             "Your training with weapons allows you to use the mastery properties of two kinds of Simple or Martial Melee weapons of your choice, such as Greataxes and Handaxes",
             "Whenever you finish a Long Rest, you can practice weapon drills and change one of those weapon choices",
             "When you reach certain Barbarian levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Barbarian Features table."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Danger Sense",
@@ -361,7 +364,8 @@
           "unmodelledClauses": [
             "You gain an uncanny sense of when things aren't as they should be, giving you an edge when you dodge perils",
             "You have Advantage on Dexterity saving throws unless you have the Incapacitated condition."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Reckless Attack",
@@ -372,7 +376,8 @@
             "You can throw aside all concern for defense to attack with increased ferocity",
             "When you make your first attack roll on your turn, you can decide to attack recklessly",
             "Doing so gives you Advantage on attack rolls using Strength until the start of your next turn, but attack rolls against you have Advantage during that time."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Barbarian Subclass",
@@ -384,7 +389,8 @@
             "The Path of the Berserker subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Barbarian levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Barbarian level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Primal Knowledge",
@@ -395,7 +401,8 @@
             "You gain proficiency in another skill of your choice from the skill list available to Barbarians at level 1",
             "In addition, while your Rage is active, you can channel primal power when you attempt certain tasks; whenever you make an ability check using one of the following skills, you can make it as a Strength check even if it normally uses a different ability: Acrobatics, Intimidation, Perception, Stealth, or Survival",
             "When you use this ability, your Strength represents primal power coursing through you, honing your agility, bearing, and senses."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -405,7 +412,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Barbarian levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Extra Attack",
@@ -414,7 +422,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can attack twice instead of once whenever you take the Attack action on your turn."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Fast Movement",
@@ -423,7 +432,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your speed increases by 10 feet while you aren't wearing Heavy armor."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Feral Instinct",
@@ -432,7 +442,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your instincts are so honed that you have Advantage on Initiative rolls."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Instinctive Pounce",
@@ -441,7 +452,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "As part of the Bonus Action you take to enter your Rage, you can move up to half your Speed."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Brutal Strike",
@@ -459,7 +471,8 @@
             "Hamstring Blow",
             "The target's Speed is reduced by 15 feet until the start of your next turn",
             "A target can be affected by only one Hamstring Blow at a timethe most recent one."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Relentless Rage",
@@ -472,7 +485,8 @@
             "If you succeed, your Hit Points instead change to a number equal to twice your Barbarian level",
             "Each time you use this feature after the first, the DC increases by 5",
             "When you finish a Short or Long Rest, the DC resets to 10."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Improved Brutal Strike",
@@ -487,7 +501,8 @@
             "Sundering Blow",
             "Before the start of your next turn, the next attack roll made by another creature against the target gains a +5 bonus to the roll",
             "An attack roll can gain only one Sundering Blow bonus."
-          ]
+          ],
+          "grantedAtLevel": 13
         },
         {
           "name": "Persistent Rage",
@@ -508,7 +523,8 @@
             "After you regain uses of Rage in this way, you can't do so again until you finish a Long Rest",
             "In addition, your Rage is so fierce that it now lasts for 10 minutes without you needing to do anything to extend it from round to round",
             "Your Rage ends early if you have the Unconscious condition (not just the Incapacitated condition) or don Heavy armor."
-          ]
+          ],
+          "grantedAtLevel": 15
         },
         {
           "name": "Improved Brutal Strike",
@@ -518,7 +534,8 @@
           "unmodelledClauses": [
             "The extra damage of your Brutal Strike increases to 2d10",
             "In addition, you can use two different Brutal Strike effects whenever you use your Brutal Strike feature."
-          ]
+          ],
+          "grantedAtLevel": 17
         },
         {
           "name": "Indomitable Might",
@@ -527,7 +544,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "If your total for a Strength check or Strength saving throw is less than your Strength score, you can use that score in place of the total."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -537,7 +555,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Irresistible Offense is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Primal Champion",
@@ -549,8 +568,11 @@
             "Your Strength and Constitution scores increase by 4, to a maximum of 25",
             "Barbarian Subclass: Path of the Berserker Channel Rage into Violent Fury Barbarians who walk the Path of the Berserker direct their Rage primarily toward violence",
             "Their path is one of untrammeled fury, and they thrill in the chaos of battle as they allow their Rage to seize and empower them."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Frenzy",
           "text": "If you use Reckless Attack while your Rage is active, you deal extra damage to the first target you hit on your turn with a Strength-based attack. To determine the extra damage, roll a number of d6s equal to your Rage Damage bonus, and add them together. The damage has the same type as the weapon or Unarmed Strike used for the attack.",
@@ -560,7 +582,8 @@
             "If you use Reckless Attack while your Rage is active, you deal extra damage to the first target you hit on your turn with a Strength-based attack",
             "To determine the extra damage, roll a number of d6s equal to your Rage Damage bonus, and add them together",
             "The damage has the same type as the weapon or Unarmed Strike used for the attack."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Mindless Rage",
@@ -570,7 +593,8 @@
           "unmodelledClauses": [
             "You have Immunity to the Charmed and Frightened conditions while your Rage is active",
             "If you're Charmed or Frightened when you enter your Rage, the condition ends on you."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Retaliation",
@@ -579,7 +603,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "When you take damage from a creature that is within 5 feet of you, you can take a Reaction to make one melee attack against that creature, using a weapon or an Unarmed Strike."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Intimidating Presence",
@@ -598,7 +623,8 @@
             "At the end of each of the Frightened creature's turns, the creature repeats the save, ending the effect on itself on a success",
             "Once you use this feature, you can't use it again until you finish a Long Rest unless you expend a use of your Rage (no action required) to restore your use of it",
             "Bard"
-          ]
+          ],
+          "grantedAtLevel": 14
         }
       ],
       "sourcePage": 28
@@ -1022,7 +1048,8 @@
             "At Higher Levels",
             "Your Bardic Inspiration die changes when you reach certain Bard levels, as shown in the Bardic Die column of the Bard Features table",
             "The die becomes a d8 at level 5, a d10 at level 10, and a d12 at level 15."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Spellcasting",
@@ -1056,7 +1083,8 @@
             "Charisma is your spellcasting ability for your Bard spells",
             "Spellcasting Focus",
             "You can use a Musical Instrument as a Spellcasting Focus for your Bard spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Expertise",
@@ -1067,7 +1095,8 @@
             "You gain Expertise (see \"Rules Glossary\") in two of your skill proficiencies of your choice",
             "Performance and Persuasion are recommended if you have proficiency in them",
             "At Bard level 9, you gain Expertise in two more of your skill proficiencies of your choice."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Jack of All Trades",
@@ -1077,7 +1106,8 @@
           "unmodelledClauses": [
             "You can add half your Proficiency Bonus (round down) to any ability check you make that uses a skill proficiency you lack and that doesn't otherwise use your Proficiency Bonus",
             "For example, if you make a Strength (Athletics) check and lack Athletics proficiency, you can add half your Proficiency Bonus to the check."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Bard Subclass",
@@ -1089,7 +1119,8 @@
             "The College of Lore subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Bard levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Bard level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -1099,7 +1130,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Bard levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Font of Inspiration",
@@ -1109,7 +1141,8 @@
           "unmodelledClauses": [
             "You now regain all your expended uses of Bardic Inspiration when you finish a Short or Long Rest",
             "In addition, you can expend a spell slot (no action required) to regain one expended use of Bardic Inspiration."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Countercharm",
@@ -1119,7 +1152,8 @@
           "unmodelledClauses": [
             "You can use musical notes or words of power to disrupt mind-influencing effects",
             "If you or a creature within 30 feet of you fails a saving throw against an effect that applies the Charmed or Frightened condition, you can take a Reaction to cause the save to be rerolled, and the new roll has Advantage."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Magical Secrets",
@@ -1130,7 +1164,8 @@
             "You've learned secrets from various magical traditions",
             "Whenever you reach a Bard level (including this level) and the Prepared Spells number in the Bard Features table increases, you can choose any of your new prepared spells from the Bard, Cleric, Druid, and Wizard spell lists, and the chosen spells count as Bard spells for you (see a class's section for its spell list)",
             "In addition, whenever you replace a spell prepared for this class, you can replace it with a spell from those lists."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Superior Inspiration",
@@ -1139,7 +1174,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "When you roll Initiative, you regain expended uses of Bardic Inspiration until you have two if you have fewer than that."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -1149,7 +1185,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Spell Recall is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Words of Creation",
@@ -1166,8 +1203,11 @@
             "Cantrips (Level 0 Bard Spells) Spell School Special Dancing Lights Illusion C Light Evocation - Mage Hand Conjuration - Mending Transmutation - Message Transmutation - Minor Illusion Illusion - Spell School Special Prestidigitation Transmutation - Starry Wisp Evocation - True Strike Divination - Vicious Mockery Enchantment - Level 1 Bard Spells Spell School Special Animal Friendship Enchantment - Bane Enchantment C Charm Person Enchantment - Color Spray Illusion - Command Enchantment - Comprehend Languages Divination R Cure Wounds Abjuration - Detect Magic Divination C, R Disguise Self Illusion - Dissonant Whispers Enchantment - Faerie Fire Evocation C Feather Fall Transmutation - Healing Word Abjuration - Heroism Enchantment C Hideous Laughter Enchantment C Identify Divination R, M Illusory Script Illusion R, M Longstrider Transmutation - Silent Image Illusion C Sleep Enchantment C Speak with Animals Divination R Thunderwave Evocation - Unseen Servant Conjuration R Level 2 Bard Spells Spell School Special Aid Abjuration - Animal Messenger Enchantment R Blindness/Deafness Transmutation - Calm Emotions Enchantment C Detect Thoughts Divination C Enhance Ability Transmutation C Enlarge/Reduce Transmutation C Enthrall Enchantment C Heat Metal Transmutation C Hold Person Enchantment C Spell School Special Invisibility Illusion C Knock Transmutation - Lesser Restoration Abjuration - Locate Animals or Plants Divination R Locate Object Divination C Magic Mouth Illusion R, M Mirror Image Illusion - See Invisibility Divination - Shatter Evocation - Silence Illusion C, R Suggestion Enchantment C Zone of Truth Enchantment - Level 3 Bard Spells Spell School Special Bestow Curse Necromancy C Clairvoyance Divination C, M Dispel Magic Abjuration - Fear Illusion C Glyph of Warding Abjuration M Hypnotic Pattern Illusion C Major Image Illusion C Mass Healing Word Abjuration - Nondetection Abjuration M Plant Growth Transmutation - Sending Divination - Slow Transmutation C Speak with Dead Necromancy - Speak with Plants Transmutation - Stinking Cloud Conjuration C Tiny Hut Evocation R Tongues Divination - Level 4 Bard Spells Spell School Special Charm Monster Enchantment - Compulsion Enchantment C Confusion Enchantment C Dimension Door Conjuration - Freedom of Movement Abjuration - Greater Invisibility Illusion C Hallucinatory Terrain Illusion - Locate Creature Divination C Phantasmal Killer Illusion C Polymorph Transmutation C Level 5 Bard Spells Spell School Special Animate Objects Transmutation C Awaken Transmutation M Dominate Person Enchantment C Dream Illusion - Geas Enchantment - Greater Restoration Abjuration M Hold Monster Enchantment C Legend Lore Divination M Mass Cure Wounds Abjuration - Mislead Illusion C Modify Memory Enchantment C Planar Binding Abjuration M Raise Dead Necromancy M Scrying Divination C, M Seeming Illusion - Telepathic Bond Divination R Teleportation Circle Conjuration M Level 6 Bard Spells Spell School Special Eyebite Necromancy C Find the Path Divination C, M Guards and Wards Abjuration M Heroes' Feast Conjuration M Irresistible Dance Enchantment C Mass Suggestion Enchantment - Programmed Illusion Illusion M True Seeing Divination M Level 7 Bard Spells Spell School Special Arcane Sword Evocation C, M Etherealness Conjuration - Forcecage Evocation C, M Magnificent Mansion Conjuration M Mirage Arcane Illusion - Prismatic Spray Evocation - Project Image Illusion C, M Regenerate Transmutation - Resurrection Necromancy M Symbol Abjuration M Teleport Conjuration - Level 8 Bard Spells Spell School Special Antipathy/Sympathy Enchantment - Befuddlement Enchantment - Dominate Monster Enchantment C Glibness Enchantment - Mind Blank Abjuration - Power Word Stun Enchantment - Level 9 Bard Spells Spell School Special Foresight Divination - Power Word Heal Enchantment - Power Word Kill Enchantment - Prismatic Wall Abjuration - True Polymorph Transmutation C Bard Subclass: College of Lore Plumb the Depths of Magical Knowledge Bards of the College of Lore collect spells and secrets from diverse sources, such as scholarly tomes, mystical rites, and peasant tales",
             "The college's members gather in libraries and universities to share their lore with one another",
             "They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Bonus Proficiencies",
           "text": "You gain proficiency with three skills of your choice.",
@@ -1175,7 +1215,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You gain proficiency with three skills of your choice."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Cutting Words",
@@ -1185,7 +1226,8 @@
           "unmodelledClauses": [
             "You learn to use your wit to supernaturally distract, confuse, and otherwise sap the confidence and competence of others",
             "When a creature that you can see within 60 feet of yourself makes a damage roll or succeeds on an ability check or attack roll, you can take a Reaction to expend one use of your Bardic Inspiration; roll your Bardic Inspiration die, and subtract the number rolled from the creature's roll, reducing the damage or potentially turning the success into a failure."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Magical Discoveries",
@@ -1197,7 +1239,8 @@
             "These spells can come from the Cleric, Druid, or Wizard spell list or any combination thereof (see a class's section for its spell list)",
             "A spell you choose must be a cantrip or a spell for which you have spell slots, as shown in the Bard Features table",
             "You always have the chosen spells prepared, and whenever you gain a Bard level, you can replace one of the spells with another spell that meets these requirements."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Peerless Skill",
@@ -1208,7 +1251,8 @@
             "When you make an ability check or attack roll and fail, you can expend one use of Bardic Inspiration; roll the Bardic Inspiration die, and add the number rolled to the d20, potentially turning a failure into a success",
             "On a failure, the Bardic Inspiration isn't expended",
             "Cleric"
-          ]
+          ],
+          "grantedAtLevel": 14
         }
       ],
       "sourcePage": 31
@@ -1648,7 +1692,8 @@
             "Wisdom is your spellcasting ability for your Cleric spells",
             "Spellcasting Focus",
             "You can use a Holy Symbol as a Spellcasting Focus for your Cleric spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Divine Order",
@@ -1663,7 +1708,8 @@
             "You know one extra cantrip from the Cleric spell list",
             "In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks",
             "The bonus equals your Wisdom modifier (minimum of +1)."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Channel Divinity",
@@ -1697,7 +1743,8 @@
             "If the creature fails its save, it has the Frightened and Incapacitated conditions for 1 minute",
             "For that duration, it tries to move as far from you as it can on its turns",
             "This effect ends early on the creature if it takes any damage, if you have the Incapacitated condition, or if you die."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Cleric Subclass",
@@ -1709,7 +1756,8 @@
             "The Life Domain subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Cleric levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Cleric level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -1719,7 +1767,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Cleric levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Sear Undead",
@@ -1730,7 +1779,8 @@
             "Whenever you use Turn Undead, you can roll a number of d8s equal to your Wisdom modifier (minimum of 1d8) and add the rolls together",
             "Each Undead that fails its saving throw against that use of Turn Undead takes Radiant damage equal to the roll's total",
             "This damage doesn't end the turn effect."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Blessed Strikes",
@@ -1744,7 +1794,8 @@
             "Once on each of your turns when you hit a creature with an attack roll using a weapon, you can cause the target to take an extra 1d8 Necrotic or Radiant damage (your choice)",
             "Potent Spellcasting",
             "Add your Wisdom modifier to the damage you deal with any Cleric cantrip."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Divine Intervention",
@@ -1756,7 +1807,8 @@
             "As a Magic action, choose any Cleric spell of level 5 or lower that doesn't require a Reaction to cast",
             "As part of the same action, you cast that spell without expending a spell slot or needing Material components",
             "You can't use this feature again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Improved Blessed Strikes",
@@ -1769,7 +1821,8 @@
             "The extra damage of your Divine Strike increases to 2d8",
             "Potent Spellcasting",
             "When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier."
-          ]
+          ],
+          "grantedAtLevel": 14
         },
         {
           "name": "Epic Boon",
@@ -1779,7 +1832,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Fate is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Greater Divine Intervention",
@@ -1798,8 +1852,11 @@
             "Existence itself relies on the positive energy associated with this domain, so a Cleric of almost any religious tradition might choose it",
             "This domain is particularly associated with agricultural deities, gods of healing or endurance, and gods of home and community",
             "Religious orders of healing also seek the magic of this domain."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Disciple of Life",
           "text": "When a spell you cast with a spell slot restores Hit Points to a creature, that creature regains additional Hit Points on the turn you cast the spell. The additional Hit Points equal 2 plus the spell slot's level.",
@@ -1808,7 +1865,8 @@
           "unmodelledClauses": [
             "When a spell you cast with a spell slot restores Hit Points to a creature, that creature regains additional Hit Points on the turn you cast the spell",
             "The additional Hit Points equal 2 plus the spell slot's level."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Life Domain Spells",
@@ -1819,7 +1877,8 @@
             "Your connection to this divine domain ensures you always have certain spells ready",
             "When you reach a Cleric level specified in the Life Domain Spells table, you thereafter always have the listed spells prepared",
             "Life Domain Spells Cleric Prepared Spells Level 3 Aid, Bless, Cure Wounds, Lesser Restoration 5 Mass Healing Word, Revivify 7 Aura of Life, Death Ward 9 Greater Restoration, Mass Cure Wounds"
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Preserve Life",
@@ -1830,7 +1889,8 @@
             "As a Magic action, you present your Holy Symbol and expend a use of your Channel Divinity to evoke healing energy that can restore a number of Hit Points equal to five times your Cleric level",
             "Choose Bloodied creatures within 30 feet of yourself (which can include you), and divide those Hit Points among them",
             "This feature can restore a creature to no more than half its Hit Point maximum."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Blessed Healer",
@@ -1840,7 +1900,8 @@
           "unmodelledClauses": [
             "The healing spells you cast on others heal you as well",
             "Immediately after you cast a spell with a spell slot that restores Hit Points to one or more creatures other than yourself, you regain Hit Points equal to 2 plus the spell slot's level."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Supreme Healing",
@@ -1851,7 +1912,8 @@
             "When you would normally roll one or more dice to restore Hit Points to a creature with a spell or Channel Divinity, don't roll those dice for the healing; instead use the highest number possible for each die",
             "For example, instead of restoring 2d6 Hit Points to a creature with a spell, you restore 12",
             "Druid"
-          ]
+          ],
+          "grantedAtLevel": 17
         }
       ],
       "sourcePage": 36
@@ -2297,7 +2359,8 @@
             "Wisdom is your spellcasting ability for your Druid spells",
             "Spellcasting Focus",
             "You can use a Druidic Focus as a Spellcasting Focus for your Druid spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Druidic",
@@ -2310,7 +2373,8 @@
             "You can use Druidic to leave hidden messages",
             "You and others who know Druidic automatically spot such a message",
             "Others spot the message's presence with a successful DC 15 Intelligence (Investigation) check but can't decipher it without magic."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Primal Order",
@@ -2325,7 +2389,8 @@
             "The bonus equals your Wisdom modifier (minimum bonus of +1)",
             "Warden",
             "Trained for battle, you gain proficiency with Martial weapons and training with Medium armor."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Wild Shape",
@@ -2368,7 +2433,8 @@
             "Worn equipment functions as normal, but the GM decides whether it's practical for the new form to wear a piece of equipment based on the creature's size and shape",
             "Your equipment doesn't change size or shape to match the new form, and any equipment that the new form can't wear must either fall to the ground or merge with the form",
             "Equipment that merges with the form has no effect while you're in that form."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Wild Companion",
@@ -2379,7 +2445,8 @@
             "You can summon a nature spirit that assumes an animal form to aid you",
             "As a Magic action, you can expend a spell slot or a use of Wild Shape to cast the Find Familiar spell without Material components",
             "When you cast the spell in this way, the familiar is Fey and disappears when you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Druid Subclass",
@@ -2391,7 +2458,8 @@
             "The Circle of the Land subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Druid levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Druid level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -2401,7 +2469,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Druid levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Wild Resurgence",
@@ -2411,7 +2480,8 @@
           "unmodelledClauses": [
             "Once on each of your turns, if you have no uses of Wild Shape left, you can give yourself one use by expending a spell slot (no action required)",
             "In addition, you can expend one use of Wild Shape (no action required) to give yourself a level 1 spell slot, but you can't do so again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Elemental Fury",
@@ -2425,7 +2495,8 @@
             "Add your Wisdom modifier to the damage you deal with any Druid cantrip",
             "Primal Strike",
             "Once on each of your turns when you hit a creature with an attack roll using a weapon or a Beast form's attack in Wild Shape, you can cause the target to take an extra 1d8 Cold, Fire, Lightning, or Thunder damage (choose when you hit)."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Improved Elemental Fury",
@@ -2438,7 +2509,8 @@
             "When you cast a Druid cantrip with a range of 10 feet or greater, the spell's range increases by 300 feet",
             "Primal Strike",
             "The extra damage of your Primal Strike increases to 2d8."
-          ]
+          ],
+          "grantedAtLevel": 15
         },
         {
           "name": "Beast Spells",
@@ -2447,7 +2519,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "While using Wild Shape, you can cast spells in Beast form, except for any spell that has a Material component with a cost specified or that consumes its Material component."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -2457,7 +2530,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Dimensional Travel is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Archdruid",
@@ -2482,8 +2556,11 @@
             "Cantrips (Level 0 Druid Spells) Spell School Special Druidcraft Transmutation - Elementalism Transmutation - Guidance Divination C Mending Transmutation - Message Transmutation - Poison Spray Necromancy - Produce Flame Conjuration - Resistance Abjuration C Shillelagh Transmutation - Spare the Dying Necromancy - Starry Wisp Evocation - Level 1 Druid Spells Spell School Special Animal Friendship Enchantment - Charm Person Enchantment - Create or Destroy Water Transmutation - Cure Wounds Abjuration - Detect Magic Divination C, R Detect Poison and Disease Divination C, R Entangle Conjuration C Faerie Fire Evocation C Fog Cloud Conjuration C Goodberry Conjuration - Healing Word Abjuration - Ice Knife Conjuration - Jump Transmutation - Longstrider Transmutation - Protection from Evil and Good Abjuration C, M Purify Food and Drink Transmutation R Speak with Animals Divination R Thunderwave Evocation - Level 2 Druid Spells Spell School Special Aid Abjuration - Animal Messenger Enchantment R Augury Divination R, M Barkskin Transmutation - Continual Flame Evocation M Darkvision Transmutation - Enhance Ability Transmutation C Enlarge/Reduce Transmutation C Find Traps Divination - Flame Blade Evocation C Flaming Sphere Evocation C Gust of Wind Evocation C Heat Metal Transmutation C Hold Person Enchantment C Lesser Restoration Abjuration - Locate Animals or Plants Divination R Locate Object Divination C Moonbeam Evocation C Pass without Trace Abjuration C Protection from Poison Abjuration - Spike Growth Transmutation C Level 3 Druid Spells Spell School Special Call Lightning Conjuration C Conjure Animals Conjuration C Daylight Evocation - Dispel Magic Abjuration - Meld into Stone Transmutation R Plant Growth Transmutation - Protection from Energy Abjuration C Revivify Necromancy M Sleet Storm Conjuration C Speak with Plants Transmutation - Water Breathing Transmutation R Water Walk Transmutation R Wind Wall Evocation C Level 4 Druid Spells Spell School Special Blight Necromancy - Charm Monster Enchantment - Confusion Enchantment C Conjure Minor Elementals Conjuration C Conjure Woodland Beings Conjuration C Control Water Transmutation C Divination Divination R, M Dominate Beast Enchantment C Fire Shield Evocation - Freedom of Movement Abjuration - Giant Insect Conjuration C Hallucinatory Terrain Illusion - Ice Storm Evocation - Locate Creature Divination C Polymorph Transmutation C Stone Shape Transmutation - Stoneskin Transmutation C, M Wall of Fire Evocation C Level 5 Druid Spells Spell School Special Antilife Shell Abjuration C Awaken Transmutation M Commune with Nature Divination R Cone of Cold Evocation - Conjure Elemental Conjuration C Contagion Necromancy - Geas Enchantment - Greater Restoration Abjuration M Insect Plague Conjuration C Mass Cure Wounds Abjuration - Planar Binding Abjuration M Reincarnate Necromancy M Scrying Divination C, M Tree Stride Conjuration C Wall of Stone Evocation C Level 6 Druid Spells Spell School Special Conjure Fey Conjuration C Find the Path Divination C, M Flesh to Stone Transmutation C Heal Abjuration - Heroes' Feast Conjuration M Move Earth Transmutation C Sunbeam Evocation C Transport via Plants Conjuration - Wall of Thorns Conjuration C Wind Walk Transmutation - Level 7 Druid Spells Spell School Special Fire Storm Evocation - Mirage Arcane Illusion - Plane Shift Conjuration M Regenerate Transmutation - Reverse Gravity Transmutation C Symbol Abjuration M Level 8 Druid Spells Spell School Special Animal Shapes Transmutation - Antipathy/Sympathy Enchantment - Befuddlement Enchantment - Control Weather Transmutation C Earthquake Transmutation C Incendiary Cloud Conjuration C Sunburst Evocation - Tsunami Conjuration C Level 9 Druid Spells Spell School Special Foresight Divination - Shapechange Transmutation C, M Storm of Vengeance Conjuration C True Resurrection Necromancy M Druid Subclass: Circle of the Land Celebrate Connection to the Natural World The Circle of the Land comprises mystics and sages who safeguard ancient knowledge and rites",
             "These Druids meet within sacred circles of trees or standing stones to whisper primal secrets in Druidic",
             "The circle's wisest members preside as the chief priests of their communities."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Circle of the Land Spells",
           "text": "Whenever you finish a Long Rest, choose one type of land: arid, polar, temperate, or tropical. Consult the table below that corresponds to the chosen type; you have the spells listed for your Druid level and lower prepared. Arid Land Druid Level Circle Spells 3 Blur, Burning Hands, Fire Bolt 5 Fireball 7 Blight 9 Wall of Stone Polar Land Druid Level Circle Spells 3 Fog Cloud, Hold Person, Ray of Frost 5 Sleet Storm 7 Ice Storm 9 Cone of Cold Temperate Land Druid Level Circle Spells 3 Misty Step, Shocking Grasp, Sleep 5 Lightning Bolt 7 Freedom of Movement 9 Tree Stride Tropical Land Druid Level Circle Spells 3 Acid Splash, Ray of Sickness, Web 5 Stinking Cloud 7 Polymorph 9 Insect Plague",
@@ -2493,7 +2570,8 @@
             "Whenever you finish a Long Rest, choose one type of land: arid, polar, temperate, or tropical",
             "Consult the table below that corresponds to the chosen type; you have the spells listed for your Druid level and lower prepared",
             "Arid Land Druid Level Circle Spells 3 Blur, Burning Hands, Fire Bolt 5 Fireball 7 Blight 9 Wall of Stone Polar Land Druid Level Circle Spells 3 Fog Cloud, Hold Person, Ray of Frost 5 Sleet Storm 7 Ice Storm 9 Cone of Cold Temperate Land Druid Level Circle Spells 3 Misty Step, Shocking Grasp, Sleep 5 Lightning Bolt 7 Freedom of Movement 9 Tree Stride Tropical Land Druid Level Circle Spells 3 Acid Splash, Ray of Sickness, Web 5 Stinking Cloud 7 Polymorph 9 Insect Plague"
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Land's Aid",
@@ -2506,7 +2584,8 @@
             "Each creature of your choice in the Sphere must make a Constitution saving throw against your spell save DC, taking 2d6 Necrotic damage on a failed save or half as much damage on a successful one",
             "One creature of your choice in that area regains 2d6 Hit Points",
             "The damage and healing increase by 1d6 when you reach Druid levels 10 (3d6) and 14 (4d6)."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Natural Recovery",
@@ -2520,7 +2599,8 @@
             "For example, if you're a level 6 Druid, you can recover up to three levels' worth of spell slots",
             "You can recover a level 3 spell slot, a level 2 and a level 1 spell slot, or three level 1 spell slots",
             "Once you recover spell slots with this feature, you can't do so again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Nature's Ward",
@@ -2535,7 +2615,8 @@
           "unmodelledClauses": [
             "You are immune to the Poisoned condition, and you have Resistance to a damage type associated with your current land choice in the Circle Spells feature, as shown in the Nature's Ward table",
             "Nature's Ward Land Type Resistance Land Type Resistance Arid Fire Temperate Lightning Polar Cold Tropical Poison"
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Nature's Sanctuary",
@@ -2553,7 +2634,8 @@
             "You and your allies have Half Cover while in that area, and your allies gain the current Resistance of your Nature's Ward while there",
             "As a Bonus Action, you can move the Cube up to 60 feet to ground within 120 feet of yourself",
             "Fighter"
-          ]
+          ],
+          "grantedAtLevel": 14
         }
       ],
       "sourcePage": 41
@@ -2846,7 +2928,8 @@
             "Defense is recommended",
             "Whenever you gain a Fighter level, you can replace the feat you chose with a different Fighting Style feat",
             "Second Weapon Wind Mastery Mastery 2 3 Mind 2 3 2 3 3 4 3 4 3 4 3 4 3 4 3 4 4 5 4 5 4 5 Attacks 4 5 4 5 4 5 4 6 (three uses) 4 6 4 6 4 6 4 6"
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Second Wind",
@@ -2859,7 +2942,8 @@
             "You can use this feature twice",
             "You regain one expended use when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest",
             "When you reach certain Fighter levels, you gain more uses of this feature, as shown in the Second Wind column of the Fighter Features table."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Weapon Mastery",
@@ -2870,7 +2954,8 @@
             "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice",
             "Whenever you finish a Long Rest, you can practice weapon drills and change one of those weapon choices",
             "When you reach certain Fighter levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Fighter Features table."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Action Surge",
@@ -2882,7 +2967,8 @@
             "On your turn, you can take one additional action, except the Magic action",
             "Once you use this feature, you can't do so again until you finish a Short or Long Rest",
             "Starting at level 17, you can use it twice before a rest but only once on a turn."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Tactical Mind",
@@ -2894,7 +2980,8 @@
             "When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success",
             "Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success",
             "If the check still fails, this use of Second Wind isn't expended."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Fighter Subclass",
@@ -2906,7 +2993,8 @@
             "The Champion subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Fighter levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Fighter level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -2916,7 +3004,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Fighter levels 6, 8, 12, 14, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Extra Attack",
@@ -2925,7 +3014,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can attack twice instead of once whenever you take the Attack action on your turn."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Tactical Shift",
@@ -2934,7 +3024,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Whenever you activate your Second Wind with a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Indomitable",
@@ -2945,7 +3036,8 @@
             "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level",
             "You must use the new roll, and you can't use this feature again until you finish a Long Rest",
             "You can use this feature twice before a Long Rest starting at level 13 and three times before a Long Rest starting at level 17."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Tactical Master",
@@ -2954,7 +3046,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "When you attack with a weapon whose mastery property you can use, you can replace that property with the Push, Sap, or Slow property for that attack."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Two Extra Attacks",
@@ -2963,7 +3056,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can attack three times instead of once whenever you take the Attack action on your turn."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Studied Attacks",
@@ -2973,7 +3067,8 @@
           "unmodelledClauses": [
             "You study your opponents and learn from each attack you make",
             "If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn."
-          ]
+          ],
+          "grantedAtLevel": 13
         },
         {
           "name": "Epic Boon",
@@ -2983,7 +3078,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Combat Prowess is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Three Extra Attacks",
@@ -2995,8 +3091,11 @@
             "Fighter Subclass: Champion Pursue Physical Excellence in Combat A Champion focuses on the development of martial prowess in a relentless pursuit of victory",
             "Champions combine rigorous training with physical excellence to deal devastating blows, withstand peril, and garner glory",
             "Whether in athletic contests or bloody battle, Champions strive for the crown of the victor."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Improved Critical",
           "text": "Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20.",
@@ -3004,7 +3103,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Remarkable Athlete",
@@ -3014,7 +3114,8 @@
           "unmodelledClauses": [
             "Thanks to your athleticism, you have Advantage on Initiative rolls and Strength (Athletics) checks",
             "In addition, immediately after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Additional Fighting Style",
@@ -3023,7 +3124,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You gain another Fighting Style feat of your choice."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Heroic Warrior",
@@ -3033,7 +3135,8 @@
           "unmodelledClauses": [
             "The thrill of battle drives you toward victory",
             "During combat, you can give yourself Heroic Inspiration whenever you start your turn without it."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Superior Critical",
@@ -3042,7 +3145,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your attack rolls with weapons and Unarmed Strikes can now score a Critical Hit on a roll of 18-20 on the d20."
-          ]
+          ],
+          "grantedAtLevel": 15
         },
         {
           "name": "Survivor",
@@ -3057,7 +3161,8 @@
             "Heroic Rally",
             "At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point",
             "Monk"
-          ]
+          ],
+          "grantedAtLevel": 18
         }
       ],
       "sourcePage": 47
@@ -3371,7 +3476,8 @@
             "You can use your Dexterity modifier instead of your Strength modifier for the attack and damage rolls of your Unarmed Strikes and Monk weapons",
             "In addition, when you use the Grapple or Shove option of your Unarmed Strike, you can use your Dexterity modifier instead of your Strength modifier to determine the save DC",
             "Martial Focus Unarmored Arts Points Movement 1d6 - - 1d6 2 +10 ft. 1d6 3 +10 ft. 1d6 4 +10 ft. 1d8 5 +10 ft. 1d8 6 +15 ft. 1d8 7 +15 ft. 1d8 8 +15 ft. 1d8 9 +15 ft. 1d8 10 +20 ft. 1d10 11 +20 ft. 1d10 12 +20 ft. 1d10 13 +20 ft. 1d10 14 +25 ft. 1d10 15 +25 ft. 1d10 16 +25 ft. 1d12 17 +25 ft. 1d12 18 +30 ft. 1d12 19 +30 ft. 1d12 20 +30 ft."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Unarmored Defense",
@@ -3380,7 +3486,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "While you aren't wearing armor or wielding a Shield, your base Armor Class equals 10 plus your Dexterity and Wisdom modifiers."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Monk's Focus",
@@ -3404,7 +3511,8 @@
             "Step of the Wind",
             "You can take the Dash action as a Bonus Action",
             "Alternatively, you can expend 1 Focus Point to take both the Disengage and Dash actions as a Bonus Action, and your jump distance is doubled for the turn."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Unarmored Movement",
@@ -3414,7 +3522,8 @@
           "unmodelledClauses": [
             "Your speed increases by 10 feet while you aren't wearing armor or wielding a Shield",
             "This bonus increases when you reach certain Monk levels, as shown on the Monk Features table."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Uncanny Metabolism",
@@ -3425,7 +3534,8 @@
             "When you roll Initiative, you can regain all expended Focus Points",
             "When you do so, roll your Martial Arts die, and regain a number of Hit Points equal to your Monk level plus the number rolled",
             "Once you use this feature, you can't use it again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Deflect Attacks",
@@ -3439,7 +3549,8 @@
             "If you do so, choose a creature you can see within 5 feet of yourself if the attack was a melee attack or a creature you can see within 60 feet of yourself that isn't behind Total Cover if the attack was a ranged attack",
             "That creature must succeed on a Dexterity saving throw or take damage equal to two rolls of your Martial Arts die plus your Dexterity modifier",
             "The damage is the same type dealt by the attack."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Monk Subclass",
@@ -3451,7 +3562,8 @@
             "The Warrior of the Open Hand subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Monk levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Monk level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -3461,7 +3573,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Monk levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Slow Fall",
@@ -3470,7 +3583,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can take a Reaction when you fall to reduce any damage you take from the fall by an amount equal to five times your Monk level."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Extra Attack",
@@ -3479,7 +3593,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can attack twice instead of once whenever you take the Attack action on your turn."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Stunning Strike",
@@ -3496,7 +3611,8 @@
             "The target must make a Constitution saving throw",
             "On a failed save, the target has the Stunned condition until the start of your next turn",
             "On a successful save, the target's Speed is halved until the start of your next turn, and the next attack roll made against the target before then has Advantage."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Empowered Strikes",
@@ -3505,7 +3621,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Whenever you deal damage with your Unarmed Strike, it can deal your choice of Force damage or its normal damage type."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Evasion",
@@ -3520,7 +3637,8 @@
           "unmodelledClauses": [
             "When you're subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw and only half damage if you fail",
             "You don't benefit from this feature if you have the Incapacitated condition."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Acrobatic Movement",
@@ -3529,7 +3647,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "While you aren't wearing armor or wielding a Shield, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the movement."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Heightened Focus",
@@ -3546,7 +3665,8 @@
             "When you expend a Focus Point to use Step of the Wind, you can choose a willing creature within 5 feet of yourself that is Large or smaller",
             "You move the creature with you until the end of your turn",
             "The creature's movement doesn't provoke Opportunity Attacks."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Self-Restoration",
@@ -3556,7 +3676,8 @@
           "unmodelledClauses": [
             "Through sheer force of will, you can remove one of the following conditions from yourself at the end of each of your turns: Charmed, Frightened, or Poisoned",
             "In addition, forgoing food and drink doesn't give you levels of Exhaustion."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Deflect Energy",
@@ -3565,7 +3686,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can now use your Deflect Attacks feature against attacks that deal any damage type, not just Bludgeoning, Piercing, or Slashing."
-          ]
+          ],
+          "grantedAtLevel": 13
         },
         {
           "name": "Disciplined Survivor",
@@ -3575,7 +3697,8 @@
           "unmodelledClauses": [
             "Your physical and mental discipline grant you proficiency in all saving throws",
             "Additionally, whenever you make a saving throw and fail, you can expend 1 Focus Point to reroll it, and you must use the new roll."
-          ]
+          ],
+          "grantedAtLevel": 14
         },
         {
           "name": "Perfect Focus",
@@ -3584,7 +3707,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "When you roll Initiative and don't use Uncanny Metabolism, you regain expended Focus Points until you have 4 if you have 3 or fewer."
-          ]
+          ],
+          "grantedAtLevel": 15
         },
         {
           "name": "Superior Defense",
@@ -3599,7 +3723,8 @@
           "unmodelledClauses": [
             "At the start of your turn, you can expend 3 Focus Points to bolster yourself against harm for 1 minute or until you have the Incapacitated condition",
             "During that time, you have Resistance to all damage except Force damage."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -3609,7 +3734,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Irresistible Offense is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Body and Mind",
@@ -3621,8 +3747,11 @@
             "Your Dexterity and Wisdom scores increase by 4, to a maximum of 25",
             "Monk Subclass: Warrior of the Open Hand Master Unarmed Combat Techniques Warriors of the Open Hand are masters of unarmed combat",
             "They learn techniques to push and trip their opponents and manipulate their own energy to protect themselves from harm."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Open Hand Technique",
           "text": "Whenever you hit a creature with an attack granted by your Flurry of Blows, you can impose one of the following effects on that target. Addle. The target can't make Opportunity Attacks until the start of its next turn. Push. The target must succeed on a Strength saving throw or be pushed up to 15 feet away from you. Topple. The target must succeed on a Dexterity saving throw or have the Prone condition.",
@@ -3641,7 +3770,8 @@
             "The target must succeed on a Strength saving throw or be pushed up to 15 feet away from you",
             "Topple",
             "The target must succeed on a Dexterity saving throw or have the Prone condition."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Wholeness of Body",
@@ -3653,7 +3783,8 @@
             "As a Bonus Action, you can roll your Martial Arts die",
             "You regain a number of Hit Points equal to the number rolled plus your Wisdom modifier (minimum of 1 Hit Point regained)",
             "You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Fleet Step",
@@ -3662,7 +3793,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "When you take a Bonus Action other than Step of the Wind, you can also use Step of the Wind immediately after that Bonus Action."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Quivering Palm",
@@ -3679,7 +3811,8 @@
             "You can have only one creature under the effect of this feature at a time",
             "You can end the vibrations harmlessly (no action required)",
             "Paladin"
-          ]
+          ],
+          "grantedAtLevel": 17
         }
       ],
       "sourcePage": 49
@@ -4045,7 +4178,8 @@
             "You have a pool of healing power that replenishes when you finish a Long Rest",
             "With that pool, you can restore a total number of Hit Points equal to five times your Paladin level. -Spell Slots per Spell Level- Channel Prepared Divinity Spells 1 2 3 4 5 - 2 2 - - - - - 3 2 - - - - 2 4 3 - - - - 2 5 3 - - - - 2 6 4 2 - - - 2 6 4 2 - - - 2 7 4 3 - - - 2 7 4 3 - - - 2 9 4 3 2 - - 2 9 4 3 2 - - 3 10 4 3 3 - - 3 10 4 3 3 - - 3 11 4 3 3 1 - 3 11 4 3 3 1 - 3 12 4 3 3 2 - 3 12 4 3 3 2 - 3 14 4 3 3 3 1 3 14 4 3 3 3 1 3 15 4 3 3 3 2 3 15 4 3 3 3 2 As a Bonus Action, you can touch a creature (which could be yourself) and draw power from the pool of healing to restore a number of Hit Points to that creature, up to the maximum amount remaining in the pool",
             "You can also expend 5 Hit Points from the pool of healing power to remove the Poisoned condition from the creature; those points don't also restore Hit Points to the creature."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Spellcasting",
@@ -4074,7 +4208,8 @@
             "Charisma is your spellcasting ability for your Paladin spells",
             "Spellcasting Focus",
             "You can use a Holy Symbol as a Spellcasting Focus for your Paladin spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Weapon Mastery",
@@ -4085,7 +4220,8 @@
             "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longswords and Javelins",
             "Whenever you finish a Long Rest, you can change the kinds of weapons you chose",
             "For example, you could switch to using the mastery properties of Halberds and Flails."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Fighting Style",
@@ -4100,7 +4236,8 @@
             "Guidance and Sacred Flame are recommended",
             "The chosen cantrips count as Paladin spells for you, and Charisma is your spellcasting ability for them",
             "Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Paladin's Smite",
@@ -4110,7 +4247,8 @@
           "unmodelledClauses": [
             "You always have the Divine Smite spell prepared",
             "In addition, you can cast it without expending a spell slot, but you must finish a Long Rest before you can cast it in this way again."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Channel Divinity",
@@ -4141,7 +4279,8 @@
             "As a Bonus Action, you can open your awareness to detect Celestials, Fiends, and Undead",
             "For the next 10 minutes or until you have the Incapacitated condition, you know the location of any creature of those types within 60 feet of yourself, and you know its creature type",
             "Within the same radius, you also detect the presence of any place or object that has been consecrated or desecrated, as with the Hallow spell."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Paladin Subclass",
@@ -4153,7 +4292,8 @@
             "The Oath of Devotion subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Paladin levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Paladin level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -4163,7 +4303,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Paladin levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Extra Attack",
@@ -4172,7 +4313,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can attack twice instead of once whenever you take the Attack action on your turn."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Faithful Steed",
@@ -4183,7 +4325,8 @@
             "You can call on the aid of an otherworldly steed",
             "You always have the Find Steed spell prepared",
             "You can also cast the spell once without expending a spell slot, and you regain the ability to do so when you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Aura of Protection",
@@ -4200,7 +4343,8 @@
             "The aura is inactive while you have the Incapacitated condition",
             "You and your allies in the aura gain a bonus to saving throws equal to your Charisma modifier (minimum bonus of +1)",
             "If another Paladin is present, a creature can benefit from only one Aura of Protection at a time; the creature chooses which aura while in them."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Abjure Foes",
@@ -4217,7 +4361,8 @@
             "As you present your Holy Symbol or weapon, you can target a number of creatures equal to your Charisma modifier (minimum of one creature) that you can see within 60 feet of yourself",
             "Each target must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage",
             "While Frightened in this way, a target can do only one of the following on its turns: move, take an action, or take a Bonus Action."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Aura of Courage",
@@ -4232,7 +4377,8 @@
           "unmodelledClauses": [
             "You and your allies have Immunity to the Frightened condition while in your Aura of Protection",
             "If a Frightened ally enters the aura, that condition has no effect on that ally while there."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Radiant Strikes",
@@ -4242,7 +4388,8 @@
           "unmodelledClauses": [
             "Your strikes now carry supernatural power",
             "When you hit a target with an attack roll using a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Restoring Touch",
@@ -4252,7 +4399,8 @@
           "unmodelledClauses": [
             "When you use Lay On Hands on a creature, you can also remove one or more of the following conditions from the creature: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned",
             "You must expend 5 Hit Points from the healing pool of Lay On Hands for each of these conditions you remove; those points don't also restore Hit Points to the creature."
-          ]
+          ],
+          "grantedAtLevel": 14
         },
         {
           "name": "Aura Expansion",
@@ -4261,7 +4409,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your Aura of Protection is now a 30-foot Emanation."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -4280,8 +4429,11 @@
             "Many who swear this oath are devoted to gods of law and good and use their gods' tenets as the measure of personal devotion",
             "Others hold angels as their ideals and incorporate images of angelic wings into their helmets or coats of arms",
             "These paladins share the following tenets: • Let your word be your promise. • Protect the weak and never fear to act. • Let your honorable deeds be an example."
-          ]
-        },
+          ],
+          "grantedAtLevel": 19
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Oath of Devotion Spells",
           "text": "The magic of your oath ensures you always have certain spells ready; when you reach a Paladin level specified in the Oath of Devotion Spells table, you thereafter always have the listed spells prepared. Oath of Devotion Spells Paladin Level Spells 3 Protection from Evil and Good, Shield of Faith 5 Aid, Zone of Truth 9 Beacon of Hope, Dispel Magic 13 Freedom of Movement , Guardian of Faith 17 Commune, Flame Strike",
@@ -4290,7 +4442,8 @@
           "unmodelledClauses": [
             "The magic of your oath ensures you always have certain spells ready; when you reach a Paladin level specified in the Oath of Devotion Spells table, you thereafter always have the listed spells prepared",
             "Oath of Devotion Spells Paladin Level Spells 3 Protection from Evil and Good, Shield of Faith 5 Aid, Zone of Truth 9 Beacon of Hope, Dispel Magic 13 Freedom of Movement , Guardian of Faith 17 Commune, Flame Strike"
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Sacred Weapon",
@@ -4303,7 +4456,8 @@
             "The weapon also emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that",
             "You can end this effect early (no action required)",
             "This effect also ends if you aren't carrying the weapon."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Aura of Devotion",
@@ -4318,7 +4472,8 @@
           "unmodelledClauses": [
             "You and your allies have Immunity to the Charmed condition while in your Aura of Protection",
             "If a Charmed ally enters the aura, that condition has no effect on that ally while there."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Smite of Protection",
@@ -4329,7 +4484,8 @@
             "Your magical smite now radiates protective energy",
             "Whenever you cast Divine Smite, you and your allies have Half Cover while in your Aura of Protection",
             "The aura has this benefit until the start of your next turn."
-          ]
+          ],
+          "grantedAtLevel": 15
         },
         {
           "name": "Holy Nimbus",
@@ -4347,7 +4503,8 @@
             "Sunlight",
             "The aura is filled with Bright Light that is sunlight",
             "Ranger"
-          ]
+          ],
+          "grantedAtLevel": 20
         }
       ],
       "sourcePage": 53
@@ -4730,7 +4887,8 @@
             "Wisdom is your spellcasting ability for your Ranger spells",
             "Spellcasting Focus",
             "You can use a Druidic Focus as a Spellcasting Focus for your Ranger spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Favored Enemy",
@@ -4741,7 +4899,8 @@
             "You always have the Hunter's Mark spell prepared",
             "You can cast it twice without expending a spell slot, and you regain all expended uses of this ability when you finish a Long Rest",
             "The number of times you can cast the spell without a spell slot increases when you reach certain Ranger levels, as shown in the Favored Enemy column of the Ranger Features table."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Weapon Mastery",
@@ -4752,7 +4911,8 @@
             "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longbows and Shortswords",
             "Whenever you finish a Long Rest, you can change the kinds of weapons you chose",
             "For example, you could switch to using the mastery properties of Scimitars and Longswords."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Deft Explorer",
@@ -4766,7 +4926,8 @@
             "You gain Expertise in that skill",
             "Languages",
             "You know two languages of your choice from the language tables in \"Character Creation.\""
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Fighting Style",
@@ -4781,7 +4942,8 @@
             "Guidance and Starry Wisp are recommended",
             "The chosen cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them",
             "Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Ranger Subclass",
@@ -4793,7 +4955,8 @@
             "The Hunter subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Ranger levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Ranger level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -4803,7 +4966,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Ranger levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Extra Attack",
@@ -4812,7 +4976,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can attack twice instead of once whenever you take the Attack action on your turn."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Roving",
@@ -4822,7 +4987,8 @@
           "unmodelledClauses": [
             "Your Speed increases by 10 feet while you aren't wearing Heavy armor",
             "You also have a Climb Speed and a Swim Speed equal to your Speed."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Expertise",
@@ -4832,7 +4998,8 @@
           "unmodelledClauses": [
             "Choose two of your skill proficiencies with which you lack Expertise",
             "You gain Expertise in those skills."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Tireless",
@@ -4846,7 +5013,8 @@
             "You can use this action a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest",
             "Decrease Exhaustion",
             "Whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Relentless Hunter",
@@ -4855,7 +5023,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Taking damage can't break your Concentration on Hunter's Mark."
-          ]
+          ],
+          "grantedAtLevel": 13
         },
         {
           "name": "Nature's Veil",
@@ -4871,7 +5040,8 @@
             "You invoke spirits of nature to magically hide yourself",
             "As a Bonus Action, you can give yourself the Invisible condition until the end of your next turn",
             "You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 14
         },
         {
           "name": "Precise Hunter",
@@ -4880,7 +5050,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You have Advantage on attack rolls against the creature currently marked by your Hunter's Mark."
-          ]
+          ],
+          "grantedAtLevel": 17
         },
         {
           "name": "Feral Senses",
@@ -4889,7 +5060,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your connection to the forces of nature grants you Blindsight with a range of 30 feet."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -4899,7 +5071,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Dimensional Travel is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Foe Slayer",
@@ -4912,8 +5085,11 @@
             "The spells are organized by spell level and then alphabetized, and each spell's school of magic is listed",
             "In the Special column, C means the spell requires Concentration, R means it's a Ritual, and M means it requires a specific Material component",
             "Level 1 Ranger Spells Spell School Special Alarm Abjuration R Animal Friendship Enchantment - Cure Wounds Abjuration - Detect Magic Divination C, R Detect Poison and Disease Divination C, R Ensnaring Strike Conjuration C Entangle Conjuration C Fog Cloud Conjuration C Goodberry Conjuration - Hunter's Mark Divination C Jump Transmutation - Longstrider Transmutation - Speak with Animals Divination R Level 2 Ranger Spells Spell School Special Aid Abjuration - Animal Messenger Enchantment R Barkskin Transmutation - Darkvision Transmutation - Enhance Ability Transmutation C Find Traps Divination - Gust of Wind Evocation C Lesser Restoration Abjuration - Locate Animals or Plants Divination R Locate Object Divination C Magic Weapon Transmutation - Pass without Trace Abjuration C Protection from Poison Abjuration - Silence Illusion C, R Spike Growth Transmutation C Level 3 Ranger Spells Spell School Special Conjure Animals Conjuration C Daylight Evocation - Dispel Magic Abjuration - Meld into Stone Transmutation R Nondetection Abjuration M Plant Growth Transmutation - Protection from Energy Abjuration C Revivify Necromancy M Speak with Plants Transmutation - Water Breathing Transmutation R Water Walk Transmutation R Wind Wall Evocation C Level 4 Ranger Spells Spell School Special Conjure Woodland Beings Conjuration C Dominate Beast Enchantment C Freedom of Movement Abjuration - Locate Creature Divination C Stoneskin Transmutation C, M Level 5 Ranger Spells Spell School Special Commune with Nature Divination R Greater Restoration Abjuration M Tree Stride Conjuration C Ranger Subclass: Hunter Protect Nature and People from Destruction You stalk prey in the wilds and elsewhere, using your abilities as a Hunter to protect nature and people everywhere from forces that would destroy them."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Hunter's Lore",
           "text": "You can call on the forces of nature to reveal certain strengths and weaknesses of your prey. While a creature is marked by your Hunter's Mark, you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if the creature has any, you know what they are.",
@@ -4922,7 +5098,8 @@
           "unmodelledClauses": [
             "You can call on the forces of nature to reveal certain strengths and weaknesses of your prey",
             "While a creature is marked by your Hunter's Mark, you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if the creature has any, you know what they are."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Hunter's Prey",
@@ -4938,7 +5115,8 @@
             "You can deal this extra damage only once per turn",
             "Horde Breaker",
             "Once on each of your turns when you make an attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, that is within the weapon's range, and that you haven't attacked this turn."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Defensive Tactics",
@@ -4952,7 +5130,8 @@
             "Opportunity Attacks have Disadvantage against you",
             "Multiattack Defense",
             "When a creature hits you with an attack roll, that creature has Disadvantage on all other attack rolls against you this turn."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Superior Hunter's Prey",
@@ -4961,7 +5140,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Once per turn when you deal damage to a creature marked by your Hunter's Mark, you can also deal that spell's extra damage to a different creature that you can see within 30 feet of the first creature."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Superior Hunter's Defense",
@@ -4971,7 +5151,8 @@
           "unmodelledClauses": [
             "When you take damage, you can take a Reaction to give yourself Resistance to that damage and any other damage of the same type until the end of the current turn",
             "Rogue"
-          ]
+          ],
+          "grantedAtLevel": 15
         }
       ],
       "sourcePage": 57
@@ -5242,7 +5423,8 @@
             "You gain Expertise in two of your skill proficiencies of your choice",
             "Sleight of Hand and Stealth are recommended if you have proficiency in them",
             "At Rogue level 6, you gain Expertise in two more of your skill proficiencies of your choice."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Sneak Attack",
@@ -5260,7 +5442,8 @@
             "The extra damage's type is the same as the weapon's type",
             "You don't need Advantage on the attack roll if at least one of your allies is within 5 feet of the target, the ally doesn't have the Incapacitated condition, and you don't have Disadvantage on the attack roll",
             "The extra damage increases as you gain Rogue levels, as shown in the Sneak Attack column of the Rogue Features table."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Thieves' Cant",
@@ -5270,7 +5453,8 @@
           "unmodelledClauses": [
             "You picked up various languages in the communities where you plied your roguish talents",
             "You know Thieves' Cant and one other language of your choice, which you choose from the language tables in \"Character Creation.\""
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Weapon Mastery",
@@ -5281,7 +5465,8 @@
             "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Daggers and Shortbows",
             "Sneak Attack Weapon Mastery 1d6 1d6 2d6 2d6 3d6 3d6 4d6 4d6 5d6 5d6 6d6 6d6 7d6 7d6 8d6 8d6 9d6 9d6 10d6 10d6 Whenever you finish a Long Rest, you can change the kinds of weapons you chose",
             "For example, you could switch to using the mastery properties of Scimitars and Shortswords."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Cunning Action",
@@ -5291,7 +5476,8 @@
           "unmodelledClauses": [
             "Your quick thinking and agility allow you to move and act quickly",
             "On your turn, you can take one of the following actions as a Bonus Action: Dash, Disengage, or Hide."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Rogue Subclass",
@@ -5303,7 +5489,8 @@
             "The Thief subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Rogue levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Rogue level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Steady Aim",
@@ -5313,7 +5500,8 @@
           "unmodelledClauses": [
             "As a Bonus Action, you give yourself Advantage on your next attack roll on the current turn",
             "You can use this feature only if you haven't moved during this turn, and after you use it, your Speed is 0 until the end of the current turn."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -5323,7 +5511,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Rogue levels 8, 10, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Cunning Strike",
@@ -5355,7 +5544,8 @@
             "If the target is Large or smaller, it must succeed on a Dexterity saving throw or have the Prone condition",
             "Withdraw (Cost: 1d6)",
             "Immediately after the attack, you move up to half your Speed without provoking Opportunity Attacks."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Uncanny Dodge",
@@ -5364,7 +5554,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "When an attacker that you can see hits you with an attack roll, you can take a Reaction to halve the attack's damage against you (round down)."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Evasion",
@@ -5380,7 +5571,8 @@
             "You can nimbly dodge out of the way of certain dangers",
             "When you're subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw and only half damage if you fail",
             "You can't use this feature if you have the Incapacitated condition."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Reliable Talent",
@@ -5389,7 +5581,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Whenever you make an ability check that uses one of your skill or tool proficiencies, you can treat a d20 roll of 9 or lower as a 10."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Improved Cunning Strike",
@@ -5398,7 +5591,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "You can use up to two Cunning Strike effects when you deal Sneak Attack damage, paying the die cost for each effect."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Devious Strikes",
@@ -5424,7 +5618,8 @@
             "The Unconscious target repeats the save at the end of each of its turns, ending the effect on itself on a success",
             "Obscure (Cost: 3d6)",
             "The target must succeed on a Dexterity saving throw, or it has the Blinded condition until the end of its next turn."
-          ]
+          ],
+          "grantedAtLevel": 14
         },
         {
           "name": "Slippery Mind",
@@ -5434,7 +5629,8 @@
           "unmodelledClauses": [
             "Your cunning mind is exceptionally difficult to control",
             "You gain proficiency in Wisdom and Charisma saving throws."
-          ]
+          ],
+          "grantedAtLevel": 15
         },
         {
           "name": "Elusive",
@@ -5449,7 +5645,8 @@
           "unmodelledClauses": [
             "You're so evasive that attackers rarely gain the upper hand against you",
             "No attack roll can have Advantage against you unless you have the Incapacitated condition."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -5459,7 +5656,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of the Night Spirit is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Stroke of Luck",
@@ -5472,8 +5670,11 @@
             "Once you use this feature, you can't use it again until you finish a Short or Long Rest",
             "Rogue Subclass: Thief Hunt for Treasure as a Classic Adventurer A mix of burglar, treasure hunter, and explorer, you are the epitome of an adventurer",
             "In addition to improving your agility and stealth, you gain abilities useful for delving into ruins and getting maximum benefit from the magic items you find there."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Fast Hands",
           "text": "As a Bonus Action, you can do one of the following. Sleight of Hand. Make a Dexterity (Sleight of Hand) check to pick a lock or disarm a trap with Thieves' Tools or to pick a pocket. Use an Object. Take the Utilize action, or take the Magic action to use a magic item that requires that action.",
@@ -5485,7 +5686,8 @@
             "Make a Dexterity (Sleight of Hand) check to pick a lock or disarm a trap with Thieves' Tools or to pick a pocket",
             "Use an Object",
             "Take the Utilize action, or take the Magic action to use a magic item that requires that action."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Second-Story Work",
@@ -5498,7 +5700,8 @@
             "You gain a Climb Speed equal to your Speed",
             "Jumper",
             "You can determine your jump distance using your Dexterity rather than your Strength."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Supreme Sneak",
@@ -5509,7 +5712,8 @@
             "You gain the following Cunning Strike option",
             "Stealth Attack (Cost: 1d6)",
             "If you have the Hide action's Invisible condition, this attack doesn't end that condition on you if you end the turn behind Three-Quarters Cover or Total Cover."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Use Magic Device",
@@ -5529,7 +5733,8 @@
             "If the scroll contains a higher-level spell, you must first succeed on an Intelligence (Arcana) check (DC 10 plus the spell's level)",
             "On a successful check, you cast the spell from the scroll",
             "On a failed check, the scroll disintegrates."
-          ]
+          ],
+          "grantedAtLevel": 13
         },
         {
           "name": "Thief's Reflexes",
@@ -5541,7 +5746,8 @@
             "You can take two turns during the first round of any combat",
             "You take your first turn at your normal Initiative and your second turn at your Initiative minus 10",
             "Sorcerer"
-          ]
+          ],
+          "grantedAtLevel": 17
         }
       ],
       "sourcePage": 61
@@ -5984,7 +6190,8 @@
             "Charisma is your spellcasting ability for your Sorcerer spells",
             "Spellcasting Focus",
             "You can use an Arcane Focus as a Spellcasting Focus for your Sorcerer spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Innate Sorcery",
@@ -5995,7 +6202,8 @@
             "An event in your past left an indelible mark on you, infusing you with simmering magic",
             "As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits: • The spell save DC of your Sorcerer spells increases by 1. • You have Advantage on the attack rolls of Sorcerer spells you cast",
             "You can use this feature twice, and you regain all expended uses of it when you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Font of Magic",
@@ -6018,7 +6226,8 @@
             "Any spell slot you create with this feature vanishes when you finish a Long Rest",
             "Creating Spell Slots Spell Slot Sorcery Point Min",
             "Sorcerer Level Cost Level 1 2 2 2 3 3 3 5 5 4 6 7 5 7 9"
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Metamagic",
@@ -6032,7 +6241,8 @@
             "You can use only one Metamagic option on a spell when you cast it unless otherwise noted in one of those options",
             "Whenever you gain a Sorcerer level, you can replace one of your Metamagic options with one you don't know",
             "You gain two more options at Sorcerer level 10 and two more at Sorcerer level 17."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Sorcerer Subclass",
@@ -6044,7 +6254,8 @@
             "The Draconic Sorcery subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Sorcerer levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Sorcerer level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -6054,7 +6265,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Sorcerer levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Sorcerous Restoration",
@@ -6064,7 +6276,8 @@
           "unmodelledClauses": [
             "When you finish a Short Rest, you can regain expended Sorcery Points, but no more than a number equal to half your Sorcerer level (round down)",
             "Once you use this feature, you can't do so again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Sorcery Incarnate",
@@ -6074,7 +6287,8 @@
           "unmodelledClauses": [
             "If you have no uses of Innate Sorcery left, you can use it if you spend 2 Sorcery Points when you take the Bonus Action to activate it",
             "In addition, while your Innate Sorcery feature is active, you can use up to two of your Metamagic options on each spell you cast."
-          ]
+          ],
+          "grantedAtLevel": 7
         },
         {
           "name": "Epic Boon",
@@ -6084,7 +6298,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Dimensional Travel is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Arcane Apotheosis",
@@ -6120,8 +6335,11 @@
             "You might have absorbed magic from a site infused with dragons' power",
             "Or perhaps you handled a treasure taken from a dragon's hoard that was steeped in draconic power",
             "Or you might have a dragon for an ancestor."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Draconic Resilience",
           "text": "The magic in your body manifests physical traits of your draconic gift. Your Hit Point maximum increases by 3, and it increases by 1 whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren't wearing armor, your base Armor Class equals 10 plus your Dexterity and Charisma modifiers.",
@@ -6132,7 +6350,8 @@
             "Your Hit Point maximum increases by 3, and it increases by 1 whenever you gain another Sorcerer level",
             "Parts of you are also covered by dragon-like scales",
             "While you aren't wearing armor, your base Armor Class equals 10 plus your Dexterity and Charisma modifiers."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Draconic Spells",
@@ -6142,7 +6361,8 @@
           "unmodelledClauses": [
             "When you reach a Sorcerer level specified in the Draconic Spells table, you thereafter always have the listed spells prepared",
             "Draconic Spells Sorcerer Level Spells 3 Alter Self, Chromatic Orb, Command, Dragon's Breath 5 Fear, Fly 7 Arcane Eye, Charm Monster 9 Legend Lore, Summon Dragon"
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Elemental Affinity",
@@ -6153,7 +6373,8 @@
             "Your draconic magic has an affinity with a damage type associated with dragons",
             "Choose one of those types: Acid, Cold, Fire, Lightning, or Poison",
             "You have Resistance to that damage type, and when you cast a spell that deals damage of that type, you can add your Charisma modifier to one damage roll of that spell."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Dragon Wings",
@@ -6165,7 +6386,8 @@
             "The wings last for 1 hour or until you dismiss them (no action required)",
             "For the duration, you have a Fly Speed of 60 feet",
             "Once you use this feature, you can't use it again until you finish a Long Rest unless you spend 3 Sorcery Points (no action required) to restore your use of it."
-          ]
+          ],
+          "grantedAtLevel": 14
         },
         {
           "name": "Dragon Companion",
@@ -6178,7 +6400,8 @@
             "Whenever you start casting the spell, you can modify it so that it doesn't require Concentration",
             "If you do so, the spell's duration becomes 1 minute for that casting",
             "Warlock"
-          ]
+          ],
+          "grantedAtLevel": 18
         }
       ],
       "sourcePage": 64
@@ -6522,7 +6745,8 @@
             "You can't replace an invocation if it's a prerequisite for another invocation that you have",
             "When you gain certain Warlock levels, you gain more invocations of your choice, as shown in the Invocations column of the Warlock Features table",
             "You can't pick the same invocation more than once unless its description says otherwise."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Pact Magic",
@@ -6560,7 +6784,8 @@
             "Charisma is the spellcasting ability for your Warlock spells",
             "Spellcasting Focus",
             "You can use an Arcane Focus as a Spellcasting Focus for your Warlock spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Magical Cunning",
@@ -6571,7 +6796,8 @@
             "You can perform an esoteric rite for 1 minute",
             "At the end of it, you regain expended Pact Magic spell slots but no more than a number equal to half your maximum (round up)",
             "Once you use this feature, you can't do so again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Warlock Subclass",
@@ -6583,7 +6809,8 @@
             "The Fiend Patron subclass is detailed after this class's description",
             "A subclass is a specialization that grants you features at certain Warlock levels",
             "For the rest of your career, you gain each of your subclass's features that are of your Warlock level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -6593,7 +6820,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Warlock levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Contact Patron",
@@ -6605,7 +6833,8 @@
             "Now you can communicate directly; you always have the Contact Other Plane spell prepared",
             "With this feature, you can cast the spell without expending a spell slot to contact your patron, and you automatically succeed on the spell's saving throw",
             "Once you cast the spell with this feature, you can't do so in this way again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 9
         },
         {
           "name": "Mystic Arcanum",
@@ -6619,7 +6848,8 @@
             "As shown in the Warlock Features table, you gain another Warlock spell of your choice that can be cast in this way when you reach Warlock levels 13 (level 7 spell), 15 (level 8 spell), and 17 (level 9 spell)",
             "You regain all uses of your Mystic Arcanum when you finish a Long Rest",
             "Whenever you gain a Warlock level, you can replace one of your arcanum spells with another Warlock spell of the same level."
-          ]
+          ],
+          "grantedAtLevel": 11
         },
         {
           "name": "Epic Boon",
@@ -6629,7 +6859,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Fate is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Eldritch Master",
@@ -6728,8 +6959,11 @@
             "Cantrips (Level 0 Warlock Spells) Spell School Special Chill Touch Necromancy - Eldritch Blast Evocation - Mage Hand Conjuration - Minor Illusion Illusion - Poison Spray Necromancy - Prestidigitation Transmutation - True Strike Divination - Level 1 Warlock Spells Spell School Special Bane Enchantment C Charm Person Enchantment - Comprehend Languages Divination R Detect Magic Divination C, R Expeditious Retreat Transmutation C Hellish Rebuke Evocation - Hex Enchantment C Hideous Laughter Enchantment C Illusory Script Illusion R, M Protection from Evil and Good Abjuration C, M Speak with Animals Divination R Unseen Servant Conjuration R Level 2 Warlock Spells Spell School Special Darkness Evocation C Enthrall Enchantment C Hold Person Enchantment C Invisibility Illusion C Mind Spike Divination C Mirror Image Illusion - Misty Step Conjuration - Ray of Enfeeblement Necromancy C Spider Climb Transmutation C Suggestion Enchantment C Level 3 Warlock Spells Spell School Special Counterspell Abjuration - Dispel Magic Abjuration - Fear Illusion C Fly Transmutation C Spell School Special Gaseous Form Transmutation C Hypnotic Pattern Illusion C Magic Circle Abjuration M Major Image Illusion C Remove Curse Abjuration - Tongues Divination - Vampiric Touch Necromancy C Level 4 Warlock Spells Spell School Special Banishment Abjuration C Blight Necromancy - Charm Monster Enchantment - Dimension Door Conjuration - Hallucinatory Terrain Illusion - Level 5 Warlock Spells Spell School Special Contact Other Plane Divination R Dream Illusion - Hold Monster Enchantment C Mislead Illusion C Planar Binding Abjuration M Scrying Divination C, M Teleportation Circle Conjuration M Level 6 Warlock Spells Spell School Special Circle of Death Necromancy M Create Undead Necromancy M Eyebite Necromancy C True Seeing Divination M Level 7 Warlock Spells Spell School Special Etherealness Conjuration - Finger of Death Necromancy - Forcecage Evocation C, M Plane Shift Conjuration M Level 8 Warlock Spells Spell School Special Befuddlement Enchantment - Demiplane Conjuration - Dominate Monster Enchantment C Glibness Enchantment - Power Word Stun Enchantment - Level 9 Warlock Spells Spell School Special Astral Projection Necromancy M Foresight Divination - Gate Conjuration C, M Imprisonment Abjuration M Power Word Kill Enchantment - True Polymorph Transmutation C Weird Illusion C Warlock Subclass: Fiend Patron Make a Deal with the Lower Planes Your pact draws on the Lower Planes, the realms of perdition",
             "You might forge a bargain with a demon lord, an archdevil, or another fiend that is especially mighty",
             "That patron's aims are evil-the corruption or destruction of all things, ultimately including you-and your path is defined by the extent to which you strive against those aims."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Dark One's Blessing",
           "text": "When you reduce an enemy to 0 Hit Points, you gain Temporary Hit Points equal to your Charisma modifier plus your Warlock level (minimum of 1 Temporary Hit Point). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 Hit Points.",
@@ -6738,7 +6972,8 @@
           "unmodelledClauses": [
             "When you reduce an enemy to 0 Hit Points, you gain Temporary Hit Points equal to your Charisma modifier plus your Warlock level (minimum of 1 Temporary Hit Point)",
             "You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 Hit Points."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Fiend Spells",
@@ -6748,7 +6983,8 @@
           "unmodelledClauses": [
             "The magic of your patron ensures you always have certain spells ready; when you reach a Warlock level specified in the Fiend Spells table, you thereafter always have the listed spells prepared",
             "Fiend Spells Warlock Level Spells 3 Burning Hands, Command, Scorching Ray, Suggestion 5 Fireball, Stinking Cloud 7 Fire Shield, Wall of Fire 9 Geas, Insect Plague"
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Dark One's Own Luck",
@@ -6761,7 +6997,8 @@
             "You can do so after seeing the roll but before any of the roll's effects occur",
             "You can use this feature a number of times equal to your Charisma modifier (minimum of once), but you can use it no more than once per roll",
             "You regain all expended uses when you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Fiendish Resilience",
@@ -6771,7 +7008,8 @@
           "unmodelledClauses": [
             "Choose one damage type, other than Force, whenever you finish a Short or Long Rest",
             "You have Resistance to that damage type until you choose a different one with this feature."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Hurl Through Hell",
@@ -6789,7 +7027,8 @@
             "The target takes 8d10 Psychic damage if it isn't a Fiend, and it has the Incapacitated condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space",
             "Once you use this feature, you can't use it again until you finish a Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it",
             "Wizard"
-          ]
+          ],
+          "grantedAtLevel": 14
         }
       ],
       "sourcePage": 70
@@ -7220,7 +7459,8 @@
             "Intelligence is your spellcasting ability for your Wizard spells",
             "Spellcasting Focus",
             "You can use an Arcane Focus or your spellbook as a Spellcasting Focus for your Wizard spells."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Ritual Adept",
@@ -7230,7 +7470,8 @@
           "unmodelledClauses": [
             "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook",
             "You needn't have the spell prepared, but you must read from the book to cast a spell in this way."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Arcane Recovery",
@@ -7243,7 +7484,8 @@
             "The spell slots can have a combined level equal to no more than half your Wizard level (round up), and none of the slots can be level 6 or higher",
             "For example, if you're a level 4 Wizard, you can recover up to two levels' worth of spell slots, regaining either one level 2 spell slot or two level 1 spell slots",
             "Once you use this feature, you can't do so again until you finish a Long Rest."
-          ]
+          ],
+          "grantedAtLevel": 1
         },
         {
           "name": "Scholar",
@@ -7254,7 +7496,8 @@
             "While studying magic, you also specialized in another field of study",
             "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion",
             "You have Expertise in the chosen skill."
-          ]
+          ],
+          "grantedAtLevel": 2
         },
         {
           "name": "Wizard Subclass",
@@ -7278,7 +7521,8 @@
             "If you lose your spellbook, you can use the same procedure to transcribe the Wizard spells that you have prepared into a new spellbook",
             "Filling out the remainder of the new book requires you to find new spells to do so",
             "For this reason, many wizards keep a backup spellbook. of your career, you gain each of your subclass's features that are of your Wizard level or lower."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Ability Score Improvement",
@@ -7288,7 +7532,8 @@
           "unmodelledClauses": [
             "You gain the Ability Score Improvement feat (see \"Feats\") or another feat of your choice for which you qualify",
             "You gain this feature again at Wizard levels 8, 12, and 16."
-          ]
+          ],
+          "grantedAtLevel": 4
         },
         {
           "name": "Memorize Spell",
@@ -7297,7 +7542,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Whenever you finish a Short Rest, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared for your Spellcasting feature with another level 1+ spell from the book."
-          ]
+          ],
+          "grantedAtLevel": 5
         },
         {
           "name": "Spell Mastery",
@@ -7310,7 +7556,8 @@
             "You always have those spells prepared, and you can cast them at their lowest level without expending a spell slot",
             "To cast either spell at a higher level, you must expend a spell slot",
             "Whenever you finish a Long Rest, you can study your spellbook and replace one of those spells with an eligible spell of the same level from the book."
-          ]
+          ],
+          "grantedAtLevel": 18
         },
         {
           "name": "Epic Boon",
@@ -7320,7 +7567,8 @@
           "unmodelledClauses": [
             "You gain an Epic Boon feat (see \"Feats\") or another feat of your choice for which you qualify",
             "Boon of Spell Recall is recommended."
-          ]
+          ],
+          "grantedAtLevel": 19
         },
         {
           "name": "Signature Spells",
@@ -7338,8 +7586,11 @@
             "Cantrips (Level 0 Wizard Spells) Spell School Special Acid Splash Evocation - Chill Touch Necromancy - Dancing Lights Illusion C Elementalism Transmutation - Fire Bolt Evocation - Light Evocation - Spell School Special Mage Hand Conjuration - Mending Transmutation - Message Transmutation - Minor Illusion Illusion - Poison Spray Necromancy - Prestidigitation Transmutation - Ray of Frost Evocation - Shocking Grasp Evocation - True Strike Divination - Level 1 Wizard Spells Spell School Special Alarm Abjuration R Burning Hands Evocation - Charm Person Enchantment - Chromatic Orb Evocation M Color Spray Illusion - Comprehend Languages Divination R Detect Magic Divination C, R Disguise Self Illusion - Expeditious Retreat Transmutation C False Life Necromancy - Feather Fall Transmutation - Find Familiar Conjuration R, M Floating Disk Conjuration R Fog Cloud Conjuration C Grease Conjuration - Hideous Laughter Enchantment C Ice Knife Conjuration - Identify Divination R, M Illusory Script Illusion R, M Jump Transmutation - Longstrider Transmutation - Mage Armor Abjuration - Magic Missile Evocation - Protection from Evil and Good Abjuration C, M Ray of Sickness Necromancy - Shield Abjuration - Silent Image Illusion C Sleep Enchantment C Thunderwave Evocation - Unseen Servant Conjuration R Level 2 Wizard Spells Spell School Special Acid Arrow Evocation - Alter Self Transmutation C Arcane Lock Abjuration M Arcanist's Magic Aura Illusion - Augury Divination R, M Blindness/Deafness Transmutation - Blur Illusion C Continual Flame Evocation M Darkness Evocation C Darkvision Transmutation - Detect Thoughts Divination C Dragon's Breath Transmutation C Enhance Ability Transmutation C Enlarge/Reduce Transmutation C Flaming Sphere Evocation C Gentle Repose Necromancy R, M Gust of Wind Evocation C Hold Person Enchantment C Invisibility Illusion C Knock Transmutation - Levitate Transmutation C Locate Object Divination C Magic Mouth Illusion R, M Magic Weapon Transmutation - Mind Spike Divination C Mirror Image Illusion - Misty Step Conjuration - Ray of Enfeeblement Necromancy C Rope Trick Transmutation - Scorching Ray Evocation - See Invisibility Divination - Shatter Evocation - Spider Climb Transmutation C Suggestion Enchantment C Web Conjuration C Level 3 Wizard Spells Spell School Special Animate Dead Necromancy - Bestow Curse Necromancy C Blink Transmutation - Clairvoyance Divination C, M Counterspell Abjuration - Dispel Magic Abjuration - Spell School Special Fear Illusion C Fireball Evocation - Fly Transmutation C Gaseous Form Transmutation C Glyph of Warding Abjuration M Haste Transmutation C Hypnotic Pattern Illusion C Lightning Bolt Evocation - Magic Circle Abjuration M Major Image Illusion C Nondetection Abjuration M Phantom Steed Illusion R Protection from Energy Abjuration C Remove Curse Abjuration - Sending Divination - Sleet Storm Conjuration C Slow Transmutation C Speak with Dead Necromancy - Stinking Cloud Conjuration C Tiny Hut Evocation R Tongues Divination - Vampiric Touch Necromancy C Water Breathing Transmutation R Level 4 Wizard Spells Spell School Special Arcane Eye Divination C Banishment Abjuration C Black Tentacles Conjuration C Blight Necromancy - Charm Monster Enchantment - Confusion Enchantment C Conjure Minor Elementals Conjuration C Control Water Transmutation C Dimension Door Conjuration - Divination Divination R, M Fabricate Transmutation - Faithful Hound Conjuration - Fire Shield Evocation - Greater Invisibility Illusion C Hallucinatory Terrain Illusion - Ice Storm Evocation - Locate Creature Divination C Phantasmal Killer Illusion C Spell School Special Polymorph Transmutation C Private Sanctum Abjuration - Resilient Sphere Abjuration C Secret Chest Conjuration M Stone Shape Transmutation - Stoneskin Transmutation C, M Vitriolic Sphere Evocation - Wall of Fire Evocation C Level 5 Wizard Spells Spell School Special Animate Objects Transmutation C Arcane Hand Evocation C Cloudkill Conjuration C Cone of Cold Evocation - Conjure Elemental Conjuration C Contact Other Plane Divination R Creation Illusion - Dominate Person Enchantment C Dream Illusion - Geas Enchantment - Hold Monster Enchantment C Legend Lore Divination M Mislead Illusion C Modify Memory Enchantment C Passwall Transmutation - Planar Binding Abjuration M Scrying Divination C, M Seeming Illusion - Summon Dragon Conjuration C, M Telekinesis Transmutation C Telepathic Bond Divination R Teleportation Circle Conjuration M Wall of Force Evocation C Wall of Stone Evocation C Level 6 Wizard Spells Spell School Special Chain Lightning Evocation - Circle of Death Necromancy M Contingency Abjuration M Create Undead Necromancy M Disintegrate Transmutation - Eyebite Necromancy C Flesh to Stone Transmutation C Freezing Sphere Evocation - Globe of Invulnerability Abjuration C Guards and Wards Abjuration M Instant Summons Conjuration R, M Irresistible Dance Enchantment C Magic Jar Necromancy M Mass Suggestion Enchantment - Move Earth Transmutation C Programmed Illusion Illusion M Sunbeam Evocation C True Seeing Divination M Wall of Ice Evocation C Level 7 Wizard Spells Spell School Special Arcane Sword Evocation C, M Delayed Blast Fireball Evocation C Etherealness Conjuration - Finger of Death Necromancy - Forcecage Evocation C, M Magnificent Mansion Conjuration M Mirage Arcane Illusion - Plane Shift Conjuration M Prismatic Spray Evocation - Project Image Illusion C, M Reverse Gravity Transmutation C Sequester Transmutation M Simulacrum Illusion M Symbol Abjuration M Teleport Conjuration - Level 8 Wizard Spells Spell School Special Antimagic Field Abjuration C Antipathy/Sympathy Enchantment - Befuddlement Enchantment - Clone Necromancy M Control Weather Transmutation C Demiplane Conjuration - Dominate Monster Enchantment C Incendiary Cloud Conjuration C Maze Conjuration C Mind Blank Abjuration - Power Word Stun Enchantment - Sunburst Evocation - Level 9 Wizard Spells Spell School Special Astral Projection Necromancy M Foresight Divination - Gate Conjuration C, M Imprisonment Abjuration M Meteor Swarm Evocation - Power Word Kill Enchantment - Prismatic Wall Abjuration - Shapechange Transmutation C, M Time Stop Transmutation - True Polymorph Transmutation C Weird Illusion C Wish Conjuration - Wizard Subclass: Evoker Create Explosive Elemental Effects Your studies focus on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid",
             "Some Evokers find employment in military forces, serving as artillery to blast armies from afar",
             "Others use their power to protect others, while some seek their own gain."
-          ]
-        },
+          ],
+          "grantedAtLevel": 20
+        }
+      ],
+      "subclassFeatures": [
         {
           "name": "Evocation Savant",
           "text": "Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free. In addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
@@ -7349,7 +7600,8 @@
             "Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free",
             "In addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free",
             "The chosen spell must be of a level for which you have spell slots."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Potent Cantrip",
@@ -7359,7 +7611,8 @@
           "unmodelledClauses": [
             "Your damaging cantrips affect even creatures that avoid the brunt of the effect",
             "When you cast a cantrip at a creature and you miss with the attack roll or the target succeeds on a saving throw against the cantrip, the target takes half the cantrip's damage (if any) but suffers no additional effect from the cantrip."
-          ]
+          ],
+          "grantedAtLevel": 3
         },
         {
           "name": "Sculpt Spells",
@@ -7370,7 +7623,8 @@
             "You can create pockets of relative safety within the effects of your evocations",
             "When you cast an Evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 plus the spell's level",
             "The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save."
-          ]
+          ],
+          "grantedAtLevel": 6
         },
         {
           "name": "Empowered Evocation",
@@ -7379,7 +7633,8 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Whenever you cast a Wizard spell from the Evocation school, you can add your Intelligence modifier to one damage roll of that spell."
-          ]
+          ],
+          "grantedAtLevel": 10
         },
         {
           "name": "Overchannel",
@@ -7393,7 +7648,8 @@
             "If you use this feature again before you finish a Long Rest, you take 2d12 Necrotic damage for each level of the spell slot immediately after you cast it",
             "This damage ignores Resistance and Immunity",
             "Each time you use this feature again before finishing a Long Rest, the Necrotic damage per spell level increases by 1d12."
-          ]
+          ],
+          "grantedAtLevel": 14
         }
       ],
       "sourcePage": 77

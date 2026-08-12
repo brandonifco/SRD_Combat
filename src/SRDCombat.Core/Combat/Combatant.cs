@@ -154,6 +154,16 @@ public sealed record CombatantStats(
     public bool CriticalHitsAgainstBecomeNormal { get; init; }
 
     /// <summary>
+    /// The lowest natural d20 roll that scores a Critical Hit. 20 for everyone except a
+    /// Champion, whose Improved Critical reads "on a roll of 19 or 20".
+    /// </summary>
+    /// <remarks>
+    /// Only a natural 20 auto-hits; a 19 still has to beat Armor Class, because the
+    /// printed feature widens the crit and says nothing about hitting.
+    /// </remarks>
+    public int CriticalHitThreshold { get; init; } = 20;
+
+    /// <summary>
     /// Skill bonuses by SRD skill name, for the ability checks a fight asks for.
     /// </summary>
     /// <remarks>
@@ -258,6 +268,7 @@ public sealed record CombatantStats(
             DiesAtZeroHitPoints: false)
         {
             CriticalHitsAgainstBecomeNormal = sheet.CriticalHitsAgainstBecomeNormal,
+            CriticalHitThreshold = sheet.Has(ClassFeature.ImprovedCritical) ? 19 : 20,
 
             SkillBonuses = sheet.Skills.ToDictionary(
                 skill => skill.Skill,
@@ -471,6 +482,9 @@ public sealed class FeatureState
     /// <summary>True once Reckless Attack has been declared this turn.</summary>
     public bool IsRecklessThisTurn { get; internal set; }
 
+    /// <summary>Frenzy is "the first target you hit on your turn" — once, tracked here.</summary>
+    public bool FrenzyUsedThisTurn { get; internal set; }
+
     /// <summary>True after Steady Aim, until the next attack roll consumes it.</summary>
     public bool SteadyAimedThisTurn { get; internal set; }
 
@@ -533,6 +547,7 @@ public sealed class FeatureState
     {
         SneakAttackUsedThisTurn = false;
         IsRecklessThisTurn = false;
+        FrenzyUsedThisTurn = false;
         SteadyAimedThisTurn = false;
         AttackedThisTurn = false;
         AttacksRemainingThisAction = 0;
