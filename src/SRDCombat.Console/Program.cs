@@ -32,42 +32,33 @@ var random = new SeededRandomSource(seed);
 Console.WriteLine();
 Console.WriteLine($"SRD_Combat — a fight (seed {seed})");
 
-var party = PregeneratedParty.Build(content, level: 1, x: 1);
+var difficulty = DifficultyFrom(args);
+var level = LevelFrom(args) ?? 1;
+
+var party = PregeneratedParty.Build(content, level);
 Display.PartySideId = PregeneratedParty.SideId;
 
-// Two monsters the party can plausibly beat at level 1, drawn from the curated pool so
-// the fight only contains creatures whose turns the engine executes in full.
-var pool = MonsterPool.Draw(content.Monsters, maximumChallengeRating: 0.5m);
+var fight = EncounterFactory.Build(content, party, difficulty, random);
+var encounter = fight.Encounter;
 
-var chosen = pool
-    .Where(monster => monster.ChallengeRating >= 0.25m)
-    .OrderBy(monster => monster.Id, StringComparer.Ordinal)
-    .Take(2)
-    .ToArray();
-
-if (chosen.Length == 0)
+if (fight.Built.Monsters.Count == 0)
 {
-    Console.Error.WriteLine("The monster pool is empty at this challenge rating.");
+    Console.Error.WriteLine("The budget bought nothing. Try a higher difficulty or level.");
     return 1;
 }
 
-var monsters = chosen
-    .Select((monster, index) => new Combatant(
-        $"monster{index}",
-        monster.Name,
-        "monsters",
-        CombatantStats.FromMonster(monster),
-        new GridPosition(8, 1 + index)))
-    .ToArray();
-
-var encounter = Encounter.Start(
-    new Battlefield(12, 6),
-    [.. party.Select(member => member.Combatant), .. monsters],
-    random);
-
 Display.Labels = Labels.For(encounter.Combatants);
 
-Console.WriteLine($"The party meets {string.Join(" and ", chosen.Select(monster => monster.Name))}.");
+var roster = fight.Built.Monsters
+    .GroupBy(monster => monster.Name)
+    .Select(group => group.Count() > 1 ? $"{group.Count()} {group.Key}s" : group.Key)
+    .ToArray();
+
+Console.WriteLine(
+    $"A {difficulty.ToString().ToLowerInvariant()}-difficulty fight for {party.Count} level {level} " +
+    $"characters: {string.Join(", ", roster)}.");
+Console.WriteLine(
+    $"Budget {fight.Built.Budget} XP, spent {fight.Built.Spent}, {fight.Built.Remaining} left over.");
 Console.WriteLine("Type 'help' for commands.");
 
 var completed = new CommandLoop(encounter, PregeneratedParty.SideId).Run();
@@ -88,6 +79,28 @@ Console.WriteLine(
         : "The party falls.");
 
 return 0;
+
+static EncounterDifficulty DifficultyFrom(string[] args)
+{
+    var index = Array.FindIndex(args, argument => argument is "--difficulty");
+
+    return index >= 0
+        && index + 1 < args.Length
+        && Enum.TryParse<EncounterDifficulty>(args[index + 1], ignoreCase: true, out var difficulty)
+            ? difficulty
+            // Low is "one or two scary moments ... their characters should emerge
+            // victorious", which is the right default for sitting down cold.
+            : EncounterDifficulty.Low;
+}
+
+static int? LevelFrom(string[] args)
+{
+    var index = Array.FindIndex(args, argument => argument is "--level");
+
+    return index >= 0 && index + 1 < args.Length && int.TryParse(args[index + 1], out var level)
+        ? Math.Clamp(level, 1, 5)
+        : null;
+}
 
 static int? SeedFrom(string[] args)
 {
