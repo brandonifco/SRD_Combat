@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #54 (the gauntlet: ladder, run state and rests) |
-| Tests | **534 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #55 (XP awards and levelling) |
+| Tests | **553 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **5 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Work remaining | **4 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -38,16 +38,15 @@ save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
 **A whole run is playable.** `dotnet run --project src/SRDCombat.Console` climbs a
-fifteen-fight gauntlet from level 1 to 5, each rung **built to the SRD's printed XP
-budget**, with wounds, spent resources and the dead carried between fights and rests
-restoring exactly what the printed rules say;
+thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
+spent resources and the dead carried between fights, rests restoring exactly what the
+printed rules say, and **levels earned by experience rather than handed out on a
+schedule**;
 `--seed <n>` makes a fight reproducible, which is a complete bug repro. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
-**What does not exist yet.** No XP awards and no levelling *earned* in play — the ladder
-names the level each rung is fought at and the party is re-resolved to it, but nothing
-awards experience or decides when a level has been earned. No loot, no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
+**What does not exist yet.** No loot and no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings, reaching for a limited-use entry — a thrown Rock, a breath weapon —
 only when nothing else reaches, and never one whose area would catch its own side. And
 **encounters can contain livestock** — a Camel is mechanically `Complete` and narratively
@@ -461,6 +460,23 @@ Three things a Phase 2 author should know before starting:
   regains 1 Hit Point after 1d4 hours" is that **the gap between two rungs is at least
   four hours** — a survivor who went down is conscious at 1 hit point when the next
   fight begins.
+- **The one link in the advancement chain the SRD does not print is the award.** It
+  publishes the thresholds and each monster's worth, and for the step between says only
+  that experience is "awarded by the Game Master". `ExperienceRules` states the reading —
+  **a defeated monster's printed XP is split evenly among the characters who fought** —
+  and the argument for it is checkable: it makes the two published tables agree, since
+  dividing a fully-spent encounter by the party size returns exactly the per-character
+  figure the budget table printed. There is a test asserting that at every level and
+  difficulty.
+- **Levelling is re-resolving the draft at the new level**, never editing a sheet, so a
+  levelled character cannot hold a number that disagrees with the rules that made it. The
+  new level's hit points arrive as a bigger *maximum* — damage already taken stays taken,
+  which is all "your Hit Point maximum increases" promises. **Characters level
+  individually**, because a party diverges the moment somebody dies and stops earning,
+  which is also why `EncounterBudget.ForLevels` sums each character's own figure.
+- **A rung names no level.** It used to, and that meant the ladder *granted* levels on a
+  schedule; the ladder now says only how hard a fight should be, and experience decides
+  how strong the party is when it arrives.
 - **A run owns its state; the engine owns the fight.** `GauntletRun` seeds fresh
   combatants from `CharacterState` through `CombatantCarryOver` and reads them back when
   the fight ends. Nothing about a run leaks into `Encounter`, which stays one

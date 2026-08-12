@@ -44,7 +44,7 @@ if (SingleFightRequested(args))
     return PlayFight(only, random) is FightResult.Won or FightResult.Lost ? 0 : 0;
 }
 
-var run = GauntletRun.Start(content, GauntletLadder.Default(LevelFrom(args) ?? 1, 5));
+var run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1);
 
 Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
 Console.WriteLine("Type 'help' during a fight for commands.");
@@ -56,7 +56,7 @@ while (run.Next is { } step)
     Console.WriteLine();
     Console.WriteLine(new string('=', 60));
     Console.WriteLine(
-        $"Fight {run.Cleared + 1} of {run.Ladder.Count} — level {step.Level}, " +
+        $"Fight {run.Cleared + 1} of {run.Ladder.Count} — " +
         $"{step.Difficulty.ToString().ToLowerInvariant()} difficulty.");
 
     if (rest is { } taken)
@@ -70,8 +70,9 @@ while (run.Next is { } step)
             $"  {member.Draft.Name,-8} " +
             (state.IsDead
                 ? "dead"
-                : $"{state.CurrentHitPoints}/{member.Sheet.MaximumHitPoints} hp, " +
-                  $"{state.HitDiceRemaining} hit {(state.HitDiceRemaining == 1 ? "die" : "dice")}"));
+                : $"level {state.Level}, {state.CurrentHitPoints}/{member.Sheet.MaximumHitPoints} hp, " +
+                  $"{state.HitDiceRemaining} hit {(state.HitDiceRemaining == 1 ? "die" : "dice")}, " +
+                  $"{state.ExperiencePoints} xp"));
     }
 
     var fight = run.BeginNext(random);
@@ -82,6 +83,7 @@ while (run.Next is { } step)
         return 1;
     }
 
+    var levelUpsBefore = run.LevelUps.Count;
     var result = PlayFight(fight, random);
 
     if (result == FightResult.Quit)
@@ -92,6 +94,11 @@ while (run.Next is { } step)
     }
 
     run.CompleteFight(fight);
+
+    foreach (var levelUp in run.LevelUps.Skip(levelUpsBefore))
+    {
+        Console.WriteLine(levelUp + "!");
+    }
 }
 
 Console.WriteLine();

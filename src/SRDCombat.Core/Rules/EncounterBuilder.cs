@@ -116,4 +116,19 @@ public static class EncounterBuilder
             EncounterBudget.For(partySize, partyLevel, difficulty),
             random,
             maximumMonsters);
+
+    /// <summary>
+    /// Builds an encounter for a party whose members may be at different levels.
+    /// </summary>
+    public static BuiltEncounter ForLevels(
+        IEnumerable<MonsterDefinition> candidates,
+        IEnumerable<int> partyLevels,
+        EncounterDifficulty difficulty,
+        IRandomSource random,
+        int maximumMonsters = DefaultMaximumMonsters) =>
+        Build(
+            candidates,
+            EncounterBudget.ForLevels(partyLevels, difficulty),
+            random,
+            maximumMonsters);
 }

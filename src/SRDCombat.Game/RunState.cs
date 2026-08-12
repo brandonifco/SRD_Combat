@@ -25,6 +25,7 @@ namespace SRDCombat.Game;
 /// <param name="SecondWindRemaining">Second Wind uses left.</param>
 /// <param name="ActionSurgeRemaining">Action Surge uses left.</param>
 /// <param name="SpellSlotsRemaining">Spell slots left, by level.</param>
+/// <param name="ExperiencePoints">Experience earned so far. Stops accruing at death.</param>
 /// <param name="IsDead">Dead for good. The gauntlet does not raise the dead.</param>
 public sealed record CharacterState(
     int CurrentHitPoints,
@@ -33,8 +34,16 @@ public sealed record CharacterState(
     int SecondWindRemaining,
     int ActionSurgeRemaining,
     IReadOnlyDictionary<int, int> SpellSlotsRemaining,
+    int ExperiencePoints,
     bool IsDead)
 {
+    /// <summary>The level this character has earned.</summary>
+    public int Level => ExperienceRules.LevelFor(ExperiencePoints);
+
+    /// <summary>The same state with an award added. The dead earn nothing.</summary>
+    public CharacterState Earning(int experience) =>
+        IsDead ? this : this with { ExperiencePoints = ExperiencePoints + experience };
+
     /// <summary>A character at full strength, as they begin the gauntlet.</summary>
     public static CharacterState Fresh(PartyMember member)
     {
@@ -50,6 +59,10 @@ public sealed record CharacterState(
             character?.SecondWindUses ?? 0,
             character?.ActionSurgeUses ?? 0,
             new Dictionary<int, int>(member.Sheet.SpellSlots),
+            // A character built at a level above 1 starts with the experience that level
+            // costs, so a run begun partway up the ladder advances from the right place
+            // rather than levelling again immediately.
+            AdvancementRules.ExperienceToReach(member.Sheet.Level),
             IsDead: false);
     }
 

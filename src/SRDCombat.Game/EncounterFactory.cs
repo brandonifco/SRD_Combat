@@ -65,12 +65,11 @@ public static class EncounterFactory
         ArgumentNullException.ThrowIfNull(random);
         ArgumentOutOfRangeException.ThrowIfZero(party.Count);
 
-        var level = party[0].Sheet.Level;
-
-        var built = EncounterBuilder.ForParty(
+        // Each character's own level, because a party diverges once somebody dies and
+        // stops earning experience.
+        var built = EncounterBuilder.ForLevels(
             MonsterPool.Draw(content.Monsters, maximumChallengeRating),
-            party.Count,
-            level,
+            party.Select(member => member.Sheet.Level),
             difficulty,
             random);
 

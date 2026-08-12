@@ -85,6 +85,21 @@ public static class PregeneratedParty
         ];
     }
 
+    /// <summary>
+    /// Resolves one character from a draft at a level.
+    /// </summary>
+    /// <remarks>
+    /// Public because levelling is re-resolving a draft, and characters level
+    /// individually once a death makes the party diverge.
+    /// </remarks>
+    public static PartyMember Resolve(SrdContent content, CharacterDraft draft, int level, int x = 0, int y = 0)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(draft);
+
+        return Member(content, draft with { Level = level }, level, x, y);
+    }
+
     private static PartyMember Member(SrdContent content, CharacterDraft draft, int level, int x, int y)
     {
         var sheet = CharacterResolver.Resolve(
