@@ -36,12 +36,28 @@ public sealed record LootAward(int MemberIndex, string Description, CharacterDra
 /// different suits in the book, and this model has one body to put a suit on.
 /// </para>
 /// <para>
+/// <b>Potions are the routine drop</b>, on the same argument at a smaller scale: a
+/// Moderate rung yields one Potion of Healing, so a run accumulates a consumable supply
+/// between milestones without the permanent items arriving any faster. Potency follows
+/// the finder's level for the same reason rarity does — a greater potion is Uncommon,
+/// which a level 3 party has earned.
+/// </para>
+/// <para>
 /// The pick among candidates goes through <see cref="IRandomSource"/>, so a seeded run
 /// finds the same loot every time.
 /// </para>
 /// </remarks>
 public static class LootTable
 {
+    /// <summary>The potency a character of this level finds.</summary>
+    /// <remarks>
+    /// Common below level 3 and Uncommon from there, matching the rarity gate the
+    /// permanent items use. Superior and supreme are Rare and Very Rare and never drop
+    /// in a game that stops at level 5.
+    /// </remarks>
+    public static HealingPotion PotionFor(int level) =>
+        level >= 3 ? HealingPotion.Greater : HealingPotion.Standard;
+
     /// <summary>Rolls a drop, or returns null when no candidate would improve anybody.</summary>
     public static LootAward? Roll(
         SrdContent content,

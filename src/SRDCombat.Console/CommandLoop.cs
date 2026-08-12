@@ -117,6 +117,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
             "surge" => encounter.ActionSurge(),
             "aim" => encounter.SteadyAim(),
             "cunning" => CunningAction(words),
+            "drink" => Drink(active, words),
             "trip" => encounter.CunningStrike(CunningStrikeEffect.Trip),
             "end" or "e" => EndTurn(),
             "look" or "l" => Look(),
@@ -210,6 +211,32 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
             : encounter.UseEntry(string.Join(' ', words[1..^1]), target);
     }
 
+    /// <summary>
+    /// Drinks a potion, or administers one to somebody adjacent.
+    /// </summary>
+    /// <remarks>
+    /// The potency is chosen rather than typed — the weakest carried, because spending a
+    /// greater potion on a scratch wastes the difference and is the mistake a client can
+    /// spare the player without deciding anything a rule cares about. Everything else,
+    /// reach and the Bonus Action included, is the engine's to refuse.
+    /// </remarks>
+    private ActionRefusal? Drink(Combatant active, string[] words)
+    {
+        if (active.Inventory.Weakest is not { } potency)
+        {
+            return new ActionRefusal("client.no_potion", $"{active.Name} carries no potions.");
+        }
+
+        if (words.Length < 2)
+        {
+            return encounter.DrinkPotion(potency);
+        }
+
+        return Find(words[1]) is { } target
+            ? encounter.DrinkPotion(potency, target)
+            : new ActionRefusal("client.no_target", $"Nobody here is called '{words[1]}'.");
+    }
+
     private ActionRefusal? CunningAction(string[] words)
     {
         if (words.Length < 2)
@@ -259,6 +286,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         Display.Say("dodge / dash / disengage / stand / escape");
         Display.Say("rage / reckless / secondwind / surge / aim / trip");
         Display.Say("cunning <dash|disengage>");
+        Display.Say("drink [letter]          drink a potion, or give one to somebody adjacent");
         Display.Say("look                    redraw the grid");
         Display.Say("end                     end your turn");
         Display.Say("quit                    leave the fight");

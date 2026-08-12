@@ -653,12 +653,83 @@ public sealed record ActiveCondition(
 /// <param name="SecondWindRemaining">Second Wind uses left, or null for all.</param>
 /// <param name="ActionSurgeRemaining">Action Surge uses left, or null for all.</param>
 /// <param name="SpellSlotsRemaining">Slots left by level, or null for a full complement.</param>
+/// <param name="Potions">
+/// Potions of Healing carried in, by potency. Null and empty both mean none — unlike the
+/// resources above, "unchanged from full" is not a meaningful default for a consumable
+/// nobody starts with.
+/// </param>
 public sealed record CombatantCarryOver(
     int CurrentHitPoints,
     int? RagesRemaining = null,
     int? SecondWindRemaining = null,
     int? ActionSurgeRemaining = null,
-    IReadOnlyDictionary<int, int>? SpellSlotsRemaining = null);
+    IReadOnlyDictionary<int, int>? SpellSlotsRemaining = null,
+    IReadOnlyDictionary<HealingPotion, int>? Potions = null);
+
+/// <summary>
+/// What a combatant is carrying that a fight can consume.
+/// </summary>
+/// <remarks>
+/// A sibling of <see cref="FeatureState"/> and <see cref="UsageState"/> rather than part
+/// of either: a potion is not a class feature and not a stat block entry, and it is the
+/// one thing a fight spends that <em>no</em> rest brings back. Nothing seeds this from a
+/// character sheet, because a potion is state rather than a choice — it comes in from
+/// the run, or not at all.
+/// </remarks>
+public sealed class InventoryState
+{
+    private readonly Dictionary<HealingPotion, int> _potions = [];
+
+    /// <summary>Potions carried, by potency. Only potencies actually held appear.</summary>
+    public IReadOnlyDictionary<HealingPotion, int> Potions => _potions;
+
+    /// <summary>How many of one potency are left.</summary>
+    public int CountOf(HealingPotion potency) => _potions.GetValueOrDefault(potency);
+
+    /// <summary>How many potions of any potency are left.</summary>
+    public int TotalPotions => _potions.Values.Sum();
+
+    /// <summary>
+    /// The weakest potion carried, or null when there is none.
+    /// </summary>
+    /// <remarks>
+    /// What a client or the tactics policy should reach for by default: spending a
+    /// supreme potion on a scratch wastes the difference, and the weakest one that is
+    /// available is never the wrong end of that trade by much.
+    /// </remarks>
+    public HealingPotion? Weakest => _potions
+        .Where(pair => pair.Value > 0)
+        .Select(pair => (HealingPotion?)pair.Key)
+        .OrderBy(potency => potency)
+        .FirstOrDefault();
+
+    internal void Seed(IReadOnlyDictionary<HealingPotion, int> potions)
+    {
+        _potions.Clear();
+
+        foreach (var (potency, count) in potions.Where(pair => pair.Value > 0))
+        {
+            _potions[potency] = count;
+        }
+    }
+
+    internal void Spend(HealingPotion potency)
+    {
+        if (!_potions.TryGetValue(potency, out var count) || count <= 0)
+        {
+            return;
+        }
+
+        if (count == 1)
+        {
+            _potions.Remove(potency);
+        }
+        else
+        {
+            _potions[potency] = count - 1;
+        }
+    }
+}
 
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>
 public sealed class Combatant
@@ -744,6 +815,11 @@ public sealed class Combatant
             }
         }
 
+        if (carriedOver.Potions is { } potions)
+        {
+            Inventory.Seed(potions);
+        }
+
         // A creature brought in at 0 hit points is already down. Going through the same
         // path a blow would take keeps Unconscious, Prone and the dying state consistent
         // with how every other creature reaches 0.
@@ -786,6 +862,9 @@ public sealed class Combatant
 
     /// <summary>Limited-use entry state for this fight — recharges and uses per day.</summary>
     public UsageState Uses { get; }
+
+    /// <summary>Consumables carried into this fight, and what is left of them.</summary>
+    public InventoryState Inventory { get; } = new();
 
     private readonly IReadOnlyCollection<Rules.MonsterTrait> _traits;
 
