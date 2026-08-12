@@ -23,6 +23,31 @@ public sealed record SpellParseResult(
 public static partial class SpellParser
 {
     private const string HeadingFont = "GillSans-SemiBold";
+
+    /// <summary>
+    /// The one spell heading the book sets in small caps, and what it should read.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Acid Splash's heading is <c>GillSans-SemiBold-SC700</c>, and small caps come out
+    /// of the text layer as <c>Ac i d Sp lASh</c> — letters split into runs and the case
+    /// scrambled, with no way to tell a letter gap from a word gap. It is the only spell
+    /// heading in the chapter set this way; every other SC700 line is a sidebar title or
+    /// a stat block's ability row.
+    /// </para>
+    /// <para>
+    /// So it is repaired from a curated map rather than by a rule inferred from one
+    /// example, and the map is keyed on the exact mangled text: if a better reader ever
+    /// renders it correctly, the key stops matching and the spell arrives under its real
+    /// name rather than being silently rewritten. This is the same bargain
+    /// <c>KnownCorrections</c> makes.
+    /// </para>
+    /// </remarks>
+    private static readonly IReadOnlyDictionary<string, string> SmallCapsHeadings =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Ac i d Sp lASh"] = "Acid Splash",
+        };
     private const double MinimumHeadingHeight = 7.6;
     private const double MaximumHeadingHeight = 9.2;
 
@@ -36,6 +61,8 @@ public static partial class SpellParser
         var diagnostics = new List<ParseDiagnostic>();
 
         SpellBuilder? current = null;
+
+        lines = JoinWrappedTypeLines(lines);
 
         void Flush()
         {
@@ -63,7 +90,7 @@ public static partial class SpellParser
             if (IsHeading(line) && NextLineIsSpellType(lines, index))
             {
                 Flush();
-                current = new SpellBuilder(line.Text.Trim(), line.Page);
+                current = new SpellBuilder(HeadingName(line), line.Page);
                 continue;
             }
 
@@ -76,13 +103,74 @@ public static partial class SpellParser
     }
 
     private static bool IsHeading(SourceLine line) =>
-        line.Font == HeadingFont
+        (line.Font == HeadingFont || SmallCapsHeadings.ContainsKey(line.Text.Trim()))
         && line.Height >= MinimumHeadingHeight
         && line.Height <= MaximumHeadingHeight
         && line.Text.Length > 0;
 
+    /// <summary>The spell's name, repairing the one heading the book sets in small caps.</summary>
+    private static string HeadingName(SourceLine line)
+    {
+        var text = line.Text.Trim();
+
+        return SmallCapsHeadings.TryGetValue(text, out var repaired) ? repaired : text;
+    }
+
     private static bool NextLineIsSpellType(IReadOnlyList<SourceLine> lines, int index) =>
         index + 1 < lines.Count && SpellTypePattern().IsMatch(lines[index + 1].Text.Trim());
+
+    /// <summary>
+    /// Joins a level/school/classes line that wrapped onto a second line.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A spell with enough classes to overflow the column prints them across two lines —
+    /// <c>Level 1 Abjuration (Bard, Cleric, Druid, Paladin,</c> then <c>Ranger)</c> — and
+    /// the type grammar is anchored on its closing bracket, so the wrapped ones matched
+    /// nothing and their spells were never detected at all. That dropped <b>38 of the
+    /// book's 339 spells</b>, Cure Wounds among them, and nothing noticed because a spell
+    /// that is never detected produces no diagnostic to report.
+    /// </para>
+    /// <para>
+    /// Rejoining before parsing keeps the fix in one place: every later test of the type
+    /// line sees a single complete one, exactly as an unwrapped spell always did.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<SourceLine> JoinWrappedTypeLines(IReadOnlyList<SourceLine> lines)
+    {
+        var joined = new List<SourceLine>(lines.Count);
+
+        for (var index = 0; index < lines.Count; index++)
+        {
+            var line = lines[index];
+
+            if (index + 1 < lines.Count && UnterminatedSpellType().IsMatch(line.Text.Trim()))
+            {
+                var continuation = lines[index + 1];
+
+                // Only a line that closes the bracket, so an unterminated line followed by
+                // something else is left alone to fail as loudly as it did before.
+                if (continuation.Text.Contains(')', StringComparison.Ordinal))
+                {
+                    // Constructed rather than cloned with `with`: SourceLine.Text is a
+                    // property initialiser, and a record's copy constructor copies
+                    // backing fields without re-running initialisers — so a `with` clone
+                    // would carry the *unjoined* text and change nothing.
+                    joined.Add(new SourceLine(
+                        line.Page,
+                        line.Column,
+                        line.Baseline,
+                        [.. line.Words, .. continuation.Words]));
+                    index++;
+                    continue;
+                }
+            }
+
+            joined.Add(line);
+        }
+
+        return joined;
+    }
 
     /// <summary>Accumulates one spell as its lines arrive.</summary>
     private sealed class SpellBuilder(string name, int page)
@@ -315,6 +403,12 @@ public static partial class SpellParser
 
     [GeneratedRegex(@"^(?:Level (?<level>\d)\s+(?<school>Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation)|(?<cantripSchool>Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation)\s+Cantrip)\s*\((?<classes>[^)]+)\)$")]
     private static partial Regex SpellTypePattern();
+
+    // A type line whose class list has not closed by the end of the line: the same
+    // grammar as SpellTypePattern up to the bracket, deliberately sharing its school
+    // list so the two cannot drift apart.
+    [GeneratedRegex(@"^(?:Level \d\s+(?:Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation)|(?:Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation)\s+Cantrip)\s*\([^)]*$")]
+    private static partial Regex UnterminatedSpellType();
 
     [GeneratedRegex(@"M\s*\((?<material>[^)]+)\)")]
     private static partial Regex MaterialPattern();

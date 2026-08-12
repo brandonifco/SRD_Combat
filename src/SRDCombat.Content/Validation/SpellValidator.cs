@@ -6,16 +6,48 @@ namespace SRDCombat.Content.Validation;
 /// Checks extracted spells.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Spells have no self-checking arithmetic the way stat blocks do, so these are shape
 /// checks: the things the SRD's own rules text says must be true of every spell.
+/// </para>
+/// <para>
+/// <b>The most important one is the count</b>, and it was missing for far too long. The
+/// parser silently dropped 39 of the book's 339 spells — Cure Wounds among them — and
+/// nothing caught it, because a spell that is never detected produces no diagnostic and
+/// the only figure anyone looked at was the extractor reporting its own total. A number
+/// the pipeline prints about itself agrees with the code by construction and checks
+/// nothing. This asserts the shape of what should have been found, which is the lesson
+/// every other extraction bug in this project already taught.
+/// </para>
 /// </remarks>
 public static class SpellValidator
 {
+    /// <summary>
+    /// How many spell descriptions the SRD's spell chapter contains.
+    /// </summary>
+    /// <remarks>
+    /// Counted from the printed pages 104–175: every spell prints exactly one
+    /// level/school/classes line under its heading. If a future extraction legitimately
+    /// changes this — a different source edition — move the number and say why in the
+    /// same commit, because lowering it to match a broken parser is exactly the failure
+    /// this guards.
+    /// </remarks>
+    public const int ExpectedSpellCount = 339;
+
     public static ValidationResult Validate(IReadOnlyList<SpellDefinition> spells)
     {
         ArgumentNullException.ThrowIfNull(spells);
 
         var issues = new List<ValidationIssue>();
+
+        if (spells.Count != ExpectedSpellCount)
+        {
+            issues.Add(new ValidationIssue(
+                ValidationSeverity.Error,
+                "spell.count.unexpected",
+                "spells",
+                $"Extracted {spells.Count} spells; the SRD's spell chapter has {ExpectedSpellCount}."));
+        }
 
         foreach (var duplicate in spells
                      .GroupBy(spell => spell.Id, StringComparer.Ordinal)

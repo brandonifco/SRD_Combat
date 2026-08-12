@@ -11,9 +11,55 @@ public class SpellContentTests
     private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
 
     [Fact]
+    public void ASpellWhoseClassListWrapsIsStillExtracted()
+    {
+        // Cure Wounds prints five classes, which overflow the column: "Level 1
+        // Abjuration (Bard, Cleric, Druid, Paladin," then "Ranger)". The type grammar is
+        // anchored on its closing bracket, so every wrapped spell went undetected — 38
+        // of them, silently, because a spell that is never detected raises no diagnostic.
+        var cure = Content.Spells.Single(spell => spell.Name == "Cure Wounds");
+
+        Assert.Equal(1, cure.Level);
+        Assert.Equal(MagicSchool.Abjuration, cure.School);
+        Assert.Equal(
+            new[] { "Bard", "Cleric", "Druid", "Paladin", "Ranger" },
+            cure.Classes);
+    }
+
+    [Fact]
+    public void TheOneSmallCapsHeadingIsRepaired()
+    {
+        // Acid Splash alone is set in GillSans-SemiBold-SC700, and small caps reach the
+        // text layer as "Ac i d Sp lASh". It is repaired from a curated map keyed on that
+        // exact text, so a better reader would stop matching rather than be overridden.
+        var splash = Content.Spells.Single(spell => spell.Name == "Acid Splash");
+
+        Assert.Equal(0, splash.Level);
+        Assert.Equal(new[] { "Sorcerer", "Wizard" }, splash.Classes);
+    }
+
+    [Fact]
+    public void EverySpellAClassListNamesExists()
+    {
+        // The cross-reference that would have caught the missing spells on day one: a
+        // class's printed spell list names Cure Wounds, so an extraction without it
+        // disagrees with itself.
+        var known = Content.Spells.Select(spell => spell.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var name in new[] { "Cure Wounds", "Detect Magic", "Hold Person", "Aid", "Healing Word" })
+        {
+            Assert.Contains(name, known);
+        }
+    }
+
+    [Fact]
     public void TheWholeSpellListIsExtracted()
     {
-        Assert.True(Content.Spells.Count >= 300, $"Only {Content.Spells.Count} spells were extracted.");
+        // Exact, not a floor. This read ">= 300" for months and was satisfied by exactly
+        // the broken number while 39 spells were missing — a floor is the right shape
+        // for something that should grow as the engine models more, and the wrong shape
+        // for a count fixed by the source document.
+        Assert.Equal(SpellValidator.ExpectedSpellCount, Content.Spells.Count);
 
         // Levels 0-9 are all represented, which is a cheap check that no band was missed.
         Assert.Equal(
