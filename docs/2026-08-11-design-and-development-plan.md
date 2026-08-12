@@ -398,7 +398,14 @@ actions.
 position, and use their own abilities. This is what makes fights feel authored rather
 than random, and it is deliberately after a playable ladder rather than before it.
 
-**Phase 7 — Godot client.**
+**Phase 7 — Godot client.** *Ends when:* a fight can be played with a mouse.
+
+**Keep the Godot project out of `SRDCombat.sln`.** CI runs bare `dotnet restore`, `build`
+and `test` from the repository root, so every project in the solution is built on a runner
+that has .NET 8 and no Godot. A client that stays outside the solution cannot break the
+gate that protects the engine, and the only shared file it needs to touch is `.gitignore`.
+This was checked rather than assumed — see the Environment section of `CLAUDE.md` for what
+a trial project proved, including that no engine change is required to draw a fight.
 
 ## Working conventions
 

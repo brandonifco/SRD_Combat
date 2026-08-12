@@ -883,6 +883,18 @@ there, which the script cannot tell you.
   is how the stale one above was caught. It is deliberately **not** pinned in `.mise.toml`:
   an unresolvable pin would break `mise install` for everyone to serve nobody, so it goes
   in alongside the branch that starts the client.
+- **Phase 7 was proved buildable before being started**, so the next author inherits facts
+  rather than an experiment. A throwaway `Godot.NET.Sdk` project referencing
+  `SRDCombat.Game` **compiled clean and ran headless against the real engine**, printing
+  its monster count through the actual `ContentLoader`. Three things that fell out of it:
+  the Godot SDK is a NuGet package, so **the build needs no Godot installed and no .NET 8
+  SDK** (the net8.0 reference assemblies restore themselves); a live X display exists
+  (`DISPLAY=:1`), so a windowed run can be watched and captured; and **the engine's public
+  API is already enough for a client** — `Battlefield` for the grid, `MovementRules.FindPath`
+  per square for reachable-square highlighting, `Combatants`/`TurnOrder`/`ActiveCombatant`
+  for state, `Log` for events, every action returning an `ActionRefusal` to display. A
+  Godot client needs **no change to `Core`, `Content` or `Game`**, and the day one is
+  needed is the day the work has left its lane.
 - **`pdftotext`** (poppler) is the extraction workhorse for eyeballing pages. Needed only
   alongside the PDF.
 - **A real X11 display exists** (`DISPLAY=:1`, Xorg — not headless), but no
