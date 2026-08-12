@@ -101,4 +101,26 @@ public static class EncounterBudget
 
         return PerCharacter(level, difficulty) * partySize;
     }
+
+    /// <summary>
+    /// The budget for a party whose members are not all the same level.
+    /// </summary>
+    /// <remarks>
+    /// A stated generalisation: the printed procedure says "cross-reference the party's
+    /// level", assuming one level for everybody, and multiplying by the party size is
+    /// only shorthand for adding up a figure that happens to be the same each time. So a
+    /// mixed party sums each character's own figure, which reduces to exactly the printed
+    /// arithmetic when they are all the same level. Parties diverge in this game when a
+    /// character dies and stops earning, so this is reachable rather than theoretical.
+    /// </remarks>
+    public static int ForLevels(IEnumerable<int> levels, EncounterDifficulty difficulty)
+    {
+        ArgumentNullException.ThrowIfNull(levels);
+
+        var total = levels.Sum(level => PerCharacter(level, difficulty));
+
+        return total > 0
+            ? total
+            : throw new ArgumentException("A budget needs at least one character.", nameof(levels));
+    }
 }

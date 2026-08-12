@@ -5,11 +5,15 @@ using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Game;
 
-/// <summary>One rung of the ladder: a fight at a level and a difficulty.</summary>
-/// <param name="Level">The party level this rung is built for.</param>
+/// <summary>One rung of the ladder: a fight at a difficulty, and the rest before it.</summary>
+/// <remarks>
+/// A rung names no level, deliberately. It used to, and that made the ladder *grant*
+/// levels on a schedule; now experience does, so a rung says only how hard the fight
+/// should be for whoever turns up to it.
+/// </remarks>
 /// <param name="Difficulty">How hard it should be.</param>
 /// <param name="RestBefore">The rest the party gets before it, if any.</param>
-public sealed record LadderStep(int Level, EncounterDifficulty Difficulty, RestKind? RestBefore = null);
+public sealed record LadderStep(EncounterDifficulty Difficulty, RestKind? RestBefore = null);
 
 /// <summary>How a run ended, or that it has not.</summary>
 public enum RunOutcome
@@ -45,42 +49,36 @@ public enum RunOutcome
 /// </remarks>
 public static class GauntletLadder
 {
-    /// <summary>Fights at each level before the party moves up.</summary>
-    public const int FightsPerLevel = 3;
+    /// <summary>Fights in one cycle of rising difficulty.</summary>
+    public const int FightsPerCycle = 3;
 
-    /// <summary>The default ladder: levels 1 to 5, three fights each.</summary>
-    public static IReadOnlyList<LadderStep> Default(int fromLevel = 1, int toLevel = 5)
+    /// <summary>
+    /// The default ladder: cycles of Low, Moderate, High until the run is long enough to
+    /// carry a party from level 1 to level 5.
+    /// </summary>
+    /// <remarks>
+    /// The length is chosen against the arithmetic rather than picked: a cycle awards
+    /// each character the low, moderate and high per-character budgets added together,
+    /// and reaching level 5 costs 6,500 XP, so a run needs roughly thirty fights. Ending
+    /// a cycle on High and resting long afterwards gives the short-rest resources
+    /// something to be scarce for within a cycle.
+    /// </remarks>
+    public static IReadOnlyList<LadderStep> Default(int fights = 30)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(fromLevel, 1);
-        ArgumentOutOfRangeException.ThrowIfLessThan(toLevel, fromLevel);
+        ArgumentOutOfRangeException.ThrowIfLessThan(fights, 1);
 
-        var steps = new List<LadderStep>();
-
-        for (var level = fromLevel; level <= toLevel; level++)
-        {
-            for (var fight = 0; fight < FightsPerLevel; fight++)
-            {
-                var difficulty = fight switch
+        return Enumerable.Range(0, fights)
+            .Select(index => new LadderStep(
+                (index % FightsPerCycle) switch
                 {
                     0 => EncounterDifficulty.Low,
                     1 => EncounterDifficulty.Moderate,
                     _ => EncounterDifficulty.High,
-                };
-
-                // No rest before the very first fight of the run; a Long Rest on arriving
-                // at a new level, a Short Rest between fights at the same one.
-                var rest = (level, fight) switch
-                {
-                    _ when level == fromLevel && fight == 0 => (RestKind?)null,
-                    (_, 0) => RestKind.Long,
-                    _ => RestKind.Short,
-                };
-
-                steps.Add(new LadderStep(level, difficulty, rest));
-            }
-        }
-
-        return steps;
+                },
+                // No rest before the first fight; a Long Rest at the start of each new
+                // cycle, a Short Rest between fights within one.
+                index == 0 ? null : index % FightsPerCycle == 0 ? RestKind.Long : RestKind.Short))
+            .ToArray();
     }
 }
 
@@ -110,6 +108,7 @@ public sealed class GauntletRun
     private readonly SrdContent _content;
     private readonly List<CharacterState> _states;
     private readonly List<string> _casualties = [];
+    private readonly List<string> _levelUps = [];
 
     private GauntletRun(
         SrdContent content,
@@ -123,8 +122,11 @@ public sealed class GauntletRun
         Party = party;
     }
 
-    /// <summary>Starts a run with a fresh party at the ladder's first level.</summary>
-    public static GauntletRun Start(SrdContent content, IReadOnlyList<LadderStep>? ladder = null)
+    /// <summary>Starts a run with a fresh party.</summary>
+    public static GauntletRun Start(
+        SrdContent content,
+        IReadOnlyList<LadderStep>? ladder = null,
+        int startingLevel = 1)
     {
         ArgumentNullException.ThrowIfNull(content);
 
@@ -135,7 +137,7 @@ public sealed class GauntletRun
             throw new ArgumentException("A run needs at least one rung.", nameof(ladder));
         }
 
-        var party = PregeneratedParty.Build(content, rungs[0].Level);
+        var party = PregeneratedParty.Build(content, startingLevel);
 
         return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)]);
     }
@@ -174,13 +176,6 @@ public sealed class GauntletRun
         if (Next is not { } step)
         {
             return null;
-        }
-
-        // The party is re-resolved at the rung's level, which is what makes levelling a
-        // matter of naming a higher level rather than editing anybody.
-        if (step.Level != Party[0].Sheet.Level)
-        {
-            Party = PregeneratedParty.Build(_content, step.Level);
         }
 
         if (step.RestBefore is not { } rest)
@@ -270,6 +265,7 @@ public sealed class GauntletRun
             return;
         }
 
+        AwardExperience(fight);
         Cleared++;
 
         if (Cleared >= Ladder.Count)
@@ -277,4 +273,61 @@ public sealed class GauntletRun
             Outcome = RunOutcome.Survived;
         }
     }
+
+    /// <summary>
+    /// Awards the fight's experience and levels up anyone who has earned it.
+    /// </summary>
+    /// <remarks>
+    /// Only the living earn, and the award is shared among them — so a party that has
+    /// lost someone advances slightly faster per head, which is the arithmetic being
+    /// honest rather than a consolation.
+    /// </remarks>
+    private void AwardExperience(Fight fight)
+    {
+        var earners = _states.Count(state => state.CanFight);
+
+        if (earners == 0)
+        {
+            return;
+        }
+
+        var award = ExperienceRules.AwardPerCharacter(fight.Built.Monsters, earners);
+        var party = Party.ToArray();
+
+        for (var i = 0; i < _states.Count; i++)
+        {
+            var before = _states[i];
+            var after = before.Earning(award);
+            _states[i] = after;
+
+            if (after.Level == before.Level)
+            {
+                continue;
+            }
+
+            // Levelling is re-resolving the draft at the new level. Nothing on a sheet is
+            // edited, so a levelled character cannot hold a number that disagrees with
+            // the rules that made it.
+            var previousMaximum = party[i].Sheet.MaximumHitPoints;
+            party[i] = PregeneratedParty.Resolve(_content, party[i].Draft, after.Level);
+
+            // The new level's extra hit points arrive as extra hit points, not as
+            // healing: damage already taken stays taken, which is what the SRD's
+            // "your Hit Point maximum increases" says and no more.
+            var gained = Math.Max(0, party[i].Sheet.MaximumHitPoints - previousMaximum);
+
+            _states[i] = after with
+            {
+                CurrentHitPoints = after.CurrentHitPoints + gained,
+                HitDiceRemaining = after.HitDiceRemaining + (after.Level - before.Level),
+            };
+
+            _levelUps.Add($"{party[i].Draft.Name} reaches level {after.Level}");
+        }
+
+        Party = party;
+    }
+
+    /// <summary>Level-ups in the order they happened, for a client to narrate.</summary>
+    public IReadOnlyList<string> LevelUps => _levelUps;
 }

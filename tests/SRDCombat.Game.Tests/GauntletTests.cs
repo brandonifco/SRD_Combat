@@ -20,17 +20,28 @@ public class GauntletTests
     private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
 
     [Fact]
-    public void TheDefaultLadderClimbsLevelsOneToFive()
+    public void TheDefaultLadderRisesInCycles()
     {
         var ladder = GauntletLadder.Default();
 
-        Assert.Equal(5 * GauntletLadder.FightsPerLevel, ladder.Count);
-        Assert.Equal(1, ladder[0].Level);
-        Assert.Equal(5, ladder[^1].Level);
+        Assert.True(ladder.Count >= 30, "The default run is too short to reach level 5.");
 
-        // Rising within each level, so a run has a shape rather than a flat grind.
+        // Rising within each cycle, so a run has a shape rather than a flat grind.
         Assert.Equal(EncounterDifficulty.Low, ladder[0].Difficulty);
-        Assert.Equal(EncounterDifficulty.High, ladder[GauntletLadder.FightsPerLevel - 1].Difficulty);
+        Assert.Equal(EncounterDifficulty.Moderate, ladder[1].Difficulty);
+        Assert.Equal(EncounterDifficulty.High, ladder[GauntletLadder.FightsPerCycle - 1].Difficulty);
+        Assert.Equal(EncounterDifficulty.Low, ladder[GauntletLadder.FightsPerCycle].Difficulty);
+    }
+
+    [Fact]
+    public void ARungNamesNoLevelBecauseExperienceGrantsThem()
+    {
+        // The ladder used to prescribe a level per rung, which meant the game handed out
+        // levels on a schedule. Experience does it now, so a rung says only how hard the
+        // fight should be.
+        var run = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.Low)]);
+
+        Assert.All(run.States, state => Assert.Equal(1, state.Level));
     }
 
     [Fact]
@@ -40,7 +51,7 @@ public class GauntletTests
 
         Assert.Null(ladder[0].RestBefore);
         Assert.Equal(RestKind.Short, ladder[1].RestBefore);
-        Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerLevel].RestBefore);
+        Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerCycle].RestBefore);
     }
 
     [Fact]
@@ -193,7 +204,7 @@ public class GauntletTests
     public void ARunAdvancesRungByRungAndCanBeSurvived()
     {
         // A short ladder run end to end, which is the whole feature in one test.
-        var ladder = GauntletLadder.Default(fromLevel: 1, toLevel: 1);
+        var ladder = GauntletLadder.Default(fights: 3);
         var run = GauntletRun.Start(Content, ladder);
         var random = new SeededRandomSource(20250812);
 
@@ -221,7 +232,7 @@ public class GauntletTests
     [Fact]
     public void AWipeEndsTheRun()
     {
-        var run = GauntletRun.Start(Content, [new LadderStep(1, EncounterDifficulty.Low)]);
+        var run = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.Low)]);
         var random = new SeededRandomSource(5);
 
         run.PrepareForNext(random);
@@ -246,7 +257,7 @@ public class GauntletTests
     [Fact]
     public void TheRunRefusesToBuildAFightOnceItIsOver()
     {
-        var run = GauntletRun.Start(Content, [new LadderStep(1, EncounterDifficulty.Low)]);
+        var run = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.Low)]);
         var random = new SeededRandomSource(6);
 
         run.PrepareForNext(random);
@@ -255,6 +266,110 @@ public class GauntletTests
         run.CompleteFight(fight);
 
         Assert.Throws<InvalidOperationException>(() => run.BeginNext(random));
+    }
+
+
+    [Fact]
+    public void WinningAFightAwardsExperienceToTheLiving()
+    {
+        var run = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.Low)]);
+        var random = new SeededRandomSource(20250812);
+
+        run.PrepareForNext(random);
+        var fight = run.BeginNext(random);
+        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+
+        var before = run.States.Select(state => state.ExperiencePoints).ToArray();
+        run.CompleteFight(fight);
+
+        if (fight.Encounter.WinningSide != PregeneratedParty.SideId)
+        {
+            // A lost fight pays nothing, which is the other half of the rule.
+            Assert.Equal(before, run.States.Select(state => state.ExperiencePoints));
+            return;
+        }
+
+        Assert.All(
+            run.States.Zip(before),
+            pair => Assert.True(
+                pair.First.IsDead || pair.First.ExperiencePoints > pair.Second,
+                "A survivor of a won fight earned nothing."));
+    }
+
+    [Fact]
+    public void EnoughExperienceLevelsACharacterAndResolvesThemAfresh()
+    {
+        // Levelling is re-resolving the draft, so the levelled sheet must carry the new
+        // level's numbers rather than the old ones with a label changed.
+        var member = PregeneratedParty.Build(Content, level: 1).First();
+        var levelled = PregeneratedParty.Resolve(Content, member.Draft, level: 3);
+
+        Assert.Equal(3, levelled.Sheet.Level);
+        Assert.True(levelled.Sheet.MaximumHitPoints > member.Sheet.MaximumHitPoints);
+        Assert.Equal(member.Draft.Name, levelled.Draft.Name);
+    }
+
+    [Fact]
+    public void ALevelUpAddsHitPointsWithoutHealingTheDamageAlreadyTaken()
+    {
+        // "Your Hit Point maximum increases" and nothing more: a wounded character who
+        // levels is still wounded, just with a bigger maximum.
+        var first = PregeneratedParty.Build(Content, level: 1).First();
+        var second = PregeneratedParty.Resolve(Content, first.Draft, level: 2);
+        var gained = second.Sheet.MaximumHitPoints - first.Sheet.MaximumHitPoints;
+
+        var hurt = CharacterState.Fresh(first) with { CurrentHitPoints = 1 };
+        var afterLevel = hurt with { CurrentHitPoints = hurt.CurrentHitPoints + gained };
+
+        Assert.True(gained > 0);
+        Assert.Equal(1 + gained, afterLevel.CurrentHitPoints);
+        Assert.True(afterLevel.CurrentHitPoints < second.Sheet.MaximumHitPoints);
+    }
+
+    [Fact]
+    public void ACharacterBuiltAboveLevelOneStartsWithThatLevelsExperience()
+    {
+        // Otherwise a run begun at level 3 would level again on its first win.
+        var member = PregeneratedParty.Build(Content, level: 3).First();
+        var state = CharacterState.Fresh(member);
+
+        Assert.Equal(3, state.Level);
+        Assert.Equal(AdvancementRules.ExperienceToReach(3), state.ExperiencePoints);
+    }
+
+    [Fact]
+    public void TheDeadEarnNothing()
+    {
+        var member = PregeneratedParty.Build(Content).First();
+        var dead = CharacterState.Fresh(member) with { IsDead = true };
+
+        Assert.Equal(dead.ExperiencePoints, dead.Earning(500).ExperiencePoints);
+    }
+
+    [Fact]
+    public void ARunReachesLevelFiveIfItIsPlayedOutFarEnough()
+    {
+        // The pacing claim the default ladder's length rests on: thirty fights is enough
+        // to carry a party from level 1 to the top of this game's tier. Fought by the
+        // policy on both sides, so it is the arithmetic being tested, not tactics.
+        var run = GauntletRun.Start(Content, GauntletLadder.Default());
+        var random = new SeededRandomSource(4242);
+
+        while (run.Next is not null)
+        {
+            run.PrepareForNext(random);
+            var fight = run.BeginNext(random);
+            SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+            run.CompleteFight(fight);
+        }
+
+        // However the run ended, nobody may exceed the supported tier.
+        Assert.All(run.States, state => Assert.InRange(state.Level, 1, AdvancementRules.MaximumSupportedLevel));
+
+        if (run.Outcome == RunOutcome.Survived)
+        {
+            Assert.Contains(run.States, state => state.Level >= 3);
+        }
     }
 
     [Fact]
