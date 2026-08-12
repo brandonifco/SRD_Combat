@@ -60,7 +60,10 @@ public static class CharacterResolver
         var features = ResolveFeatures(content.Class, draft.Level);
         var constitution = AbilityRules.ModifierFor(scores[Ability.Constitution]);
 
-        var (armorClass, armorSource) = ResolveArmorClass(draft, content, scores, features);
+        var expertise = ResolveExpertise(draft, content.Background, features);
+        var fightingStyle = ResolveFightingStyle(draft, features);
+
+        var (armorClass, armorSource) = ResolveArmorClass(draft, content, scores, features, fightingStyle);
 
         return new CharacterSheet
         {
@@ -77,9 +80,11 @@ public static class CharacterResolver
             SpeedFeet = ResolveSpeed(draft, content, features),
             Size = content.Species.Sizes.Count > 0 ? content.Species.Sizes[0] : CreatureSize.Medium,
             SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency),
-            Skills = ResolveSkills(draft, content.Background, scores, proficiency),
-            Attacks = ResolveAttacks(draft, content, scores, proficiency),
+            Skills = ResolveSkills(draft, content.Background, scores, proficiency, expertise),
+            Attacks = ResolveAttacks(draft, content, scores, proficiency, fightingStyle),
             Features = features,
+            FightingStyle = fightingStyle,
+            ExpertiseSkills = expertise,
             SpellSlots = levelRow.SpellSlots,
             UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, draft.Level),
         };
@@ -204,7 +209,8 @@ public static class CharacterResolver
         CharacterDraft draft,
         CharacterBuildContent content,
         IReadOnlyDictionary<Ability, int> scores,
-        IReadOnlyList<GrantedFeature> features)
+        IReadOnlyList<GrantedFeature> features,
+        FightingStyle fightingStyle)
     {
         var dexterity = AbilityRules.ModifierFor(scores[Ability.Dexterity]);
         var shield = draft.HasShield ? ShieldBonus(content) : 0;
@@ -221,11 +227,21 @@ public static class CharacterResolver
                 ? armor.MaximumDexterityModifier is { } cap ? Math.Min(cap, dexterity) : dexterity
                 : 0;
 
+            // Defense: "While you're wearing Light, Medium, or Heavy armor, you gain a
+            // +1 bonus to Armor Class." A Shield is none of those three, so a shield
+            // alone does not turn it on — which is why the category is tested rather
+            // than "is anything worn".
+            var defense = fightingStyle == FightingStyle.Defense
+                && armor.Category is ArmorCategory.Light or ArmorCategory.Medium or ArmorCategory.Heavy
+                    ? 1
+                    : 0;
+
             return (
-                armor.BaseArmorClass + dexterityPart + shield,
+                armor.BaseArmorClass + dexterityPart + shield + defense,
                 $"{armor.Name} {armor.BaseArmorClass}" +
                 (armor.AddsDexterityModifier ? $" + {dexterityPart} (Dex)" : string.Empty) +
-                shieldNote);
+                shieldNote +
+                (defense > 0 ? " + 1 (Defense)" : string.Empty));
         }
 
         // Barbarian Unarmored Defense: 10 + Dexterity + Constitution, and a Shield still
@@ -262,11 +278,11 @@ public static class CharacterResolver
         CharacterDraft draft,
         BackgroundDefinition background,
         IReadOnlyDictionary<Ability, int> scores,
-        int proficiency)
+        int proficiency,
+        IReadOnlyList<string> expertise)
     {
-        // Proficiency comes from two places and does not stack with itself.
-        var proficient = new HashSet<string>(draft.ChosenSkills, StringComparer.OrdinalIgnoreCase);
-        proficient.UnionWith(background.SkillProficiencies);
+        var proficient = ProficientSkills(draft, background);
+        var expert = new HashSet<string>(expertise, StringComparer.OrdinalIgnoreCase);
 
         return SkillRules.AllSkills
             .Select(skill =>
@@ -274,13 +290,124 @@ public static class CharacterResolver
                 var ability = SkillRules.AbilityFor(skill);
                 var isProficient = proficient.Contains(skill);
 
+                // Expertise doubles the proficiency bonus rather than adding a second
+                // one, and it only ever applies where proficiency already does — which
+                // ResolveExpertise has already refused a draft for getting wrong.
+                var multiplier = expert.Contains(skill) ? 2 : 1;
+
                 return new SkillBonus(
                     skill,
                     ability,
-                    AbilityRules.ModifierFor(scores[ability]) + (isProficient ? proficiency : 0),
+                    AbilityRules.ModifierFor(scores[ability]) + (isProficient ? proficiency * multiplier : 0),
                     isProficient);
             })
             .ToArray();
+    }
+
+    /// <summary>Every skill the character is proficient in, from either source.</summary>
+    /// <remarks>Proficiency comes from two places and does not stack with itself.</remarks>
+    private static HashSet<string> ProficientSkills(CharacterDraft draft, BackgroundDefinition background)
+    {
+        var proficient = new HashSet<string>(draft.ChosenSkills, StringComparer.OrdinalIgnoreCase);
+        proficient.UnionWith(background.SkillProficiencies);
+
+        return proficient;
+    }
+
+    /// <summary>
+    /// Validates the draft's Expertise picks against what the class actually grants.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The allowance is counted from the granted features rather than from the class
+    /// name, so the Rogue's Expertise and the Ranger's Deft Explorer — the same rule
+    /// under two printed names — need no special case. Both map to
+    /// <see cref="ClassFeature.Expertise"/>, and each grant is worth what the SRD prints
+    /// for it: the Rogue's level 1 Expertise gives two skills, Deft Explorer gives one.
+    /// </para>
+    /// <para>
+    /// Level 6's second pair of Rogue picks is deliberately not modelled: this game stops
+    /// at level 5, and an allowance for a level no character reaches would be untested
+    /// rules. Refusing what the character has not earned is the point — a draft asking
+    /// for Expertise it was never granted is a mistake, not a preference.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<string> ResolveExpertise(
+        CharacterDraft draft,
+        BackgroundDefinition background,
+        IReadOnlyList<GrantedFeature> features)
+    {
+        if (draft.ExpertiseSkills.Count == 0)
+        {
+            return [];
+        }
+
+        var allowance = features
+            .Where(granted => granted.Feature == ClassFeature.Expertise)
+            .Sum(granted => granted.Level == 1 ? 2 : 1);
+
+        if (allowance == 0)
+        {
+            throw new ArgumentException(
+                "This character has no feature granting Expertise.",
+                nameof(draft));
+        }
+
+        if (draft.ExpertiseSkills.Count > allowance)
+        {
+            throw new ArgumentException(
+                $"This character may take Expertise in {allowance} skill(s), not {draft.ExpertiseSkills.Count}.",
+                nameof(draft));
+        }
+
+        if (draft.ExpertiseSkills.Distinct(StringComparer.OrdinalIgnoreCase).Count() != draft.ExpertiseSkills.Count)
+        {
+            throw new ArgumentException("Expertise cannot be taken twice in the same skill.", nameof(draft));
+        }
+
+        // "You gain Expertise in two of your skill proficiencies" — it doubles a
+        // proficiency the character has, so it cannot be spent on one they lack.
+        var proficient = ProficientSkills(draft, background);
+
+        foreach (var skill in draft.ExpertiseSkills)
+        {
+            if (!SkillRules.AllSkills.Contains(skill, StringComparer.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"Unknown skill '{skill}'.", nameof(draft));
+            }
+
+            if (!proficient.Contains(skill))
+            {
+                throw new ArgumentException(
+                    $"Expertise needs proficiency in {skill} first.",
+                    nameof(draft));
+            }
+        }
+
+        return draft.ExpertiseSkills;
+    }
+
+    /// <summary>
+    /// The Fighting Style the character actually has, refusing one they were never
+    /// granted.
+    /// </summary>
+    private static FightingStyle ResolveFightingStyle(
+        CharacterDraft draft,
+        IReadOnlyList<GrantedFeature> features)
+    {
+        if (draft.FightingStyle == FightingStyle.Unspecified)
+        {
+            return FightingStyle.Unspecified;
+        }
+
+        if (!features.Any(granted => granted.Feature == ClassFeature.FightingStyle))
+        {
+            throw new ArgumentException(
+                "This character has no feature granting a Fighting Style.",
+                nameof(draft));
+        }
+
+        return draft.FightingStyle;
     }
 
     /// <summary>
@@ -296,7 +423,8 @@ public static class CharacterResolver
         CharacterDraft draft,
         CharacterBuildContent content,
         IReadOnlyDictionary<Ability, int> scores,
-        int proficiency)
+        int proficiency,
+        FightingStyle fightingStyle)
     {
         var strength = AbilityRules.ModifierFor(scores[Ability.Strength]);
         var dexterity = AbilityRules.ModifierFor(scores[Ability.Dexterity]);
@@ -323,10 +451,15 @@ public static class CharacterResolver
                 weapon.DamageType,
                 (weapon.Damage with { Modifier = weapon.Damage.Modifier + ability }).Average);
 
+            // Archery: "+2 bonus to attack rolls you make with Ranged weapons." The
+            // weapon's kind decides it, not the attack's range band — a thrown Dagger is
+            // a Melee weapon with a range, and the style does not touch it.
+            var archery = fightingStyle == FightingStyle.Archery && weapon.Kind == WeaponKind.Ranged ? 2 : 0;
+
             attacks.Add(new CombatAttack(
                 weapon.Name,
                 weapon.Kind == WeaponKind.Ranged ? AttackKind.Ranged : AttackKind.Melee,
-                ability + proficiency,
+                ability + proficiency + archery,
                 weapon.Kind == WeaponKind.Melee
                     ? weapon.Properties.HasFlag(WeaponProperty.Reach) ? 10 : 5
                     : null,

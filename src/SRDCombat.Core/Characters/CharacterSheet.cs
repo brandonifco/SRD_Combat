@@ -54,6 +54,18 @@ public sealed record CharacterSheet
     /// <summary>Implemented class features the character has at this level.</summary>
     public required IReadOnlyList<GrantedFeature> Features { get; init; }
 
+    /// <summary>
+    /// The Fighting Style in effect, already folded into <see cref="ArmorClass"/> and
+    /// <see cref="Attacks"/>. Carried for display rather than for arithmetic.
+    /// </summary>
+    public FightingStyle FightingStyle { get; init; } = FightingStyle.Unspecified;
+
+    /// <summary>
+    /// Skills taken with Expertise, already doubled in <see cref="Skills"/>. Carried for
+    /// display rather than for arithmetic.
+    /// </summary>
+    public IReadOnlyList<string> ExpertiseSkills { get; init; } = [];
+
     /// <summary>Spell slots by spell level, from the class table. Empty for a non-caster.</summary>
     public required IReadOnlyDictionary<int, int> SpellSlots { get; init; }
 
