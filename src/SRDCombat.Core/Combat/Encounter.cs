@@ -879,32 +879,51 @@ public sealed partial class Encounter
     /// engine executes and, at most, a size gate. The gate is checked here because it is
     /// the only part that depends on who was hit.
     /// </remarks>
-    private void ImposeRiders(Combatant attacker, CombatAttack attack, Combatant target)
+    private void ImposeRiders(Combatant attacker, CombatAttack attack, Combatant target) =>
+        // The grapple's range is the reach of the attack that made it, which is what
+        // the SRD measures against when it asks whether the two have come apart.
+        ImposeConditions(attacker, attack.AppliedConditions, target, attack.MaximumRangeFeet);
+
+    /// <summary>
+    /// Imposes every rider the engine can, from an attack's hit or a failed save.
+    /// </summary>
+    /// <param name="source">The creature imposing the conditions.</param>
+    /// <param name="riders">The printed riders. Ones the engine cannot impose are skipped.</param>
+    /// <param name="target">The creature they land on.</param>
+    /// <param name="grappleRangeFeet">
+    /// The range a Grappled rider is measured against when asking whether the grapple has
+    /// broken by distance. Null when the effect prints none — an engulf-style grapple from
+    /// a saving throw has no reach to measure, and ends only by escape or the grappler's
+    /// incapacity.
+    /// </param>
+    private void ImposeConditions(
+        Combatant source,
+        IReadOnlyList<AppliedCondition> riders,
+        Combatant target,
+        int? grappleRangeFeet)
     {
         // A creature already down takes nothing further from the blow; Unconscious has
         // brought Prone with it already.
-        if (attack.AppliedConditions.Count == 0 || !target.IsActive)
+        if (riders.Count == 0 || !target.IsActive)
         {
             return;
         }
 
-        foreach (var rider in attack.AppliedConditions)
+        foreach (var rider in riders)
         {
             if (!ConditionRules.CanImpose(rider, target))
             {
                 continue;
             }
 
-            var expiry = ConditionRules.ExpiryFor(rider.Duration, attacker, target);
+            var expiry = ConditionRules.ExpiryFor(rider.Duration, source, target);
 
-            // The grapple's range is the reach of the attack that made it, which is what
-            // the SRD measures against when it asks whether the two have come apart.
             var imposed = new ActiveCondition(
                 rider.Condition,
-                attacker.Id,
+                source.Id,
                 expiry,
                 rider.EscapeDifficultyClass,
-                rider.Condition == ConditionType.Grappled ? attack.MaximumRangeFeet : null);
+                rider.Condition == ConditionType.Grappled ? grappleRangeFeet : null);
 
             if (!target.AddCondition(imposed))
             {
@@ -916,10 +935,123 @@ public sealed partial class Encounter
             Add(
                 CombatStepKind.Condition,
                 $"{target.Name} has the {rider.Condition} condition{escape}" +
-                $"{DescribeDuration(rider.Duration, attacker, target)}.",
-                attacker,
+                $"{DescribeDuration(rider.Duration, source, target)}.",
+                source,
                 target);
         }
+    }
+
+    /// <summary>
+    /// Resolves a saving-throw effect — a spell's or a stat block entry's — against every
+    /// creature it reaches.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// One loop for both callers, deliberately: the roll, the halving, Restrained's
+    /// Disadvantage on Dexterity saves, Concentration and dying are the same rules
+    /// wherever the save came from, and two copies would drift.
+    /// </para>
+    /// <para>
+    /// The riders are a parameter rather than read from <paramref name="save"/> because
+    /// the two callers have decided differently: an entry imposes every rider the engine
+    /// can execute, a spell passes none until executing spell conditions is its own
+    /// decided piece of work. A rider lands on a failure — or either way when the printed
+    /// outcome is "Failure or Success" — and carries no grapple range, because a save
+    /// effect prints no reach to measure a grapple against.
+    /// </para>
+    /// </remarks>
+    private void ResolveSaveEffect(
+        Combatant source,
+        string effectName,
+        SaveEffect save,
+        int difficultyClass,
+        GridPosition point,
+        Combatant? target,
+        CombatStepKind kind,
+        IReadOnlyList<AppliedCondition> riders)
+    {
+        var affected = save.Area is { } area
+            ? CreaturesIn(AreaTargeting.Cover(area, source.Position, point, Battlefield))
+            : target is null ? [] : [target];
+
+        if (save.Area is { } shape)
+        {
+            Add(
+                kind,
+                $"{effectName} fills a {shape.SizeFeet}-foot {shape.Shape}, catching " +
+                $"{affected.Count} creature(s).",
+                source);
+        }
+
+        foreach (var victim in affected)
+        {
+            // Restrained imposes Disadvantage on Dexterity saving throws, and on nothing
+            // else — the ability matters, not just the condition.
+            var mode = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained)
+                ? RollMode.Disadvantage
+                : RollMode.Normal;
+
+            var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
+            var succeeded = roll.Total >= difficultyClass;
+
+            Add(
+                kind,
+                $"{victim.Name} makes a {save.Ability} saving throw: {roll} vs DC {difficultyClass} — " +
+                (succeeded ? "success." : "failure."),
+                source,
+                victim);
+
+            if (succeeded && save.SuccessOutcome == SaveSuccessOutcome.NoEffect)
+            {
+                continue;
+            }
+
+            foreach (var component in save.FailureDamage)
+            {
+                var rolled = DiceRoller.Roll(_random, component.Amount);
+
+                // A successful save against a damaging effect halves it.
+                var halvings = succeeded && save.SuccessOutcome == SaveSuccessOutcome.HalfDamage ? 1 : 0;
+                var rageHalving = RageResists(victim, component.Type) ? 1 : 0;
+
+                var applied = DamageRules.Apply(
+                    victim,
+                    rolled.Total,
+                    component.Type,
+                    fromCriticalHit: false,
+                    halvings + rageHalving);
+
+                Add(
+                    CombatStepKind.Damage,
+                    $"{victim.Name} takes {applied.Effective} {component.Type} damage" +
+                    (halvings > 0 ? " (halved by a successful save)" : string.Empty) +
+                    $" [{rolled}] — {DescribeHealth(victim)}.",
+                    source,
+                    victim);
+
+                CheckConcentration(victim, applied.Effective);
+
+                if (applied.Died)
+                {
+                    Add(CombatStepKind.Died, $"{victim.Name} is dead.", victim);
+                    break;
+                }
+
+                if (applied.Downed)
+                {
+                    Add(CombatStepKind.Downed, $"{victim.Name} drops to 0 hit points and falls Unconscious.", victim);
+                    break;
+                }
+            }
+
+            if (!succeeded || save.SuccessOutcome == SaveSuccessOutcome.SameAsFailure)
+            {
+                ImposeConditions(source, riders, victim, grappleRangeFeet: null);
+            }
+        }
+
+        // The damage may have dropped a grappler, in this fight or another one.
+        EndBrokenGrapples();
     }
 
     /// <summary>Narrates a duration the way the SRD prints it.</summary>

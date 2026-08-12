@@ -424,8 +424,10 @@ public static partial class MonsterParser
             return false;
         }
 
+        // The explicit array sidesteps a collection-expression overload ambiguity that the
+        // SDK 8.0.1xx compiler reports and later 8.0.x compilers do not (#27).
         private static IEnumerable<string> SplitList(string text) => text
-            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(value => value.Length > 0);
 
         private static bool IsNone(string value) =>

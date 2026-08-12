@@ -29,6 +29,9 @@ public enum CombatStepKind
 
     /// <summary>A spent Recharge ability rolling its d6 at the start of a turn.</summary>
     Recharge,
+
+    /// <summary>A stat block entry being used, and the saving throws it forces.</summary>
+    Entry,
     TurnEnded,
     EncounterEnded,
 }

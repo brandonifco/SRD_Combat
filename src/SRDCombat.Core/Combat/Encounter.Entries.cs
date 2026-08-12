@@ -16,8 +16,10 @@ namespace SRDCombat.Core.Combat;
 /// <para>
 /// The dispatch is on <see cref="EntryMechanics"/>, and anything the engine cannot
 /// resolve is refused with a named code, exactly like <c>spell.not_implemented</c>.
-/// Saving-throw entries refuse with <c>entry.save_not_implemented</c> today; executing
-/// them is issue #6, and this is the entry point it plugs into.
+/// Attack entries resolve as one swing; saving-throw entries resolve through the same
+/// loop as save spells — every creature in the area rolls against the printed DC, damage
+/// halves on a success where the text says so, and the riders the engine can execute
+/// land on a failure.
 /// </para>
 /// <para>
 /// One judgement call, written down: an attack entry whose name carries a form gate —
@@ -30,7 +32,17 @@ namespace SRDCombat.Core.Combat;
 public sealed partial class Encounter
 {
     /// <summary>Uses a named stat block entry as the active combatant's action.</summary>
-    public ActionRefusal? UseEntry(string entryName, Combatant? target = null)
+    public ActionRefusal? UseEntry(string entryName, Combatant? target = null) =>
+        UseEntry(entryName, target?.Position, target);
+
+    /// <summary>
+    /// Uses a named stat block entry aimed at a point, for an area effect — where a
+    /// breath weapon is exhaled, independent of any one creature.
+    /// </summary>
+    public ActionRefusal? UseEntry(string entryName, GridPosition point, Combatant? target = null) =>
+        UseEntry(entryName, (GridPosition?)point, target);
+
+    private ActionRefusal? UseEntry(string entryName, GridPosition? point, Combatant? target)
     {
         if (ActiveCombatant is not { } actor)
         {
@@ -68,9 +80,7 @@ public sealed partial class Encounter
             EntryMechanics.Multiattack => new ActionRefusal(
                 "entry.is_attack_action",
                 $"{entry.Name} is the Attack action; make its attacks with Attack."),
-            EntryMechanics.SavingThrow => new ActionRefusal(
-                "entry.save_not_implemented",
-                $"{entry.Name} resolves through a saving throw, which monsters cannot execute yet."),
+            EntryMechanics.SavingThrow => UseSaveEntry(actor, entry, point, target),
             EntryMechanics.Narrative => new ActionRefusal(
                 "entry.narrative",
                 $"{entry.Name} has no effect on a fight."),
@@ -134,6 +144,90 @@ public sealed partial class Encounter
         actor.Turn.SpendAction();
         actor.Uses.Spend(entry.Name);
         ResolveAttack(actor, attack, target, isOpportunityAttack: false);
+        CheckForCompletion();
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves a saving-throw entry: every creature it reaches rolls against the printed
+    /// DC, exactly as a save spell does.
+    /// </summary>
+    /// <remarks>
+    /// The riders passed through are the save's own — every one the engine can execute
+    /// lands on a failed save, and the rest stay counted in the entry's
+    /// <c>UnmodelledClauses</c>. A Grappled rider carries no range: an engulf-style
+    /// grapple has no printed reach to measure, so it ends only by escape or the
+    /// grappler's incapacity.
+    /// </remarks>
+    private ActionRefusal? UseSaveEntry(Combatant actor, MonsterEntry entry, GridPosition? point, Combatant? target)
+    {
+        if (entry.Save is not { } save)
+        {
+            // The extractor always pairs SavingThrow mechanics with the effect; this
+            // guards hand-authored stats.
+            return new ActionRefusal(
+                "entry.save_missing",
+                $"{entry.Name} has no structured saving throw behind it.");
+        }
+
+        // A monster's stat block always prints its DC; only hand-authored stats can omit
+        // one, and guessing at a DC is not an option.
+        if (save.DifficultyClass is not { } difficultyClass)
+        {
+            return new ActionRefusal(
+                "entry.save_missing_dc",
+                $"{entry.Name} prints no save difficulty class.");
+        }
+
+        if (save.Area is { } area && !AreaTargeting.CanResolve(area.Shape))
+        {
+            return new ActionRefusal(
+                "entry.area_not_modelled",
+                $"{entry.Name} uses a {area.Shape}, which is not modelled.");
+        }
+
+        if (save.Area is null && target is null)
+        {
+            return new ActionRefusal("entry.needs_target", $"{entry.Name} needs a creature to target.");
+        }
+
+        if (save.Area is null && target is { IsDead: true })
+        {
+            return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
+        }
+
+        if ((point ?? target?.Position) is not { } aim)
+        {
+            return new ActionRefusal(
+                "entry.needs_target",
+                $"{entry.Name} needs a creature or a point to aim at.");
+        }
+
+        if (!actor.Turn.HasAction)
+        {
+            return new ActionRefusal("action.spent", $"{actor.Name} has already used its action.");
+        }
+
+        actor.Turn.SpendAction();
+        actor.Uses.Spend(entry.Name);
+
+        Add(
+            CombatStepKind.Entry,
+            $"{actor.Name} uses {entry.Name}" +
+            (save.Area is null && target is not null ? $" on {target.Name}." : "."),
+            actor,
+            target);
+
+        ResolveSaveEffect(
+            actor,
+            entry.Name,
+            save,
+            difficultyClass,
+            aim,
+            target,
+            CombatStepKind.Entry,
+            save.AppliedConditions);
+
         CheckForCompletion();
         return null;
     }
