@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #71 (magic items extracted and executed) |
+| Branch | `main` at PR #73 (loot drops at the milestones, closing #48) |
 | Tests | **570 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **1 open GitHub issue**, against the plan doc's Phase 4. |
+| Work remaining | **1 open GitHub issue** — #72, Potions of Healing as consumables. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -45,7 +45,9 @@ and a fallen character rejoining at the next Long Rest.
 `--seed <n>` makes a fight reproducible, which is a complete bug repro. The run is
 **persistent**: it autosaves after every cleared fight, `--continue` resumes it, and
 defeat means reload rather than reset — the save deliberately keeps the state after the
-last fight the party *won*. The client is
+last fight the party *won*. **Each High milestone cleared drops one magic item** —
+chosen from what would actually improve somebody, equipped by re-resolving the finder's
+draft, riding the save for free because a draft is what a save holds. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
@@ -60,7 +62,8 @@ where runs routinely end. **Nothing has ever cleared the ladder**, but that is n
 the curve's doing: a pure Low/Moderate ladder also went 0-for-40, and every figure here
 is a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
 
-**What does not exist yet.** No loot. `SimpleTacticsPolicy` is still a placeholder, but no longer a
+**What does not exist yet.** Potions as combat consumables (#72 — permanent loot drops,
+but nothing drinkable). `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
 rages, spends Second Wind, casts when its weapon cannot reach, and reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
@@ -95,10 +98,13 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-One issue, Phase 4.
+One issue.
 
-- **#48 — loot.** The magic items chapter (printed pages 204–253) has never been parsed,
-  so the first question is whether loot draws only from mundane equipment.
+- **#72 — Potions of Healing as consumables.** The permanent-loot half of #48 shipped;
+  potions need machinery no permanent item did — carried state, a Bonus Action drink
+  (administering to an Unconscious ally included, which is the interesting half), the
+  policy and the client using it, and routine rungs dropping them. The healing tiers
+  live in a body-text table, so they belong in a curated rules map, not the extractor.
 
 **A caution before tuning anything against numbers:** the party in an automated run is
 played by `SimpleTacticsPolicy`. It uses features, spells and focus fire now, but it is
@@ -448,6 +454,16 @@ so *it* can tell what is left; they do not belong in a status report.
   are on the registry's doc comments: the Wand's "ignore Half Cover" is vacuous while no
   cover model exists, and Elven Chain's training override is satisfied by construction
   because armour training is not modelled.
+- **Loot rates are this project's design; the items are the book's.** The SRD prints no
+  award-rate table ("Adventures hold the promise—but not a guarantee—of finding magic
+  items"), so `LootTable` states the choice: one permanent item after each High
+  milestone, rarity gated by the finder's level (Uncommon always, Rare at 3+, nothing
+  dearer in a game that ends at level 5), drawn only from candidates that would improve
+  somebody — no Headband of Intellect, because nobody in this party casts on
+  Intelligence. A +N item already owned upgrades in place; **one enchantment per worn
+  suit of armour**, because "+1 Armor" and "Adamantine Armor" are different suits and
+  the model has one body to put a suit on. Equipping is a draft change and a re-resolve
+  — never a sheet edit — so found gear rides the save for free and cannot drift.
 
 ## Extraction traps — read before parsing another SRD chapter
 
