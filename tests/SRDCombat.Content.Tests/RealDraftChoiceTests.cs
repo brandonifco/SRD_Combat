@@ -188,12 +188,61 @@ public class RealDraftChoiceTests
             Content.ClassesById["class.sorcerer"].Levels.Single(row => row.Level == 4).FeatureNames);
     }
 
+    [Fact]
+    public void AMasteredWeaponCarriesItsPropertyIntoTheAttack()
+    {
+        var plain = Build("class.fighter", level: 1);
+        var mastered = Build("class.fighter", level: 1, masteries: ["weapon.longsword"]);
+
+        // The property is unlocked by the feature, so the same Longsword carries it only
+        // for the character who took it.
+        Assert.Null(plain.Attacks[0].Mastery);
+        Assert.Equal(WeaponMastery.Sap, mastered.Attacks[0].Mastery);
+
+        // And it stops being reported as a gap.
+        Assert.DoesNotContain("Weapon Mastery", mastered.UnimplementedFeatures);
+    }
+
+    [Fact]
+    public void AMasteryTheEngineDoesNotExecuteIsRefusedByName()
+    {
+        // The Greataxe's Cleave needs a second attack whose damage omits the ability
+        // modifier, which CombatAttack cannot express. Unlocking it would be a feature
+        // that silently does nothing.
+        var refusal = Assert.Throws<ArgumentException>(
+            () => Build("class.barbarian", level: 1, masteries: ["weapon.greataxe"]));
+
+        Assert.Contains("Cleave", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheCountComesFromTheClassTableAndGrowsWithLevel()
+    {
+        // The Fighter's printed Weapon Mastery column is 3 at level 1 and 4 at level 4.
+        string[] four = ["weapon.longsword", "weapon.mace", "weapon.rapier", "weapon.shortsword"];
+
+        Assert.Throws<ArgumentException>(() => Build("class.fighter", level: 1, masteries: four));
+
+        var atFour = Build("class.fighter", level: 4, masteries: four);
+
+        Assert.Equal(WeaponMastery.Sap, atFour.Attacks[0].Mastery);
+    }
+
+    [Fact]
+    public void AClassWithoutTheFeatureCannotMasterAnything()
+    {
+        // The Cleric never gets Weapon Mastery.
+        Assert.Throws<ArgumentException>(
+            () => Build("class.cleric", level: 5, masteries: ["weapon.mace"]));
+    }
+
     private static CharacterSheet Build(
         string classId,
         int level,
         FightingStyle style = FightingStyle.Unspecified,
         IReadOnlyList<string>? expertise = null,
-        IReadOnlyList<AbilityScoreImprovement>? improvements = null)
+        IReadOnlyList<AbilityScoreImprovement>? improvements = null,
+        IReadOnlyList<string>? masteries = null)
     {
         const string backgroundId = "background.soldier";
         var background = Content.BackgroundsById[backgroundId];
@@ -222,6 +271,7 @@ public class RealDraftChoiceTests
             ExpertiseSkills = expertise ?? [],
             FightingStyle = style,
             AbilityScoreImprovements = improvements ?? [],
+            WeaponMasteryIds = masteries ?? [],
             WeaponIds = ["weapon.longsword"],
             ArmorId = "armor.chain-mail",
         };

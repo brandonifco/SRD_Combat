@@ -444,6 +444,10 @@ public sealed partial class Encounter
 
         EndRageIfUnsustained(combatant);
         ExpireConditions(combatant, ConditionClock.EndOfTurn);
+
+        // Vex lasts "before the end of your next turn", so an unspent one dies here.
+        combatant.Features.VexedTargetId = null;
+
         EndBrokenGrapples();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
         AdvanceTurn();
@@ -617,6 +621,7 @@ public sealed partial class Encounter
             // in no state to take that turn, or it never ends at all.
             combatant.BeginTurnClock();
             ExpireConditions(combatant, ConditionClock.StartOfTurn);
+            ExpireSapsFrom(combatant);
             EndBrokenGrapples();
 
             // "At the start of each of the monster's turns, roll 1d6" — its turn starts
@@ -864,6 +869,107 @@ public sealed partial class Encounter
         ResolveAttack(attacker, attack, mover, isOpportunityAttack: true);
     }
 
+    /// <summary>
+    /// Graze: "If your attack roll with this weapon misses a creature, you can deal
+    /// damage to that creature equal to the ability modifier you used to make the attack
+    /// roll."
+    /// </summary>
+    /// <remarks>
+    /// No roll and no dice — the modifier itself, of the weapon's own damage type. A
+    /// modifier of zero or less deals nothing, since "damage equal to the modifier" is
+    /// not damage when the modifier is not positive.
+    /// </remarks>
+    /// <summary>
+    /// Clears the Saps this creature inflicted: "Disadvantage on its next attack roll
+    /// <em>before the start of your next turn</em>" — measured against the sapper's turn,
+    /// not the victim's, which is why the victim remembers who sapped it.
+    /// </summary>
+    private void ExpireSapsFrom(Combatant sapper)
+    {
+        foreach (var victim in _combatants.Where(c => c.Features.SappedBy == sapper.Id))
+        {
+            victim.Features.SappedBy = null;
+        }
+    }
+
+    private void ApplyGraze(Combatant attacker, CombatAttack attack, Combatant target)
+    {
+        if (attack.Mastery != WeaponMastery.Graze || attack.AbilityModifier <= 0)
+        {
+            return;
+        }
+
+        var applied = DamageRules.Apply(target, attack.AbilityModifier, attack.Damage[0].Type);
+
+        Add(
+            CombatStepKind.Feature,
+            $"{attack.Name}'s Graze deals {applied.Effective} {attack.Damage[0].Type} damage anyway — " +
+            $"{DescribeHealth(target)}.",
+            attacker,
+            target);
+
+        if (applied.Died)
+        {
+            Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
+        }
+        else if (applied.Downed)
+        {
+            Add(CombatStepKind.Downed, $"{target.Name} drops to 0 hit points and falls Unconscious.", target);
+        }
+    }
+
+    /// <summary>
+    /// Sap and Topple, both of which read "if you hit a creature with this weapon".
+    /// </summary>
+    /// <remarks>
+    /// Topple's DC is "8 plus the ability modifier used to make the attack roll and your
+    /// Proficiency Bonus", which is why <see cref="CombatAttack.AbilityModifier"/> is
+    /// carried on the attack rather than recomputed from the sheet: a monster's attack
+    /// has no sheet to recompute from.
+    /// </remarks>
+    private void ApplySapAndTopple(Combatant attacker, CombatAttack attack, Combatant target)
+    {
+        switch (attack.Mastery)
+        {
+            case WeaponMastery.Sap:
+                target.Features.SappedBy = attacker.Id;
+
+                Add(
+                    CombatStepKind.Feature,
+                    $"{attack.Name}'s Sap leaves {target.Name} with Disadvantage on its next attack roll.",
+                    attacker,
+                    target);
+                break;
+
+            case WeaponMastery.Topple:
+                if (!target.IsActive)
+                {
+                    break;
+                }
+
+                var difficultyClass = WeaponMasteryRules.ToppleDifficultyClass(
+                    attack.AbilityModifier,
+                    attacker.Stats.ProficiencyBonus);
+
+                var roll = D20Test.Roll(_random, target.Stats.SaveBonusFor(Ability.Constitution));
+                var succeeded = roll.Total >= difficultyClass;
+
+                Add(
+                    CombatStepKind.Feature,
+                    $"{attack.Name}'s Topple forces a Constitution saving throw: {roll} vs DC " +
+                    $"{difficultyClass} — {(succeeded ? "stays up." : "goes down.")}",
+                    attacker,
+                    target);
+
+                if (!succeeded)
+                {
+                    ImposeConditions(attacker, [new AppliedCondition(ConditionType.Prone)], target, grappleRangeFeet: null);
+                }
+
+                break;
+        }
+    }
+
     private void ResolveAttack(Combatant attacker, CombatAttack attack, Combatant target, bool isOpportunityAttack)
     {
         // Reckless Attack cuts both ways: Advantage on the Barbarian's own melee attacks
@@ -885,12 +991,23 @@ public sealed partial class Encounter
         var steadyAim = attacker.Features.SteadyAimedThisTurn;
         attacker.Features.SteadyAimedThisTurn = false;
 
+        // Vex: "you have Advantage on your next attack roll against that creature" — the
+        // named creature only, and spent on this roll however it lands. Sap is the
+        // mirror image on the defender: Disadvantage on its next attack roll, and this
+        // is that roll.
+        var vexed = attacker.Features.VexedTargetId == target.Id;
+        attacker.Features.VexedTargetId = null;
+
+        var sapped = attacker.Features.SappedBy is not null;
+        attacker.Features.SappedBy = null;
+
         var result = AttackRules.Resolve(
             _random,
             attacker,
             attack,
             target,
-            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim);
+            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed,
+            extraDisadvantage: sapped);
 
         var modeNote = result.Roll.Mode switch
         {
@@ -911,6 +1028,8 @@ public sealed partial class Encounter
                 $"{result.TargetArmorClass} — miss{reason}.",
                 attacker,
                 target);
+
+            ApplyGraze(attacker, attack, target);
             return;
         }
 
@@ -924,6 +1043,10 @@ public sealed partial class Encounter
             target);
 
         attacker.Features.AttackedThisTurn = true;
+
+        // Sap and Topple both read "if you hit a creature with this weapon", so they
+        // land on the hit itself rather than on damage being dealt.
+        ApplySapAndTopple(attacker, attack, target);
 
         // Uncanny Dodge is decided once for the attack, not once per damage component.
         var halvings = TryUncannyDodge(target) ? 1 : 0;
@@ -1017,6 +1140,20 @@ public sealed partial class Encounter
                     target);
                 break;
             }
+        }
+
+        // Vex: "if you hit a creature with this weapon and deal damage to the creature",
+        // so it is set here rather than on the hit - a hit absorbed entirely by Immunity
+        // deals no damage and vexes nobody.
+        if (attack.Mastery == WeaponMastery.Vex && components.Any(pair => pair.Result.Total > 0))
+        {
+            attacker.Features.VexedTargetId = target.Id;
+
+            Add(
+                CombatStepKind.Feature,
+                $"{attack.Name}'s Vex gives {attacker.Name} Advantage on its next attack against {target.Name}.",
+                attacker,
+                target);
         }
 
         ImposeRiders(attacker, attack, target);

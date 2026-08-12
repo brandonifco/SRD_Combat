@@ -201,6 +201,8 @@ public static class PregeneratedParty
         FightingStyle = FightingStyle.Defense,
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
         WeaponIds = ["weapon.longsword"],
+        // The Longsword's Sap: the enemy it hits swings back at Disadvantage.
+        WeaponMasteryIds = ["weapon.longsword"],
         ArmorId = "armor.chain-mail",
         HasShield = true,
     };
@@ -237,6 +239,9 @@ public static class PregeneratedParty
         ExpertiseSkills = ["Stealth", "Acrobatics"],
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Dexterity),
         WeaponIds = ["weapon.shortsword", "weapon.shortbow"],
+        // Both carry Vex, which compounds with Sneak Attack: a hit buys Advantage on the
+        // next swing at the same target, and Advantage is what Sneak Attack wants.
+        WeaponMasteryIds = ["weapon.shortsword", "weapon.shortbow"],
         ArmorId = "armor.leather-armor",
     };
 
