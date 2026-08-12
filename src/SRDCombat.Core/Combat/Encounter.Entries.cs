@@ -115,7 +115,9 @@ public sealed partial class Encounter
                 $"{entry.Name} has no resolvable attack behind it.");
         }
 
-        if (!target.IsActive && target.IsDead)
+        // Only death refuses the attack: an Unconscious creature is a legal target,
+        // and hitting one is how death saves fail.
+        if (target.IsDead)
         {
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
         }

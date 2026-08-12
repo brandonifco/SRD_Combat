@@ -169,7 +169,9 @@ public sealed partial class Encounter
             return new ActionRefusal("attack.unknown", $"{attacker.Name} has no attack called '{attackName}'.");
         }
 
-        if (!target.IsActive && target.IsDead)
+        // Only death refuses the attack: an Unconscious creature is a legal target,
+        // and hitting one is how death saves fail.
+        if (target.IsDead)
         {
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
         }
