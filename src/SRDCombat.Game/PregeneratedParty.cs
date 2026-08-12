@@ -30,8 +30,22 @@ public sealed record PartyMember(CharacterDraft Draft, CharacterSheet Sheet, Com
             Combatant.Name,
             Combatant.SideId,
             Combatant.Stats,
-            position),
+            position,
+            CarriedOver),
     };
+
+    /// <summary>
+    /// The same character carrying wounds and spent resources in from an earlier fight.
+    /// </summary>
+    /// <remarks>
+    /// Held rather than applied immediately because placement makes the combatant, and a
+    /// combatant's starting state has to be set when it is constructed. Set it here and
+    /// <see cref="AtPosition"/> honours it.
+    /// </remarks>
+    public PartyMember CarryingOver(CombatantCarryOver carriedOver) => this with { CarriedOver = carriedOver };
+
+    /// <summary>What this member brings in from an earlier fight. Null means full strength.</summary>
+    public CombatantCarryOver? CarriedOver { get; init; }
 }
 
 /// <summary>

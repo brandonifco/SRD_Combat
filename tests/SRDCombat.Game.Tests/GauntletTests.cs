@@ -1,0 +1,271 @@
+using SRDCombat.Content;
+using SRDCombat.Core.Combat;
+using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
+
+namespace SRDCombat.Game.Tests;
+
+/// <summary>
+/// A run through the gauntlet: what carries between fights, what rests restore, and how
+/// a run ends.
+/// </summary>
+/// <remarks>
+/// The property that makes a gauntlet a game rather than a series of unrelated fights is
+/// that <em>nothing resets on its own</em>. Most of these tests are that property from a
+/// different angle.
+/// </remarks>
+public class GauntletTests
+{
+    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+
+    [Fact]
+    public void TheDefaultLadderClimbsLevelsOneToFive()
+    {
+        var ladder = GauntletLadder.Default();
+
+        Assert.Equal(5 * GauntletLadder.FightsPerLevel, ladder.Count);
+        Assert.Equal(1, ladder[0].Level);
+        Assert.Equal(5, ladder[^1].Level);
+
+        // Rising within each level, so a run has a shape rather than a flat grind.
+        Assert.Equal(EncounterDifficulty.Low, ladder[0].Difficulty);
+        Assert.Equal(EncounterDifficulty.High, ladder[GauntletLadder.FightsPerLevel - 1].Difficulty);
+    }
+
+    [Fact]
+    public void TheFirstFightOffersNoRestAndEachNewLevelOffersALongOne()
+    {
+        var ladder = GauntletLadder.Default();
+
+        Assert.Null(ladder[0].RestBefore);
+        Assert.Equal(RestKind.Short, ladder[1].RestBefore);
+        Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerLevel].RestBefore);
+    }
+
+    [Fact]
+    public void WoundsAndSpentResourcesCarryIntoTheNextFight()
+    {
+        var run = GauntletRun.Start(Content);
+        var random = new SeededRandomSource(4);
+
+        run.PrepareForNext(random);
+        var fight = run.BeginNext(random);
+
+        // Wound someone and spend a resource, then finish the fight.
+        var barbarian = fight.Encounter.Combatants
+            .First(combatant => combatant.Name == "Korrin");
+
+        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+        run.CompleteFight(fight);
+
+        var index = run.Party.ToList().FindIndex(member => member.Draft.Name == "Korrin");
+        var state = run.States[index];
+
+        Assert.Equal(barbarian.Features.RagesRemaining, state.RagesRemaining);
+        Assert.True(
+            state.CurrentHitPoints <= run.Party[index].Sheet.MaximumHitPoints,
+            "A survivor came out of a fight with more hit points than they have.");
+    }
+
+    [Fact]
+    public void ALongRestRestoresEverything()
+    {
+        var member = PregeneratedParty.Build(Content, level: 3)
+            .Single(candidate => candidate.Draft.Name == "Korrin");
+
+        var spent = CharacterState.Fresh(member) with
+        {
+            CurrentHitPoints = 1,
+            RagesRemaining = 0,
+            HitDiceRemaining = 0,
+        };
+
+        var rested = spent.AfterRest(member, RestKind.Long, new SeededRandomSource(1), hitDieSides: 12);
+
+        Assert.Equal(member.Sheet.MaximumHitPoints, rested.CurrentHitPoints);
+        Assert.Equal(member.Combatant.Stats.Character!.RageUses, rested.RagesRemaining);
+
+        // The 2024 change worth not re-learning: a Long Rest returns *all* spent Hit
+        // Point Dice, where earlier editions returned half.
+        Assert.Equal(member.Sheet.Level, rested.HitDiceRemaining);
+    }
+
+    [Fact]
+    public void AShortRestReturnsOneRageAndNotAllOfThem()
+    {
+        // "You regain one expended use when you finish a Short Rest, and you regain all
+        // expended uses when you finish a Long Rest." A Barbarian at level 3 has three.
+        var member = PregeneratedParty.Build(Content, level: 3)
+            .Single(candidate => candidate.Draft.Name == "Korrin");
+
+        var spent = CharacterState.Fresh(member) with { RagesRemaining = 0 };
+        var rested = spent.AfterRest(member, RestKind.Short, new SeededRandomSource(1), hitDieSides: 12);
+
+        Assert.Equal(1, rested.RagesRemaining);
+        Assert.True(rested.RagesRemaining < member.Combatant.Stats.Character!.RageUses);
+    }
+
+    [Fact]
+    public void AShortRestSpendsHitDiceToHealAndNotBeyondTheMaximum()
+    {
+        var member = PregeneratedParty.Build(Content, level: 5)
+            .Single(candidate => candidate.Draft.Name == "Brenna");
+
+        var hurt = CharacterState.Fresh(member) with { CurrentHitPoints = 1 };
+        var rested = hurt.AfterRest(member, RestKind.Short, new SeededRandomSource(2), hitDieSides: 10);
+
+        Assert.True(rested.CurrentHitPoints > hurt.CurrentHitPoints, "The short rest healed nothing.");
+        Assert.True(rested.CurrentHitPoints <= member.Sheet.MaximumHitPoints);
+        Assert.True(rested.HitDiceRemaining < hurt.HitDiceRemaining, "No Hit Point Dice were spent.");
+    }
+
+    [Fact]
+    public void ACharacterAtZeroHitPointsCannotRest()
+    {
+        // "To start a Short Rest, you must have at least 1 Hit Point", and the same for
+        // a Long Rest. A downed character cannot rest their way back.
+        var member = PregeneratedParty.Build(Content).First();
+        var downed = CharacterState.Fresh(member) with { CurrentHitPoints = 0 };
+
+        var rested = downed.AfterRest(member, RestKind.Long, new SeededRandomSource(1), hitDieSides: 10);
+
+        Assert.Equal(0, rested.CurrentHitPoints);
+        Assert.False(RestRules.CanRest(rested.CurrentHitPoints));
+    }
+
+    [Fact]
+    public void ASurvivorWhoWentDownComesBackAtOneHitPoint()
+    {
+        // "A Stable creature that isn't healed regains 1 Hit Point after 1d4 hours" — the
+        // stated reading that stops a downed character being stuck, since resting needs
+        // a hit point to start.
+        var member = PregeneratedParty.Build(Content).First();
+
+        var combatant = new Combatant(
+            member.Combatant.Id,
+            member.Combatant.Name,
+            member.Combatant.SideId,
+            member.Combatant.Stats,
+            new GridPosition(0, 0),
+            new CombatantCarryOver(CurrentHitPoints: 0));
+
+        Assert.False(combatant.IsDead);
+
+        var state = CharacterState.Fresh(member).AfterFight(combatant);
+
+        Assert.Equal(RestRules.HitPointsAfterStabilising, state.CurrentHitPoints);
+        Assert.True(state.CanFight);
+    }
+
+    [Fact]
+    public void ACombatantCarriedInAtZeroArrivesDown()
+    {
+        var member = PregeneratedParty.Build(Content).First();
+
+        var combatant = new Combatant(
+            "carried",
+            "Carried",
+            "party",
+            member.Combatant.Stats,
+            new GridPosition(0, 0),
+            new CombatantCarryOver(CurrentHitPoints: 0));
+
+        Assert.True(combatant.HasCondition(ConditionType.Unconscious));
+        Assert.False(combatant.CanAct);
+    }
+
+    [Fact]
+    public void CarriedResourcesReachTheCombatant()
+    {
+        var member = PregeneratedParty.Build(Content, level: 3)
+            .Single(candidate => candidate.Draft.Name == "Korrin");
+
+        var placed = member
+            .CarryingOver(new CombatantCarryOver(CurrentHitPoints: 5, RagesRemaining: 1))
+            .AtPosition(new GridPosition(0, 0));
+
+        Assert.Equal(5, placed.Combatant.CurrentHitPoints);
+        Assert.Equal(1, placed.Combatant.Features.RagesRemaining);
+    }
+
+    [Fact]
+    public void ARunAdvancesRungByRungAndCanBeSurvived()
+    {
+        // A short ladder run end to end, which is the whole feature in one test.
+        var ladder = GauntletLadder.Default(fromLevel: 1, toLevel: 1);
+        var run = GauntletRun.Start(Content, ladder);
+        var random = new SeededRandomSource(20250812);
+
+        var fought = 0;
+
+        while (run.Next is not null && fought < ladder.Count)
+        {
+            run.PrepareForNext(random);
+            var fight = run.BeginNext(random);
+            SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+            run.CompleteFight(fight);
+            fought++;
+        }
+
+        Assert.NotEqual(RunOutcome.InProgress, run.Outcome);
+        Assert.True(fought > 0);
+
+        if (run.Outcome == RunOutcome.Survived)
+        {
+            Assert.Equal(ladder.Count, run.Cleared);
+            Assert.Null(run.Next);
+        }
+    }
+
+    [Fact]
+    public void AWipeEndsTheRun()
+    {
+        var run = GauntletRun.Start(Content, [new LadderStep(1, EncounterDifficulty.Low)]);
+        var random = new SeededRandomSource(5);
+
+        run.PrepareForNext(random);
+        var fight = run.BeginNext(random);
+        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+        run.CompleteFight(fight);
+
+        // Whichever way this particular fight went, the outcome must be decided and the
+        // two states must agree with each other.
+        if (run.Outcome == RunOutcome.Defeated)
+        {
+            Assert.True(
+                run.States.All(state => !state.CanFight) || fight.Encounter.WinningSide != PregeneratedParty.SideId,
+                "The run was lost without a wipe or a lost fight.");
+        }
+        else
+        {
+            Assert.Equal(PregeneratedParty.SideId, fight.Encounter.WinningSide);
+        }
+    }
+
+    [Fact]
+    public void TheRunRefusesToBuildAFightOnceItIsOver()
+    {
+        var run = GauntletRun.Start(Content, [new LadderStep(1, EncounterDifficulty.Low)]);
+        var random = new SeededRandomSource(6);
+
+        run.PrepareForNext(random);
+        var fight = run.BeginNext(random);
+        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+        run.CompleteFight(fight);
+
+        Assert.Throws<InvalidOperationException>(() => run.BeginNext(random));
+    }
+
+    [Fact]
+    public void AnUnfinishedFightCannotBeRecorded()
+    {
+        var run = GauntletRun.Start(Content);
+        var random = new SeededRandomSource(7);
+
+        run.PrepareForNext(random);
+        var fight = run.BeginNext(random);
+
+        Assert.Throws<InvalidOperationException>(() => run.CompleteFight(fight));
+    }
+}
