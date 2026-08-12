@@ -1,3 +1,4 @@
+using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Rules;
 
@@ -164,5 +165,55 @@ public class MovementRulesTests
 
         Assert.Equal(12, MovementRules.StandUpCostFeet(
             CombatTestData.Combatant("m", stats: CombatTestData.Stats(speedFeet: 25))));
+    }
+
+    [Fact]
+    public void ADownedCreatureStillOccupiesItsSquare()
+    {
+        // Reading occupancy as "active" let a creature end its move standing on an
+        // unconscious one. That was invisible until healing existed: the downed creature
+        // then stood up inside somebody else, and the next path finder found two
+        // combatants in one square and threw.
+        var mover = CombatTestData.Combatant("mover");
+        // A character rather than a monster: a monster dies at 0 hit points, and the
+        // dead deliberately do not block — it is the unconscious who still take up room.
+        var downed = CombatTestData.Combatant(
+            "downed",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(diesAtZeroHitPoints: false),
+            x: 2);
+
+        DamageRules.Apply(downed, downed.Stats.MaximumHitPoints, DamageType.Bludgeoning);
+
+        Assert.False(downed.IsDead);
+        Assert.False(downed.IsActive);
+
+        var onto = MovementRules.FindPath(
+            new Battlefield(8, 8),
+            mover,
+            downed.Position,
+            budgetFeet: 30,
+            [mover, downed]);
+
+        Assert.Null(onto);
+    }
+
+    [Fact]
+    public void PathfindingSurvivesTwoCombatantsInOneSquare()
+    {
+        // Whatever produces it, a path finder that throws is the worst possible failure
+        // mode — it takes down a whole run mid-fight rather than picking a square.
+        var mover = CombatTestData.Combatant("mover");
+        var first = CombatTestData.Combatant("first", sideId: CombatTestData.Monsters, x: 3);
+        var second = CombatTestData.Combatant("second", sideId: CombatTestData.Monsters, x: 3);
+
+        var path = MovementRules.FindPath(
+            new Battlefield(8, 8),
+            mover,
+            new GridPosition(1, 0),
+            budgetFeet: 30,
+            [mover, first, second]);
+
+        Assert.NotNull(path);
     }
 }

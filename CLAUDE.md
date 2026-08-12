@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #61 (healing spells) |
-| Tests | **563 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #62 (party tactics and focus fire) |
+| Tests | **565 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **5 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
@@ -37,14 +37,15 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**A whole run is playable, and automated runs still lose.** Measured over 20 runs both
-before and after healing landed: none survived the 30-fight ladder, median one fight
-cleared, **and the numbers did not move at all** — because `SimpleTacticsPolicy` never
-casts, so the Cleric's Cure Wounds and Healing Word go unused in any automated run. That
-is the clearest possible statement of the measurement's limit: **automated runs measure
-the policy, not the game.** Do not tune difficulty against them until #50 lands. The
-death spiral itself (#58) is still open, though a human player now has the tool that
-addresses it.
+**A whole run is playable, and automated runs still lose.** Measured over 20 runs at each
+step: before features, median 1 fight cleared of 30; with features and focus fire, median
+2 and deaths down from 17 to 13. **Better, and nowhere near enough** — none of 60 runs has
+ever survived the ladder. With the policy now using everything the party owns, the
+evidence points away from tactics and at **encounter shape**: a Low fight for four level 1
+characters buys **5.4 monsters on average and hits the eight cap a quarter of the time**,
+because the builder picks uniformly among whatever is affordable and cheap creatures are
+always affordable. Four characters against eight creatures is an action-economy problem no
+policy solves. That is #63, and it is the next thing to measure against.
 
  `dotnet run --project src/SRDCombat.Console` climbs a
 thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
@@ -55,9 +56,11 @@ schedule**;
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
-**What does not exist yet.** No loot and no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
-melee and swings, reaching for a limited-use entry — a thrown Rock, a breath weapon —
-only when nothing else reaches, and never one whose area would catch its own side. And
+**What does not exist yet.** No loot and no save files. `SimpleTacticsPolicy` is still a placeholder, but no longer a
+naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
+rages, spends Second Wind, casts when its weapon cannot reach, and reaches for a
+limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
+whose area would catch its own side. And
 **encounters can contain livestock** — a Camel is mechanically `Complete` and narratively
 absurd as a foe — which is #52 and a third axis neither the pool nor the budget owns.
 
@@ -451,11 +454,23 @@ default — deliberate).
   sequence of a whole fight, so it catches interaction bugs no unit test reaches. When
   it fails, **read the diff before touching the fixture** — a change to the transcript
   is a change to how the game plays. Regenerate only once the new behaviour is intended:
-  un-skip `TranscriptWriter`, run it, re-skip it, review.
+  un-skip `TranscriptWriter`, run it, re-skip it, review. It churned once, when the policy
+  learned to focus fire, and it earned its keep doing so: the failure was not the
+  byte-for-byte diff but `TheFightExercisesTheHardParts`, which noticed the adventurers
+  now won quickly enough that **nobody went down and the fight covered no Death Saving
+  Throws at all**. The composition was kept and the seed moved to one that still reaches
+  them — the seed is chosen for coverage, and `SkirmishScenario` says so.
 - **It uses hand-authored combatants, not SRD monsters, on purpose** — so it fails when
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
   `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
   every CR 0–4 monster can take a turn without throwing.
+- **A creature at 0 hit points still occupies its square.** Reading occupancy as "active"
+  let a mover end its turn standing on an unconscious creature, which was invisible until
+  healing existed — the downed creature then stood up *inside* someone else and the next
+  path find threw on two combatants in one square, taking down a whole run mid-fight. Two
+  of sixty seeded runs crashed. `MovementRules.FindPath` now treats anyone not dead as
+  occupying, and keys its blockers as a lookup so that a duplicated square is survivable
+  rather than fatal whatever produces it.
 - **All randomness goes through `IRandomSource`.** Never reach for `Random.Shared`
   anywhere in `Core`; determinism is what the transcripts rest on. `ScriptedRandomSource`
   throws when a test rolls more dice than it scripted — if that fires, the test's premise

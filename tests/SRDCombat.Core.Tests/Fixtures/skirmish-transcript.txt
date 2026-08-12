@@ -1,156 +1,141 @@
 A fight breaks out!
-Sela rolls initiative: 22.
-Raider Nick rolls initiative: 19.
-Raider Slow rolls initiative: 14.
-Ferrin rolls initiative: 11.
-Bruk rolls initiative: 7.
-Raider Vex rolls initiative: 5.
-Raider Sap rolls initiative: 4.
+Raider Slow rolls initiative: 22.
+Sela rolls initiative: 21.
+Bruk rolls initiative: 20.
+Raider Vex rolls initiative: 19.
+Raider Sap rolls initiative: 15.
+Ferrin rolls initiative: 13.
+Raider Nick rolls initiative: 13.
 Round 1 begins.
-Sela's turn begins.
-Sela attacks Raider Vex with Shortbow: d20 7+5 = 12 vs AC 13 — miss.
-Sela ends their turn.
-Raider Nick's turn begins.
-Raider Nick moves from (10,4) to (4,4) (30 ft.).
-Raider Nick ends their turn.
 Raider Slow's turn begins.
-Raider Slow attacks Bruk with Shortbow: d20 14+3 = 17 vs AC 15 — hit
-Bruk takes 5 Piercing damage [(4)+1 = 5] — 21/26 hit points.
+Raider Slow attacks Sela with Shortbow: d20 9+3 = 12 vs AC 14 — miss.
 Raider Slow ends their turn.
-Ferrin's turn begins.
-Ferrin moves from (1,3) to (3,3) (10 ft.).
-Ferrin attacks Raider Nick with Longsword: d20 4+5 = 9 vs AC 13 — miss.
-Ferrin ends their turn.
+Sela's turn begins.
+Sela attacks Raider Slow with Shortbow: d20 17+5 = 22 vs AC 12 — hit
+Raider Slow takes 9 Piercing damage [(6)+3 = 9] — dead.
+Raider Slow is dead.
+Sela ends their turn.
 Bruk's turn begins.
-Bruk moves from (1,4) to (3,4) (10 ft.).
-Bruk attacks Raider Nick with Halberd: d20 11+4 = 15 vs AC 13 — hit
-Raider Nick takes 4 Slashing damage [(2)+2 = 4] — 7/11 hit points.
+Bruk moves from (1,4) to (7,3) (30 ft.).
 Bruk ends their turn.
 Raider Vex's turn begins.
-Raider Vex moves from (10,2) to (4,5) (30 ft.).
-Raider Vex attacks Bruk with Scimitar: d20 7+4 = 11 vs AC 15 — miss.
+Raider Vex leaves Bruk's reach, provoking an Opportunity Attack.
+Bruk swings at Raider Vex with Halberd: d20 1+4 = 5 vs AC 13 — miss — a natural 1, an automatic miss.
+Raider Vex moves from (10,2) to (6,2) (20 ft.).
+Raider Vex attacks Bruk with Scimitar: d20 12+4 = 16 vs AC 15 — hit
+Bruk takes 5 Slashing damage [(3)+2 = 5] — 21/26 hit points.
 Raider Vex ends their turn.
 Raider Sap's turn begins.
-Raider Sap moves from (10,3) to (5,5) (25 ft.).
+Raider Sap moves from (10,3) to (6,3) (20 ft.).
+Raider Sap attacks Bruk with Scimitar: d20 7+4 = 11 vs AC 15 — miss.
 Raider Sap ends their turn.
+Ferrin's turn begins.
+Ferrin moves from (1,3) to (5,1) (25 ft.).
+Ferrin attacks Raider Vex with Longsword: d20 6+5 = 11 vs AC 13 — miss.
+Ferrin ends their turn.
+Raider Nick's turn begins.
+Raider Nick moves from (10,4) to (6,4) (20 ft.).
+Raider Nick attacks Bruk with Scimitar: d20 2+4 = 6 vs AC 15 — miss.
+Raider Nick ends their turn.
 Round 2 begins.
 Sela's turn begins.
-Sela attacks Raider Nick with Shortbow: d20 6+5 = 11 vs AC 13 — miss.
+Sela attacks Raider Vex with Shortbow: d20 19+5 = 24 vs AC 13 — hit
+Raider Vex takes 4 Piercing damage [(1)+3 = 4] — 7/11 hit points.
 Sela ends their turn.
-Raider Nick's turn begins.
-Raider Nick attacks Bruk with Scimitar: d20 18+4 = 22 vs AC 15 — hit
-Bruk takes 8 Slashing damage [(6)+2 = 8] — 13/26 hit points.
-Raider Nick ends their turn.
-Raider Slow's turn begins.
-Raider Slow attacks Bruk with Shortbow: d20 3+3 = 6 vs AC 15 — miss.
-Raider Slow ends their turn.
-Ferrin's turn begins.
-Ferrin attacks Raider Nick with Longsword: d20 18+5 = 23 vs AC 13 — hit
-Raider Nick takes 6 Slashing damage [(3)+3 = 6] — 1/11 hit points.
-Ferrin ends their turn.
 Bruk's turn begins.
-Bruk attacks Raider Nick with Halberd: d20 15+4 = 19 vs AC 13 — hit
-Raider Nick takes 5 Slashing damage [(3)+2 = 5] — dead.
-Raider Nick is dead.
+Bruk attacks Raider Vex with Halberd: d20 5+4 = 9 vs AC 13 — miss.
 Bruk ends their turn.
 Raider Vex's turn begins.
-Raider Vex attacks Bruk with Scimitar: d20 19+4 = 23 vs AC 15 — hit
-Bruk takes 6 Slashing damage [(4)+2 = 6] — 7/26 hit points.
+Raider Vex attacks Bruk with Scimitar: d20 15+4 = 19 vs AC 15 — hit
+Bruk takes 5 Slashing damage [(3)+2 = 5] — 16/26 hit points.
 Raider Vex ends their turn.
 Raider Sap's turn begins.
-Raider Sap leaves Ferrin's reach, provoking an Opportunity Attack.
-Ferrin swings at Raider Sap with Longsword: d20 15+5 = 20 vs AC 13 — hit
-Raider Sap takes 4 Slashing damage [(1)+3 = 4] — 7/11 hit points.
-Raider Sap moves from (5,5) to (2,3) (20 ft.).
-Raider Sap attacks Bruk with Scimitar: d20 5+4 = 9 vs AC 15 — miss.
+Raider Sap attacks Bruk with Scimitar: d20 11+4 = 15 vs AC 15 — hit
+Bruk takes 5 Slashing damage [(3)+2 = 5] — 11/26 hit points.
 Raider Sap ends their turn.
+Ferrin's turn begins.
+Ferrin attacks Raider Vex with Longsword: d20 3+5 = 8 vs AC 13 — miss.
+Ferrin ends their turn.
+Raider Nick's turn begins.
+Raider Nick attacks Bruk with Scimitar: d20 13+4 = 17 vs AC 15 — hit
+Bruk takes 4 Slashing damage [(2)+2 = 4] — 7/26 hit points.
+Raider Nick ends their turn.
 Round 3 begins.
 Sela's turn begins.
-Sela attacks Raider Sap with Shortbow: d20 9+5 = 14 vs AC 13 — hit
-Raider Sap takes 4 Piercing damage [(1)+3 = 4] — 3/11 hit points.
+Sela attacks Raider Vex with Shortbow: d20 5+5 = 10 vs AC 13 — miss.
 Sela ends their turn.
-Raider Slow's turn begins.
-Raider Slow attacks Bruk with Shortbow: d20 20+3 = 23 vs AC 15 — hit — a Critical Hit!
-Bruk takes 8 Piercing damage [(4+3)+1 = 8] — 0/26 hit points.
-Bruk drops to 0 hit points and falls Unconscious.
-Raider Slow ends their turn.
-Ferrin's turn begins.
-Ferrin attacks Raider Sap with Longsword: d20 4+5 = 9 vs AC 13 — miss.
-Ferrin ends their turn.
-Bruk's turn begins, at 0 hit points.
-Bruk makes a Death Saving Throw: d20 8+0 = 8 — failure (1/3).
+Bruk's turn begins.
+Bruk attacks Raider Vex with Halberd: d20 8+4 = 12 vs AC 13 — miss.
+Bruk ends their turn.
 Raider Vex's turn begins.
-Raider Vex moves from (4,5) to (2,2) (20 ft.).
-Raider Vex attacks Ferrin with Scimitar: d20 11+4 = 15 vs AC 17 — miss.
+Raider Vex attacks Bruk with Scimitar: d20 18+4 = 22 vs AC 15 — hit
+Bruk takes 4 Slashing damage [(2)+2 = 4] — 3/26 hit points.
 Raider Vex ends their turn.
 Raider Sap's turn begins.
-Raider Sap attacks Ferrin with Scimitar: d20 10+4 = 14 vs AC 17 — miss.
+Raider Sap attacks Bruk with Scimitar: d20 1+4 = 5 vs AC 15 — miss — a natural 1, an automatic miss.
 Raider Sap ends their turn.
-Round 4 begins.
-Sela's turn begins.
-Sela attacks Raider Sap with Shortbow: d20 8+5 = 13 vs AC 13 — hit
-Raider Sap takes 7 Piercing damage [(4)+3 = 7] — dead.
-Raider Sap is dead.
-Sela ends their turn.
-Raider Slow's turn begins.
-Raider Slow attacks Ferrin with Shortbow: d20 6+3 = 9 vs AC 17 — miss.
-Raider Slow ends their turn.
-Ferrin's turn begins.
-Ferrin attacks Raider Vex with Longsword: d20 8+5 = 13 vs AC 13 — hit
-Raider Vex takes 4 Slashing damage [(1)+3 = 4] — 7/11 hit points.
-Ferrin ends their turn.
-Bruk's turn begins, at 0 hit points.
-Bruk makes a Death Saving Throw: d20 5+0 = 5 — failure (2/3).
-Raider Vex's turn begins.
-Raider Vex attacks Ferrin with Scimitar: d20 17+4 = 21 vs AC 17 — hit
-Ferrin takes 6 Slashing damage [(4)+2 = 6] — 22/28 hit points.
-Raider Vex ends their turn.
-Round 5 begins.
-Sela's turn begins.
-Sela attacks Raider Vex with Shortbow: d20 13+5 = 18 vs AC 13 — hit
-Raider Vex takes 4 Piercing damage [(1)+3 = 4] — 3/11 hit points.
-Sela ends their turn.
-Raider Slow's turn begins.
-Raider Slow attacks Ferrin with Shortbow: d20 5+3 = 8 vs AC 17 — miss.
-Raider Slow ends their turn.
-Ferrin's turn begins.
-Ferrin attacks Raider Vex with Longsword: d20 7+5 = 12 vs AC 13 — miss.
-Ferrin ends their turn.
-Bruk's turn begins, at 0 hit points.
-Bruk makes a Death Saving Throw: d20 15+0 = 15 — success (1/3).
-Raider Vex's turn begins.
-Raider Vex attacks Ferrin with Scimitar: d20 19+4 = 23 vs AC 17 — hit
-Ferrin takes 6 Slashing damage [(4)+2 = 6] — 16/28 hit points.
-Raider Vex ends their turn.
-Round 6 begins.
-Sela's turn begins.
-Sela attacks Raider Vex with Shortbow: d20 1+5 = 6 vs AC 13 — miss — a natural 1, an automatic miss.
-Sela ends their turn.
-Raider Slow's turn begins.
-Raider Slow attacks Ferrin with Shortbow: d20 8+3 = 11 vs AC 17 — miss.
-Raider Slow ends their turn.
 Ferrin's turn begins.
 Ferrin attacks Raider Vex with Longsword: d20 12+5 = 17 vs AC 13 — hit
-Raider Vex takes 5 Slashing damage [(2)+3 = 5] — dead.
+Raider Vex takes 6 Slashing damage [(3)+3 = 6] — 1/11 hit points.
+Ferrin ends their turn.
+Raider Nick's turn begins.
+Raider Nick attacks Bruk with Scimitar: d20 13+4 = 17 vs AC 15 — hit
+Bruk takes 8 Slashing damage [(6)+2 = 8] — 0/26 hit points.
+Bruk drops to 0 hit points and falls Unconscious.
+Raider Nick ends their turn.
+Round 4 begins.
+Sela's turn begins.
+Sela attacks Raider Vex with Shortbow: d20 13+5 = 18 vs AC 13 — hit
+Raider Vex takes 8 Piercing damage [(5)+3 = 8] — dead.
 Raider Vex is dead.
-Ferrin ends their turn.
-Bruk's turn begins, at 0 hit points.
-Bruk makes a Death Saving Throw: d20 4+0 = 4 — failure (3/3) — Bruk dies.
-Bruk is dead.
-Round 7 begins.
-Sela's turn begins.
-Sela attacks Raider Slow with Shortbow: d20 9+5 = 14 vs AC 12 — hit
-Raider Slow takes 5 Piercing damage [(2)+3 = 5] — 4/9 hit points.
 Sela ends their turn.
-Raider Slow's turn begins.
-Raider Slow attacks Ferrin with Shortbow: d20 9+3 = 12 vs AC 17 — miss.
-Raider Slow ends their turn.
+Bruk's turn begins, at 0 hit points.
+Bruk makes a Death Saving Throw: d20 14+0 = 14 — success (1/3).
+Raider Sap's turn begins.
+Raider Sap leaves Ferrin's reach, provoking an Opportunity Attack.
+Ferrin swings at Raider Sap with Longsword: d20 17+5 = 22 vs AC 13 — hit
+Raider Sap takes 10 Slashing damage [(7)+3 = 10] — 1/11 hit points.
+Raider Sap moves from (6,3) to (4,0) (25 ft.).
+Raider Sap attacks Ferrin with Scimitar: d20 10+4 = 14 vs AC 17 — miss.
+Raider Sap ends their turn.
 Ferrin's turn begins.
-Ferrin moves from (3,3) to (9,1) (30 ft.).
+Ferrin attacks Raider Sap with Longsword: d20 2+5 = 7 vs AC 13 — miss.
 Ferrin ends their turn.
-Round 8 begins.
+Raider Nick's turn begins.
+Raider Nick moves from (6,4) to (4,1) (30 ft.).
+Raider Nick attacks Ferrin with Scimitar: d20 9+4 = 13 vs AC 17 — miss.
+Raider Nick ends their turn.
+Round 5 begins.
 Sela's turn begins.
-Sela attacks Raider Slow with Shortbow: d20 20+5 = 25 vs AC 12 — hit — a Critical Hit!
-Raider Slow takes 8 Piercing damage [(4+1)+3 = 8] — dead.
-Raider Slow is dead.
+Sela attacks Raider Sap with Shortbow: d20 6+5 = 11 vs AC 13 — miss.
+Sela ends their turn.
+Bruk's turn begins, at 0 hit points.
+Bruk makes a Death Saving Throw: d20 20+0 = 20 — a natural 20 — they regain 1 hit point and are conscious again!
+Bruk stands up.
+Bruk moves from (7,3) to (6,0) (15 ft.).
+Bruk attacks Raider Sap with Halberd: d20 4+4 = 8 vs AC 13 — miss.
+Bruk ends their turn.
+Raider Sap's turn begins.
+Raider Sap attacks Ferrin with Scimitar: d20 5+4 = 9 vs AC 17 — miss.
+Raider Sap ends their turn.
+Ferrin's turn begins.
+Ferrin attacks Raider Sap with Longsword: d20 3+5 = 8 vs AC 13 — miss.
+Ferrin ends their turn.
+Raider Nick's turn begins.
+Raider Nick attacks Ferrin with Scimitar: d20 12+4 = 16 vs AC 17 — miss.
+Raider Nick ends their turn.
+Round 6 begins.
+Sela's turn begins.
+Sela attacks Raider Sap with Shortbow: d20 11+5 = 16 vs AC 13 — hit
+Raider Sap takes 6 Piercing damage [(3)+3 = 6] — dead.
+Raider Sap is dead.
+Sela ends their turn.
+Bruk's turn begins.
+Bruk attacks Raider Nick with Halberd: d20 12+4 = 16 vs AC 13 — hit
+Raider Nick takes 10 Slashing damage [(8)+2 = 10] — 1/11 hit points.
+Bruk ends their turn.
+Ferrin's turn begins.
+Ferrin attacks Raider Nick with Longsword: d20 16+5 = 21 vs AC 13 — hit
+Raider Nick takes 5 Slashing damage [(2)+3 = 5] — dead.
+Raider Nick is dead.
 The fight ends in victory for the party.
