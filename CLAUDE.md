@@ -15,7 +15,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #65 (fallen characters return) |
+| Branch | `main` at PR #66 (fallen characters return) |
 | Tests | **571 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · **339 spells** (all of them; see below) · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
@@ -37,22 +37,25 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**A whole run is playable, and automated runs still lose — but far less badly.** Measured
-over 20 runs at each step, median fights cleared of 30: **1** at the start, **2** once the
-policy used the party's features and focused fire, **3** once encounters stopped buying
-five to eight monsters at a time, with the best run reaching fight 14 and level 3. **Still
-nothing has cleared the ladder.** Two things are known to remain: a casualty is permanent
-with no way to recover one (#58), and the party is played by `SimpleTacticsPolicy`, so
-these numbers are a floor rather than a verdict.
-
- `dotnet run --project src/SRDCombat.Console` climbs a
+**A whole run is playable.** `dotnet run --project src/SRDCombat.Console` climbs a
 thirty-fight gauntlet, each rung **built to the SRD's printed XP budget**, with wounds,
 spent resources and the dead carried between fights, rests restoring exactly what the
-printed rules say, and **levels earned by experience rather than handed out on a
-schedule**;
+printed rules say, **levels earned by experience rather than handed out on a schedule**,
+and a fallen character rejoining at the next Long Rest.
 `--seed <n>` makes a fight reproducible, which is a complete bug repro. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
+
+**Automated runs still lose, and the ladder is why.** Measured over 20-40 runs at each
+step, median fights cleared of 30: **1** at the start, **2** once the policy used the
+party's features and focused fire, **3** once encounters stopped buying five to eight
+monsters at a time — and **still 3** once fallen characters could return, because a party
+usually wipes within a cycle before reaching the Long Rest that would bring anybody back.
+**Nothing has ever cleared the ladder.** What decides where a run ends is the curve's own
+shape: **38 of 40 runs end on a Moderate or High rung, 23 of them on High**, and a ladder
+of Low and Moderate fights alone reaches a median of 7 and a best of 27. That is #65, a
+design decision about a curve this project invented rather than a bug. Every figure here
+is also a floor rather than a verdict, because `SimpleTacticsPolicy` is playing the party.
 
 **What does not exist yet.** No loot and no save files. `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
@@ -704,6 +707,12 @@ dotnet test SRDCombat.sln -c Debug
   which is why `Core` owns its randomness behind an abstraction.
 - When a design decision here or in the plan doc turns out to be wrong, **correct the
   doc in the same commit as the code**, not as a follow-up pass.
+- **Check that an edit to this file actually applied.** A scripted find-and-replace over
+  prose silently does nothing when the text has drifted, and this file changes on most
+  branches. Two edits no-opped that way in one afternoon: one left a sentence with its
+  opening clause missing, and the other left the status section claiming a permanent-death
+  rule that had just been replaced. Both read as confident and were false, which is worse
+  than a merge conflict would have been.
 
 ## Attribution obligation
 
