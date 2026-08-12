@@ -13,9 +13,10 @@ namespace SRDCombat.Core.Characters;
 /// works.
 /// </para>
 /// <para>
-/// Spellcasting is absent because spells are not extracted yet. That is the single
-/// largest gap in the character model and is called out on the sheet rather than being
-/// quietly treated as "no effect".
+/// Spellcasting is absent from this map even though casting works: slots, spell lists
+/// and the casting ability are resolved separately, and the printed feature's remaining
+/// content — preparing and changing spells between fights — is not modelled, so the
+/// name stays reported rather than claimed.
 /// </para>
 /// </remarks>
 public enum ClassFeature
@@ -46,6 +47,18 @@ public enum ClassFeature
 
     /// <summary>Fighter: one extra action, once per rest.</summary>
     ActionSurge,
+
+    /// <summary>Barbarian: Advantage on Dexterity saving throws unless Incapacitated.</summary>
+    DangerSense,
+
+    /// <summary>Barbarian: Speed +10 feet while not in Heavy armour.</summary>
+    FastMovement,
+
+    /// <summary>
+    /// Rogue: a Bonus Action for Advantage on the next attack roll this turn, at the
+    /// cost of all movement.
+    /// </summary>
+    SteadyAim,
 }
 
 /// <summary>A class feature a character has, and the level it came from.</summary>
@@ -75,6 +88,9 @@ public static class ClassFeatureRegistry
             ["Uncanny Dodge"] = ClassFeature.UncannyDodge,
             ["Second Wind"] = ClassFeature.SecondWind,
             ["Action Surge"] = ClassFeature.ActionSurge,
+            ["Danger Sense"] = ClassFeature.DangerSense,
+            ["Fast Movement"] = ClassFeature.FastMovement,
+            ["Steady Aim"] = ClassFeature.SteadyAim,
         };
 
     /// <summary>The implemented feature for a printed name, or null when not implemented.</summary>

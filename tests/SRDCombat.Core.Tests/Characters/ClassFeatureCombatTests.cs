@@ -272,6 +272,146 @@ public class ClassFeatureCombatTests
         Assert.Equal("feature.absent", encounter.CunningAction(CunningActionKind.Dash)?.Code);
     }
 
+    [Fact]
+    public void SteadyAimGrantsAdvantageOnTheNextAttackOnly()
+    {
+        // Two d20s (10 and 3) for the aimed attack, then a single d20 for the second:
+        // the Advantage is "your next attack roll", not the rest of the turn.
+        var hero = Character(
+            "hero",
+            Features([ClassFeature.SteadyAim, ClassFeature.ExtraAttack], attacksPerAction: 2),
+            initiative: 10);
+        var monster = CombatTestData.Combatant(
+            "monster",
+            sideId: CombatTestData.Monsters,
+            x: 1,
+            stats: CombatTestData.Stats(armorClass: 5, maximumHitPoints: 90));
+
+        var encounter = Encounter.Start(
+            new Battlefield(8, 8),
+            [hero, monster],
+            new ScriptedRandomSource(20, 1, 10, 3, 5, 10, 5));
+
+        Assert.Null(encounter.SteadyAim());
+
+        Assert.False(hero.Turn.HasBonusAction);
+        Assert.Equal(0, hero.Turn.MovementFeet);
+
+        Assert.Null(encounter.Attack("Sword", monster));
+        Assert.Null(encounter.Attack("Sword", monster));
+
+        Assert.Equal(
+            1,
+            encounter.Log.Count(step => step.Narration.Contains("with Advantage", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void SteadyAimIsRefusedOnceMoved()
+    {
+        var hero = Character("hero", Features([ClassFeature.SteadyAim]), initiative: 10);
+        var monster = CombatTestData.Combatant(
+            "monster",
+            sideId: CombatTestData.Monsters,
+            x: 5,
+            stats: CombatTestData.Stats(armorClass: 5, maximumHitPoints: 90));
+
+        var encounter = Encounter.Start(new Battlefield(8, 8), [hero, monster], new ScriptedRandomSource(20, 1));
+
+        Assert.Null(encounter.Move(new GridPosition(0, 1)));
+
+        Assert.Equal("feature.steady_aim.moved", encounter.SteadyAim()?.Code);
+    }
+
+    [Fact]
+    public void DashBuysNothingAfterSteadyAim()
+    {
+        // "Your Speed is 0 until the end of the current turn" — a Dash adds to 0.
+        var hero = Character("hero", Features([ClassFeature.SteadyAim]), initiative: 10);
+        var monster = CombatTestData.Combatant(
+            "monster",
+            sideId: CombatTestData.Monsters,
+            x: 5,
+            stats: CombatTestData.Stats(armorClass: 5, maximumHitPoints: 90));
+
+        var encounter = Encounter.Start(new Battlefield(8, 8), [hero, monster], new ScriptedRandomSource(20, 1));
+
+        Assert.Null(encounter.SteadyAim());
+        Assert.Null(encounter.Dash());
+
+        Assert.Equal(0, hero.Turn.MovementFeet);
+    }
+
+    [Fact]
+    public void DangerSenseIsAdvantageOnDexteritySavesAlone()
+    {
+        // The Dexterity save rolls two d20s (3 and 18 — the 18 succeeds, proving the
+        // higher die was used); the Constitution save the next turn rolls exactly one.
+        var (encounter, hero) = SaveFight(new ScriptedRandomSource(20, 1, 3, 18, 1, 3, 1));
+
+        Assert.Null(encounter.UseEntry("Acid Breath", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Dexterity saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("success.", StringComparison.Ordinal));
+
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        Assert.Null(encounter.UseEntry("Bellow", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Constitution saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("failure", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DangerSenseIsLostWhileIncapacitated()
+    {
+        // One d20 (a 3, failing) and one damage die: the printed exception is real.
+        var (encounter, hero) = SaveFight(new ScriptedRandomSource(20, 1, 3, 1));
+
+        hero.AddCondition(ConditionType.Incapacitated);
+
+        Assert.Null(encounter.UseEntry("Acid Breath", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Dexterity saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("failure", StringComparison.Ordinal));
+    }
+
+    /// <summary>A monster with one Dexterity and one Constitution save entry, facing a
+    /// hero with Danger Sense.</summary>
+    private static (Encounter Encounter, Combatant Hero) SaveFight(IRandomSource random)
+    {
+        static MonsterEntry Entry(string name, Ability ability) =>
+            new(name, MonsterEntrySection.Action, $"{name}.",
+                Mechanics: EntryMechanics.SavingThrow,
+                Save: new SaveEffect(
+                    ability,
+                    12,
+                    null,
+                    [new AttackDamage(DiceExpression.Parse("1d6"), DamageType.Acid, 3)],
+                    SaveSuccessOutcome.HalfDamage,
+                    []));
+
+        var breather = CombatTestData.Combatant(
+            "breather",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 10, attacks: []) with
+            {
+                Entries = [Entry("Acid Breath", Ability.Dexterity), Entry("Bellow", Ability.Constitution)],
+            });
+
+        var hero = Character("hero", Features([ClassFeature.DangerSense]), initiative: -10, x: 1);
+
+        var encounter = Encounter.Start(new Battlefield(8, 8), [breather, hero], random);
+
+        return (encounter, hero);
+    }
+
     private static CombatantFeatures Features(
         ClassFeature[]? features = null,
         int attacksPerAction = 1,

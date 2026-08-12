@@ -15,8 +15,8 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #31 (passive traits) |
-| Tests | **402 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #33 (class features: Danger Sense, Fast Movement, Steady Aim) |
+| Tests | **409 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
 | Work remaining | **7 open GitHub issues.** Not in this file, not in chat. |
@@ -24,7 +24,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
 from real content — species, class, background, levels 1–5 — and fight alongside
-monsters, with nine implemented class features and working spellcasting (attack spells,
+monsters, with twelve implemented class features and working spellcasting (attack spells,
 save spells with areas, slots, Concentration). A wolf's bite knocks a Medium creature
 Prone and a Huge one not, a Giant Centipede's poison lasts until the start of the
 centipede's next turn and no longer, a Giant Frog's grapple holds a bandit until it
@@ -90,9 +90,15 @@ governing plan doc carries the same list with the reasoning; this is the short f
    that does not exist; Undead Fortitude is the best next one, needing only a hook where
    damage would drop the creature. The registry works off entry *names*, so content
    still counts these entries `Unmodelled` until #28's regeneration reclassifies them.
-6. **#10 class features.** Same argument, weaker — Danger Sense wants saves executed,
-   Cunning Strike imposes conditions. The least architectural item here and on a
-   different subsystem from #9, which makes it the safest work to interleave.
+6. **#10 class features — done for what needs no new machinery.** Danger Sense
+   (Advantage on Dexterity saves, folded into the shared save loop beside Magic
+   Resistance), Fast Movement (+10 feet derived in `CharacterResolver`, gated on Heavy
+   armour), and Steady Aim (a Bonus Action; "haven't moved" is read as "has spent no
+   movement", so standing up counts, and forfeited Speed stays 0 through a later Dash).
+   The rest are refiled as #32 with one named blocker each: Fighting Style and Deft
+   Explorer need *draft choices* the resolver does not yet carry, Cunning Strike's
+   Poison rider hangs on #22's timed durations, Favored Enemy on a Hunter's Mark effect
+   the spell grammar does not model.
 7. **#11 curate the monster pool — last, deliberately.** Weighting the pool by mechanical
    coverage means nothing until coverage stops moving, and every step above moves it.
 

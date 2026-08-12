@@ -663,8 +663,24 @@ it needs only a hook at the moment damage would drop the creature, machinery
 `Unmodelled` in content until the #28 regeneration teaches the extractor which names are
 executed.
 
-**6. Class features (#10).** Same argument, weaker: Danger Sense wants saving throws
-executed and Cunning Strike imposes conditions. The least architectural item on the list
+**6. Class features (#10) — done for what needs no new machinery.** Three landed the day
+saves did, which was the argument for the ordering: **Danger Sense** is Advantage on
+Dexterity saving throws unless Incapacitated, folded into the same combined-mode
+computation as Magic Resistance and Restrained in the shared save loop; **Fast
+Movement** is +10 feet derived in `CharacterResolver` beside the armour-class
+derivation, gated on Heavy armour exactly as printed; **Steady Aim** is a Bonus Action
+whose two readings are written down — "you haven't moved during this turn" is read as
+"has spent no movement", so standing up counts as moving, and the forfeited Speed is
+locked at 0 so a later Dash buys nothing. Steady Aim's Advantage is consumed by the next
+attack roll whether it hits or not.
+
+What remains of #10 is one follow-up issue per blocker rather than a live umbrella:
+Fighting Style and Deft Explorer's Expertise are *character-creation choices* the draft
+does not yet carry — the first genuinely new machinery in the list; Cunning Strike can
+land Trip today but its Poison rider prints "for 1 minute", which is #22's duration
+shape; Tactical Mind wants an in-combat ability check, of which the engine rolls exactly
+one (escaping a grapple); Favored Enemy needs Hunter's Mark, whose effect the spell
+grammar does not model. The least architectural item on the list
 and the only one on the character rather than the monster side, which makes it the safest
 work to interleave when a lower-stakes branch is wanted.
 

@@ -105,6 +105,52 @@ public sealed partial class Encounter
         return null;
     }
 
+    /// <summary>
+    /// Rogue Steady Aim: a Bonus Action for Advantage on the next attack roll this
+    /// turn, at the cost of all movement.
+    /// </summary>
+    /// <remarks>
+    /// "You can use this bonus action only if you haven't moved during this turn, and
+    /// after you use [it], your Speed is 0 until the end of the current turn." Spending
+    /// movement is what the engine reads as having moved — standing up included — and
+    /// forfeited movement stays 0 through a later Dash.
+    /// </remarks>
+    public ActionRefusal? SteadyAim()
+    {
+        if (ActiveCombatant is not { } combatant)
+        {
+            return new ActionRefusal("encounter.complete", "The encounter is over.");
+        }
+
+        if (!combatant.Stats.Has(ClassFeature.SteadyAim))
+        {
+            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Steady Aim.");
+        }
+
+        if (combatant.Turn.HasMoved)
+        {
+            return new ActionRefusal(
+                "feature.steady_aim.moved",
+                $"{combatant.Name} has already moved this turn.");
+        }
+
+        if (!combatant.Turn.HasBonusAction)
+        {
+            return new ActionRefusal("bonus_action.spent", $"{combatant.Name} has used its Bonus Action.");
+        }
+
+        combatant.Turn.SpendBonusAction();
+        combatant.Turn.ForfeitMovement();
+        combatant.Features.SteadyAimedThisTurn = true;
+
+        Add(
+            CombatStepKind.Feature,
+            $"{combatant.Name} takes Steady Aim: Advantage on its next attack, and its Speed is 0 this turn.",
+            combatant);
+
+        return null;
+    }
+
     /// <summary>Fighter Action Surge: one extra action on this turn.</summary>
     public ActionRefusal? ActionSurge()
     {

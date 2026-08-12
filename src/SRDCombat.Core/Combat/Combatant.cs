@@ -352,6 +352,16 @@ public sealed class TurnResources
     /// <summary>Movement left this turn, in feet.</summary>
     public int MovementFeet { get; private set; }
 
+    /// <summary>
+    /// True once any movement has been spent this turn. Standing up spends movement,
+    /// so it counts as having moved — the reading Steady Aim's "haven't moved" gate
+    /// rests on.
+    /// </summary>
+    public bool HasMoved { get; private set; }
+
+    /// <summary>True after Steady Aim: Speed is 0 for the rest of the turn.</summary>
+    private bool _movementForfeited;
+
     /// <summary>True when the combatant took the Dodge action this turn.</summary>
     public bool IsDodging { get; private set; }
 
@@ -365,6 +375,8 @@ public sealed class TurnResources
         HasBonusAction = true;
         HasReaction = true;
         MovementFeet = speedFeet;
+        HasMoved = false;
+        _movementForfeited = false;
         IsDodging = false;
         HasDisengaged = false;
     }
@@ -378,10 +390,31 @@ public sealed class TurnResources
 
     public void SpendReaction() => HasReaction = false;
 
-    public void SpendMovement(int feet) => MovementFeet = Math.Max(0, MovementFeet - feet);
+    public void SpendMovement(int feet)
+    {
+        MovementFeet = Math.Max(0, MovementFeet - feet);
+        HasMoved = HasMoved || feet > 0;
+    }
 
     /// <summary>The Dash action: gain extra movement equal to your Speed.</summary>
-    public void AddMovement(int feet) => MovementFeet += feet;
+    /// <remarks>
+    /// Buys nothing after Steady Aim — "your Speed is 0 for the rest of the turn", and
+    /// a Dash adds to a Speed of 0.
+    /// </remarks>
+    public void AddMovement(int feet)
+    {
+        if (!_movementForfeited)
+        {
+            MovementFeet += feet;
+        }
+    }
+
+    /// <summary>Steady Aim's price: no movement for the rest of the turn.</summary>
+    public void ForfeitMovement()
+    {
+        MovementFeet = 0;
+        _movementForfeited = true;
+    }
 
     public void StartDodging() => IsDodging = true;
 
@@ -412,6 +445,9 @@ public sealed class FeatureState
     /// <summary>True once Reckless Attack has been declared this turn.</summary>
     public bool IsRecklessThisTurn { get; internal set; }
 
+    /// <summary>True after Steady Aim, until the next attack roll consumes it.</summary>
+    public bool SteadyAimedThisTurn { get; internal set; }
+
     /// <summary>
     /// Whether the creature attacked on its turn. Rage ends if a turn passes without
     /// the Barbarian attacking or forcing a saving throw.
@@ -437,6 +473,7 @@ public sealed class FeatureState
     {
         SneakAttackUsedThisTurn = false;
         IsRecklessThisTurn = false;
+        SteadyAimedThisTurn = false;
         AttackedThisTurn = false;
         AttacksRemainingThisAction = 0;
     }

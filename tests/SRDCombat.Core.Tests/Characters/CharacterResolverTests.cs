@@ -96,6 +96,24 @@ public class CharacterResolverTests
     }
 
     [Fact]
+    public void FastMovementAddsTenFeetOutsideHeavyArmor()
+    {
+        var content = CharacterTestData.Content(
+            classDefinition: CharacterTestData.Class(
+                featuresByLevel: new Dictionary<int, string[]> { [5] = ["Fast Movement"] }));
+
+        // Not yet granted at level 4; granted at 5; withheld again in Heavy armour,
+        // which is the printed gate.
+        Assert.Equal(30, CharacterResolver.Resolve(CharacterTestData.Draft(level: 4), content).SpeedFeet);
+        Assert.Equal(40, CharacterResolver.Resolve(CharacterTestData.Draft(level: 5), content).SpeedFeet);
+        Assert.Equal(
+            30,
+            CharacterResolver.Resolve(
+                CharacterTestData.Draft(level: 5, armorId: "armor.chain-mail"),
+                content).SpeedFeet);
+    }
+
+    [Fact]
     public void ArmorClassComesFromWhatIsWorn()
     {
         var content = CharacterTestData.Content();

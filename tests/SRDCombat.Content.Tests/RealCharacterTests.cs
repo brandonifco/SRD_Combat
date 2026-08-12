@@ -72,6 +72,18 @@ public class RealCharacterTests
     }
 
     [Fact]
+    public void ALevelFiveBarbarianSensesDangerAndMovesFaster()
+    {
+        var barbarian = Build("class.barbarian", "species.goliath", "background.soldier", 5, armorId: null);
+
+        Assert.True(barbarian.Has(ClassFeature.DangerSense));
+        Assert.True(barbarian.Has(ClassFeature.FastMovement));
+
+        // Goliath 35, +10 from Fast Movement out of Heavy armour.
+        Assert.Equal(45, barbarian.SpeedFeet);
+    }
+
+    [Fact]
     public void ARogueGetsSneakAttackAndCunningAction()
     {
         var rogue = Build("class.rogue", "species.halfling", "background.criminal", 5, armorId: null);
@@ -79,6 +91,7 @@ public class RealCharacterTests
         Assert.True(rogue.Has(ClassFeature.SneakAttack));
         Assert.True(rogue.Has(ClassFeature.CunningAction));
         Assert.True(rogue.Has(ClassFeature.UncannyDodge));
+        Assert.True(rogue.Has(ClassFeature.SteadyAim));
 
         // The Rogue's Sneak Attack dice come straight off the class table.
         Assert.Equal("3d6", Content.ClassesById["class.rogue"].AtLevel(5)!.Resources["Sneak Attack"]);
