@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #39 (the Emanation's excluded origin) |
-| Tests | **445 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #40 (the derived monster pool) |
+| Tests | **455 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **2 open GitHub issues.** Not in this file, not in chat. |
+| Work remaining | **1 open GitHub issue.** Not in this file, not in chat. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -117,8 +117,19 @@ governing plan doc carries the same list with the reasoning; this is the short f
    off the machine, which is the argument for checking the book the moment it is
    reachable. A Sphere deliberately keeps its centre: it is centred on a point, not
    extending from a creature.
-8. **#11 curate the monster pool — last, deliberately.** Weighting the pool by mechanical
-   coverage means nothing until coverage stops moving, and every step above moves it.
+8. **#11 curate the monster pool — done, last as argued.** It is **derived, not
+   hand-written**: `MonsterPool` grades each stat block from the content's own
+   `IsFullyModelled` accounting, so implementing a trait enlarges the pool at the next
+   regeneration with nothing to edit. The grade turns on **where** the gap is, not how
+   many there are — `Complete` (nothing unmodelled), `Playable` (every *Action* entry
+   modelled, something outside them not), `Diminished` (an action loses part of its
+   printed text — the Boar's Gore without its charge), `Unusable` (no action the engine
+   can resolve). **Admission is Playable or better**: the creature's whole turn is
+   exactly what the block prints. Tier-1 today is **131 monsters, at least five at every
+   CR from 0 to 4**, and the tests assert floors rather than exact counts so good news
+   never fails a build. Two CR 0 creatures are `Unusable` and both are faithful readings
+   checked against print — the Shrieker Fungus has only a Reaction, the Seahorse only a
+   swim action — so `Admits` refuses them at *any* floor.
 
 **Conditions are the most-reopened type in that list** — #6 imposes them on a failed
 save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
@@ -394,6 +405,9 @@ Three things a Phase 2 author should know before starting:
 - **`ChallengeRatingRules` already exists** in `Core.Rules` with the full XP and
   proficiency-bonus tables, and the SRD's per-character encounter XP budget is on
   printed page 202 — the encounter builder implements a published table, not a guess.
+  **`MonsterPool` decides what may go in the bag; `ChallengeRatingRules` prices it.**
+  Keep them apart: coverage is not difficulty, and nothing in the pool weights or
+  balances an encounter.
 
 ## Related projects on this machine — context, not dependencies
 
