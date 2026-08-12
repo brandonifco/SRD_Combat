@@ -1,3 +1,4 @@
+using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Content.Tests;
@@ -75,6 +76,56 @@ public class PlausibleFoeTests
         var names = Content.Monsters.Select(monster => monster.Name).ToHashSet(StringComparer.Ordinal);
 
         Assert.All(PlausibleFoes.ExcludedNames, excluded => Assert.Contains(excluded, names));
+    }
+
+    [Fact]
+    public void TheAquaticRuleCatchesExactlyTheCreaturesWithNowhereToFight()
+    {
+        // Verified against all 330 stat blocks before the rule was trusted, which is
+        // what the issue asked for: nine, and nothing else in the book.
+        var aquatic = Content.Monsters.Where(PlausibleFoes.IsAquatic).Select(m => m.Name).ToArray();
+
+        Assert.Equal(
+            [
+                "Giant Seahorse", "Giant Shark", "Hunter Shark", "Killer Whale", "Octopus",
+                "Piranha", "Reef Shark", "Seahorse", "Swarm of Piranhas",
+            ],
+            aquatic.OrderBy(name => name, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void ATokenLandSpeedAloneIsNotEnough()
+    {
+        // The clause that stops the obvious version being wrong. Every one of these
+        // walks 5 feet and is a perfectly good land encounter, several of them staples;
+        // a bare "walks 5 or less" rule would have taken the lot.
+        foreach (var id in new[]
+                 {
+                     "monster.animated-flying-sword", "monster.swarm-of-bats", "monster.will-o-wisp",
+                     "monster.ghost", "monster.violet-fungus", "monster.bat", "monster.owl",
+                 })
+        {
+            var monster = Content.MonstersById[id];
+
+            Assert.Equal(PlausibleFoes.TokenLandSpeedFeet, monster.Speeds[MovementMode.Walk]);
+            Assert.False(PlausibleFoes.IsAquatic(monster), $"{monster.Name} is not aquatic.");
+        }
+    }
+
+    [Fact]
+    public void TheAmphibiousCreaturesTheBookMeansToBeMetAshoreAreKept()
+    {
+        // The boundary is the SRD's own: these walk 10 feet or more. The Giant Octopus
+        // is the closest call in the book, and the SRD gave it twice the Octopus's land
+        // speed on purpose.
+        foreach (var id in new[]
+                 {
+                     "monster.giant-octopus", "monster.merfolk-skirmisher", "monster.merrow",
+                     "monster.aboleth", "monster.archelon", "monster.crab",
+                 })
+        {
+            Assert.False(PlausibleFoes.IsAquatic(Content.MonstersById[id]));
+        }
     }
 
     [Fact]
