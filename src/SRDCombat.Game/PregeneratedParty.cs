@@ -11,7 +11,28 @@ namespace SRDCombat.Game;
 /// <param name="Draft">What was chosen. Levelling re-resolves this rather than mutating the sheet.</param>
 /// <param name="Sheet">Every number, derived.</param>
 /// <param name="Combatant">The fighting piece.</param>
-public sealed record PartyMember(CharacterDraft Draft, CharacterSheet Sheet, Combatant Combatant);
+public sealed record PartyMember(CharacterDraft Draft, CharacterSheet Sheet, Combatant Combatant)
+{
+    /// <summary>
+    /// The same character as a fresh combatant at a given square.
+    /// </summary>
+    /// <remarks>
+    /// A combatant's position is the engine's to change once a fight is running, so
+    /// setting up a fight makes a new one rather than moving an existing piece. It starts
+    /// at full hit points with every resource unspent — correct for a standalone fight,
+    /// and the thing the gauntlet will have to revisit when it decides what carries
+    /// between them.
+    /// </remarks>
+    public PartyMember AtPosition(GridPosition position) => this with
+    {
+        Combatant = new Combatant(
+            Combatant.Id,
+            Combatant.Name,
+            Combatant.SideId,
+            Combatant.Stats,
+            position),
+    };
+}
 
 /// <summary>
 /// Four hand-authored characters to play with, until building your own party exists.

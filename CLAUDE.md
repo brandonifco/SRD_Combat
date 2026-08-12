@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #43 (the console client — the game is playable) |
-| Tests | **494 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #53 (the encounter builder) |
+| Tests | **519 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **7 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
+| Work remaining | **6 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -38,7 +38,8 @@ save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
 **It is playable.** `dotnet run --project src/SRDCombat.Console` puts a pregenerated
-party of four in front of monsters drawn from `MonsterPool` and hands you their turns;
+party of four in front of an encounter **built to the SRD's printed XP budget** and hands
+you their turns;
 `--seed <n>` makes a fight reproducible, which is a complete bug repro. The client is
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
@@ -46,9 +47,9 @@ deliberately thin — it calls the engine's public actions and prints `CombatSte
 **What does not exist yet.** No gauntlet, no XP awards, no levelling in play, no loot,
 no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings, reaching for a limited-use entry — a thrown Rock, a breath weapon —
-only when nothing else reaches, and never one whose area would catch its own side. The
-client's own encounter is two arbitrary monsters at a fixed distance, standing in until
-the encounter builder exists.
+only when nothing else reaches, and never one whose area would catch its own side. And
+**encounters can contain livestock** — a Camel is mechanically `Complete` and narratively
+absurd as a foe — which is #52 and a third axis neither the pool nor the budget owns.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -434,12 +435,24 @@ Three things a Phase 2 author should know before starting:
   a save entry is credited, and a registry-implemented trait is
   `EntryMechanics.Passive` rather than counted. What remains text on
   `MonsterEntry.Text` is in `UnmodelledClauses`, never silently held.
-- **`ChallengeRatingRules` already exists** in `Core.Rules` with the full XP and
-  proficiency-bonus tables, and the SRD's per-character encounter XP budget is on
-  printed page 202 — the encounter builder implements a published table, not a guess.
-  **`MonsterPool` decides what may go in the bag; `ChallengeRatingRules` prices it.**
-  Keep them apart: coverage is not difficulty, and nothing in the pool weights or
-  balances an encounter.
+- **Encounter building is three published steps, split across three types.** Choose a
+  difficulty (the caller's), `EncounterBudget` cross-references printed page 202 and
+  multiplies by party size, `EncounterBuilder` spends it, `EncounterFactory` places the
+  result. **`MonsterPool` decides what may go in the bag; the budget decides how much.**
+  Keep them apart — coverage is not difficulty, and nothing in the pool weights an
+  encounter. **The XP spent is the creature's *printed* value, not one derived from its
+  CR**, because step 3 says "every creature has an XP value in its stat block"; the two
+  disagree once (the Archmage) and the printed number wins.
+- **Two encounter interpretations the page does not settle, both stated in code.** The
+  SRD caps neither the monster count nor the selection method — its examples run from one
+  Bugbear Warrior to nine Stirges — so the builder caps at eight (a grid and a turn loop
+  have opinions the book does not) and picks uniformly among everything affordable.
+  Placement is the other: **the sides start 30 feet apart**, which is the number deciding
+  whether ranged attacks and breath weapons matter at all.
+- **Coverage is not appropriateness either — a third axis, and nothing owns it yet.** The
+  builder happily fields a Camel: mechanically `Complete`, narratively absurd. See #52;
+  the fix is expected to be a curated list rather than a heuristic, and `EncounterBuilder`
+  needs no change because it already takes any candidate sequence.
 
 ## Related projects on this machine — context, not dependencies
 
@@ -541,7 +554,8 @@ budgets are on 202**), magic items 204–253, monsters 254–343, animals 344+.
 dotnet run --project src/SRDCombat.Console
 ```
 
-Add `--seed 12345` to replay a fight exactly; the seed is printed at the start of every
+`--difficulty low|moderate|high` and `--level 1..5` pick the fight;
+`--seed 12345` replays one exactly; the seed is printed at the start of every
 run, so *"it happened on seed 12345"* is a complete bug report. The content directory is
 found by walking up for `data/srd`, so it runs from anywhere in the repo.
 
