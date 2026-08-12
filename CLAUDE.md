@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #42 (Cunning Strike and Tactical Mind) |
-| Tests | **482 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #43 (the console client — the game is playable) |
+| Tests | **494 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 300 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor |
-| Work remaining | **0 open GitHub issues.** The Phase 2–4 rules backlog is closed; next is a client. |
+| Work remaining | **7 open GitHub issues**, filed against the plan doc's Phases 3, 4 and 6. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -37,11 +37,18 @@ next turn — while a Ghoul's paralysis stays where the book put it, behind an e
 save the model does not express. All from the stat blocks' own words. A frozen
 transcript pins one whole eight-round fight byte-for-byte.
 
-**What does not exist yet.** No client of any kind — nothing is playable by a person.
-No gauntlet, no XP awards, no levelling in play, no loot, no save files, no pregenerated
-characters. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
+**It is playable.** `dotnet run --project src/SRDCombat.Console` puts a pregenerated
+party of four in front of monsters drawn from `MonsterPool` and hands you their turns;
+`--seed <n>` makes a fight reproducible, which is a complete bug repro. The client is
+deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
+**recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
+
+**What does not exist yet.** No gauntlet, no XP awards, no levelling in play, no loot,
+no save files. Monster tactics are a placeholder (`SimpleTacticsPolicy`) that closes to
 melee and swings, reaching for a limited-use entry — a thrown Rock, a breath weapon —
-only when nothing else reaches, and never one whose area would catch its own side.
+only when nothing else reaches, and never one whose area would catch its own side. The
+client's own encounter is two arbitrary monsters at a fixed distance, standing in until
+the encounter builder exists.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -527,6 +534,24 @@ Useful page ranges (printed page numbers, which match the PDF's own indices):
 classes 28–82, character origins 83–86, feats 87–88, equipment 89–103, spells
 104–175, rules glossary 176–191, gameplay toolbox 192–203 (**combat encounter XP
 budgets are on 202**), magic items 204–253, monsters 254–343, animals 344+.
+
+## Running the game
+
+```bash
+dotnet run --project src/SRDCombat.Console
+```
+
+Add `--seed 12345` to replay a fight exactly; the seed is printed at the start of every
+run, so *"it happened on seed 12345"* is a complete bug report. The content directory is
+found by walking up for `data/srd`, so it runs from anywhere in the repo.
+
+**The client holds no rules.** It calls the engine's public actions, prints
+`CombatStep.Narration`, and shows a refusal with its named code rather than hiding it —
+a refusal is the engine explaining a rule, and swallowing one would make the client a
+second place rules live. Two constraints worth keeping: **the log appends and never
+replaces** (5eGoldBox's replaced its contents and was immediately called messy), and
+`Labels` gives every combatant a unique letter, because the first fight ever played had
+an Animated Flying Sword, an Ape and a Cleric called Aldous all drawing as `A`.
 
 ## Build and test
 
