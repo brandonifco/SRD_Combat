@@ -76,19 +76,36 @@ public abstract partial class FightScreen : Node2D
     /// <summary>The subclass's setup, run once the shared pieces exist.</summary>
     protected abstract void OnReady();
 
+    /// <summary>The extracted content, found the way the console client finds it.</summary>
+    protected static SrdContent LoadContent() => ContentLoader.Load(ContentDirectory());
+
     /// <summary>Builds the same fight the console client would, from the same content.</summary>
     protected static Fight ResolveFight(int seed)
     {
-        var content = ContentLoader.Load(ContentDirectory());
+        var content = LoadContent();
         var party = PregeneratedParty.Build(content, level: 3);
         var random = new SeededRandomSource(seed);
 
         return EncounterFactory.Build(content, party, EncounterDifficulty.Moderate, random);
     }
 
-    /// <summary>The seed to fight on — <c>--seed=&lt;n&gt;</c>, or today's default.</summary>
-    protected static int SeedArgument() =>
-        ArgumentValue("seed") is { } text && int.TryParse(text, out var parsed) ? parsed : 20250812;
+    /// <summary>
+    /// The seed to fight on. <c>--seed=&lt;n&gt;</c> wins; a capture or probe run falls
+    /// back to a fixed seed, because a verification image must not change between runs;
+    /// otherwise the seed is fresh, exactly as the console rolls one — and it is in the
+    /// heading, so "it happened on seed 12345" stays a complete bug report.
+    /// </summary>
+    protected static int SeedArgument()
+    {
+        if (ArgumentValue("seed") is { } text && int.TryParse(text, out var parsed))
+        {
+            return parsed;
+        }
+
+        return HasArgument("probe") || ArgumentValue("capture") is not null
+            ? 20250812
+            : Random.Shared.Next();
+    }
 
     /// <summary>"2 Animated Armors, Awakened Tree" — the fight's cast, for the heading.</summary>
     protected static string RosterOf(Fight fight) =>

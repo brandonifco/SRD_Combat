@@ -2,14 +2,19 @@ using Godot;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 
 namespace SRDCombat.Viewer;
 
 /// <summary>
-/// Plays a fight with the mouse: the party's turns wait for the player, every other side
-/// is taken by <see cref="SimpleTacticsPolicy"/>, one turn per beat so it can be watched.
+/// Plays the gauntlet with the mouse: the party's turns wait for the player, every other
+/// side is taken by <see cref="SimpleTacticsPolicy"/>, one turn per beat so it can be
+/// watched, and between fights an interlude carries the run — the rest taken, who came
+/// back, who levelled, what was found — exactly as the console client narrates it.
+/// <c>--one-fight</c> plays a single encounter instead, and the run autosaves after
+/// every cleared fight so <c>--continue</c> resumes it.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -28,6 +33,11 @@ namespace SRDCombat.Viewer;
 /// carried for the console's reason too — spending a supreme potion on a scratch wastes
 /// the difference, and that default decides nothing a rule cares about.
 /// </para>
+/// <para>
+/// The run itself is all <see cref="GauntletRun"/>'s: rests, experience, levelling,
+/// loot and the autosave format live in <c>Game</c>, and this screen only shows what
+/// the run reports and asks it to begin the next fight.
+/// </para>
 /// </remarks>
 public partial class PlayMode : FightScreen
 {
@@ -43,9 +53,18 @@ public partial class PlayMode : FightScreen
         PotionTarget,
     }
 
-    private Encounter _encounter = null!;
+    /// <summary>Where the screen is: in a fight, between fights, or after the run.</summary>
+    private enum Phase
+    {
+        Fighting,
+        Interlude,
+        RunOver,
+    }
+
+    private Encounter? _encounter;
     private Labels _labels = null!;
     private string _subtitle = string.Empty;
+    private int _seed;
     private double _elapsed;
     private double _pace = SecondsPerTurn;
     private readonly HashSet<GridPosition> _reachable = [];
@@ -58,19 +77,22 @@ public partial class PlayMode : FightScreen
     private string? _notice;
     private bool _probeStarted;
 
-    protected override string Title => "SRD_Combat — playing a fight";
+    private GauntletRun? _run;
+    private Fight? _fight;
+    private SeededRandomSource _dice = null!;
+    private string _savePath = "srdcombat-save.json";
+    private Phase _phase = Phase.Fighting;
+    private readonly List<string> _interlude = [];
+    private Rect2 _continueButton;
+    private bool _fightEndHandled;
+
+    protected override string Title => "SRD_Combat — playing";
 
     private float ButtonRowTop => GridTop + (GridHeight * CellPixels) + 14f;
 
     protected override void OnReady()
     {
-        var seed = SeedArgument();
-        var fight = ResolveFight(seed);
-
-        _encounter = fight.Encounter;
-        _labels = Labels.For(_encounter.Combatants);
-        AdoptBattlefield(_encounter);
-        _subtitle = $"seed {seed} — the party against {RosterOf(fight)}";
+        _seed = SeedArgument();
 
         // A probe run drives the screen through its own input path — synthesized clicks
         // through the viewport — and captures what each one produced. Monsters hurry so
@@ -80,7 +102,220 @@ public partial class PlayMode : FightScreen
             _pace = 0.05;
         }
 
+        if (HasArgument("one-fight"))
+        {
+            var fight = ResolveFight(_seed);
+
+            _fight = null;
+            _encounter = fight.Encounter;
+            _labels = Labels.For(_encounter.Combatants);
+            AdoptBattlefield(_encounter);
+            _subtitle = $"one fight — seed {_seed} — the party against {RosterOf(fight)}";
+
+            RefreshAfterAction(null);
+            return;
+        }
+
+        var content = LoadContent();
+
+        _dice = new SeededRandomSource(_seed);
+        _savePath = ArgumentValue("save") ?? "srdcombat-save.json";
+
+        if (HasArgument("continue"))
+        {
+            // A save that cannot be read is shown and nothing is started: silently
+            // beginning a fresh run here would overwrite the file being asked about.
+            if (!File.Exists(_savePath))
+            {
+                _phase = Phase.RunOver;
+                _interlude.Add($"No save at '{_savePath}'. Pass --save=<path> or start a new run.");
+                _subtitle = $"seed {_seed}";
+                return;
+            }
+
+            try
+            {
+                _run = GauntletRun.Resume(content, RunSave.FromJson(File.ReadAllText(_savePath)));
+            }
+            catch (Exception failure) when (failure is System.Text.Json.JsonException or InvalidDataException)
+            {
+                _phase = Phase.RunOver;
+                _interlude.Add($"Cannot load '{_savePath}': {failure.Message}");
+                _subtitle = $"seed {_seed}";
+                return;
+            }
+
+            _subtitle = $"continuing after fight {_run.Cleared} of {_run.Ladder.Count} — seed {_seed}";
+        }
+        else
+        {
+            var level = ArgumentValue("level") is { } text && int.TryParse(text, out var parsed)
+                ? Math.Clamp(parsed, 1, 5)
+                : 1;
+
+            _run = GauntletRun.Start(content, GauntletLadder.Default(), level);
+            _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
+        }
+
+        EnterInterlude([]);
+    }
+
+    /// <summary>
+    /// Sets up the between-fights screen: what the last fight left behind, then what the
+    /// run says about the next one — the rest taken, who returned, how everybody stands.
+    /// </summary>
+    /// <remarks>
+    /// The wording deliberately matches the console client's, because both are only
+    /// repeating what <see cref="GauntletRun"/> reports. The save was already written
+    /// when the fight completed; the rest applied here lives in the run's memory and is
+    /// reapplied on resume, exactly as the console's loop ordering has it.
+    /// </remarks>
+    private void EnterInterlude(IEnumerable<string> after)
+    {
+        _interlude.Clear();
+        _interlude.AddRange(after);
+        _phase = Phase.Interlude;
+
+        if (_run is not { } run)
+        {
+            _phase = Phase.RunOver;
+            QueueRedraw();
+            return;
+        }
+
+        if (run.Outcome == RunOutcome.Survived)
+        {
+            _interlude.Add(string.Empty);
+            _interlude.Add($"The gauntlet is beaten — {run.Ladder.Count} fights cleared.");
+            AddFallen(run);
+            _phase = Phase.RunOver;
+        }
+        else if (run.Outcome == RunOutcome.Defeated)
+        {
+            _interlude.Add(string.Empty);
+            _interlude.Add($"The run ends after {run.Cleared} fight(s).");
+
+            if (run.Cleared > 0)
+            {
+                _interlude.Add("Launch with --continue to retry from after the last cleared fight.");
+            }
+
+            AddFallen(run);
+            _phase = Phase.RunOver;
+        }
+        else if (run.Next is { } step)
+        {
+            var returnsBefore = run.Returns.Count;
+            var rest = run.PrepareForNext(_dice);
+
+            _interlude.Add(string.Empty);
+            _interlude.Add(
+                $"Fight {run.Cleared + 1} of {run.Ladder.Count} — " +
+                $"{step.Difficulty.ToString().ToLowerInvariant()} difficulty.");
+
+            if (rest is { } taken)
+            {
+                _interlude.Add($"The party takes a {taken} Rest.");
+            }
+
+            foreach (var returned in run.Returns.Skip(returnsBefore))
+            {
+                _interlude.Add(returned + ".");
+            }
+
+            _interlude.Add(string.Empty);
+
+            foreach (var (member, state) in run.Party.Zip(run.States))
+            {
+                _interlude.Add(state.IsDead
+                    ? $"{member.Draft.Name} — dead"
+                    : $"{member.Draft.Name} — level {state.Level}, " +
+                      $"{state.CurrentHitPoints}/{member.Sheet.MaximumHitPoints} hp, " +
+                      $"{state.HitDiceRemaining} hit {(state.HitDiceRemaining == 1 ? "die" : "dice")}, " +
+                      $"{state.ExperiencePoints} xp");
+            }
+        }
+
+        QueueRedraw();
+    }
+
+    private void AddFallen(GauntletRun run)
+    {
+        var fallen = run.Fallen.ToArray();
+
+        if (fallen.Length > 0)
+        {
+            _interlude.Add("Fallen: " + string.Join(", ", fallen) + ".");
+        }
+        else if (run.Casualties.Count > 0)
+        {
+            _interlude.Add($"Everyone made it, though {run.Casualties.Count} went down along the way.");
+        }
+    }
+
+    private void StartNextFight()
+    {
+        if (_run is not { } run || run.Next is null)
+        {
+            return;
+        }
+
+        var fight = run.BeginNext(_dice);
+
+        _fight = fight;
+        _encounter = fight.Encounter;
+        _labels = Labels.For(_encounter.Combatants);
+        AdoptBattlefield(_encounter);
+        _subtitle = $"fight {run.Cleared + 1} of {run.Ladder.Count} — seed {_seed} — the party against {RosterOf(fight)}";
+        _phase = Phase.Fighting;
+        _fightEndHandled = false;
+        _buttonsFor = null;
+
         RefreshAfterAction(null);
+    }
+
+    /// <summary>
+    /// Reports a finished fight to the run and saves. The save happens only after a
+    /// cleared fight, never after the defeat itself — the file keeps the last state
+    /// worth returning to, which is what makes reloading a retry.
+    /// </summary>
+    private void HandleFightEnd()
+    {
+        if (_fightEndHandled)
+        {
+            return;
+        }
+
+        _fightEndHandled = true;
+
+        if (_run is not { } run || _fight is not { } fight || _encounter is not { } encounter)
+        {
+            QueueRedraw();
+            return;
+        }
+
+        var levelUpsBefore = run.LevelUps.Count;
+        var lootBefore = run.LootFound.Count;
+
+        run.CompleteFight(fight, _dice);
+
+        var after = new List<string>
+        {
+            encounter.WinningSide == PregeneratedParty.SideId
+                ? $"Fight {run.Cleared} cleared!"
+                : "The party falls.",
+        };
+
+        after.AddRange(run.LevelUps.Skip(levelUpsBefore).Select(line => line + "!"));
+        after.AddRange(run.LootFound.Skip(lootBefore).Select(line => line + "!"));
+
+        if (run.Outcome != RunOutcome.Defeated)
+        {
+            File.WriteAllText(_savePath, RunSave.ToJson(run));
+            after.Add($"Saved to {_savePath}.");
+        }
+
+        EnterInterlude(after);
     }
 
     /// <summary>
@@ -103,12 +338,12 @@ public partial class PlayMode : FightScreen
 
         foreach (var (caption, act) in new (string, Func<ActionRefusal?>)[]
         {
-            ("Dodge", () => _encounter.Dodge()),
-            ("Dash", () => _encounter.Dash()),
-            ("Disengage", () => _encounter.Disengage()),
-            ("Stand Up", () => _encounter.StandUp()),
-            ("Escape", () => _encounter.Escape()),
-            ("End Turn", () => { _encounter.EndTurn(); return null; }),
+            ("Dodge", () => _encounter!.Dodge()),
+            ("Dash", () => _encounter!.Dash()),
+            ("Disengage", () => _encounter!.Disengage()),
+            ("Stand Up", () => _encounter!.StandUp()),
+            ("Escape", () => _encounter!.Escape()),
+            ("End Turn", () => { _encounter!.EndTurn(); return null; }),
         })
         {
             x = AddButton(x, ButtonRowTop, caption, act);
@@ -125,14 +360,14 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        FeatureButton(ClassFeature.Rage, "Rage", () => _encounter.Rage());
-        FeatureButton(ClassFeature.RecklessAttack, "Reckless", () => _encounter.RecklessAttack());
-        FeatureButton(ClassFeature.SecondWind, "Second Wind", () => _encounter.SecondWind());
-        FeatureButton(ClassFeature.ActionSurge, "Action Surge", () => _encounter.ActionSurge());
-        FeatureButton(ClassFeature.SteadyAim, "Steady Aim", () => _encounter.SteadyAim());
-        FeatureButton(ClassFeature.CunningAction, "Cunning Dash", () => _encounter.CunningAction(CunningActionKind.Dash));
-        FeatureButton(ClassFeature.CunningAction, "Cunning Disengage", () => _encounter.CunningAction(CunningActionKind.Disengage));
-        FeatureButton(ClassFeature.CunningStrike, "Trip", () => _encounter.CunningStrike(CunningStrikeEffect.Trip));
+        FeatureButton(ClassFeature.Rage, "Rage", () => _encounter!.Rage());
+        FeatureButton(ClassFeature.RecklessAttack, "Reckless", () => _encounter!.RecklessAttack());
+        FeatureButton(ClassFeature.SecondWind, "Second Wind", () => _encounter!.SecondWind());
+        FeatureButton(ClassFeature.ActionSurge, "Action Surge", () => _encounter!.ActionSurge());
+        FeatureButton(ClassFeature.SteadyAim, "Steady Aim", () => _encounter!.SteadyAim());
+        FeatureButton(ClassFeature.CunningAction, "Cunning Dash", () => _encounter!.CunningAction(CunningActionKind.Dash));
+        FeatureButton(ClassFeature.CunningAction, "Cunning Disengage", () => _encounter!.CunningAction(CunningActionKind.Disengage));
+        FeatureButton(ClassFeature.CunningStrike, "Trip", () => _encounter!.CunningStrike(CunningStrikeEffect.Trip));
 
         if (active.Stats.Character?.CanCast == true)
         {
@@ -147,7 +382,7 @@ public partial class PlayMode : FightScreen
         {
             x = AddButton(x, row2, "Drink", () =>
                 active.Inventory.Weakest is { } potency
-                    ? _encounter.DrinkPotion(potency)
+                    ? _encounter!.DrinkPotion(potency)
                     : new ActionRefusal("client.no_potion", $"{active.Name} carries no potions."));
 
             AddButton(x, row2, "Give Potion", () =>
@@ -167,8 +402,9 @@ public partial class PlayMode : FightScreen
 
     /// <summary>The active combatant when it is the player's to command, else null.</summary>
     private Combatant? CommandedCombatant() =>
-        !_encounter.IsComplete
-        && _encounter.ActiveCombatant is { } active
+        _phase == Phase.Fighting
+        && _encounter is { IsComplete: false } encounter
+        && encounter.ActiveCombatant is { } active
         && active.SideId == PregeneratedParty.SideId
         && active.CanAct
             ? active
@@ -176,13 +412,20 @@ public partial class PlayMode : FightScreen
 
     public override void _Process(double delta)
     {
-        if (_encounter.IsComplete)
+        if (_phase != Phase.Fighting || _encounter is not { } encounter)
         {
             RunProbeIfAsked();
             return;
         }
 
-        if (_encounter.ActiveCombatant is not { } active)
+        if (encounter.IsComplete)
+        {
+            HandleFightEnd();
+            RunProbeIfAsked();
+            return;
+        }
+
+        if (encounter.ActiveCombatant is not { } active)
         {
             return;
         }
@@ -206,14 +449,14 @@ public partial class PlayMode : FightScreen
 
         if (active.SideId != PregeneratedParty.SideId)
         {
-            SimpleTacticsPolicy.TakeTurn(_encounter);
+            SimpleTacticsPolicy.TakeTurn(encounter);
         }
         else
         {
             // A downed or Incapacitated party member has no commands to give; ending
             // the turn is what the console client does, and the engine owns whatever
             // happens at the boundary — Death Saving Throws included.
-            _encounter.EndTurn();
+            encounter.EndTurn();
         }
 
         RefreshAfterAction(null);
@@ -250,7 +493,17 @@ public partial class PlayMode : FightScreen
 
     private void HandleClick(Vector2 pixel)
     {
-        if (CommandedCombatant() is not { } active)
+        if (_phase == Phase.Interlude)
+        {
+            if (_continueButton.HasPoint(pixel))
+            {
+                StartNextFight();
+            }
+
+            return;
+        }
+
+        if (CommandedCombatant() is not { } active || _encounter is not { } encounter)
         {
             return;
         }
@@ -265,7 +518,7 @@ public partial class PlayMode : FightScreen
 
             if (aimed is { } target)
             {
-                Run(() => _encounter.CastSpell(spell.Id, target));
+                Run(() => encounter.CastSpell(spell.Id, target));
             }
             else
             {
@@ -283,7 +536,7 @@ public partial class PlayMode : FightScreen
 
             if (aimed is { } target && active.Inventory.Weakest is { } potency)
             {
-                Run(() => _encounter.DrinkPotion(potency, target));
+                Run(() => encounter.DrinkPotion(potency, target));
             }
             else
             {
@@ -331,20 +584,20 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        var occupant = _encounter.Combatants.FirstOrDefault(combatant =>
+        var occupant = encounter.Combatants.FirstOrDefault(combatant =>
             !combatant.IsDead && combatant.Position == square);
 
         if (occupant is { } somebody && somebody.SideId != PregeneratedParty.SideId)
         {
             Run(() => AttackChoice.BestFor(active, somebody) is { } attack
-                ? _encounter.Attack(attack.Name, somebody)
+                ? encounter.Attack(attack.Name, somebody)
                 : new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches {somebody.Name}."));
         }
         else if (occupant is null)
         {
             // Sent to the engine whether or not it is highlighted: the refusal is the
             // rule, the highlight only advice.
-            Run(() => _encounter.Move(square));
+            Run(() => encounter.Move(square));
         }
     }
 
@@ -354,8 +607,8 @@ public partial class PlayMode : FightScreen
     /// is the engine's to allow or refuse, and its answer teaches the rule.
     /// </remarks>
     private Combatant? TokenTarget(Vector2 pixel) =>
-        SquareAt(pixel) is { } square
-            ? _encounter.Combatants.FirstOrDefault(combatant =>
+        SquareAt(pixel) is { } square && _encounter is { } encounter
+            ? encounter.Combatants.FirstOrDefault(combatant =>
                 !combatant.IsDead && combatant.Position == square)
             : null;
 
@@ -388,6 +641,7 @@ public partial class PlayMode : FightScreen
         // this turn — and the two condition gates mirror Move's early refusals so the
         // advice does not light squares the engine would refuse.
         if (commanded is { } mover
+            && _encounter is { } encounter
             && !mover.HasCondition(ConditionType.Prone)
             && ConditionRules.ImmobilisedBy(mover) is null)
         {
@@ -398,7 +652,7 @@ public partial class PlayMode : FightScreen
                     var square = new GridPosition(x, y);
 
                     if (MovementRules.FindPath(
-                            _encounter.Battlefield, mover, square, mover.Turn.MovementFeet, _encounter.Combatants)
+                            encounter.Battlefield, mover, square, mover.Turn.MovementFeet, encounter.Combatants)
                         is not null)
                     {
                         _reachable.Add(square);
@@ -412,7 +666,14 @@ public partial class PlayMode : FightScreen
 
     public override void _Draw()
     {
-        var active = _encounter.ActiveCombatant;
+        if (_phase != Phase.Fighting || _encounter is not { } encounter)
+        {
+            DrawChrome(_subtitle, StatusLine(null));
+            DrawInterlude();
+            return;
+        }
+
+        var active = encounter.ActiveCombatant;
         var commanded = CommandedCombatant();
 
         DrawChrome(_subtitle, StatusLine(commanded));
@@ -426,11 +687,11 @@ public partial class PlayMode : FightScreen
                 new Color(PartyColour, 0.16f));
         }
 
-        var tokens = TokensFrom(_encounter, _labels);
+        var tokens = TokensFrom(encounter, _labels);
 
         if (commanded is not null && _pending == Pending.Nothing)
         {
-            foreach (var enemy in _encounter.EnemiesOf(commanded))
+            foreach (var enemy in encounter.EnemiesOf(commanded))
             {
                 if (!enemy.IsDead && AttackChoice.BestFor(commanded, enemy) is not null)
                 {
@@ -441,7 +702,7 @@ public partial class PlayMode : FightScreen
 
         DrawTokens(tokens, active?.Id);
         DrawTurnOrder(tokens, active?.Id);
-        DrawLog(_encounter.Log, _encounter.Log.Count, tokens.Count);
+        DrawLog(encounter.Log, encounter.Log.Count, tokens.Count);
 
         if (commanded is { } character)
         {
@@ -475,6 +736,38 @@ public partial class PlayMode : FightScreen
                 Trim(notice, 78),
                 fontSize: 13,
                 modulate: MonsterColour);
+        }
+    }
+
+    /// <summary>The between-fights screen: the run's own words, and a way onward.</summary>
+    private void DrawInterlude()
+    {
+        var y = GridTop + 8f;
+
+        foreach (var line in _interlude)
+        {
+            if (line.Length == 0)
+            {
+                y += 10;
+                continue;
+            }
+
+            DrawString(TextFont, new Vector2(GridLeft, y), Trim(line, 100), fontSize: 14, modulate: Ink);
+            y += 22;
+        }
+
+        if (_phase == Phase.Interlude)
+        {
+            _continueButton = new Rect2(GridLeft, y + 16, 110, 32);
+
+            DrawRect(_continueButton, GridLine);
+            DrawRect(_continueButton, Dim, filled: false, width: 1);
+            DrawString(
+                TextFont,
+                new Vector2(_continueButton.Position.X + 18, _continueButton.Position.Y + 21),
+                "Continue",
+                fontSize: 14,
+                modulate: Ink);
         }
     }
 
@@ -551,9 +844,19 @@ public partial class PlayMode : FightScreen
 
     private string StatusLine(Combatant? commanded)
     {
-        if (_encounter.IsComplete)
+        if (_phase == Phase.RunOver)
         {
-            return _encounter.WinningSide == PregeneratedParty.SideId
+            return "the run is over — [esc] quit";
+        }
+
+        if (_phase == Phase.Interlude)
+        {
+            return "between fights — Continue when ready   [esc] quit";
+        }
+
+        if (_encounter is { IsComplete: true } encounter)
+        {
+            return encounter.WinningSide == PregeneratedParty.SideId
                 ? "the party wins — [esc] quit"
                 : "the party has fallen — [esc] quit";
         }
@@ -581,10 +884,10 @@ public partial class PlayMode : FightScreen
     private static string Tick(bool available) => available ? "✓" : "✗";
 
     /// <summary>
-    /// Drives commanded turns through the real input path and captures each result:
-    /// a refusal on purpose, a walk, a swing, a feature, and — when a caster's turn
-    /// comes — the spell menu and a cast. How a change to this screen gets checked
-    /// without a person clicking.
+    /// Drives the screen through the real input path and captures each result: the
+    /// run's opening interlude, then commanded turns — a refusal on purpose, a walk, a
+    /// swing, a feature, and when a caster's turn comes, the spell menu and a cast. How
+    /// a change to this screen gets checked without a person clicking.
     /// </summary>
     private void RunProbeIfAsked()
     {
@@ -599,6 +902,13 @@ public partial class PlayMode : FightScreen
 
     private async void RunProbe(string directory)
     {
+        if (_run is not null && _phase == Phase.Interlude)
+        {
+            await CaptureFrame(Path.Combine(directory, "run-0-interlude.png"));
+            Click(_continueButton.GetCenter());
+        }
+
+        await NextCommandedTurn();
         await CaptureFrame(Path.Combine(directory, "play-1-turn-ready.png"));
 
         // A refusal on purpose — standing up while not Prone — because showing the
@@ -658,11 +968,39 @@ public partial class PlayMode : FightScreen
             }
         }
 
+        // In a run, play the fight out through the same clicks — swing at the nearest
+        // enemy, end the turn — to reach the other side of the fight: the post-fight
+        // interlude with its level-ups, loot and save, or the defeat screen. Whichever
+        // comes, the capture shows the run reporting it.
+        if (_run is not null)
+        {
+            var safety = 0;
+
+            while (_phase == Phase.Fighting && safety < 5000)
+            {
+                safety++;
+
+                if (CommandedCombatant() is { } fighter)
+                {
+                    if (NearestEnemyOf(fighter) is { } foe)
+                    {
+                        Click(CentreOf(foe.Position));
+                    }
+
+                    ClickButton("End Turn");
+                }
+
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+
+            await CaptureFrame(Path.Combine(directory, "run-9-after-fight.png"));
+        }
+
         GetTree().Quit();
     }
 
     private Combatant? NearestEnemyOf(Combatant active) =>
-        _encounter.EnemiesOf(active)
+        _encounter?.EnemiesOf(active)
             .Where(enemy => !enemy.IsDead)
             .OrderBy(enemy => enemy.Position.DistanceFeetTo(active.Position))
             .FirstOrDefault();
@@ -671,7 +1009,7 @@ public partial class PlayMode : FightScreen
     {
         var waited = 0;
 
-        while (CommandedCombatant() is null && !_encounter.IsComplete && waited < 3000)
+        while (CommandedCombatant() is null && waited < 3000)
         {
             waited++;
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

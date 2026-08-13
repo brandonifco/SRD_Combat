@@ -1,12 +1,13 @@
 # SRD_Combat Viewer
 
-The Godot client. **Playing is the default**: the party's turns wait for your mouse,
-every other side is taken by the tactics policy, one turn per beat so you can watch what
-happens to you. `--watch` keeps the original read-only screen, which resolves the whole
-fight up front and lets you scrub through it. The phase this client belongs to ends when
-a fight can be played with a mouse; a whole fight now can be — move, attack, the basic
-actions, class features, spells and potions — and what remains is playing a *run* rather
-than one fight.
+The Godot client. **The gauntlet is the default**, exactly as it is in the console: a
+run of thirty fights with rests, experience, levelling and loot between them, autosaved
+after every cleared fight. The party's turns wait for your mouse, every other side is
+taken by the tactics policy, one turn per beat so you can watch what happens to you.
+Between fights an interlude reports what the run reports — the rest taken, who returned,
+who levelled, what was found — and a Continue button marches on. `--one-fight` plays a
+single encounter instead; `--watch` keeps the original read-only screen, which resolves
+one fight up front and lets you scrub through it.
 
 ## Running it
 
@@ -17,6 +18,13 @@ way the console client finds it.
 ```bash
 godot --path client
 ```
+
+The run autosaves to `srdcombat-save.json` in the directory Godot was launched from
+(`--save=<path>` moves it), and `--continue` resumes it. Defeat does not touch the save —
+the file keeps the state after the last fight the party *won*, so reloading is a retry.
+`--level=1..5` starts a new run partway up. A save that cannot be read is shown with its
+reason and nothing is started, because silently beginning a fresh run would overwrite
+the file being asked about.
 
 On your turn:
 
@@ -39,12 +47,18 @@ display: a shown button can still be refused, and absent is honest where inert w
 be. A line under the buttons reads out what is left to spend — slots, feature uses,
 potions — straight off the engine's state.
 
-Arguments go after Godot's `--` separator. `--seed=<n>` picks the fight — the same
-promise the console client makes, that a seed is a complete bug report:
+Arguments go after Godot's `--` separator. `--seed=<n>` picks the run — the same promise
+the console client makes, that a seed is a complete bug report; without one the seed is
+fresh, and it is always in the heading. (A `--capture` or `--probe` run falls back to a
+fixed seed instead, because a verification image must not change between runs.)
 
 ```bash
 godot --path client -- --seed=12345
 ```
+
+One honest gap: a spell is aimed at a *creature*, so an area cast at a bare square —
+Spirit Guardians centred on yourself included — cannot be expressed yet; the engine's
+refusal will say so.
 
 ### The read-only screen
 
@@ -62,13 +76,14 @@ renders one frame to a PNG and quits (with `--at=<turn>` choosing the turn), and
 godot --path client -- --probe=<directory>
 ```
 
-The play screen's verification loop: it drives commanded turns through the real input
-path — synthesized clicks through the viewport, not calls around the input layer — and
-captures a PNG after each step: turn ready, a refusal on purpose (Stand Up while not
-Prone), a walk toward the nearest enemy, an attack, a feature, the turn ended — then
-plays on to the next commanded turn and, if it belongs to a caster, walks the cast flow:
-menu, choice, target. It is how a change to this screen gets checked without a person
-clicking.
+The play screen's verification loop: it drives the screen through the real input path —
+synthesized clicks through the viewport, not calls around the input layer — and captures
+a PNG after each step: the run's opening interlude, then commanded turns (a refusal on
+purpose — Stand Up while not Prone — a walk toward the nearest enemy, an attack, a
+feature, a caster's menu-choice-target flow), then plays the fight out and captures the
+other side of it: the post-fight interlude with its save, or the defeat screen. Seed 1
+clears fight 1 that way; the default seed loses it — both ends of `HandleFightEnd` have
+been watched.
 
 ## Why this project is not in SRDCombat.sln
 
