@@ -271,6 +271,74 @@ public class CoverTests
         Assert.Equal("spell.total_cover", refusal?.Code);
     }
 
+    [Fact]
+    public void ThePolicySidestepsAWall_AndPrefersTheShelteredFiringSquare()
+    {
+        // The archer's straight shot crosses the wall at (2,1) — Total Cover, refused —
+        // so its turn becomes: move to a square that can deliver the attack, preferring
+        // the one where return fire suffers cover, then shoot. Row 0 fires past the low
+        // obstacle at (2,0) — Half Cover both ways, since the line is the same line —
+        // and row 2 is open ground, so the policy takes row 0 and pays the +2 on its
+        // own shot: 14 + 4 = 18 against AC 13 + 2.
+        var archer = CombatTestData.Combatant(
+            "archer",
+            stats: CombatTestData.Stats(
+                initiativeBonus: 10,
+                attacks: [CombatTestData.RangedAttack(bonus: 4)]),
+            y: 1);
+
+        var brute = CombatTestData.Combatant(
+            "brute",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: -10, attacks: []),
+            x: 4,
+            y: 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(9, 3, blocked: [new GridPosition(2, 1)], lowObstacles: [new GridPosition(2, 0)]),
+            [archer, brute],
+            new ScriptedRandomSource(20, 1, 14, 3));
+
+        SimpleTacticsPolicy.TakeTurn(encounter);
+
+        Assert.Equal(new GridPosition(1, 0), archer.Position);
+
+        var swing = encounter.Log.Last(step => step.Narration.Contains("attacks"));
+        Assert.Contains("vs AC 15 (Half Cover) — hit", swing.Narration);
+    }
+
+    [Fact]
+    public void AnOpportunityAttackDoesNotSwingThroughTotalCover()
+    {
+        // "Melee reach means nothing in between" is false for a reach weapon: a
+        // Halberd's Opportunity Attack spans a square, and that square can be a wall.
+        // The mover slips away unswung-at, the way a charmer does.
+        var sentinel = CombatTestData.Combatant(
+            "sentinel",
+            stats: CombatTestData.Stats(
+                initiativeBonus: -10,
+                attacks: [CombatTestData.MeleeAttack("Halberd", reachFeet: 10)]),
+            x: 0,
+            y: 1);
+
+        var runner = CombatTestData.Combatant(
+            "runner",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 10),
+            x: 2,
+            y: 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(9, 3, blocked: [new GridPosition(1, 1)]),
+            [sentinel, runner],
+            new ScriptedRandomSource(20, 1));
+
+        Assert.Null(encounter.Move(new GridPosition(4, 1)));
+
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.OpportunityAttack);
+        Assert.True(sentinel.Turn.HasReaction);
+    }
+
     // ── Areas of effect ─────────────────────────────────────────────────────────
 
     [Fact]

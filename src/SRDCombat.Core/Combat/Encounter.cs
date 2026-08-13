@@ -857,6 +857,15 @@ public sealed partial class Encounter
             return;
         }
 
+        // "Can't be targeted directly" forbids the Opportunity Attack too, and reach
+        // weapons make it reachable: a Halberd's reach spans a square, and that square
+        // can be a wall. Caught by the regenerated transcript, which printed a hit
+        // through Total Cover — the mover slips away unswung-at, like the charmer above.
+        if (CoverRules.Between(Battlefield, attacker.Position, mover.Position) == CoverDegree.Total)
+        {
+            return;
+        }
+
         var attack = attacker.Stats.Attacks
             .Where(candidate => candidate.Kind == AttackKind.Melee)
             .Where(candidate => attacker.Uses.IsAvailable(candidate.Name))
@@ -1004,9 +1013,10 @@ public sealed partial class Encounter
         bool isSpellAttack = false)
     {
         // Total Cover never reaches here: every targeting path refuses it before
-        // spending, and an Opportunity Attack is rolled from within melee reach, where
-        // the centre-to-centre segment has no square between to cross. What remains is
-        // Half or Three-Quarters, raising the AC to beat.
+        // spending, and MakeOpportunityAttack declines to swing through it — a reach
+        // weapon's Opportunity Attack can genuinely cross a wall square, which the
+        // regenerated transcript caught. What remains is Half or Three-Quarters,
+        // raising the AC to beat.
         var cover = CoverRules.Between(Battlefield, attacker.Position, target.Position);
 
         // Wand of the War Mage: "you ignore Half Cover when making a spell attack" —
