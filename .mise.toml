@@ -5,7 +5,10 @@
 # all — and every drift was discovered by hand, late. A version pinned in a committed
 # file is checkable; a version described in prose is not.
 #
-# Run `mise install` once per machine, then `scripts/doctor.sh` to confirm.
+# Run `mise install` once per machine, activate mise in your shell
+# (`eval "$(mise activate bash)"`, and append it to ~/.bashrc), then `scripts/doctor.sh`
+# to confirm. Installing without activating leaves the pin inert: `mise current dotnet`
+# reports the pinned version while `dotnet` resolves to whatever is first on PATH.
 
 [tools]
 # Pinned to match CI exactly. `.github/workflows` installs 8.0.x, and `Directory.Build.props`
