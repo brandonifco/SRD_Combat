@@ -4,8 +4,9 @@ The Godot client. **Playing is the default**: the party's turns wait for your mo
 every other side is taken by the tactics policy, one turn per beat so you can watch what
 happens to you. `--watch` keeps the original read-only screen, which resolves the whole
 fight up front and lets you scrub through it. The phase this client belongs to ends when
-a fight can be played with a mouse; the core of that — move, attack, the basic actions,
-end turn — is here, and spells, class features and potions are the slices that remain.
+a fight can be played with a mouse; a whole fight now can be — move, attack, the basic
+actions, class features, spells and potions — and what remains is playing a *run* rather
+than one fight.
 
 ## Running it
 
@@ -24,13 +25,19 @@ On your turn:
 | click a square | walk there — the engine charges movement and provokes what it provokes |
 | click an enemy | attack with the hardest-hitting attack that reaches |
 | Dodge / Dash / Disengage / Stand Up / Escape | the untargeted actions, as buttons |
+| second button row | what this character brought — Rage, Reckless, Second Wind, Action Surge, Steady Aim, Cunning Dash/Disengage, Trip |
+| Cast | open the spell list; click a spell, then click its target |
+| Drink / Give Potion | drink the weakest potion carried, or arm a click to give it to somebody |
 | End Turn | pass |
-| Esc | quit |
+| Esc | back out of an armed click or open menu; quit when nothing is armed |
 
 Faint blue squares are where a walk could end; ringed enemies are ones an attack
 reaches. Both are advice, not rules — a click anywhere is sent to the engine, and **a
 refusal is shown with its code** rather than swallowed, because a refusal is the engine
-explaining a rule.
+explaining a rule. The second row is filtered by what the character *has*, which is
+display: a shown button can still be refused, and absent is honest where inert would not
+be. A line under the buttons reads out what is left to spend — slots, feature uses,
+potions — straight off the engine's state.
 
 Arguments go after Godot's `--` separator. `--seed=<n>` picks the fight — the same
 promise the console client makes, that a seed is a complete bug report:
@@ -55,11 +62,13 @@ renders one frame to a PNG and quits (with `--at=<turn>` choosing the turn), and
 godot --path client -- --probe=<directory>
 ```
 
-The play screen's verification loop: it drives one commanded turn through the real input
+The play screen's verification loop: it drives commanded turns through the real input
 path — synthesized clicks through the viewport, not calls around the input layer — and
 captures a PNG after each step: turn ready, a refusal on purpose (Stand Up while not
-Prone), a walk toward the nearest enemy, an attack, the turn ended. It is how a change
-to this screen gets checked without a person clicking.
+Prone), a walk toward the nearest enemy, an attack, a feature, the turn ended — then
+plays on to the next commanded turn and, if it belongs to a caster, walks the cast flow:
+menu, choice, target. It is how a change to this screen gets checked without a person
+clicking.
 
 ## Why this project is not in SRDCombat.sln
 

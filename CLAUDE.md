@@ -152,11 +152,11 @@ the first time a probe walked an archer adjacent and shot; `AttackRules` already
 `AtLongRange` and the within-5-feet geometry, so it slots beside them. Beyond it the next
 work is Phase 5 (character creation), Phase 6 proper (separate monster tactics from party
 tactics — one policy still plays both sides), or the rest of Phase 7 — `client/` now
-**plays a fight with the mouse** (party turns click to move and attack, buttons for the
-untargeted actions, refusals shown with codes, the policy playing the monsters; `--watch`
-keeps the read-only screen, `--probe` is its verification loop — see its README), and
-what remains is spells, features and potions under the mouse, then playing a *run* rather
-than one fight. And no human has yet played a run to its end.
+**plays a whole fight with the mouse** (move, attack, the untargeted actions, class
+features, spells and potions, refusals shown with codes, the policy playing the monsters;
+`--watch` keeps the read-only screen, `--probe` is its verification loop — see its
+README), and what remains is playing a *run* rather than one fight. And no human has yet
+played a run to its end.
 
 - **#83 is closed (2026-08-12, after upcasting and subclasses landed) but its direction
   is not finished**: the encounter budget prices a fight assuming both sides are whole,
@@ -166,8 +166,8 @@ than one fight. And no human has yet played a run to its end.
   when the next engine slice is chosen, this is still where the evidence points.
 
 Beyond those the next work is a phase, not a fix: Phases 1–4 are done, Phase 6 is done for
-monsters and open-ended for the party, Phase 7 plays a fight with the mouse but not yet a
-run, and Phase 5 has never been started. **Do not
+monsters and open-ended for the party, Phase 7 plays a whole fight with the mouse but not
+yet a run, and Phase 5 has never been started. **Do not
 read a short queue as "nearly finished":** the ladder has been cleared twice in forty
 seeded runs and never by a person, and no human has played more than a few rungs by hand.
 

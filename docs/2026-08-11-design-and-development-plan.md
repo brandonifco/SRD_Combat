@@ -423,8 +423,16 @@ advice rather than rule: the click is sent to the engine either way. A `--probe`
 drives one commanded turn through the real input path with synthesized clicks —
 including a refusal on purpose — and captures each step, which is this screen's version
 of the capture loop; its first run caught a real engine gap (#96, ranged attacks in
-melee lack their printed Disadvantage). What remains of the phase: spells, class
-features and potions under the mouse, and playing a *run* rather than one fight.
+melee lack their printed Disadvantage).
+
+**Spells, features and potions followed in the next slice**, so a whole fight is now
+playable: a second button row carries what the character brought (filtered by granted
+features — display, while whether an action may happen now stays the engine's answer, so
+absent is honest where inert would not be), Cast opens the spell list and arms the next
+click as the target, Drink and Give Potion spend the weakest potion carried (the
+console's own default), and a line under the buttons reads out slots, feature uses and
+potions straight off the engine's state. What remains of the phase: playing a *run* —
+the gauntlet, rests, loot and levelling — rather than one fight.
 
 ## Working conventions
 
