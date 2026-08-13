@@ -72,7 +72,10 @@ internal static class Display
 
                 if (here is null)
                 {
-                    System.Console.Write(field.IsPassable(square) ? ". " : "# ");
+                    System.Console.Write(
+                        !field.IsPassable(square) ? "# "
+                        : field.DifficultTerrain.Contains(square) ? "~ "
+                        : ". ");
                     continue;
                 }
 

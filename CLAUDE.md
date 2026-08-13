@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #103 (Dodge's printed exception and its Dexterity-save half) |
-| Tests | **678 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main`, mid-#106 (its terrain half is merged; cover and policy awareness remain) |
+| Tests | **686 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
+| Work remaining | **#106 (terrain and cover)** — the seeded-terrain slice is done, the cover model and the policy's use of it are not. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -163,7 +163,20 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**Nothing.** (#96 — ranged attacks in close combat — was found by the play client's probe
+**#106 — random terrain and cover.** Its first slice is merged: `TerrainGenerator` in
+`Game` scatters wall clusters and Difficult Terrain patches across every generated
+battlefield, seeded through `IRandomSource` so a seed still replays the fight, placed
+only strictly between the two sides' columns, and admitted one square at a time under a
+connectivity check so no draw can ever wall a side off — the interpretations are stated
+on the class, and both clients already rendered the terrain the moment it existed. What
+remains is the cover model (Half +2 / Three-Quarters +5 to AC and Dexterity saves, Total
+untargetable — the printed table is in the Combat chapter, and the Areas of Effect
+glossary entry excludes locations behind Total Cover from areas) and the policy learning
+to use it. **Terrain's pacing impact is deliberately unmeasured until the whole of #106
+lands** — the plan is to measure the slices together over the standing 40 seeds, and the
+file's own history says an unmeasured "cosmetic" change is how a median quietly halves.
+
+(#96 — ranged attacks in close combat — was found by the play client's probe
 and fixed the same day: `RangedAttackInCloseCombat` sits beside `AtLongRange` in
 `AttackCircumstances`, "who can see you" is read as any enemy without Blinded — the same
 shape of reading Frightened records — and a dual-mode attack inside its reach stays a
@@ -791,6 +804,11 @@ cost real time:
   characters came to **5.4 creatures, hitting the cap a quarter of the time**. It is 3.0
   now, and reads like the book's own examples. *Placement:* **the sides start 30 feet
   apart**, the number deciding whether ranged attacks and breath weapons matter at all.
+  The ground between them is generated too: `TerrainGenerator` (in `Game`, beside the
+  factory) seeds walls and Difficult Terrain from the fight's own dice, keeps every
+  feature strictly between the spawn columns, and refuses any wall square that would
+  disconnect one spawn from another — so the 30 feet stays crossable by construction,
+  and a bare field remains a possible draw on purpose.
 - **Rests differ per feature, so restoring them is a table and not a reset.** Verified
   against print: Rage and Second Wind each return **one** use on a Short Rest and all on
   a Long; Action Surge returns whole on **either**; spell slots on a Long Rest only. And
