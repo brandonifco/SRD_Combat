@@ -272,18 +272,20 @@ public class CoverTests
     }
 
     [Fact]
-    public void ThePolicySidestepsAWall_AndPrefersTheShelteredFiringSquare()
+    public void ThePolicySidestepsAWall_AndPrefersTheCleanShot()
     {
         // The archer's straight shot crosses the wall at (2,1) — Total Cover, refused —
-        // so its turn becomes: move to a square that can deliver the attack, preferring
-        // the one where return fire suffers cover, then shoot. Row 0 fires past the low
-        // obstacle at (2,0) — Half Cover both ways, since the line is the same line —
-        // and row 2 is open ground, so the policy takes row 0 and pays the +2 on its
-        // own shot: 14 + 4 = 18 against AC 13 + 2.
+        // so its turn becomes: move to a square that can deliver the attack, then
+        // shoot. Row 0 fires past the low obstacle at (2,0), paying +2 on its own
+        // shot; row 2 is a clean line. The clean shot outranks the shelter the
+        // obstacle would give (#108's ordering), so the policy takes row 2 and rolls
+        // against the bare AC. Speed 10 keeps the adjacent squares out of the
+        // question.
         var archer = CombatTestData.Combatant(
             "archer",
             stats: CombatTestData.Stats(
                 initiativeBonus: 10,
+                speedFeet: 10,
                 attacks: [CombatTestData.RangedAttack(bonus: 4)]),
             y: 1);
 
@@ -301,10 +303,164 @@ public class CoverTests
 
         SimpleTacticsPolicy.TakeTurn(encounter);
 
-        Assert.Equal(new GridPosition(1, 0), archer.Position);
+        Assert.Equal(new GridPosition(2, 2), archer.Position);
 
         var swing = encounter.Log.Last(step => step.Narration.Contains("attacks"));
-        Assert.Contains("vs AC 15 (Half Cover) — hit", swing.Narration);
+        Assert.Contains("vs AC 13 — hit", swing.Narration);
+        Assert.DoesNotContain("Cover", swing.Narration);
+    }
+
+    // ── Creatures as cover (#108) ───────────────────────────────────────────────
+
+    [Fact]
+    public void ALivingCreatureOnTheLine_IsHalfCover()
+    {
+        var bystander = CombatTestData.Combatant("bystander", x: 2, y: 1);
+
+        Assert.Equal(
+            CoverDegree.Half,
+            CoverRules.Between(
+                new Battlefield(9, 3),
+                new GridPosition(0, 1),
+                new GridPosition(4, 1),
+                [bystander]));
+    }
+
+    [Fact]
+    public void ADeadCreature_GrantsNothing()
+    {
+        // A fallen body lies flat and covers less than half of a standing target — the
+        // same line MovementRules draws when the dead stop occupying their square.
+        var corpse = CombatTestData.Combatant("corpse", x: 2, y: 1);
+        DamageRules.Apply(corpse, 20, DamageType.Slashing);
+        Assert.True(corpse.IsDead);
+
+        Assert.Equal(
+            CoverDegree.None,
+            CoverRules.Between(
+                new Battlefield(9, 3),
+                new GridPosition(0, 1),
+                new GridPosition(4, 1),
+                [corpse]));
+    }
+
+    [Fact]
+    public void ACrowdIsStillHalfCover()
+    {
+        // The printed table reserves Three-Quarters and Total for objects; however many
+        // creatures the line crosses, crowds are not walls.
+        var first = CombatTestData.Combatant("first", x: 1, y: 1);
+        var second = CombatTestData.Combatant("second", x: 2, y: 1);
+
+        Assert.Equal(
+            CoverDegree.Half,
+            CoverRules.Between(
+                new Battlefield(9, 3),
+                new GridPosition(0, 1),
+                new GridPosition(4, 1),
+                [first, second]));
+    }
+
+    [Fact]
+    public void CreaturesNeverEscalateObstacles()
+    {
+        // A creature beside one low obstacle is two sources of Half, and Half is what
+        // applies; two low obstacles are Three-Quarters on their own, and the creature
+        // does not raise that either.
+        var bystander = CombatTestData.Combatant("bystander", x: 3, y: 1);
+        var oneObstacle = new Battlefield(9, 3, lowObstacles: [new GridPosition(2, 1)]);
+        var twoObstacles = new Battlefield(
+            9, 3, lowObstacles: [new GridPosition(1, 1), new GridPosition(2, 1)]);
+
+        Assert.Equal(
+            CoverDegree.Half,
+            CoverRules.Between(oneObstacle, new GridPosition(0, 1), new GridPosition(4, 1), [bystander]));
+        Assert.Equal(
+            CoverDegree.ThreeQuarters,
+            CoverRules.Between(twoObstacles, new GridPosition(0, 1), new GridPosition(4, 1), [bystander]));
+    }
+
+    [Fact]
+    public void ShootingPastABystander_RaisesTheTargetsArmorClass()
+    {
+        var archer = CombatTestData.Combatant(
+            "archer",
+            stats: CombatTestData.Stats(
+                initiativeBonus: 10,
+                attacks: [CombatTestData.RangedAttack(bonus: 4)]),
+            y: 1);
+
+        var bystander = CombatTestData.Combatant(
+            "bystander",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(attacks: []),
+            x: 2,
+            y: 1);
+
+        var brute = CombatTestData.Combatant(
+            "brute",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: -10, attacks: []),
+            x: 4,
+            y: 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(9, 3),
+            [archer, bystander, brute],
+            new ScriptedRandomSource(20, 10, 1, 14, 3));
+
+        Assert.Null(encounter.Attack("Bow", brute));
+
+        var swing = encounter.Log.Last(step => step.Narration.Contains("attacks"));
+        Assert.Contains("vs AC 15 (Half Cover)", swing.Narration);
+    }
+
+    [Fact]
+    public void TheArcherStepsAroundItsAlly_InsteadOfShootingThroughIt()
+    {
+        // The behaviour #108 was deferred over: a shot through an ally is legal at +2,
+        // so the old turn shape took it every time and never reached the movement that
+        // would have cleared the line. ImproveFiringPosition steps aside first, to a
+        // square with a strictly cheaper shot that is not beside an enemy, and the
+        // attack rolls against the bare AC.
+        var archer = CombatTestData.Combatant(
+            "archer",
+            stats: CombatTestData.Stats(
+                initiativeBonus: 10,
+                attacks: [CombatTestData.RangedAttack(bonus: 4)]),
+            y: 1);
+
+        var ally = CombatTestData.Combatant(
+            "ally",
+            stats: CombatTestData.Stats(initiativeBonus: -5, attacks: []),
+            x: 1,
+            y: 1);
+
+        var brute = CombatTestData.Combatant(
+            "brute",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: -10, attacks: []),
+            x: 4,
+            y: 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(9, 3),
+            [archer, ally, brute],
+            new ScriptedRandomSource(20, 10, 1, 14, 3));
+
+        SimpleTacticsPolicy.TakeTurn(encounter);
+
+        // Behaviour, not a square: the archer moved somewhere with a clean line, out of
+        // close combat, and rolled against the bare AC.
+        Assert.NotEqual(new GridPosition(0, 1), archer.Position);
+        Assert.Equal(
+            CoverDegree.None,
+            CoverRules.Between(encounter.Battlefield, archer.Position, brute.Position, [ally, brute]));
+        Assert.True(archer.Position.DistanceFeetTo(brute.Position) > Battlefield.FeetPerSquare);
+
+        var swing = encounter.Log.Last(step => step.Narration.Contains("attacks"));
+        Assert.Contains("vs AC 13 — hit", swing.Narration);
+        Assert.DoesNotContain("Cover", swing.Narration);
     }
 
     [Fact]

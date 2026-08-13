@@ -49,11 +49,16 @@ public enum CoverDegree
 /// engine's reading, stated here.
 /// </item>
 /// <item>
-/// <b>Creatures do not yet grant cover.</b> The printed table's Half Cover row names
-/// "another creature" as a source, and this class deliberately reads only terrain — a
-/// creature-granted +2 belongs with a policy that understands standing behind someone,
-/// and shipping the bonus without the understanding would only make every ranged attack
-/// quietly worse. Tracked as its own issue rather than held silently.
+/// <b>A living creature crossed is Half Cover, and never more.</b> The printed table's
+/// Half Cover row names "another creature" as a source, and the caller passes the
+/// combatants for it (#108). Three readings, stated: <em>the dead grant nothing</em> — a
+/// fallen body lies flat and covers less than half of a standing target, the same line
+/// <c>MovementRules</c> draws when it stops counting the dead as occupying;
+/// <em>crowds are not walls</em> — however many creatures the line crosses, the degree
+/// from creatures alone stays Half, because the table reserves Three-Quarters and Total
+/// for objects; and <em>creatures never escalate obstacles</em> — a creature beside a
+/// low obstacle is two sources of Half and Half is what applies, the table's own "only
+/// the most protective degree" rule.
 /// </item>
 /// </list>
 /// <para>
@@ -87,7 +92,17 @@ public static class CoverRules
     /// The degree of cover a target square has against an effect originating at another
     /// square.
     /// </summary>
-    public static CoverDegree Between(Battlefield field, GridPosition origin, GridPosition target)
+    /// <param name="creatures">
+    /// Everyone on the field, when the caller has a field to offer — a living creature
+    /// the line crosses grants Half Cover. Null (a bare-geometry unit test) reads only
+    /// the terrain. The origin's and target's own squares never count, whoever stands
+    /// there: the segment starts and ends in them.
+    /// </param>
+    public static CoverDegree Between(
+        Battlefield field,
+        GridPosition origin,
+        GridPosition target,
+        IReadOnlyCollection<Combatant>? creatures = null)
     {
         ArgumentNullException.ThrowIfNull(field);
 
@@ -96,7 +111,12 @@ public static class CoverRules
             return CoverDegree.None;
         }
 
+        var occupied = creatures is null
+            ? null
+            : creatures.Where(creature => !creature.IsDead).Select(creature => creature.Position).ToHashSet();
+
         var lowObstaclesCrossed = 0;
+        var creatureCrossed = false;
 
         var minX = Math.Min(origin.X, target.X);
         var maxX = Math.Max(origin.X, target.X);
@@ -123,15 +143,27 @@ public static class CoverRules
                 {
                     lowObstaclesCrossed++;
                 }
+
+                if (occupied is not null && occupied.Contains(square))
+                {
+                    creatureCrossed = true;
+                }
             }
         }
 
-        return lowObstaclesCrossed switch
+        var fromObstacles = lowObstaclesCrossed switch
         {
             0 => CoverDegree.None,
             1 => CoverDegree.Half,
             _ => CoverDegree.ThreeQuarters,
         };
+
+        // "If a target is behind multiple sources of cover, only the most protective
+        // degree of cover applies" — and from creatures alone the degree is Half,
+        // however many the line crosses.
+        var fromCreatures = creatureCrossed ? CoverDegree.Half : CoverDegree.None;
+
+        return (CoverDegree)Math.Max((int)fromObstacles, (int)fromCreatures);
     }
 
     /// <summary>

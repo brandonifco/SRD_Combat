@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the close of #106 (terrain, cover, and the policy's use of both) |
-| Tests | **708 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the close of #108 (creatures grant Half Cover, and the policy steps around its allies) |
+| Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **#108** (creatures granting Half Cover, deferred from #106 on purpose). Beyond it the next work is a phase — see the plan doc. |
+| Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -113,8 +113,10 @@ reach, reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
 whose area would catch its own side, and uses cover: a square the target has Total Cover
 against no longer counts as a firing position, a sidestep that clears a wall is taken
-even when it does not close distance, and among firing squares the best-sheltered one
-wins.
+even when it does not close distance, a legal-but-penalized shot — the target behind an
+ally or a low obstacle — is worth a step sideways before anything is spent, a shooter
+avoids ending beside an enemy because the engine would put that roll at Disadvantage,
+and among what remains the clean shot outranks shelter, which outranks closeness.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -166,7 +168,22 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**#106 — random terrain and cover — is closed**, in three slices, and **its pacing was
+**Nothing.** #108 closed the last of the cover work: creatures grant Half Cover as the
+printed table says, under three stated readings on `CoverRules` — the dead grant nothing
+(a fallen body lies flat, the same line `MovementRules` draws), crowds are not walls
+(however many creatures the line crosses, creatures alone are Half, because the table
+reserves the higher degrees for objects), and creatures never escalate obstacles. The
+policy grew the understanding whose absence had deferred the rule: a legal-but-penalized
+shot is worth a step sideways *before* anything is spent (`ImproveFiringPosition` —
+without it, cover the archer could shoot through was cover it always shot through, since
+a successful attack ended the turn before movement was ever considered), a shooter
+avoids ending beside an enemy because the engine puts that roll at Disadvantage, and
+`ReachOf` counts only attacks the actor could actually swing, so a creature whose thrown
+Rock is spent plans like the melee creature it now is. Measured over the recorded seeds
+1–40: median 4 → 3.5, best 19 → 21 — within 40-run noise, and symmetric by construction,
+since both sides fan out and step around their own allies alike.
+
+**#106 — random terrain and cover — closed just before it**, in three slices, and **its pacing was
 measured before closing, unlike the plausibility fixes this file warns about.** A fresh
 three-way comparison over seeds 1–40 — the historical table's own seed set was never
 recorded, which is why the absolute numbers below do not line up with it and why any
@@ -195,10 +212,10 @@ ranking above closeness because once a square delivers the attack, closing furth
 a ranged creature nothing. The third slice also caught a bug the second had shipped:
 **a reach weapon's Opportunity Attack can genuinely cross a wall square**, and the
 regenerated transcript printed a hit through Total Cover — `MakeOpportunityAttack` now
-declines to swing, the way it declines against a charmer. **Creatures granting Half
-Cover is printed and deliberately deferred to #108**, because shipping the +2 before
-the policy understands standing behind someone would only make every ranged attack
-quietly worse.
+declines to swing, the way it declines against a charmer. Creatures granting Half Cover
+was deliberately deferred out of #106 into #108 — shipping the +2 before the policy
+understood standing behind someone would only have made every ranged attack quietly
+worse — and #108 is now closed too, above.
 
 (#96 — ranged attacks in close combat — was found by the play client's probe
 and fixed the same day: `RangedAttackInCloseCombat` sits beside `AtLongRange` in
@@ -329,20 +346,20 @@ got wrong. Ordered by dependency rather than by how valuable each looked on its 
 save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
 steps 1 and 2 came before anything else, and why they were worth doing as one design.
 
-**The frozen transcript has churned exactly three times**, and every churn was the fixture
+**The frozen transcript has churned exactly four times**, and every churn was the fixture
 catching a real change to how the game plays. Once when the tactics policy learned to
 focus fire — where the failure that mattered was not the byte-for-byte diff but
 `TheFightExercisesTheHardParts`, which noticed the adventurers now won quickly enough that
 nobody went down and the fight covered no Death Saving Throws at all. Once when cover
 landed (#106): the skirmish field's middle wall had always been drawn and never mattered,
 and the moment it granted Total Cover the opening archer's shot through it was refused, so
-both sides' archers had to reposition before shooting. And once when the policy learned to
-*use* cover, which changed every fight enough that the scenario's seed no longer reached
-the hard parts and moved for the second time (composition unchanged, dice moved — the
-history is on `SkirmishScenario.Seed`); that regeneration also caught a shipped bug, a
-reach weapon's Opportunity Attack narrated straight through a wall. Read the diff before
-regenerating, every time — twice now it has been the thing that caught what the unit
-tests did not.
+both sides' archers had to reposition before shooting. Once when the policy learned to
+*use* cover — a regeneration that also caught a shipped bug, a reach weapon's Opportunity
+Attack narrated straight through a wall. And once when creatures started granting Half
+Cover and the policy learned to step around its allies (#108). The scenario's seed has
+moved three times over these, composition unchanged, dice moved — the history is on
+`SkirmishScenario.Seed`. Read the diff before regenerating, every time — twice now it has
+been the thing that caught what the unit tests did not.
 
 ## The rule this project runs on
 
@@ -779,14 +796,15 @@ default — deliberate).
   sequence of a whole fight, so it catches interaction bugs no unit test reaches. When
   it fails, **read the diff before touching the fixture** — a change to the transcript
   is a change to how the game plays. Regenerate only once the new behaviour is intended:
-  un-skip `TranscriptWriter`, run it, re-skip it, review. It has churned three times —
-  focus fire, cover landing, the policy using cover — and earned its keep every time.
-  Twice the failure that mattered was not the byte-for-byte diff:
+  un-skip `TranscriptWriter`, run it, re-skip it, review. It has churned four times —
+  focus fire, cover landing, the policy using cover, creatures granting cover — and
+  earned its keep every time. Twice the failure that mattered was not the byte-for-byte
+  diff:
   `TheFightExercisesTheHardParts` noticed the focus-fire fight no longer downed anybody
   and covered no Death Saving Throws, and the cover-policy regeneration's diff showed a
   reach weapon's Opportunity Attack narrating a hit straight through Total Cover — a
   shipped bug no unit test had caught, because "melee reach means nothing in between" is
-  false for a Halberd. Both times the composition was kept and only the seed moved — the
+  false for a Halberd. Each time the composition was kept and only the seed moved — the
   seed is chosen for coverage, and `SkirmishScenario` carries the history.
 - **It uses hand-authored combatants, not SRD monsters, on purpose** — so it fails when
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
@@ -824,7 +842,11 @@ default — deliberate).
   to swing, the way it declines against a charmer. The save half rides
   `ResolveSaveEffect` against the effect's **point of origin** (the erupting point for a
   Sphere or Cube, the creature for everything else — `AreaTargeting.PointOfOrigin`), and
-  a non-Dexterity save gains nothing.
+  a non-Dexterity save gains nothing. Since #108 the combatants are part of the
+  judgement: a living creature the line crosses is Half Cover, under three readings
+  stated on `CoverRules` — the dead grant nothing, crowds are not walls, and creatures
+  never escalate obstacles. `AreaTargeting`'s Total-cover exclusion stays terrain-only
+  by construction, since creatures cannot provide Total.
 
 Things worth knowing before touching the engine or the content pipeline. The list has
 outgrown the phase it was written for; each entry is here because getting it wrong once
