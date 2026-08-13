@@ -423,7 +423,9 @@ advice rather than rule: the click is sent to the engine either way. A `--probe`
 drives one commanded turn through the real input path with synthesized clicks —
 including a refusal on purpose — and captures each step, which is this screen's version
 of the capture loop; its first run caught a real engine gap (#96, ranged attacks in
-melee lack their printed Disadvantage).
+melee lacked their printed Disadvantage — fixed the same day, and the first rule a
+client found that forty automated runs never surfaced, because the policy rarely shoots
+point-blank and nothing was checking the roll's mode when it did).
 
 **Spells, features and potions followed in the next slice**, so a whole fight is now
 playable: a second button row carries what the character brought (filtered by granted

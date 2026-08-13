@@ -1024,7 +1024,8 @@ public sealed partial class Encounter
             attack,
             target,
             extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed,
-            extraDisadvantage: sapped);
+            extraDisadvantage: sapped,
+            combatants: _combatants);
 
         var modeNote = result.Roll.Mode switch
         {
@@ -1281,7 +1282,7 @@ public sealed partial class Encounter
 
         attacker.Features.CleaveUsedThisTurn = true;
 
-        var result = AttackRules.Resolve(_random, attacker, attack, second);
+        var result = AttackRules.Resolve(_random, attacker, attack, second, combatants: _combatants);
 
         var swing = result.Hit
             ? $"hit{(result.Critical ? " — a Critical Hit!" : string.Empty)}"

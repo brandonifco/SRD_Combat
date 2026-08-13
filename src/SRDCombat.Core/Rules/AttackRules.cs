@@ -29,6 +29,15 @@ namespace SRDCombat.Core.Rules;
 /// </param>
 /// <param name="TargetIsParalyzed">The target is Paralyzed.</param>
 /// <param name="TargetIsStunned">The target is Stunned.</param>
+/// <param name="RangedAttackInCloseCombat">
+/// The attack rolls ranged while an able enemy stands within 5 feet. Printed page 15:
+/// "When you make a ranged attack roll with a weapon, a spell, or some other means, you
+/// have Disadvantage on the roll if you are within 5 feet of an enemy who can see you
+/// and doesn't have the Incapacitated condition." Any enemy counts, the target included.
+/// "Who can see you" rests on the same stated reading Frightened records: sight is
+/// unmodelled, so an enemy on the field is read as seeing the attacker unless it has the
+/// Blinded condition — the one part of sight the engine does express.
+/// </param>
 /// <remarks>
 /// Every one defaults to false, because false is "nothing unusual is true" for all of
 /// them. That keeps a caller naming only the circumstance it cares about, and means the
@@ -48,7 +57,8 @@ public sealed record AttackCircumstances(
     bool TargetIsBlinded = false,
     bool AttackerIsFrightened = false,
     bool TargetIsParalyzed = false,
-    bool TargetIsStunned = false);
+    bool TargetIsStunned = false,
+    bool RangedAttackInCloseCombat = false);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
 /// <param name="Roll">The d20 roll.</param>
@@ -67,10 +77,17 @@ public sealed record AttackRoll(
 public static class AttackRules
 {
     /// <summary>Works out the Advantage and Disadvantage applying to an attack.</summary>
+    /// <param name="combatants">
+    /// Everyone on the field, for the circumstances that depend on more than the two
+    /// creatures involved — today that is Ranged Attacks in Close Combat, which asks
+    /// about <em>any</em> enemy within 5 feet. Null means the caller has no field to
+    /// offer (a two-creature unit test), and those circumstances stay false.
+    /// </param>
     public static AttackCircumstances DescribeCircumstances(
         Combatant attacker,
         CombatAttack attack,
-        Combatant target)
+        Combatant target,
+        IReadOnlyCollection<Combatant>? combatants = null)
     {
         ArgumentNullException.ThrowIfNull(attacker);
         ArgumentNullException.ThrowIfNull(attack);
@@ -93,7 +110,37 @@ public static class AttackRules
             TargetIsBlinded: target.HasCondition(ConditionType.Blinded),
             AttackerIsFrightened: attacker.HasCondition(ConditionType.Frightened),
             TargetIsParalyzed: target.HasCondition(ConditionType.Paralyzed),
-            TargetIsStunned: target.HasCondition(ConditionType.Stunned));
+            TargetIsStunned: target.HasCondition(ConditionType.Stunned),
+            RangedAttackInCloseCombat:
+                combatants is not null && InCloseCombat(attacker, attack, distance, combatants));
+    }
+
+    /// <summary>
+    /// Whether this ranged attack roll is being made within 5 feet of an able enemy.
+    /// </summary>
+    /// <remarks>
+    /// The enemy must be alive (a corpse is not an enemy who can see anything), able to
+    /// see the attacker (read as: not Blinded — the reading is on
+    /// <see cref="AttackCircumstances.RangedAttackInCloseCombat"/>), and not
+    /// Incapacitated, which Unconscious and Paralyzed both bring with them.
+    /// </remarks>
+    private static bool InCloseCombat(
+        Combatant attacker,
+        CombatAttack attack,
+        int distanceFeet,
+        IReadOnlyCollection<Combatant> combatants)
+    {
+        if (!attack.IsRangedAttackRoll(distanceFeet))
+        {
+            return false;
+        }
+
+        return combatants.Any(other =>
+            other.SideId != attacker.SideId
+            && !other.IsDead
+            && !other.HasCondition(ConditionType.Blinded)
+            && !other.HasCondition(ConditionType.Incapacitated)
+            && other.Position.DistanceFeetTo(attacker.Position) <= Battlefield.FeetPerSquare);
     }
 
     /// <summary>
@@ -150,6 +197,7 @@ public static class AttackRules
             || circumstances.AtLongRange
             || circumstances.AttackerIsBlinded
             || circumstances.AttackerIsFrightened
+            || circumstances.RangedAttackInCloseCombat
             || (circumstances.TargetIsProne && !withinFiveFeet);
 
         return D20Test.Combine(advantage, disadvantage);
@@ -162,13 +210,18 @@ public static class AttackRules
     /// rather than overriding it.
     /// </param>
     /// <param name="extraDisadvantage">Disadvantage from such a source.</param>
+    /// <param name="combatants">
+    /// Everyone on the field, when the caller has it — see
+    /// <see cref="DescribeCircumstances"/>.
+    /// </param>
     public static AttackRoll Resolve(
         IRandomSource random,
         Combatant attacker,
         CombatAttack attack,
         Combatant target,
         bool extraAdvantage = false,
-        bool extraDisadvantage = false)
+        bool extraDisadvantage = false,
+        IReadOnlyCollection<Combatant>? combatants = null)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(attacker);
@@ -176,7 +229,7 @@ public static class AttackRules
         ArgumentNullException.ThrowIfNull(target);
 
         var distance = attacker.Position.DistanceFeetTo(target.Position);
-        var circumstances = DescribeCircumstances(attacker, attack, target);
+        var circumstances = DescribeCircumstances(attacker, attack, target, combatants);
         var mode = D20Test.Combine(ResolveRollMode(circumstances, distance), extraAdvantage, extraDisadvantage);
 
         var roll = D20Test.Roll(random, attack.AttackBonus, mode);
