@@ -65,6 +65,18 @@ public static class SimpleTacticsPolicy
             return;
         }
 
+        // Before anything is spent: a legal but penalized shot — the target behind an
+        // ally or a low obstacle — is worth a step sideways first, when a strictly
+        // cheaper firing square is in walking distance. Attacks and spells both fire
+        // from wherever this leaves us.
+        ImproveFiringPosition(encounter, actor, target);
+
+        if (encounter.IsComplete || !actor.CanAct)
+        {
+            encounter.EndTurn();
+            return;
+        }
+
         // Spells are weighed against the swing they would replace, rather than being a
         // last resort. The old rule — cast only when the weapon cannot reach — made two
         // whole categories unreachable by construction (#85): a Touch spell fails
@@ -626,62 +638,170 @@ public static class SimpleTacticsPolicy
     /// <remarks>
     /// Cover changed what "can attack from" means: a square within reach whose line the
     /// target has Total Cover against delivers nothing, so it no longer counts as a
-    /// firing position. Two consequences are deliberate. A square that does not close
-    /// the distance is still taken when it turns a blocked attack into a possible one —
-    /// the sidestep that clears a wall, without which an archer stood forever behind
-    /// the one square it could not shoot past. And among squares it can attack from,
-    /// the actor prefers the one where the enemy side's return lines suffer the most
-    /// cover, shelter ranking above closeness because once a square delivers the attack,
-    /// closing further buys a ranged creature nothing.
+    /// firing position. Three preferences are deliberate, in this order. A square that
+    /// does not close the distance is still taken when it turns a blocked attack into a
+    /// possible one — the sidestep that clears a wall, without which an archer stood
+    /// forever behind the one square it could not shoot past. A shooter avoids ending
+    /// beside an enemy, because the printed Ranged Attacks in Close Combat rule would
+    /// put its own roll at Disadvantage there — the engine enforces it, so the policy
+    /// respects it. Among what remains, the clean shot comes first: creatures grant
+    /// Half Cover too (#108), so the square where the target's cover is cheapest wins,
+    /// which is what stops an archer shooting through the ally it spawned behind when a
+    /// step sideways clears the line. Then shelter — the square where the enemy side's
+    /// return lines suffer the most cover — ranking above closeness, because once a
+    /// square delivers the attack, closing further buys a ranged creature nothing.
     /// </remarks>
     private static void MoveTowards(Encounter encounter, Combatant actor, Combatant target)
     {
-        var reach = actor.Stats.Attacks.Count > 0
-            ? actor.Stats.Attacks.Max(attack => attack.MaximumRangeFeet)
-            : MovementRules.MeleeReachFeet(actor);
-
-        var field = encounter.Battlefield;
-        var enemies = encounter.Combatants
-            .Where(enemy => enemy.SideId != actor.SideId && enemy.IsActive)
-            .ToArray();
+        var reach = ReachOf(actor);
+        var others = OthersThan(encounter, actor);
 
         var currentDistance = actor.Position.DistanceFeetTo(target.Position);
         var canAttackFromHere = currentDistance <= reach
-            && CoverRules.Between(field, actor.Position, target.Position) != CoverDegree.Total;
+            && CoverRules.Between(encounter.Battlefield, actor.Position, target.Position, others)
+                != CoverDegree.Total;
 
-        var candidates = field.AllSquares()
+        var best = ScoreSquares(encounter, actor, target, others, reach)
+            .Where(option =>
+                option.Distance < currentDistance
+                || (option.CanAttackFrom && !canAttackFromHere))
+            .OrderByDescending(option => option.CanAttackFrom)
+            .ThenBy(option => option.InCloseCombat)
+            .ThenBy(option => option.OwnShotPenalty)
+            .ThenByDescending(option => option.Shelter)
+            .ThenBy(option => option.Distance)
+            .ThenBy(option => option.Square.X)
+            .ThenBy(option => option.Square.Y)
+            .FirstOrDefault();
+
+        if (best is not null)
+        {
+            encounter.Move(best.Square);
+        }
+    }
+
+    /// <summary>
+    /// Steps to a cheaper firing square before the attack is attempted, when the shot
+    /// from here is legal but penalized.
+    /// </summary>
+    /// <remarks>
+    /// Without this, cover the actor could shoot through was cover it always shot
+    /// through: an attack through Half Cover succeeds, so the turn never reached the
+    /// movement that would have cleared the line — the exact behaviour #108 was
+    /// deferred over, an archer firing forever past the ally it spawned behind. Only a
+    /// square that strictly improves the shot is worth the walk, so a penalized shot
+    /// with nothing better stays where it is rather than drifting.
+    /// </remarks>
+    private static void ImproveFiringPosition(Encounter encounter, Combatant actor, Combatant target)
+    {
+        var reach = ReachOf(actor);
+        var others = OthersThan(encounter, actor);
+
+        var currentCover = CoverRules.Between(
+            encounter.Battlefield, actor.Position, target.Position, others);
+        var currentPenalty = CoverRules.Bonus(currentCover);
+
+        // Out of reach or fully blocked is MoveTowards' problem; a clean shot needs no
+        // improving.
+        if (actor.Position.DistanceFeetTo(target.Position) > reach
+            || currentCover == CoverDegree.Total
+            || currentPenalty == 0)
+        {
+            return;
+        }
+
+        var best = ScoreSquares(encounter, actor, target, others, reach)
+            .Where(option => option.CanAttackFrom && option.OwnShotPenalty < currentPenalty)
+            .OrderBy(option => option.InCloseCombat)
+            .ThenBy(option => option.OwnShotPenalty)
+            .ThenByDescending(option => option.Shelter)
+            .ThenBy(option => option.Distance)
+            .ThenBy(option => option.Square.X)
+            .ThenBy(option => option.Square.Y)
+            .FirstOrDefault();
+
+        if (best is not null)
+        {
+            encounter.Move(best.Square);
+        }
+    }
+
+    /// <summary>One reachable square, scored for choosing a firing position.</summary>
+    private sealed record FiringOption(
+        GridPosition Square,
+        int Distance,
+        bool CanAttackFrom,
+        bool InCloseCombat,
+        int OwnShotPenalty,
+        int Shelter);
+
+    /// <summary>Every square this turn's movement reaches, scored.</summary>
+    private static IEnumerable<FiringOption> ScoreSquares(
+        Encounter encounter,
+        Combatant actor,
+        Combatant target,
+        IReadOnlyList<Combatant> others,
+        int reach)
+    {
+        var field = encounter.Battlefield;
+        var enemies = others
+            .Where(enemy => enemy.SideId != actor.SideId && enemy.IsActive)
+            .ToArray();
+
+        // Only a shooter cares about standing beside an enemy — the printed Ranged
+        // Attacks in Close Combat rule the engine enforces. A melee creature's firing
+        // squares are all beside its target by definition, so the flag would tie
+        // everywhere and decide nothing.
+        var shoots = reach > Battlefield.FeetPerSquare;
+
+        return field.AllSquares()
             .Where(square => MovementRules.FindPath(
                 field,
                 actor,
                 square,
                 actor.Turn.MovementFeet,
                 encounter.Combatants) is not null)
-            .Select(square => new
+            .Select(square =>
             {
-                Square = square,
-                Distance = square.DistanceFeetTo(target.Position),
-                CanAttackFrom = square.DistanceFeetTo(target.Position) <= reach
-                    && CoverRules.Between(field, square, target.Position) != CoverDegree.Total,
-                Shelter = enemies.Sum(enemy => ShelterValue(
-                    CoverRules.Between(field, enemy.Position, square))),
-            })
-            .Where(option =>
-                option.Distance < currentDistance
-                || (option.CanAttackFrom && !canAttackFromHere))
-            .OrderByDescending(option => option.CanAttackFrom)
-            .ThenByDescending(option => option.Shelter)
-            .ThenBy(option => option.Distance)
-            .ThenBy(option => option.Square.X)
-            .ThenBy(option => option.Square.Y)
-            .ToList();
+                var targetCover = CoverRules.Between(field, square, target.Position, others);
 
-        if (candidates.Count == 0)
-        {
-            return;
-        }
-
-        encounter.Move(candidates[0].Square);
+                return new FiringOption(
+                    square,
+                    square.DistanceFeetTo(target.Position),
+                    square.DistanceFeetTo(target.Position) <= reach
+                        && targetCover != CoverDegree.Total,
+                    shoots && enemies.Any(enemy =>
+                        square.DistanceFeetTo(enemy.Position) <= Battlefield.FeetPerSquare),
+                    CoverRules.Bonus(targetCover),
+                    enemies.Sum(enemy => ShelterValue(
+                        CoverRules.Between(field, enemy.Position, square, others))));
+            });
     }
+
+    /// <summary>
+    /// How far the actor can deliver an attack from, counting only attacks it could
+    /// actually swing — TryAttack's own filter — so a creature whose thrown Rock is
+    /// spent plans like the melee creature it now is rather than standing off at a
+    /// range it can no longer use.
+    /// </summary>
+    private static int ReachOf(Combatant actor)
+    {
+        var usable = actor.Stats.Attacks
+            .Where(attack => actor.Uses.IsAvailable(attack.Name))
+            .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
+            .ToArray();
+
+        return usable.Length > 0
+            ? usable.Max(attack => attack.MaximumRangeFeet)
+            : MovementRules.MeleeReachFeet(actor);
+    }
+
+    /// <summary>
+    /// Everyone but the actor: it is evaluating squares it would occupy, and its own
+    /// body at the square it is leaving must not shelter or obstruct the plan.
+    /// </summary>
+    private static IReadOnlyList<Combatant> OthersThan(Encounter encounter, Combatant actor) =>
+        encounter.Combatants.Where(other => other.Id != actor.Id).ToArray();
 
     /// <summary>
     /// What standing behind this much cover is worth when choosing a square. The printed

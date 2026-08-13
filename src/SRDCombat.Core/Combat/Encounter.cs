@@ -208,7 +208,7 @@ public sealed partial class Encounter
 
         // "Can't be targeted directly." Refused before anything is spent, like every
         // other targeting rule.
-        if (CoverRules.Between(Battlefield, attacker.Position, target.Position) == CoverDegree.Total)
+        if (CoverRules.Between(Battlefield, attacker.Position, target.Position, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "attack.total_cover",
@@ -861,7 +861,7 @@ public sealed partial class Encounter
         // weapons make it reachable: a Halberd's reach spans a square, and that square
         // can be a wall. Caught by the regenerated transcript, which printed a hit
         // through Total Cover — the mover slips away unswung-at, like the charmer above.
-        if (CoverRules.Between(Battlefield, attacker.Position, mover.Position) == CoverDegree.Total)
+        if (CoverRules.Between(Battlefield, attacker.Position, mover.Position, _combatants) == CoverDegree.Total)
         {
             return;
         }
@@ -1017,7 +1017,7 @@ public sealed partial class Encounter
         // weapon's Opportunity Attack can genuinely cross a wall square, which the
         // regenerated transcript caught. What remains is Half or Three-Quarters,
         // raising the AC to beat.
-        var cover = CoverRules.Between(Battlefield, attacker.Position, target.Position);
+        var cover = CoverRules.Between(Battlefield, attacker.Position, target.Position, _combatants);
 
         // Wand of the War Mage: "you ignore Half Cover when making a spell attack" —
         // Half exactly, so Three-Quarters still counts.
@@ -1551,7 +1551,8 @@ public sealed partial class Encounter
                     ? CoverRules.Between(
                         Battlefield,
                         AreaTargeting.PointOfOrigin(save.Area, source.Position, point),
-                        victim.Position)
+                        victim.Position,
+                        _combatants)
                     : CoverDegree.None;
                 var coverNote = CoverRules.Bonus(cover) > 0
                     ? $" ({CoverRules.Describe(cover)})"

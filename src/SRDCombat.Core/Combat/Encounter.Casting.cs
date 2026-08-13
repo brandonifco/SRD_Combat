@@ -82,7 +82,7 @@ public sealed partial class Encounter
         if (target is not null
             && !spell.IsSelfRanged
             && (spell.IsSpellAttack || spell.Heal is not null || spell.Save is { Area: null })
-            && CoverRules.Between(Battlefield, caster.Position, target.Position) == CoverDegree.Total)
+            && CoverRules.Between(Battlefield, caster.Position, target.Position, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "spell.total_cover",

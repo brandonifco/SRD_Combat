@@ -183,8 +183,16 @@ public class RealCharacterTests
             SimpleTacticsPolicy.TakeTurn(encounter);
         }
 
-        // A Fireball centred on the middle goblin catches all three.
-        Assert.Null(encounter.CastSpell("spell.fireball", new GridPosition(9, 4)));
+        // A Fireball centred on the goblins catches all three. Aimed at where they
+        // actually stand rather than where they spawned, because the goblins may have
+        // taken turns before the wizard's — and the policy moves them with a mind of
+        // its own (since #108 they fan out rather than queueing behind each other).
+        // The 20-foot radius reaches every goblin from their midpoint by construction.
+        var midpoint = new GridPosition(
+            (int)Math.Round(goblins.Average(goblin => goblin.Position.X)),
+            (int)Math.Round(goblins.Average(goblin => goblin.Position.Y)));
+
+        Assert.Null(encounter.CastSpell("spell.fireball", midpoint));
 
         Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Spell);
         Assert.All(goblins, goblin =>

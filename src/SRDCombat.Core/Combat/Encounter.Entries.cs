@@ -151,7 +151,7 @@ public sealed partial class Encounter
         }
 
         // "Can't be targeted directly" — an attack-shaped entry is still an attack.
-        if (CoverRules.Between(Battlefield, actor.Position, target.Position) == CoverDegree.Total)
+        if (CoverRules.Between(Battlefield, actor.Position, target.Position, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "attack.total_cover",
@@ -217,7 +217,7 @@ public sealed partial class Encounter
         // area effect is aimed at a point, and AreaTargeting's exclusion decides who is
         // caught behind what.
         if (save.Area is null && target is not null
-            && CoverRules.Between(Battlefield, actor.Position, target.Position) == CoverDegree.Total)
+            && CoverRules.Between(Battlefield, actor.Position, target.Position, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "entry.total_cover",
