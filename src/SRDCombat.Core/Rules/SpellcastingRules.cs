@@ -1,3 +1,4 @@
+using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 
 namespace SRDCombat.Core.Rules;
@@ -50,4 +51,32 @@ public static class SpellcastingRules
     /// taken, whichever is higher.
     /// </summary>
     public static int ConcentrationDifficultyClass(int damageTaken) => Math.Max(10, damageTaken / 2);
+
+    /// <summary>
+    /// Whether casting this spell would do something the engine executes: an attack
+    /// roll, healing, or a saving throw with damage or an imposable condition behind it,
+    /// in an area the engine can resolve.
+    /// </summary>
+    /// <remarks>
+    /// The same tests <c>Encounter.CastSpell</c> applies before spending anything — its
+    /// <c>spell.not_implemented</c>, <c>spell.area_not_modelled</c> and
+    /// <c>spell.save_effect_not_modelled</c> refusals are this predicate's three false
+    /// branches, kept granular there because a refusal explains itself and collapsed
+    /// here because a chooser only needs yes or no. Character creation filters its spell
+    /// menu with this, because offering a spell that can never be cast would be an
+    /// unimplemented rule wearing a checkbox.
+    /// </remarks>
+    public static bool HasExecutableEffect(SpellDefinition spell)
+    {
+        ArgumentNullException.ThrowIfNull(spell);
+
+        return spell.Heal is not null
+            || spell.IsSpellAttack
+            || (spell.Save is { } save
+                && (save.Area is not { } area || AreaTargeting.CanResolve(area.Shape))
+                && (spell.Damage.Count > 0
+                    || save.FailureDamage.Count > 0
+                    || spell.AppliedConditions.Any(ConditionRules.CanBeImposed)
+                    || save.AppliedConditions.Any(ConditionRules.CanBeImposed)));
+    }
 }

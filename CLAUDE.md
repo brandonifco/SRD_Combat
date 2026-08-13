@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
+| Work remaining | **Phase 5 (character creation) is underway** — the draft chooses its spells; the choice-enumeration layer and the console flow are next. No open GitHub issues. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -644,6 +644,22 @@ so *it* can tell what is left; they do not belong in a status report.
   clears **4** and burned the Cleric's slots on damage while the party bled. The cautious
   healer wins because a slot spent on damage is gone when the character who needed it
   drops. Median over the whole change: **4 → 6.5**.
+- **A draft chooses its spells now, and the menu is the sixth curated allowlist.**
+  `CharacterDraft.ChosenSpellIds` carries the plan under the same reading as its
+  Ability Score Improvements — resolving at a level prepares the first entries the
+  class table's printed Cantrips and Prepared Spells columns allow, and a spell whose
+  level has no slots yet is skipped for now rather than refused. **The gate is
+  `PreparableSpells`, curated by hand, not the shape data — and the reason is worth
+  not re-learning:** `SpellcastingRules.HasExecutableEffect` (the casting path's own
+  refusal tests as one predicate) says yes to Bestow Curse, whose extracted
+  save-plus-damage shape is a sliver of a printed effect the engine cannot express,
+  and the spell-level `UnmodelledClauses` accounting is **not populated** the way the
+  stat-block accounting is — Bestow Curse reads as fully modelled. A menu filtered on
+  shape would offer spells that execute partially: the Goblin Warrior bug wearing a
+  spell list. The registry's bar and its per-spell exclusion reasons are on the class,
+  including the two pregen-blessed entries whose gaps are now stated rather than
+  silent: Guiding Bolt's Advantage rider does not execute, and Spirit Guardians is
+  cast as a one-time Emanation rather than its printed persistent aura.
 - **The pregen Cleric prepares six of its printed nine, and the shortfall is not a
   choice.** Of the 109 spells on the Cleric list, six have an effect the engine executes:
   Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds and Spirit
