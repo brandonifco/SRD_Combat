@@ -123,16 +123,32 @@ and no asset to fetch:
 
 ```bash
 git clone https://github.com/brandonifco/SRD_Combat.git && cd SRD_Combat
-mise install                           # pins the SDK to the one CI gates on
-./scripts/doctor.sh                     # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug     # expect 673 passing, 1 skipped by design
+curl -fsSL https://mise.run | sh            # once per machine, if mise is absent
+eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
+mise install                                # pins the SDK to the one CI gates on
+./scripts/doctor.sh                         # confirms this machine agrees with CI
+dotnet test SRDCombat.sln -c Debug          # expect 673 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
-**The two middle lines are the only setup step, and skipping them is survivable but
-misleading** — the build will succeed on whatever SDK happens to be installed and tell you
-nothing about whether CI will agree. `doctor.sh` needs no tooling of its own and is worth
-running even without mise, because it reports what you *have* rather than what you assume.
+**Those four middle lines are the only setup step, and the activation line is the one that
+gets skipped** — it looks like shell decoration and it is the step that does the work.
+Without it `mise install` still succeeds and `mise current dotnet` still reports the pinned
+version, while `dotnet` goes on resolving to whatever is first on `PATH`. That combination
+is what a silently ineffective pin looks like from the inside: on 2026-08-13 a machine
+reported `✓ mise is managing dotnet 8.0.129` while compiling every target on .NET 10.
+**`doctor.sh` is what catches it** — the check that fails is `This repository resolves to
+SDK ...`, not any of the mise ones, which is why it is worth running even without mise: it
+reports what you *have* rather than what you assume.
+
+Activation is **directory-scoped**, which is the reassurance worth having before editing a
+shell profile. `dotnet` resolves to the pinned 8.0.129 inside this repository and to
+whatever the machine already had everywhere else, so nothing outside SRD_Combat changes.
+Watching it switch is the fastest proof the pin is live:
+
+```bash
+cd ~ && dotnet --version && cd - && dotnet --version
+```
 
 `data/srd` is in the repo, which is why none of that needs the SRD PDF. **The one thing
 that does is re-extracting content** (`tools/SrdExtract`), and the PDF is deliberately not

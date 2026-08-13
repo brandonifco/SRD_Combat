@@ -139,13 +139,18 @@ if command -v mise >/dev/null 2>&1; then
             pass "mise is managing dotnet $(cd "$REPO_ROOT" && mise current dotnet 2>/dev/null)"
         else
             warn 'mise is installed but is not managing dotnet for this repository.'
-            note 'Run `mise install` here, and make sure mise is activated in your shell.'
+            note 'Run `mise install` here, then activate mise in your shell:'
+            note '  eval "$(mise activate bash)"   # and append it to ~/.bashrc'
         fi
     fi
 else
     warn 'mise is not installed, so the toolchain is not pinned on this machine.'
     note 'Install: https://mise.jdx.dev/getting-started.html'
-    note 'Then run `mise install` in the repository root.'
+    note 'Then, in the repository root:'
+    note '  mise install'
+    note '  eval "$(mise activate bash)"   # and append it to ~/.bashrc'
+    note 'The activation line is not optional: without it `mise install` succeeds and'
+    note 'dotnet still resolves to whatever is first on PATH.'
 fi
 
 # ---------------------------------------------------------------------------
