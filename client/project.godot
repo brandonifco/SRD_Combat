@@ -1,0 +1,23 @@
+; SRD_Combat's Phase 7 client, at its read-only beginning: it watches a fight rather
+; than playing one. See client/README.md for why this project sits outside the solution.
+
+config_version=5
+
+[application]
+
+config/name="SRD_Combat Viewer"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
+
+[dotnet]
+
+project/assembly_name="SRDCombat.Viewer"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=760
+
+[rendering]
+
+environment/defaults/default_clear_color=Color(0.09, 0.09, 0.11, 1)

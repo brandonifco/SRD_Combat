@@ -1,0 +1,26 @@
+<Project Sdk="Godot.NET.Sdk/4.4.0">
+
+  <!--
+    Deliberately outside SRDCombat.sln. CI runs bare `dotnet restore`, `build` and `test`
+    from the repository root, which resolve the solution — so a project that is not in it
+    is invisible to the gate that protects the engine, and cannot break a merge on a
+    runner that has .NET 8 and no Godot. See README.md beside this file and the plan
+    doc's Phase 7 section.
+
+    Directory.Build.props still reaches here — MSBuild walks up from the *project's*
+    directory, not from wherever the build was launched — so TargetFramework, Nullable,
+    ImplicitUsings and TreatWarningsAsErrors all arrive from the repository root and the
+    client is held to the engine's standard without restating it. Verified with
+    `dotnet msbuild -getProperty:...` rather than assumed; an earlier version of this
+    comment claimed the opposite.
+  -->
+  <PropertyGroup>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>SRDCombat.Viewer</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\SRDCombat.Game\SRDCombat.Game.csproj" />
+  </ItemGroup>
+
+</Project>

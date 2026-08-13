@@ -22,6 +22,10 @@
 # line, `global.json`, `Directory.Build.props` and the CI workflow all change together.
 dotnet = "8.0.129"
 
-# Godot is deliberately absent. Phase 7 has not started, no machine has it installed, and
-# an unresolvable pin here would break `mise install` for everyone to serve nobody. Add
-# it in the branch that starts the Godot client, alongside the code that needs it.
+# Godot is deliberately absent, and the reason changed when Phase 7 started. The plan was
+# to pin it in the branch that started the client; that branch checked, and the pin is a
+# trap: mise's godot (aqua:godotengine/godot) installs the *standard* build — the
+# registry's asset templates never select a `_mono_` archive — so the pin would shim a
+# Godot that cannot run a C# project ahead of the working .NET one on PATH. Worse than no
+# pin. `doctor.sh` reports the Godot actually resolved instead; install the ".NET"
+# variant by hand (4.x, `godot --version` should say `mono`).

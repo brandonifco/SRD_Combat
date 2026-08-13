@@ -149,7 +149,9 @@ per concern, and the gate before merge.
 
 **Nothing.** Phases 1–4 are done; the next work is Phase 5 (character creation), Phase 6
 proper (separate monster tactics from party tactics — one policy still plays both sides),
-or Phase 7 (the Godot client). And no human has yet played a run to its end.
+or the rest of Phase 7 — `client/` now watches a fight (read-only, snapshots, a
+`--capture` verification flag; see its README), and the mouse-driven play the phase is
+named for is what remains. And no human has yet played a run to its end.
 
 - **#83 — the party is a fraction of its printed self.** The successor to #79, and the
   most valuable thing in the queue: the encounter budget prices a fight assuming both
@@ -160,7 +162,8 @@ or Phase 7 (the Godot client). And no human has yet played a run to its end.
   at level 4+ is still unmeasurable in a run**, which is the part of #79 that was true.
 
 Beyond those the next work is a phase, not a fix: Phases 1–4 are done, Phase 6 is done for
-monsters and open-ended for the party, and Phases 5 and 7 have never been started. **Do not
+monsters and open-ended for the party, Phase 7 has its read-only first slice, and Phase 5
+has never been started. **Do not
 read a short queue as "nearly finished":** the ladder has been cleared twice in forty
 seeded runs and never by a person, and no human has played more than a few rungs by hand.
 
