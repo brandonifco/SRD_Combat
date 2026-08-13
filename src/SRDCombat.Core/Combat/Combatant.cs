@@ -61,6 +61,21 @@ public sealed record CombatAttack(
 
     /// <summary>True when the attack can be made against a target this far away.</summary>
     public bool CanReach(int distanceFeet) => distanceFeet <= MaximumRangeFeet;
+
+    /// <summary>
+    /// True when using this attack at this distance makes a <em>ranged</em> attack roll,
+    /// which is what "Ranged Attacks in Close Combat" (printed page 15) hangs on.
+    /// </summary>
+    /// <remarks>
+    /// A pure ranged attack rolls ranged at any distance — a Shortbow fired at an
+    /// adjacent target is still a ranged attack roll, which is exactly when the printed
+    /// Disadvantage bites. A dual-mode attack ("Melee or Ranged Attack Roll") used
+    /// inside its melee reach is read as the melee use, the same reading
+    /// <see cref="IsAtLongRange"/> already makes; beyond its reach only the ranged use
+    /// remains. A melee-only attack never rolls ranged.
+    /// </remarks>
+    public bool IsRangedAttackRoll(int distanceFeet) =>
+        NormalRangeFeet is not null && distanceFeet > (ReachFeet ?? 0);
 }
 
 /// <summary>

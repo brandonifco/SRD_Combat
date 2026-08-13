@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #95 (the Godot client's read-only first slice) |
-| Tests | **664 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #100 (ranged attacks in close combat, closing #96) |
+| Tests | **673 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **One open issue: #96** (ranged attacks in melee lack their printed Disadvantage — found by the play client's probe). Beyond it the next work is a phase — see the plan doc. |
+| Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -125,7 +125,7 @@ and no asset to fetch:
 git clone https://github.com/brandonifco/SRD_Combat.git && cd SRD_Combat
 mise install                           # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                     # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug     # expect 664 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug     # expect 673 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -147,9 +147,11 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**#96 — ranged attacks within 5 feet of an enemy lack their printed Disadvantage**, found
-the first time a probe walked an archer adjacent and shot; `AttackRules` already models
-`AtLongRange` and the within-5-feet geometry, so it slots beside them. Beyond it the next
+**Nothing.** (#96 — ranged attacks in close combat — was found by the play client's probe
+and fixed the same day: `RangedAttackInCloseCombat` sits beside `AtLongRange` in
+`AttackCircumstances`, "who can see you" is read as any enemy without Blinded — the same
+shape of reading Frightened records — and a dual-mode attack inside its reach stays a
+melee roll.) The next
 work is Phase 5 (character creation), Phase 6 proper (separate monster tactics from party
 tactics — one policy still plays both sides), or Phase 7's polish — `client/` now **plays
 the whole gauntlet with the mouse** (move, attack, features, spells, potions, refusals
@@ -735,7 +737,10 @@ default — deliberate).
   doubles the *dice* and adds the modifier once; a monster dies at 0 hit points while a
   character rolls Death Saves; Dodge lasts until the start of the dodger's *next* turn;
   and attacking an Unconscious creature from beyond 5 feet is a *normal* roll, because
-  Unconscious grants Advantage while the Prone it carries imposes Disadvantage.
+  Unconscious grants Advantage while the Prone it carries imposes Disadvantage. A ranged
+  attack rolled within 5 feet of *any* able enemy has Disadvantage (printed page 15 —
+  "an enemy", not "the target"), "who can see you" is read as any enemy without Blinded,
+  and a dual-mode attack used inside its reach is a melee roll that escapes it.
 
 Things worth knowing before touching the engine or the content pipeline. The list has
 outgrown the phase it was written for; each entry is here because getting it wrong once

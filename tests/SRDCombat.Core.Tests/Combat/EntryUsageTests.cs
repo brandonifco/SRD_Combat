@@ -32,8 +32,11 @@ public class EntryUsageTests
     public void AnAttackEntryLockedOutOfTheMultiattackIsUsedThroughUseEntry()
     {
         // The Ape's shape: Multiattack is "two Fist attacks", so Attack() refuses the
-        // Rock — before UseEntry existed, the entry was unreachable entirely.
-        var (encounter, hurler, target) = HurlerFight(new ScriptedRandomSource(20, 1, 2));
+        // Rock — before UseEntry existed, the entry was unreachable entirely. The target
+        // stands 10 feet off because a Rock thrown from 5 feet is a ranged attack in
+        // close combat, and its Disadvantage would consume a second d20 this script
+        // does not hold — these tests are about usage, not roll modes.
+        var (encounter, hurler, target) = HurlerFight(new ScriptedRandomSource(20, 1, 2), targetDistanceSquares: 2);
 
         Assert.Equal("attack.not_in_multiattack", encounter.Attack("Rock", target)?.Code);
 
@@ -48,7 +51,11 @@ public class EntryUsageTests
     public void ASpentRechargeEntryIsRefusedUntilTheDieComesUp()
     {
         // One Rock (a miss), a failed d6 next round, a successful one the round after.
-        var (encounter, hurler, target) = HurlerFight(new ScriptedRandomSource(20, 1, 2, 5, 6, 2));
+        // At 10 feet for the same reason as above: adjacency would put the throw at
+        // Disadvantage and shift every die in the script.
+        var (encounter, hurler, target) = HurlerFight(
+            new ScriptedRandomSource(20, 1, 2, 5, 6, 2),
+            targetDistanceSquares: 2);
 
         Assert.Null(encounter.UseEntry("Rock", target));
         Assert.Equal("entry.not_recharged", encounter.UseEntry("Rock", target)?.Code);
