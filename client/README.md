@@ -11,11 +11,15 @@ one fight up front and lets you scrub through it.
 
 ## Running it
 
-Needs Godot 4.x with .NET support on `PATH` (`doctor.sh` checks, variant included).
-Nothing else — the content is committed and found by walking up for `data/srd`, the same
-way the console client finds it.
+Needs Godot 4.x with .NET support on `PATH` (`doctor.sh` checks, variant included), and
+one `dotnet build` before the first launch — Godot does not compile the C# assembly on
+its own, and launching without it fails on `Cannot instantiate C# script`, which reads
+like a broken checkout rather than the missing step it is. The content needs nothing:
+it is committed and found by walking up for `data/srd`, the same way the console client
+finds it.
 
 ```bash
+dotnet build client/SRDCombat.Viewer.csproj -c Debug
 godot --path client
 ```
 
