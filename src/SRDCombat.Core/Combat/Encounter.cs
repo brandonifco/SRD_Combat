@@ -1481,14 +1481,22 @@ public sealed partial class Encounter
                 // else — the ability matters, not just the condition. Magic Resistance is
                 // Advantage against spells only: a stat block's save entry is read as not
                 // magical, a reading recorded on MonsterTraitRegistry. Danger Sense is
-                // Advantage on Dexterity saves unless the Barbarian is Incapacitated.
-                // Combined, so Advantage and Disadvantage cancel rather than either winning.
+                // Advantage on Dexterity saves unless the Barbarian is Incapacitated, and
+                // Dodge is the same Advantage unless its printed exception applies —
+                // RetainsDodgeBenefits carries it, shared with the attack-roll half. A
+                // Restrained dodger shows why sharing matters: Restrained is Speed 0, so
+                // Dodge is lost entirely and the save is at plain Disadvantage rather
+                // than the two cancelling. Combined, so Advantage and Disadvantage cancel
+                // rather than either winning.
                 var restrained = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained);
                 var magicResistance = kind == CombatStepKind.Spell && victim.HasTrait(MonsterTrait.MagicResistance);
                 var dangerSense = save.Ability == Ability.Dexterity
                     && victim.Stats.Has(ClassFeature.DangerSense)
                     && !victim.HasCondition(ConditionType.Incapacitated);
-                var mode = D20Test.Combine(magicResistance || dangerSense, restrained);
+                var dodging = save.Ability == Ability.Dexterity
+                    && victim.Turn.IsDodging
+                    && ConditionRules.RetainsDodgeBenefits(victim);
+                var mode = D20Test.Combine(magicResistance || dangerSense || dodging, restrained);
 
                 var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
                 succeeded = roll.Total >= difficultyClass;
