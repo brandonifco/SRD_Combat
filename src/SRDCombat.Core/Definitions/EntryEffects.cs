@@ -102,13 +102,19 @@ public enum SaveSuccessOutcome
 /// <param name="FailureDamage">Damage dealt on a failed save.</param>
 /// <param name="SuccessOutcome">What a successful save achieves.</param>
 /// <param name="AppliedConditions">Conditions imposed on a failed save.</param>
+/// <param name="CoverIgnored">
+/// "The target gains no benefit from Half Cover or Three-Quarters Cover for this save."
+/// Sacred Flame prints it; the sentence is structured at extraction because leaving it
+/// as prose would quietly weaken the spell below its printed self the day cover landed.
+/// </param>
 public sealed record SaveEffect(
     Ability Ability,
     int? DifficultyClass,
     EffectArea? Area,
     IReadOnlyList<AttackDamage> FailureDamage,
     SaveSuccessOutcome SuccessOutcome,
-    IReadOnlyList<AppliedCondition> AppliedConditions);
+    IReadOnlyList<AppliedCondition> AppliedConditions,
+    bool CoverIgnored = false);
 
 /// <summary>
 /// An effect that restores hit points: "regains a number of Hit Points equal to 2d8 plus

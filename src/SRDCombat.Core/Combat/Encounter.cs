@@ -206,6 +206,15 @@ public sealed partial class Encounter
                 $"{target.Name} is {distance} ft. away, beyond {attack.Name}'s reach.");
         }
 
+        // "Can't be targeted directly." Refused before anything is spent, like every
+        // other targeting rule.
+        if (CoverRules.Between(Battlefield, attacker.Position, target.Position) == CoverDegree.Total)
+        {
+            return new ActionRefusal(
+                "attack.total_cover",
+                $"{target.Name} has Total Cover from {attacker.Name} and can't be targeted directly.");
+        }
+
         // A Multiattack names which attacks it is made of; anything else is a separate
         // action, reached through UseEntry rather than here.
         if (!attacker.Stats.AllowsInMultiattack(attack.Name))
@@ -987,8 +996,26 @@ public sealed partial class Encounter
         }
     }
 
-    private void ResolveAttack(Combatant attacker, CombatAttack attack, Combatant target, bool isOpportunityAttack)
+    private void ResolveAttack(
+        Combatant attacker,
+        CombatAttack attack,
+        Combatant target,
+        bool isOpportunityAttack,
+        bool isSpellAttack = false)
     {
+        // Total Cover never reaches here: every targeting path refuses it before
+        // spending, and an Opportunity Attack is rolled from within melee reach, where
+        // the centre-to-centre segment has no square between to cross. What remains is
+        // Half or Three-Quarters, raising the AC to beat.
+        var cover = CoverRules.Between(Battlefield, attacker.Position, target.Position);
+
+        // Wand of the War Mage: "you ignore Half Cover when making a spell attack" —
+        // Half exactly, so Three-Quarters still counts.
+        if (cover == CoverDegree.Half && isSpellAttack && attacker.Stats.IgnoresHalfCoverOnSpellAttacks)
+        {
+            cover = CoverDegree.None;
+        }
+
         // Reckless Attack cuts both ways: Advantage on the Barbarian's own melee attacks
         // this turn, and Advantage to anyone attacking the Barbarian until its next turn.
         var recklessAdvantage = attacker.Features.IsRecklessThisTurn && attack.Kind == AttackKind.Melee;
@@ -1025,7 +1052,8 @@ public sealed partial class Encounter
             target,
             extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed,
             extraDisadvantage: sapped,
-            combatants: _combatants);
+            combatants: _combatants,
+            cover: cover);
 
         var modeNote = result.Roll.Mode switch
         {
@@ -1033,6 +1061,11 @@ public sealed partial class Encounter
             RollMode.Disadvantage => " with Disadvantage",
             _ => string.Empty,
         };
+
+        // The AC narrated already includes the cover bonus — this names why it grew.
+        var coverNote = result.Cover == CoverDegree.None
+            ? string.Empty
+            : $" ({CoverRules.Describe(result.Cover)})";
 
         var verb = isOpportunityAttack ? "swings at" : "attacks";
 
@@ -1043,7 +1076,7 @@ public sealed partial class Encounter
             Add(
                 CombatStepKind.Attack,
                 $"{attacker.Name} {verb} {target.Name} with {attack.Name}{modeNote}: {result.Roll} vs AC " +
-                $"{result.TargetArmorClass} — miss{reason}.",
+                $"{result.TargetArmorClass}{coverNote} — miss{reason}.",
                 attacker,
                 target);
 
@@ -1056,7 +1089,7 @@ public sealed partial class Encounter
         Add(
             CombatStepKind.Attack,
             $"{attacker.Name} {verb} {target.Name} with {attack.Name}{modeNote}: {result.Roll} vs AC " +
-            $"{result.TargetArmorClass} — hit{criticalNote}",
+            $"{result.TargetArmorClass}{coverNote} — hit{criticalNote}",
             attacker,
             target);
 
@@ -1498,12 +1531,31 @@ public sealed partial class Encounter
                     && ConditionRules.RetainsDodgeBenefits(victim);
                 var mode = D20Test.Combine(magicResistance || dangerSense || dodging, restrained);
 
-                var roll = D20Test.Roll(_random, victim.Stats.SaveBonusFor(save.Ability), mode);
+                // Cover's other half: "+2/+5 bonus to AC and Dexterity saving throws",
+                // judged from the effect's point of origin — the erupting point for a
+                // Sphere or Cube, the creature for everything else. Total never reaches
+                // here: an area excludes those squares and single-target paths refuse
+                // them. Sacred Flame prints "gains no benefit from Half Cover or
+                // Three-Quarters Cover for this save", carried as Save.CoverIgnored.
+                var cover = save.Ability == Ability.Dexterity && !save.CoverIgnored
+                    ? CoverRules.Between(
+                        Battlefield,
+                        AreaTargeting.PointOfOrigin(save.Area, source.Position, point),
+                        victim.Position)
+                    : CoverDegree.None;
+                var coverNote = CoverRules.Bonus(cover) > 0
+                    ? $" ({CoverRules.Describe(cover)})"
+                    : string.Empty;
+
+                var roll = D20Test.Roll(
+                    _random,
+                    victim.Stats.SaveBonusFor(save.Ability) + CoverRules.Bonus(cover),
+                    mode);
                 succeeded = roll.Total >= difficultyClass;
 
                 Add(
                     kind,
-                    $"{victim.Name} makes a {save.Ability} saving throw: {roll} vs DC {difficultyClass} — " +
+                    $"{victim.Name} makes a {save.Ability} saving throw{coverNote}: {roll} vs DC {difficultyClass} — " +
                     (succeeded ? "success." : "failure."),
                     source,
                     victim);

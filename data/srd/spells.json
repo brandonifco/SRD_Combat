@@ -73,7 +73,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -228,7 +229,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -267,7 +269,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -480,7 +483,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "The creature has the Charmed condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -563,7 +567,8 @@
             "condition": "Grappled",
             "unmodelledRequirement": "The target must succeed on a Dexterity saving throw, or the target has the Grappled condition, with an escape DC equal to your spell save DC"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -834,7 +839,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -875,7 +881,8 @@
             "condition": "Incapacitated",
             "unmodelledRequirement": "While there, the target has the Incapacitated condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -975,7 +982,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1018,7 +1026,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1067,7 +1076,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "On a failed save, it takes 3d6 Bludgeoning damage, and it has the Restrained condition until the spell ends"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1114,7 +1124,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1189,7 +1200,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1230,7 +1242,8 @@
         "ability": "Constitution",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -1331,7 +1344,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1375,7 +1389,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1418,7 +1433,8 @@
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -1456,7 +1472,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1502,7 +1519,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "On a failed save, the target has the Charmed condition until the spell ends or until you or your allies damage it"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -1547,7 +1565,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "On a failed save, the target has the Charmed condition until the spell ends or until you or your allies damage it"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -1655,7 +1674,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1768,7 +1788,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -1817,7 +1838,8 @@
             "condition": "Blinded",
             "unmodelledRequirement": "Each creature in a 15-foot Cone originating from you must succeed on a Constitution saving throw or have the Blinded condition until the end of your next turn."
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -1859,7 +1881,8 @@
             "condition": "Prone",
             "unmodelledRequirement": "The target has the Prone condition and then ends its turn"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -1993,7 +2016,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "Each creature of your choice that you can see within range must succeed on a Wisdom saving throw or have the Charmed condition until the spell ends"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -2040,7 +2064,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2086,7 +2111,8 @@
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -2124,7 +2150,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2168,7 +2195,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2211,7 +2239,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "On failed save, the target takes 8d8 damage of the spirit's type, and the target has the Restrained condition until the spell ends"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -2317,7 +2346,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2366,7 +2396,8 @@
             "condition": "Incapacitated",
             "unmodelledRequirement": "On a failed save, you take 6d6 Psychic damage and have the Incapacitated condition until you finish a Long Rest"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2418,7 +2449,8 @@
             "condition": "Poisoned",
             "unmodelledRequirement": "The target must succeed on a Constitution saving throw or take 11d8 Necrotic damage and have the Poisoned condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2532,7 +2564,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -2607,7 +2640,8 @@
         "ability": "Constitution",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -2969,7 +3003,8 @@
         },
         "failureDamage": [],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3133,7 +3168,8 @@
         "ability": "Wisdom",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3237,7 +3273,8 @@
         "ability": "Dexterity",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3269,7 +3306,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3342,7 +3380,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -3481,7 +3520,8 @@
             "condition": "Deafened",
             "unmodelledRequirement": "41-50 The target has the Deafened condition for 1 minute."
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -3523,7 +3563,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "One Beast you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -3567,7 +3608,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "One creature you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -3610,7 +3652,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "One Humanoid you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -3651,7 +3694,8 @@
         },
         "failureDamage": [],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3690,7 +3734,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -3777,7 +3822,8 @@
             "condition": "Prone",
             "unmodelledRequirement": "On a failed save, a creature has the Prone condition, and its Concentration is broken"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -3928,7 +3974,8 @@
         "ability": "Constitution",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3968,7 +4015,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "On a failed save, the target has the Restrained condition until the spell ends"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -4017,7 +4065,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4053,7 +4102,8 @@
         "ability": "Wisdom",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -4161,7 +4211,8 @@
           {
             "condition": "Poisoned"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4244,7 +4295,8 @@
             "condition": "Invisible",
             "unmodelledRequirement": "For the duration, objects and affected creatures shed Dim Light in a 10-foot radius and can't benefit from the Invisible condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4286,7 +4338,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -4362,7 +4415,8 @@
             "condition": "Frightened",
             "unmodelledRequirement": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4583,7 +4637,8 @@
         "ability": "Constitution",
         "failureDamage": [],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -4625,7 +4680,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -4751,7 +4807,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -4825,7 +4882,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -4876,7 +4934,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -4926,7 +4985,8 @@
             "condition": "Petrified",
             "unmodelledRequirement": "If it fails its saves three times, it is turned to stone and has the Petrified condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -5099,7 +5159,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -5215,7 +5276,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "Creatures that were swimming on the surface of frozen water are trapped in the ice and have the Restrained condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -5355,7 +5417,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -5523,7 +5586,8 @@
         },
         "failureDamage": [],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -5591,7 +5655,8 @@
             "condition": "Prone",
             "unmodelledRequirement": "When the grease appears, each creature standing in its area must succeed on a Dexterity saving throw or have the Prone condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -5687,7 +5752,8 @@
         "ability": "Dexterity",
         "failureDamage": [],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -5824,7 +5890,8 @@
         "ability": "Strength",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -5954,7 +6021,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6091,7 +6159,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6135,7 +6204,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6284,7 +6354,8 @@
             "condition": "Prone",
             "unmodelledRequirement": "During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6329,7 +6400,8 @@
             "condition": "Paralyzed",
             "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6376,7 +6448,8 @@
             "condition": "Paralyzed",
             "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6421,7 +6494,8 @@
             "condition": "Blinded",
             "unmodelledRequirement": "In addition, when a Fiend or an Undead hits an affected creature with a melee attack roll, the attacker must succeed on a Constitution saving throw or have the Blinded condition until the end of its next turn."
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6509,7 +6583,8 @@
             "condition": "Incapacitated",
             "unmodelledRequirement": "While Charmed, the creature has the Incapacitated condition and a Speed of 0"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6562,7 +6637,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6618,7 +6694,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6733,7 +6810,8 @@
             "condition": "Unconscious",
             "unmodelledRequirement": "The target has the Unconscious condition and can't be awoken"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6784,7 +6862,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6825,7 +6904,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6876,7 +6956,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -6951,7 +7032,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "On a failed save, the target has the Charmed condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -7148,7 +7230,8 @@
         "ability": "Constitution",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -7223,7 +7306,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -7460,7 +7544,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -7490,7 +7575,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -7797,7 +7883,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "Drop your weapons, and dance! Stop in an hour.\" Each target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -7992,7 +8079,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -8078,7 +8166,8 @@
             "condition": "Invisible",
             "unmodelledRequirement": "While you have this knowledge, the target can't become hidden from you, and if it has the Invisible condition, it gains no benefit from that condition against you."
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -8309,7 +8398,8 @@
             "condition": "Incapacitated",
             "unmodelledRequirement": "While Charmed in this way, the target also has the Incapacitated condition and is unaware of its surroundings, though it can hear you"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -8356,7 +8446,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -8535,7 +8626,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -8578,7 +8670,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -8697,7 +8790,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -8837,7 +8931,8 @@
         "ability": "Wisdom",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -8947,7 +9042,8 @@
             "condition": "Stunned",
             "unmodelledRequirement": "If the target has 150 Hit Points or fewer, it has the Stunned condition"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -9100,7 +9196,8 @@
             "condition": "Blinded",
             "unmodelledRequirement": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -9209,7 +9306,8 @@
             "condition": "Petrified",
             "unmodelledRequirement": "If it fails three times, it has the Petrified condition until it is freed by an effect like the Greater Restoration spell"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -9574,7 +9672,8 @@
         "ability": "Constitution",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -9764,7 +9863,8 @@
         "ability": "Dexterity",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -9859,7 +9959,8 @@
         "ability": "Dexterity",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -9957,7 +10058,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": true
       },
       "damage": [
         {
@@ -9996,7 +10098,8 @@
         "ability": "Wisdom",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10061,7 +10164,8 @@
         "ability": "Wisdom",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10096,7 +10200,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -10202,7 +10307,8 @@
         "ability": "Charisma",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10352,7 +10458,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -10668,7 +10775,8 @@
             "condition": "Unconscious",
             "unmodelledRequirement": "If the target fails the second save, the target has the Unconscious condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -10719,7 +10827,8 @@
             "condition": "Prone",
             "unmodelledRequirement": "When a creature enters the Cylinder for the first time on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration."
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -10761,7 +10870,8 @@
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -11025,7 +11135,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -11143,7 +11254,8 @@
             "condition": "Poisoned",
             "unmodelledRequirement": "Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the current turn"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -11268,7 +11380,8 @@
             "condition": "Deafened",
             "unmodelledRequirement": "Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -11338,7 +11451,8 @@
             "condition": "Charmed",
             "unmodelledRequirement": "For example, you could say, \"Fetch the key to the cult's treasure vault, and give the key to me.\" Or you could say, \"Stop fighting, leave this library peacefully, and don't return.\" The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -11420,7 +11534,8 @@
             "condition": "Blinded",
             "unmodelledRequirement": "On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -11480,7 +11595,8 @@
             "condition": "Blinded",
             "unmodelledRequirement": "On a failed save, a creature takes 12d6 Radiant damage and has the Blinded condition for 1 minute"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -11550,7 +11666,8 @@
             "condition": "Stunned",
             "unmodelledRequirement": "Each target must succeed on a Wisdom saving throw or have the Stunned condition for 1 minute."
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -11609,7 +11726,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "Until the end of your next turn, the creature has the Restrained condition, and if you lift it into the air, it is suspended there"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [
@@ -11818,7 +11936,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12014,7 +12133,8 @@
         "ability": "Wisdom",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -12147,7 +12267,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12263,7 +12384,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12318,7 +12440,8 @@
           }
         ],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12369,7 +12492,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12456,7 +12580,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12501,7 +12626,8 @@
         "ability": "Dexterity",
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -12543,7 +12669,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12692,7 +12819,8 @@
             "condition": "Restrained",
             "unmodelledRequirement": "The first time a creature enters the webs on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained condition while in the webs or until it breaks free"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12754,7 +12882,8 @@
             "condition": "Frightened",
             "unmodelledRequirement": "On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration"
           }
-        ]
+        ],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12850,7 +12979,8 @@
           }
         ],
         "successOutcome": "HalfDamage",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [
         {
@@ -12992,7 +13122,8 @@
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": []
+        "appliedConditions": [],
+        "coverIgnored": false
       },
       "damage": [],
       "appliedConditions": [],

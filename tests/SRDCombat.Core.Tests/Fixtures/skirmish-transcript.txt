@@ -8,6 +8,7 @@ Ferrin rolls initiative: 13.
 Raider Nick rolls initiative: 13.
 Round 1 begins.
 Raider Slow's turn begins.
+Raider Slow moves from (11,3) to (6,0) (30 ft.).
 Raider Slow attacks Sela with Shortbow: d20 9+3 = 12 vs AC 14 — miss.
 Raider Slow ends their turn.
 Sela's turn begins.
@@ -39,6 +40,7 @@ Raider Nick attacks Bruk with Scimitar: d20 2+4 = 6 vs AC 15 — miss.
 Raider Nick ends their turn.
 Round 2 begins.
 Sela's turn begins.
+Sela moves from (0,3) to (4,0) (20 ft.).
 Sela attacks Raider Vex with Shortbow: d20 19+5 = 24 vs AC 13 — hit
 Raider Vex takes 4 Piercing damage [(1)+3 = 4] — 7/11 hit points.
 Sela ends their turn.
@@ -95,47 +97,55 @@ Raider Sap's turn begins.
 Raider Sap leaves Ferrin's reach, provoking an Opportunity Attack.
 Ferrin swings at Raider Sap with Longsword: d20 17+5 = 22 vs AC 13 — hit
 Raider Sap takes 10 Slashing damage [(7)+3 = 10] — 1/11 hit points.
-Raider Sap moves from (6,3) to (4,0) (25 ft.).
-Raider Sap attacks Ferrin with Scimitar: d20 10+4 = 14 vs AC 17 — miss.
+Raider Sap moves from (6,3) to (4,1) (30 ft.).
+Raider Sap attacks Sela with Scimitar: d20 10+4 = 14 vs AC 14 — hit
+Sela takes 3 Slashing damage [(1)+2 = 3] — 16/19 hit points.
 Raider Sap ends their turn.
 Ferrin's turn begins.
-Ferrin attacks Raider Sap with Longsword: d20 2+5 = 7 vs AC 13 — miss.
+Ferrin attacks Raider Sap with Longsword: d20 9+5 = 14 vs AC 13 — hit
+Raider Sap takes 6 Slashing damage [(3)+3 = 6] — dead.
+Raider Sap is dead.
 Ferrin ends their turn.
 Raider Nick's turn begins.
 Raider Nick moves from (6,4) to (4,1) (30 ft.).
-Raider Nick attacks Ferrin with Scimitar: d20 9+4 = 13 vs AC 17 — miss.
+Raider Nick attacks Sela with Scimitar: d20 20+4 = 24 vs AC 14 — hit — a Critical Hit!
+Sela takes 6 Slashing damage [(2+2)+2 = 6] — 10/19 hit points.
 Raider Nick ends their turn.
 Round 5 begins.
 Sela's turn begins.
-Sela attacks Raider Sap with Shortbow: d20 6+5 = 11 vs AC 13 — miss.
+Sela attacks Raider Nick with Shortbow with Disadvantage: d20 3/12 -> 3+5 = 8 vs AC 13 — miss.
 Sela ends their turn.
 Bruk's turn begins, at 0 hit points.
-Bruk makes a Death Saving Throw: d20 20+0 = 20 — a natural 20 — they regain 1 hit point and are conscious again!
-Bruk stands up.
-Bruk moves from (7,3) to (6,0) (15 ft.).
-Bruk attacks Raider Sap with Halberd: d20 4+4 = 8 vs AC 13 — miss.
-Bruk ends their turn.
-Raider Sap's turn begins.
-Raider Sap attacks Ferrin with Scimitar: d20 5+4 = 9 vs AC 17 — miss.
-Raider Sap ends their turn.
+Bruk makes a Death Saving Throw: d20 11+0 = 11 — success (2/3).
 Ferrin's turn begins.
-Ferrin attacks Raider Sap with Longsword: d20 3+5 = 8 vs AC 13 — miss.
+Ferrin attacks Raider Nick with Longsword: d20 7+5 = 12 vs AC 13 — miss.
 Ferrin ends their turn.
 Raider Nick's turn begins.
-Raider Nick attacks Ferrin with Scimitar: d20 12+4 = 16 vs AC 17 — miss.
+Raider Nick attacks Sela with Scimitar: d20 12+4 = 16 vs AC 14 — hit
+Sela takes 7 Slashing damage [(5)+2 = 7] — 3/19 hit points.
 Raider Nick ends their turn.
 Round 6 begins.
 Sela's turn begins.
-Sela attacks Raider Sap with Shortbow: d20 11+5 = 16 vs AC 13 — hit
-Raider Sap takes 6 Piercing damage [(3)+3 = 6] — dead.
-Raider Sap is dead.
+Sela attacks Raider Nick with Shortbow with Disadvantage: d20 16/4 -> 4+5 = 9 vs AC 13 — miss.
 Sela ends their turn.
-Bruk's turn begins.
-Bruk attacks Raider Nick with Halberd: d20 12+4 = 16 vs AC 13 — hit
-Raider Nick takes 10 Slashing damage [(8)+2 = 10] — 1/11 hit points.
-Bruk ends their turn.
+Bruk's turn begins, at 0 hit points.
+Bruk makes a Death Saving Throw: d20 1+0 = 1 — a natural 1 — two failures (2/3).
 Ferrin's turn begins.
-Ferrin attacks Raider Nick with Longsword: d20 16+5 = 21 vs AC 13 — hit
-Raider Nick takes 5 Slashing damage [(2)+3 = 5] — dead.
+Ferrin attacks Raider Nick with Longsword: d20 13+5 = 18 vs AC 13 — hit
+Raider Nick takes 9 Slashing damage [(6)+3 = 9] — 2/11 hit points.
+Ferrin ends their turn.
+Raider Nick's turn begins.
+Raider Nick attacks Sela with Scimitar: d20 4+4 = 8 vs AC 14 — miss.
+Raider Nick ends their turn.
+Round 7 begins.
+Sela's turn begins.
+Sela attacks Raider Nick with Shortbow with Disadvantage: d20 8/7 -> 7+5 = 12 vs AC 13 — miss.
+Sela ends their turn.
+Bruk's turn begins, at 0 hit points.
+Bruk makes a Death Saving Throw: d20 12+0 = 12 — success (3/3) — they are Stable.
+Bruk is Stable.
+Ferrin's turn begins.
+Ferrin attacks Raider Nick with Longsword: d20 11+5 = 16 vs AC 13 — hit
+Raider Nick takes 8 Slashing damage [(5)+3 = 8] — dead.
 Raider Nick is dead.
 The fight ends in victory for the party.

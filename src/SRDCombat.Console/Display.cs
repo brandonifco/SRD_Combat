@@ -72,8 +72,11 @@ internal static class Display
 
                 if (here is null)
                 {
+                    // '#' a wall, 'o' a low obstacle to duck behind, '~' Difficult
+                    // Terrain, '.' open ground.
                     System.Console.Write(
-                        !field.IsPassable(square) ? "# "
+                        field.Blocked.Contains(square) ? "# "
+                        : field.LowObstacles.Contains(square) ? "o "
                         : field.DifficultTerrain.Contains(square) ? "~ "
                         : ". ");
                     continue;

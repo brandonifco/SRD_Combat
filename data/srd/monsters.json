@@ -111,7 +111,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -189,7 +190,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -209,7 +211,8 @@
                 "condition": "Charmed",
                 "unmodelledRequirement": "Failure: The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "PerDay",
@@ -397,7 +400,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: 24 (4d10 + 2) Thunder damage, and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -841,7 +845,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -1476,7 +1481,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -2139,7 +2145,8 @@
                 "condition": "Petrified",
                 "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -2451,7 +2458,8 @@
                   "whileGrappleHolds": true
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -2492,7 +2500,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -2516,7 +2525,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "If the behir takes 30 damage or more on a single turn from the swallowed creature, the behir must succeed on a DC 14 Constitution saving throw at the end of that turn or regurgitate the creature, which falls in a space within 10 feet of the behir and has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -2766,7 +2776,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -2920,7 +2931,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3085,7 +3097,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3122,7 +3135,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -3304,7 +3318,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3341,7 +3356,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -3752,7 +3768,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3898,7 +3915,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4055,7 +4073,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4256,7 +4275,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4592,7 +4612,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4624,7 +4645,8 @@
                 "condition": "Unconscious",
                 "unmodelledRequirement": "Second Failure: The target has the Unconscious condition for 1 minute"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -4775,7 +4797,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4807,7 +4830,8 @@
                 "condition": "Unconscious",
                 "unmodelledRequirement": "Second Failure: The target has the Unconscious condition for 1 minute"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -4975,7 +4999,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5007,7 +5032,8 @@
                 "condition": "Unconscious",
                 "unmodelledRequirement": "Second Failure: The target has the Unconscious condition for 10 minutes"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -5073,7 +5099,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -5228,7 +5255,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5260,7 +5288,8 @@
                 "condition": "Unconscious",
                 "unmodelledRequirement": "Second Failure: The target has the Unconscious condition for 10 minutes"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -5326,7 +5355,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -5470,7 +5500,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5498,7 +5529,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: The target is pushed up to 30 feet straight away from the dragon and has the Prone condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -5651,7 +5683,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5679,7 +5712,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: The target is pushed up to 40 feet straight away from the dragon and has the Prone condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -5848,7 +5882,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5876,7 +5911,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: The target is pushed up to 60 feet straight away from the dragon and has the Prone condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -5947,7 +5983,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -6122,7 +6159,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -6150,7 +6188,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: The target is pushed up to 60 feet straight away from the dragon and has the Prone condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -6221,7 +6260,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -6395,7 +6435,8 @@
                 "escapeDifficultyClass": 13,
                 "unmodelledRequirement": "Failure: The target has the Grappled condition (escape DC 13)."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -6661,7 +6702,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: 19 (3d12) Bludgeoning damage, and the target has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -6828,7 +6870,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: 7 (1d6 + 4) Bludgeoning damage, and the target has the Prone condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -7006,7 +7049,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "Failure: 9 (2d4 + 4) Fire damage, and the target has the Restrained condition until the end of the devil's next turn, at which point the chain disappears"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -7035,7 +7079,8 @@
                 "condition": "Frightened",
                 "unmodelledRequirement": "Failure: The target has the Frightened condition until the end of its turn"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -7216,7 +7261,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -7376,7 +7422,8 @@
                 "condition": "Paralyzed",
                 "unmodelledRequirement": "While Poisoned, the target has the Paralyzed condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -7737,7 +7784,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -8228,7 +8276,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -8251,7 +8300,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -8391,7 +8441,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -8414,7 +8465,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -8570,7 +8622,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -8593,7 +8646,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -8628,7 +8682,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -8805,7 +8860,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -8828,7 +8884,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -8863,7 +8920,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -9034,7 +9092,8 @@
                   "whileGrappleHolds": true
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -9964,7 +10023,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "Failure: While in the whirlwind, the target has the Restrained condition and moves with the whirlwind"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -10125,7 +10185,8 @@
                 "condition": "Frightened",
                 "unmodelledRequirement": "Failure: The target has the Frightened condition and repeats the save at the end of each of its turns, ending the effect on itself on a success"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -10316,7 +10377,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -10442,7 +10504,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "PerDay",
@@ -11421,7 +11484,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "Failure: 14 (4d6) Force damage, and the target has the Restrained condition until the rope is destroyed, the erinyes uses a Bonus Action to release the target, or the erinyes uses Entangling Rope again."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -11618,7 +11682,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Bludgeoning, Poison, and Psychic damage)."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -12800,7 +12865,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "An engulfed target is suffocating, can't cast spells with a Verbal component, has the Restrained condition, and takes 10 (3d6) Acid damage at the start of each of the cube's turns"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -12912,7 +12978,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -13164,7 +13231,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -13195,7 +13263,8 @@
                 "condition": "Incapacitated",
                 "unmodelledRequirement": "Failure: The target is possessed by the ghost; the ghost disappears, and the target has the Incapacitated condition and loses control of its body"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -13442,7 +13511,8 @@
                 "condition": "Incapacitated",
                 "unmodelledRequirement": "The mouther babbles incoherently while it doesn't have the Incapacitated condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -13509,7 +13579,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -13681,7 +13752,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -13820,7 +13892,8 @@
                 "condition": "Prone",
                 "maximumTargetSize": "Medium"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -14499,7 +14572,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -14522,7 +14596,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -14671,7 +14746,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -14694,7 +14770,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -14859,7 +14936,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -14892,7 +14970,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -14924,7 +15003,8 @@
                 "condition": "Incapacitated",
                 "unmodelledRequirement": "Failure: 10 (3d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it re appears in an unoccupied space of the dragon's choice within 120 feet of the dragon"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -15113,7 +15193,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15146,7 +15227,8 @@
             },
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -15178,7 +15260,8 @@
                 "condition": "Incapacitated",
                 "unmodelledRequirement": "Failure: 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -15325,7 +15408,8 @@
                 "condition": "Petrified",
                 "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15367,7 +15451,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Dexterity Saving Throw: DC 16, one creature within 5 feet that has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -15648,7 +15733,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15804,7 +15890,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15972,7 +16059,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -16019,7 +16107,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -16193,7 +16282,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -16240,7 +16330,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -16886,7 +16977,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -17256,7 +17348,8 @@
             },
             "failureDamage": [],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -17377,7 +17470,8 @@
                 "condition": "Incapacitated",
                 "unmodelledRequirement": "While Charmed, the target has the Incapacitated condition and ignores the Luring Song of other harpies"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -17532,7 +17626,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -17656,7 +17751,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -18514,7 +18610,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -19116,7 +19213,8 @@
                 "condition": "Unconscious",
                 "unmodelledRequirement": "Failure: If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -19297,7 +19395,8 @@
                 "escapeDifficultyClass": 13,
                 "unmodelledRequirement": "Failure: 7 (1d8 + 3) Thunder damage, and the target has the Grappled condition (escape DC 13)"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -19493,7 +19592,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -19929,7 +20029,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Failure: 18 (4d8) Bludgeoning damage, and the target has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -19958,7 +20059,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -19988,7 +20090,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "If the kraken takes 50 damage or more on a single turn from a creature inside it, the kraken must succeed on a DC 25 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the kraken with the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -20034,7 +20137,8 @@
             },
             "failureDamage": [],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -20165,7 +20269,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -20518,7 +20623,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -20909,7 +21015,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -21244,7 +21351,8 @@
                   "whileGrappleHolds": true
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -21462,7 +21570,8 @@
                 "condition": "Petrified",
                 "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -21577,7 +21686,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -21629,7 +21739,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -21757,7 +21868,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -21823,7 +21935,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -21925,7 +22038,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -21977,7 +22091,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -22093,7 +22208,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -22145,7 +22261,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -22826,7 +22943,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -23037,7 +23155,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -23284,7 +23403,8 @@
                 "condition": "Frightened",
                 "unmodelledRequirement": "Failure: 28 (8d6) Psychic damage, and the target has the Frightened condition for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -24291,7 +24411,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -24771,7 +24892,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -24930,7 +25052,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -25070,7 +25193,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -25379,7 +25503,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -25842,7 +25967,8 @@
                 "condition": "Unconscious",
                 "unmodelledRequirement": "Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -26040,7 +26166,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "If the worm dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -26201,7 +26328,8 @@
                 "condition": "Frightened",
                 "unmodelledRequirement": "Failure: The target has the Frightened condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "PerDay",
@@ -26386,7 +26514,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -26540,7 +26669,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -26685,7 +26815,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -26841,7 +26972,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -27041,7 +27173,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -27237,7 +27370,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "If the remorhaz dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse by using 15 feet of movement, exiting Prone."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -27660,7 +27794,8 @@
             "difficultyClass": 11,
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -27993,7 +28128,8 @@
                   "whileGrappleHolds": true
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -28123,7 +28259,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -28359,7 +28496,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -28405,7 +28543,8 @@
             "difficultyClass": 11,
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -28699,7 +28838,8 @@
                 "escapeDifficultyClass": 14,
                 "unmodelledRequirement": "Failure: The target is pulled into the shambling mound's space and has the Grappled condition (escape DC 14)"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -29008,7 +29148,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -29040,7 +29181,8 @@
                 "condition": "Paralyzed",
                 "unmodelledRequirement": "Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -29189,7 +29331,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -29221,7 +29364,8 @@
                 "condition": "Paralyzed",
                 "unmodelledRequirement": "Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -29386,7 +29530,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -29418,7 +29563,8 @@
                 "condition": "Paralyzed",
                 "unmodelledRequirement": "Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -29480,7 +29626,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -29642,7 +29789,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -29674,7 +29822,8 @@
                 "condition": "Paralyzed",
                 "unmodelledRequirement": "Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -29736,7 +29885,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -30241,7 +30391,8 @@
             "difficultyClass": 21,
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -30296,7 +30447,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -30332,7 +30484,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -30753,7 +30906,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -30805,7 +30959,8 @@
             "difficultyClass": 16,
             "failureDamage": [],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -31010,7 +31165,8 @@
             "difficultyClass": 16,
             "failureDamage": [],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -31294,7 +31450,8 @@
             "difficultyClass": 10,
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -32004,7 +32161,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -32167,7 +32325,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -32412,7 +32571,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -32444,7 +32604,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "If the tarrasque dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -33637,7 +33798,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -33852,7 +34014,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -34067,7 +34230,8 @@
                 "condition": "Poisoned",
                 "unmodelledRequirement": "Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -34116,7 +34280,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "PerDay",
@@ -34526,7 +34691,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental's turns"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -35544,7 +35710,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -35701,7 +35868,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -35869,7 +36037,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -35898,7 +36067,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -36083,7 +36253,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -36112,7 +36283,8 @@
               }
             ],
             "successOutcome": "SameAsFailure",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -36304,7 +36476,8 @@
               }
             ],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -36453,7 +36626,8 @@
             "difficultyClass": 10,
             "failureDamage": [],
             "successOutcome": "NoEffect",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -36590,7 +36764,8 @@
               }
             ],
             "successOutcome": "HalfDamage",
-            "appliedConditions": []
+            "appliedConditions": [],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -38687,7 +38862,8 @@
                 "escapeDifficultyClass": 12,
                 "unmodelledRequirement": "Failure: 7 (3d4) Bludgeoning damage, and the target has the Grappled condition (escape DC 12)."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -39357,7 +39533,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Dexterity Saving Throw: DC 16, one creature within 5 feet that has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -39775,7 +39952,8 @@
                 "condition": "Prone",
                 "maximumTargetSize": "Large"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -40271,7 +40449,8 @@
                 "escapeDifficultyClass": 14,
                 "unmodelledRequirement": "Failure: 13 (2d8 + 4) Bludgeoning damage, and the target has the Grappled condition (escape DC 14)."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -42018,7 +42197,8 @@
                 "condition": "Restrained",
                 "unmodelledRequirement": "Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage)."
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",
@@ -43407,7 +43587,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -43634,7 +43815,8 @@
                 "condition": "Prone",
                 "unmodelledRequirement": "Dexterity Saving Throw: DC 18, one creature within 5 feet that has the Prone condition"
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "appliedConditions": [
             {
@@ -45977,7 +46159,8 @@
                   "whileGrappleHolds": false
                 }
               }
-            ]
+            ],
+            "coverIgnored": false
           },
           "usage": {
             "kind": "Recharge",

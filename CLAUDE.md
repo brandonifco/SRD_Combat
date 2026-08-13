@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main`, mid-#106 (its terrain half is merged; cover and policy awareness remain) |
-| Tests | **686 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main`, mid-#106 (terrain and the cover model are merged; policy awareness and the pacing measurement remain) |
+| Tests | **707 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **#106 (terrain and cover)** — the seeded-terrain slice is done, the cover model and the policy's use of it are not. |
+| Work remaining | **#106 (terrain and cover)** — terrain and the cover model are done; the policy's use of cover and the 40-seed measurement are not. **#108** (creatures granting Half Cover) waits on that policy work by design. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -163,18 +163,25 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**#106 — random terrain and cover.** Its first slice is merged: `TerrainGenerator` in
-`Game` scatters wall clusters and Difficult Terrain patches across every generated
-battlefield, seeded through `IRandomSource` so a seed still replays the fight, placed
-only strictly between the two sides' columns, and admitted one square at a time under a
-connectivity check so no draw can ever wall a side off — the interpretations are stated
-on the class, and both clients already rendered the terrain the moment it existed. What
-remains is the cover model (Half +2 / Three-Quarters +5 to AC and Dexterity saves, Total
-untargetable — the printed table is in the Combat chapter, and the Areas of Effect
-glossary entry excludes locations behind Total Cover from areas) and the policy learning
-to use it. **Terrain's pacing impact is deliberately unmeasured until the whole of #106
-lands** — the plan is to measure the slices together over the standing 40 seeds, and the
-file's own history says an unmeasured "cosmetic" change is how a median quietly halves.
+**#106 — random terrain and cover.** Two slices are merged. `TerrainGenerator` in `Game`
+scatters obstacle clusters — walls, or low obstacles on a coin flip per cluster — and
+Difficult Terrain patches across every generated battlefield, seeded through
+`IRandomSource` so a seed still replays the fight, placed only strictly between the two
+sides' columns, and admitted one square at a time under a connectivity check so no draw
+can ever wall a side off. And **cover executes whole**: `CoverRules` judges the printed
+degrees along the centre-to-centre segment (a wall crossed is Total, one low obstacle
+Half, two Three-Quarters, corner touches slip by — the readings are on the class), Half
+and Three-Quarters raise AC **and** Dexterity saves, Total refuses the targeting with a
+named code on every path (`attack.total_cover`, `spell.total_cover`,
+`entry.total_cover`), areas exclude squares behind Total Cover per the glossary, the
+Wand of the War Mage's "ignore Half Cover" is real after shipping vacuous, and Sacred
+Flame's printed "gains no benefit from Half Cover" rides `SaveEffect.CoverIgnored`,
+structured at extraction. **Creatures granting Half Cover is printed and deliberately
+deferred to #108**, because shipping the +2 before the policy understands standing
+behind someone would only make every ranged attack quietly worse. What remains of #106
+is the policy learning to use cover, and then the pacing measurement over the standing
+40 seeds — **still deliberately unmeasured until then**, because the file's own history
+says an unmeasured "cosmetic" change is how a median quietly halves.
 
 (#96 — ranged attacks in close combat — was found by the play client's probe
 and fixed the same day: `RangedAttackInCloseCombat` sits beside `AtLongRange` in
@@ -305,10 +312,15 @@ got wrong. Ordered by dependency rather than by how valuable each looked on its 
 save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
 steps 1 and 2 came before anything else, and why they were worth doing as one design.
 
-**The frozen transcript churned exactly once**, when the tactics policy learned to focus
-fire, and it caught the right thing when it did: not the byte-for-byte diff but
+**The frozen transcript has churned exactly twice**, and both churns were the fixture
+catching a real change to how the game plays. Once when the tactics policy learned to
+focus fire — where the failure that mattered was not the byte-for-byte diff but
 `TheFightExercisesTheHardParts`, which noticed the adventurers now won quickly enough that
-nobody went down and the fight covered no Death Saving Throws at all. Read the diff before
+nobody went down and the fight covered no Death Saving Throws at all. And once when cover
+landed (#106): the skirmish field's middle wall had always been drawn and never mattered,
+and the moment it granted Total Cover the opening archer's shot through it was refused, so
+both sides' archers now reposition before shooting — the new fight runs seven rounds and
+walks a downed character through death saves to stabilization. Read the diff before
 regenerating, every time.
 
 ## The rule this project runs on
@@ -603,12 +615,16 @@ so *it* can tell what is left; they do not belong in a status report.
   limited to 5 feet — and **Spirit Guardians is still never cast**, because the healer's
   reserve holds every slot whenever anybody is badly hurt, which is nearly always. That is
   the honest state: the mechanism to cast it exists and the priorities never choose it.
-- **Area geometry is a stated interpretation, not a derivation — with one exception.**
+- **Area geometry is a stated interpretation, not a derivation — with two exceptions.**
   The SRD describes areas for a table with a ruler; `AreaTargeting` documents how each
   becomes squares. Cylinder is not modelled and a spell using one is refused. The
-  exception is the **Emanation's excluded origin square, which is printed** (glossary,
-  page 181) — the Cone's and Line's exclusions are the inferred ones. Do not "tidy" the
-  three into one rule: they agree today by different authority.
+  exceptions are printed: the **Emanation's excluded origin square** (glossary, page
+  181) — the Cone's and Line's exclusions are the inferred ones, so do not "tidy" the
+  three into one rule, they agree today by different authority — and the **exclusion of
+  squares behind Total Cover** (the glossary's Areas of Effect entry), where the printed
+  rule tests "all straight lines" from the point of origin and the engine tests the one
+  centre-to-centre line it measures everything else with, a stricter stated reading on
+  `CoverRules.LineBlocked`.
 - **`SpellcastingRules.AbilityFor` is a curated map, not Primary Ability.** A Paladin's
   primary abilities are Strength *and* Charisma and it casts on Charisma — reading it
   from the Core Traits table would be right for six classes and quietly wrong for two.
@@ -642,8 +658,10 @@ so *it* can tell what is left; they do not belong in a status report.
   Strength is 19"), Adamantine Armor (crits demoted in `AttackRules`), Vicious Weapon
   and Elven Chain. Attunement is enforced from print — **no more than three, no
   duplicate copies** — and read as happening at the rest between fights. Two readings
-  are on the registry's doc comments: the Wand's "ignore Half Cover" is vacuous while no
-  cover model exists, and Elven Chain's training override is satisfied by construction
+  are on the registry's doc comments: the Wand's "ignore Half Cover" is **real since
+  cover landed** — a spell attack past one low obstacle rolls against the bare AC, Half
+  exactly so Three-Quarters still counts, after shipping vacuously for as long as no
+  cover model existed — and Elven Chain's training override is satisfied by construction
   because armour training is not modelled.
 - **A potion is the one thing a fight spends that no rest brings back**, which is why it
   lives on `CharacterState` beside the resources rather than on the draft beside the
@@ -770,6 +788,16 @@ default — deliberate).
   attack rolled within 5 feet of *any* able enemy has Disadvantage (printed page 15 —
   "an enemy", not "the target"), "who can see you" is read as any enemy without Blinded,
   and a dual-mode attack used inside its reach is a melee roll that escapes it.
+- **Cover is judged where the battlefield is known, never inside `AttackRules`.**
+  `CoverRules.Between` needs the `Battlefield`, so `Encounter` computes the degree and
+  passes it in; `AttackRules.Resolve` just adds the bonus to the AC it compares and
+  records the degree on the `AttackRoll` for narration. Total Cover is refused before
+  anything is spent on every targeting path, which is why `ResolveAttack` can assume it
+  never sees one — an Opportunity Attack is rolled from within melee reach, where the
+  centre-to-centre segment has no square between to cross. The save half rides
+  `ResolveSaveEffect` against the effect's **point of origin** (the erupting point for a
+  Sphere or Cube, the creature for everything else — `AreaTargeting.PointOfOrigin`), and
+  a non-Dexterity save gains nothing.
 
 Things worth knowing before touching the engine or the content pipeline. The list has
 outgrown the phase it was written for; each entry is here because getting it wrong once

@@ -31,6 +31,7 @@ public abstract partial class FightScreen : Node2D
     protected static readonly Color GridLine = new("2c2c38");
     protected static readonly Color Difficult = new("2a2438");
     protected static readonly Color Blocked = new("3a2a2a");
+    protected static readonly Color LowObstacle = new("4a4032");
     protected static readonly Color PartyColour = new("5a9fd4");
     protected static readonly Color MonsterColour = new("c4614f");
     protected static readonly Color DeadColour = new("4a4a52");
@@ -44,6 +45,7 @@ public abstract partial class FightScreen : Node2D
     protected int GridHeight { get; private set; }
     protected IReadOnlyCollection<GridPosition> BlockedSquares { get; private set; } = [];
     protected IReadOnlyCollection<GridPosition> DifficultSquares { get; private set; } = [];
+    protected IReadOnlyCollection<GridPosition> LowObstacleSquares { get; private set; } = [];
 
     /// <summary>The heading the screen draws — what kind of screen this is.</summary>
     protected abstract string Title { get; }
@@ -120,6 +122,7 @@ public abstract partial class FightScreen : Node2D
         GridHeight = encounter.Battlefield.Height;
         BlockedSquares = encounter.Battlefield.Blocked;
         DifficultSquares = encounter.Battlefield.DifficultTerrain;
+        LowObstacleSquares = encounter.Battlefield.LowObstacles;
     }
 
     protected static Token TokenFrom(Combatant combatant, Labels labels) => new(
@@ -174,6 +177,10 @@ public abstract partial class FightScreen : Node2D
                 if (BlockedSquares.Contains(position))
                 {
                     DrawRect(square, Blocked);
+                }
+                else if (LowObstacleSquares.Contains(position))
+                {
+                    DrawRect(square, LowObstacle);
                 }
                 else if (DifficultSquares.Contains(position))
                 {

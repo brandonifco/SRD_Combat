@@ -1,4 +1,5 @@
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Core.Combat;
 
@@ -44,6 +45,14 @@ namespace SRDCombat.Core.Combat;
 /// Cylinder is not modelled; it needs a height this engine has no concept of, and a
 /// spell using one is reported rather than silently treated as a Sphere.
 /// </para>
+/// <para>
+/// <b>A square behind Total Cover is excluded, and that one is printed too.</b> The
+/// glossary's Areas of Effect entry: a location every straight line to which is blocked
+/// from the point of origin "isn't included in the area of effect", and "to block a
+/// line, an obstruction must provide Total Cover". Which single line this engine tests
+/// in place of "all straight lines" is <see cref="CoverRules.LineBlocked"/>'s stated
+/// reading.
+/// </para>
 /// </remarks>
 public static class AreaTargeting
 {
@@ -77,8 +86,21 @@ public static class AreaTargeting
             return [];
         }
 
-        return battlefield.AllSquares().Where(square => Covers(area, origin, target, square)).ToArray();
+        var pointOfOrigin = PointOfOrigin(area, origin, target);
+
+        return battlefield.AllSquares()
+            .Where(square => Covers(area, origin, target, square))
+            .Where(square => !CoverRules.LineBlocked(battlefield, pointOfOrigin, square))
+            .ToArray();
     }
+
+    /// <summary>
+    /// The square an area's energy erupts from: the chosen point for a Sphere or a Cube,
+    /// the creature producing the effect for the shapes that extend from one — a Cone, a
+    /// Line, an Emanation — and for an effect with no area at all.
+    /// </summary>
+    public static GridPosition PointOfOrigin(EffectArea? area, GridPosition origin, GridPosition target) =>
+        area?.Shape is AreaShape.Sphere or AreaShape.Cube ? target : origin;
 
     private static bool Covers(EffectArea area, GridPosition origin, GridPosition target, GridPosition square) =>
         area.Shape switch

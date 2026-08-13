@@ -40,6 +40,12 @@ public sealed record MagicItemPowers
     /// <summary>Bonus to spell attack rolls — the Wand of the War Mage.</summary>
     public int SpellAttackBonus { get; init; }
 
+    /// <summary>
+    /// "You ignore Half Cover when making a spell attack" — the Wand of the War Mage's
+    /// second power. Half exactly: Three-Quarters still counts.
+    /// </summary>
+    public bool IgnoresHalfCoverOnSpellAttacks { get; init; }
+
     /// <summary>The ability a "Your Strength is 19" item sets, if any.</summary>
     public Ability? SetsAbility { get; init; }
 
@@ -91,9 +97,12 @@ public sealed record MagicItemPowers
 /// Readings written down, per the project rule:
 /// </para>
 /// <para>
-/// <b>Wand of the War Mage's "you ignore Half Cover"</b> — the engine models no cover of
-/// any kind, so no spell attack ever suffers it and the clause is satisfied vacuously.
-/// If cover is ever modelled, this entry must learn to ignore it in the same change.
+/// <b>Wand of the War Mage's "you ignore Half Cover"</b> — real since cover landed
+/// (#106): a spell attack made past one low obstacle rolls against the bare AC while
+/// everyone else's rolls suffer the +2. Half exactly — Three-Quarters still counts,
+/// because the printed sentence names one degree. This entry was satisfied vacuously
+/// for as long as the engine modelled no cover, which its doc carried as a warning that
+/// cover's arrival had to change it — and did.
 /// </para>
 /// <para>
 /// <b>Elven Chain's "You are considered trained with this armor"</b> — the resolver does
@@ -160,9 +169,9 @@ public static class MagicItemRegistry
         ("Shield, +1, +2, or +3", "+2") => PlusShield(2),
         ("Shield, +1, +2, or +3", "+3") => PlusShield(3),
 
-        ("Wand of the War Mage, +1, +2, or +3", "+1") => new MagicItemPowers { SpellAttackBonus = 1, RequiresSpellcaster = true },
-        ("Wand of the War Mage, +1, +2, or +3", "+2") => new MagicItemPowers { SpellAttackBonus = 2, RequiresSpellcaster = true },
-        ("Wand of the War Mage, +1, +2, or +3", "+3") => new MagicItemPowers { SpellAttackBonus = 3, RequiresSpellcaster = true },
+        ("Wand of the War Mage, +1, +2, or +3", "+1") => new MagicItemPowers { SpellAttackBonus = 1, IgnoresHalfCoverOnSpellAttacks = true, RequiresSpellcaster = true },
+        ("Wand of the War Mage, +1, +2, or +3", "+2") => new MagicItemPowers { SpellAttackBonus = 2, IgnoresHalfCoverOnSpellAttacks = true, RequiresSpellcaster = true },
+        ("Wand of the War Mage, +1, +2, or +3", "+3") => new MagicItemPowers { SpellAttackBonus = 3, IgnoresHalfCoverOnSpellAttacks = true, RequiresSpellcaster = true },
 
         ("Ring of Protection", null) => Protection(),
         ("Cloak of Protection", null) => Protection(),
