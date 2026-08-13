@@ -431,8 +431,21 @@ features — display, while whether an action may happen now stays the engine's 
 absent is honest where inert would not be), Cast opens the spell list and arms the next
 click as the target, Drink and Give Potion spend the weakest potion carried (the
 console's own default), and a line under the buttons reads out slots, feature uses and
-potions straight off the engine's state. What remains of the phase: playing a *run* —
-the gauntlet, rests, loot and levelling — rather than one fight.
+potions straight off the engine's state.
+
+**The run followed, and the phase's end state — a fight played with a mouse — is met.**
+The gauntlet is the client's default exactly as it is the console's: `GauntletRun` owns
+rests, experience, levelling, loot and the save, and the screen only shows what the run
+reports in interludes between fights, with a Continue button to march on. Autosave after
+every cleared fight, `--continue` to resume, defeat leaving the save untouched — all the
+console's semantics, because they are the same `Game` types. The probe now plays fight 1
+out through the synthesized-click path and captures whichever side of the fight comes:
+seed 1 clears it (interlude, save written), the fixed default seed loses it (defeat
+screen, save untouched). What remains is polish rather than the phase: an area spell
+cannot yet be aimed at a bare square (Spirit Guardians centred on the caster included),
+the attack a click means cannot be overridden by name, and there is no slot choice when
+casting. And still no human has played a run to its end — the client now removes the
+last excuse.
 
 ## Working conventions
 
