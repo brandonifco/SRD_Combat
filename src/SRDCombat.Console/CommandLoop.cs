@@ -156,25 +156,15 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         }
 
         // Default to the hardest-hitting attack that reaches, which is the choice a
-        // player would make by hand every time; naming one overrides it.
+        // player would make by hand every time; naming one overrides it. The choice is
+        // shared with the Godot client so the two cannot drift apart on it.
         var name = words.Length > 2
             ? string.Join(' ', words[2..])
-            : BestAttack(active, target)?.Name;
+            : AttackChoice.BestFor(active, target)?.Name;
 
         return name is null
             ? new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches.")
             : encounter.Attack(name, target);
-    }
-
-    private CombatAttack? BestAttack(Combatant active, Combatant target)
-    {
-        var distance = active.Position.DistanceFeetTo(target.Position);
-
-        return active.Stats.Attacks
-            .Where(attack => attack.CanReach(distance))
-            .OrderByDescending(attack => attack.Damage.Sum(damage => damage.Amount.Average))
-            .ThenBy(attack => attack.Name, StringComparer.Ordinal)
-            .FirstOrDefault();
     }
 
     private ActionRefusal? Cast(Combatant active, string[] words)

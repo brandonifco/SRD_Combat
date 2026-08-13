@@ -411,9 +411,20 @@ a trial project proved, including that no engine change is required to draw a fi
 engine resolves it once, forwards, and the viewer scrubs through per-turn snapshots —
 grid, tokens, initiative, the appending log — with a `--capture` flag that renders one
 frame to a PNG so a change to the screen can be checked without a person watching it. It
-touched no engine code, as the trial predicted. What remains of the phase is the mouse:
-input, a player-driven turn, and the refusals surfaced the way the console client
-surfaces them.
+touched no engine code, as the trial predicted.
+
+**The mouse landed the same day.** Playing is now the client's default screen: the
+party's turns wait for a click — a square walks, an enemy is attacked with the
+hardest-hitting attack that reaches (the console's own default, shared as
+`AttackChoice` in `Game` so the clients cannot drift), buttons carry the untargeted
+actions — while the policy plays the monsters one turn per beat, and every refusal is
+shown with its code. The highlight is `MovementRules.FindPath` asked once per square,
+advice rather than rule: the click is sent to the engine either way. A `--probe` flag
+drives one commanded turn through the real input path with synthesized clicks —
+including a refusal on purpose — and captures each step, which is this screen's version
+of the capture loop; its first run caught a real engine gap (#96, ranged attacks in
+melee lack their printed Disadvantage). What remains of the phase: spells, class
+features and potions under the mouse, and playing a *run* rather than one fight.
 
 ## Working conventions
 

@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #91 (Cleave and Slow, closing #81) |
+| Branch | `main` at PR #95 (the Godot client's read-only first slice) |
 | Tests | **664 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
+| Work remaining | **One open issue: #96** (ranged attacks in melee lack their printed Disadvantage — found by the play client's probe). Beyond it the next work is a phase — see the plan doc. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -147,23 +147,27 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**Nothing.** Phases 1–4 are done; the next work is Phase 5 (character creation), Phase 6
-proper (separate monster tactics from party tactics — one policy still plays both sides),
-or the rest of Phase 7 — `client/` now watches a fight (read-only, snapshots, a
-`--capture` verification flag; see its README), and the mouse-driven play the phase is
-named for is what remains. And no human has yet played a run to its end.
+**#96 — ranged attacks within 5 feet of an enemy lack their printed Disadvantage**, found
+the first time a probe walked an archer adjacent and shot; `AttackRules` already models
+`AtLongRange` and the within-5-feet geometry, so it slots beside them. Beyond it the next
+work is Phase 5 (character creation), Phase 6 proper (separate monster tactics from party
+tactics — one policy still plays both sides), or the rest of Phase 7 — `client/` now
+**plays a fight with the mouse** (party turns click to move and attack, buttons for the
+untargeted actions, refusals shown with codes, the policy playing the monsters; `--watch`
+keeps the read-only screen, `--probe` is its verification loop — see its README), and
+what remains is spells, features and potions under the mouse, then playing a *run* rather
+than one fight. And no human has yet played a run to its end.
 
-- **#83 — the party is a fraction of its printed self.** The successor to #79, and the
-  most valuable thing in the queue: the encounter budget prices a fight assuming both
-  sides are whole, the monster side is, and the party is not. In order of what the
-  evidence supports — **a real Cleric spell list or upcasting** (nine slots, four
-  spendable, 4 spells known of 109 available, and no new subsystem needed), then
-  **subclasses** (nobody has one), then the rest of the class features. **Anything gated
-  at level 4+ is still unmeasurable in a run**, which is the part of #79 that was true.
+- **#83 is closed (2026-08-12, after upcasting and subclasses landed) but its direction
+  is not finished**: the encounter budget prices a fight assuming both sides are whole,
+  the monster side is, and the party still is not — the Cleric executes 6 spells of the
+  109 on its list, and most class features past the first few levels stay reported on
+  `UnimplementedFeatures`. Party power is the only lever that has ever moved pacing, so
+  when the next engine slice is chosen, this is still where the evidence points.
 
 Beyond those the next work is a phase, not a fix: Phases 1–4 are done, Phase 6 is done for
-monsters and open-ended for the party, Phase 7 has its read-only first slice, and Phase 5
-has never been started. **Do not
+monsters and open-ended for the party, Phase 7 plays a fight with the mouse but not yet a
+run, and Phase 5 has never been started. **Do not
 read a short queue as "nearly finished":** the ladder has been cleared twice in forty
 seeded runs and never by a person, and no human has played more than a few rungs by hand.
 
