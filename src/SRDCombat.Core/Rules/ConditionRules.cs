@@ -169,6 +169,27 @@ public static class ConditionRules
     }
 
     /// <summary>
+    /// Whether a Dodging creature keeps Dodge's benefits — Disadvantage on attack rolls
+    /// against it, Advantage on its Dexterity saving throws.
+    /// </summary>
+    /// <remarks>
+    /// The printed exception is one sentence covering both halves: "You lose these
+    /// benefits if you have the Incapacitated condition or if your Speed is 0" (glossary,
+    /// Dodge). Speed 0 is read as the condition-borne kind (<see cref="IsImmobile"/> —
+    /// Grappled, Restrained, Paralyzed, Unconscious), not a turn-scoped forfeit like
+    /// Steady Aim's: Dodge's benefits run from the dodger's turn to the start of its
+    /// next, which is exactly when a forfeit that ends "at the end of the current turn"
+    /// has already expired. Both call sites — the attack roll and the saving throw —
+    /// go through here so the exception cannot be half-applied.
+    /// </remarks>
+    public static bool RetainsDodgeBenefits(Combatant combatant)
+    {
+        ArgumentNullException.ThrowIfNull(combatant);
+
+        return !combatant.HasCondition(ConditionType.Incapacitated) && !IsImmobile(combatant);
+    }
+
+    /// <summary>
     /// The condition making this creature automatically fail a saving throw with this
     /// ability, or null when the save is rolled normally. No die is consumed by an
     /// automatic failure — the printed clause replaces the roll rather than penalising it.

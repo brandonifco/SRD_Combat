@@ -11,12 +11,12 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 ## Current state — read this first
 
-**As of 2026-08-12.** All numbers here are verified, not estimated.
+**As of 2026-08-13.** All numbers here are verified, not estimated.
 
 | | |
 | --- | --- |
-| Branch | `main` at PR #100 (ranged attacks in close combat, closing #96) |
-| Tests | **673 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at PR #103 (Dodge's printed exception and its Dexterity-save half) |
+| Tests | **678 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Work remaining | **No open GitHub issues.** The next work is a phase — see the plan doc. |
@@ -127,7 +127,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 673 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 678 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 

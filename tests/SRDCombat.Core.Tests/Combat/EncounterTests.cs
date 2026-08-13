@@ -113,6 +113,102 @@ public class EncounterTests
     }
 
     [Fact]
+    public void Dodging_IsAdvantageOnDexteritySavesAlone()
+    {
+        // The Dexterity save rolls two d20s (3 and 18 — the 18 succeeds, proving the
+        // higher die was used); the Constitution save the next round rolls exactly one,
+        // because Dodge's printed save benefit names Dexterity alone. ScriptedRandomSource
+        // throws on a surplus die, which is what pins the counts.
+        var (encounter, hero) = DodgeSaveFight(new ScriptedRandomSource(20, 1, 3, 18, 1, 3, 1));
+
+        Assert.Null(encounter.Dodge());
+        encounter.EndTurn();
+        Assert.Null(encounter.UseEntry("Acid Breath", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Dexterity saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("success", StringComparison.Ordinal));
+
+        encounter.EndTurn();
+        Assert.Null(encounter.Dodge());
+        encounter.EndTurn();
+        Assert.Null(encounter.UseEntry("Bellow", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Constitution saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("failure", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DodgeSaveAdvantage_IsLostWhileGrappled()
+    {
+        // "You lose these benefits ... if your Speed is 0" — a grappled dodger rolls the
+        // Dexterity save on one die (a 3, failing), not two.
+        var (encounter, hero) = DodgeSaveFight(new ScriptedRandomSource(20, 1, 3, 1));
+
+        Assert.Null(encounter.Dodge());
+        hero.AddCondition(ConditionType.Grappled);
+        encounter.EndTurn();
+        Assert.Null(encounter.UseEntry("Acid Breath", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Dexterity saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("failure", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ARestrainedDodger_SavesAtPlainDisadvantage()
+    {
+        // Restrained is itself Speed 0, so it cancels Dodge entirely rather than the two
+        // trading Advantage against Disadvantage to a normal roll: the save rolls two
+        // dice and takes the lower (an 18 then a 3 — the 3 fails, proving Disadvantage
+        // survived).
+        var (encounter, hero) = DodgeSaveFight(new ScriptedRandomSource(20, 1, 18, 3, 1));
+
+        Assert.Null(encounter.Dodge());
+        hero.AddCondition(ConditionType.Restrained);
+        encounter.EndTurn();
+        Assert.Null(encounter.UseEntry("Acid Breath", hero));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Dexterity saving throw", StringComparison.Ordinal)
+                && step.Narration.Contains("failure", StringComparison.Ordinal));
+    }
+
+    private static (Encounter Encounter, Combatant Hero) DodgeSaveFight(IRandomSource random)
+    {
+        static MonsterEntry Entry(string name, Ability ability) =>
+            new(name, MonsterEntrySection.Action, $"{name}.",
+                Mechanics: EntryMechanics.SavingThrow,
+                Save: new SaveEffect(
+                    ability,
+                    12,
+                    null,
+                    [new AttackDamage(DiceExpression.Parse("1d6"), DamageType.Acid, 3)],
+                    SaveSuccessOutcome.HalfDamage,
+                    []));
+
+        var hero = CombatTestData.Combatant("hero", x: 0, stats: CombatTestData.Stats(initiativeBonus: 10));
+
+        var breather = CombatTestData.Combatant(
+            "breather",
+            sideId: CombatTestData.Monsters,
+            x: 1,
+            stats: CombatTestData.Stats(initiativeBonus: -10, attacks: []) with
+            {
+                Entries = [Entry("Acid Breath", Ability.Dexterity), Entry("Bellow", Ability.Constitution)],
+            });
+
+        var encounter = Encounter.Start(Field(), [hero, breather], random);
+
+        return (encounter, hero);
+    }
+
+    [Fact]
     public void MovingOutOfReach_ProvokesAnOpportunityAttack()
     {
         var hero = CombatTestData.Combatant("hero", x: 1, y: 0, stats: CombatTestData.Stats(initiativeBonus: 10));

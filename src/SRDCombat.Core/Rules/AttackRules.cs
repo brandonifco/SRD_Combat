@@ -96,8 +96,14 @@ public static class AttackRules
         var distance = attacker.Position.DistanceFeetTo(target.Position);
 
         return new AttackCircumstances(
-            // Dodge is lost while Incapacitated, so an unconscious dodger gets nothing.
-            TargetIsDodging: target.Turn.IsDodging && !target.HasCondition(ConditionType.Incapacitated),
+            // Dodge is lost while Incapacitated or at Speed 0 (the printed exception,
+            // shared with the Dexterity-save half through RetainsDodgeBenefits), and its
+            // attack-roll half alone is gated on "if you can see the attacker" — read as
+            // the dodger not being Blinded, the same sight reading Ranged Attacks in
+            // Close Combat records.
+            TargetIsDodging: target.Turn.IsDodging
+                && ConditionRules.RetainsDodgeBenefits(target)
+                && !target.HasCondition(ConditionType.Blinded),
             TargetIsProne: target.HasCondition(ConditionType.Prone),
             TargetIsUnconscious: target.HasCondition(ConditionType.Unconscious),
             AttackerIsProne: attacker.HasCondition(ConditionType.Prone),

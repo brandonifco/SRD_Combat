@@ -102,6 +102,42 @@ public class AttackRulesTests
         Assert.False(circumstances.TargetIsDodging);
     }
 
+    [Fact]
+    public void ADodgingTargetThatIsGrappled_LosesTheBenefit()
+    {
+        // The printed exception's second half: "or if your Speed is 0". Grappled is the
+        // Speed-0 condition that does not also bring Incapacitated, so it is the case
+        // the Incapacitated check alone would miss.
+        var attacker = CombatTestData.Combatant("a");
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+        target.Turn.BeginTurn(30);
+        target.Turn.StartDodging();
+        target.AddCondition(ConditionType.Grappled);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attacker.Stats.Attacks[0], target);
+
+        Assert.False(circumstances.TargetIsDodging);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void ADodgingTargetThatIsBlinded_DoesNotImposeDisadvantage()
+    {
+        // Dodge's attack-roll half is "if you can see the attacker", and a Blinded
+        // dodger cannot — so the attacker keeps the plain Advantage Blinded grants
+        // rather than Dodge cancelling it to a normal roll.
+        var attacker = CombatTestData.Combatant("a");
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+        target.Turn.BeginTurn(30);
+        target.Turn.StartDodging();
+        target.AddCondition(ConditionType.Blinded);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attacker.Stats.Attacks[0], target);
+
+        Assert.False(circumstances.TargetIsDodging);
+        Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
     [Theory]
     // Prone gives the attacker Advantage up close and Disadvantage from further away.
     [InlineData(5, RollMode.Advantage)]
