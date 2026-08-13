@@ -32,7 +32,10 @@ public sealed record Fight(Encounter Encounter, IReadOnlyList<PartyMember> Party
 /// </para>
 /// <para>
 /// The battlefield is sized to hold both sides with room to manoeuvre round the flanks,
-/// rather than being a corridor that makes positioning meaningless.
+/// rather than being a corridor that makes positioning meaningless — and it is not bare:
+/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain between the sides,
+/// seeded from the same dice as everything else, with its own interpretations stated on
+/// the class.
 /// </para>
 /// </remarks>
 public static class EncounterFactory
@@ -79,10 +82,22 @@ public static class EncounterFactory
         // room to go round rather than only through.
         var width = separation + 3;
         var height = Math.Max(party.Count, Math.Max(built.Monsters.Count, 1)) + 2;
-        var battlefield = new Battlefield(width, height);
+
+        var partySpawns = party
+            .Select((_, index) => new GridPosition(1, index + 1))
+            .ToArray();
+        var monsterSpawns = built.Monsters
+            .Select((_, index) => new GridPosition(1 + separation, index + 1))
+            .ToArray();
+
+        var battlefield = TerrainGenerator.Generate(
+            width,
+            height,
+            [.. partySpawns, .. monsterSpawns],
+            random);
 
         var placed = party
-            .Select((member, index) => member.AtPosition(new GridPosition(1, index + 1)))
+            .Select((member, index) => member.AtPosition(partySpawns[index]))
             .ToArray();
 
         var combatants = new List<Combatant>(placed.Select(member => member.Combatant));
@@ -96,7 +111,7 @@ public static class EncounterFactory
                 monster.Name,
                 MonsterSideId,
                 CombatantStats.FromMonster(monster),
-                new GridPosition(1 + separation, index + 1)));
+                monsterSpawns[index]));
         }
 
         return new Fight(
