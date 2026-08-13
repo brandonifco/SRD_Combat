@@ -188,6 +188,23 @@ public sealed record CharacterDraft
     /// rather than being silently forgotten.
     /// </remarks>
     public IReadOnlyList<AbilityScoreImprovement> AbilityScoreImprovements { get; init; } = [];
+
+    /// <summary>
+    /// Ids of the spells this caster has chosen, in the order they were chosen.
+    /// </summary>
+    /// <remarks>
+    /// The same reading as <see cref="AbilityScoreImprovements"/>: a draft describes the
+    /// character at every level, so the list is the <em>plan</em>, and resolving at a
+    /// level prepares the first entries that level's printed columns allow — cantrips
+    /// against the Cantrips column, level 1+ spells against Prepared Spells, and a spell
+    /// whose level has no slots yet is skipped for now rather than refused, because "must
+    /// be of a level for which you have spell slots" is a fact about today and the plan
+    /// is about later. What <em>is</em> refused, loudly: an unknown id, a spell not on
+    /// this class's printed list, and a spell whose effect the engine does not execute —
+    /// a prepared spell that can never be cast would be an unimplemented rule holding
+    /// silently. Empty means no choice was made, and a pregenerated loadout stands in.
+    /// </remarks>
+    public IReadOnlyList<string> ChosenSpellIds { get; init; } = [];
 }
 
 /// <summary>How hit points are determined on levelling.</summary>

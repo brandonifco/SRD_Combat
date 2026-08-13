@@ -112,10 +112,15 @@ public static class PregeneratedParty
                 content.ArmorById,
                 content.MagicItemsById));
 
-        var spells = SpellIdsFor(draft.ClassId)
-            .Where(content.SpellsById.ContainsKey)
-            .Select(id => content.SpellsById[id])
-            .ToArray();
+        // A draft that chose its spells resolves them through SpellPreparation; the
+        // curated per-class loadout below stands in only when no choice was made, which
+        // is what the four pregens do.
+        var spells = draft.ChosenSpellIds.Count > 0
+            ? SpellPreparation.Prepare(content, draft, level)
+            : SpellIdsFor(draft.ClassId)
+                .Where(content.SpellsById.ContainsKey)
+                .Select(id => content.SpellsById[id])
+                .ToArray();
 
         var stats = StatsFor(content, sheet, draft.ClassId, level, spells);
 
