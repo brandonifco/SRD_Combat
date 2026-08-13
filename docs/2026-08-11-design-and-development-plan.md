@@ -407,6 +407,14 @@ gate that protects the engine, and the only shared file it needs to touch is `.g
 This was checked rather than assumed — see the Environment section of `CLAUDE.md` for what
 a trial project proved, including that no engine change is required to draw a fight.
 
+**Started 2026-08-12 with a read-only slice.** `client/` watches a seeded fight: the
+engine resolves it once, forwards, and the viewer scrubs through per-turn snapshots —
+grid, tokens, initiative, the appending log — with a `--capture` flag that renders one
+frame to a PNG so a change to the screen can be checked without a person watching it. It
+touched no engine code, as the trial predicted. What remains of the phase is the mouse:
+input, a player-driven turn, and the refusals surfaced the way the console client
+surfaces them.
+
 ## Working conventions
 
 Carried over from GoldBox because they earned it there:

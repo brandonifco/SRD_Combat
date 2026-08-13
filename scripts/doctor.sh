@@ -190,10 +190,22 @@ else
     warn 'pdftotext not installed — `sudo apt install poppler-utils` if you need it.'
 fi
 
-if command -v godot >/dev/null 2>&1 || [[ -x "$HOME/.local/bin/godot" ]]; then
-    pass 'Godot found (Phase 7)'
+# The variant matters, not just the presence: the standard build cannot run a C# project,
+# and installing it (mise's godot package does exactly that) leaves `client/` failing with
+# no obvious cause. `--version` prints e.g. `4.7.stable.mono.official.<hash>`.
+godot_bin="$(command -v godot 2>/dev/null || true)"
+[[ -z "$godot_bin" && -x "$HOME/.local/bin/godot" ]] && godot_bin="$HOME/.local/bin/godot"
+
+if [[ -n "$godot_bin" ]]; then
+    godot_version="$("$godot_bin" --version 2>/dev/null | head -n 1)"
+    if [[ "$godot_version" == *mono* ]]; then
+        pass "Godot found ($godot_version) — the .NET build, which client/ needs"
+    else
+        warn "Godot at $godot_bin is not the .NET build ($godot_version) — it cannot run client/."
+        note 'Install the ".NET" variant from godotengine.org; `godot --version` should say `mono`.'
+    fi
 else
-    warn 'Godot not installed. Not needed until the Phase 7 client exists.'
+    warn 'Godot not installed. Needed only to run client/, the Phase 7 viewer.'
 fi
 
 if command -v gh >/dev/null 2>&1; then
