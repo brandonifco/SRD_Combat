@@ -99,6 +99,9 @@ public sealed record CharacterSheet
     /// <summary>Item bonus to spell attack rolls — the Wand of the War Mage.</summary>
     public int SpellAttackItemBonus { get; init; }
 
+    /// <summary>"You ignore Half Cover when making a spell attack" — the same wand.</summary>
+    public bool IgnoresHalfCoverOnSpellAttacks { get; init; }
+
     /// <summary>"Any Critical Hit against you becomes a normal hit" — Adamantine Armor.</summary>
     public bool CriticalHitsAgainstBecomeNormal { get; init; }
 

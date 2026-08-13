@@ -169,6 +169,12 @@ public sealed record CombatantStats(
     public bool CriticalHitsAgainstBecomeNormal { get; init; }
 
     /// <summary>
+    /// "You ignore Half Cover when making a spell attack" — the Wand of the War Mage.
+    /// Half exactly; Three-Quarters still counts.
+    /// </summary>
+    public bool IgnoresHalfCoverOnSpellAttacks { get; init; }
+
+    /// <summary>
     /// The lowest natural d20 roll that scores a Critical Hit. 20 for everyone except a
     /// Champion, whose Improved Critical reads "on a roll of 19 or 20".
     /// </summary>
@@ -283,6 +289,7 @@ public sealed record CombatantStats(
             DiesAtZeroHitPoints: false)
         {
             CriticalHitsAgainstBecomeNormal = sheet.CriticalHitsAgainstBecomeNormal,
+            IgnoresHalfCoverOnSpellAttacks = sheet.IgnoresHalfCoverOnSpellAttacks,
             CriticalHitThreshold = sheet.Has(ClassFeature.ImprovedCritical) ? 19 : 20,
 
             SkillBonuses = sheet.Skills.ToDictionary(

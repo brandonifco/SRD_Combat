@@ -64,14 +64,19 @@ public sealed record AttackCircumstances(
 /// <param name="Roll">The d20 roll.</param>
 /// <param name="Hit">Whether it hit.</param>
 /// <param name="Critical">Whether it is a Critical Hit.</param>
-/// <param name="TargetArmorClass">The AC it was rolled against.</param>
+/// <param name="TargetArmorClass">
+/// The AC it was rolled against — the target's own plus any cover bonus, because that
+/// sum is the number the roll actually had to meet and the number narration should say.
+/// </param>
 /// <param name="Circumstances">What produced the roll's mode.</param>
+/// <param name="Cover">The degree of cover the target had, for narration.</param>
 public sealed record AttackRoll(
     D20Roll Roll,
     bool Hit,
     bool Critical,
     int TargetArmorClass,
-    AttackCircumstances Circumstances);
+    AttackCircumstances Circumstances,
+    CoverDegree Cover = CoverDegree.None);
 
 /// <summary>Resolving attack rolls.</summary>
 public static class AttackRules
@@ -220,6 +225,12 @@ public static class AttackRules
     /// Everyone on the field, when the caller has it — see
     /// <see cref="DescribeCircumstances"/>.
     /// </param>
+    /// <param name="cover">
+    /// The target's cover against this attack, already judged by the caller —
+    /// <see cref="CoverRules.Between"/> needs the battlefield, which this method never
+    /// sees. Half and Three-Quarters raise the AC to beat; Total never reaches here,
+    /// because "can't be targeted directly" is a refusal before anything is rolled.
+    /// </param>
     public static AttackRoll Resolve(
         IRandomSource random,
         Combatant attacker,
@@ -227,7 +238,8 @@ public static class AttackRules
         Combatant target,
         bool extraAdvantage = false,
         bool extraDisadvantage = false,
-        IReadOnlyCollection<Combatant>? combatants = null)
+        IReadOnlyCollection<Combatant>? combatants = null,
+        CoverDegree cover = CoverDegree.None)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(attacker);
@@ -238,16 +250,19 @@ public static class AttackRules
         var circumstances = DescribeCircumstances(attacker, attack, target, combatants);
         var mode = D20Test.Combine(ResolveRollMode(circumstances, distance), extraAdvantage, extraDisadvantage);
 
+        var armorClass = target.Stats.ArmorClass + CoverRules.Bonus(cover);
+
         var roll = D20Test.Roll(random, attack.AttackBonus, mode);
 
         // A natural 20 always hits and is always a Critical Hit; a natural 1 always
-        // misses. Both ignore modifiers and AC entirely.
+        // misses. Both ignore modifiers and AC entirely — cover included: the bonus
+        // raises the number to beat, and a natural 20 does not beat numbers.
         if (roll.IsNatural1)
         {
-            return new AttackRoll(roll, Hit: false, Critical: false, target.Stats.ArmorClass, circumstances);
+            return new AttackRoll(roll, Hit: false, Critical: false, armorClass, circumstances, cover);
         }
 
-        var hit = roll.IsNatural20 || roll.Total >= target.Stats.ArmorClass;
+        var hit = roll.IsNatural20 || roll.Total >= armorClass;
 
         // Improved Critical widens the crit band and nothing else — a natural 19 still
         // has to beat AC, because only the 20 auto-hits. Unconscious and Paralyzed print
@@ -266,7 +281,7 @@ public static class AttackRules
         // the same way.
         critical &= !target.Stats.CriticalHitsAgainstBecomeNormal;
 
-        return new AttackRoll(roll, hit, critical, target.Stats.ArmorClass, circumstances);
+        return new AttackRoll(roll, hit, critical, armorClass, circumstances, cover);
     }
 
     /// <summary>

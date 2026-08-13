@@ -236,4 +236,20 @@ public class SpellContentTests
         Assert.Empty(result.Errors);
         Assert.Contains(result.Warnings, issue => issue.Code == "spell.components.none");
     }
+
+    [Fact]
+    public void SacredFlameDeniesItsTargetCover()
+    {
+        // "The target gains no benefit from Half Cover or Three-Quarters Cover for this
+        // save." Left as prose, this sentence would have quietly weakened the spell
+        // below its printed self the day cover landed — the Cleric's own cantrip, cast
+        // every fight.
+        var flame = Content.Spells.Single(spell => spell.Name == "Sacred Flame");
+
+        Assert.NotNull(flame.Save);
+        Assert.True(flame.Save!.CoverIgnored);
+
+        // And exactly one spell prints that sentence, so nothing else was swept in.
+        Assert.Single(Content.Spells, spell => spell.Save?.CoverIgnored == true);
+    }
 }

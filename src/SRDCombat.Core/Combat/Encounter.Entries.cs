@@ -1,4 +1,5 @@
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Core.Combat;
 
@@ -149,6 +150,14 @@ public sealed partial class Encounter
                 $"{target.Name} is {distance} ft. away, beyond {attack.Name}'s reach.");
         }
 
+        // "Can't be targeted directly" — an attack-shaped entry is still an attack.
+        if (CoverRules.Between(Battlefield, actor.Position, target.Position) == CoverDegree.Total)
+        {
+            return new ActionRefusal(
+                "attack.total_cover",
+                $"{target.Name} has Total Cover from {actor.Name} and can't be targeted directly.");
+        }
+
         actor.Turn.SpendAction();
         actor.Uses.Spend(entry.Name);
         ResolveAttack(actor, attack, target, isOpportunityAttack: false);
@@ -202,6 +211,17 @@ public sealed partial class Encounter
         if (save.Area is null && target is { IsDead: true })
         {
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
+        }
+
+        // A single-target save effect targets directly, so Total Cover refuses it; an
+        // area effect is aimed at a point, and AreaTargeting's exclusion decides who is
+        // caught behind what.
+        if (save.Area is null && target is not null
+            && CoverRules.Between(Battlefield, actor.Position, target.Position) == CoverDegree.Total)
+        {
+            return new ActionRefusal(
+                "entry.total_cover",
+                $"{target.Name} has Total Cover from {actor.Name} and can't be targeted directly.");
         }
 
         if ((point ?? target?.Position) is not { } aim)

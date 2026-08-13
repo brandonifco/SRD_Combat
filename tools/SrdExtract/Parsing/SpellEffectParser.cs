@@ -51,7 +51,12 @@ internal static partial class SpellEffectParser
             ParseArea(text),
             damage,
             success,
-            conditions);
+            conditions,
+            // "The target gains no benefit from Half Cover or Three-Quarters Cover for
+            // this save" — Sacred Flame. Structured rather than left as prose, because
+            // the day cover landed this sentence was the difference between the spell as
+            // printed and a quietly weaker one.
+            CoverIgnored: CoverIgnoredPattern().IsMatch(text));
     }
 
     /// <summary>
@@ -168,4 +173,10 @@ internal static partial class SpellEffectParser
 
     [GeneratedRegex(@"half as much damage", RegexOptions.IgnoreCase)]
     private static partial Regex HalfDamagePattern();
+
+    // "The target gains no benefit from Half Cover or Three-Quarters Cover for this
+    // save." Deliberately whole: a looser pattern could match prose about cover that
+    // grants rather than denies the benefit.
+    [GeneratedRegex(@"gains\s+no\s+benefit\s+from\s+Half\s+Cover\s+or\s+Three-Quarters\s+Cover\s+for\s+this\s+save")]
+    private static partial Regex CoverIgnoredPattern();
 }

@@ -4,8 +4,8 @@ using SRDCombat.Core.Dice;
 namespace SRDCombat.Game;
 
 /// <summary>
-/// Scatters terrain across a generated battlefield: walls nothing can enter, and
-/// Difficult Terrain that costs double to cross.
+/// Scatters terrain across a generated battlefield: walls nothing can enter, low
+/// obstacles to duck behind, and Difficult Terrain that costs double to cross.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,16 +21,19 @@ namespace SRDCombat.Game;
 /// quietly remake it.
 /// </item>
 /// <item>
-/// <b>Walls come in clusters, Difficult Terrain in patches.</b> Up to three wall clusters
-/// of one to three squares, up to two patches of one to four. A draw can also produce a
-/// bare field, on purpose: variety includes the plain, and the numbers are small because
-/// the fields are — a generated battlefield is nine squares wide.
+/// <b>Obstacles come in clusters, Difficult Terrain in patches.</b> Up to three obstacle
+/// clusters of one to three squares — each cluster drawn as either a wall (Total Cover)
+/// or a low obstacle (Half Cover, shot over rather than blocking), a coin flip per
+/// cluster — and up to two patches of one to four. A draw can also produce a bare field,
+/// on purpose: variety includes the plain, and the numbers are small because the fields
+/// are — a generated battlefield is nine squares wide.
 /// </item>
 /// <item>
-/// <b>Every fight stays winnable on foot.</b> A wall square whose placement would cut any
-/// spawn square off from any other is discarded rather than placed, checked one square at
-/// a time, so the guarantee holds whatever the dice drew. Both sides field melee-only
-/// creatures, and a fight the sides cannot reach each other in is not a fight.
+/// <b>Every fight stays winnable on foot.</b> An obstacle square — wall or low, both
+/// being impassable — whose placement would cut any spawn square off from any other is
+/// discarded rather than placed, checked one square at a time, so the guarantee holds
+/// whatever the dice drew. Both sides field melee-only creatures, and a fight the sides
+/// cannot reach each other in is not a fight.
 /// </item>
 /// </list>
 /// <para>
@@ -71,6 +74,8 @@ public static class TerrainGenerator
         }
 
         var walls = new HashSet<GridPosition>();
+        var lowObstacles = new HashSet<GridPosition>();
+        var impassable = new HashSet<GridPosition>();
         var difficult = new HashSet<GridPosition>();
 
         bool InRegion(GridPosition square) =>
@@ -91,19 +96,21 @@ public static class TerrainGenerator
             _ => new GridPosition(from.X - 1, from.Y),
         };
 
-        var wallClusters = random.Roll(4) - 1;
+        var obstacleClusters = random.Roll(4) - 1;
 
-        for (var cluster = 0; cluster < wallClusters; cluster++)
+        for (var cluster = 0; cluster < obstacleClusters; cluster++)
         {
+            var kind = random.Roll(2) == 1 ? walls : lowObstacles;
             var current = DrawSquare();
             var size = random.Roll(3);
 
             for (var grown = 0; grown < size; grown++)
             {
-                if (InRegion(current) && !walls.Contains(current)
-                    && StaysConnected(walls, current, spawnSet, width, height))
+                if (InRegion(current) && !impassable.Contains(current)
+                    && StaysConnected(impassable, current, spawnSet, width, height))
                 {
-                    walls.Add(current);
+                    kind.Add(current);
+                    impassable.Add(current);
                 }
 
                 current = Step(current);
@@ -119,7 +126,7 @@ public static class TerrainGenerator
 
             for (var grown = 0; grown < size; grown++)
             {
-                if (InRegion(current) && !walls.Contains(current))
+                if (InRegion(current) && !impassable.Contains(current))
                 {
                     difficult.Add(current);
                 }
@@ -128,14 +135,14 @@ public static class TerrainGenerator
             }
         }
 
-        return new Battlefield(width, height, walls, difficult);
+        return new Battlefield(width, height, walls, difficult, lowObstacles);
     }
 
     /// <summary>
-    /// Whether every spawn square can still reach every other with this wall added.
+    /// Whether every spawn square can still reach every other with this obstacle added.
     /// </summary>
     private static bool StaysConnected(
-        HashSet<GridPosition> walls,
+        HashSet<GridPosition> impassable,
         GridPosition candidate,
         HashSet<GridPosition> spawns,
         int width,
@@ -154,7 +161,7 @@ public static class TerrainGenerator
             foreach (var next in frontier.Dequeue().Neighbours())
             {
                 if (next.X < 0 || next.X >= width || next.Y < 0 || next.Y >= height
-                    || next == candidate || walls.Contains(next) || !reached.Add(next))
+                    || next == candidate || impassable.Contains(next) || !reached.Add(next))
                 {
                     continue;
                 }

@@ -75,6 +75,20 @@ public sealed partial class Encounter
             return resolution;
         }
 
+        // "Can't be targeted directly." Applies wherever the spell aims at the creature
+        // itself — an attack, a single-target save, a heal. A spell aimed at a point is
+        // not targeting anyone: its area decides who is caught, and the Total Cover
+        // exclusion inside AreaTargeting is the rule that decides it.
+        if (target is not null
+            && !spell.IsSelfRanged
+            && (spell.IsSpellAttack || spell.Heal is not null || spell.Save is { Area: null })
+            && CoverRules.Between(Battlefield, caster.Position, target.Position) == CoverDegree.Total)
+        {
+            return new ActionRefusal(
+                "spell.total_cover",
+                $"{target.Name} has Total Cover from {caster.Name} and can't be targeted directly.");
+        }
+
         // "Can't Harm the Charmer": an attack spell aimed at the charmer is an attack,
         // and a damaging save spell whose area catches the charmer targets them — the
         // glossary's definition of a target includes a creature forced to make a saving
@@ -431,7 +445,7 @@ public sealed partial class Encounter
             spell.RangeFeet,
             spell.Damage);
 
-        ResolveAttack(caster, attack, target, isOpportunityAttack: false);
+        ResolveAttack(caster, attack, target, isOpportunityAttack: false, isSpellAttack: true);
     }
 
     private void ResolveSpellSave(

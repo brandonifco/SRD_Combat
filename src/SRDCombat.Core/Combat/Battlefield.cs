@@ -52,12 +52,14 @@ public sealed class Battlefield
 
     private readonly HashSet<GridPosition> _blocked;
     private readonly HashSet<GridPosition> _difficultTerrain;
+    private readonly HashSet<GridPosition> _lowObstacles;
 
     public Battlefield(
         int width,
         int height,
         IEnumerable<GridPosition>? blocked = null,
-        IEnumerable<GridPosition>? difficultTerrain = null)
+        IEnumerable<GridPosition>? difficultTerrain = null,
+        IEnumerable<GridPosition>? lowObstacles = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(width, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(height, 1);
@@ -66,22 +68,32 @@ public sealed class Battlefield
         Height = height;
         _blocked = [.. blocked ?? []];
         _difficultTerrain = [.. difficultTerrain ?? []];
+        _lowObstacles = [.. lowObstacles ?? []];
     }
 
     public int Width { get; }
 
     public int Height { get; }
 
+    /// <summary>Full-height walls: impassable, and Total Cover to hide behind.</summary>
     public IReadOnlyCollection<GridPosition> Blocked => _blocked;
 
     public IReadOnlyCollection<GridPosition> DifficultTerrain => _difficultTerrain;
+
+    /// <summary>
+    /// Half-height obstacles — crates, boulders: impassable like a wall, but shot over
+    /// rather than blocking outright. What crossing one is worth is
+    /// <c>CoverRules</c>' business, not this class's.
+    /// </summary>
+    public IReadOnlyCollection<GridPosition> LowObstacles => _lowObstacles;
 
     /// <summary>True when the square exists on this battlefield.</summary>
     public bool IsInBounds(GridPosition position) =>
         position.X >= 0 && position.X < Width && position.Y >= 0 && position.Y < Height;
 
     /// <summary>True when the square exists and nothing permanently blocks it.</summary>
-    public bool IsPassable(GridPosition position) => IsInBounds(position) && !_blocked.Contains(position);
+    public bool IsPassable(GridPosition position) =>
+        IsInBounds(position) && !_blocked.Contains(position) && !_lowObstacles.Contains(position);
 
     /// <summary>
     /// The movement cost in feet of entering a square: 5 normally, 10 for Difficult

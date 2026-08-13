@@ -116,6 +116,7 @@ public static class CharacterResolver
                 - improvementsTaken,
             MagicItemNames = magicItems.Select(item => ItemDisplayName(item)).ToArray(),
             SpellAttackItemBonus = magicItems.Sum(item => item.Powers.SpellAttackBonus),
+            IgnoresHalfCoverOnSpellAttacks = magicItems.Any(item => item.Powers.IgnoresHalfCoverOnSpellAttacks),
             CriticalHitsAgainstBecomeNormal = magicItems.Any(item => item.Powers.CriticalHitsAgainstBecomeNormal),
         };
     }
