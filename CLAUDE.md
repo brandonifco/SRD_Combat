@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main`, mid-#106 (terrain and the cover model are merged; policy awareness and the pacing measurement remain) |
-| Tests | **707 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the close of #106 (terrain, cover, and the policy's use of both) |
+| Tests | **708 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **#106 (terrain and cover)** — terrain and the cover model are done; the policy's use of cover and the 40-seed measurement are not. **#108** (creatures granting Half Cover) waits on that policy work by design. |
+| Work remaining | **#108** (creatures granting Half Cover, deferred from #106 on purpose). Beyond it the next work is a phase — see the plan doc. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -109,9 +109,12 @@ has never been seen in play. Every figure is still a floor rather than a verdict
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
 rages, spends Second Wind, drinks and administers potions, casts when its weapon cannot
-reach, and reaches for a
+reach, reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
-whose area would catch its own side.
+whose area would catch its own side, and uses cover: a square the target has Total Cover
+against no longer counts as a firing position, a sidestep that clears a wall is taken
+even when it does not close distance, and among firing squares the best-sheltered one
+wins.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -163,7 +166,15 @@ per concern, and the gate before merge.
 
 ### What is open now
 
-**#106 — random terrain and cover.** Two slices are merged. `TerrainGenerator` in `Game`
+**#106 — random terrain and cover — is closed**, in three slices, and **its pacing was
+measured before closing, unlike the plausibility fixes this file warns about.** A fresh
+three-way comparison over seeds 1–40 — the historical table's own seed set was never
+recorded, which is why the absolute numbers below do not line up with it and why any
+future measurement should write its seeds down: pre-#106 median 3 (best 19), terrain +
+cover with the naive policy 3.5 (best 21), policy using cover 4 (best 19). **Terrain and
+cover cost nothing and probably pay a little**, which makes sense: both sides get the
+same walls, and the party's archers benefit most from the policy learning to sidestep
+and shelter. The slices, for the record: `TerrainGenerator` in `Game`
 scatters obstacle clusters — walls, or low obstacles on a coin flip per cluster — and
 Difficult Terrain patches across every generated battlefield, seeded through
 `IRandomSource` so a seed still replays the fight, placed only strictly between the two
@@ -176,12 +187,18 @@ named code on every path (`attack.total_cover`, `spell.total_cover`,
 `entry.total_cover`), areas exclude squares behind Total Cover per the glossary, the
 Wand of the War Mage's "ignore Half Cover" is real after shipping vacuous, and Sacred
 Flame's printed "gains no benefit from Half Cover" rides `SaveEffect.CoverIgnored`,
-structured at extraction. **Creatures granting Half Cover is printed and deliberately
-deferred to #108**, because shipping the +2 before the policy understands standing
-behind someone would only make every ranged attack quietly worse. What remains of #106
-is the policy learning to use cover, and then the pacing measurement over the standing
-40 seeds — **still deliberately unmeasured until then**, because the file's own history
-says an unmeasured "cosmetic" change is how a median quietly halves.
+structured at extraction. And the policy uses it: a square the target has Total Cover
+against is not a firing position, a sidestep that clears a wall is taken even when it
+does not close distance — without which an archer stood forever behind the one square it
+could not shoot past — and among firing squares the best-sheltered one wins, shelter
+ranking above closeness because once a square delivers the attack, closing further buys
+a ranged creature nothing. The third slice also caught a bug the second had shipped:
+**a reach weapon's Opportunity Attack can genuinely cross a wall square**, and the
+regenerated transcript printed a hit through Total Cover — `MakeOpportunityAttack` now
+declines to swing, the way it declines against a charmer. **Creatures granting Half
+Cover is printed and deliberately deferred to #108**, because shipping the +2 before
+the policy understands standing behind someone would only make every ranged attack
+quietly worse.
 
 (#96 — ranged attacks in close combat — was found by the play client's probe
 and fixed the same day: `RangedAttackInCloseCombat` sits beside `AtLongRange` in
@@ -312,16 +329,20 @@ got wrong. Ordered by dependency rather than by how valuable each looked on its 
 save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
 steps 1 and 2 came before anything else, and why they were worth doing as one design.
 
-**The frozen transcript has churned exactly twice**, and both churns were the fixture
+**The frozen transcript has churned exactly three times**, and every churn was the fixture
 catching a real change to how the game plays. Once when the tactics policy learned to
 focus fire — where the failure that mattered was not the byte-for-byte diff but
 `TheFightExercisesTheHardParts`, which noticed the adventurers now won quickly enough that
-nobody went down and the fight covered no Death Saving Throws at all. And once when cover
+nobody went down and the fight covered no Death Saving Throws at all. Once when cover
 landed (#106): the skirmish field's middle wall had always been drawn and never mattered,
 and the moment it granted Total Cover the opening archer's shot through it was refused, so
-both sides' archers now reposition before shooting — the new fight runs seven rounds and
-walks a downed character through death saves to stabilization. Read the diff before
-regenerating, every time.
+both sides' archers had to reposition before shooting. And once when the policy learned to
+*use* cover, which changed every fight enough that the scenario's seed no longer reached
+the hard parts and moved for the second time (composition unchanged, dice moved — the
+history is on `SkirmishScenario.Seed`); that regeneration also caught a shipped bug, a
+reach weapon's Opportunity Attack narrated straight through a wall. Read the diff before
+regenerating, every time — twice now it has been the thing that caught what the unit
+tests did not.
 
 ## The rule this project runs on
 
@@ -758,12 +779,15 @@ default — deliberate).
   sequence of a whole fight, so it catches interaction bugs no unit test reaches. When
   it fails, **read the diff before touching the fixture** — a change to the transcript
   is a change to how the game plays. Regenerate only once the new behaviour is intended:
-  un-skip `TranscriptWriter`, run it, re-skip it, review. It churned once, when the policy
-  learned to focus fire, and it earned its keep doing so: the failure was not the
-  byte-for-byte diff but `TheFightExercisesTheHardParts`, which noticed the adventurers
-  now won quickly enough that **nobody went down and the fight covered no Death Saving
-  Throws at all**. The composition was kept and the seed moved to one that still reaches
-  them — the seed is chosen for coverage, and `SkirmishScenario` says so.
+  un-skip `TranscriptWriter`, run it, re-skip it, review. It has churned three times —
+  focus fire, cover landing, the policy using cover — and earned its keep every time.
+  Twice the failure that mattered was not the byte-for-byte diff:
+  `TheFightExercisesTheHardParts` noticed the focus-fire fight no longer downed anybody
+  and covered no Death Saving Throws, and the cover-policy regeneration's diff showed a
+  reach weapon's Opportunity Attack narrating a hit straight through Total Cover — a
+  shipped bug no unit test had caught, because "melee reach means nothing in between" is
+  false for a Halberd. Both times the composition was kept and only the seed moved — the
+  seed is chosen for coverage, and `SkirmishScenario` carries the history.
 - **It uses hand-authored combatants, not SRD monsters, on purpose** — so it fails when
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
   `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
@@ -793,8 +817,11 @@ default — deliberate).
   passes it in; `AttackRules.Resolve` just adds the bonus to the AC it compares and
   records the degree on the `AttackRoll` for narration. Total Cover is refused before
   anything is spent on every targeting path, which is why `ResolveAttack` can assume it
-  never sees one — an Opportunity Attack is rolled from within melee reach, where the
-  centre-to-centre segment has no square between to cross. The save half rides
+  never sees one — and the Opportunity Attack is a filter rather than an assumption,
+  because "melee reach means nothing in between" is false for a reach weapon: a
+  Halberd's Opportunity Attack spans a square that can be a wall, which the regenerated
+  transcript caught printing a hit through Total Cover. `MakeOpportunityAttack` declines
+  to swing, the way it declines against a charmer. The save half rides
   `ResolveSaveEffect` against the effect's **point of origin** (the erupting point for a
   Sphere or Cube, the creature for everything else — `AreaTargeting.PointOfOrigin`), and
   a non-Dexterity save gains nothing.

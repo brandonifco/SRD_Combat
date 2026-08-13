@@ -621,17 +621,37 @@ public static class SimpleTacticsPolicy
 
     /// <summary>
     /// Moves as close to the target as this turn's movement allows, preferring a square
-    /// the creature can actually attack from.
+    /// the creature can actually attack from — and, among those, the best-sheltered one.
     /// </summary>
+    /// <remarks>
+    /// Cover changed what "can attack from" means: a square within reach whose line the
+    /// target has Total Cover against delivers nothing, so it no longer counts as a
+    /// firing position. Two consequences are deliberate. A square that does not close
+    /// the distance is still taken when it turns a blocked attack into a possible one —
+    /// the sidestep that clears a wall, without which an archer stood forever behind
+    /// the one square it could not shoot past. And among squares it can attack from,
+    /// the actor prefers the one where the enemy side's return lines suffer the most
+    /// cover, shelter ranking above closeness because once a square delivers the attack,
+    /// closing further buys a ranged creature nothing.
+    /// </remarks>
     private static void MoveTowards(Encounter encounter, Combatant actor, Combatant target)
     {
         var reach = actor.Stats.Attacks.Count > 0
             ? actor.Stats.Attacks.Max(attack => attack.MaximumRangeFeet)
             : MovementRules.MeleeReachFeet(actor);
 
-        var candidates = encounter.Battlefield.AllSquares()
+        var field = encounter.Battlefield;
+        var enemies = encounter.Combatants
+            .Where(enemy => enemy.SideId != actor.SideId && enemy.IsActive)
+            .ToArray();
+
+        var currentDistance = actor.Position.DistanceFeetTo(target.Position);
+        var canAttackFromHere = currentDistance <= reach
+            && CoverRules.Between(field, actor.Position, target.Position) != CoverDegree.Total;
+
+        var candidates = field.AllSquares()
             .Where(square => MovementRules.FindPath(
-                encounter.Battlefield,
+                field,
                 actor,
                 square,
                 actor.Turn.MovementFeet,
@@ -640,9 +660,16 @@ public static class SimpleTacticsPolicy
             {
                 Square = square,
                 Distance = square.DistanceFeetTo(target.Position),
+                CanAttackFrom = square.DistanceFeetTo(target.Position) <= reach
+                    && CoverRules.Between(field, square, target.Position) != CoverDegree.Total,
+                Shelter = enemies.Sum(enemy => ShelterValue(
+                    CoverRules.Between(field, enemy.Position, square))),
             })
-            .Where(option => option.Distance < actor.Position.DistanceFeetTo(target.Position))
-            .OrderBy(option => option.Distance > reach ? 1 : 0)
+            .Where(option =>
+                option.Distance < currentDistance
+                || (option.CanAttackFrom && !canAttackFromHere))
+            .OrderByDescending(option => option.CanAttackFrom)
+            .ThenByDescending(option => option.Shelter)
             .ThenBy(option => option.Distance)
             .ThenBy(option => option.Square.X)
             .ThenBy(option => option.Square.Y)
@@ -655,4 +682,15 @@ public static class SimpleTacticsPolicy
 
         encounter.Move(candidates[0].Square);
     }
+
+    /// <summary>
+    /// What standing behind this much cover is worth when choosing a square. The printed
+    /// bonuses for the graded degrees, and better than both for Total, which cannot be
+    /// shot through at all.
+    /// </summary>
+    private static int ShelterValue(CoverDegree degree) => degree switch
+    {
+        CoverDegree.Total => 7,
+        _ => CoverRules.Bonus(degree),
+    };
 }
