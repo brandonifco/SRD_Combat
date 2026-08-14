@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at the shop's honesty pass — offers state their effect (#166), armor's Strength requirement is enforced (#164) and the auto-buyer keeps its masteries (#165) — after the first played run's fixes #159 and #160 |
-| Tests | **866 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **873 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **Median 11 of 30, best 30, 40 of 120 runs clearing everything, 51 reaching level 4** (fresh seeds 121–240: 8 · 34 · 44) — `tools/PacingMeasure`, loot on + the Long Rest merchant. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
@@ -277,6 +277,22 @@ together took clears **33 → 40** canonical and **26 → 34** fresh, and level-
 44 → 51 and 36 → 44 — the auto-buyer really had been downgrading the party at every Long
 Rest since the economy landed.
 
+**The controls answer to the keyboard and show only what can be used.** `TurnOptions`
+in `Game` decides both, so the two clients cannot drift: each action carries a key that
+is **unique across the whole set**, so D is Dodge whenever Dodge is offered and never
+anything else, and the row shrinks as a turn is spent — Dodge and Dash leave with the
+Action, Second Wind with the Bonus Action, Action Surge appears only once there is no
+Action left to surge past, Stand Up only while Prone. **This reverses the client's first
+stance**, which drew everything and let refusals teach the rules; the status line still
+reads `Action ✓ Bonus ✗`, so a row that has shrunk still explains itself, and the engine
+still refuses anything that arrives by another road. The duplication of the engine's
+refusals is the real cost and is guarded from the direction that hurts: a test asserts
+that whatever `TurnOptions` hides, the engine refuses. The grid also **fogs every square
+the acting character has Total Cover against**, since that cover refuses an attack, a
+spell and an area alike. And `AttackChoice` no longer fires a bow point blank: a ranged
+roll within 5 feet of an enemy has Disadvantage, so a penalised attack sorts below every
+unpenalised one and the Rogue's blade wins the tie its bow used to take alphabetically.
+
 **An offer says what it would change, and saying so found two more bugs.** A shop row
 used to read `Chain Mail for Brenna — 75 GP` and nothing else, which is a price tag with
 no goods behind it. `ShopOffer.Effect` now carries the comparison — armor class before
@@ -319,7 +335,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 866 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 873 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
