@@ -58,6 +58,62 @@ public class PregeneratedPartyTests
     }
 
     [Fact]
+    public void TheClericNeverCarriesASpellItHasNoSlotFor()
+    {
+        // Caught by playing: the Cast menu of a level 1 Cleric offered Hold Person,
+        // Revivify and Spirit Guardians — every one of them refusable and nothing
+        // else — because the pregens took a second path that read their curated list
+        // straight onto the sheet, skipping the printed columns.
+        foreach (var level in new[] { 1, 2, 3, 4, 5 })
+        {
+            var cleric = PregeneratedParty.Build(Content, level)
+                .Single(member => member.Draft.Name == "Aldous");
+
+            var slots = cleric.Sheet.SpellSlots;
+            var highest = slots.Count > 0 ? slots.Keys.Max() : 0;
+            var prepared = cleric.Combatant.Stats.Character!.Spells;
+
+            Assert.All(prepared, spell =>
+                Assert.True(
+                    spell.IsCantrip || spell.Level <= highest,
+                    $"level {level} Cleric prepared {spell.Name} (level {spell.Level}) with no slot for it"));
+
+            // And the printed Prepared Spells column is a ceiling, not a suggestion.
+            var allowance = CharacterCreation.SpellAllowances(
+                Content.ClassesById["class.cleric"],
+                level,
+                cleric.Sheet.DivineOrder);
+
+            Assert.True(prepared.Count(spell => !spell.IsCantrip) <= allowance.Prepared);
+            Assert.True(prepared.Count(spell => spell.IsCantrip) <= allowance.Cantrips);
+        }
+    }
+
+    [Fact]
+    public void TheClericStillGrowsIntoItsWholePlanByLevelFive()
+    {
+        // The other half of the same rule: nothing was lost, it arrives when the
+        // slots do. Hold Person needs level 2 slots, Revivify and Spirit Guardians
+        // level 3.
+        var levelOne = PregeneratedParty.Build(Content, 1)
+            .Single(member => member.Draft.Name == "Aldous")
+            .Combatant.Stats.Character!.Spells.Select(spell => spell.Id).ToArray();
+
+        Assert.DoesNotContain("spell.hold-person", levelOne);
+        Assert.DoesNotContain("spell.revivify", levelOne);
+        Assert.Contains("spell.sacred-flame", levelOne);
+        Assert.Contains("spell.cure-wounds", levelOne);
+
+        var levelFive = PregeneratedParty.Build(Content, 5)
+            .Single(member => member.Draft.Name == "Aldous")
+            .Combatant.Stats.Character!.Spells.Select(spell => spell.Id).ToArray();
+
+        Assert.Contains("spell.hold-person", levelFive);
+        Assert.Contains("spell.revivify", levelFive);
+        Assert.Contains("spell.spirit-guardians", levelFive);
+    }
+
+    [Fact]
     public void TheClericTakesProtectorAndTheChoiceIsNoLongerReported()
     {
         var aldous = PregeneratedParty.Build(Content)
