@@ -993,39 +993,6 @@ public partial class CreateMode : FightScreen
         }
     }
 
-    private static IReadOnlyList<string> Wrap(string text, int width)
-    {
-        var lines = new List<string>();
-
-        foreach (var paragraph in text.Split('\n'))
-        {
-            if (paragraph.Length == 0)
-            {
-                lines.Add(string.Empty);
-                continue;
-            }
-
-            var line = string.Empty;
-
-            foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (line.Length + word.Length + 1 > width && line.Length > 0)
-                {
-                    lines.Add(line);
-                    line = string.Empty;
-                }
-
-                line += (line.Length > 0 ? " " : string.Empty) + word;
-            }
-
-            if (line.Length > 0)
-            {
-                lines.Add(line);
-            }
-        }
-
-        return lines;
-    }
 
     // ── The probe ───────────────────────────────────────────────────────────────
 

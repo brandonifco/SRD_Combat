@@ -296,8 +296,11 @@ a screenshot read between each — for the first time. Fight 1 turned up Rage en
 missed swing; the Cast menu of that same fight turned up a level 1 Cleric holding three
 spells it had no slot for. Fixing the two (#159, #160) took the canonical median from
 **6 to 10.5** and full clears from **16 to 33**. Two more things the play surfaced that
-the automated instrument never could: **the log truncates its own narration exactly
-where the outcome of the roll lives** (#161), and **a potion found by a character who
+the automated instrument never could: **the log truncated its own narration exactly
+where the outcome of the roll lived** — fixed by wrapping rather than cutting, since
+whether an attack hit is the *last word* of the sentence and an ellipsis reliably ate it
+(#161; the wrap helper moved to `FightScreen` so the creation panel and the log share
+one) — and **a potion found by a character who
 later goes down is stuck with them**, because administering reads the *actor's*
 inventory — so loot handed to the squishiest member is loot the party may never drink.
 The run itself reached fight 3 of 30 and is on disk; `--continue` resumes it.
