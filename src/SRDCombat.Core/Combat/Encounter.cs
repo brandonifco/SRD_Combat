@@ -457,8 +457,15 @@ public sealed partial class Encounter
         ExpireConditions(combatant, ConditionClock.EndOfTurn);
         RollRepeatSaves(combatant);
 
-        // Vex lasts "before the end of your next turn", so an unspent one dies here.
-        combatant.Features.VexedTargetId = null;
+        // Vex lasts "before the end of your next turn": an unspent one dies at the end
+        // of a turn *after* the one that earned it — never at the end of the earning
+        // turn itself, which is the off-by-one that starved a single-attack Rogue's
+        // Sneak Attack of the Advantage its own bow had just bought (#153).
+        if (combatant.Features.VexedTargetId is not null
+            && combatant.TurnsBegun > combatant.Features.VexEarnedOnTurn)
+        {
+            combatant.Features.VexedTargetId = null;
+        }
 
         EndBrokenGrapples();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
@@ -1322,6 +1329,7 @@ public sealed partial class Encounter
         if (attack.Mastery == WeaponMastery.Vex && components.Any(pair => pair.Result.Total > 0))
         {
             attacker.Features.VexedTargetId = target.Id;
+            attacker.Features.VexEarnedOnTurn = attacker.TurnsBegun;
 
             Add(
                 CombatStepKind.Feature,

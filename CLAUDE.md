@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the party-power phase's first slice (Channel Divinity — Divine Spark, #151) |
-| Tests | **832 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the Vex clock fix (#153), after the party-power phase's first slice (Divine Spark, #151) |
+| Tests | **834 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 8 of 30, best 30, 14 of 120 runs clearing everything, 31 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The step here: Divine Spark (#151) moved every figure at once (median 7 → 8, clears 12 → 14, level-4 24 → 31) — a slot-free heal is the cautious-healer finding one rung cheaper. Before that the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Pacing | **Median 7 of 30, best 30, 9 of 120 runs clearing everything, 21 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120 — **and the four-cell table below is why that headline must not be read alone.** Divine Spark (#151) moved every canonical figure at once (median 7 → 8, clears 12 → 14, level-4 24 → 31); the Vex clock fix (#153) then read 8 → 7 on the canonical seeds while reading **4 → 8 in the fix's favour on fresh seeds 121–240** (main 4/10/26, fix 8/14/32) — a strictly party-positive rule fix whose extra Advantage die reshuffles every later roll, so the seed-set × build interaction dominates a single range. That is #132's ±2 lesson operating at 120-seed scale: cross-check a surprising verdict on a second range before believing it. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The party-power phase (#83's direction) is underway** — Divine Spark is its first slice, and it is the only lever that has ever raised pacing. The squad-AI series (#122–#127) is complete: its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work). Also open: Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -273,7 +273,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 832 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 834 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 

@@ -101,6 +101,49 @@ public class WeaponMasteryTests
     }
 
     [Fact]
+    public void VexSurvivesToTheVexersNextTurnAndFeedsThatAttack()
+    {
+        // "This benefit lasts until the end of your next turn" — earned on turn one,
+        // it must still be there when turn two's attack rolls. The script is exact:
+        // two initiatives, turn one's attack and its 1d1 damage, then turn two's
+        // Advantage pair and damage — a missing or surplus die throws, which is the
+        // proof the second attack really rolled twice.
+        var (encounter, attacker, target) = Fight(
+            WeaponMastery.Vex, abilityModifier: 3, roll: 18, extraRolls: [1, 15, 3, 1]);
+
+        encounter.Attack(attacker.Stats.Attacks[0].Name, target);
+        Assert.Equal(target.Id, attacker.Features.VexedTargetId);
+
+        // The end of the *earning* turn is not "the end of your next turn".
+        encounter.EndTurn();
+        Assert.Equal(target.Id, attacker.Features.VexedTargetId);
+
+        // The target's turn passes; the vexer's next turn begins and swings.
+        encounter.EndTurn();
+        Assert.Null(encounter.Attack(attacker.Stats.Attacks[0].Name, target));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("with Advantage", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AnUnspentVexDiesAtTheEndOfTheVexersNextTurn()
+    {
+        var (encounter, attacker, target) = Fight(
+            WeaponMastery.Vex, abilityModifier: 3, roll: 18, extraRolls: [1]);
+
+        encounter.Attack(attacker.Stats.Attacks[0].Name, target);
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        // The vexer's next turn passes without spending it: it dies at that turn's end.
+        Assert.Equal(target.Id, attacker.Features.VexedTargetId);
+        encounter.EndTurn();
+        Assert.Null(attacker.Features.VexedTargetId);
+    }
+
+    [Fact]
     public void ToppleKnocksTheTargetProneOnAFailedSave()
     {
         // "a Constitution saving throw (DC 8 plus the ability modifier used to make the

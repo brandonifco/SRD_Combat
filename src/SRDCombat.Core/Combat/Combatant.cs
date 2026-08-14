@@ -591,10 +591,19 @@ public sealed class FeatureState
     /// </summary>
     /// <remarks>
     /// "before the end of your next turn" — so unlike Sap this is cleared at the end of
-    /// the holder's own next turn, and it is target-specific: vexing a goblin buys
-    /// nothing against the goblin beside it.
+    /// the holder's own <em>next</em> turn, and it is target-specific: vexing a goblin
+    /// buys nothing against the goblin beside it. <see cref="VexEarnedOnTurn"/> is what
+    /// makes "next" mean next: for its first shipped year this was cleared at the end
+    /// of whatever turn was ending, so a Vex earned by a single-attack Rogue died
+    /// before the Sneak Attack it was printed to feed (#153).
     /// </remarks>
     public string? VexedTargetId { get; internal set; }
+
+    /// <summary>
+    /// The holder's turn count when the Vex was earned. The end of a <em>later</em>
+    /// turn of the holder's clears it; the end of the earning turn does not.
+    /// </summary>
+    public int VexEarnedOnTurn { get; internal set; }
 
     /// <summary>
     /// The spell this creature is concentrating on, if any. A creature can concentrate
