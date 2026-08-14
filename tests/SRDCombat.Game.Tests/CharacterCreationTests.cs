@@ -127,6 +127,12 @@ public class CharacterCreationTests
         Assert.Equal(3, CharacterCreation.MasteryAllowance(fighter, level: 1));
         Assert.Equal(0, CharacterCreation.MasteryAllowance(Content.ClassesById["class.cleric"], level: 1));
 
+        // The Rogue's table prints no Weapon Mastery column — its two kinds live in the
+        // feature's prose, the resolver's own fallback. The first version read only the
+        // column and quietly offered the Rogue nothing.
+        Assert.Equal(2, CharacterCreation.MasteryAllowance(Content.ClassesById["class.rogue"], level: 1));
+        Assert.Equal(2, CharacterCreation.MasteryAllowance(Content.ClassesById["class.ranger"], level: 1));
+
         var options = CharacterCreation.MasteryOptions(Content, fighter);
         Assert.NotEmpty(options);
         Assert.All(options, weapon => Assert.True(WeaponMasteryRules.Executes(weapon.Mastery)));

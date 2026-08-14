@@ -74,7 +74,24 @@ if (ContinueRequested(args))
 }
 else
 {
-    run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1);
+    if (args.Contains("--create"))
+    {
+        // Creation runs before the run's dice: the drafts are choices, not rolls, and
+        // the seed governs the fights they walk into.
+        var drafts = PartyCreator.CreateParty(content);
+
+        if (drafts is null)
+        {
+            Console.WriteLine("Creation abandoned; no run started.");
+            return 0;
+        }
+
+        run = GauntletRun.Start(content, drafts, GauntletLadder.Default());
+    }
+    else
+    {
+        run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1);
+    }
 
     Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
 }

@@ -162,15 +162,32 @@ public static class CharacterCreation
     }
 
     /// <summary>
-    /// How many kinds of weapon this class may master at this level — the printed
-    /// Weapon Mastery column, zero for classes without one.
+    /// How many kinds of weapon this class may master at this level — the resolver's
+    /// own rule, mirrored: the printed Weapon Mastery column where one exists, and the
+    /// feature prose's two for a class whose table prints none (the Rogue, Ranger and
+    /// Paladin all say two). Zero without the feature at all.
     /// </summary>
+    /// <remarks>
+    /// The first version read only the column and quietly offered the Rogue no
+    /// masteries — caught by the creation flow's scripted smoke session, not by a unit
+    /// test, because the unit test had only asserted the classes with columns.
+    /// </remarks>
     public static int MasteryAllowance(ClassDefinition @class, int level)
     {
         ArgumentNullException.ThrowIfNull(@class);
 
-        return @class.Levels.SingleOrDefault(row => row.Level == level)
-            ?.ResourceCount("Weapon Mastery") ?? 0;
+        if (@class.Levels.SingleOrDefault(row => row.Level == level)
+            ?.ResourceCount("Weapon Mastery") is { } printed)
+        {
+            return printed;
+        }
+
+        var granted = @class.Features.Any(feature =>
+            string.Equals(feature.Name, "Weapon Mastery", StringComparison.Ordinal)
+            && feature.GrantedAtLevel is { } at
+            && at <= level);
+
+        return granted ? 2 : 0;
     }
 
     /// <summary>
