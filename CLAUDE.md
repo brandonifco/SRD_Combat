@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **The squad-AI series, #122–#127** — six researched slices toward real party tactics (blackboard + focus fire, roles + screening, engagement phases, composition-aware doctrine, the Phase 6 monster/party split). #122 (OA-aware movement) is done; #123 is the top of the queue. |
+| Work remaining | **The squad-AI series, #124–#127** — roles + screening, engagement phases, composition-aware doctrine, the Phase 6 monster/party split. #122 and #123 are done, and #123 (coordinated focus fire) **doubled the measured median, 4 → 8** — the largest single jump ever recorded. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -106,8 +106,22 @@ essentially never reaches level 4 — which is #79, and the reason half this tie
 has never been seen in play. Every figure is still a floor rather than a verdict, because
 `SimpleTacticsPolicy` is playing the party.
 
+**A second measured series exists now, on the recorded seeds 1–40** (methodology fixed
+at the #106 close-out, after the original table's seed set turned out never to have been
+written down): pre-#106 median **3**, terrain+cover **3.5**, policy-uses-cover **4**,
+creature cover **3.5**, Revivify **3.5**, OA-aware movement **4** — and then
+**coordinated focus fire (#123) took it to 8, the largest single jump either series has
+ever recorded**, potions included. The mechanism is the one the squad-AI research
+promised: a dead enemy loses its whole action economy, so the party converging on the
+most threat-per-hit-point kill beats the same attacks spread — and only the party
+consults the doctrine, so the whole gain lands on their side. The corroboration of the
+party-power thesis could not be cleaner: one targeting rule, doubled median.
+
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
-naive one: it focuses fire on the weakest enemy already in reach, heals a fallen ally,
+naive one: characters converge on `PartyDoctrine`'s shared kill — most threat per hit
+point left, falling back to their own reach when the focus target is beyond it, walking
+at the same kill when nothing is — while monsters still take the weakest enemy already
+in reach; it heals a fallen ally,
 rages, spends Second Wind, drinks and administers potions, casts when its weapon cannot
 reach, reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
