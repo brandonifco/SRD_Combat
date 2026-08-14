@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
@@ -12,7 +13,7 @@ namespace SRDCombat.Content.Validation;
 /// misread. It plays the same role hit-points-versus-hit-dice does for monsters — an
 /// independently known value the extraction has to reproduce.
 /// </remarks>
-public static class ClassValidator
+public static partial class ClassValidator
 {
     /// <summary>Hit dice the SRD actually uses for classes.</summary>
     private static readonly int[] LegalHitDice = [6, 8, 10, 12];
@@ -53,6 +54,27 @@ public static class ClassValidator
             }
         }
 
+        // No feature's prose may carry a run of bare table numbers — the shape the
+        // class table's per-level values leak in (#116). Written per the standing
+        // lesson, after the leak sat invisible for the chapter's whole life: assert
+        // the shape of what should NOT have been found, too. Printed prose lists
+        // numbers with punctuation ("15, 14, 13, 12, 10, 8"), so five consecutive
+        // bare numbers separated by spaces occur in no legitimate feature text.
+        foreach (var definition in classes)
+        {
+            foreach (var feature in definition.Features.Concat(definition.SubclassFeatures))
+            {
+                if (TableNumberRun().IsMatch(feature.Text))
+                {
+                    issues.Add(new ValidationIssue(
+                        ValidationSeverity.Error,
+                        "class.feature.table_noise",
+                        $"{definition.Name}: {feature.Name}",
+                        "Feature prose carries a run of bare numbers — a table leaked into it."));
+                }
+            }
+        }
+
         foreach (var duplicate in classes
                      .GroupBy(definition => definition.Id, StringComparer.Ordinal)
                      .Where(group => group.Count() > 1))
@@ -71,6 +93,10 @@ public static class ClassValidator
 
         return new ValidationResult(issues);
     }
+
+    // Five or more consecutive bare small numbers separated only by whitespace.
+    [GeneratedRegex(@"(\b\d{1,2}\b\s+){4,}\b\d{1,2}\b")]
+    private static partial Regex TableNumberRun();
 
     private static void ValidateOne(ClassDefinition definition, List<ValidationIssue> issues)
     {

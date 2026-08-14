@@ -504,7 +504,17 @@ public static partial class ClassParser
 
             if (_features.Count > 0)
             {
-                if (text.Length > 0)
+                // The full-width Features table is sliced into these column lines too,
+                // and appending every line put the table's headers and per-level
+                // numbers into whichever feature's prose was open when the table's
+                // region arrived (#116) — invisible until character creation shipped
+                // the prose verbatim. Prose in this chapter is set in the Cambria
+                // family (the wrapping variants included, which is why the family is
+                // matched); everything GillSans inside a feature region is a table's —
+                // the adjacent advancement table, or a feature's own printed sub-table
+                // like Font of Magic's costs, which appended here was garbled digits
+                // and dropped is absent and honest.
+                if (text.Length > 0 && line.Font.StartsWith("Cambria", StringComparison.Ordinal))
                 {
                     AppendWrapped(_features[^1].Text, text);
                 }
