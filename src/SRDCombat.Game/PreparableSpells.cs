@@ -66,6 +66,7 @@ public static class PreparableSpells
                 "spell.cure-wounds",
                 "spell.healing-word",
                 "spell.inflict-wounds",
+                "spell.revivify",
                 "spell.spirit-guardians",
             ],
             ["class.wizard"] =

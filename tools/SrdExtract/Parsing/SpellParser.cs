@@ -276,14 +276,15 @@ public static partial class SpellParser
 
             // Healing is read only when the spell neither attacks nor forces a save, so
             // a spell that damages on a save and heals on a success cannot be mistaken
-            // for a healing spell.
+            // for a healing spell. Revival is gated the same way.
             var heal = save is null && !isSpellAttack ? SpellEffectParser.ParseHeal(body) : null;
+            var revival = save is null && !isSpellAttack ? SpellEffectParser.ParseRevival(body) : null;
 
             var mechanics = save is not null
                 ? EntryMechanics.SavingThrow
                 : isSpellAttack
                     ? EntryMechanics.Attack
-                    : heal is not null
+                    : heal is not null || revival is not null
                         ? EntryMechanics.Healing
                         : classified.Mechanics;
 
@@ -309,6 +310,7 @@ public static partial class SpellParser
                 Mechanics = mechanics,
                 Save = save,
                 Heal = heal,
+                Revival = revival,
                 Damage = SpellEffectParser.ParseDamage(body),
                 AppliedConditions = attackRider is not null ? [attackRider] : classified.AppliedConditions,
                 IsSpellAttack = isSpellAttack,

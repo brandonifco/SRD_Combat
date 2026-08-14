@@ -184,12 +184,12 @@ public static class PregeneratedParty
         // heal harder next turn — is the most interesting one a party has in a fight.
         //
         // The rest are every Cleric spell the engine actually executes at levels 1-3.
-        // The class table prepares nine at level 5 and this is six, and the shortfall is
-        // not a choice: of the 109 spells on the printed Cleric list, these are the ones
-        // whose effect is modelled. Everything else either has no effect the engine can
-        // express — Bane, Command, Hold Person, and the rest of the sixty-six that were
-        // silently doing nothing until `spell.save_effect_not_modelled` started refusing
-        // them — or needs machinery that does not exist yet.
+        // The class table prepares nine at level 5 and this is seven, and the shortfall
+        // is not a choice: of the 109 spells on the printed Cleric list, these are the
+        // ones whose effect is modelled. Everything else either has no effect the engine
+        // can express — Bane, Command, Hold Person, and the rest of the sixty-six that
+        // were silently doing nothing until `spell.save_effect_not_modelled` started
+        // refusing them — or needs machinery that does not exist yet.
         "class.cleric" =>
         [
             "spell.sacred-flame",
@@ -202,6 +202,11 @@ public static class PregeneratedParty
             // is the first thing this party has that punishes a crowd.
             "spell.inflict-wounds",
             "spell.spirit-guardians",
+
+            // Revivify (#119): the printed answer to the way runs actually end. A death
+            // used to be permanent until the next Long Rest; now the ten-round window
+            // is a fight the party can win.
+            "spell.revivify",
         ],
         _ => [],
     };

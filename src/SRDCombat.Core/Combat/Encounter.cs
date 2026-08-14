@@ -758,6 +758,7 @@ public sealed partial class Encounter
 
         if (result.Died)
         {
+            combatant.RecordDeathRound(Round);
             Add(CombatStepKind.Died, $"{combatant.Name} is dead.", combatant);
         }
     }
@@ -945,6 +946,7 @@ public sealed partial class Encounter
 
         if (applied.Died)
         {
+            target.RecordDeathRound(Round);
             Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
         }
         else if (applied.Downed)
@@ -1214,6 +1216,7 @@ public sealed partial class Encounter
 
             if (applied.Died)
             {
+                target.RecordDeathRound(Round);
                 Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
                 break;
             }
@@ -1363,6 +1366,7 @@ public sealed partial class Encounter
 
         if (applied.Died)
         {
+            second.RecordDeathRound(Round);
             Add(CombatStepKind.Died, $"{second.Name} is dead.", second);
         }
         else if (applied.Downed)
@@ -1611,6 +1615,7 @@ public sealed partial class Encounter
 
                 if (applied.Died)
                 {
+                    victim.RecordDeathRound(Round);
                     Add(CombatStepKind.Died, $"{victim.Name} is dead.", victim);
                     break;
                 }

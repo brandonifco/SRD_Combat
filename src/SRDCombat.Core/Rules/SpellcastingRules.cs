@@ -71,6 +71,7 @@ public static class SpellcastingRules
         ArgumentNullException.ThrowIfNull(spell);
 
         return spell.Heal is not null
+            || spell.Revival is not null
             || spell.IsSpellAttack
             || (spell.Save is { } save
                 && (save.Area is not { } area || AreaTargeting.CanResolve(area.Shape))

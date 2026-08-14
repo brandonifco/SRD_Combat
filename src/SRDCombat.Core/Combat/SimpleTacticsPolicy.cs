@@ -199,6 +199,15 @@ public static class SimpleTacticsPolicy
             // Back on their feet for the cost of a Bonus Action.
         }
 
+        // A dead ally outranks a downed one: the downed are still rolling Death Saving
+        // Throws and can be got up later, while the dead have a printed window that is
+        // closing. The refusals decide what "can be revived" means — the policy just
+        // asks, and a refused cast costs nothing.
+        else if (actor.Turn.HasAction && TryReviveDeadAlly(encounter, actor))
+        {
+            return;
+        }
+
         // Healing Word is a Bonus Action, so getting someone up can cost nothing but the
         // slot; Cure Wounds is an Action and is only worth it if nobody can be reached
         // the cheap way.
@@ -258,6 +267,127 @@ public static class SimpleTacticsPolicy
     }
 
     /// <summary>
+    /// Revives the freshest dead ally when the actor carries a revival spell — walking
+    /// to the body first, because Revivify is Touch.
+    /// </summary>
+    /// <remarks>
+    /// The engine's refusals are the arbiter of "can be revived": the policy only asks,
+    /// and a refused cast costs nothing. The freshest corpse first because every window
+    /// is closing and the newest death has the most left. When the body is beyond this
+    /// turn's movement, the walk toward it still happens and the method reports false,
+    /// so the rest of the turn is spent fighting from wherever the walk ended.
+    /// </remarks>
+    private static bool TryReviveDeadAlly(Encounter encounter, Combatant actor)
+    {
+        if (actor.Stats.Character is not { CanCast: true } character)
+        {
+            return false;
+        }
+
+        var revival = character.Spells.FirstOrDefault(spell =>
+            spell.Revival is not null && spell.CastingTime == SpellCastingTime.Action);
+
+        if (revival is null)
+        {
+            return false;
+        }
+
+        var corpses = encounter.Combatants
+            .Where(other => other.SideId == actor.SideId
+                && other.Id != actor.Id
+                && other.IsDead
+                && other.DiedInRound is not null)
+            .OrderByDescending(other => other.DiedInRound)
+            .ThenBy(other => other.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var corpse in corpses)
+        {
+            if (actor.Position.DistanceFeetTo(corpse.Position) > Battlefield.FeetPerSquare)
+            {
+                var beside = encounter.Battlefield.AllSquares()
+                    // Beside, never on: the corpse does not block the square, and
+                    // standing on it would be exactly the crowding the revival's own
+                    // no-room refusal exists to prevent.
+                    .Where(square => square != corpse.Position
+                        && square.DistanceFeetTo(corpse.Position) <= Battlefield.FeetPerSquare)
+                    .Where(square => MovementRules.FindPath(
+                        encounter.Battlefield,
+                        actor,
+                        square,
+                        actor.Turn.MovementFeet,
+                        encounter.Combatants) is not null)
+                    .OrderBy(square => square.DistanceFeetTo(actor.Position))
+                    .ThenBy(square => square.X)
+                    .ThenBy(square => square.Y)
+                    .Cast<GridPosition?>()
+                    .FirstOrDefault();
+
+                if (beside is { } destination)
+                {
+                    encounter.Move(destination);
+                }
+                else
+                {
+                    // Out of range this turn: commit the walk toward the freshest body
+                    // and fight on from wherever it ends.
+                    MoveTowards(encounter, actor, corpse);
+                    return false;
+                }
+            }
+
+            if (actor.Position.DistanceFeetTo(corpse.Position) <= Battlefield.FeetPerSquare
+                && encounter.CastSpell(revival.Id, corpse) is null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether casting this spell would consume the caster's last slot at or above its
+    /// revival spell's level — the slot a death would need.
+    /// </summary>
+    private static bool WouldSpendTheLastRevivalSlot(Combatant actor, SpellDefinition spell)
+    {
+        var revival = actor.Stats.Character!.Spells.FirstOrDefault(candidate => candidate.Revival is not null);
+
+        if (revival is null)
+        {
+            return false;
+        }
+
+        // The slot the engine would pick: the lowest level at or above the spell's own
+        // with a slot remaining — SpendCastingCost's rule, mirrored.
+        int? picked = null;
+
+        for (var level = spell.Level; level <= 9; level++)
+        {
+            if (actor.Features.SpellSlotsRemaining.GetValueOrDefault(level) > 0)
+            {
+                picked = level;
+                break;
+            }
+        }
+
+        if (picked is not { } chosen || chosen < revival.Level)
+        {
+            return false;
+        }
+
+        var remainingAtRevivalLevels = 0;
+
+        for (var level = revival.Level; level <= 9; level++)
+        {
+            remainingAtRevivalLevels += actor.Features.SpellSlotsRemaining.GetValueOrDefault(level);
+        }
+
+        return remainingAtRevivalLevels <= 1;
+    }
+
+    /// <summary>
     /// Heals the ally most in need with a spell of the given casting time.
     /// </summary>
     /// <remarks>
@@ -270,6 +400,13 @@ public static class SimpleTacticsPolicy
     {
         var healing = actor.Stats.Character!.Spells
             .Where(spell => spell.Heal is not null && spell.CastingTime == castingTime)
+            // The cautious healer's newest clause: a heal must not burn the last slot
+            // that could power a revival. The engine spends the lowest slot that fits,
+            // so once the small slots are dry an upcast Cure Wounds quietly eats the
+            // level 3 slot Revivify needs — which is exactly how the first measured
+            // level-5 runs fired zero revivals across forty-five deaths: every slot
+            // that could answer a death had already bought hit points.
+            .Where(spell => !WouldSpendTheLastRevivalSlot(actor, spell))
             // The biggest heal first: a slot spent getting someone up should buy as much
             // margin as it can.
             .OrderByDescending(spell => spell.Heal!.Dice.Average)
