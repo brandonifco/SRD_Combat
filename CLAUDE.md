@@ -11,15 +11,16 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 ## Current state — read this first
 
-**As of 2026-08-13.** All numbers here are verified, not estimated.
+**As of 2026-08-14.** All numbers here are verified, not estimated.
 
 | | |
 | --- | --- |
-| Branch | `main` at the close of #108 (creatures grant Half Cover, and the policy steps around its allies) |
-| Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the close of #132 (the pacing instrument is code, and the series is re-baselined on it) |
+| Tests | **774 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **The squad-AI series, #126–#127** — composition-aware doctrine and the Phase 6 split. #122–#125 are done; #123 (focus fire) **doubled the median, 4 → 8**, and both positional slices measured themselves out of the build: #124's screening cost pacing at every strength, and #125's engagement phases found that even a *paying trigger* cannot rescue holding at this game's engagement distances — the two ladders below are required reading before any further positional work. |
+| Pacing | **Median 6 of 30, best 23, 6 of 120 runs reaching level 4** — `tools/PacingMeasure`, loot on, seeds 1–120, the canonical instrument since #132. |
+| Work remaining | **The squad-AI series, #126–#127** — composition-aware doctrine and the Phase 6 split. #122–#125 are done; #123 (focus fire) is the series' real gain (**4 → 6 on the canonical instrument**; the recorded "4 → 8" was half a 40-seed outlier — see the instrument paragraph), and both positional slices measured themselves out of the build: #124's screening cost pacing at every strength, and #125's engagement phases found that even a *paying trigger* cannot rescue holding at this game's engagement distances — the two ladders below are required reading before any further positional work. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -53,7 +54,8 @@ deliberately thin — it calls the engine's public actions and prints `CombatSte
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
 **Automated runs still lose, and the pacing history is worth reading as a whole.** Measured
-over the same 40 seeds throughout, median fights cleared of 30:
+over the same 40 seeds throughout (an unrecorded set — and 40-seed medians carry about
+±2 of noise, a #132 finding this table predates), median fights cleared of 30:
 
 | After | Median | Best | Runs reaching level 4 |
 | --- | --- | --- | --- |
@@ -106,16 +108,38 @@ essentially never reaches level 4 — which is #79, and the reason half this tie
 has never been seen in play. Every figure is still a floor rather than a verdict, because
 `SimpleTacticsPolicy` is playing the party.
 
-**A second measured series exists now, on the recorded seeds 1–40** (methodology fixed
+**A second measured series exists, on the recorded seeds 1–40** (methodology fixed
 at the #106 close-out, after the original table's seed set turned out never to have been
 written down): pre-#106 median **3**, terrain+cover **3.5**, policy-uses-cover **4**,
 creature cover **3.5**, Revivify **3.5**, OA-aware movement **4** — and then
-**coordinated focus fire (#123) took it to 8, the largest single jump either series has
-ever recorded**, potions included. The mechanism is the one the squad-AI research
-promised: a dead enemy loses its whole action economy, so the party converging on the
-most threat-per-hit-point kill beats the same attacks spread — and only the party
-consults the doctrine, so the whole gain lands on their side. The corroboration of the
-party-power thesis could not be cleaner: one targeting rule, doubled median.
+**coordinated focus fire (#123) took it to 8**. The mechanism is the one the squad-AI
+research promised: a dead enemy loses its whole action economy, so the party converging
+on the most threat-per-hit-point kill beats the same attacks spread — and only the
+party consults the doctrine, so the whole gain lands on their side. The gain is real,
+but read the next paragraph before trusting any of this series' absolute numbers.
+
+**The instrument is now code — `tools/PacingMeasure` — and re-baselining it (#132)
+rewrote what the series' numbers mean.** The seeds 1–40 series above was measured on a
+session-scratch harness that never passed `CompleteFight` a random source, so **no
+potion or magic item ever dropped** — an instrument nobody chose, recovered from an old
+scratchpad and reproduced exactly. Re-measured across three fresh 40-seed sets on one
+build, its no-loot medians read 8, 4.5, 4 and its loot medians 4, 4, 6: **a 40-seed
+median carries about ±2 of noise, not the ±0.5 this file used to treat as the floor**,
+because the distribution is lumpy — of 120 loot-form runs on current `main`, 47 die by
+fight 2, 18 clear exactly 8, and exactly one clears 5, so a 40-seed median teeters
+between lumps. The canonical form is now **loot on (the game the player plays), seeds
+1–120**: current `main` reads **median 6, best 23, 6 of 120 runs reaching level 4**,
+and focus fire re-measured under it is **4 → 6** (no-loot: 4 → 5) — the series'
+recorded "4 → 8" was half effect, half outlier. The #124/#125 dismantling ladders were
+controlled comparisons on the retired instrument and their *verdicts* stand — every
+wiring cost or tied, none paid — but the 8 they defended belongs to it. Measure any
+future slice with the tool, bar and result from the same command, seeds written down:
+
+```bash
+dotnet run --project tools/PacingMeasure -- --seeds 1-120
+```
+
+(`--no-loot` reproduces the retired form for continuity; `--seeds a-b` picks the range.)
 
 **And #124 measured the opposite lesson, term by term, before shipping none of it.**
 The screening behavior — front liners standing in enemy lanes, the back rank holding
@@ -188,7 +212,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 678 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 774 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
