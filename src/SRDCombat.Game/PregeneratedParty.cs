@@ -112,15 +112,13 @@ public static class PregeneratedParty
                 content.ArmorById,
                 content.MagicItemsById));
 
-        // A draft that chose its spells resolves them through SpellPreparation; the
-        // curated per-class loadout below stands in only when no choice was made, which
-        // is what the four pregens do.
-        var spells = draft.ChosenSpellIds.Count > 0
-            ? SpellPreparation.Prepare(content, draft, level)
-            : SpellIdsFor(draft.ClassId)
-                .Where(content.SpellsById.ContainsKey)
-                .Select(id => content.SpellsById[id])
-                .ToArray();
+        // One preparation path, for pregenerated and created characters alike. The
+        // pregens used to take a second one that read their curated list straight onto
+        // the sheet, and it skipped the printed Cantrips and Prepared Spells columns
+        // entirely: a level 1 Cleric walked into fight 1 carrying Hold Person, Revivify
+        // and Spirit Guardians with no slot above level 1 to cast any of them, which is
+        // what the Cast menu of a played run showed.
+        var spells = SpellPreparation.Prepare(content, draft, level);
 
         var stats = StatsFor(content, sheet, draft.ClassId, level, spells);
 
@@ -172,14 +170,23 @@ public static class PregeneratedParty
     }
 
     /// <summary>
-    /// The spells the pregenerated caster knows.
+    /// The spells the pregenerated Cleric plans, in the order they are prepared.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// One of each shape the engine resolves, so playing exercises every casting path:
     /// Sacred Flame forces a save, Guiding Bolt rolls a spell attack, and Cure Wounds
     /// and Healing Word restore hit points. A spell the engine cannot resolve would be
     /// refused with a reason at the point of casting, which is honest but makes for a
     /// poor fight.
+    /// </para>
+    /// <para>
+    /// <b>It is a plan rather than a loadout</b>, and it rides the draft's
+    /// <c>ChosenSpellIds</c> so that <see cref="SpellPreparation"/> reads it under the
+    /// printed columns — which is the whole reason the order matters. The level 1
+    /// Cleric prepares Sacred Flame and the four level 1 spells; Hold Person arrives
+    /// with level 2 slots and the level 3 pair with level 3 slots.
+    /// </para>
     /// </remarks>
     private static IReadOnlyList<string> SpellIdsFor(string classId) => classId switch
     {
@@ -302,6 +309,7 @@ public static class PregeneratedParty
         DivineOrder = DivineOrder.Protector,
         ChosenSkills = ["Insight", "Religion"],
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Wisdom),
+        ChosenSpellIds = SpellIdsFor("class.cleric"),
         WeaponIds = ["weapon.mace"],
         ArmorId = "armor.chain-shirt",
         HasShield = true,

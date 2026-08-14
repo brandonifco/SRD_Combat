@@ -235,11 +235,16 @@ public class SpellPreparationTests
     }
 
     [Fact]
-    public void ADraftWithNoChoiceKeepsThePregeneratedLoadout()
+    public void ADraftThatChoseNoSpellsPreparesNone()
     {
+        // This asserted the opposite until a played run read the Cast menu: a draft
+        // with no chosen spells used to fall back to a curated per-class loadout that
+        // skipped the printed columns, which is how a level 1 Cleric ended up holding
+        // three spells it had no slot for. There is one preparation path now, and a
+        // caster who chose nothing prepares nothing.
         var member = PregeneratedParty.Resolve(Content, Cleric(), level: 1);
 
-        Assert.NotEmpty(member.Combatant.Stats.Character!.Spells);
+        Assert.Empty(member.Combatant.Stats.Character!.Spells);
     }
 
     [Fact]
