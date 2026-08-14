@@ -161,7 +161,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         // shared with the Godot client so the two cannot drift apart on it.
         var name = words.Length > 2
             ? string.Join(' ', words[2..])
-            : AttackChoice.BestFor(active, target)?.Name;
+            : AttackChoice.BestFor(active, target, encounter.Combatants)?.Name;
 
         return name is null
             ? new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches.")
