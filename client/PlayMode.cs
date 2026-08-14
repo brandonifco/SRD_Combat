@@ -818,7 +818,7 @@ public partial class PlayMode : FightScreen
 
         if (occupant is { } somebody && somebody.SideId != PregeneratedParty.SideId)
         {
-            Run(() => AttackChoice.BestFor(active, somebody) is { } attack
+            Run(() => AttackChoice.BestFor(active, somebody, encounter.Combatants) is { } attack
                 ? encounter.Attack(attack.Name, somebody)
                 : new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches {somebody.Name}."));
         }
@@ -922,7 +922,7 @@ public partial class PlayMode : FightScreen
         {
             foreach (var enemy in encounter.EnemiesOf(commanded))
             {
-                if (!enemy.IsDead && AttackChoice.BestFor(commanded, enemy) is not null)
+                if (!enemy.IsDead && AttackChoice.BestFor(commanded, enemy, encounter.Combatants) is not null)
                 {
                     DrawCircle(CentreOf(enemy.Position), (CellPixels / 2f) - 4, MonsterColour, filled: false, width: 2);
                 }
