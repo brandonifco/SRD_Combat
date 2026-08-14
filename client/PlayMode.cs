@@ -88,6 +88,12 @@ public partial class PlayMode : FightScreen
     /// can never mean different things.
     /// </summary>
     private GridPosition? _cursor;
+
+    /// <summary>
+    /// The highlighted row of whichever menu is open. Arrows move it and Enter takes
+    /// it, so choosing a spell never has to reach for the mouse.
+    /// </summary>
+    private int _menuIndex;
     private readonly List<(Rect2 Rect, string Caption, Func<ActionRefusal?> Act)> _buttons = [];
     private readonly List<(Rect2 Rect, SpellDefinition Spell)> _spellRows = [];
     private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
@@ -450,6 +456,7 @@ public partial class PlayMode : FightScreen
 
             case TurnAction.Attacks:
                 _spellMenuOpen = false;
+                _menuIndex = 0;
 
                 // With one attack there is nothing to choose, so it arms targeting
                 // straight away; the menu is for characters carrying a choice.
@@ -467,6 +474,7 @@ public partial class PlayMode : FightScreen
             case TurnAction.Cast:
                 _spellMenuOpen = !_spellMenuOpen;
                 _attackMenuOpen = false;
+                _menuIndex = 0;
                 return null;
 
             case TurnAction.Drink:
@@ -479,6 +487,67 @@ public partial class PlayMode : FightScreen
             case TurnAction.DivineSparkHarm: _pending = Pending.SparkHarmTarget; return null;
 
             default: return null;
+        }
+    }
+
+    /// <summary>Takes a spell off the menu: the slot choice if there is one, else the target.</summary>
+    private void ChooseSpell(SpellDefinition spell)
+    {
+        _spellMenuOpen = false;
+        _pendingSpell = spell;
+        _menuIndex = 0;
+
+        // A slotted spell with more than one slot level to burn is a real choice; one
+        // level, or a cantrip, arms straight away and the engine picks as it always has.
+        if (CommandedCombatant() is { } caster && SlotLevelsFor(caster, spell).Count > 1)
+        {
+            _slotMenuOpen = true;
+        }
+        else
+        {
+            _pending = Pending.SpellTarget;
+        }
+
+        QueueRedraw();
+    }
+
+    private void ChooseSlot(int level)
+    {
+        _slotMenuOpen = false;
+        _pendingSlot = level;
+        _pending = Pending.SpellTarget;
+        QueueRedraw();
+    }
+
+    private void ChooseAttack(CombatAttack attack)
+    {
+        _attackMenuOpen = false;
+        _pendingAttack = attack;
+        _pending = Pending.AttackTarget;
+        QueueRedraw();
+    }
+
+    /// <summary>How many rows the open menu has, or zero when none is open.</summary>
+    private int OpenMenuLength =>
+        _spellMenuOpen ? _spellRows.Count
+        : _slotMenuOpen ? _slotRows.Count
+        : _attackMenuOpen ? _attackRows.Count
+        : 0;
+
+    /// <summary>Takes the highlighted row of whichever menu is open.</summary>
+    private void TakeHighlightedRow()
+    {
+        if (_spellMenuOpen && _menuIndex < _spellRows.Count)
+        {
+            ChooseSpell(_spellRows[_menuIndex].Spell);
+        }
+        else if (_slotMenuOpen && _menuIndex < _slotRows.Count)
+        {
+            ChooseSlot(_slotRows[_menuIndex].Level);
+        }
+        else if (_attackMenuOpen && _menuIndex < _attackRows.Count)
+        {
+            ChooseAttack(_attackRows[_menuIndex].Attack);
         }
     }
 
@@ -612,6 +681,24 @@ public partial class PlayMode : FightScreen
                 _ => (GridPosition?)null,
             };
 
+            // An open menu takes the arrows first: while a spell list is up, Up and Down
+            // belong to it rather than to the board behind it.
+            if (OpenMenuLength is > 0 and var rows)
+            {
+                if (step is { } scroll && scroll.X == 0)
+                {
+                    _menuIndex = Math.Clamp(_menuIndex + scroll.Y, 0, rows - 1);
+                    QueueRedraw();
+                    return;
+                }
+
+                if (key.Keycode is Key.Enter or Key.KpEnter)
+                {
+                    TakeHighlightedRow();
+                    return;
+                }
+            }
+
             if (step is { } move && CommandedCombatant() is { } walker)
             {
                 var from = _cursor ?? walker.Position;
@@ -728,22 +815,7 @@ public partial class PlayMode : FightScreen
             {
                 if (rect.HasPoint(pixel))
                 {
-                    _spellMenuOpen = false;
-                    _pendingSpell = chosen;
-
-                    // A slotted spell with more than one slot level to burn is a real
-                    // choice; one level, or a cantrip, arms straight away and the
-                    // engine picks as it always has.
-                    if (SlotLevelsFor(active, chosen).Count > 1)
-                    {
-                        _slotMenuOpen = true;
-                    }
-                    else
-                    {
-                        _pending = Pending.SpellTarget;
-                    }
-
-                    QueueRedraw();
+                    ChooseSpell(chosen);
                     return;
                 }
             }
@@ -755,10 +827,7 @@ public partial class PlayMode : FightScreen
             {
                 if (rect.HasPoint(pixel))
                 {
-                    _slotMenuOpen = false;
-                    _pendingSlot = level;
-                    _pending = Pending.SpellTarget;
-                    QueueRedraw();
+                    ChooseSlot(level);
                     return;
                 }
             }
@@ -770,10 +839,7 @@ public partial class PlayMode : FightScreen
             {
                 if (rect.HasPoint(pixel))
                 {
-                    _attackMenuOpen = false;
-                    _pendingAttack = chosen;
-                    _pending = Pending.AttackTarget;
-                    QueueRedraw();
+                    ChooseAttack(chosen);
                     return;
                 }
             }
@@ -1312,7 +1378,7 @@ public partial class PlayMode : FightScreen
 
         var top = ButtonRowTop + 36 + 28 + 54;
 
-        DrawString(TextFont, new Vector2(GridLeft, top - 6), "SPELLS — click one, then its target", fontSize: 12, modulate: Dim);
+        DrawString(TextFont, new Vector2(GridLeft, top - 6), "SPELLS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
 
         var y = top + 6;
 
@@ -1322,6 +1388,12 @@ public partial class PlayMode : FightScreen
             _spellRows.Add((rect, spell));
 
             DrawRect(rect, GridLine);
+
+            if (_spellRows.Count - 1 == _menuIndex)
+            {
+                DrawRect(rect, ActiveRing, filled: false, width: 2f);
+            }
+
             DrawString(
                 TextFont,
                 new Vector2(rect.Position.X + 8, rect.Position.Y + 15),
@@ -1344,7 +1416,7 @@ public partial class PlayMode : FightScreen
 
         var top = ButtonRowTop + 36 + 28 + 54;
 
-        DrawString(TextFont, new Vector2(GridLeft, top - 6), "ATTACKS — click one, then its target", fontSize: 12, modulate: Dim);
+        DrawString(TextFont, new Vector2(GridLeft, top - 6), "ATTACKS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
 
         var y = top + 6;
 
@@ -1352,6 +1424,11 @@ public partial class PlayMode : FightScreen
         {
             var rect = new Rect2(GridLeft, y, 300, 20);
             _attackRows.Add((rect, attack));
+
+            if (_attackRows.Count - 1 == _menuIndex)
+            {
+                DrawRect(rect, ActiveRing, filled: false, width: 2f);
+            }
 
             var dice = string.Join(" + ", attack.Damage.Select(damage => $"{damage.Amount} {damage.Type}"));
             var reach = attack.NormalRangeFeet is { } normal
@@ -1397,7 +1474,7 @@ public partial class PlayMode : FightScreen
         DrawString(
             TextFont,
             new Vector2(GridLeft, top - 6),
-            $"SLOT for {spell.Name} — click a level, then the target",
+            $"SLOT for {spell.Name} — click a level, or arrows and Enter",
             fontSize: 12,
             modulate: Dim);
 
@@ -1407,6 +1484,11 @@ public partial class PlayMode : FightScreen
         {
             var rect = new Rect2(GridLeft, y, 260, 20);
             _slotRows.Add((rect, level));
+
+            if (_slotRows.Count - 1 == _menuIndex)
+            {
+                DrawRect(rect, ActiveRing, filled: false, width: 2f);
+            }
 
             var left = character.Features.SpellSlotsRemaining.GetValueOrDefault(level);
 
@@ -1444,18 +1526,18 @@ public partial class PlayMode : FightScreen
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
         {
             return _pendingSlot is { } slot
-                ? $"choose a target for {spell.Name} (level {slot} slot) — click anywhere else to cancel"
-                : $"choose a target for {spell.Name} — click anywhere else to cancel";
+                ? $"choose a target for {spell.Name} (level {slot} slot) — click it, or arrows and Enter; Esc cancels"
+                : $"choose a target for {spell.Name} — click it, or arrows and Enter; Esc cancels";
         }
 
         if (_pending == Pending.AttackTarget && _pendingAttack is { } attack)
         {
-            return $"choose a target for {attack.Name} — click anywhere else to cancel";
+            return $"choose a target for {attack.Name} — click it, or arrows and Enter; Esc cancels";
         }
 
         if (_pending == Pending.PotionTarget)
         {
-            return "choose who drinks the potion — click anywhere else to cancel";
+            return "choose who drinks the potion — click it, or arrows and Enter; Esc cancels";
         }
 
         if (commanded is { } active)

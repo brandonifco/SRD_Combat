@@ -38,8 +38,8 @@ On your turn:
 | --- | --- |
 | click a square | walk there — the engine charges movement and provokes what it provokes |
 | click an enemy | attack with the hardest-hitting attack that reaches, never a bow point blank |
-| **arrow keys** | move the keyboard's cursor around the board |
-| **Enter** | act on the cursor's square — the same thing a click there would do |
+| **arrow keys** | move the cursor around the board — or the highlighted row, while a menu is open |
+| **Enter** | take the highlighted menu row, or act on the cursor's square — the same thing a click would do |
 | **a letter** | the action whose button shows it: `D` Dodge, `R` Dash, `G` Disengage, `U` Stand Up, `E` Escape, `A` Attack, `C` Cast, `Q` Drink, `P` Give Potion, `W` Second Wind, `S` Action Surge, `F` Rage, `K` Reckless, `M` Steady Aim, `X`/`Z` Cunning Dash/Disengage, `T` Trip, `H`/`J` Spark Heal/Harm |
 | **Space** | End Turn |
 | Esc | back out of an armed click or open menu; quit when nothing is armed |
