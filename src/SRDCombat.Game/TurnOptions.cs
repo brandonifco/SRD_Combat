@@ -95,7 +95,7 @@ public static class TurnOptions
         TurnAction.StandUp => "Stand Up",
         TurnAction.Escape => "Escape",
         TurnAction.EndTurn => "End Turn",
-        TurnAction.Attacks => "Attacks",
+        TurnAction.Attacks => "Attack",
         TurnAction.Cast => "Cast",
         TurnAction.Drink => "Drink",
         TurnAction.GivePotion => "Give Potion",
@@ -156,10 +156,12 @@ public static class TurnOptions
 
             TurnAction.Escape => actor.ConditionState(ConditionType.Grappled) is { EscapeDifficultyClass: not null },
 
-            // The menu is only worth opening when there is a choice inside it; with one
-            // attack the click on the enemy already swings it.
+            // Offered whenever the character can swing at all. It used to appear only
+            // with more than one attack to choose between, on the reasoning that a
+            // click on the enemy already swings — but that left attacking as the one
+            // thing with no button, discoverable only by knowing to click the board.
             TurnAction.Attacks =>
-                actor.Stats.Attacks.Count > 1
+                actor.Stats.Attacks.Count > 0
                 && (turn.HasAction || features.AttacksRemainingThisAction > 0),
 
             // Some spells are cast with a Bonus Action, so either will do.

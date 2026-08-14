@@ -37,17 +37,23 @@ On your turn:
 | Input | Does |
 | --- | --- |
 | click a square | walk there — the engine charges movement and provokes what it provokes |
-| click an enemy | attack with the hardest-hitting attack that reaches |
-| Dodge / Dash / Disengage / Stand Up / Escape | the untargeted actions, as buttons |
-| second button row | what this character brought — Rage, Reckless, Second Wind, Action Surge, Steady Aim, Cunning Dash/Disengage, Trip |
-| Attacks | open the attack list — shown when there is a choice to make; click one, then click its target |
-| Cast | open the spell list; click a spell — a slotted spell with a real slot choice asks which level to burn — then click its target |
-| Drink / Give Potion | drink the weakest potion carried, or arm a click to give it to somebody |
-| End Turn | pass |
+| click an enemy | attack with the hardest-hitting attack that reaches, never a bow point blank |
+| **arrow keys** | move the keyboard's cursor around the board |
+| **Enter** | act on the cursor's square — the same thing a click there would do |
+| **a letter** | the action whose button shows it: `D` Dodge, `R` Dash, `G` Disengage, `U` Stand Up, `E` Escape, `A` Attack, `C` Cast, `Q` Drink, `P` Give Potion, `W` Second Wind, `S` Action Surge, `F` Rage, `K` Reckless, `M` Steady Aim, `X`/`Z` Cunning Dash/Disengage, `T` Trip, `H`/`J` Spark Heal/Harm |
+| **Space** | End Turn |
 | Esc | back out of an armed click or open menu; quit when nothing is armed |
 
+**Only what can be used is shown**, and every button carries its key. The row shrinks as
+the turn is spent — Dodge and Dash go with the Action, Second Wind with the Bonus Action,
+Action Surge appears only once there is no Action left to surge past, Stand Up only while
+Prone. The status line above still reads out what is left, so a row that has shrunk says
+why. A key is a property of its action rather than of its place in the row, so `D` is
+Dodge whenever Dodge is offered and never anything else.
+
 Faint blue squares are where a walk could end; ringed enemies are ones an attack
-reaches. Both are advice, not rules — a click anywhere is sent to the engine, and **a
+reaches; a **shaded** square is one this character has Total Cover against, which refuses
+an attack, a spell and an area alike. Both are advice, not rules — a click anywhere is sent to the engine, and **a
 refusal is shown with its code** rather than swallowed, because a refusal is the engine
 explaining a rule. The second row is filtered by what the character *has*, which is
 display: a shown button can still be refused, and absent is honest where inert would not

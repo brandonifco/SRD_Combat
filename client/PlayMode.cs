@@ -81,6 +81,13 @@ public partial class PlayMode : FightScreen
 
     /// <summary>Squares the active character has Total Cover against — fogged, not merely dim.</summary>
     private readonly HashSet<GridPosition> _blocked = [];
+
+    /// <summary>
+    /// The keyboard's place on the board. Arrow keys move it, Enter acts on it, and it
+    /// resolves through the very same path a click does — so the two ways of playing
+    /// can never mean different things.
+    /// </summary>
+    private GridPosition? _cursor;
     private readonly List<(Rect2 Rect, string Caption, Func<ActionRefusal?> Act)> _buttons = [];
     private readonly List<(Rect2 Rect, SpellDefinition Spell)> _spellRows = [];
     private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
@@ -442,8 +449,19 @@ public partial class PlayMode : FightScreen
             case TurnAction.CunningStrikeTrip: return encounter.CunningStrike(CunningStrikeEffect.Trip);
 
             case TurnAction.Attacks:
-                _attackMenuOpen = !_attackMenuOpen;
                 _spellMenuOpen = false;
+
+                // With one attack there is nothing to choose, so it arms targeting
+                // straight away; the menu is for characters carrying a choice.
+                if (CommandedCombatant() is { } swinging && swinging.Stats.Attacks.Count == 1)
+                {
+                    _attackMenuOpen = false;
+                    _pendingAttack = swinging.Stats.Attacks[0];
+                    _pending = Pending.AttackTarget;
+                    return null;
+                }
+
+                _attackMenuOpen = !_attackMenuOpen;
                 return null;
 
             case TurnAction.Cast:
@@ -580,19 +598,49 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        // A key runs exactly what its button would, and only while that button is
-        // shown — so a keypress can never reach an action the row is hiding.
-        if (@event is InputEventKey { Pressed: true } key
-            && _phase == Phase.Fighting
-            && !_shopView
-            && _pending == Pending.Nothing)
+        if (@event is InputEventKey { Pressed: true } key && _phase == Phase.Fighting && !_shopView)
         {
-            var typed = key.Keycode == Key.Space ? ' ' : (char)key.Keycode;
-
-            if (ActionForKey(typed) is { } action)
+            // The board under the keyboard: arrows walk a cursor, Enter acts on it
+            // through the same path a click takes. The cursor appears the moment it is
+            // asked for, starting on the character whose turn it is.
+            var step = key.Keycode switch
             {
-                Run(() => Invoke(action));
+                Key.Left => new GridPosition(-1, 0),
+                Key.Right => new GridPosition(1, 0),
+                Key.Up => new GridPosition(0, -1),
+                Key.Down => new GridPosition(0, 1),
+                _ => (GridPosition?)null,
+            };
+
+            if (step is { } move && CommandedCombatant() is { } walker)
+            {
+                var from = _cursor ?? walker.Position;
+
+                _cursor = new GridPosition(
+                    Math.Clamp(from.X + move.X, 0, GridWidth - 1),
+                    Math.Clamp(from.Y + move.Y, 0, GridHeight - 1));
+
+                QueueRedraw();
                 return;
+            }
+
+            if (key.Keycode is Key.Enter or Key.KpEnter && _cursor is { } chosen)
+            {
+                ActivateSquare(chosen);
+                return;
+            }
+
+            // A key runs exactly what its button would, and only while that button is
+            // shown — so a keypress can never reach an action the row is hiding.
+            if (_pending == Pending.Nothing)
+            {
+                var typed = key.Keycode == Key.Space ? ' ' : (char)key.Keycode;
+
+                if (ActionForKey(typed) is { } action)
+                {
+                    Run(() => Invoke(action));
+                    return;
+                }
             }
         }
 
@@ -668,91 +716,9 @@ public partial class PlayMode : FightScreen
         // An armed click resolves first: the next token is the target, anywhere else
         // backs out. Cancelling must never cost anything, so nothing is spent until the
         // engine call itself.
-        if (_pending == Pending.AttackTarget && _pendingAttack is { } chosenAttack)
+        if (_pending != Pending.Nothing)
         {
-            var struck = TokenTarget(pixel);
-            ClearPending();
-
-            if (struck is { } victim)
-            {
-                Run(() => encounter.Attack(chosenAttack.Name, victim));
-            }
-            else
-            {
-                _notice = null;
-                QueueRedraw();
-            }
-
-            return;
-        }
-
-        if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
-        {
-            var aimed = TokenTarget(pixel);
-            var ground = SquareAt(pixel);
-            var slot = _pendingSlot;
-            ClearPending();
-
-            if (aimed is { } target)
-            {
-                Run(() => encounter.CastSpell(spell.Id, target, slot));
-            }
-            else if (spell.Save?.Area is not null && ground is { } spot)
-            {
-                // An area spell aimed at bare ground: the engine's point overload
-                // rules on it — range, shape and who the area catches are all its
-                // answers, not this client's.
-                Run(() => encounter.CastSpell(spell.Id, spot, target: null, slot));
-            }
-            else
-            {
-                _notice = null;
-                QueueRedraw();
-            }
-
-            return;
-        }
-
-        if (_pending == Pending.PotionTarget)
-        {
-            var aimed = TokenTarget(pixel);
-            ClearPending();
-
-            // The target's own flask first, the actor's pack second — the same order
-            // the engine spends them in, so the potency named is one that exists.
-            if (aimed is { } target
-                && (target.Inventory.Weakest ?? active.Inventory.Weakest) is { } potency)
-            {
-                Run(() => encounter.DrinkPotion(potency, target));
-            }
-            else
-            {
-                _notice = null;
-                QueueRedraw();
-            }
-
-            return;
-        }
-
-        if (_pending is Pending.SparkHealTarget or Pending.SparkHarmTarget)
-        {
-            var aimed = TokenTarget(pixel);
-            var mode = _pending == Pending.SparkHealTarget ? DivineSparkUse.Heal : DivineSparkUse.Harm;
-            ClearPending();
-
-            if (aimed is { } target)
-            {
-                // Radiant by default when harming; the console command is where the
-                // Necrotic choice lives, the two types being identical to every
-                // creature the resolver cannot tell apart.
-                Run(() => encounter.DivineSpark(target, mode));
-            }
-            else
-            {
-                _notice = null;
-                QueueRedraw();
-            }
-
+            ActivateSquare(SquareAt(pixel));
             return;
         }
 
@@ -833,13 +799,117 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        if (SquareAt(pixel) is not { } square)
+        ActivateSquare(SquareAt(pixel));
+    }
+
+    /// <summary>
+    /// Acts on one square, whether a mouse clicked it or the keyboard's cursor sat on
+    /// it and Enter was pressed.
+    /// </summary>
+    /// <remarks>
+    /// <b>One path for both.</b> Arrow keys and a click have to mean exactly the same
+    /// thing on the same square, and the surest way to guarantee that is for there to be
+    /// only one place that decides. A null square is "nowhere" — off the board, or a
+    /// click on the chrome — which backs out of anything armed without spending it.
+    /// </remarks>
+    private void ActivateSquare(GridPosition? at)
+    {
+        if (CommandedCombatant() is not { } active || _encounter is not { } encounter)
         {
             return;
         }
 
-        var occupant = encounter.Combatants.FirstOrDefault(combatant =>
-            !combatant.IsDead && combatant.Position == square);
+        var square = at ?? new GridPosition(-1, -1);
+
+        if (_pending == Pending.AttackTarget && _pendingAttack is { } chosenAttack)
+        {
+            var struck = TokenAt(square);
+            ClearPending();
+
+            if (struck is { } victim)
+            {
+                Run(() => encounter.Attack(chosenAttack.Name, victim));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
+        if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
+        {
+            var aimed = TokenAt(square);
+            var ground = square;
+            var slot = _pendingSlot;
+            ClearPending();
+
+            if (aimed is { } target)
+            {
+                Run(() => encounter.CastSpell(spell.Id, target, slot));
+            }
+            else if (spell.Save?.Area is not null && ground is { } spot)
+            {
+                // An area spell aimed at bare ground: the engine's point overload
+                // rules on it — range, shape and who the area catches are all its
+                // answers, not this client's.
+                Run(() => encounter.CastSpell(spell.Id, spot, target: null, slot));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
+        if (_pending == Pending.PotionTarget)
+        {
+            var aimed = TokenAt(square);
+            ClearPending();
+
+            // The target's own flask first, the actor's pack second — the same order
+            // the engine spends them in, so the potency named is one that exists.
+            if (aimed is { } target
+                && (target.Inventory.Weakest ?? active.Inventory.Weakest) is { } potency)
+            {
+                Run(() => encounter.DrinkPotion(potency, target));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
+        if (_pending is Pending.SparkHealTarget or Pending.SparkHarmTarget)
+        {
+            var aimed = TokenAt(square);
+            var mode = _pending == Pending.SparkHealTarget ? DivineSparkUse.Heal : DivineSparkUse.Harm;
+            ClearPending();
+
+            if (aimed is { } target)
+            {
+                // Radiant by default when harming; the console command is where the
+                // Necrotic choice lives, the two types being identical to every
+                // creature the resolver cannot tell apart.
+                Run(() => encounter.DivineSpark(target, mode));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
+        var occupant = TokenAt(square);
 
         if (occupant is { } somebody && somebody.SideId != PregeneratedParty.SideId)
         {
@@ -847,13 +917,17 @@ public partial class PlayMode : FightScreen
                 ? encounter.Attack(attack.Name, somebody)
                 : new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches {somebody.Name}."));
         }
-        else if (occupant is null)
+        else if (occupant is null && at is not null)
         {
             // Sent to the engine whether or not it is highlighted: the refusal is the
             // rule, the highlight only advice.
             Run(() => encounter.Move(square));
         }
     }
+
+    /// <summary>The living combatant standing on a square, whichever side it is on.</summary>
+    private Combatant? TokenAt(GridPosition square) =>
+        _encounter?.Combatants.FirstOrDefault(combatant => !combatant.IsDead && combatant.Position == square);
 
     /// <summary>The living combatant under a pixel, whichever side it is on.</summary>
     /// <remarks>
@@ -884,6 +958,10 @@ public partial class PlayMode : FightScreen
         if (commanded is null || commanded.Id != _buttonsFor)
         {
             ClearPending();
+
+            // A new character's turn starts the cursor on them rather than wherever the
+            // last one left it, so the first arrow key moves somewhere meaningful.
+            _cursor = commanded?.Position;
         }
 
         // Rebuilt after every action, not just on a change of character: the row now
@@ -975,6 +1053,16 @@ public partial class PlayMode : FightScreen
             DrawRect(
                 new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
                 new Color(0f, 0f, 0f, 0.55f));
+        }
+
+        // The keyboard's cursor, drawn over the advice so it is never lost in it.
+        if (_cursor is { } caret)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (caret.X * CellPixels), GridTop + (caret.Y * CellPixels), CellPixels, CellPixels),
+                ActiveRing,
+                filled: false,
+                width: 3f);
         }
 
         var tokens = TokensFrom(encounter, _labels);
@@ -1374,7 +1462,7 @@ public partial class PlayMode : FightScreen
         {
             var turn = active.Turn;
             return $"{active.Name}'s turn — Action {Tick(turn.HasAction)}  Bonus {Tick(turn.HasBonusAction)}  " +
-                   $"Move {turn.MovementFeet} ft — click a square to move, an enemy to attack   [esc] quit";
+                   $"Move {turn.MovementFeet} ft — click, or arrows and Enter; keys are on the buttons   [esc] quit";
         }
 
         return "the other side is acting…   [esc] quit";
