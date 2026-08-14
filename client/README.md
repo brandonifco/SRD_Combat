@@ -5,7 +5,9 @@ run of thirty fights with rests, experience, levelling and loot between them, au
 after every cleared fight. The party's turns wait for your mouse, every other side is
 taken by the tactics policy, one turn per beat so you can watch what happens to you.
 Between fights an interlude reports what the run reports — the rest taken, who returned,
-who levelled, what was found — and a Continue button marches on. `--one-fight` plays a
+who levelled, what was found — and a Continue button marches on. At each Long Rest a
+Shop button opens the merchant's stall: every offer at its printed price, the purse in
+the header, the unaffordable dimmed, a click buys, Back or Esc returns. `--one-fight` plays a
 single encounter instead; `--watch` keeps the original read-only screen, which resolves
 one fight up front and lets you scrub through it.
 

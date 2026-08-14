@@ -1,5 +1,6 @@
 using Godot;
 using SRDCombat.Core.Combat;
+using SRDCombat.Content;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
@@ -98,7 +99,14 @@ public partial class PlayMode : FightScreen
     public IReadOnlyList<CharacterDraft>? CreatedDrafts { get; init; }
     private Phase _phase = Phase.Fighting;
     private readonly List<string> _interlude = [];
+    private SrdContent? _content;
     private Rect2 _continueButton;
+    private Rect2 _shopButton;
+    private Rect2 _shopBackButton;
+    private bool _shopAvailable;
+    private bool _shopView;
+    private string? _shopNotice;
+    private readonly List<(Rect2 Rect, ShopOffer Offer)> _shopRows = [];
     private bool _fightEndHandled;
 
     protected override string Title => "SRD_Combat — playing";
@@ -132,6 +140,7 @@ public partial class PlayMode : FightScreen
         }
 
         var content = LoadContent();
+        _content = content;
 
         _dice = new SeededRandomSource(_seed);
         _savePath = ArgumentValue("save") ?? "srdcombat-save.json";
@@ -234,6 +243,12 @@ public partial class PlayMode : FightScreen
             {
                 _interlude.Add($"The party takes a {taken} Rest.");
             }
+
+            // The merchant reaches the party at each Long Rest, exactly as the
+            // console's shop does. The button is the door; nothing is automatic.
+            _shopAvailable = rest == RestKind.Long;
+            _shopView = false;
+            _shopNotice = null;
 
             foreach (var returned in run.Returns.Skip(returnsBefore))
             {
@@ -496,7 +511,16 @@ public partial class PlayMode : FightScreen
     {
         if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
-            // Esc backs out of whatever is armed before it quits anything.
+            // Esc backs out of whatever is armed before it quits anything — the
+            // merchant's stall included.
+            if (_shopView)
+            {
+                _shopView = false;
+                _shopNotice = null;
+                QueueRedraw();
+                return;
+            }
+
             if (_pending != Pending.Nothing || _spellMenuOpen || _attackMenuOpen || _slotMenuOpen)
             {
                 ClearPending();
@@ -529,6 +553,41 @@ public partial class PlayMode : FightScreen
     {
         if (_phase == Phase.Interlude)
         {
+            if (_shopView && _run is { } shopping)
+            {
+                if (_shopBackButton.HasPoint(pixel))
+                {
+                    _shopView = false;
+                    _shopNotice = null;
+                    QueueRedraw();
+                    return;
+                }
+
+                foreach (var (rect, offer) in _shopRows)
+                {
+                    if (rect.HasPoint(pixel))
+                    {
+                        // The engine's answer either way: a purchase re-lists the
+                        // stall with the purse lighter, a refusal is shown with its
+                        // code like every other rule.
+                        _shopNotice = shopping.Purchase(offer) is { } refusal
+                            ? $"[{refusal.Code}] {refusal.Message}"
+                            : $"Bought: {offer.Description}.";
+                        QueueRedraw();
+                        return;
+                    }
+                }
+
+                return;
+            }
+
+            if (_shopAvailable && _shopButton.HasPoint(pixel))
+            {
+                _shopView = true;
+                QueueRedraw();
+                return;
+            }
+
             if (_continueButton.HasPoint(pixel))
             {
                 StartNextFight();
@@ -850,6 +909,12 @@ public partial class PlayMode : FightScreen
     /// <summary>The between-fights screen: the run's own words, and a way onward.</summary>
     private void DrawInterlude()
     {
+        if (_shopView && _run is { } shopping)
+        {
+            DrawShop(shopping);
+            return;
+        }
+
         var y = GridTop + 8f;
 
         foreach (var line in _interlude)
@@ -876,7 +941,88 @@ public partial class PlayMode : FightScreen
                 "Continue",
                 fontSize: 14,
                 modulate: Ink);
+
+            if (_shopAvailable)
+            {
+                _shopButton = new Rect2(GridLeft + 126, y + 16, 110, 32);
+
+                DrawRect(_shopButton, GridLine);
+                DrawRect(_shopButton, Dim, filled: false, width: 1);
+                DrawString(
+                    TextFont,
+                    new Vector2(_shopButton.Position.X + 30, _shopButton.Position.Y + 21),
+                    "Shop",
+                    fontSize: 14,
+                    modulate: Ink);
+            }
         }
+    }
+
+    /// <summary>
+    /// The merchant's stall: every offer at its printed price, the purse in the
+    /// header, the unaffordable dimmed the way the console stars them — a thing worth
+    /// saving toward is worth seeing.
+    /// </summary>
+    private void DrawShop(GauntletRun run)
+    {
+        _shopRows.Clear();
+
+        var offers = Shop.Offers(_content!, run.Party, run.States);
+        var y = GridTop + 8f;
+
+        DrawString(
+            TextFont,
+            new Vector2(GridLeft, y),
+            $"A merchant is here. The purse holds {Shop.Price(run.GoldCopper)}. Click to buy.",
+            fontSize: 14,
+            modulate: Ink);
+
+        y += 26;
+
+        if (offers.Count == 0)
+        {
+            DrawString(
+                TextFont,
+                new Vector2(GridLeft, y),
+                "Nothing here would improve anybody.",
+                fontSize: 13,
+                modulate: Dim);
+            y += 22;
+        }
+
+        foreach (var offer in offers)
+        {
+            var rect = new Rect2(GridLeft, y, 340, 19);
+            _shopRows.Add((rect, offer));
+
+            DrawRect(rect, GridLine);
+            DrawString(
+                TextFont,
+                new Vector2(rect.Position.X + 8, rect.Position.Y + 14),
+                Trim(offer.Description, 60),
+                fontSize: 12,
+                modulate: offer.CostCopper <= run.GoldCopper ? Ink : Dim);
+
+            y += 21;
+        }
+
+        if (_shopNotice is { } notice)
+        {
+            y += 6;
+            DrawString(TextFont, new Vector2(GridLeft, y + 12), Trim(notice, 78), fontSize: 13, modulate: MonsterColour);
+            y += 18;
+        }
+
+        _shopBackButton = new Rect2(GridLeft, y + 12, 110, 32);
+
+        DrawRect(_shopBackButton, GridLine);
+        DrawRect(_shopBackButton, Dim, filled: false, width: 1);
+        DrawString(
+            TextFont,
+            new Vector2(_shopBackButton.Position.X + 30, _shopBackButton.Position.Y + 21),
+            "Back",
+            fontSize: 14,
+            modulate: Ink);
     }
 
     /// <summary>What this character has left to spend. Read off the state, never computed.</summary>
