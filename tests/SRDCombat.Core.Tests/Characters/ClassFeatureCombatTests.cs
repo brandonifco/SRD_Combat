@@ -94,18 +94,86 @@ public class ClassFeatureCombatTests
     }
 
     [Fact]
-    public void RageEndsIfTheBarbarianDoesNotFight()
+    public void RageSurvivesTheTurnItBeganOnAndEndsAfterAQuietOne()
     {
+        // "The Rage lasts until the end of your next turn" — the entering turn never
+        // has to extend it. This test asserted the opposite until a played run showed
+        // a Barbarian losing its Rage in the same turn it spent a use entering.
         var (encounter, hero, _) = Fight(Features([ClassFeature.Rage], rageDamageBonus: 2, rageUses: 2));
 
         Assert.Null(encounter.Rage());
         Assert.True(hero.Features.IsRaging);
 
-        // A turn that lands no attack does not sustain the Rage.
+        encounter.EndTurn();
+        Assert.True(hero.Features.IsRaging);
+
+        // The monster's turn, then the Barbarian's own next turn passes doing nothing
+        // that the printed clause counts — only now does the Rage end.
+        encounter.EndTurn();
+        Assert.Equal(hero.Id, encounter.ActiveCombatant?.Id);
+
         encounter.EndTurn();
 
         Assert.False(hero.Features.IsRaging);
         Assert.Contains(encounter.Log, step => step.Narration.Contains("Rage ends", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AMissedAttackRollStillExtendsTheRage()
+    {
+        // "Make an attack roll against an enemy" — the roll, not the hit. The engine
+        // recorded only hits, so a Barbarian who swung and missed on its second turn
+        // lost the Rage it was still paying for.
+        var hero = Character("hero", Features([ClassFeature.Rage], rageDamageBonus: 2, rageUses: 2), initiative: 10);
+        var monster = CombatTestData.Combatant(
+            "monster",
+            sideId: CombatTestData.Monsters,
+            x: 1,
+            stats: CombatTestData.Stats(armorClass: 30, maximumHitPoints: 90, initiativeBonus: 0, attacks: []));
+
+        // Initiative twice, then a 2 on the swing — nowhere near AC 30.
+        var encounter = Encounter.Start(
+            new Battlefield(8, 8),
+            [hero, monster],
+            new SeededSequence(20, 1, 2, 2, 2, 2));
+
+        Assert.Null(encounter.Rage());
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        // The Barbarian's second turn: one swing, one miss.
+        Assert.Equal(hero.Id, encounter.ActiveCombatant?.Id);
+        Assert.Null(encounter.Attack("Sword", monster));
+        Assert.True(hero.Features.SustainedRageThisTurn);
+
+        encounter.EndTurn();
+
+        Assert.True(hero.Features.IsRaging);
+    }
+
+    [Fact]
+    public void ABonusActionExtendsARageWithoutSpendingAUse()
+    {
+        // "Take a Bonus Action to extend your Rage" — the third printed option, and
+        // the only one a Barbarian with nothing in reach can take.
+        var (encounter, hero, _) = Fight(Features([ClassFeature.Rage], rageDamageBonus: 2, rageUses: 2));
+
+        Assert.Null(encounter.Rage());
+        Assert.Equal(1, hero.Features.RagesRemaining);
+
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        // The second turn: extend rather than swing, and no Rage use is spent.
+        Assert.Null(encounter.Rage());
+        Assert.Equal(1, hero.Features.RagesRemaining);
+
+        encounter.EndTurn();
+
+        Assert.True(hero.Features.IsRaging);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("extend the Rage", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -1088,6 +1088,11 @@ public sealed partial class Encounter
                     attack.AbilityModifier,
                     attacker.Stats.ProficiencyBonus);
 
+                // Topple forces a saving throw, which is a printed Rage extension in
+                // its own right — the Barbarian's Greataxe carries Cleave, but a
+                // Topple weapon is a legal draft and this is the path it takes.
+                attacker.Features.SustainedRageThisTurn = true;
+
                 var roll = D20Test.Roll(_random, target.Stats.SaveBonusFor(Ability.Constitution));
                 var succeeded = roll.Total >= difficultyClass;
 
@@ -1172,6 +1177,14 @@ public sealed partial class Encounter
             combatants: _combatants,
             cover: cover);
 
+        // "Make an attack roll against an enemy" — the first printed way to extend a
+        // Rage, and it is the roll rather than the hit, so it is recorded here before
+        // the miss path returns.
+        if (target.SideId != attacker.SideId)
+        {
+            attacker.Features.SustainedRageThisTurn = true;
+        }
+
         var modeNote = result.Roll.Mode switch
         {
             RollMode.Advantage => " with Advantage",
@@ -1209,8 +1222,6 @@ public sealed partial class Encounter
             $"{result.TargetArmorClass}{coverNote} — hit{criticalNote}",
             attacker,
             target);
-
-        attacker.Features.AttackedThisTurn = true;
 
         // Sap and Topple both read "if you hit a creature with this weapon", so they
         // land on the hit itself rather than on damage being dealt.
@@ -1654,6 +1665,13 @@ public sealed partial class Encounter
                 $"{effectName} fills a {shape.SizeFeet}-foot {shape.Shape}, catching " +
                 $"{affected.Count} creature(s).",
                 source);
+        }
+
+        // "Force an enemy to make a saving throw" — the Rage's second printed
+        // extension, and the reason this is not simply an attack-roll flag.
+        if (affected.Any(victim => victim.SideId != source.SideId))
+        {
+            source.Features.SustainedRageThisTurn = true;
         }
 
         foreach (var victim in affected)

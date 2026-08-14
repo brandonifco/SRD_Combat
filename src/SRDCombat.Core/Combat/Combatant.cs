@@ -565,10 +565,24 @@ public sealed class FeatureState
     public CunningStrikeEffect CunningStrike { get; internal set; }
 
     /// <summary>
-    /// Whether the creature attacked on its turn. Rage ends if a turn passes without
-    /// the Barbarian attacking or forcing a saving throw.
+    /// Whether the creature did one of the printed things that extend a Rage this
+    /// turn: <b>made an attack roll</b> against an enemy, forced an enemy to make a
+    /// saving throw, or spent the Bonus Action on the extension itself.
     /// </summary>
-    public bool AttackedThisTurn { get; internal set; }
+    /// <remarks>
+    /// The printed option is "Make an attack roll against an enemy" — <b>the roll,
+    /// not the hit</b>. This flag was set only where damage landed until a played
+    /// run watched a Barbarian rage, swing, miss and lose the Rage in the same turn.
+    /// </remarks>
+    public bool SustainedRageThisTurn { get; internal set; }
+
+    /// <summary>
+    /// The rager's turn count when the Rage began. "The Rage lasts until the end of
+    /// your next turn", so the turn it was entered on never has to extend it — the
+    /// requirement starts one turn later, on the same stamped clock Vex and Guiding
+    /// Bolt run on.
+    /// </summary>
+    public int RageBeganOnTurn { get; internal set; }
 
     /// <summary>
     /// Attacks still available from the current Attack action. Extra Attack is modelled
@@ -644,7 +658,7 @@ public sealed class FeatureState
         FrenzyUsedThisTurn = false;
         CleaveUsedThisTurn = false;
         SteadyAimedThisTurn = false;
-        AttackedThisTurn = false;
+        SustainedRageThisTurn = false;
         AttacksRemainingThisAction = 0;
         CunningStrike = CunningStrikeEffect.None;
     }
