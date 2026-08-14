@@ -1346,6 +1346,24 @@ public sealed partial class Encounter
 
         ImposeRiders(attacker, attack, target);
 
+        // The embedded saving throw — the Ghast's Claw — rolls after the damage and
+        // the attack's own riders, against the printed DC, gated on the printed
+        // creature type. A target the blow already finished rolls nothing.
+        if (attack.EmbeddedSave is { } embedded
+            && target.IsActive
+            && (embedded.ExcludedTargetType is not { } exempt || target.Stats.Type != exempt))
+        {
+            ResolveSaveEffect(
+                attacker,
+                attack.Name,
+                embedded.Save,
+                embedded.Save.DifficultyClass ?? 10,
+                target.Position,
+                target,
+                CombatStepKind.Entry,
+                embedded.Save.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray());
+        }
+
         // "The effect occurs immediately after the attack's damage is dealt" — after the
         // riders, which are part of the attack itself.
         if (cunningStrike)

@@ -43,6 +43,12 @@ public sealed record CombatAttack(
     /// </summary>
     public int AbilityModifier { get; init; }
 
+    /// <summary>
+    /// The saving throw a hit forces, carried whole from the stat block — see
+    /// <see cref="EmbeddedAttackSave"/>. Null for nearly every attack.
+    /// </summary>
+    public EmbeddedAttackSave? EmbeddedSave { get; init; }
+
     /// <summary>The furthest this attack can reach at all, in feet.</summary>
     public int MaximumRangeFeet =>
         Math.Max(ReachFeet ?? 0, LongRangeFeet ?? NormalRangeFeet ?? 0);
@@ -345,7 +351,10 @@ public sealed record CombatantStats(
                 // The rider hangs off the entry rather than off the attack grammar, so it
                 // is joined to the attack here. Only the ones the engine can impose to the
                 // letter come across; the rest stay counted in UnmodelledClauses.
-                entry.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray()))
+                entry.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray())
+            {
+                EmbeddedSave = entry.Attack.EmbeddedSave,
+            })
             .ToArray();
 
         return new CombatantStats(

@@ -545,6 +545,65 @@ public class RealMonsterCombatTests
             step => step.Narration.Contains("repeats the Wisdom saving throw", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void TheGhastsClawParalyzesTheLivingAndSparesTheDead()
+    {
+        // The embedded attack save, whole and against real content: "If the target is
+        // a non-Undead creature, it is subjected to the following effect. Constitution
+        // Saving Throw: DC 10. Failure: The target has the Paralyzed condition until
+        // the end of its next turn." The Ghast is Complete now — the first creature
+        // the embedded-save model brought into the pool.
+        var ghast = Content.MonstersById["monster.ghast"];
+        var claw = CombatantStats.FromMonster(ghast).Attacks.Single(attack => attack.Name == "Claw");
+
+        Assert.NotNull(claw.EmbeddedSave);
+        Assert.Equal(CreatureType.Undead, claw.EmbeddedSave!.ExcludedTargetType);
+        Assert.Equal(10, claw.EmbeddedSave.Save.DifficultyClass);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(ghast, "ghast", "undead", new GridPosition(0, 4)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(1, 4)),
+            ],
+            // Initiatives; the claw's d20 and its two damage dice; the bandit's failed
+            // Constitution save (3 + 0 vs DC 10).
+            new ScriptedRandomSource(20, 1, 15, 1, 1, 3));
+
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.Attack("Claw", bandit));
+        Assert.True(bandit.HasCondition(ConditionType.Paralyzed));
+
+        // "Until the end of its next turn": the ghast's turn ends, the bandit's own
+        // turn comes round — a skip, since Paralyzed brings Incapacitated — and the
+        // clock frees it at that turn's end.
+        encounter.EndTurn();
+
+        Assert.False(bandit.HasCondition(ConditionType.Paralyzed));
+    }
+
+    [Fact]
+    public void AnUndeadTargetNeverRollsTheGhastsSave()
+    {
+        // The printed gate: a zombie clawed by a ghast takes the damage and nothing
+        // else. The script carries no save die, and would throw if one were asked for.
+        var ghast = Content.MonstersById["monster.ghast"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(ghast, "ghast", "undead", new GridPosition(0, 4)),
+                Spawn(Content.MonstersById["monster.zombie"], "zombie", "walkers", new GridPosition(1, 4)),
+            ],
+            new ScriptedRandomSource(20, 1, 15, 1, 1));
+
+        var zombie = encounter.Combatants.Single(combatant => combatant.Id == "zombie");
+
+        Assert.Null(encounter.Attack("Claw", zombie));
+        Assert.False(zombie.HasCondition(ConditionType.Paralyzed));
+    }
+
     private static Combatant Spawn(MonsterDefinition monster, string id, string side, GridPosition position) =>
         new(id, monster.Name, side, CombatantStats.FromMonster(monster), position);
 }
