@@ -30,6 +30,15 @@ public sealed partial class Encounter
     /// and a consumable spent wrongly cannot be given back the way a spent Action can be
     /// re-decided in a client.
     /// </para>
+    /// <para>
+    /// <b>A potion within reach is usable, whoever is carrying it.</b> The flask may come
+    /// from the drinker's own pack as readily as the actor's, and the drinker's is
+    /// reached for first — spending someone's own potion on them before opening your
+    /// pack is what a person does, and it leaves the helper's supplies intact. Until a
+    /// played run found it, administering read only the actor's inventory, which meant a
+    /// potion found by a character who later went down was stuck with them: the one
+    /// person who could not act was the only one who could drink it.
+    /// </para>
     /// </remarks>
     public ActionRefusal? DrinkPotion(HealingPotion potency, Combatant? target = null)
     {
@@ -45,11 +54,17 @@ public sealed partial class Encounter
 
         var drinker = target ?? actor;
 
-        if (actor.Inventory.CountOf(potency) <= 0)
+        // Whose flask this is. The drinker's own comes first; the actor's pack is the
+        // fallback, and for a creature drinking its own potion the two are the same.
+        var carrier = drinker.Inventory.CountOf(potency) > 0 ? drinker : actor;
+
+        if (carrier.Inventory.CountOf(potency) <= 0)
         {
             return new ActionRefusal(
                 "potion.none",
-                $"{actor.Name} carries no {PotionRules.PrintedName(potency)}.");
+                ReferenceEquals(drinker, actor)
+                    ? $"{actor.Name} carries no {PotionRules.PrintedName(potency)}."
+                    : $"Neither {actor.Name} nor {drinker.Name} carries a {PotionRules.PrintedName(potency)}.");
         }
 
         if (!actor.Turn.HasBonusAction)
@@ -77,15 +92,19 @@ public sealed partial class Encounter
         }
 
         actor.Turn.SpendBonusAction();
-        actor.Inventory.Spend(potency);
+        carrier.Inventory.Spend(potency);
 
         var rolled = DiceRoller.Roll(_random, PotionRules.Healing(potency));
         var wasDown = drinker.CurrentHitPoints == 0;
         var restored = DamageRules.Heal(drinker, rolled.Total);
 
+        // Whose flask it was is worth narrating: "their own" is the difference between
+        // a rescuer spending their supplies and spending the casualty's.
+        var whose = ReferenceEquals(carrier, drinker) ? "their own " : string.Empty;
+
         var opening = ReferenceEquals(drinker, actor)
             ? $"{actor.Name} drinks a {PotionRules.PrintedName(potency)}"
-            : $"{actor.Name} administers a {PotionRules.PrintedName(potency)} to {drinker.Name}";
+            : $"{actor.Name} administers {whose}{PotionRules.PrintedName(potency)} to {drinker.Name}";
 
         Add(
             CombatStepKind.Item,

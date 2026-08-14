@@ -154,6 +154,53 @@ public class PotionTests
         Assert.Equal(3, carrying.Inventory.TotalPotions);
     }
 
+    [Fact]
+    public void ACasualtysOwnPotionCanBeAdministeredByAnybodyInReach()
+    {
+        // The bug a played run found: a potion carried by the character who goes down
+        // could only be drunk by the one person who could not act. Whoever is in reach
+        // can use it now.
+        var (encounter, healer, ally) = Fight(
+            new SeededSequence(20, 1, 3, 3), wounded: 20, potions: 0, allyPotions: 1);
+        DamageRulesHelper.Down(ally);
+
+        Assert.Equal(0, healer.Inventory.TotalPotions);
+        Assert.Null(encounter.DrinkPotion(HealingPotion.Standard, ally));
+
+        Assert.True(ally.CurrentHitPoints > 0, "the casualty's own potion did not get them up");
+        Assert.Equal(0, ally.Inventory.TotalPotions);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("administers their own Potion of Healing", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheDrinkersOwnFlaskIsSpentBeforeTheHelpersPack()
+    {
+        // Spending someone's own potion on them before opening your pack is what a
+        // person does, and it leaves the rescuer's supplies intact.
+        var (encounter, healer, ally) = Fight(
+            new SeededSequence(20, 1, 3, 3), wounded: 20, potions: 2, allyPotions: 1);
+        DamageRulesHelper.Down(ally);
+
+        Assert.Null(encounter.DrinkPotion(HealingPotion.Standard, ally));
+
+        Assert.Equal(0, ally.Inventory.TotalPotions);
+        Assert.Equal(2, healer.Inventory.TotalPotions);
+    }
+
+    [Fact]
+    public void AdministeringIsRefusedWhenNeitherPartyCarriesOne()
+    {
+        var (encounter, _, ally) = Fight(new SeededSequence(20, 1), wounded: 20, potions: 0);
+        DamageRulesHelper.Down(ally);
+
+        var refusal = encounter.DrinkPotion(HealingPotion.Standard, ally);
+
+        Assert.Equal("potion.none", refusal?.Code);
+        Assert.Equal(0, ally.CurrentHitPoints);
+    }
+
     /// <summary>
     /// A healer and an ally, both characters, with the healer acting first. The scripted
     /// dice open with the initiative rolls.
@@ -163,7 +210,8 @@ public class PotionTests
         int wounded,
         int potions,
         int allyAt = 20,
-        int allyX = 1)
+        int allyX = 1,
+        int allyPotions = 0)
     {
         var healer = new Combatant(
             "healer",
@@ -183,7 +231,11 @@ public class PotionTests
             CombatTestData.Heroes,
             CombatTestData.Stats(maximumHitPoints: 20, initiativeBonus: -10, diesAtZeroHitPoints: false),
             new GridPosition(allyX, 0),
-            new CombatantCarryOver(allyAt));
+            new CombatantCarryOver(
+                allyAt,
+                Potions: allyPotions > 0
+                    ? new Dictionary<HealingPotion, int> { [HealingPotion.Standard] = allyPotions }
+                    : null));
 
         // An enemy far away, so the fight does not end the moment it starts.
         var enemy = CombatTestData.Combatant(

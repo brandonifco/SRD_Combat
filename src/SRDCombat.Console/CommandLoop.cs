@@ -243,19 +243,26 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
     /// </remarks>
     private ActionRefusal? Drink(Combatant active, string[] words)
     {
-        if (active.Inventory.Weakest is not { } potency)
-        {
-            return new ActionRefusal("client.no_potion", $"{active.Name} carries no potions.");
-        }
-
         if (words.Length < 2)
         {
-            return encounter.DrinkPotion(potency);
+            return active.Inventory.Weakest is { } own
+                ? encounter.DrinkPotion(own)
+                : new ActionRefusal("client.no_potion", $"{active.Name} carries no potions.");
         }
 
-        return Find(words[1]) is { } target
+        if (Find(words[1]) is not { } target)
+        {
+            return new ActionRefusal("client.no_target", $"Nobody here is called '{words[1]}'.");
+        }
+
+        // The target's own flask first, the actor's pack second — the order the engine
+        // spends them in, so a character carrying none can still get a casualty up
+        // with the casualty's own potion.
+        return (target.Inventory.Weakest ?? active.Inventory.Weakest) is { } potency
             ? encounter.DrinkPotion(potency, target)
-            : new ActionRefusal("client.no_target", $"Nobody here is called '{words[1]}'.");
+            : new ActionRefusal(
+                "client.no_potion",
+                $"Neither {active.Name} nor {target.Name} carries a potion.");
     }
 
     /// <summary>
