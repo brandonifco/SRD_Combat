@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the first played run's two fixes — Rage's duration (#159) and the pregens' spell preparation (#160) — after the party-power slices #151, #153, #155 and #157 |
-| Tests | **854 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the shop's honesty pass — offers state their effect (#166), armor's Strength requirement is enforced (#164) and the auto-buyer keeps its masteries (#165) — after the first played run's fixes #159 and #160 |
+| Tests | **858 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 10.5 of 30, best 30, 33 of 120 runs clearing everything, 44 reaching level 4** (fresh seeds 121–240: 8 · 26 · 36) — `tools/PacingMeasure`, loot on + the Long Rest merchant. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Pacing | **Median 11 of 30, best 30, 40 of 120 runs clearing everything, 51 reaching level 4** (fresh seeds 121–240: 8 · 34 · 44) — `tools/PacingMeasure`, loot on + the Long Rest merchant. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The party-power phase (#83's direction) is underway** — Divine Spark is its first slice, and it is the only lever that has ever raised pacing. The squad-AI series (#122–#127) is complete: its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work). Also open: Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -259,6 +259,24 @@ closing through provocation stays possible because the cost is a preference amon
 candidates, never a veto on moving at all. Measured: median 3.5 → 4 over the recorded
 seeds — modest because both sides got smarter at once.
 
+**Both bugs the display found are now fixed, and the second one was costing real
+pacing.** **#164**: the Armor table's Strength score is enforced — "the armor reduces
+your Speed by 10 feet unless your Strength is equal to or greater than that score",
+checked against the *resolved* Strength so a background increase or a Belt counts, and
+stacking with Fast Movement's own Heavy-armor gate rather than replacing it. Three suits
+print one (Chain Mail 13, Splint and Plate 15), and the stall's existing Speed clause now
+quietly stops selling Plate to a Strength 13 Cleric while leaving Chain Mail — which asks
+exactly 13 — as the offer that armors him. Measured alone: medians unchanged, clears
+33 → 31 canonical and **26 → 31** fresh, so a printed penalty cost nothing.
+**#165**: `Shop.AutoBuy` no longer takes a swap that drops a mastery the character has
+unlocked, because `Score` is average damage and cannot see a property — it had been
+selling **Cleave**, a whole second attack, and the Rogue's **Vex**, which feeds its own
+Sneak Attack, for one point of average damage apiece. The stall still lists those swaps:
+a player can read the mastery line and choose, which is what the display is for. The two
+together took clears **33 → 40** canonical and **26 → 34** fresh, and level-4 runs
+44 → 51 and 36 → 44 — the auto-buyer really had been downgrading the party at every Long
+Rest since the economy landed.
+
 **An offer says what it would change, and saying so found two more bugs.** A shop row
 used to read `Chain Mail for Brenna — 75 GP` and nothing else, which is a price tag with
 no goods behind it. `ShopOffer.Effect` now carries the comparison — armor class before
@@ -298,7 +316,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 854 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 858 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 

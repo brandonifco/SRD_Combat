@@ -96,7 +96,7 @@ public static class CharacterResolver
             MaximumHitPoints = ResolveHitPoints(content.Class, draft.Level, constitution, hitPointMethod, random),
             ArmorClass = armorClass,
             ArmorClassSource = armorSource,
-            SpeedFeet = ResolveSpeed(draft, content, features),
+            SpeedFeet = ResolveSpeed(draft, content, features, scores),
             Size = content.Species.Sizes.Count > 0 ? content.Species.Sizes[0] : CreatureSize.Medium,
             SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency, magicItems),
             Skills = ResolveSkills(draft, content.Background, scores, proficiency, expertise, divineOrder),
@@ -566,24 +566,55 @@ public static class CharacterResolver
     /// gate is the printed one; nothing else this engine models changes a character's
     /// Speed, so the species number plus this bonus is the whole derivation.
     /// </summary>
+    /// <summary>
+    /// Walking speed: the species' own, the Barbarian's Fast Movement, and the Armor
+    /// table's Strength requirement.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If the Armor table shows a Strength score for armor you're wearing, the armor
+    /// reduces your Speed by 10 feet unless your Strength is equal to or greater than
+    /// that score." Three suits print one — Chain Mail at 13, Splint and Plate at 15 —
+    /// and the score was extracted and validated for a long time while <b>nothing read
+    /// it</b>, so a Strength 13 Cleric could be sold Plate Armor for five points of
+    /// armor class and no cost at all (#164). It is checked against the <em>resolved</em>
+    /// scores, so a background increase, an Ability Score Improvement or a Belt that
+    /// sets Strength all count toward meeting it.
+    /// </para>
+    /// <para>
+    /// The reduction stacks with Fast Movement's gate rather than replacing it: a
+    /// Barbarian in Heavy armor loses the +10 for wearing it at all, and loses a
+    /// further 10 if they cannot carry it.
+    /// </para>
+    /// </remarks>
     private static int ResolveSpeed(
         CharacterDraft draft,
         CharacterBuildContent content,
-        IReadOnlyList<GrantedFeature> features)
+        IReadOnlyList<GrantedFeature> features,
+        IReadOnlyDictionary<Ability, int> scores)
     {
         var speed = content.Species.SpeedFeet;
 
-        var wearsHeavyArmor = draft.ArmorId is { } armorId
-            && content.Armor.TryGetValue(armorId, out var armor)
-            && armor.Category == ArmorCategory.Heavy;
+        var worn = draft.ArmorId is { } armorId && content.Armor.TryGetValue(armorId, out var armor)
+            ? armor
+            : null;
 
-        if (features.Any(granted => granted.Feature == ClassFeature.FastMovement) && !wearsHeavyArmor)
+        if (features.Any(granted => granted.Feature == ClassFeature.FastMovement)
+            && worn?.Category != ArmorCategory.Heavy)
         {
             speed += 10;
         }
 
+        if (worn?.MinimumStrength is { } required && scores[Ability.Strength] < required)
+        {
+            speed -= HeavyArmorSpeedPenaltyFeet;
+        }
+
         return speed;
     }
+
+    /// <summary>"The armor reduces your Speed by 10 feet" — the Armor table's own number.</summary>
+    private const int HeavyArmorSpeedPenaltyFeet = 10;
 
     private static (int ArmorClass, string Source) ResolveArmorClass(
         CharacterDraft draft,
