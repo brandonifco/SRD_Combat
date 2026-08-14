@@ -37,9 +37,10 @@ internal static class SkirmishScenario
     /// 20260869 stopped qualifying when the policy learned to use cover (#106) and the
     /// fight it produced no longer downed anybody either, and 20260807 fell the same way
     /// when creatures started granting Half Cover and the policy learned to step around
-    /// its allies (#108). The composition is unchanged every time; only the dice move.
+    /// its allies (#108), as did 20260803 when movement learned what an Opportunity
+    /// Attack costs (#122). The composition is unchanged every time; only the dice move.
     /// </remarks>
-    public const int Seed = 20260803;
+    public const int Seed = 20260805;
 
     public static Encounter Create(IRandomSource? random = null) =>
         Encounter.Start(Field(), Combatants(), random ?? new SeededRandomSource(Seed));

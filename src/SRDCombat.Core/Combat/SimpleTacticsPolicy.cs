@@ -311,16 +311,20 @@ public static class SimpleTacticsPolicy
                     // no-room refusal exists to prevent.
                     .Where(square => square != corpse.Position
                         && square.DistanceFeetTo(corpse.Position) <= Battlefield.FeetPerSquare)
-                    .Where(square => MovementRules.FindPath(
+                    .Select(square => (Square: square, Path: MovementRules.FindPath(
                         encounter.Battlefield,
                         actor,
                         square,
                         actor.Turn.MovementFeet,
-                        encounter.Combatants) is not null)
-                    .OrderBy(square => square.DistanceFeetTo(actor.Position))
-                    .ThenBy(square => square.X)
-                    .ThenBy(square => square.Y)
-                    .Cast<GridPosition?>()
+                        encounter.Combatants)))
+                    .Where(candidate => candidate.Path is not null)
+                    // The healer's walk to the body respects the same arithmetic as
+                    // every other walk: the least-provoking way in first.
+                    .OrderBy(candidate => ProvokedDamageAlong(encounter, actor, candidate.Path!))
+                    .ThenBy(candidate => candidate.Square.DistanceFeetTo(actor.Position))
+                    .ThenBy(candidate => candidate.Square.X)
+                    .ThenBy(candidate => candidate.Square.Y)
+                    .Select(candidate => (GridPosition?)candidate.Square)
                     .FirstOrDefault();
 
                 if (beside is { } destination)
@@ -804,6 +808,9 @@ public static class SimpleTacticsPolicy
                 || (option.CanAttackFrom && !canAttackFromHere))
             .OrderByDescending(option => option.CanAttackFrom)
             .ThenBy(option => option.InCloseCombat)
+            // The walk's own cost ranks above the shot's: an Opportunity Attack taken
+            // is worth more than a +2 on the target's AC avoided.
+            .ThenBy(option => option.ProvokedDamage)
             .ThenBy(option => option.OwnShotPenalty)
             .ThenByDescending(option => option.Shelter)
             .ThenBy(option => option.Distance)
@@ -849,6 +856,13 @@ public static class SimpleTacticsPolicy
 
         var best = ScoreSquares(encounter, actor, target, others, reach)
             .Where(option => option.CanAttackFrom && option.OwnShotPenalty < currentPenalty)
+            // A sidestep is free by definition; a sidestep that eats an Opportunity
+            // Attack is not a sidestep. The improvement this method buys is at most a
+            // few points of AC, a provoked swing costs more, and the shot from here is
+            // legal — so a provoking candidate is refused outright rather than merely
+            // deprioritised. This is the veto for the watched bug: a caster walking
+            // out of two enemies' reach to clear an ally's Half Cover.
+            .Where(option => option.ProvokedDamage == 0)
             .OrderBy(option => option.InCloseCombat)
             .ThenBy(option => option.OwnShotPenalty)
             .ThenByDescending(option => option.Shelter)
@@ -869,6 +883,7 @@ public static class SimpleTacticsPolicy
         int Distance,
         bool CanAttackFrom,
         bool InCloseCombat,
+        double ProvokedDamage,
         int OwnShotPenalty,
         int Shelter);
 
@@ -892,14 +907,16 @@ public static class SimpleTacticsPolicy
         var shoots = reach > Battlefield.FeetPerSquare;
 
         return field.AllSquares()
-            .Where(square => MovementRules.FindPath(
+            .Select(square => (Square: square, Path: MovementRules.FindPath(
                 field,
                 actor,
                 square,
                 actor.Turn.MovementFeet,
-                encounter.Combatants) is not null)
-            .Select(square =>
+                encounter.Combatants)))
+            .Where(candidate => candidate.Path is not null)
+            .Select(candidate =>
             {
+                var (square, path) = candidate;
                 var targetCover = CoverRules.Between(field, square, target.Position, others);
 
                 return new FiringOption(
@@ -909,10 +926,52 @@ public static class SimpleTacticsPolicy
                         && targetCover != CoverDegree.Total,
                     shoots && enemies.Any(enemy =>
                         square.DistanceFeetTo(enemy.Position) <= Battlefield.FeetPerSquare),
+                    ProvokedDamageAlong(encounter, actor, path!),
                     CoverRules.Bonus(targetCover),
                     enemies.Sum(enemy => ShelterValue(
                         CoverRules.Between(field, enemy.Position, square, others))));
             });
+    }
+
+    /// <summary>
+    /// The Opportunity-Attack damage a walk along this path can expect: each distinct
+    /// enemy whose reach the path leaves, once — a Reaction is one per round — costed at
+    /// its hardest melee attack's average.
+    /// </summary>
+    /// <remarks>
+    /// Two stated simplifications. The path judged is the pathfinder's own cheapest one
+    /// for the destination — an equally-cheap safer path to the same square would go
+    /// unnoticed, and making <c>FindPath</c> itself provocation-aware is a further slice
+    /// if the difference ever shows. And the cost is the raw damage average rather than
+    /// hit-chance-weighted — the same simplification the attack chooser makes, and
+    /// enough to order squares by. What it fixes is real and was watched happening: a
+    /// caster walking out of two enemies' reach to improve a shot, eating both swings,
+    /// because nothing in the scoring knew the swings existed.
+    /// </remarks>
+    private static double ProvokedDamageAlong(Encounter encounter, Combatant actor, MovementPath path)
+    {
+        var provoked = new HashSet<string>(StringComparer.Ordinal);
+        var total = 0.0;
+        var from = actor.Position;
+
+        foreach (var step in path.Steps)
+        {
+            foreach (var enemy in MovementRules.FindOpportunityAttackers(actor, from, step, encounter.Combatants))
+            {
+                if (provoked.Add(enemy.Id))
+                {
+                    total += enemy.Stats.Attacks
+                        .Where(attack => attack.Kind == AttackKind.Melee)
+                        .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+                        .DefaultIfEmpty(0)
+                        .Max();
+                }
+            }
+
+            from = step;
+        }
+
+        return total;
     }
 
     /// <summary>

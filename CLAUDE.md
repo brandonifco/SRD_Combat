@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **No open GitHub issues.** Every phase has met its printed end state; Revivify (#119) landed with the honest caveat that its automated value waits on runs reaching level 5. |
+| Work remaining | **The squad-AI series, #122–#127** — six researched slices toward real party tactics (blackboard + focus fire, roles + screening, engagement phases, composition-aware doctrine, the Phase 6 monster/party split). #122 (OA-aware movement) is done; #123 is the top of the queue. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -116,7 +116,14 @@ against no longer counts as a firing position, a sidestep that clears a wall is 
 even when it does not close distance, a legal-but-penalized shot — the target behind an
 ally or a low obstacle — is worth a step sideways before anything is spent, a shooter
 avoids ending beside an enemy because the engine would put that roll at Disadvantage,
-and among what remains the clean shot outranks shelter, which outranks closeness.
+and among what remains the clean shot outranks shelter, which outranks closeness. Since
+#122 every walk also knows what an Opportunity Attack costs: destinations are scored
+with the expected damage the pathfinder's route provokes (each distinct enemy once — a
+Reaction is one per round — at its hardest melee attack's average), a provoking
+"sidestep" is refused outright because the swing costs more than the +2 it saves, and
+closing through provocation stays possible because the cost is a preference among
+candidates, never a veto on moving at all. Measured: median 3.5 → 4 over the recorded
+seeds — modest because both sides got smarter at once.
 
 **Picking up cold:** `gh issue list` is the work queue, and the order below is not the
 order the issues were filed in. Take the top of it.
@@ -346,7 +353,8 @@ got wrong. Ordered by dependency rather than by how valuable each looked on its 
 save, #9 has passives referencing them, #10 has Cunning Strike applying them. That is why
 steps 1 and 2 came before anything else, and why they were worth doing as one design.
 
-**The frozen transcript has churned exactly four times**, and every churn was the fixture
+**The frozen transcript has churned exactly five times** — the fifth when movement
+learned what an Opportunity Attack costs (#122) — and every churn was the fixture
 catching a real change to how the game plays. Once when the tactics policy learned to
 focus fire — where the failure that mattered was not the byte-for-byte diff but
 `TheFightExercisesTheHardParts`, which noticed the adventurers now won quickly enough that
@@ -856,10 +864,10 @@ default — deliberate).
   sequence of a whole fight, so it catches interaction bugs no unit test reaches. When
   it fails, **read the diff before touching the fixture** — a change to the transcript
   is a change to how the game plays. Regenerate only once the new behaviour is intended:
-  un-skip `TranscriptWriter`, run it, re-skip it, review. It has churned four times —
-  focus fire, cover landing, the policy using cover, creatures granting cover — and
-  earned its keep every time. Twice the failure that mattered was not the byte-for-byte
-  diff:
+  un-skip `TranscriptWriter`, run it, re-skip it, review. It has churned five times —
+  focus fire, cover landing, the policy using cover, creatures granting cover, and
+  Opportunity-Attack-aware movement — and earned its keep every time. Twice the failure
+  that mattered was not the byte-for-byte diff:
   `TheFightExercisesTheHardParts` noticed the focus-fire fight no longer downed anybody
   and covered no Death Saving Throws, and the cover-policy regeneration's diff showed a
   reach weapon's Opportunity Attack narrating a hit straight through Total Cover — a
