@@ -467,6 +467,14 @@ public sealed partial class Encounter
             combatant.Features.VexedTargetId = null;
         }
 
+        // Guiding Bolt's light runs on the same stamped clock, measured against its
+        // author: it dies at the end of the caster's next turn, wherever it landed.
+        foreach (var victim in _combatants.Where(c => c.Features.GuidedBy == combatant.Id
+            && combatant.TurnsBegun > c.Features.GuidedOnAuthorTurn))
+        {
+            victim.Features.GuidedBy = null;
+        }
+
         EndBrokenGrapples();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
         AdvanceTurn();
@@ -1149,12 +1157,17 @@ public sealed partial class Encounter
         var sapped = attacker.Features.SappedBy is not null;
         attacker.Features.SappedBy = null;
 
+        // Guiding Bolt's light: "the next attack roll made against it ... has
+        // Advantage" — anyone's roll, spent on this one however it lands.
+        var guided = target.Features.GuidedBy is not null;
+        target.Features.GuidedBy = null;
+
         var result = AttackRules.Resolve(
             _random,
             attacker,
             attack,
             target,
-            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed,
+            extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed || guided,
             extraDisadvantage: sapped,
             combatants: _combatants,
             cover: cover);
@@ -1202,6 +1215,20 @@ public sealed partial class Encounter
         // Sap and Topple both read "if you hit a creature with this weapon", so they
         // land on the hit itself rather than on damage being dealt.
         ApplySapAndTopple(attacker, attack, target);
+
+        // Guiding Bolt's rider is "On a hit" too — the light lands here, before the
+        // damage, and unlike Vex it does not care whether the damage gets through.
+        if (attack.GrantsAdvantageAgainstTargetOnHit)
+        {
+            target.Features.GuidedBy = attacker.Id;
+            target.Features.GuidedOnAuthorTurn = attacker.TurnsBegun;
+
+            Add(
+                CombatStepKind.Feature,
+                $"{attack.Name}'s light clings to {target.Name}: the next attack roll against it has Advantage.",
+                attacker,
+                target);
+        }
 
         // Uncanny Dodge is decided once for the attack, not once per damage component.
         var halvings = TryUncannyDodge(target) ? 1 : 0;

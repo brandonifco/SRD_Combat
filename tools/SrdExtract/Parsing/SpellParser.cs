@@ -314,6 +314,10 @@ public static partial class SpellParser
                 Damage = SpellEffectParser.ParseDamage(body),
                 AppliedConditions = attackRider is not null ? [attackRider] : classified.AppliedConditions,
                 IsSpellAttack = isSpellAttack,
+                // Guiding Bolt's rider, structured only on an attack spell: the
+                // sentence hangs off "On a hit", and only a hit can land it.
+                GrantsAdvantageAgainstTargetOnHit =
+                    isSpellAttack && SpellEffectParser.ParseNextAttackAdvantage(body),
                 UnmodelledClauses = mechanics == EntryMechanics.Unmodelled
                     ? classified.UnmodelledClauses
                     : [],

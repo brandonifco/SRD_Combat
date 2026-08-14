@@ -143,6 +143,19 @@ public sealed record SpellDefinition
     /// </remarks>
     public bool IsSpellAttack { get; init; }
 
+    /// <summary>
+    /// "and the next attack roll made against it before the end of your next turn has
+    /// Advantage" — Guiding Bolt, exactly once in the book (verified corpus-wide).
+    /// Structured at extraction like Sacred Flame's cover clause, because leaving the
+    /// sentence as prose shipped the spell as 4d6 and a light that did nothing.
+    /// </summary>
+    /// <remarks>
+    /// The roll is anyone's — the printed sentence names the roll made against the
+    /// target, not who makes it — and the expiry runs on the caster's turn-stamped
+    /// clock, the same shape Vex uses (#153).
+    /// </remarks>
+    public bool GrantsAdvantageAgainstTargetOnHit { get; init; }
+
     /// <summary>Clauses the model could not express. Empty when fully modelled.</summary>
     public IReadOnlyList<string> UnmodelledClauses { get; init; } = [];
 
