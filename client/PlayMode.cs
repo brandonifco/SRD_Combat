@@ -74,12 +74,15 @@ public partial class PlayMode : FightScreen
     private readonly List<(Rect2 Rect, string Caption, Func<ActionRefusal?> Act)> _buttons = [];
     private readonly List<(Rect2 Rect, SpellDefinition Spell)> _spellRows = [];
     private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
+    private readonly List<(Rect2 Rect, int Level)> _slotRows = [];
     private string? _buttonsFor;
     private bool _spellMenuOpen;
     private bool _attackMenuOpen;
+    private bool _slotMenuOpen;
     private Pending _pending;
     private SpellDefinition? _pendingSpell;
     private CombatAttack? _pendingAttack;
+    private int? _pendingSlot;
     private string? _notice;
     private bool _probeStarted;
 
@@ -494,7 +497,7 @@ public partial class PlayMode : FightScreen
         if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
             // Esc backs out of whatever is armed before it quits anything.
-            if (_pending != Pending.Nothing || _spellMenuOpen || _attackMenuOpen)
+            if (_pending != Pending.Nothing || _spellMenuOpen || _attackMenuOpen || _slotMenuOpen)
             {
                 ClearPending();
                 QueueRedraw();
@@ -516,8 +519,10 @@ public partial class PlayMode : FightScreen
         _pending = Pending.Nothing;
         _pendingSpell = null;
         _pendingAttack = null;
+        _pendingSlot = null;
         _spellMenuOpen = false;
         _attackMenuOpen = false;
+        _slotMenuOpen = false;
     }
 
     private void HandleClick(Vector2 pixel)
@@ -562,18 +567,19 @@ public partial class PlayMode : FightScreen
         {
             var aimed = TokenTarget(pixel);
             var ground = SquareAt(pixel);
+            var slot = _pendingSlot;
             ClearPending();
 
             if (aimed is { } target)
             {
-                Run(() => encounter.CastSpell(spell.Id, target));
+                Run(() => encounter.CastSpell(spell.Id, target, slot));
             }
             else if (spell.Save?.Area is not null && ground is { } spot)
             {
                 // An area spell aimed at bare ground: the engine's point overload
                 // rules on it — range, shape and who the area catches are all its
                 // answers, not this client's.
-                Run(() => encounter.CastSpell(spell.Id, spot));
+                Run(() => encounter.CastSpell(spell.Id, spot, target: null, slot));
             }
             else
             {
@@ -610,6 +616,33 @@ public partial class PlayMode : FightScreen
                 {
                     _spellMenuOpen = false;
                     _pendingSpell = chosen;
+
+                    // A slotted spell with more than one slot level to burn is a real
+                    // choice; one level, or a cantrip, arms straight away and the
+                    // engine picks as it always has.
+                    if (SlotLevelsFor(active, chosen).Count > 1)
+                    {
+                        _slotMenuOpen = true;
+                    }
+                    else
+                    {
+                        _pending = Pending.SpellTarget;
+                    }
+
+                    QueueRedraw();
+                    return;
+                }
+            }
+        }
+
+        if (_slotMenuOpen)
+        {
+            foreach (var (rect, level) in _slotRows)
+            {
+                if (rect.HasPoint(pixel))
+                {
+                    _slotMenuOpen = false;
+                    _pendingSlot = level;
                     _pending = Pending.SpellTarget;
                     QueueRedraw();
                     return;
@@ -642,10 +675,12 @@ public partial class PlayMode : FightScreen
         }
 
         // A click on the grid closes an open menu rather than acting through it.
-        if (_spellMenuOpen || _attackMenuOpen)
+        if (_spellMenuOpen || _attackMenuOpen || _slotMenuOpen)
         {
             _spellMenuOpen = false;
             _attackMenuOpen = false;
+            _slotMenuOpen = false;
+            _pendingSpell = null;
             QueueRedraw();
             return;
         }
@@ -798,6 +833,7 @@ public partial class PlayMode : FightScreen
 
             DrawSpellMenu(character);
             DrawAttackMenu(character);
+            DrawSlotMenu(character);
         }
 
         if (_notice is { } notice)
@@ -951,6 +987,58 @@ public partial class PlayMode : FightScreen
         }
     }
 
+    /// <summary>The slot levels this caster could burn on this spell, lowest first.</summary>
+    private static List<int> SlotLevelsFor(Combatant caster, SpellDefinition spell)
+    {
+        if (spell.IsCantrip)
+        {
+            return [];
+        }
+
+        return Enumerable.Range(spell.Level, 10 - spell.Level)
+            .Where(level => caster.Features.SpellSlotsRemaining.GetValueOrDefault(level) > 0)
+            .ToList();
+    }
+
+    private void DrawSlotMenu(Combatant character)
+    {
+        _slotRows.Clear();
+
+        if (!_slotMenuOpen || _pendingSpell is not { } spell)
+        {
+            return;
+        }
+
+        var top = ButtonRowTop + 36 + 28 + 54;
+
+        DrawString(
+            TextFont,
+            new Vector2(GridLeft, top - 6),
+            $"SLOT for {spell.Name} — click a level, then the target",
+            fontSize: 12,
+            modulate: Dim);
+
+        var y = top + 6;
+
+        foreach (var level in SlotLevelsFor(character, spell))
+        {
+            var rect = new Rect2(GridLeft, y, 260, 20);
+            _slotRows.Add((rect, level));
+
+            var left = character.Features.SpellSlotsRemaining.GetValueOrDefault(level);
+
+            DrawRect(rect, GridLine);
+            DrawString(
+                TextFont,
+                new Vector2(rect.Position.X + 8, rect.Position.Y + 15),
+                $"level {level} slot — {left} left" + (level > spell.Level ? " (upcast)" : string.Empty),
+                fontSize: 12,
+                modulate: Ink);
+
+            y += 24;
+        }
+    }
+
     private string StatusLine(Combatant? commanded)
     {
         if (_phase == Phase.RunOver)
@@ -972,7 +1060,9 @@ public partial class PlayMode : FightScreen
 
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
         {
-            return $"choose a target for {spell.Name} — click anywhere else to cancel";
+            return _pendingSlot is { } slot
+                ? $"choose a target for {spell.Name} (level {slot} slot) — click anywhere else to cancel"
+                : $"choose a target for {spell.Name} — click anywhere else to cancel";
         }
 
         if (_pending == Pending.AttackTarget && _pendingAttack is { } attack)

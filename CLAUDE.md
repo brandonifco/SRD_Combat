@@ -347,10 +347,13 @@ the whole gauntlet with the mouse** (move, attack, features, spells, potions, re
 shown with codes, interludes between fights, autosave and `--continue`, the policy
 playing the monsters; `--one-fight` for a single encounter, `--watch` for the read-only
 screen, `--probe` for its verification loop — see its README), which is the phase's
-printed end state met; what is left there is polish (no slot choice — area spells aim
-at bare squares in both clients now, wiring that caught the point path skipping the
-printed range check the creature-aimed path always made, and the Godot client grew the
-Attacks menu the console's `attack <letter> [name]` always had). And no human has yet played a run
+printed end state met — and the polish list is now empty: area spells aim at bare
+squares in both clients (wiring that caught the point path skipping the printed range
+check the creature-aimed path always made), the Godot client grew the Attacks menu the
+console's `attack <letter> [name]` always had, and a slotted spell can be deliberately
+upcast in both clients (`CastSpell`'s `slotLevel` burns exactly the slot named or
+refuses with a reason; the console reads a trailing number, the mouse client asks
+which level to burn when there is a real choice). And no human has yet played a run
 to its end — the client now removes the last excuse.
 
 - **#83 is closed (2026-08-12, after upcasting and subclasses landed) but its direction

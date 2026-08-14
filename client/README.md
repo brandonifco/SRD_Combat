@@ -39,7 +39,7 @@ On your turn:
 | Dodge / Dash / Disengage / Stand Up / Escape | the untargeted actions, as buttons |
 | second button row | what this character brought — Rage, Reckless, Second Wind, Action Surge, Steady Aim, Cunning Dash/Disengage, Trip |
 | Attacks | open the attack list — shown when there is a choice to make; click one, then click its target |
-| Cast | open the spell list; click a spell, then click its target |
+| Cast | open the spell list; click a spell — a slotted spell with a real slot choice asks which level to burn — then click its target |
 | Drink / Give Potion | drink the weakest potion carried, or arm a click to give it to somebody |
 | End Turn | pass |
 | Esc | back out of an armed click or open menu; quit when nothing is armed |

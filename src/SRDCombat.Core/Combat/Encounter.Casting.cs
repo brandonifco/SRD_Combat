@@ -17,23 +17,36 @@ namespace SRDCombat.Core.Combat;
 /// the whole project runs on.
 /// </para>
 /// <para>
-/// Deliberately not implemented: upcasting (the scaling text is carried but not applied),
-/// spells whose effect is neither damage nor a condition, and Cylinder areas. Each is
-/// refused with a named code so a client can say why.
+/// Deliberately not implemented: spells whose effect is neither damage, healing nor a
+/// condition, and Cylinder areas. Each is refused with a named code so a client can say
+/// why. (This paragraph once listed upcasting too, and stayed stale for the whole slice
+/// that implemented it: scaling has applied at casting time since the upcasting slice —
+/// automatically when the small slots run dry, and by choice through
+/// <c>CastSpell</c>'s <c>slotLevel</c> since the Phase 7 polish.)
 /// </para>
 /// </remarks>
 public sealed partial class Encounter
 {
     /// <summary>Casts a spell at a creature.</summary>
-    public ActionRefusal? CastSpell(string spellId, Combatant target)
+    /// <param name="spellId">The spell to cast.</param>
+    /// <param name="target">The creature it is aimed at.</param>
+    /// <param name="slotLevel">
+    /// The slot level to spend, for a deliberate upcast. Null — the default, and the
+    /// only thing the policy ever passes — means the lowest slot that will do.
+    /// </param>
+    public ActionRefusal? CastSpell(string spellId, Combatant target, int? slotLevel = null)
     {
         ArgumentNullException.ThrowIfNull(target);
 
-        return CastSpell(spellId, target.Position, target);
+        return CastSpell(spellId, target.Position, target, slotLevel);
     }
 
     /// <summary>Casts a spell at a point, for an area effect.</summary>
-    public ActionRefusal? CastSpell(string spellId, GridPosition point, Combatant? target = null)
+    public ActionRefusal? CastSpell(
+        string spellId,
+        GridPosition point,
+        Combatant? target = null,
+        int? slotLevel = null)
     {
         if (ActiveCombatant is not { } caster)
         {
@@ -53,7 +66,7 @@ public sealed partial class Encounter
             return new ActionRefusal("spell.unknown", $"{caster.Name} does not know '{spellId}'.");
         }
 
-        if (CheckCastingCost(caster, spell) is { } refusal)
+        if (CheckCastingCost(caster, spell, slotLevel) is { } refusal)
         {
             return refusal;
         }
@@ -155,7 +168,7 @@ public sealed partial class Encounter
             return charmed;
         }
 
-        var slotUsed = SpendCastingCost(caster, spell);
+        var slotUsed = SpendCastingCost(caster, spell, slotLevel);
 
         // The narration names the slot actually spent, which is not always the spell's
         // own level: when the level 1 slots are dry, Cure Wounds burns a level 2 slot —
@@ -323,7 +336,7 @@ public sealed partial class Encounter
             target);
     }
 
-    private static ActionRefusal? CheckCastingCost(Combatant caster, SpellDefinition spell)
+    private static ActionRefusal? CheckCastingCost(Combatant caster, SpellDefinition spell, int? slotLevel)
     {
         switch (spell.CastingTime)
         {
@@ -344,7 +357,29 @@ public sealed partial class Encounter
         // A cantrip costs no slot; everything else needs one of its own level or higher.
         if (spell.IsCantrip)
         {
-            return null;
+            return slotLevel is null
+                ? null
+                : new ActionRefusal(
+                    "spell.cantrip_needs_no_slot",
+                    $"{spell.Name} is a cantrip and is cast without a slot.");
+        }
+
+        // A chosen slot answers to the printed rule before anything is spent: "you must
+        // use a spell slot of the spell's level or higher".
+        if (slotLevel is { } chosen)
+        {
+            if (chosen < spell.Level)
+            {
+                return new ActionRefusal(
+                    "spell.slot_below_spell",
+                    $"{spell.Name} is level {spell.Level}; a level {chosen} slot cannot hold it.");
+            }
+
+            return caster.Features.SpellSlotsRemaining.GetValueOrDefault(chosen) > 0
+                ? null
+                : new ActionRefusal(
+                    "spell.no_slot",
+                    $"{caster.Name} has no level {chosen} spell slot left.");
         }
 
         return HighestAvailableSlot(caster, spell.Level) is null
@@ -432,7 +467,7 @@ public sealed partial class Encounter
         return spell;
     }
 
-    private static int? SpendCastingCost(Combatant caster, SpellDefinition spell)
+    private static int? SpendCastingCost(Combatant caster, SpellDefinition spell, int? slotLevel)
     {
         switch (spell.CastingTime)
         {
@@ -452,6 +487,15 @@ public sealed partial class Encounter
         if (spell.IsCantrip)
         {
             return null;
+        }
+
+        // A chosen slot is spent exactly as chosen; CheckCastingCost already ruled it
+        // legal, and the deliberate upcast buys the same printed dice the automatic
+        // one does.
+        if (slotLevel is { } picked)
+        {
+            caster.Features.SpellSlotsRemaining[picked]--;
+            return picked;
         }
 
         // Spend the lowest slot that will do. A higher one is only burned when nothing
