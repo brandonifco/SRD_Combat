@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **Phase 5's charter is met in the console** (`--create` builds a party, every option with its printed text, browsing ≠ committing); the Godot creation screen is the phase's remaining polish, filed as #115. |
+| Work remaining | **Phase 5's charter is met in both clients** — `--create` builds a party in the console and under the mouse, every option with its printed text, browsing ≠ committing. **#116** (class feature prose carries leaked table fragments, visible now that creation ships prose verbatim) is the open work. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve

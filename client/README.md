@@ -55,6 +55,12 @@ Arguments go after Godot's `--` separator. `--seed=<n>` picks the run — the sa
 the console client makes, that a seed is a complete bug report; without one the seed is
 fresh, and it is always in the heading. (A `--capture` or `--probe` run falls back to a
 fixed seed instead, because a verification image must not change between runs.)
+`--create` builds your own party first (Phase 5): every option browsed shows its printed
+SRD text and a separate Take commits it, the resolver's word is final on the summary
+step, and the four drafts hand off to this screen's ordinary run — save, `--continue`
+and defeat-means-reload included. With `--probe` the creation screen drives itself
+through the same synthesized clicks, one class of each menu shape, before the play
+screen's probe takes over.
 
 ```bash
 godot --path client -- --seed=12345
