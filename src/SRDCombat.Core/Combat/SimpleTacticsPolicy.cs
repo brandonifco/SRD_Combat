@@ -508,12 +508,21 @@ public static class SimpleTacticsPolicy
         var slotsAreSpokenFor = NeedsHealing(encounter, actor) && CanHeal(character);
 
         var spells = character.Spells
-            .Where(spell => spell.Damage.Count > 0 || spell.Save?.FailureDamage.Count > 0)
+            .Where(spell => spell.Damage.Count > 0
+                || spell.Save?.FailureDamage.Count > 0
+                || HardControlRiders(spell).Any())
             .Where(spell => spell.CastingTime == SpellCastingTime.Action)
             .Where(spell => spell.IsCantrip || !slotsAreSpokenFor)
             .Where(spell => !ShouldHoldTheArea(encounter, actor, target, spell))
+            // Hold Person's printed gate: a spell that names its target's creature
+            // type is never aimed at anything else — the engine would refuse, and the
+            // policy should not spend its evaluation asking.
+            .Where(spell => spell.TargetCreatureType is not { } required
+                || target.Stats.Type == required)
             .Where(spell => spell.IsSelfRanged || spell.TargetRangeFeet is null || spell.TargetRangeFeet >= distance)
-            .Select(spell => (Spell: spell, Value: SpellValue(encounter, actor, target, spell)))
+            .Select(spell => (Spell: spell,
+                Value: SpellValue(encounter, actor, target, spell)
+                    + ControlValue(actor, target, spell)))
             .Where(candidate => candidate.Value > 0)
             .Where(candidate => IsWorthCasting(candidate.Spell, candidate.Value, swing))
             .OrderByDescending(candidate => candidate.Value)
@@ -607,6 +616,53 @@ public static class SimpleTacticsPolicy
 
     /// <summary>How much clearer a slotted spell must be than a weapon swing.</summary>
     private const double SlotMargin = 1.5;
+
+    /// <summary>
+    /// How many rounds a landed hold is priced at. Two is a stated crude constant: the
+    /// printed repeat save gives the victim a fresh roll every turn, so "for the
+    /// duration" is worth a couple of rounds in practice, not the whole minute.
+    /// </summary>
+    private const double HeldRounds = 2.0;
+
+    /// <summary>
+    /// The riders that remove a whole action economy: what makes a control spell worth
+    /// a slot at all. Paralyzed and Stunned both take the turn away entirely — lesser
+    /// conditions are real but not priceable at this policy's altitude.
+    /// </summary>
+    private static IEnumerable<AppliedCondition> HardControlRiders(SpellDefinition spell) =>
+        (spell.Save?.AppliedConditions ?? [])
+            .Where(ConditionRules.CanBeImposed)
+            .Where(rider => rider.Condition is ConditionType.Paralyzed or ConditionType.Stunned);
+
+    /// <summary>
+    /// What holding this target is worth: its threat per round, for the rounds the
+    /// hold plausibly lasts, discounted by the chance the save succeeds outright.
+    /// </summary>
+    /// <remarks>
+    /// The same altitude as every other number here — <c>ThreatPerRound</c> against
+    /// numbers made the same way. A held creature also grants Advantage and close-in
+    /// Critical Hits, which this deliberately does not price: the removed action
+    /// economy is the measurable bulk, and the extras only sweeten a cast the bulk
+    /// already justified.
+    /// </remarks>
+    private static double ControlValue(Combatant actor, Combatant target, SpellDefinition spell)
+    {
+        if (!HardControlRiders(spell).Any())
+        {
+            return 0;
+        }
+
+        var difficultyClass = spell.Save?.DifficultyClass
+            ?? actor.Stats.Character?.SpellSaveDifficultyClass
+            ?? 10;
+
+        var failChance = Math.Clamp(
+            (difficultyClass - 1 - target.Stats.SaveBonusFor(spell.Save!.Ability)) / 20.0,
+            0.05,
+            0.95);
+
+        return PartyDoctrine.ThreatPerRound(target) * HeldRounds * failChance;
+    }
 
     /// <summary>Expected damage from this creature's best reaching attack, for one action.</summary>
     private static double WeaponValue(Combatant actor, int distance)
