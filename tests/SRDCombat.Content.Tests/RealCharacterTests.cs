@@ -107,7 +107,13 @@ public class RealCharacterTests
         // The honest half: the sheet states outright that its casting does nothing yet,
         // rather than presenting a Cleric that silently cannot cast.
         Assert.Contains("Spellcasting", cleric.UnimplementedFeatures);
-        Assert.Contains("Channel Divinity", cleric.UnimplementedFeatures);
+
+        // Channel Divinity executes (Divine Spark), so the name is claimed — while the
+        // features hanging off its unimplemented half stay reported: Sear Undead rides
+        // Turn Undead, and Turn Undead is refused for its unmodelled early outs.
+        Assert.True(cleric.Has(ClassFeature.ChannelDivinity));
+        Assert.DoesNotContain("Channel Divinity", cleric.UnimplementedFeatures);
+        Assert.Contains("Sear Undead", cleric.UnimplementedFeatures);
     }
 
     [Fact]

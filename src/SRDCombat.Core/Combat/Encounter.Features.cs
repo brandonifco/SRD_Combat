@@ -356,6 +356,167 @@ public sealed partial class Encounter
         }
     }
 
+    /// <summary>How far Divine Spark reaches: "another creature you can see within 30 feet".</summary>
+    private const int DivineSparkRangeFeet = 30;
+
+    /// <summary>
+    /// Cleric Channel Divinity — Divine Spark: a Magic action pointing the Holy Symbol
+    /// at another creature within 30 feet, rolling 1d8 + Wisdom, and either restoring
+    /// that many hit points or forcing a Constitution saving throw for that much
+    /// Necrotic or Radiant damage, half (round down) on a success.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The readings, in printed order: a Magic action spends the Action; "another
+    /// creature" refuses the Cleric itself; "that you can see" is the Total Cover
+    /// refusal, sight being unmodelled — the same reading every targeted spell makes;
+    /// the DC "equals the spell save DC from this class's Spellcasting feature", which
+    /// a resolved Cleric already carries, and a Channel Divinity bearer without
+    /// resolved spellcasting falls back to the same Wisdom-based arithmetic that DC is
+    /// made of. The dice step at Cleric levels 7, 13 and 18 is written from the printed
+    /// thresholds even though this game ends at level 5, so the arithmetic cannot
+    /// quietly stay wrong if the cap ever moves.
+    /// </para>
+    /// <para>
+    /// Two deliberate boundaries. Divine Spark "channel[s] divine energy ... to fuel
+    /// magical effects", so Magic Resistance applies although it is not a spell — the
+    /// one non-spell path that passes <c>magicalEffect: true</c> into the save loop.
+    /// And Disciple of Life does not feed it: that feature reads "a spell you cast with
+    /// a spell slot", and this is neither. Every refusal fires before the use is spent,
+    /// the potion precedent — a use burned pointing at a corpse cannot be given back.
+    /// </para>
+    /// </remarks>
+    public ActionRefusal? DivineSpark(
+        Combatant target,
+        DivineSparkUse use,
+        DamageType damageType = DamageType.Radiant)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+
+        if (ActiveCombatant is not { } combatant)
+        {
+            return new ActionRefusal("encounter.complete", "The encounter is over.");
+        }
+
+        if (!combatant.Stats.Has(ClassFeature.ChannelDivinity))
+        {
+            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Channel Divinity.");
+        }
+
+        if (combatant.Features.ChannelDivinityRemaining <= 0)
+        {
+            return new ActionRefusal(
+                "feature.channel_divinity.exhausted",
+                $"{combatant.Name} has no Channel Divinity uses left.");
+        }
+
+        if (!combatant.Turn.HasAction)
+        {
+            return new ActionRefusal("action.spent", $"{combatant.Name} has already used its action.");
+        }
+
+        if (ReferenceEquals(target, combatant))
+        {
+            return new ActionRefusal(
+                "feature.divine_spark.self",
+                "Divine Spark points at another creature, not the Cleric itself.");
+        }
+
+        if (target.IsDead)
+        {
+            return new ActionRefusal(
+                "feature.divine_spark.dead",
+                $"{target.Name} is dead; Divine Spark restores the living or harms them.");
+        }
+
+        if (combatant.Position.DistanceFeetTo(target.Position) > DivineSparkRangeFeet)
+        {
+            return new ActionRefusal(
+                "feature.divine_spark.out_of_range",
+                $"{target.Name} is beyond Divine Spark's {DivineSparkRangeFeet} ft. range.");
+        }
+
+        if (CoverRules.Between(Battlefield, combatant.Position, target.Position, _combatants) == CoverDegree.Total)
+        {
+            return new ActionRefusal(
+                "feature.total_cover",
+                $"{target.Name} has Total Cover from {combatant.Name} and can't be targeted.");
+        }
+
+        if (use == DivineSparkUse.Harm
+            && damageType is not (DamageType.Necrotic or DamageType.Radiant))
+        {
+            return new ActionRefusal(
+                "feature.divine_spark.damage_type",
+                $"Divine Spark deals Necrotic or Radiant damage, not {damageType}.");
+        }
+
+        // "Can't Harm the Charmer": a damaging magical effect aimed at the charmer,
+        // refused before anything is spent, exactly as a damaging spell is.
+        if (use == DivineSparkUse.Harm && CharmedBy(combatant, target))
+        {
+            return new ActionRefusal(
+                "feature.charmed",
+                $"{combatant.Name} is Charmed by {target.Name} and cannot harm them.");
+        }
+
+        combatant.Turn.SpendAction();
+        combatant.Features.ChannelDivinityRemaining--;
+
+        Add(
+            CombatStepKind.Feature,
+            $"{combatant.Name} uses Channel Divinity — Divine Spark " +
+            $"({combatant.Features.ChannelDivinityRemaining} use(s) left).",
+            combatant);
+
+        var level = combatant.Stats.Character?.Level ?? 1;
+        var diceCount = level >= 18 ? 4 : level >= 13 ? 3 : level >= 7 ? 2 : 1;
+        var wisdom = combatant.Stats.ModifierFor(Ability.Wisdom);
+        var dice = new DiceExpression(diceCount, 8, wisdom);
+
+        if (use == DivineSparkUse.Heal)
+        {
+            var rolled = DiceRoller.Roll(_random, dice);
+            var wasDown = target.CurrentHitPoints == 0;
+            var restored = DamageRules.Heal(target, rolled.Total);
+
+            Add(
+                CombatStepKind.Feature,
+                $"{target.Name} regains {restored} hit points [{rolled}] — {DescribeHealth(target)}." +
+                (wasDown && target.CurrentHitPoints > 0
+                    ? $" {target.Name} is back on their feet."
+                    : string.Empty),
+                combatant,
+                target);
+
+            return null;
+        }
+
+        var difficultyClass = combatant.Stats.Character is { SpellSaveDifficultyClass: > 0 } caster
+            ? caster.SpellSaveDifficultyClass
+            : SpellcastingRules.SaveDifficultyClass(combatant.Stats.ProficiencyBonus, wisdom);
+
+        ResolveSaveEffect(
+            combatant,
+            "Divine Spark",
+            new SaveEffect(
+                Ability.Constitution,
+                difficultyClass,
+                Area: null,
+                [new AttackDamage(dice, damageType, dice.Average)],
+                SaveSuccessOutcome.HalfDamage,
+                AppliedConditions: []),
+            difficultyClass,
+            target.Position,
+            target,
+            CombatStepKind.Feature,
+            riders: [],
+            magicalEffect: true);
+
+        CheckForCompletion();
+        return null;
+    }
+
     /// <summary>Rogue Cunning Action: Dash or Disengage as a Bonus Action.</summary>
     public ActionRefusal? CunningAction(CunningActionKind kind)
     {

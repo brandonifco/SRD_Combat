@@ -294,9 +294,12 @@ public class CharacterResolverTests
 
         var sheet = CharacterResolver.Resolve(CharacterTestData.Draft(level: 3), content);
 
+        // Channel Divinity left this list when Divine Spark executed; Divine Order and
+        // Spellcasting stay on it.
         Assert.Equal(
-            ["Channel Divinity", "Divine Order", "Spellcasting"],
+            ["Divine Order", "Spellcasting"],
             sheet.UnimplementedFeatures);
+        Assert.True(sheet.Has(ClassFeature.ChannelDivinity));
 
         // A subclass placeholder is not a feature in its own right.
         Assert.DoesNotContain("Cleric Subclass", sheet.UnimplementedFeatures);

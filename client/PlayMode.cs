@@ -55,6 +55,12 @@ public partial class PlayMode : FightScreen
 
         /// <summary>Give Potion was pressed; the next ally clicked drinks it.</summary>
         PotionTarget,
+
+        /// <summary>Divine Spark (heal) was pressed; the next ally clicked is restored.</summary>
+        SparkHealTarget,
+
+        /// <summary>Divine Spark (harm) was pressed; the next enemy clicked saves or burns.</summary>
+        SparkHarmTarget,
     }
 
     /// <summary>Where the screen is: in a fight, between fights, or after the run.</summary>
@@ -400,6 +406,16 @@ public partial class PlayMode : FightScreen
         FeatureButton(ClassFeature.CunningAction, "Cunning Dash", () => _encounter!.CunningAction(CunningActionKind.Dash));
         FeatureButton(ClassFeature.CunningAction, "Cunning Disengage", () => _encounter!.CunningAction(CunningActionKind.Disengage));
         FeatureButton(ClassFeature.CunningStrike, "Trip", () => _encounter!.CunningStrike(CunningStrikeEffect.Trip));
+        FeatureButton(ClassFeature.ChannelDivinity, "Spark Heal", () =>
+        {
+            _pending = Pending.SparkHealTarget;
+            return null;
+        });
+        FeatureButton(ClassFeature.ChannelDivinity, "Spark Harm", () =>
+        {
+            _pending = Pending.SparkHarmTarget;
+            return null;
+        });
 
         // A menu is only worth a button when there is a choice inside it: with one
         // attack, the default click already swings it.
@@ -657,6 +673,28 @@ public partial class PlayMode : FightScreen
             if (aimed is { } target && active.Inventory.Weakest is { } potency)
             {
                 Run(() => encounter.DrinkPotion(potency, target));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
+        if (_pending is Pending.SparkHealTarget or Pending.SparkHarmTarget)
+        {
+            var aimed = TokenTarget(pixel);
+            var mode = _pending == Pending.SparkHealTarget ? DivineSparkUse.Heal : DivineSparkUse.Harm;
+            ClearPending();
+
+            if (aimed is { } target)
+            {
+                // Radiant by default when harming; the console command is where the
+                // Necrotic choice lives, the two types being identical to every
+                // creature the resolver cannot tell apart.
+                Run(() => encounter.DivineSpark(target, mode));
             }
             else
             {
@@ -1054,6 +1092,11 @@ public partial class PlayMode : FightScreen
         if (character.Stats.Has(ClassFeature.ActionSurge))
         {
             parts.Add($"Action Surge ×{character.Features.ActionSurgeRemaining}");
+        }
+
+        if (character.Stats.Has(ClassFeature.ChannelDivinity))
+        {
+            parts.Add($"Channel Divinity ×{character.Features.ChannelDivinityRemaining}");
         }
 
         if (character.Inventory.TotalPotions > 0)

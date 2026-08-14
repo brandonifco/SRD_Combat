@@ -24,6 +24,7 @@ namespace SRDCombat.Game;
 /// <param name="RagesRemaining">Rages left.</param>
 /// <param name="SecondWindRemaining">Second Wind uses left.</param>
 /// <param name="ActionSurgeRemaining">Action Surge uses left.</param>
+/// <param name="ChannelDivinityRemaining">Channel Divinity uses left.</param>
 /// <param name="SpellSlotsRemaining">Spell slots left, by level.</param>
 /// <param name="ExperiencePoints">Experience earned so far. Stops accruing at death.</param>
 /// <param name="IsDead">Dead for good. The gauntlet does not raise the dead.</param>
@@ -33,6 +34,7 @@ public sealed record CharacterState(
     int RagesRemaining,
     int SecondWindRemaining,
     int ActionSurgeRemaining,
+    int ChannelDivinityRemaining,
     IReadOnlyDictionary<int, int> SpellSlotsRemaining,
     int ExperiencePoints,
     bool IsDead)
@@ -80,6 +82,7 @@ public sealed record CharacterState(
             character?.RageUses ?? 0,
             character?.SecondWindUses ?? 0,
             character?.ActionSurgeUses ?? 0,
+            character?.ChannelDivinityUses ?? 0,
             new Dictionary<int, int>(member.Sheet.SpellSlots),
             // A character built at a level above 1 starts with the experience that level
             // costs, so a run begun partway up the ladder advances from the right place
@@ -135,6 +138,7 @@ public sealed record CharacterState(
             RagesRemaining = combatant.Features.RagesRemaining,
             SecondWindRemaining = combatant.Features.SecondWindRemaining,
             ActionSurgeRemaining = combatant.Features.ActionSurgeRemaining,
+            ChannelDivinityRemaining = combatant.Features.ChannelDivinityRemaining,
             SpellSlotsRemaining = new Dictionary<int, int>(combatant.Features.SpellSlotsRemaining),
             // Drunk is drunk: what came out of the fight is what is left.
             Potions = new Dictionary<HealingPotion, int>(combatant.Inventory.Potions),
@@ -179,6 +183,13 @@ public sealed record CharacterState(
                 state.SecondWindRemaining,
                 character?.SecondWindUses ?? 0),
             ActionSurgeRemaining = RestRules.AllOnEitherRest(rest, character?.ActionSurgeUses ?? 0),
+            // Channel Divinity prints the Second Wind pattern word for word: "You
+            // regain one of its expended uses when you finish a Short Rest, and you
+            // regain all expended uses when you finish a Long Rest."
+            ChannelDivinityRemaining = RestRules.OneOnShortAllOnLong(
+                rest,
+                state.ChannelDivinityRemaining,
+                character?.ChannelDivinityUses ?? 0),
             HitDiceRemaining = RestRules.HitDiceAfter(rest, state.HitDiceRemaining, member.Sheet.Level),
         };
 

@@ -226,6 +226,16 @@ public static class SimpleTacticsPolicy
         {
             // Healed with the Bonus Action; the Action is still free to fight with.
         }
+
+        // Divine Spark before the Action-time slot heal: both spend the Action, and
+        // the spark spends no slot — the cautious healer's arithmetic, one rung
+        // cheaper. Only the heal half is ever chosen here; the harm half is a real
+        // option a player has, but spending the party's cheapest revival resource on
+        // damage is exactly the trade the measured slot-reserve findings warn against.
+        else if (actor.Turn.HasAction && TryDivineSparkFallenAlly(encounter, actor))
+        {
+            return;
+        }
         else if (actor.Turn.HasAction && TryHealFallenAlly(encounter, actor, SpellCastingTime.Action))
         {
             return;
@@ -275,6 +285,34 @@ public static class SimpleTacticsPolicy
             .FirstOrDefault();
 
         return fallen is not null && encounter.DrinkPotion(potency, fallen) is null;
+    }
+
+    /// <summary>
+    /// Spends a Channel Divinity use getting the nearest fallen ally within 30 feet
+    /// back up, for no slot.
+    /// </summary>
+    /// <remarks>
+    /// The nearest first, the potion's own tiebreak; the engine's refusals — range,
+    /// Total Cover, an exhausted Channel Divinity — are the arbiter, and a refused
+    /// attempt costs nothing, so the loop just tries the next casualty.
+    /// </remarks>
+    private static bool TryDivineSparkFallenAlly(Encounter encounter, Combatant actor)
+    {
+        if (!actor.Stats.Has(ClassFeature.ChannelDivinity)
+            || actor.Features.ChannelDivinityRemaining <= 0)
+        {
+            return false;
+        }
+
+        var fallen = encounter.Combatants
+            .Where(other => other.SideId == actor.SideId
+                && other.Id != actor.Id
+                && !other.IsDead
+                && other.CurrentHitPoints == 0)
+            .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
+            .ThenBy(other => other.Id, StringComparer.Ordinal);
+
+        return fallen.Any(ally => encounter.DivineSpark(ally, DivineSparkUse.Heal) is null);
     }
 
     /// <summary>

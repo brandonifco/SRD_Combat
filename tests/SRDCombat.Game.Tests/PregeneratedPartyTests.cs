@@ -58,6 +58,25 @@ public class PregeneratedPartyTests
     }
 
     [Fact]
+    public void TheClericsChannelDivinityComesOffTheClassTable()
+    {
+        // The Cleric Features table prints the Channel Divinity column from level 2:
+        // two uses through level 5, and none at all at level 1.
+        var levelOne = PregeneratedParty.Build(Content, level: 1)
+            .Single(member => member.Draft.Name == "Aldous");
+
+        Assert.False(levelOne.Sheet.Has(ClassFeature.ChannelDivinity));
+        Assert.Equal(0, levelOne.Combatant.Stats.Character!.ChannelDivinityUses);
+
+        var levelTwo = PregeneratedParty.Build(Content, level: 2)
+            .Single(member => member.Draft.Name == "Aldous");
+
+        Assert.True(levelTwo.Sheet.Has(ClassFeature.ChannelDivinity));
+        Assert.Equal(2, levelTwo.Combatant.Stats.Character!.ChannelDivinityUses);
+        Assert.Equal(2, levelTwo.Combatant.Features.ChannelDivinityRemaining);
+    }
+
+    [Fact]
     public void TheRoguesSneakAttackAndTheBarbariansRageReachTheCombatant()
     {
         // The class table's per-level resource columns have to arrive on the combatant,

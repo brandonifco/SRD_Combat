@@ -1605,7 +1605,8 @@ public sealed partial class Encounter
         GridPosition point,
         Combatant? target,
         CombatStepKind kind,
-        IReadOnlyList<AppliedCondition> riders)
+        IReadOnlyList<AppliedCondition> riders,
+        bool? magicalEffect = null)
     {
         var affected = save.Area is { } area
             ? CreaturesIn(AreaTargeting.Cover(area, source.Position, point, Battlefield))
@@ -1651,7 +1652,14 @@ public sealed partial class Encounter
                 // than the two cancelling. Combined, so Advantage and Disadvantage cancel
                 // rather than either winning.
                 var restrained = save.Ability == Ability.Dexterity && victim.HasCondition(ConditionType.Restrained);
-                var magicResistance = kind == CombatStepKind.Spell && victim.HasTrait(MonsterTrait.MagicResistance);
+
+                // Magic Resistance defaults to the step kind — a spell is magical, a
+                // stat block's save entry is read as not (the registry's reading) — and
+                // magicalEffect overrides it for the effects that are neither: Divine
+                // Spark is printed as divine energy fuelling a magical effect, so it
+                // is resisted although it is no spell.
+                var magicResistance = (magicalEffect ?? kind == CombatStepKind.Spell)
+                    && victim.HasTrait(MonsterTrait.MagicResistance);
                 var dangerSense = save.Ability == Ability.Dexterity
                     && victim.Stats.Has(ClassFeature.DangerSense)
                     && !victim.HasCondition(ConditionType.Incapacitated);
