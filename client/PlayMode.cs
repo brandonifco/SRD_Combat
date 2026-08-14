@@ -452,7 +452,14 @@ public partial class PlayMode : FightScreen
                 active.Inventory.Weakest is { } potency
                     ? _encounter!.DrinkPotion(potency)
                     : new ActionRefusal("client.no_potion", $"{active.Name} carries no potions."));
+        }
 
+        // Give Potion is offered whenever there is a potion within reach to give,
+        // including one in the pack of the ally who needs it — the engine reaches for
+        // the drinker's own flask first, so a character carrying none can still get a
+        // casualty back up with the casualty's own.
+        if (active.Inventory.TotalPotions > 0 || PotionWithinReach(active))
+        {
             AddButton(x, row2, "Give Potion", () =>
             {
                 _pending = Pending.PotionTarget;
@@ -460,6 +467,15 @@ public partial class PlayMode : FightScreen
             });
         }
     }
+
+    /// <summary>Whether an ally in reach is carrying a potion the active character could administer.</summary>
+    private bool PotionWithinReach(Combatant active) =>
+        _encounter is { } encounter
+        && encounter.Combatants.Any(other => other.SideId == active.SideId
+            && !ReferenceEquals(other, active)
+            && !other.IsDead
+            && other.Inventory.TotalPotions > 0
+            && active.Position.DistanceFeetTo(other.Position) <= PotionRules.ReachFeet);
 
     private float AddButton(float x, float y, string caption, Func<ActionRefusal?> act)
     {
@@ -677,7 +693,10 @@ public partial class PlayMode : FightScreen
             var aimed = TokenTarget(pixel);
             ClearPending();
 
-            if (aimed is { } target && active.Inventory.Weakest is { } potency)
+            // The target's own flask first, the actor's pack second — the same order
+            // the engine spends them in, so the potency named is one that exists.
+            if (aimed is { } target
+                && (target.Inventory.Weakest ?? active.Inventory.Weakest) is { } potency)
             {
                 Run(() => encounter.DrinkPotion(potency, target));
             }

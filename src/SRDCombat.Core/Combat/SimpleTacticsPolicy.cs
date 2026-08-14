@@ -271,20 +271,28 @@ public static class SimpleTacticsPolicy
     /// </remarks>
     private static bool TryAdministerPotion(Encounter encounter, Combatant actor)
     {
-        if (actor.Inventory.Weakest is not { } potency)
-        {
-            return false;
-        }
-
         var fallen = encounter.Combatants
             .Where(other => other.SideId == actor.SideId
                 && !ReferenceEquals(other, actor)
                 && !other.IsDead
                 && other.CurrentHitPoints == 0)
             .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
-            .FirstOrDefault();
+            .ThenBy(other => other.Id, StringComparer.Ordinal);
 
-        return fallen is not null && encounter.DrinkPotion(potency, fallen) is null;
+        // The casualty's own flask counts, and is reached for first — a potion found by
+        // somebody who later goes down used to be stuck with them, because this only
+        // ever looked in the helper's pack.
+        foreach (var ally in fallen)
+        {
+            var potency = ally.Inventory.Weakest ?? actor.Inventory.Weakest;
+
+            if (potency is { } chosen && encounter.DrinkPotion(chosen, ally) is null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
