@@ -330,4 +330,28 @@ public class CharacterResolverTests
             CharacterResolver.Resolve(
                 CharacterTestData.Draft(weaponIds: ["weapon.not-a-thing"]),
                 CharacterTestData.Content()));
+    [Fact]
+    public void AShieldAndATwoHandedWeaponDoNotShareEnoughHands()
+    {
+        // "Two-Handed: This weapon requires two hands when you attack with it," and a
+        // donned shield is strapped to one of them. The gap held silently until the
+        // shop sold a shield-bearer a Maul.
+        var greataxe = CharacterTestData.Weapon(
+            id: "weapon.greataxe",
+            name: "Greataxe",
+            damage: "1d12",
+            properties: WeaponProperty.TwoHanded);
+
+        var draft = CharacterTestData.Draft(hasShield: true, weaponIds: ["weapon.greataxe"]);
+
+        Assert.Throws<ArgumentException>(() =>
+            CharacterResolver.Resolve(draft, CharacterTestData.Content(weapons: [greataxe])));
+
+        // Without the shield the same draft resolves: the weapon is legal, the
+        // pairing was the problem.
+        var unburdened = CharacterTestData.Draft(hasShield: false, weaponIds: ["weapon.greataxe"]);
+
+        Assert.NotNull(CharacterResolver.Resolve(unburdened, CharacterTestData.Content(weapons: [greataxe])));
+    }
+
 }

@@ -840,6 +840,22 @@ public static class CharacterResolver
                 throw new ArgumentException($"Unknown weapon '{weaponId}'.", nameof(draft));
             }
 
+            // "Two-Handed: This weapon requires two hands when you attack with it,"
+            // and a donned shield is strapped to one of them. The model tracks no
+            // hands, so the rule lives here as a draft refusal: a build that could
+            // never legally swing its own weapon must not resolve. The Lance's
+            // printed "(unless mounted)" qualifier changes nothing in a game with no
+            // mounts. This gap held silently until the shop sold Brenna a Maul to
+            // carry beside her shield — nothing before the merchant ever handed a
+            // shield-bearer a two-hander.
+            if (draft.HasShield && weapon.Properties.HasFlag(WeaponProperty.TwoHanded))
+            {
+                throw new ArgumentException(
+                    $"{weapon.Name} is Two-Handed and the draft carries a shield; " +
+                    "there are not enough hands to attack with it.",
+                    nameof(draft));
+            }
+
             // Finesse lets the wielder choose; a ranged weapon uses Dexterity; everything
             // else uses Strength.
             var ability = weapon.Properties.HasFlag(WeaponProperty.Finesse)
