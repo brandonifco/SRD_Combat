@@ -45,13 +45,14 @@ namespace SRDCombat.Game;
 /// spell grammar and imposed by the same path a bite's rider takes.
 /// </para>
 /// <para>
-/// <b>Two entries predate the bar and carry stated gaps rather than silent ones.</b>
-/// The pregenerated Cleric has always shipped Guiding Bolt, whose "next attack roll
-/// against it has Advantage" rider does not execute, and Spirit Guardians, whose
-/// printed form is a persistent aura (halved Speed, saves each turn) that the engine
-/// casts as a one-time Emanation. Both are kept — removing them would change the
-/// pregens, and the damage they do deal is real and correctly priced — and both gaps
-/// are now written down here instead of being discoverable only by reading the fight.
+/// <b>One entry predates the bar and carries a stated gap rather than a silent one.</b>
+/// Spirit Guardians' printed form is a persistent aura (halved Speed, saves each turn)
+/// that the engine casts as a one-time Emanation; it is kept because removing it would
+/// change the pregens, and the damage it does deal is real and correctly priced.
+/// (Guiding Bolt carried this paragraph's other gap until #155: its "next attack roll
+/// made against it ... has Advantage" rider now executes whole, structured at
+/// extraction and spent by the next roll against the lit target on the caster's
+/// turn-stamped clock.)
 /// </para>
 /// </remarks>
 public static class PreparableSpells

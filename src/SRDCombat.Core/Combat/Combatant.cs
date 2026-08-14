@@ -49,6 +49,13 @@ public sealed record CombatAttack(
     /// </summary>
     public EmbeddedAttackSave? EmbeddedSave { get; init; }
 
+    /// <summary>
+    /// True when a hit marks the target so that the next attack roll against it has
+    /// Advantage — Guiding Bolt's rider, carried from the spell onto the attack the
+    /// cast builds. False for every weapon and every stat-block attack.
+    /// </summary>
+    public bool GrantsAdvantageAgainstTargetOnHit { get; init; }
+
     /// <summary>The furthest this attack can reach at all, in feet.</summary>
     public int MaximumRangeFeet =>
         Math.Max(ReachFeet ?? 0, LongRangeFeet ?? NormalRangeFeet ?? 0);
@@ -604,6 +611,25 @@ public sealed class FeatureState
     /// turn of the holder's clears it; the end of the earning turn does not.
     /// </summary>
     public int VexEarnedOnTurn { get; internal set; }
+
+    /// <summary>
+    /// Who lit this creature up with Guiding Bolt's rider, when somebody has: the next
+    /// attack roll made against it — anyone's — has Advantage. Null when nobody has.
+    /// </summary>
+    /// <remarks>
+    /// The state lives on the victim because the benefit belongs to whoever attacks it
+    /// next, and the author is remembered because the expiry — "before the end of your
+    /// next turn" — is measured on the <em>caster's</em> clock, the possessive trap
+    /// every duration in this file carries.
+    /// </remarks>
+    public string? GuidedBy { get; internal set; }
+
+    /// <summary>
+    /// The author's turn count when the light landed. The end of a later turn of the
+    /// author's clears it; the end of the casting turn does not — the same stamped
+    /// clock Vex runs on (#153).
+    /// </summary>
+    public int GuidedOnAuthorTurn { get; internal set; }
 
     /// <summary>
     /// The spell this creature is concentrating on, if any. A creature can concentrate

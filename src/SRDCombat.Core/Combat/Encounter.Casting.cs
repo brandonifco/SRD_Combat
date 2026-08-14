@@ -568,7 +568,10 @@ public sealed partial class Encounter
             spell.RangeFeet,
             spell.RangeFeet,
             spell.Damage,
-            spell.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray());
+            spell.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray())
+        {
+            GrantsAdvantageAgainstTargetOnHit = spell.GrantsAdvantageAgainstTargetOnHit,
+        };
 
         ResolveAttack(caster, attack, target, isOpportunityAttack: false, isSpellAttack: true);
     }

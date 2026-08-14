@@ -95,6 +95,17 @@ internal static partial class SpellEffectParser
     }
 
     /// <summary>
+    /// True when the text prints Guiding Bolt's rider — "and the next attack roll made
+    /// against it before the end of your next turn has Advantage" — whole.
+    /// </summary>
+    public static bool ParseNextAttackAdvantage(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        return NextAttackAdvantagePattern().IsMatch(text);
+    }
+
+    /// <summary>
     /// Reads a spell's damage dice. Unlike a stat block there is no printed average, so
     /// the expression's own average stands in — which keeps the validator's
     /// average-matches-dice check meaningful for monsters without weakening it here.
@@ -235,6 +246,14 @@ internal static partial class SpellEffectParser
     // "A Construct has Disadvantage on the save." — whole, for the same reason.
     [GeneratedRegex(@"A\s+Construct\s+has\s+Disadvantage\s+on\s+the\s+save")]
     private static partial Regex ConstructDisadvantagePattern();
+
+    // "and the next attack roll made against it before the end of your next turn has
+    // Advantage" — Guiding Bolt, exactly once in the book. Whole, because a looser
+    // pattern could match a rider whose window or beneficiary is different, and the
+    // engine executes exactly this window on exactly this roll.
+    [GeneratedRegex(
+        @"the\s+next\s+attack\s+roll\s+made\s+against\s+it\s+before\s+the\s+end\s+of\s+your\s+next\s+turn\s+has\s+Advantage")]
+    private static partial Regex NextAttackAdvantagePattern();
 
     // Revivify's two sentences, whole: the one-minute window and the revive-with-N
     // must both be printed for the shape to structure.

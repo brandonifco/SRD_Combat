@@ -27,6 +27,23 @@ public class SpellContentTests
     }
 
     [Fact]
+    public void GuidingBoltCarriesItsAdvantageRiderAndNothingElseDoes()
+    {
+        // "and the next attack roll made against it before the end of your next turn
+        // has Advantage" — structured at extraction like Sacred Flame's cover clause,
+        // and printed exactly once in the book, so the flag's census is an exact count
+        // rather than a floor: the sentence occurring anywhere new should be a
+        // deliberate discovery, not a silent match.
+        var lit = Content.Spells
+            .Where(spell => spell.GrantsAdvantageAgainstTargetOnHit)
+            .ToArray();
+
+        var bolt = Assert.Single(lit);
+        Assert.Equal("Guiding Bolt", bolt.Name);
+        Assert.True(bolt.IsSpellAttack);
+    }
+
+    [Fact]
     public void TheOneSmallCapsHeadingIsRepaired()
     {
         // Acid Splash alone is set in GillSans-SemiBold-SC700, and small caps reach the

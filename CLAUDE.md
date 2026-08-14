@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the Vex clock fix (#153), after the party-power phase's first slice (Divine Spark, #151) |
-| Tests | **834 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at Guiding Bolt's rider (#155), after the Vex clock fix (#153) and the party-power phase's first slice (Divine Spark, #151) |
+| Tests | **838 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 7 of 30, best 30, 9 of 120 runs clearing everything, 21 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120 — **and the four-cell table below is why that headline must not be read alone.** Divine Spark (#151) moved every canonical figure at once (median 7 → 8, clears 12 → 14, level-4 24 → 31); the Vex clock fix (#153) then read 8 → 7 on the canonical seeds while reading **4 → 8 in the fix's favour on fresh seeds 121–240** (main 4/10/26, fix 8/14/32) — a strictly party-positive rule fix whose extra Advantage die reshuffles every later roll, so the seed-set × build interaction dominates a single range. That is #132's ±2 lesson operating at 120-seed scale: cross-check a surprising verdict on a second range before believing it. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Pacing | **Median 6 of 30, best 30, 13 of 120 runs clearing everything, 25 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120 — **and no single headline from this instrument should be read alone any more.** The three slices since the economy read, on canonical/fresh (121–240) seed medians: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 on both ranges against that build's 7/8. All three are strictly party-positive mechanisms, and every extra Advantage die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The party-power phase (#83's direction) is underway** — Divine Spark is its first slice, and it is the only lever that has ever raised pacing. The squad-AI series (#122–#127) is complete: its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work). Also open: Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -273,7 +273,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 834 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 838 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -850,9 +850,12 @@ so *it* can tell what is left; they do not belong in a status report.
   stat-block accounting is — Bestow Curse reads as fully modelled. A menu filtered on
   shape would offer spells that execute partially: the Goblin Warrior bug wearing a
   spell list. The registry's bar and its per-spell exclusion reasons are on the class,
-  including the two pregen-blessed entries whose gaps are now stated rather than
-  silent: Guiding Bolt's Advantage rider does not execute, and Spirit Guardians is
-  cast as a one-time Emanation rather than its printed persistent aura. **The first
+  including the pregen-blessed entry whose gap is stated rather than silent: Spirit
+  Guardians is cast as a one-time Emanation rather than its printed persistent aura.
+  (Guiding Bolt's Advantage rider was the other stated gap until #155 — it executes
+  whole now, structured at extraction like Sacred Flame's cover clause and spent by
+  the next attack roll against the lit target, anyone's, on the caster's turn-stamped
+  clock.) **The first
   widening passes took the Wizard from seven to nine, then ten with Hold Person** — Shatter's "A Construct has
   Disadvantage on the save" now rides `SaveEffect.ConstructsSaveAtDisadvantage`
   against the stats' own creature type, and Ray of Sickness's Poisoned rider is
