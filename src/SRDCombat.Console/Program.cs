@@ -222,6 +222,14 @@ void VisitShop(GauntletRun run)
         {
             var affordable = offers[i].CostCopper <= run.GoldCopper ? "  " : "* ";
             Console.WriteLine($"  {affordable}{i + 1}. {offers[i].Description}");
+
+            // What the price actually buys, under the offer it belongs to. The lines
+            // come from the offer rather than being built here, so the mouse client
+            // and this one cannot come to different conclusions about the same trade.
+            foreach (var effect in offers[i].Effect.Lines)
+            {
+                Console.WriteLine($"        {effect}");
+            }
         }
 
         Console.WriteLine("(* beyond the purse)  buy <number>, or done:");

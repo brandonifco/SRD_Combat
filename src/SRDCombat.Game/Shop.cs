@@ -1,9 +1,145 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
+using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Game;
+
+/// <summary>
+/// The attack a purchase changes: what the buyer swings today and what they would
+/// swing after, each with its whole damage expression.
+/// </summary>
+/// <remarks>
+/// Both sides are the <em>resolved</em> attack rather than the weapon's printed dice,
+/// so the ability modifier, the Fighting Style and any magic item are already in the
+/// numbers a shopper reads — which is the only version of "what does this buy me" that
+/// is true for the character standing in front of the stall.
+/// </remarks>
+/// <param name="FromName">The attack being replaced.</param>
+/// <param name="FromDamage">Its damage, resolved.</param>
+/// <param name="ToName">The attack that would replace it.</param>
+/// <param name="ToDamage">Its damage, resolved.</param>
+/// <param name="FromMastery">The mastery property in use today, if any.</param>
+/// <param name="ToMastery">The mastery property afterwards, if any.</param>
+public sealed record AttackChange(
+    string FromName,
+    DiceExpression FromDamage,
+    string ToName,
+    DiceExpression ToDamage,
+    WeaponMastery? FromMastery = null,
+    WeaponMastery? ToMastery = null)
+{
+    /// <summary>The change in average damage per hit. Positive is an improvement.</summary>
+    public int AverageDelta => ToDamage.Average - FromDamage.Average;
+
+    /// <summary>
+    /// True when the swap changes which mastery property the character actually wields.
+    /// </summary>
+    /// <remarks>
+    /// The damage numbers hide this entirely, and it is often the larger half of the
+    /// trade: a Barbarian selling a Greataxe for a Maul buys one point of average
+    /// damage and sells Cleave, a whole second attack, for it.
+    /// </remarks>
+    public bool ChangesMastery => FromMastery != ToMastery;
+}
+
+/// <summary>
+/// What a purchase would actually change about its buyer, in the numbers a player
+/// decides on: armor class, Speed, the attack it replaces, or the healing a potion
+/// carries.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Computed here rather than in a client for the usual reason — the comparison is a
+/// reading of the resolved sheet, and two clients formatting it separately would be
+/// two places for it to drift. <see cref="Lines"/> is the rendering both use.
+/// </para>
+/// <para>
+/// <b>Detriments are carried, not hidden.</b> The offer gate already refuses anything
+/// strictly worse, but "strictly better" leaves room for a cost worth seeing: Heavy
+/// armor that gates Fast Movement shows its Speed line, because a shopper who cannot
+/// see the price in feet cannot judge the price in gold.
+/// </para>
+/// </remarks>
+public sealed record OfferEffect
+{
+    /// <summary>Armor class as the buyer stands today.</summary>
+    public required int ArmorClassBefore { get; init; }
+
+    /// <summary>Armor class after the purchase.</summary>
+    public required int ArmorClassAfter { get; init; }
+
+    /// <summary>Speed in feet as the buyer stands today.</summary>
+    public required int SpeedFeetBefore { get; init; }
+
+    /// <summary>Speed in feet after the purchase.</summary>
+    public required int SpeedFeetAfter { get; init; }
+
+    /// <summary>The attack this purchase swaps, when it swaps one.</summary>
+    public AttackChange? Attack { get; init; }
+
+    /// <summary>What a potion restores, when the offer is one.</summary>
+    public DiceExpression? Healing { get; init; }
+
+    /// <summary>Points of armor class gained. Negative would be a loss.</summary>
+    public int ArmorClassDelta => ArmorClassAfter - ArmorClassBefore;
+
+    /// <summary>Feet of Speed gained. Negative is the Heavy armor cost.</summary>
+    public int SpeedFeetDelta => SpeedFeetAfter - SpeedFeetBefore;
+
+    /// <summary>
+    /// The effect as lines a client can print under the offer, most decisive first.
+    /// Empty when a purchase changes none of the numbers this record carries.
+    /// </summary>
+    public IReadOnlyList<string> Lines
+    {
+        get
+        {
+            var lines = new List<string>();
+
+            if (Healing is { } healing)
+            {
+                lines.Add($"restores {healing} hit points ({healing.Minimum}-{healing.Maximum})");
+            }
+
+            if (Attack is { } attack)
+            {
+                lines.Add(
+                    $"{attack.ToName} {attack.ToDamage} " +
+                    $"({attack.ToDamage.Minimum}-{attack.ToDamage.Maximum}, avg {attack.ToDamage.Average}) " +
+                    $"replaces {attack.FromName} {attack.FromDamage} " +
+                    $"({attack.FromDamage.Minimum}-{attack.FromDamage.Maximum}, avg {attack.FromDamage.Average})" +
+                    $" — {Signed(attack.AverageDelta)} damage per hit");
+
+                if (attack.ChangesMastery)
+                {
+                    lines.Add(
+                        $"mastery {Describe(attack.FromMastery)} becomes {Describe(attack.ToMastery)}");
+                }
+            }
+
+            if (ArmorClassDelta != 0)
+            {
+                lines.Add($"AC {ArmorClassBefore} to {ArmorClassAfter} — {Signed(ArmorClassDelta)} armor class");
+            }
+
+            if (SpeedFeetDelta != 0)
+            {
+                lines.Add($"Speed {SpeedFeetBefore} to {SpeedFeetAfter} ft. — {Signed(SpeedFeetDelta)} ft.");
+            }
+
+            return lines;
+        }
+    }
+
+    private static string Signed(int value) =>
+        value > 0 ? $"+{value}" : value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>A mastery property's name, or "none" where the character wields none.</summary>
+    private static string Describe(WeaponMastery? mastery) => mastery?.ToString() ?? "none";
+}
 
 /// <summary>
 /// One thing the party could buy: who it is for, what it costs, and the draft change
@@ -21,13 +157,18 @@ namespace SRDCombat.Game;
 /// class counts double a point of average damage, a stated weighting rather than a
 /// derivation.
 /// </param>
+/// <param name="Effect">
+/// What the purchase changes, for a client to show beside the price. Never null —
+/// an offer nobody can read the value of is a price tag with no goods behind it.
+/// </param>
 public sealed record ShopOffer(
     int MemberIndex,
     string Description,
     int CostCopper,
     CharacterDraft? NewDraft,
     HealingPotion? Potion,
-    double Score);
+    double Score,
+    OfferEffect Effect);
 
 /// <summary>
 /// The Long Rest merchant: mundane weapons, armor, shields and Potions of Healing at
@@ -101,13 +242,23 @@ public static class Shop
         // Moderate-rung drop follows, and a client can buy it repeatedly.
         if (PotionBuyer(party, states) is { } thirstiest)
         {
+            var buyer = party[thirstiest].Sheet;
+
             offers.Add(new ShopOffer(
                 thirstiest,
                 $"Potion of Healing for {party[thirstiest].Draft.Name} — {Price(PotionCostCopper)}",
                 PotionCostCopper,
                 NewDraft: null,
                 HealingPotion.Standard,
-                Score: 0));
+                Score: 0,
+                new OfferEffect
+                {
+                    ArmorClassBefore = buyer.ArmorClass,
+                    ArmorClassAfter = buyer.ArmorClass,
+                    SpeedFeetBefore = buyer.SpeedFeet,
+                    SpeedFeetAfter = buyer.SpeedFeet,
+                    Healing = PotionRules.Healing(HealingPotion.Standard),
+                }));
         }
 
         return offers;
@@ -238,7 +389,8 @@ public static class Shop
                     armor.CostCopper,
                     draft,
                     Potion: null,
-                    Score: (resolved.Sheet.ArmorClass - currentAc) * 2.0);
+                    Score: (resolved.Sheet.ArmorClass - currentAc) * 2.0,
+                    EffectOf(member, resolved));
             }
         }
 
@@ -255,7 +407,8 @@ public static class Shop
                     ShieldCost(content),
                     draft,
                     Potion: null,
-                    Score: (resolved.Sheet.ArmorClass - currentAc) * 2.0);
+                    Score: (resolved.Sheet.ArmorClass - currentAc) * 2.0,
+                    EffectOf(member, resolved));
             }
         }
 
@@ -308,7 +461,8 @@ public static class Shop
                 weapon.CostCopper,
                 draft,
                 Potion: null,
-                Score: after - before);
+                Score: after - before,
+                EffectOf(member, resolved, weapon.Kind));
         }
     }
 
@@ -317,6 +471,58 @@ public static class Shop
     /// reach attacks for a melee weapon, ranged for ranged — so the comparison is
     /// like-for-like.
     /// </summary>
+    /// <summary>
+    /// What changed between the buyer as they stand and the buyer re-resolved with the
+    /// purchase, read off the two sheets.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="kind"/> names the attack a weapon offer swaps, so the comparison
+    /// is between two Melee attacks or two Ranged ones — a better blade must not read
+    /// as an improvement over the bow it never touched. Null for armor and shields,
+    /// which change no attack.
+    /// </remarks>
+    private static OfferEffect EffectOf(PartyMember member, PartyMember resolved, WeaponKind? kind = null)
+    {
+        var effect = new OfferEffect
+        {
+            ArmorClassBefore = member.Sheet.ArmorClass,
+            ArmorClassAfter = resolved.Sheet.ArmorClass,
+            SpeedFeetBefore = member.Sheet.SpeedFeet,
+            SpeedFeetAfter = resolved.Sheet.SpeedFeet,
+        };
+
+        if (kind is not { } swapped)
+        {
+            return effect;
+        }
+
+        var from = BestAttack(member, swapped);
+        var to = BestAttack(resolved, swapped);
+
+        return from is null || to is null
+            ? effect
+            : effect with
+            {
+                Attack = new AttackChange(
+                    from.Name,
+                    from.Damage[0].Amount,
+                    to.Name,
+                    to.Damage[0].Amount,
+                    from.Mastery,
+                    to.Mastery),
+            };
+    }
+
+    /// <summary>The member's hardest-hitting attack of a kind, or null if they have none.</summary>
+    private static CombatAttack? BestAttack(PartyMember member, WeaponKind kind) =>
+        member.Combatant.Stats.Attacks
+            .Where(attack => kind == WeaponKind.Ranged
+                ? attack.NormalRangeFeet is not null
+                : attack.ReachFeet is not null)
+            .Where(attack => attack.Damage.Count > 0)
+            .OrderByDescending(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+            .FirstOrDefault();
+
     private static double BestAverage(PartyMember member, WeaponKind kind, SrdContent content) =>
         member.Combatant.Stats.Attacks
             .Where(attack => kind == WeaponKind.Ranged
