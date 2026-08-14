@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **#119 — Revivify**, the survey's best find: the printed answer to the death spiral is a level 3 Cleric spell, and death is why runs end. Every phase has met its printed end state. |
+| Work remaining | **No open GitHub issues.** Every phase has met its printed end state; Revivify (#119) landed with the honest caveat that its automated value waits on runs reaching level 5. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -683,15 +683,22 @@ so *it* can tell what is left; they do not belong in a status report.
   extraction-refused for a modelled reason — repeat-save outs, "for the duration",
   chooser's-choice conditions — so the next widening needs the model to grow a shape,
   and the survey's best find is filed as an issue (Revivify).
-- **The pregen Cleric prepares six of its printed nine, and the shortfall is not a
-  choice.** Of the 109 spells on the Cleric list, six have an effect the engine executes:
-  Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds and Spirit
-  Guardians. **Two of those six the tactics policy can never cast** — Inflict Wounds is
-  Touch and the policy only casts when its weapon *cannot* reach, and Spirit Guardians is
-  a self-centred Emanation. #85 fixed the first — Inflict Wounds now casts, correctly
-  limited to 5 feet — and **Spirit Guardians is still never cast**, because the healer's
-  reserve holds every slot whenever anybody is badly hurt, which is nearly always. That is
-  the honest state: the mechanism to cast it exists and the priorities never choose it.
+- **The pregen Cleric prepares seven of its printed nine, and the shortfall is not a
+  choice.** Of the 109 spells on the Cleric list, seven have an effect the engine
+  executes: Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds,
+  Spirit Guardians and, since #119, Revivify — "a creature that has died within the
+  last minute returns to life with 1 Hit Point", the minute being ten rounds on the
+  same clock conditions ride, the death round stamped by the encounter, and a death
+  the fight never saw reading as too long ago because refusing a legal revival is
+  recoverable and granting a forbidden one is not. **Spirit Guardians is still never
+  cast** (a self-centred Emanation the priorities never choose), and **Revivify's
+  automated value is locked behind reaching level 5** — measured: level-1 pacing
+  unchanged (median 3.5, the ASI's story again), and at level-5 starts the policy
+  walks to the corpse, holds its last level 3 slot against upcast heals (the first
+  measured runs fired **zero revivals across forty-five deaths** because every slot
+  that could answer a death had already bought hit points — the cautious-healer
+  finding, one clause deeper), and revives when death and survival line up. Its real
+  customers are human play and created parties starting high.
 - **Area geometry is a stated interpretation, not a derivation — with two exceptions.**
   The SRD describes areas for a table with a ruler; `AreaTargeting` documents how each
   becomes squares. Cylinder is not modelled and a spell using one is refused. The

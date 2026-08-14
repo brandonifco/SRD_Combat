@@ -150,6 +150,23 @@ public sealed record SaveEffect(
 /// </param>
 public sealed record SpellHeal(DiceExpression Dice, bool AddsSpellcastingModifier);
 
+/// <summary>
+/// An effect that returns the dead to life: "You touch a creature that has died within
+/// the last minute. That creature revives with 1 Hit Point."
+/// </summary>
+/// <remarks>
+/// The fourth effect shape (#119), and the printed answer to the way runs actually end:
+/// a death stops a character earning experience, the party diverges, and the next fight
+/// is priced for four and fought by three. The trailing printed clauses — "can't revive
+/// a creature that has died of old age, nor does it restore any missing body parts" —
+/// are read as satisfied by construction, since neither age nor body parts exist in the
+/// model. "Within the last minute" is the engine's business, not this record's: the
+/// ten-round reading lives on <c>Encounter</c>, beside the same interpretation
+/// <c>ConditionDuration.ForMinutes</c> states.
+/// </remarks>
+/// <param name="HitPoints">The hit points the creature revives with — Revivify prints 1.</param>
+public sealed record SpellRevival(int HitPoints);
+
 /// <summary>Which turn boundary a condition ends on.</summary>
 public enum ConditionClock
 {

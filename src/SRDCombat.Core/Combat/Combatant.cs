@@ -1167,6 +1167,39 @@ public sealed class Combatant
         AddCondition(ConditionType.Unconscious);
     }
 
+    /// <summary>
+    /// The encounter round this creature died in, stamped by the encounter beside its
+    /// own "is dead" narration. Null means the death was not seen this fight — a
+    /// combatant brought in dead, or hand-built that way — and Revivify's window
+    /// deliberately reads null as "too long ago": refusing a revival the rules might
+    /// have allowed is recoverable, reviving one they forbid is not.
+    /// </summary>
+    public int? DiedInRound { get; private set; }
+
+    internal void RecordDeathRound(int round) => DiedInRound = round;
+
+    /// <summary>
+    /// Returns the dead to life with the given hit points — Revivify's transition, the
+    /// one thing <see cref="RegainHitPoints"/> deliberately refuses to do.
+    /// </summary>
+    /// <remarks>
+    /// Clearing <see cref="IsDead"/> first and then healing through the ordinary path
+    /// keeps everything one transition should touch consistent: the death saves reset,
+    /// Unconscious lifts, and stability clears exactly as they would for a downed
+    /// creature brought back up.
+    /// </remarks>
+    internal void ReturnToLife(int hitPoints)
+    {
+        if (!IsDead)
+        {
+            return;
+        }
+
+        IsDead = false;
+        DiedInRound = null;
+        RegainHitPoints(hitPoints);
+    }
+
     internal void MarkStable()
     {
         IsStable = true;

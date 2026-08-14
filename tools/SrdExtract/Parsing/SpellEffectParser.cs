@@ -144,6 +144,23 @@ internal static partial class SpellEffectParser
                 : null);
     }
 
+    /// <summary>
+    /// Reads a revival sentence: "You touch a creature that has died within the last
+    /// minute. That creature revives with 1 Hit Point." — Revivify's, whole, both
+    /// sentences anchored so a looser resurrection (Raise Dead's ten days) stays
+    /// unstructured rather than borrowing a window it does not print.
+    /// </summary>
+    public static SpellRevival? ParseRevival(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var match = RevivalPattern().Match(text);
+
+        return match.Success
+            ? new SpellRevival(int.Parse(match.Groups["hp"].Value, CultureInfo.InvariantCulture))
+            : null;
+    }
+
     // "must succeed on a Dexterity saving throw", "makes a Constitution saving throw",
     // "must make a Wisdom saving throw". Deliberately case-sensitive on the ability so it
     // cannot match prose about a "dexterity" score.
@@ -218,6 +235,13 @@ internal static partial class SpellEffectParser
     // "A Construct has Disadvantage on the save." — whole, for the same reason.
     [GeneratedRegex(@"A\s+Construct\s+has\s+Disadvantage\s+on\s+the\s+save")]
     private static partial Regex ConstructDisadvantagePattern();
+
+    // Revivify's two sentences, whole: the one-minute window and the revive-with-N
+    // must both be printed for the shape to structure.
+    [GeneratedRegex(
+        @"You\s+touch\s+a\s+creature\s+that\s+has\s+died\s+within\s+the\s+last\s+minute\.\s+" +
+        @"That\s+creature\s+revives\s+with\s+(?<hp>\d+)\s+Hit\s+Point")]
+    private static partial Regex RevivalPattern();
 
     // "On a hit, the target takes 2d8 Poison damage and has the Poisoned condition
     // until the end of your next turn." The whole sentence, both halves anchored: the

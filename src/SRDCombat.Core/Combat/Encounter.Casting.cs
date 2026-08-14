@@ -81,12 +81,46 @@ public sealed partial class Encounter
         // exclusion inside AreaTargeting is the rule that decides it.
         if (target is not null
             && !spell.IsSelfRanged
-            && (spell.IsSpellAttack || spell.Heal is not null || spell.Save is { Area: null })
+            && (spell.IsSpellAttack || spell.Heal is not null || spell.Revival is not null
+                || spell.Save is { Area: null })
             && CoverRules.Between(Battlefield, caster.Position, target.Position, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "spell.total_cover",
                 $"{target.Name} has Total Cover from {caster.Name} and can't be targeted directly.");
+        }
+
+        // Revivify's own gates, all before anything is spent. "Has died within the last
+        // minute": a minute is ten rounds — the same reading ConditionDuration.ForMinutes
+        // states — measured against the round the encounter stamped on the death; a
+        // death this fight never saw reads as too long ago, because refusing a revival
+        // the rules might allow is recoverable and reviving one they forbid is not. The
+        // room check is the occupancy lesson pointed forward: the dead do not occupy
+        // their square, so somebody may be standing on the corpse, and reviving into an
+        // occupied square is the two-creatures-one-square state this engine only
+        // grudgingly survives.
+        if (spell.Revival is not null && target is not null)
+        {
+            if (!target.IsDead)
+            {
+                return new ActionRefusal(
+                    "spell.target_not_dead",
+                    $"{target.Name} is not dead; {spell.Name} revives the dead.");
+            }
+
+            if (target.DiedInRound is not { } died || Round - died > RevivalWindowRounds)
+            {
+                return new ActionRefusal(
+                    "spell.dead_too_long",
+                    $"{target.Name} has been dead longer than the minute {spell.Name} allows.");
+            }
+
+            if (_combatants.Any(other => other != target && !other.IsDead && other.Position == target.Position))
+            {
+                return new ActionRefusal(
+                    "spell.no_room_to_stand",
+                    $"Someone is standing where {target.Name} fell.");
+            }
         }
 
         // "Can't Harm the Charmer": an attack spell aimed at the charmer is an attack,
@@ -126,7 +160,18 @@ public sealed partial class Encounter
         // an upcast Cure Wounds simply arrives with more dice.
         var scaled = ApplyScaling(spell, slotUsed, character.Level);
 
-        if (scaled.Heal is { } heal && target is not null)
+        if (scaled.Revival is { } revival && target is not null)
+        {
+            target.ReturnToLife(revival.HitPoints);
+
+            Add(
+                CombatStepKind.Spell,
+                $"{target.Name} revives with {revival.HitPoints} hit point" +
+                $"{(revival.HitPoints == 1 ? string.Empty : "s")} — back from the dead.",
+                caster,
+                target);
+        }
+        else if (scaled.Heal is { } heal && target is not null)
         {
             ResolveHeal(caster, scaled, heal, target, character, slotUsed ?? scaled.Level);
         }
@@ -143,13 +188,16 @@ public sealed partial class Encounter
         return null;
     }
 
+    /// <summary>How long after death Revivify still works: "within the last minute", ten rounds.</summary>
+    private const int RevivalWindowRounds = 10;
+
     /// <summary>Whether the spell has a shape this engine can resolve at all.</summary>
     private static ActionRefusal? ResolveSpellShape(SpellDefinition spell, Combatant? target)
     {
-        if (spell.Heal is not null)
+        if (spell.Heal is not null || spell.Revival is not null)
         {
             return target is null
-                ? new ActionRefusal("spell.needs_target", $"{spell.Name} needs a creature to heal.")
+                ? new ActionRefusal("spell.needs_target", $"{spell.Name} needs a creature to target.")
                 : null;
         }
 
@@ -208,9 +256,10 @@ public sealed partial class Encounter
     /// existing model rather than needing a special case here.
     /// </para>
     /// <para>
-    /// The dead stay dead. The SRD's healing spells restore hit points, and none of them
-    /// says anything about a creature that has died; raising the dead is its own spell
-    /// and its own piece of work.
+    /// The dead stay dead <em>here</em>. The SRD's healing spells restore hit points,
+    /// and none of them says anything about a creature that has died; raising the dead
+    /// was its own piece of work, and became one — <see cref="SpellRevival"/> and the
+    /// revival branch above this method are Revivify's (#119).
     /// </para>
     /// </remarks>
     private void ResolveHeal(

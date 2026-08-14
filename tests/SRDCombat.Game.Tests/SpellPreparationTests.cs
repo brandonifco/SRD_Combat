@@ -13,20 +13,37 @@ public class SpellPreparationTests
     private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
 
     [Fact]
-    public void TheClericsMenuIsExactlyTheKnownSix()
+    public void TheClericsMenuIsTheVerifiedSeven()
     {
         // The honest menu character creation can offer a Cleric, pinned by name so a
         // change to what is verified is a visible test change rather than a silently
-        // different menu. CLAUDE.md carries this list in prose; this is the assertion
-        // behind it.
+        // different menu. Revivify joined with #119. CLAUDE.md carries this list in
+        // prose; this is the assertion behind it.
         var menu = PreparableSpells.For(Content, "class.cleric")
             .Select(spell => spell.Name)
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
 
         Assert.Equal(
-            ["Cure Wounds", "Guiding Bolt", "Healing Word", "Inflict Wounds", "Sacred Flame", "Spirit Guardians"],
+            [
+                "Cure Wounds", "Guiding Bolt", "Healing Word", "Inflict Wounds", "Revivify",
+                "Sacred Flame", "Spirit Guardians",
+            ],
             menu);
+    }
+
+    [Fact]
+    public void RevivifyCarriesItsStructuredShape()
+    {
+        var revivify = Content.SpellsById["spell.revivify"];
+
+        Assert.NotNull(revivify.Revival);
+        Assert.Equal(1, revivify.Revival!.HitPoints);
+        Assert.True(SpellcastingRules.HasExecutableEffect(revivify));
+
+        // Exactly one spell structures the shape — Raise Dead's ten days must not have
+        // borrowed the one-minute window.
+        Assert.Single(Content.Spells, spell => spell.Revival is not null);
     }
 
     [Fact]

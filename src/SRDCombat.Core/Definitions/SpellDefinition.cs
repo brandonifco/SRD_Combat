@@ -165,6 +165,12 @@ public sealed record SpellDefinition
     /// </summary>
     public SpellHeal? Heal { get; init; }
 
+    /// <summary>
+    /// The revival this spell performs, when it returns the dead to life — Revivify.
+    /// Null for every other spell.
+    /// </summary>
+    public SpellRevival? Revival { get; init; }
+
     /// <summary>True when every mechanical clause is captured by the model.</summary>
     public bool IsFullyModelled =>
         Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;

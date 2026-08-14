@@ -10094,16 +10094,15 @@
       "durationText": "Instantaneous",
       "requiresConcentration": false,
       "text": "the spell consumes) You touch a creature that has died within the last minute. That creature revives with 1 Hit Point. This spell can't revive a creature that has died of old age, nor does it restore any missing body parts.",
-      "mechanics": "Unmodelled",
+      "mechanics": "Healing",
       "damage": [],
       "appliedConditions": [],
       "isSpellAttack": false,
-      "unmodelledClauses": [
-        "the spell consumes) You touch a creature that has died within the last minute",
-        "That creature revives with 1 Hit Point",
-        "This spell can't revive a creature that has died of old age, nor does it restore any missing body parts."
-      ],
-      "sourcePage": 159
+      "unmodelledClauses": [],
+      "sourcePage": 159,
+      "revival": {
+        "hitPoints": 1
+      }
     },
     {
       "id": "spell.rope-trick",

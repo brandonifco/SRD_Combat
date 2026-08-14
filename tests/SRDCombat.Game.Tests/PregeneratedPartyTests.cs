@@ -88,7 +88,8 @@ public class PregeneratedPartyTests
         Assert.Contains(spells, spell => spell.Save is not null);
         Assert.Contains(spells, spell => spell.Heal is not null);
         Assert.All(spells, spell => Assert.True(
-            spell.IsSpellAttack || spell.Save is not null || spell.Heal is not null,
+            spell.IsSpellAttack || spell.Save is not null || spell.Heal is not null
+                || spell.Revival is not null,
             $"{spell.Name} would be refused at the point of casting."));
     }
 
