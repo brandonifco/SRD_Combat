@@ -57,7 +57,10 @@ public static class SimpleTacticsPolicy
         // judgement this policy makes — see UseCharacterFeatures.
         UseCharacterFeatures(encounter, actor);
 
-        var target = NearestEnemy(encounter, actor);
+        // The side's shared judgement first: characters converge on the doctrine's
+        // focus target where they can (#123); monsters and the transcript's
+        // hand-authored fighters keep the simple nearest-weakest choice.
+        var target = PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor));
 
         if (target is null)
         {
@@ -116,7 +119,7 @@ public static class SimpleTacticsPolicy
             return;
         }
 
-        var closest = NearestEnemy(encounter, actor);
+        var closest = PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor));
 
         if (closest is not null && TryAttack(encounter, actor, closest))
         {
@@ -152,7 +155,7 @@ public static class SimpleTacticsPolicy
         while (!encounter.IsComplete
                && actor.CanAct
                && actor.Features.AttacksRemainingThisAction > 0
-               && NearestEnemy(encounter, actor) is { } next
+               && PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor)) is { } next
                && TryAttack(encounter, actor, next))
         {
             // TryAttack consumes one swing per call.
