@@ -277,6 +277,11 @@ together took clears **33 → 40** canonical and **26 → 34** fresh, and level-
 44 → 51 and 36 → 44 — the auto-buyer really had been downgrading the party at every Long
 Rest since the economy landed.
 
+**The board answers to the keyboard too**: arrow keys walk a cursor over the squares
+and Enter acts on it — through `ActivateSquare`, the *same* path a click takes, because
+two ways of playing that decide separately are two places to disagree. **Attacking is a
+button now** rather than knowledge that clicking the board works; with one attack it
+arms targeting straight away and only a real choice opens the menu.
 **The controls answer to the keyboard and show only what can be used.** `TurnOptions`
 in `Game` decides both, so the two clients cannot drift: each action carries a key that
 is **unique across the whole set**, so D is Dodge whenever Dodge is offered and never
