@@ -58,11 +58,11 @@ public enum EngagementPhase
 /// would be a second copy of the fight to keep honest.
 /// </para>
 /// <para>
-/// <b>Only characters consult it.</b> The gate is <c>Stats.Character</c>, the same line
-/// the policy already draws for features and healing: a monster's turn stays the simple
-/// policy's until the Phase 6 split (#127) gives monsters doctrine of their own, and
-/// the hand-authored transcript combatants carry no character block, so the fixture is
-/// untouched by construction.
+/// <b>Only characters consult it directly.</b> The gate is <c>Stats.Character</c>, the
+/// same line the policy already draws for features and healing. Since the Phase 6
+/// split (#127) monsters have <see cref="MonsterDoctrine"/> instead — which borrows
+/// exactly one thing from here, <see cref="Converge"/>, when a stat block's
+/// Intelligence says the creature earns it.
 /// </para>
 /// </remarks>
 public static class PartyDoctrine
@@ -418,6 +418,16 @@ public static class PartyDoctrine
             return nearest;
         }
 
+        return Converge(encounter, actor, nearest);
+    }
+
+    /// <summary>
+    /// The convergence itself, without the character gate: the shared core of
+    /// <see cref="ChooseTarget"/>, which <see cref="MonsterDoctrine"/> also reaches
+    /// for when a stat block's Intelligence says the creature fights tactically.
+    /// </summary>
+    internal static Combatant? Converge(Encounter encounter, Combatant actor, Combatant? nearest)
+    {
         if (FocusTarget(encounter, actor) is not { } focus)
         {
             return nearest;
