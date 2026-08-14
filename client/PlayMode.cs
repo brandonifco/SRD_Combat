@@ -49,6 +49,9 @@ public partial class PlayMode : FightScreen
         /// <summary>A spell was chosen; the next token clicked is its target.</summary>
         SpellTarget,
 
+        /// <summary>A named attack was chosen; the next enemy clicked takes it.</summary>
+        AttackTarget,
+
         /// <summary>Give Potion was pressed; the next ally clicked drinks it.</summary>
         PotionTarget,
     }
@@ -70,10 +73,13 @@ public partial class PlayMode : FightScreen
     private readonly HashSet<GridPosition> _reachable = [];
     private readonly List<(Rect2 Rect, string Caption, Func<ActionRefusal?> Act)> _buttons = [];
     private readonly List<(Rect2 Rect, SpellDefinition Spell)> _spellRows = [];
+    private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
     private string? _buttonsFor;
     private bool _spellMenuOpen;
+    private bool _attackMenuOpen;
     private Pending _pending;
     private SpellDefinition? _pendingSpell;
+    private CombatAttack? _pendingAttack;
     private string? _notice;
     private bool _probeStarted;
 
@@ -377,11 +383,24 @@ public partial class PlayMode : FightScreen
         FeatureButton(ClassFeature.CunningAction, "Cunning Disengage", () => _encounter!.CunningAction(CunningActionKind.Disengage));
         FeatureButton(ClassFeature.CunningStrike, "Trip", () => _encounter!.CunningStrike(CunningStrikeEffect.Trip));
 
+        // A menu is only worth a button when there is a choice inside it: with one
+        // attack, the default click already swings it.
+        if (active.Stats.Attacks.Count > 1)
+        {
+            x = AddButton(x, row2, "Attacks", () =>
+            {
+                _attackMenuOpen = !_attackMenuOpen;
+                _spellMenuOpen = false;
+                return null;
+            });
+        }
+
         if (active.Stats.Character?.CanCast == true)
         {
             x = AddButton(x, row2, "Cast", () =>
             {
                 _spellMenuOpen = !_spellMenuOpen;
+                _attackMenuOpen = false;
                 return null;
             });
         }
@@ -475,7 +494,7 @@ public partial class PlayMode : FightScreen
         if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
             // Esc backs out of whatever is armed before it quits anything.
-            if (_pending != Pending.Nothing || _spellMenuOpen)
+            if (_pending != Pending.Nothing || _spellMenuOpen || _attackMenuOpen)
             {
                 ClearPending();
                 QueueRedraw();
@@ -496,7 +515,9 @@ public partial class PlayMode : FightScreen
     {
         _pending = Pending.Nothing;
         _pendingSpell = null;
+        _pendingAttack = null;
         _spellMenuOpen = false;
+        _attackMenuOpen = false;
     }
 
     private void HandleClick(Vector2 pixel)
@@ -519,6 +540,24 @@ public partial class PlayMode : FightScreen
         // An armed click resolves first: the next token is the target, anywhere else
         // backs out. Cancelling must never cost anything, so nothing is spent until the
         // engine call itself.
+        if (_pending == Pending.AttackTarget && _pendingAttack is { } chosenAttack)
+        {
+            var struck = TokenTarget(pixel);
+            ClearPending();
+
+            if (struck is { } victim)
+            {
+                Run(() => encounter.Attack(chosenAttack.Name, victim));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
         {
             var aimed = TokenTarget(pixel);
@@ -578,6 +617,21 @@ public partial class PlayMode : FightScreen
             }
         }
 
+        if (_attackMenuOpen)
+        {
+            foreach (var (rect, chosen) in _attackRows)
+            {
+                if (rect.HasPoint(pixel))
+                {
+                    _attackMenuOpen = false;
+                    _pendingAttack = chosen;
+                    _pending = Pending.AttackTarget;
+                    QueueRedraw();
+                    return;
+                }
+            }
+        }
+
         foreach (var (rect, _, act) in _buttons)
         {
             if (rect.HasPoint(pixel))
@@ -587,10 +641,11 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        // A click on the grid closes the menu rather than acting through it.
-        if (_spellMenuOpen)
+        // A click on the grid closes an open menu rather than acting through it.
+        if (_spellMenuOpen || _attackMenuOpen)
         {
             _spellMenuOpen = false;
+            _attackMenuOpen = false;
             QueueRedraw();
             return;
         }
@@ -742,6 +797,7 @@ public partial class PlayMode : FightScreen
                 modulate: Dim);
 
             DrawSpellMenu(character);
+            DrawAttackMenu(character);
         }
 
         if (_notice is { } notice)
@@ -858,6 +914,43 @@ public partial class PlayMode : FightScreen
         }
     }
 
+    private void DrawAttackMenu(Combatant character)
+    {
+        _attackRows.Clear();
+
+        if (!_attackMenuOpen)
+        {
+            return;
+        }
+
+        var top = ButtonRowTop + 36 + 28 + 54;
+
+        DrawString(TextFont, new Vector2(GridLeft, top - 6), "ATTACKS — click one, then its target", fontSize: 12, modulate: Dim);
+
+        var y = top + 6;
+
+        foreach (var attack in character.Stats.Attacks)
+        {
+            var rect = new Rect2(GridLeft, y, 300, 20);
+            _attackRows.Add((rect, attack));
+
+            var dice = string.Join(" + ", attack.Damage.Select(damage => $"{damage.Amount} {damage.Type}"));
+            var reach = attack.NormalRangeFeet is { } normal
+                ? attack.LongRangeFeet is { } far ? $"{normal}/{far} ft." : $"{normal} ft."
+                : $"reach {attack.ReachFeet ?? 5} ft.";
+
+            DrawRect(rect, GridLine);
+            DrawString(
+                TextFont,
+                new Vector2(rect.Position.X + 8, rect.Position.Y + 15),
+                $"{attack.Name} — {dice}, {reach}",
+                fontSize: 12,
+                modulate: Ink);
+
+            y += 24;
+        }
+    }
+
     private string StatusLine(Combatant? commanded)
     {
         if (_phase == Phase.RunOver)
@@ -880,6 +973,11 @@ public partial class PlayMode : FightScreen
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
         {
             return $"choose a target for {spell.Name} — click anywhere else to cancel";
+        }
+
+        if (_pending == Pending.AttackTarget && _pendingAttack is { } attack)
+        {
+            return $"choose a target for {attack.Name} — click anywhere else to cancel";
         }
 
         if (_pending == Pending.PotionTarget)
