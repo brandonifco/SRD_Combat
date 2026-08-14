@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **Phase 5 (character creation) is underway** — the draft chooses its spells; the choice-enumeration layer and the console flow are next. No open GitHub issues. |
+| Work remaining | **Phase 5 (character creation) is underway** — the draft chooses its spells and the choice-enumeration layer is in; the console `--create` flow is next. No open GitHub issues. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -644,6 +644,19 @@ so *it* can tell what is left; they do not belong in a status report.
   clears **4** and burned the Cleric's slots on damage while the party bled. The cautious
   healer wins because a slot spent on damage is gone when the character who needed it
   drops. Median over the whole change: **4 → 6.5**.
+- **What creation may offer is enumerated in `Game`, so the clients hold no rules.**
+  `CharacterCreation` returns whole definitions — the charter's "every choice carries
+  its description" is served by shipping the SRD's own CC-BY text verbatim — and two
+  printed lines are read rather than modelled, with the readings stated on the class
+  and checked against the closed set of twelve printed lines by a test: the Weapon
+  Proficiencies line's three shapes ("Simple", "Simple and Martial", "… that have the
+  Finesse or Light property") and the Armor Training line's category names.
+  `AbilityScoreRules` carries the two deterministic printed generation methods —
+  Standard Array and the 27-point Point Cost table, transcribed from printed page 21
+  the way `PotionRules` is — plus one unprinted fact worth knowing: buying the
+  Standard Array costs exactly the 27-point budget. Random Generation (4d6 drop
+  lowest) is deliberately not offered yet: it is the only method needing dice, and
+  creation runs before a run's seed exists.
 - **A draft chooses its spells now, and the menu is the sixth curated allowlist.**
   `CharacterDraft.ChosenSpellIds` carries the plan under the same reading as its
   Ability Score Improvements — resolving at a level prepares the first entries the
