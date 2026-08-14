@@ -120,6 +120,14 @@ while (run.Next is { } step)
         Console.WriteLine(returned + ".");
     }
 
+    // The merchant reaches the party at each Long Rest — the two per cycle that
+    // bracket the milestone. The shop is the player's, never automatic here: a human
+    // who walks past the stall keeps a purse that compounds.
+    if (rest == RestKind.Long)
+    {
+        VisitShop(run);
+    }
+
     foreach (var (member, state) in run.Party.Zip(run.States))
     {
         Console.WriteLine(
@@ -192,6 +200,61 @@ else if (run.Casualties.Count > 0)
 }
 
 return 0;
+
+// The Long Rest merchant: numbered offers, buy by number, done to move on. Refusals
+// are shown with their code like every other engine answer.
+void VisitShop(GauntletRun run)
+{
+    while (true)
+    {
+        var offers = Shop.Offers(content, run.Party, run.States);
+
+        Console.WriteLine();
+        Console.WriteLine($"A merchant is here. The purse holds {Shop.Price(run.GoldCopper)}.");
+
+        if (offers.Count == 0)
+        {
+            Console.WriteLine("Nothing here would improve anybody; the party moves on.");
+            return;
+        }
+
+        for (var i = 0; i < offers.Count; i++)
+        {
+            var affordable = offers[i].CostCopper <= run.GoldCopper ? "  " : "* ";
+            Console.WriteLine($"  {affordable}{i + 1}. {offers[i].Description}");
+        }
+
+        Console.WriteLine("(* beyond the purse)  buy <number>, or done:");
+        Console.Write("> ");
+
+        var line = Console.ReadLine()?.Trim() ?? "done";
+
+        if (line.Length == 0 || line.Equals("done", StringComparison.OrdinalIgnoreCase)
+            || line.Equals("d", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var numberWord = words.Length > 1 && words[0].Equals("buy", StringComparison.OrdinalIgnoreCase)
+            ? words[1]
+            : words[0];
+
+        if (!int.TryParse(numberWord, out var picked) || picked < 1 || picked > offers.Count)
+        {
+            Console.WriteLine($"'{line}' is not an offer here — a number 1..{offers.Count}, or done.");
+            continue;
+        }
+
+        if (run.Purchase(offers[picked - 1]) is { } refusal)
+        {
+            Console.WriteLine($"[{refusal.Code}] {refusal.Message}");
+            continue;
+        }
+
+        Console.WriteLine($"Bought: {offers[picked - 1].Description}.");
+    }
+}
 
 // Plays one fight to its end, drawing it first.
 FightResult PlayFight(Fight fight, IRandomSource dice)
