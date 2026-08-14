@@ -81,6 +81,12 @@ public partial class PlayMode : FightScreen
     private Fight? _fight;
     private SeededRandomSource _dice = null!;
     private string _savePath = "srdcombat-save.json";
+
+    /// <summary>
+    /// A created party's drafts, set by <see cref="CreateMode"/> before this node is
+    /// added. Null means the pregens, exactly as before creation existed.
+    /// </summary>
+    public IReadOnlyList<CharacterDraft>? CreatedDrafts { get; init; }
     private Phase _phase = Phase.Fighting;
     private readonly List<string> _interlude = [];
     private Rect2 _continueButton;
@@ -153,7 +159,9 @@ public partial class PlayMode : FightScreen
                 ? Math.Clamp(parsed, 1, 5)
                 : 1;
 
-            _run = GauntletRun.Start(content, GauntletLadder.Default(), level);
+            _run = CreatedDrafts is not null
+                ? GauntletRun.Start(content, CreatedDrafts)
+                : GauntletRun.Start(content, GauntletLadder.Default(), level);
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
