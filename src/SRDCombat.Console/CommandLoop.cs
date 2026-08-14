@@ -171,7 +171,17 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
     {
         if (words.Length < 3)
         {
-            return new ActionRefusal("client.usage", "cast <spell name> <target letter | x,y>");
+            return new ActionRefusal("client.usage", "cast <spell name> <target letter | x,y> [slot level]");
+        }
+
+        // A trailing number is a deliberate upcast — "cast cure wounds b 3" burns the
+        // level 3 slot — and the engine rules on whether the slot is legal.
+        int? slot = null;
+
+        if (words.Length > 3 && int.TryParse(words[^1], out var chosen))
+        {
+            slot = chosen;
+            words = words[..^1];
         }
 
         var wanted = string.Join(' ', words[1..^1]);
@@ -189,12 +199,12 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         // else still names a creature by its letter.
         if (SquareArgument(words[^1]) is { } point)
         {
-            return encounter.CastSpell(spell.Id, point);
+            return encounter.CastSpell(spell.Id, point, target: null, slot);
         }
 
         return Find(words[^1]) is not { } target
             ? new ActionRefusal("client.no_target", $"Nobody here is called '{words[^1]}'.")
-            : encounter.CastSpell(spell.Id, target);
+            : encounter.CastSpell(spell.Id, target, slot);
     }
 
     /// <summary>Reads "x,y" as a grid square; null when the token is not one.</summary>
@@ -293,6 +303,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         Display.Say("attack <letter> [name]  attack; defaults to the best that reaches");
         Display.Say("cast <spell> <letter>   cast a spell at someone");
         Display.Say("cast <spell> <x,y>      aim an area spell at a bare square");
+        Display.Say("cast <spell> <at> <n>   burn a level n slot on purpose - an upcast");
         Display.Say("use <entry> <letter>    use a stat block entry by name");
         Display.Say("dodge / dash / disengage / stand / escape");
         Display.Say("rage / reckless / secondwind / surge / aim / trip");
