@@ -270,6 +270,20 @@ public sealed record ConditionDuration(
     /// <summary>"until the grapple ends": lives and dies with the sibling grapple.</summary>
     public static ConditionDuration UntilTheGrappleEnds { get; } =
         new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, 0, WhileGrappleHolds: true);
+
+    /// <summary>
+    /// The stat blocks' own repeat-save clock: "repeats the save at the end of each of
+    /// its turns, ending the effect on itself on a success. After 1 minute, it succeeds
+    /// automatically." The automatic success is the ten-turn cap — the same reading as
+    /// <see cref="ForMinutes"/> — and unlike Hold Person's there is no Concentration to
+    /// break, so the ways out are the save and the clock.
+    /// </summary>
+    public static ConditionDuration RepeatSaveUpToOneMinute { get; } =
+        new(
+            ConditionClock.EndOfTurn,
+            ConditionDurationOwner.Bearer,
+            TurnsAhead: 10,
+            RepeatSaveAtTurnEnd: true);
 }
 
 /// <summary>

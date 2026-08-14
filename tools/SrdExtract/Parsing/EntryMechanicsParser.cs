@@ -217,6 +217,19 @@ internal static partial class EntryMechanicsParser
             return false;
         }
 
+        // The repeat-save clock's own sentences are expressed by the duration the
+        // rider carries: the automatic success is the ten-turn cap, and the separate
+        // repeat sentence was joined onto its rider before parsing — this covers the
+        // printings where it also stands alone in the source text.
+        if (conditions.Any(condition => condition.Duration is { RepeatSaveAtTurnEnd: true })
+            && (sentence.StartsWith("After 1 minute, it succeeds automatically", StringComparison.Ordinal)
+                || sentence.StartsWith(
+                    "At the end of each of its turns, the target repeats the save",
+                    StringComparison.Ordinal)))
+        {
+            return true;
+        }
+
         // A sentence that is nothing but an imposable rider is now fully expressed, even
         // though the attack or saving-throw grammar itself says nothing about it. Save
         // entries joined attacks here when the engine began imposing their riders on a
@@ -433,6 +446,17 @@ internal static partial class EntryMechanicsParser
     /// </summary>
     private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(string text, bool attackEntry = false)
     {
+        // The Quasit's two-sentence form — "Failure: The target has the Frightened
+        // condition. At the end of each of its turns, the target repeats the save,
+        // ending the effect on itself on a success." — is the Doppelganger's
+        // single-sentence form printed with a full stop, and sentence-scoped parsing
+        // cannot attach the second sentence to the rider it frees. Rejoining the exact
+        // pair before splitting is the wrapped-spell-line lesson applied here: one
+        // anchored rewrite, so a single template serves both printings.
+        text = RepeatSaveJoinPattern().Replace(
+            text,
+            " and repeats the save at the end of each of its turns, ending the effect on itself on a success.");
+
         var conditions = new List<AppliedCondition>();
 
         // Sentence by sentence, because the rider's gate and its duration are the words
@@ -478,7 +502,7 @@ internal static partial class EntryMechanicsParser
 
                     var (size, duration, unmodelled) = unmodelledCompanion
                         ? (null, null, sentence)
-                        : ReadRider(sentence, clause, match, attackEntry);
+                        : ReadRider(sentence, clause, match, attackEntry, text);
 
                     added.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
                 }
@@ -528,10 +552,23 @@ internal static partial class EntryMechanicsParser
         string sentence,
         string clause,
         Match condition,
-        bool attackEntry)
+        bool attackEntry,
+        string entryText)
     {
         var trailing = clause[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
         var duration = ParseDuration(trailing);
+
+        // "and repeats the save at the end of each of its turns, ending the effect on
+        // itself on a success" — the way out inside the rider's own sentence, modelled
+        // since the repeat-save slice. Only alongside the printed cap: without "After
+        // 1 minute, it succeeds automatically." somewhere in the entry, the repeat has
+        // no clock and the conservative answer is still refusal.
+        if (duration is null
+            && RepeatSaveTrailingPattern().IsMatch(trailing)
+            && entryText.Contains(AutomaticSuccessSentence, StringComparison.Ordinal))
+        {
+            duration = ConditionDuration.RepeatSaveUpToOneMinute;
+        }
 
         // Anything after the condition that is not a duration this engine can run — "from
         // one of two claws", "until the web is destroyed", "at which point it repeats the
@@ -798,4 +835,25 @@ internal static partial class EntryMechanicsParser
     [GeneratedRegex(@"(?<!\bft)(?<!\bMr)(?<!\bDr)\.\s+(?=[A-Z0-9])")]
     private static partial Regex SentenceBoundary();
 
+    /// <summary>
+    /// The printed cap on a repeated save, exactly as the stat blocks phrase it. Its
+    /// engine reading is the ten-turn expiry <c>RepeatSaveUpToOneMinute</c> carries.
+    /// </summary>
+    internal const string AutomaticSuccessSentence = "After 1 minute, it succeeds automatically.";
+
+    /// <summary>
+    /// The repeat-save escape printed as a sentence of its own, joined back onto the
+    /// rider sentence before it — the Quasit's printing of the Doppelganger's clause.
+    /// </summary>
+    [GeneratedRegex(
+        @"(?<=Failure: The target has the [A-Z][a-z]+ condition)\.\s+" +
+        @"At the end of each of its turns, the target repeats the save, " +
+        @"ending the effect on itself on a success\.")]
+    private static partial Regex RepeatSaveJoinPattern();
+
+    // The in-sentence escape, the whole of the rider's trailing text.
+    [GeneratedRegex(
+        @"^and repeats the save at the end of each of its turns, " +
+        @"ending the effect on itself on a success$")]
+    private static partial Regex RepeatSaveTrailingPattern();
 }

@@ -7480,7 +7480,15 @@
             "appliedConditions": [
               {
                 "condition": "Poisoned",
-                "unmodelledRequirement": "Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 10,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": true
+                }
               },
               {
                 "condition": "Paralyzed",
@@ -7493,7 +7501,15 @@
           "appliedConditions": [
             {
               "condition": "Poisoned",
-              "unmodelledRequirement": "Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 10,
+                "outlastsFight": false,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": true
+              }
             },
             {
               "condition": "Paralyzed",
@@ -7501,8 +7517,6 @@
             }
           ],
           "unmodelledClauses": [
-            "Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success",
-            "After 1 minute, it succeeds automatically",
             "While Poisoned, the target has the Paralyzed condition."
           ]
         }
@@ -10273,7 +10287,15 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition and repeats the save at the end of each of its turns, ending the effect on itself on a success"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 10,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": true
+                }
               }
             ],
             "coverIgnored": false,
@@ -10286,13 +10308,18 @@
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition and repeats the save at the end of each of its turns, ending the effect on itself on a success"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 10,
+                "outlastsFight": false,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Frightened condition and repeats the save at the end of each of its turns, ending the effect on itself on a success",
-            "After 1 minute, it succeeds automatically."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Shape-Shift",
@@ -26557,7 +26584,15 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: The target has the Frightened condition"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 10,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": true
+                }
               }
             ],
             "coverIgnored": false,
@@ -26570,14 +26605,18 @@
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: The target has the Frightened condition"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 10,
+                "outlastsFight": false,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": true
+              }
             }
           ],
-          "unmodelledClauses": [
-            "Failure: The target has the Frightened condition",
-            "At the end of each of its turns, the target repeats the save, ending the effect on itself on a success",
-            "After 1 minute, it succeeds automatically."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Shape-Shift",

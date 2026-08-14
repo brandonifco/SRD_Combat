@@ -552,9 +552,15 @@ Paralyzed and Stunned. Deliberately absent: Deafened, Invisible and Petrified, e
 needing a model (hearing, sight, objects) that does not exist. **Add a condition there
 only alongside the code that gives it effects.** Forty-five attacks satisfy both checks —
 20 Prone, 12 Poisoned, 9 Grappled, and one each of Charmed, Frightened, Paralyzed and
-Incapacitated and 2 Restrained tied to their grapples — and thirty-one failed-save
-riders land: 6 Frightened, 5 Grappled, 4 each of Blinded, Poisoned and Restrained,
-2 each of Charmed, Prone and Stunned, one each of Incapacitated and Paralyzed. The
+Incapacitated and 2 Restrained tied to their grapples — and thirty-four failed-save
+riders land: 8 Frightened, 5 each of Grappled and Poisoned, 4 each of Blinded and
+Restrained, 2 each of Charmed, Prone and Stunned, one each of Incapacitated and
+Paralyzed — the three newest riding the stat blocks' own repeat-save clock
+(`ConditionDuration.RepeatSaveUpToOneMinute`): the Quasit's Scare, the Doppelganger's
+Unsettling Visage, and the Chuul's Poisoned alone under the Whelm precedent, its
+chained Paralyzed still refused. The Vrock's Spores stays refused the conservative
+way — its poison prints no automatic-success cap, only a Holy Water out the model
+cannot express. The
 Water Elemental's Whelm is still the working example of the per-rider split — its
 Grappled lands while its Restrained sentence, which chains suffocation and recurring
 damage, is refused — and the Purple Worm's Bite is the counterpart where both halves
@@ -590,10 +596,14 @@ closer" is judged at the destination square, not along the path. All of it is on
 
 **A rider printed in a "Failure:" sentence carries two extra extraction rules** — the
 fourth occurrence of bug 1's shape found them. In a *saving-throw* entry the rider must
-state its end within its own sentence: the Quasit's "Failure: The target has the
-Frightened condition." puts the way out ("repeats the save at the end of each of its
-turns") in the *next* sentence, where sentence-scoped parsing cannot attach it, and
-imposing the rider without it would make the condition permanent. And in an *attack*
+state its end within its own sentence — and the rule now has one carved exception,
+taken when repeat saves became a modelled way out: the exact printed repeat sentence
+("At the end of each of its turns, the target repeats the save, ending the effect on
+itself on a success.") is *joined back onto the rider before it* prior to splitting,
+the wrapped-spell-line lesson applied to riders, which is how the Quasit's Scare —
+this rule's own original example — finally rides. The join is anchored to the exact
+sentences, and the duration lands only alongside the printed cap ("After 1 minute, it
+succeeds automatically."); a repeat with no clock is still refused. And in an *attack*
 entry a "Failure:" sentence belongs to an embedded saving throw — the Ghast's Claw rolls
 a DC 10 Constitution save gated on "non-Undead creature", both printed in sentences of
 their own — so riding the attack with it would paralyze on every hit with no save
