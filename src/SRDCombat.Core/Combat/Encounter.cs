@@ -1539,7 +1539,14 @@ public sealed partial class Encounter
                 var dodging = save.Ability == Ability.Dexterity
                     && victim.Turn.IsDodging
                     && ConditionRules.RetainsDodgeBenefits(victim);
-                var mode = D20Test.Combine(magicResistance || dangerSense || dodging, restrained);
+
+                // Shatter: "A Construct has Disadvantage on the save." The printed
+                // sentence names the type, and the type is on the stats for exactly
+                // this rule.
+                var construct = save.ConstructsSaveAtDisadvantage
+                    && victim.Stats.Type == CreatureType.Construct;
+
+                var mode = D20Test.Combine(magicResistance || dangerSense || dodging, restrained || construct);
 
                 // Cover's other half: "+2/+5 bonus to AC and Dexterity saving throws",
                 // judged from the effect's point of origin — the erupting point for a

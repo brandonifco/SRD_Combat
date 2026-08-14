@@ -107,6 +107,12 @@ public enum SaveSuccessOutcome
 /// Sacred Flame prints it; the sentence is structured at extraction because leaving it
 /// as prose would quietly weaken the spell below its printed self the day cover landed.
 /// </param>
+/// <param name="ConstructsSaveAtDisadvantage">
+/// "A Construct has Disadvantage on the save." Shatter prints it, exactly once in the
+/// book, and Constructs are in the monster pool — an Animated Armor saving normally
+/// against Shatter would be the spell executing weaker than print against exactly the
+/// creatures the sentence names.
+/// </param>
 public sealed record SaveEffect(
     Ability Ability,
     int? DifficultyClass,
@@ -114,7 +120,8 @@ public sealed record SaveEffect(
     IReadOnlyList<AttackDamage> FailureDamage,
     SaveSuccessOutcome SuccessOutcome,
     IReadOnlyList<AppliedCondition> AppliedConditions,
-    bool CoverIgnored = false);
+    bool CoverIgnored = false,
+    bool ConstructsSaveAtDisadvantage = false);
 
 /// <summary>
 /// An effect that restores hit points: "regains a number of Hit Points equal to 2d8 plus

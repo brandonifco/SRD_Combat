@@ -56,7 +56,42 @@ internal static partial class SpellEffectParser
             // this save" — Sacred Flame. Structured rather than left as prose, because
             // the day cover landed this sentence was the difference between the spell as
             // printed and a quietly weaker one.
-            CoverIgnored: CoverIgnoredPattern().IsMatch(text));
+            CoverIgnored: CoverIgnoredPattern().IsMatch(text),
+            // "A Construct has Disadvantage on the save" — Shatter, exactly once in the
+            // book, and the same lesson: Constructs are real opponents, and leaving the
+            // sentence as prose would execute the spell weaker than print against
+            // exactly the creatures it names.
+            ConstructsSaveAtDisadvantage: ConstructDisadvantagePattern().IsMatch(text));
+    }
+
+    /// <summary>
+    /// Reads an attack spell's condition rider: "On a hit, the target takes 2d8 Poison
+    /// damage and has the Poisoned condition until the end of your next turn."
+    /// </summary>
+    /// <remarks>
+    /// The shared stat-block grammar refuses this sentence — its head-clause rule wants
+    /// the damage accounted for by a <c>Hit:</c> it never finds, because spells print
+    /// "On a hit," where stat blocks print <c>Hit:</c> — so the spell grammar reads it
+    /// here, deliberately whole: the damage half must match the spell's own damage
+    /// grammar and the duration must be the one modelled shape ("until the end of your
+    /// next turn" — the caster's, <c>ConditionDurationOwner.Source</c>), or no rider is
+    /// produced and the shared grammar's refusal stands.
+    /// </remarks>
+    public static AppliedCondition? ParseAttackRider(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var match = AttackRiderPattern().Match(text);
+
+        if (!match.Success
+            || !Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: false, out var condition))
+        {
+            return null;
+        }
+
+        return new AppliedCondition(
+            condition,
+            Duration: new ConditionDuration(ConditionClock.EndOfTurn, ConditionDurationOwner.Source));
     }
 
     /// <summary>
@@ -179,4 +214,17 @@ internal static partial class SpellEffectParser
     // grants rather than denies the benefit.
     [GeneratedRegex(@"gains\s+no\s+benefit\s+from\s+Half\s+Cover\s+or\s+Three-Quarters\s+Cover\s+for\s+this\s+save")]
     private static partial Regex CoverIgnoredPattern();
+
+    // "A Construct has Disadvantage on the save." — whole, for the same reason.
+    [GeneratedRegex(@"A\s+Construct\s+has\s+Disadvantage\s+on\s+the\s+save")]
+    private static partial Regex ConstructDisadvantagePattern();
+
+    // "On a hit, the target takes 2d8 Poison damage and has the Poisoned condition
+    // until the end of your next turn." The whole sentence, both halves anchored: the
+    // damage must be the spell damage grammar's own shape, and the duration must be the
+    // exactly modelled one.
+    [GeneratedRegex(
+        @"On\s+a\s+hit,\s+the\s+target\s+takes\s+\d+d\d+\s+\w+\s+damage\s+and\s+has\s+the\s+" +
+        @"(?<condition>[A-Z][a-z]+)\s+condition\s+until\s+the\s+end\s+of\s+your\s+next\s+turn\.")]
+    private static partial Regex AttackRiderPattern();
 }

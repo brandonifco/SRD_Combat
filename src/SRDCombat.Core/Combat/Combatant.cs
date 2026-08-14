@@ -175,6 +175,14 @@ public sealed record CombatantStats(
     public bool IgnoresHalfCoverOnSpellAttacks { get; init; }
 
     /// <summary>
+    /// The creature's printed type. Humanoid for every character — the 2024 rules print
+    /// every species as Humanoid — and the stat block's own line for a monster. Added
+    /// for the one printed rule that reads it in a fight: Shatter's "A Construct has
+    /// Disadvantage on the save."
+    /// </summary>
+    public CreatureType Type { get; init; } = CreatureType.Humanoid;
+
+    /// <summary>
     /// The lowest natural d20 roll that scores a Critical Hit. 20 for everyone except a
     /// Champion, whose Improved Critical reads "on a roll of 19 or 20".
     /// </summary>
@@ -353,6 +361,8 @@ public sealed record CombatantStats(
             attacks,
             DiesAtZeroHitPoints: true)
         {
+            Type = monster.Type,
+
             // Only a Multiattack whose named attacks the creature actually has is worth
             // carrying: several stat blocks name an attack granted by a trait or a
             // spell, and letting those through would hand out swings the creature has no
