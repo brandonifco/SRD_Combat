@@ -69,6 +69,14 @@ public sealed record SpellDefinition
     public int? RangeFeet { get; init; }
 
     /// <summary>
+    /// The creature type the spell's printed targeting names — Hold Person's "Choose a
+    /// Humanoid". Null for the overwhelming majority, which target any creature.
+    /// Structured at extraction from the exact printed sentence, and refused at casting
+    /// with <c>spell.wrong_target_type</c> when the target is anything else.
+    /// </summary>
+    public CreatureType? TargetCreatureType { get; init; }
+
+    /// <summary>
     /// The distance a target may be at, reading the two printed bands that carry no
     /// number.
     /// </summary>

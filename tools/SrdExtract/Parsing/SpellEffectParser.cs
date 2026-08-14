@@ -251,4 +251,95 @@ internal static partial class SpellEffectParser
         @"On\s+a\s+hit,\s+the\s+target\s+takes\s+\d+d\d+\s+\w+\s+damage\s+and\s+has\s+the\s+" +
         @"(?<condition>[A-Z][a-z]+)\s+condition\s+until\s+the\s+end\s+of\s+your\s+next\s+turn\.")]
     private static partial Regex AttackRiderPattern();
+
+    /// <summary>
+    /// Structures the Hold Person shape after the spell is built: a save whose failure
+    /// imposes a condition "for the duration", with the printed repeat-save way out —
+    /// and defuses the one spell whose effect is a menu.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The template is exact and matches the corpus exactly twice — Hold Person and
+    /// Hold Monster — both Concentration up to 1 minute, so the structured duration is
+    /// <see cref="ConditionDuration.ConcentrationUpToOneMinuteWithRepeatSave"/>: three
+    /// ways out, whichever comes first. Hold Person's "Choose a Humanoid that you can
+    /// see within range" is the only printed target-type gate in the book's own words,
+    /// and it rides <see cref="SpellDefinition.TargetCreatureType"/>.
+    /// </para>
+    /// <para>
+    /// Eyebite is the defusal: its effects are a per-turn menu — "one of the following
+    /// effects of your choice" — and the shared grammar read each menu entry's bare
+    /// sentence as a clean rider. Harmless while the casting path imposed nothing from
+    /// a spell's save, armmed the day it started to: three conditions at once, none
+    /// chosen, none ending. A chooser's-choice menu is unmodelled, and now says so on
+    /// every rider it holds.
+    /// </para>
+    /// </remarks>
+    public static SpellDefinition StructureHeldConditions(SpellDefinition spell)
+    {
+        if (spell.Save is not { } save)
+        {
+            return spell;
+        }
+
+        if (ChooserMenuPattern().IsMatch(spell.Text))
+        {
+            return spell with
+            {
+                Save = save with
+                {
+                    AppliedConditions = [.. save.AppliedConditions.Select(rider => rider with
+                    {
+                        UnmodelledRequirement = rider.UnmodelledRequirement
+                            ?? "one of several effects of the caster's choice",
+                    })],
+                },
+            };
+        }
+
+        var match = HeldConditionPattern().Match(spell.Text);
+
+        if (!match.Success
+            || !spell.RequiresConcentration
+            || !spell.DurationText.Contains("1 minute", StringComparison.Ordinal)
+            || !Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: false, out var condition))
+        {
+            return spell;
+        }
+
+        return spell with
+        {
+            Save = save with
+            {
+                AppliedConditions =
+                [
+                    new AppliedCondition(
+                        condition,
+                        Duration: ConditionDuration.ConcentrationUpToOneMinuteWithRepeatSave),
+                ],
+            },
+            TargetCreatureType = HumanoidTargetPattern().IsMatch(spell.Text)
+                ? CreatureType.Humanoid
+                : spell.TargetCreatureType,
+        };
+    }
+
+    // "The target must succeed on a Wisdom saving throw or have the Paralyzed
+    // condition for the duration. At the end of each of its turns, the target repeats
+    // the save, ending the spell on itself on a success." Both sentences, whole: the
+    // way out must be printed for the hold to be structured at all.
+    [GeneratedRegex(
+        @"must\s+succeed\s+on\s+a\s+\w+\s+saving\s+throw\s+or\s+have\s+the\s+" +
+        @"(?<condition>[A-Z][a-z]+)\s+condition\s+for\s+the\s+duration\.\s+" +
+        @"At\s+the\s+end\s+of\s+each\s+of\s+its\s+turns,\s+the\s+target\s+repeats\s+the\s+save,\s+" +
+        @"ending\s+the\s+spell\s+on\s+itself\s+on\s+a\s+success\.")]
+    private static partial Regex HeldConditionPattern();
+
+    // Hold Person's printed target-type gate, the only one in the book's own words.
+    [GeneratedRegex(@"Choose\s+a\s+Humanoid\s+that\s+you\s+can\s+see\s+within\s+range\.")]
+    private static partial Regex HumanoidTargetPattern();
+
+    // Eyebite: a menu of effects rather than an effect.
+    [GeneratedRegex(@"be\s+affected\s+by\s+one\s+of\s+the\s+following\s+effects\s+of\s+your\s+choice")]
+    private static partial Regex ChooserMenuPattern();
 }

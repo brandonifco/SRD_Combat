@@ -732,12 +732,25 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// when "the distance between the Grappled target and the grappler exceeds the grapple's
 /// range", so that distance has to be remembered. Only set for Grappled.
 /// </param>
+/// <param name="RepeatSaveAbility">
+/// The ability of the save the bearer repeats at the end of each of its turns, ending
+/// the condition on a success — Hold Person's way out. Null when no repeat is printed.
+/// </param>
+/// <param name="RepeatSaveDifficultyClass">The DC that repeated save rolls against.</param>
+/// <param name="TiedToConcentration">
+/// True when the condition lives only while its source concentrates on the spell that
+/// imposed it: the sweep in <c>Encounter.EndConcentration</c> takes it away the moment
+/// the Concentration ends, however it ended.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
     ConditionExpiry? Expiry = null,
     int? EscapeDifficultyClass = null,
-    int? GrappleRangeFeet = null);
+    int? GrappleRangeFeet = null,
+    Ability? RepeatSaveAbility = null,
+    int? RepeatSaveDifficultyClass = null,
+    bool TiedToConcentration = false);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.

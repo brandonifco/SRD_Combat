@@ -455,6 +455,7 @@ public sealed partial class Encounter
 
         EndRageIfUnsustained(combatant);
         ExpireConditions(combatant, ConditionClock.EndOfTurn);
+        RollRepeatSaves(combatant);
 
         // Vex lasts "before the end of your next turn", so an unspent one dies here.
         combatant.Features.VexedTargetId = null;
@@ -483,6 +484,84 @@ public sealed partial class Encounter
                     CombatStepKind.Condition,
                     $"{bearer.Name} is no longer {ended}.",
                     bearer);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rolls the saves a condition lets its bearer repeat: "at the end of each of its
+    /// turns, the target repeats the save, ending the spell on itself on a success."
+    /// </summary>
+    /// <remarks>
+    /// Only the creature whose turn is ending rolls — the printed wording counts the
+    /// bearer's own turns. The auto-failure clause is honoured before any die: a
+    /// Paralyzed creature repeating a Strength or Dexterity save fails without a roll,
+    /// which is why Hold Person prints a Wisdom save and stays escapable. Beyond that
+    /// the repeat is a plain save — none of the situational modifiers the original
+    /// effect rolled under (cover, Dodge) apply to a creature standing in its own
+    /// square at the end of its own turn.
+    /// </remarks>
+    private void RollRepeatSaves(Combatant bearer)
+    {
+        foreach (var condition in bearer.Conditions
+                     .Select(bearer.ConditionState)
+                     .OfType<ActiveCondition>()
+                     .Where(active => active.RepeatSaveDifficultyClass is not null)
+                     .ToArray())
+        {
+            var ability = condition.RepeatSaveAbility!.Value;
+            var difficultyClass = condition.RepeatSaveDifficultyClass!.Value;
+
+            if (ConditionRules.AutoFailingSaveCondition(bearer, ability) is { } autoFailing)
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} automatically fails the {ability} saving throw to shake off " +
+                    $"{condition.Condition} ({autoFailing}).",
+                    bearer);
+                continue;
+            }
+
+            var roll = D20Test.Roll(_random, bearer.Stats.SaveBonusFor(ability));
+
+            if (roll.Total >= difficultyClass && bearer.RemoveCondition(condition.Condition))
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} repeats the {ability} saving throw: {roll} vs DC {difficultyClass} — " +
+                    $"success; no longer {condition.Condition}.",
+                    bearer);
+            }
+            else
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} repeats the {ability} saving throw: {roll} vs DC {difficultyClass} — " +
+                    $"still {condition.Condition}.",
+                    bearer);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Ends every condition that lived only while this caster concentrated — Hold
+    /// Person's Paralyzed goes when the Concentration goes, however it went.
+    /// </summary>
+    internal void SweepConcentrationConditions(Combatant caster)
+    {
+        foreach (var bearer in _combatants)
+        {
+            foreach (var type in bearer.Conditions.ToArray())
+            {
+                if (bearer.ConditionState(type) is { TiedToConcentration: true } active
+                    && string.Equals(active.SourceId, caster.Id, StringComparison.Ordinal)
+                    && bearer.RemoveCondition(type))
+                {
+                    Add(
+                        CombatStepKind.Condition,
+                        $"{bearer.Name} is no longer {type} — the spell holding it has ended.",
+                        bearer);
+                }
             }
         }
     }
@@ -677,6 +756,7 @@ public sealed partial class Encounter
                 }
 
                 ExpireConditions(combatant, ConditionClock.EndOfTurn);
+                RollRepeatSaves(combatant);
 
                 if (!AdvanceIndex())
                 {
@@ -690,6 +770,11 @@ public sealed partial class Encounter
             {
                 Add(CombatStepKind.TurnStarted, $"{combatant.Name} cannot act.", combatant);
                 ExpireConditions(combatant, ConditionClock.EndOfTurn);
+
+                // The skipped turn still ends, and "at the end of each of its turns"
+                // counts it — this is the canonical case, since the creature this
+                // clause frees is exactly the one whose turns are all skips.
+                RollRepeatSaves(combatant);
 
                 if (!AdvanceIndex())
                 {
@@ -1408,7 +1493,8 @@ public sealed partial class Encounter
         Combatant source,
         IReadOnlyList<AppliedCondition> riders,
         Combatant target,
-        int? grappleRangeFeet)
+        int? grappleRangeFeet,
+        (Ability Ability, int DifficultyClass)? repeatSave = null)
     {
         // A creature already down takes nothing further from the blow; Unconscious has
         // brought Prone with it already.
@@ -1438,6 +1524,14 @@ public sealed partial class Encounter
                 continue;
             }
 
+            // A repeat-save duration repeats *the* save — the ability and DC the
+            // effect rolled — so a rider carrying the flag with no save to repeat has
+            // nothing printed to roll and must not land at all.
+            if (rider.Duration is { RepeatSaveAtTurnEnd: true } && repeatSave is null)
+            {
+                continue;
+            }
+
             var expiry = ConditionRules.ExpiryFor(rider.Duration, source, target);
 
             var imposed = new ActiveCondition(
@@ -1445,7 +1539,10 @@ public sealed partial class Encounter
                 source.Id,
                 expiry,
                 rider.EscapeDifficultyClass,
-                rider.Condition == ConditionType.Grappled ? grappleRangeFeet : null);
+                rider.Condition == ConditionType.Grappled ? grappleRangeFeet : null,
+                rider.Duration is { RepeatSaveAtTurnEnd: true } ? repeatSave!.Value.Ability : null,
+                rider.Duration is { RepeatSaveAtTurnEnd: true } ? repeatSave!.Value.DifficultyClass : null,
+                TiedToConcentration: rider.Duration is { WhileConcentrating: true });
 
             if (!target.AddCondition(imposed))
             {
@@ -1629,7 +1726,7 @@ public sealed partial class Encounter
 
             if (!succeeded || save.SuccessOutcome == SaveSuccessOutcome.SameAsFailure)
             {
-                ImposeConditions(source, riders, victim, grappleRangeFeet: null);
+                ImposeConditions(source, riders, victim, grappleRangeFeet: null, (save.Ability, difficultyClass));
             }
         }
 
@@ -1665,8 +1762,16 @@ public sealed partial class Encounter
             return;
         }
 
+        // Still in the fight means alive and above 0 hit points — not "able to act
+        // this instant". A creature Paralyzed or Stunned at full health can be freed
+        // by an expiry, a repeated save or its captor's broken Concentration, so a
+        // side of held creatures has not lost yet; before repeat saves existed this
+        // read IsActive, and Hold Person turned that reading into an instant-victory
+        // button the printed rules do not sell. What ends the fight for a held
+        // creature is the enemy walking over and finishing it, which the policy's
+        // stuck-turn rule already does.
         var standing = _combatants
-            .Where(combatant => combatant.IsActive)
+            .Where(combatant => !combatant.IsDead && combatant.CurrentHitPoints > 0)
             .Select(combatant => combatant.SideId)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
