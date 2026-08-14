@@ -503,6 +503,48 @@ public class RealMonsterCombatTests
             new SeededRandomSource(seed));
     }
 
+    [Fact]
+    public void TheQuasitsScareFrightensAndTheVictimShakesItselfFree()
+    {
+        // The rider CLAUDE.md carried for a whole era as the two-sentence refusal:
+        // "Failure: The target has the Frightened condition." with the way out printed
+        // one sentence later. Joined at extraction, it now rides with the repeat-save
+        // clock — the whole loop against real content: the printed DC 10, the failed
+        // save, the Frightened round, and the end-of-turn repeat that shakes it off.
+        var quasit = Content.MonstersById["monster.quasit"];
+        var scare = quasit.Entries.Single(entry => entry.Name.StartsWith("Scare", StringComparison.Ordinal));
+        var rider = Assert.Single(scare.Save!.AppliedConditions);
+
+        Assert.Equal(ConditionType.Frightened, rider.Condition);
+        Assert.Equal(ConditionDuration.RepeatSaveUpToOneMinute, rider.Duration);
+        Assert.True(ConditionRules.CanBeImposed(rider));
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(quasit, "quasit", "fiends", new GridPosition(0, 4)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(3, 4)),
+            ],
+            // Initiatives; the bandit's failed save (2 + 0 vs DC 10); the bandit's
+            // end-of-turn repeat, an 11 that clears it.
+            new ScriptedRandomSource(20, 1, 2, 11));
+
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.UseEntry(scare.Name, bandit));
+        Assert.True(bandit.HasCondition(ConditionType.Frightened));
+
+        // The quasit's turn ends; the bandit's own turn comes and goes, and the
+        // repeat save at its end rolls the scripted 11 against the printed DC 10.
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        Assert.False(bandit.HasCondition(ConditionType.Frightened));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("repeats the Wisdom saving throw", StringComparison.Ordinal));
+    }
+
     private static Combatant Spawn(MonsterDefinition monster, string id, string side, GridPosition position) =>
         new(id, monster.Name, side, CombatantStats.FromMonster(monster), position);
 }
