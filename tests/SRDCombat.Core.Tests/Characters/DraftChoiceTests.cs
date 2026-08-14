@@ -194,12 +194,79 @@ public class DraftChoiceTests
         Assert.DoesNotContain("Defense", sheet.ArmorClassSource, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DivineOrderIsRefusedWithoutTheGrantingFeature()
+    {
+        // The test class grants Fighting Style, never Divine Order — naming a role is
+        // the same shape of illegal draft as a Wizard with a Fighting Style.
+        var refusal = Assert.Throws<ArgumentException>(() =>
+            Resolve(CharacterTestData.Draft() with { DivineOrder = DivineOrder.Protector }));
+
+        Assert.Contains("Divine Order", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnUnchosenDivineOrderStaysReportedUnimplemented()
+    {
+        // The name is in the registry, so without this rule it would vanish from the
+        // report while nothing executed — a choice nobody made must stay visible.
+        var unchosen = Resolve(CharacterTestData.Draft(), divineOrderAtLevel1: true);
+
+        Assert.Equal(DivineOrder.Unspecified, unchosen.DivineOrder);
+        Assert.Contains("Divine Order", unchosen.UnimplementedFeatures);
+
+        var chosen = Resolve(
+            CharacterTestData.Draft() with { DivineOrder = DivineOrder.Protector },
+            divineOrderAtLevel1: true);
+
+        Assert.Equal(DivineOrder.Protector, chosen.DivineOrder);
+        Assert.DoesNotContain("Divine Order", chosen.UnimplementedFeatures);
+    }
+
+    [Fact]
+    public void ThaumaturgeAddsAWisdomBonusToArcanaAndReligionChecks()
+    {
+        // "The bonus equals your Wisdom modifier (minimum of +1)." The draft's default
+        // Wisdom is 12 (+1); the floor is exercised with an 8 (-1), which still grants
+        // +1 rather than subtracting.
+        var sheet = Resolve(
+            CharacterTestData.Draft() with { DivineOrder = DivineOrder.Thaumaturge },
+            divineOrderAtLevel1: true);
+
+        var plain = Resolve(CharacterTestData.Draft(), divineOrderAtLevel1: true);
+
+        int Of(CharacterSheet source, string skill) =>
+            source.Skills.Single(candidate => candidate.Skill == skill).Bonus;
+
+        Assert.Equal(Of(plain, "Arcana") + 1, Of(sheet, "Arcana"));
+        Assert.Equal(Of(plain, "Religion") + 1, Of(sheet, "Religion"));
+        Assert.Equal(Of(plain, "Investigation"), Of(sheet, "Investigation"));
+
+        var lowWisdom = new Dictionary<Ability, int>
+        {
+            [Ability.Strength] = 15,
+            [Ability.Dexterity] = 13,
+            [Ability.Constitution] = 14,
+            [Ability.Intelligence] = 10,
+            [Ability.Wisdom] = 8,
+            [Ability.Charisma] = 12,
+        };
+
+        var floored = Resolve(
+            CharacterTestData.Draft(scores: lowWisdom) with { DivineOrder = DivineOrder.Thaumaturge },
+            divineOrderAtLevel1: true);
+        var flooredPlain = Resolve(CharacterTestData.Draft(scores: lowWisdom), divineOrderAtLevel1: true);
+
+        Assert.Equal(Of(flooredPlain, "Religion") + 1, Of(floored, "Religion"));
+    }
+
     private static CharacterSheet Resolve(
         CharacterDraft draft,
         IEnumerable<WeaponDefinition>? weapons = null,
         bool styled = true,
         bool expertiseAtLevel1 = false,
-        bool deftExplorerAtLevel2 = false)
+        bool deftExplorerAtLevel2 = false,
+        bool divineOrderAtLevel1 = false)
     {
         var featuresByLevel = new Dictionary<int, string[]>();
 
@@ -216,6 +283,11 @@ public class DraftChoiceTests
         if (deftExplorerAtLevel2)
         {
             featuresByLevel[2] = ["Deft Explorer"];
+        }
+
+        if (divineOrderAtLevel1)
+        {
+            featuresByLevel[1] = [.. featuresByLevel.GetValueOrDefault(1, []), "Divine Order"];
         }
 
         return CharacterResolver.Resolve(

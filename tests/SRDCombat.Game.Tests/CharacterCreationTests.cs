@@ -1,4 +1,5 @@
 using SRDCombat.Content;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
@@ -151,6 +152,72 @@ public class CharacterCreationTests
         Assert.Equal(4, prepared);
 
         Assert.Equal((0, 0), CharacterCreation.SpellAllowances(Content.ClassesById["class.fighter"], level: 1));
+    }
+
+    [Fact]
+    public void DivineOrderFollowsTheFeatureHeadings()
+    {
+        Assert.True(CharacterCreation.GrantsDivineOrder(Content.ClassesById["class.cleric"], level: 1));
+        Assert.False(CharacterCreation.GrantsDivineOrder(Content.ClassesById["class.fighter"], level: 5));
+
+        // The choice is offered with the SRD's own sentence, per the charter.
+        Assert.Contains(
+            "Protector",
+            CharacterCreation.DivineOrderText(Content.ClassesById["class.cleric"]),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProtectorWidensTheClericsMenusAndNobodyElses()
+    {
+        var cleric = Content.ClassesById["class.cleric"];
+
+        // The Cleric's printed lines: "Simple weapons", "Light and Medium armor and
+        // Shields". Protector supersedes both — "proficiency with Martial weapons and
+        // training with Heavy armor".
+        Assert.DoesNotContain(
+            CharacterCreation.WeaponOptions(Content, cleric),
+            weapon => weapon.Id == "weapon.longsword");
+        Assert.Contains(
+            CharacterCreation.WeaponOptions(Content, cleric, DivineOrder.Protector),
+            weapon => weapon.Id == "weapon.longsword");
+
+        Assert.DoesNotContain(
+            CharacterCreation.ArmorOptions(Content, cleric),
+            armor => armor.Category == ArmorCategory.Heavy);
+        Assert.Contains(
+            CharacterCreation.ArmorOptions(Content, cleric, DivineOrder.Protector),
+            armor => armor.Id == "armor.chain-mail");
+
+        // Thaumaturge widens nothing here — its halves live elsewhere.
+        Assert.Equal(
+            CharacterCreation.ArmorOptions(Content, cleric).Select(armor => armor.Id),
+            CharacterCreation.ArmorOptions(Content, cleric, DivineOrder.Thaumaturge).Select(armor => armor.Id));
+
+        // A class that never grants Divine Order is not widened by naming a role: the
+        // Rogue's menus are the Rogue's menus whatever the draft claims.
+        var rogue = Content.ClassesById["class.rogue"];
+
+        Assert.Equal(
+            CharacterCreation.ArmorOptions(Content, rogue).Select(armor => armor.Id),
+            CharacterCreation.ArmorOptions(Content, rogue, DivineOrder.Protector).Select(armor => armor.Id));
+    }
+
+    [Fact]
+    public void ThaumaturgeGrowsTheCantripsColumnByOne()
+    {
+        var cleric = Content.ClassesById["class.cleric"];
+
+        Assert.Equal(4, CharacterCreation.SpellAllowances(cleric, level: 1, DivineOrder.Thaumaturge).Cantrips);
+        Assert.Equal(3, CharacterCreation.SpellAllowances(cleric, level: 1, DivineOrder.Protector).Cantrips);
+
+        // A class without the feature gains nothing from the claim.
+        Assert.Equal(
+            CharacterCreation.SpellAllowances(Content.ClassesById["class.wizard"], level: 1).Cantrips,
+            CharacterCreation.SpellAllowances(
+                Content.ClassesById["class.wizard"],
+                level: 1,
+                DivineOrder.Thaumaturge).Cantrips);
     }
 
     [Fact]

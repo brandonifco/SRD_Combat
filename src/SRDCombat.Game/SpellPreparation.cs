@@ -62,8 +62,12 @@ public static class SpellPreparation
             .Select(id => Validated(content, @class, id))
             .ToArray();
 
-        var cantripAllowance = row.ResourceCount("Cantrips") ?? 0;
-        var preparedAllowance = row.ResourceCount("Prepared Spells") ?? 0;
+        // The allowances come through CharacterCreation so Thaumaturge's extra cantrip
+        // lands here too — one reading of the columns, not two that could disagree.
+        var (cantripAllowance, preparedAllowance) = CharacterCreation.SpellAllowances(
+            @class,
+            level,
+            draft.DivineOrder);
         var highestSlot = row.SpellSlots.Count > 0 ? row.SpellSlots.Keys.Max() : 0;
 
         var cantrips = chosen

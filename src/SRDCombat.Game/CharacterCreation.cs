@@ -100,15 +100,52 @@ public static class CharacterCreation
             && granted <= level);
     }
 
-    /// <summary>The weapons this class is proficient with, per the printed line's reading.</summary>
-    public static IReadOnlyList<WeaponDefinition> WeaponOptions(SrdContent content, ClassDefinition @class)
+    /// <summary>
+    /// Whether the class has the Divine Order feature by this level — the same
+    /// heading-based reading <see cref="GrantsFightingStyle"/> makes.
+    /// </summary>
+    public static bool GrantsDivineOrder(ClassDefinition @class, int level)
+    {
+        ArgumentNullException.ThrowIfNull(@class);
+
+        return @class.Features.Any(feature =>
+            string.Equals(feature.Name, "Divine Order", StringComparison.Ordinal)
+            && feature.GrantedAtLevel is { } granted
+            && granted <= level);
+    }
+
+    /// <summary>
+    /// The printed text of the class's Divine Order feature, for a client offering the
+    /// choice — the charter's "every choice carries its description", served verbatim.
+    /// </summary>
+    public static string DivineOrderText(ClassDefinition @class)
+    {
+        ArgumentNullException.ThrowIfNull(@class);
+
+        return @class.Features
+            .FirstOrDefault(feature => string.Equals(feature.Name, "Divine Order", StringComparison.Ordinal))
+            ?.Text ?? string.Empty;
+    }
+
+    /// <summary>
+    /// The weapons this character may use, per the printed line's reading — grown by
+    /// Protector's "proficiency with Martial weapons" when that role was taken.
+    /// </summary>
+    public static IReadOnlyList<WeaponDefinition> WeaponOptions(
+        SrdContent content,
+        ClassDefinition @class,
+        DivineOrder divineOrder = DivineOrder.Unspecified)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(@class);
 
         var line = @class.WeaponProficiencies;
-        var martial = line.Contains("Martial", StringComparison.Ordinal);
-        var restricted = line.Contains("that have the", StringComparison.Ordinal);
+        var protector = divineOrder == DivineOrder.Protector && GrantsDivineOrder(@class, level: 1);
+        var martial = protector || line.Contains("Martial", StringComparison.Ordinal);
+
+        // Protector's grant is unconditional — "proficiency with Martial weapons" —
+        // so a property-restricted printed line is superseded rather than intersected.
+        var restricted = !protector && line.Contains("that have the", StringComparison.Ordinal);
 
         var restriction = WeaponProperty.None;
 
@@ -134,18 +171,26 @@ public static class CharacterCreation
             .ToArray();
     }
 
-    /// <summary>The armor this class has training in, per the printed line's names.</summary>
-    public static IReadOnlyList<ArmorDefinition> ArmorOptions(SrdContent content, ClassDefinition @class)
+    /// <summary>
+    /// The armor this character has training in, per the printed line's names — grown
+    /// by Protector's "training with Heavy armor" when that role was taken.
+    /// </summary>
+    public static IReadOnlyList<ArmorDefinition> ArmorOptions(
+        SrdContent content,
+        ClassDefinition @class,
+        DivineOrder divineOrder = DivineOrder.Unspecified)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(@class);
+
+        var protector = divineOrder == DivineOrder.Protector && GrantsDivineOrder(@class, level: 1);
 
         return content.Armor
             .Where(armor => armor.Category switch
             {
                 ArmorCategory.Light => @class.ArmorTraining.Contains("Light", StringComparison.Ordinal),
                 ArmorCategory.Medium => @class.ArmorTraining.Contains("Medium", StringComparison.Ordinal),
-                ArmorCategory.Heavy => @class.ArmorTraining.Contains("Heavy", StringComparison.Ordinal),
+                ArmorCategory.Heavy => protector || @class.ArmorTraining.Contains("Heavy", StringComparison.Ordinal),
                 _ => false,
             })
             .OrderBy(armor => armor.Category)
@@ -195,12 +240,15 @@ public static class CharacterCreation
     /// property the engine executes — Push and Nick stay off the menu for the reasons
     /// on <see cref="WeaponMasteryRules"/>, exactly as the resolver would refuse them.
     /// </summary>
-    public static IReadOnlyList<WeaponDefinition> MasteryOptions(SrdContent content, ClassDefinition @class)
+    public static IReadOnlyList<WeaponDefinition> MasteryOptions(
+        SrdContent content,
+        ClassDefinition @class,
+        DivineOrder divineOrder = DivineOrder.Unspecified)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(@class);
 
-        return WeaponOptions(content, @class)
+        return WeaponOptions(content, @class, divineOrder)
             .Where(weapon => WeaponMasteryRules.Executes(weapon.Mastery))
             .ToArray();
     }
@@ -216,14 +264,22 @@ public static class CharacterCreation
 
     /// <summary>
     /// The printed Cantrips and Prepared Spells columns at a level — how many of each
-    /// kind the plan will actually prepare there.
+    /// kind the plan will actually prepare there. Thaumaturge's "one extra cantrip
+    /// from the Cleric spell list" grows the first number by one.
     /// </summary>
-    public static (int Cantrips, int Prepared) SpellAllowances(ClassDefinition @class, int level)
+    public static (int Cantrips, int Prepared) SpellAllowances(
+        ClassDefinition @class,
+        int level,
+        DivineOrder divineOrder = DivineOrder.Unspecified)
     {
         ArgumentNullException.ThrowIfNull(@class);
 
         var row = @class.Levels.SingleOrDefault(candidate => candidate.Level == level);
 
-        return (row?.ResourceCount("Cantrips") ?? 0, row?.ResourceCount("Prepared Spells") ?? 0);
+        var thaumaturge = divineOrder == DivineOrder.Thaumaturge && GrantsDivineOrder(@class, level)
+            ? 1
+            : 0;
+
+        return ((row?.ResourceCount("Cantrips") ?? 0) + thaumaturge, row?.ResourceCount("Prepared Spells") ?? 0);
     }
 }

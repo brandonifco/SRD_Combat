@@ -61,6 +61,13 @@ public sealed record CharacterSheet
     public FightingStyle FightingStyle { get; init; } = FightingStyle.Unspecified;
 
     /// <summary>
+    /// The Divine Order in effect. Its halves are already folded in where they land —
+    /// Thaumaturge's bonus in <see cref="Skills"/>, Protector's proficiency lines in
+    /// what the creation menus and the shop may offer. Carried for display.
+    /// </summary>
+    public DivineOrder DivineOrder { get; init; } = DivineOrder.Unspecified;
+
+    /// <summary>
     /// Skills taken with Expertise, already doubled in <see cref="Skills"/>. Carried for
     /// display rather than for arithmetic.
     /// </summary>
@@ -76,8 +83,9 @@ public sealed record CharacterSheet
     /// <remarks>
     /// The same rule as everywhere else in this project: the gap is carried on the object
     /// and countable, rather than being an absence nobody can see. A level 5 Cleric's
-    /// sheet says outright that Spellcasting, Divine Order, Channel Divinity and Sear
-    /// Undead do nothing yet.
+    /// sheet says outright that Spellcasting and Sear Undead do nothing yet — and
+    /// Divine Order rejoins this list whenever the draft never chose a role, because a
+    /// mapped name whose choice is Unspecified executes nothing.
     /// </remarks>
     public required IReadOnlyList<string> UnimplementedFeatures { get; init; }
 

@@ -58,6 +58,16 @@ public class PregeneratedPartyTests
     }
 
     [Fact]
+    public void TheClericTakesProtectorAndTheChoiceIsNoLongerReported()
+    {
+        var aldous = PregeneratedParty.Build(Content)
+            .Single(member => member.Draft.Name == "Aldous");
+
+        Assert.Equal(DivineOrder.Protector, aldous.Sheet.DivineOrder);
+        Assert.DoesNotContain("Divine Order", aldous.Sheet.UnimplementedFeatures);
+    }
+
+    [Fact]
     public void TheClericsChannelDivinityComesOffTheClassTable()
     {
         // The Cleric Features table prints the Channel Divinity column from level 2:

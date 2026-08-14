@@ -15,11 +15,11 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at Guiding Bolt's rider (#155), after the Vex clock fix (#153) and the party-power phase's first slice (Divine Spark, #151) |
-| Tests | **838 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at Divine Order (#157), the party-power phase's fourth slice after Divine Spark (#151), the Vex clock fix (#153) and Guiding Bolt's rider (#155) |
+| Tests | **846 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 6 of 30, best 30, 13 of 120 runs clearing everything, 25 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120 — **and no single headline from this instrument should be read alone any more.** The three slices since the economy read, on canonical/fresh (121–240) seed medians: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 on both ranges against that build's 7/8. All three are strictly party-positive mechanisms, and every extra Advantage die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Pacing | **Median 6 of 30, best 30, 16 of 120 runs clearing everything, 24 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120 — **and no single headline from this instrument should be read alone any more.** The four slices since the economy read, on canonical/fresh (121–240) seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The party-power phase (#83's direction) is underway** — Divine Spark is its first slice, and it is the only lever that has ever raised pacing. The squad-AI series (#122–#127) is complete: its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work). Also open: Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -273,7 +273,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 838 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 846 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -728,6 +728,27 @@ so *it* can tell what is left; they do not belong in a status report.
   **Disciple of Life** (+2 + slot level on every slot-cast heal). The Thief's level 3
   features genuinely do nothing in a fight — Fast Hands picks locks, Second-Story Work
   climbs — and stay on `UnimplementedFeatures`, with a test asserting exactly that.
+- **Divine Order is a draft choice whose both roles execute, and its Protector half is
+  the options API learning about drafts.** The choice follows the Fighting Style
+  pattern — validated against the granted features, `Unspecified` the honest default —
+  with one deliberate difference: an unchosen Divine Order **stays on
+  `UnimplementedFeatures` although the registry maps the name**, because a mapped name
+  whose choice nobody made would otherwise vanish from the report while nothing
+  executed. Protector grows the printed proficiency lines, and since those lines are
+  read by `CharacterCreation.WeaponOptions`/`ArmorOptions` — the one gate creation
+  menus and the shop share — the whole effect is that API taking the draft's choice:
+  a Protector Cleric may be offered and sold Martial weapons and Heavy armor
+  (proficiency at resolution stays assumed, the reading on the resolver's attack
+  builder). Thaumaturge grows the Cantrips column by one (`SpellAllowances`, which
+  `SpellPreparation` now reads so the two cannot disagree) and puts its Wisdom-based
+  bonus (minimum +1) on the sheet's Arcana and Religion skills. **The pregen Cleric
+  takes Protector** — Strength 13 meets Chain Mail's printed requirement exactly, and
+  the shop then armors the party's healer to AC 18 with the run's own gold; Thaumaturge
+  has no second executable attack cantrip on the Cleric menu to spend its pick on.
+  Both creation clients offer the choice with the SRD's own sentence, and the Godot
+  probe takes Protector so its walk exercises the widened menus. Measured on both
+  ranges: medians hold 6/6 and full clears rise on both (13 → 16, 12 → 13) — the tail
+  gain the economy predicts, since mail costs deep-run money.
 - **Channel Divinity executes as Divine Spark; Turn Undead is a written refusal.** The
   spark is a Magic action at another creature within 30 feet — 1d8 + Wisdom as a heal,
   or a Constitution save for that much Necrotic or Radiant, half rounding down — with

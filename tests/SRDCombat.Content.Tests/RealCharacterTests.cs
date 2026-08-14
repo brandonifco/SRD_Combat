@@ -114,6 +114,10 @@ public class RealCharacterTests
         Assert.True(cleric.Has(ClassFeature.ChannelDivinity));
         Assert.DoesNotContain("Channel Divinity", cleric.UnimplementedFeatures);
         Assert.Contains("Sear Undead", cleric.UnimplementedFeatures);
+
+        // This draft never chose a Divine Order, and a choice nobody made stays
+        // reported even though the registry maps the name — the honest default.
+        Assert.Contains("Divine Order", cleric.UnimplementedFeatures);
     }
 
     [Fact]

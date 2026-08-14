@@ -119,6 +119,13 @@ public enum ClassFeature
     /// remarks for why.
     /// </summary>
     ChannelDivinity,
+
+    /// <summary>
+    /// Cleric: the level 1 choice of sacred role — Protector or Thaumaturge. The
+    /// choice lives on the draft as <c>DivineOrder</c>, and a draft that never chose
+    /// keeps the printed name reported as unimplemented.
+    /// </summary>
+    DivineOrder,
 }
 
 /// <summary>What Divine Spark's rolled total is spent on.</summary>
@@ -225,6 +232,16 @@ public static class ClassFeatureRegistry
             // an Undead the book lets a single hit set free. Sear Undead stays on
             // UnimplementedFeatures with it, being a rider on Turn Undead.
             ["Channel Divinity"] = ClassFeature.ChannelDivinity,
+
+            // Divine Order executes whole once a role is chosen: Protector grows the
+            // printed proficiency lines the creation menus and the shop read (worn
+            // proficiency is assumed at resolution — the stated reading on the attack
+            // builder), and Thaumaturge grows the Cantrips column by one and adds its
+            // Wisdom-based bonus to the sheet's Arcana and Religion skills. A draft
+            // that chose neither keeps the name reported: the resolver re-adds it to
+            // UnimplementedFeatures while the choice is Unspecified, because a mapped
+            // name would otherwise vanish from the report without anything executing.
+            ["Divine Order"] = ClassFeature.DivineOrder,
 
             // Subclass features. The SRD prints exactly one subclass per class, so a
             // level 3+ character simply has it — there is no choice for a draft to
