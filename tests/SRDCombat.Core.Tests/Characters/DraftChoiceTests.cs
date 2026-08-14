@@ -195,6 +195,45 @@ public class DraftChoiceTests
     }
 
     [Fact]
+    public void ArmorTooHeavyForItsWearerCostsTenFeetOfSpeed()
+    {
+        // "the armor reduces your Speed by 10 feet unless your Strength is equal to
+        // or greater than that score." The test armor is Chain Mail at Strength 13;
+        // the draft's Strength is 15 before its background increase.
+        var heavy = CharacterTestData.Armor() with { MinimumStrength = 18 };
+
+        var underStrength = CharacterResolver.Resolve(
+            CharacterTestData.Draft(armorId: heavy.Id),
+            CharacterTestData.Content(armor: [heavy, CharacterTestData.Shield()]));
+
+        var bare = CharacterResolver.Resolve(
+            CharacterTestData.Draft(),
+            CharacterTestData.Content(armor: [heavy, CharacterTestData.Shield()]));
+
+        Assert.Equal(bare.SpeedFeet - 10, underStrength.SpeedFeet);
+    }
+
+    [Fact]
+    public void MeetingTheStrengthScoreCostsNothing()
+    {
+        // Equal is enough — "equal to or greater than" — and the score is checked
+        // against the resolved Strength, so the background's increase counts.
+        var heavy = CharacterTestData.Armor() with { MinimumStrength = 17 };
+
+        var sheet = CharacterResolver.Resolve(
+            CharacterTestData.Draft(armorId: heavy.Id),
+            CharacterTestData.Content(armor: [heavy, CharacterTestData.Shield()]));
+
+        Assert.Equal(17, sheet.AbilityScores[Ability.Strength]);
+
+        var bare = CharacterResolver.Resolve(
+            CharacterTestData.Draft(),
+            CharacterTestData.Content(armor: [heavy, CharacterTestData.Shield()]));
+
+        Assert.Equal(bare.SpeedFeet, sheet.SpeedFeet);
+    }
+
+    [Fact]
     public void DivineOrderIsRefusedWithoutTheGrantingFeature()
     {
         // The test class grants Fighting Style, never Divine Order — naming a role is

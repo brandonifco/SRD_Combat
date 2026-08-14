@@ -182,6 +182,34 @@ public class ShopTests
     }
 
     [Fact]
+    public void TheAutoBuyerKeepsItsMasteriesAndTheStallStillOffersTheTrade()
+    {
+        // #165: Score is average damage and cannot see a property, so the auto-buyer
+        // would sell Cleave for +1 damage. It now declines — and the stall still
+        // lists the swap, because a player can read the mastery line and choose.
+        var run = FundedRun(100_000);
+        var korrin = run.Party.ToList().FindIndex(member => member.Draft.Name == "Korrin");
+        var sable = run.Party.ToList().FindIndex(member => member.Draft.Name == "Sable");
+
+        Assert.Contains(
+            Shop.Offers(Content, run.Party, run.States),
+            offer => offer.Effect.Attack is { ChangesMastery: true, FromMastery: not null });
+
+        Shop.AutoBuy(Content, run);
+
+        // The Greataxe and its Cleave are still in hand, and so are the Rogue's Vex
+        // weapons — whatever else the purse bought.
+        Assert.Contains("weapon.greataxe", run.Party[korrin].Draft.WeaponIds);
+        Assert.Equal(
+            WeaponMastery.Cleave,
+            run.Party[korrin].Combatant.Stats.Attacks.Single(attack => attack.Name == "Greataxe").Mastery);
+
+        Assert.All(
+            run.Party[sable].Combatant.Stats.Attacks.Where(attack => attack.Mastery is not null),
+            attack => Assert.Equal(WeaponMastery.Vex, attack.Mastery));
+    }
+
+    [Fact]
     public void APotionOfferShowsWhatItRestores()
     {
         var run = FundedRun(100_000);
@@ -196,6 +224,37 @@ public class ShopTests
             potion.Effect.Lines,
             line => line.Contains("2d4 + 2", StringComparison.Ordinal)
                 && line.Contains("(4-10)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheStallStopsSellingArmorItsBuyerCannotCarry()
+    {
+        // #164's consequence, and the gate's existing Speed clause doing its job:
+        // Aldous has Strength 13, so Splint and Plate (both Strength 15) would cost
+        // him 10 feet — a detriment, and the stall only offers strict improvements.
+        // Chain Mail asks exactly 13 and is still the offer that armors the Cleric.
+        var run = FundedRun(100_000);
+        var aldous = run.Party.ToList().FindIndex(member => member.Draft.Name == "Aldous");
+
+        Assert.Equal(13, run.Party[aldous].Sheet.AbilityScores[Ability.Strength]);
+
+        var armorFor = Shop.Offers(Content, run.Party, run.States)
+            .Where(offer => offer.MemberIndex == aldous && offer.NewDraft?.ArmorId is not null)
+            .Select(offer => offer.NewDraft!.ArmorId!)
+            .ToArray();
+
+        Assert.Contains("armor.chain-mail", armorFor);
+        Assert.DoesNotContain("armor.plate-armor", armorFor);
+        Assert.DoesNotContain("armor.splint-armor", armorFor);
+
+        // Brenna's Strength is 17, so the heavy suits stay on offer for her.
+        var brenna = run.Party.ToList().FindIndex(member => member.Draft.Name == "Brenna");
+
+        Assert.Contains(
+            Shop.Offers(Content, run.Party, run.States)
+                .Where(offer => offer.MemberIndex == brenna && offer.NewDraft?.ArmorId is not null)
+                .Select(offer => offer.NewDraft!.ArmorId!),
+            id => id == "armor.plate-armor");
     }
 
     [Fact]

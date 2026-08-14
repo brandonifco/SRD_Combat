@@ -281,6 +281,7 @@ public static class Shop
             var offer = Offers(content, run.Party, run.States)
                 .Where(candidate => candidate.NewDraft is not null)
                 .Where(candidate => candidate.CostCopper <= run.GoldCopper)
+                .Where(candidate => !TradesAwayAMastery(candidate))
                 .OrderByDescending(candidate => candidate.Score)
                 .ThenBy(candidate => candidate.CostCopper)
                 .ThenBy(candidate => candidate.MemberIndex)
@@ -471,6 +472,33 @@ public static class Shop
     /// reach attacks for a melee weapon, ranged for ranged — so the comparison is
     /// like-for-like.
     /// </summary>
+    /// <summary>
+    /// Whether an offer would take an executed mastery property off its buyer.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The auto-buyer declines these; the stall still offers them.</b>
+    /// <see cref="ShopOffer.Score"/> is average damage and cannot see a property, so
+    /// this loop would spend 10 gold trading <b>Cleave</b> — a whole second attack
+    /// against an adjacent enemy — for one point of average damage, and would sell the
+    /// Rogue's <b>Vex</b>, which feeds its own Sneak Attack, for the same (#165). The
+    /// gate's stated job is to take only strict improvements, and one executed property
+    /// for another is a trade rather than an improvement.
+    /// </para>
+    /// <para>
+    /// Deliberately <em>not</em> a refusal in <see cref="Offers"/>: a player can now
+    /// read the swap and its mastery line and decide for themselves, which is exactly
+    /// the choice the effect display exists to give them.
+    /// </para>
+    /// <para>
+    /// A property the character has unlocked is what puts a non-null mastery on the
+    /// attack at all, so its presence is the whole test — a swap that <em>gains</em>
+    /// one where there was none is a pure gain and stays on the auto-buyer's list.
+    /// </para>
+    /// </remarks>
+    private static bool TradesAwayAMastery(ShopOffer offer) =>
+        offer.Effect.Attack is { ChangesMastery: true, FromMastery: not null };
+
     /// <summary>
     /// What changed between the buyer as they stand and the buyer re-resolved with the
     /// purchase, read off the two sheets.
