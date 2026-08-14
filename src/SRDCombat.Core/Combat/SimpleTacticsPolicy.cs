@@ -235,7 +235,7 @@ public static class SimpleTacticsPolicy
             encounter.Rage();
         }
 
-        if (actor.Turn.HasBonusAction && IsBadlyHurt(actor))
+        if (actor.Turn.HasBonusAction && IsBadlyHurt(encounter, actor))
         {
             encounter.SecondWind();
         }
@@ -243,7 +243,7 @@ public static class SimpleTacticsPolicy
         // Last, because Second Wind is free and a potion is gone for the rest of the
         // run: drink only when badly hurt and nothing cheaper was available.
         if (actor.Turn.HasBonusAction
-            && IsBadlyHurt(actor)
+            && IsBadlyHurt(encounter, actor)
             && actor.Inventory.Weakest is { } potency)
         {
             encounter.DrinkPotion(potency);
@@ -465,9 +465,20 @@ public static class SimpleTacticsPolicy
             actor.Position.DistanceFeetTo(enemy.Position) <= actor.Stats.SpeedFeet);
     }
 
-    /// <summary>True when a character has lost more than half its hit points.</summary>
-    private static bool IsBadlyHurt(Combatant actor) =>
-        actor.CurrentHitPoints * 2 <= actor.Stats.MaximumHitPoints;
+    /// <summary>
+    /// True when a character is hurt enough to spend something on itself: half its hit
+    /// points gone while somebody can still heal, a third gone once nobody can.
+    /// </summary>
+    /// <remarks>
+    /// The party's shape raising the caution threshold (#126): a wound the Cleric can
+    /// answer is cheaper than the same wound with the Cleric down or dry, so Second
+    /// Wind and the potion in the pack both fire earlier when
+    /// <see cref="PartyDoctrine.HasHealer"/> says the safety net is gone.
+    /// </remarks>
+    private static bool IsBadlyHurt(Encounter encounter, Combatant actor) =>
+        PartyDoctrine.HasHealer(encounter, actor)
+            ? actor.CurrentHitPoints * 2 <= actor.Stats.MaximumHitPoints
+            : actor.CurrentHitPoints * 3 <= actor.Stats.MaximumHitPoints * 2;
 
     /// <summary>
     /// Casts the hardest-hitting damaging spell that reaches, for a caster whose weapon
@@ -499,6 +510,7 @@ public static class SimpleTacticsPolicy
             .Where(spell => spell.Damage.Count > 0 || spell.Save?.FailureDamage.Count > 0)
             .Where(spell => spell.CastingTime == SpellCastingTime.Action)
             .Where(spell => spell.IsCantrip || !slotsAreSpokenFor)
+            .Where(spell => !ShouldHoldTheArea(encounter, actor, target, spell))
             .Where(spell => spell.IsSelfRanged || spell.TargetRangeFeet is null || spell.TargetRangeFeet >= distance)
             .Select(spell => (Spell: spell, Value: SpellValue(encounter, actor, target, spell)))
             .Where(candidate => candidate.Value > 0)
@@ -524,11 +536,61 @@ public static class SimpleTacticsPolicy
     private static bool NeedsHealing(Encounter encounter, Combatant actor) =>
         encounter.Combatants.Any(other => other.SideId == actor.SideId
             && !other.IsDead
-            && (other.CurrentHitPoints == 0 || IsBadlyHurt(other)));
+            && (other.CurrentHitPoints == 0 || IsBadlyHurt(encounter, other)));
 
     /// <summary>Whether this caster has anything to spend a slot healing with.</summary>
     private static bool CanHeal(CombatantFeatures character) =>
         character.Spells.Any(spell => spell.Heal is not null && !spell.IsCantrip);
+
+    /// <summary>
+    /// How many rounds an area slot waits for a clump before patience expires and the
+    /// value rule alone decides.
+    /// </summary>
+    private const int AreaPatienceRounds = 3;
+
+    /// <summary>
+    /// Whether a slotted area spell should be held back for a better clump: early in
+    /// the fight, with several enemies still standing, an area that would catch only
+    /// one of them is a fireball spent on a goblin.
+    /// </summary>
+    /// <remarks>
+    /// The party's shape being patient (#126). The value rule alone cannot make this
+    /// judgement — an AoE-rich caster's swing is weak, so a single-target area cast
+    /// clears the 1.5× bar on round one and the slot is gone before the enemies ever
+    /// close into the huddle the spell was prepared for. Three bounds keep the patience
+    /// honest: a cantrip is never held (it costs nothing), the last enemy standing is
+    /// as clumped as it will ever get, and after round three the clump that was coming
+    /// has either come or never will.
+    /// </remarks>
+    private static bool ShouldHoldTheArea(
+        Encounter encounter,
+        Combatant actor,
+        Combatant target,
+        SpellDefinition spell)
+    {
+        if (spell.IsCantrip
+            || spell.Save?.Area is not { } area
+            || !AreaTargeting.CanResolve(area.Shape)
+            || encounter.Round > AreaPatienceRounds)
+        {
+            return false;
+        }
+
+        if (encounter.EnemiesOf(actor).Count(enemy => enemy.IsActive) <= 1)
+        {
+            return false;
+        }
+
+        var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
+            .ToHashSet();
+
+        var caught = encounter.Combatants.Count(combatant =>
+            combatant.IsActive
+            && combatant.SideId != actor.SideId
+            && covered.Contains(combatant.Position));
+
+        return caught < 2;
+    }
 
     /// <summary>
     /// Whether a spell is worth casting instead of swinging.

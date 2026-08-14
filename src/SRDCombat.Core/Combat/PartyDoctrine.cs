@@ -1,3 +1,4 @@
+using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Core.Combat;
@@ -237,6 +238,46 @@ public static class PartyDoctrine
             .Max() ?? 0;
 
         return Math.Max(weapon * swings, cantrip);
+    }
+
+    /// <summary>
+    /// Whether anyone on this side can still answer a wound with a spell: a living
+    /// character carrying a healing or revival spell <em>with a slot left to cast it</em>.
+    /// The party's shape tuning its caution (#126) — a party whose healer is down, or
+    /// whose healer's slots are dry, should start spending its own remedies earlier,
+    /// and a party built without a healer should fight that way from round one.
+    /// </summary>
+    /// <remarks>
+    /// The slot check is what makes this the party's <em>present</em> shape rather
+    /// than its character sheets: the same Cleric reads as a healer at the fight's
+    /// start and as nobody's safety net once the last fitting slot is gone.
+    /// </remarks>
+    public static bool HasHealer(Encounter encounter, Combatant actor)
+    {
+        ArgumentNullException.ThrowIfNull(encounter);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        return encounter.Combatants.Any(ally =>
+            ally.SideId == actor.SideId
+            && ally.IsActive
+            && ally.Stats.Character is { } character
+            && character.Spells.Any(spell =>
+                (spell.Heal is not null || spell.Revival is not null)
+                && HasSlotFor(ally, spell)));
+    }
+
+    /// <summary>Whether a slot at or above this spell's level remains unspent.</summary>
+    private static bool HasSlotFor(Combatant caster, SpellDefinition spell)
+    {
+        for (var level = spell.Level; level <= 9; level++)
+        {
+            if (caster.Features.SpellSlotsRemaining.GetValueOrDefault(level) > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

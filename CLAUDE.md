@@ -15,12 +15,12 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the close of #132 (the pacing instrument is code, and the series is re-baselined on it) |
-| Tests | **774 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the close of #126 (the party knows its own shape, and the median moves again) |
+| Tests | **785 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 6 of 30, best 23, 6 of 120 runs reaching level 4** — `tools/PacingMeasure`, loot on, seeds 1–120, the canonical instrument since #132. |
-| Work remaining | **The squad-AI series, #126–#127** — composition-aware doctrine and the Phase 6 split. #122–#125 are done; #123 (focus fire) is the series' real gain (**4 → 6 on the canonical instrument**; the recorded "4 → 8" was half a 40-seed outlier — see the instrument paragraph), and both positional slices measured themselves out of the build: #124's screening cost pacing at every strength, and #125's engagement phases found that even a *paying trigger* cannot rescue holding at this game's engagement distances — the two ladders below are required reading before any further positional work. |
+| Pacing | **Median 8 of 30, best 30, 3 of 120 runs clearing everything, 10 reaching level 4** — `tools/PacingMeasure`, loot on, seeds 1–120, the canonical instrument since #132. The first canonical-instrument clears, from #126's no-healer caution. |
+| Work remaining | **The squad-AI series' last slice, #127** — the Phase 6 split, separate monster doctrine from party doctrine. #122–#126 are done; the series' gains are #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, **6 → 8 canonical with the first full clears**), while both positional slices measured themselves out of the build: #124's screening cost pacing at every strength, and #125's engagement phases found that even a *paying trigger* cannot rescue holding at this game's engagement distances — the two ladders below are required reading before any further positional work. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -176,6 +176,29 @@ spend, and holding is always a donation of melee output.** `EngagementPhase`,
 battlefield or a monster doctrine that itself holds (#127) is what would give them a
 theatre.
 
+**And #126 — composition-aware doctrine — moved the median again, 6 → 8, with the
+canonical instrument's first full clears.** The whole gain is one term: **a party whose
+healer is down or dry fights more carefully** — `PartyDoctrine.HasHealer` reads the
+side's *present* shape (a living character with a healing or revival spell *and a slot
+left to cast it*), and without one, Second Wind and the potion in the pack fire at a
+third of hit points gone rather than half. The mechanism is the death spiral itself:
+most runs die in casualty cascades after the Cleric drops, which is exactly when the
+cheaper remedies were being saved for a "badly hurt" that arrived too late. The second
+term — **an area slot waits for a clump** (early in the fight, several enemies standing,
+a slotted area spell that would catch fewer than two is held; patience expires after
+round 3) — measured neutral where measurable, and ships wired under the Revivify
+precedent: its customers, level 5 Fireballs and created AoE parties, sit mostly beyond
+the automated instrument's reach, and it costs nothing measured. The issue's third
+term, "a party with no ranged damage skips HOLD", was already true by #125's
+arithmetic. A composition change to a *melee-heavier* party (Rogue swapped for a
+Wizard) reads median 3 on both builds — party shape dwarfs doctrine, still. And the
+measurement surfaced a genuine engine-adjacent bug fixed on its own branch first: **a
+fight that could not end** — a wall pocket whose one doorway was plugged by an
+unconscious character that `EnemiesOf` hid from every targeting path — now resolves,
+because a *stuck* turn (nothing in reach, nowhere better to stand) attacks the nearest
+downed enemy rather than idling to the round limit, with a boundary test pinning that a
+creature mid-approach never diverts to stomp the fallen.
+
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: characters converge on `PartyDoctrine`'s shared kill — most threat per hit
 point left, falling back to their own reach when the focus target is beyond it, walking
@@ -212,7 +235,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 774 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 785 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
