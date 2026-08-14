@@ -604,10 +604,17 @@ the wrapped-spell-line lesson applied to riders, which is how the Quasit's Scare
 this rule's own original example — finally rides. The join is anchored to the exact
 sentences, and the duration lands only alongside the printed cap ("After 1 minute, it
 succeeds automatically."); a repeat with no clock is still refused. And in an *attack*
-entry a "Failure:" sentence belongs to an embedded saving throw — the Ghast's Claw rolls
-a DC 10 Constitution save gated on "non-Undead creature", both printed in sentences of
-their own — so riding the attack with it would paralyze on every hit with no save
-rolled. A third rule joined with #22: **a rider behind a deeper failure tier — "Second
+entry a "Failure:" sentence belongs to an embedded saving throw — riding the attack
+with it directly would paralyze on every hit with no save rolled. That rule has its
+structured exception too, closed with #146: the Ghast's Claw carries
+`EmbeddedAttackSave` whole — the "non-Undead creature" gate (a creature type the stats
+can test), the printed DC 10, and the Failure rider — rolled by `ResolveAttack` after
+the damage, its span lifted from the rider pass so the sentences are structured once,
+and it made the Ghast the pool's first `Complete` embedded-save creature (canonical
+measurement unmoved, 7/30/9/25). The Ghoul's Claw is one word beyond the bar —
+"isn't an Undead **or elf**" names a species no combatant carries — and stays refused
+with its sentences counted, as do the Cockatrice's tiers, the Death Dog's rest-denying
+poison, the Bearded Devil's wound and the lycanthropes' curses. A third rule joined with #22: **a rider behind a deeper failure tier — "Second
 Failure: The target has the Unconscious condition for 1 minute" — is refused whatever
 its duration**, because the save model rolls one failure and the rider would land a
 whole tier early: a wyrmling's breath putting targets to sleep on the first failed save.
