@@ -66,9 +66,10 @@ screen's probe takes over.
 godot --path client -- --seed=12345
 ```
 
-One honest gap: a spell is aimed at a *creature*, so an area cast at a bare square —
-Spirit Guardians centred on yourself included — cannot be expressed yet; the engine's
-refusal will say so.
+An armed area spell may be aimed at a *bare square* as well as a creature — click the
+spell, then click the ground where it should erupt; the engine's point overload rules
+on range, shape and who the area catches. A spell with no area still needs a creature,
+and the refusal says so.
 
 ### The read-only screen
 

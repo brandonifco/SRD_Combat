@@ -347,8 +347,10 @@ the whole gauntlet with the mouse** (move, attack, features, spells, potions, re
 shown with codes, interludes between fights, autosave and `--continue`, the policy
 playing the monsters; `--one-fight` for a single encounter, `--watch` for the read-only
 screen, `--probe` for its verification loop — see its README), which is the phase's
-printed end state met; what is left there is polish (area spells cannot be aimed at a
-bare square, no named-attack override, no slot choice). And no human has yet played a run
+printed end state met; what is left there is polish (no named-attack override in the
+Godot client, no slot choice — area spells aim at bare squares in both clients now,
+and wiring that up caught the point path skipping the printed range check the
+creature-aimed path always made). And no human has yet played a run
 to its end — the client now removes the last excuse.
 
 - **#83 is closed (2026-08-12, after upcasting and subclasses landed) but its direction
