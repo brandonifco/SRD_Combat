@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at Divine Order (#157), the party-power phase's fourth slice after Divine Spark (#151), the Vex clock fix (#153) and Guiding Bolt's rider (#155) |
-| Tests | **846 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **848 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **Median 6 of 30, best 30, 16 of 120 runs clearing everything, 24 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120 — **and no single headline from this instrument should be read alone any more.** The four slices since the economy read, on canonical/fresh (121–240) seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
@@ -273,7 +273,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 846 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 848 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -728,6 +728,22 @@ so *it* can tell what is left; they do not belong in a status report.
   **Disciple of Life** (+2 + slot level on every slot-cast heal). The Thief's level 3
   features genuinely do nothing in a fight — Fast Hands picks locks, Second-Story Work
   climbs — and stay on `UnimplementedFeatures`, with a test asserting exactly that.
+- **Rage's Duration clause is the first thing a played run caught, and it had been
+  costing the Barbarian its whole feature.** Two readings were wrong. The printed
+  duration is "The Rage lasts until the end of **your next turn**", so the turn a Rage
+  is entered on never has to extend it — the engine checked the extension at the end of
+  that very turn, so a Barbarian who raged and swung could lose the Rage in the same
+  turn it spent a use on. And the first printed extension is "**Make an attack roll**
+  against an enemy" — the roll, not the hit — while the flag was set only where damage
+  landed, so a miss ended it. Both now ride the stamped-turn clock Vex and Guiding Bolt
+  use (`RageBeganOnTurn`), a missed swing counts, and the other two printed extensions
+  execute: forcing an enemy to make a saving throw (`ResolveSaveEffect` and Topple), and
+  **taking a Bonus Action to extend** — which is what `Rage()` now does when the
+  Barbarian is already raging, spending the Bonus Action and no use, in place of the
+  `feature.rage.already_raging` refusal that used to imply the choice was a mistake. The
+  Incapacitated half of the early-end clause is checked at the same boundary rather than
+  the instant it lands, a stated approximation; donning Heavy armor cannot happen inside
+  a fight.
 - **Divine Order is a draft choice whose both roles execute, and its Protector half is
   the options API learning about drafts.** The choice follows the Fighting Style
   pattern — validated against the granted features, `Unspecified` the honest default —

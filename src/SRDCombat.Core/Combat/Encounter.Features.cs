@@ -38,9 +38,26 @@ public sealed partial class Encounter
             return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Rage.");
         }
 
+        if (!combatant.Turn.HasBonusAction)
+        {
+            return new ActionRefusal("bonus_action.spent", $"{combatant.Name} has used its Bonus Action.");
+        }
+
+        // "Take a Bonus Action to extend your Rage" — the third printed extension, and
+        // the only one available to a Barbarian with nothing in reach. It spends the
+        // Bonus Action and no Rage use, so raging again is never the waste the old
+        // already_raging refusal implied.
         if (combatant.Features.IsRaging)
         {
-            return new ActionRefusal("feature.rage.already_raging", $"{combatant.Name} is already raging.");
+            combatant.Turn.SpendBonusAction();
+            combatant.Features.SustainedRageThisTurn = true;
+
+            Add(
+                CombatStepKind.Feature,
+                $"{combatant.Name} takes a Bonus Action to extend the Rage.",
+                combatant);
+
+            return null;
         }
 
         if (combatant.Features.RagesRemaining <= 0)
@@ -48,14 +65,10 @@ public sealed partial class Encounter
             return new ActionRefusal("feature.rage.exhausted", $"{combatant.Name} has no Rages left.");
         }
 
-        if (!combatant.Turn.HasBonusAction)
-        {
-            return new ActionRefusal("bonus_action.spent", $"{combatant.Name} has used its Bonus Action.");
-        }
-
         combatant.Turn.SpendBonusAction();
         combatant.Features.RagesRemaining--;
         combatant.Features.IsRaging = true;
+        combatant.Features.RageBeganOnTurn = combatant.TurnsBegun;
 
         Add(
             CombatStepKind.Feature,
@@ -631,12 +644,40 @@ public sealed partial class Encounter
         && type is DamageType.Bludgeoning or DamageType.Piercing or DamageType.Slashing;
 
     /// <summary>
-    /// Ends a Rage that was not sustained. The SRD keeps a Rage going only while the
-    /// Barbarian keeps fighting.
+    /// Ends a Rage that the printed Duration clause no longer keeps alive.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "The Rage lasts until the end of your next turn, and it ends early if you don
+    /// Heavy armor or have the Incapacitated condition. If your Rage is still active
+    /// on your next turn, you can extend the Rage for another round by doing one of
+    /// the following: Make an attack roll against an enemy. Force an enemy to make a
+    /// saving throw. Take a Bonus Action to extend your Rage."
+    /// </para>
+    /// <para>
+    /// Two readings that the first played run corrected, both of which had been
+    /// quietly costing the Barbarian its whole feature: the turn a Rage is
+    /// <em>entered</em> on never has to extend it, because the printed duration
+    /// already reaches the end of the next turn; and a <b>missed</b> attack roll
+    /// extends it, because the option is the roll rather than the hit. Donning Heavy
+    /// armor cannot happen inside a fight, so only the Incapacitated half of the
+    /// early-end clause is checked, at this boundary rather than the instant the
+    /// condition lands — a stated approximation, and the only one here.
+    /// </para>
+    /// </remarks>
     private void EndRageIfUnsustained(Combatant combatant)
     {
-        if (!combatant.Features.IsRaging || combatant.Features.AttackedThisTurn)
+        if (!combatant.Features.IsRaging)
+        {
+            return;
+        }
+
+        var incapacitated = combatant.HasCondition(ConditionType.Incapacitated);
+
+        // The entering turn is already paid for by the printed duration.
+        if (!incapacitated
+            && (combatant.TurnsBegun <= combatant.Features.RageBeganOnTurn
+                || combatant.Features.SustainedRageThisTurn))
         {
             return;
         }
