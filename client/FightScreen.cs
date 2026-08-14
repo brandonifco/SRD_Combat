@@ -279,14 +279,26 @@ public abstract partial class FightScreen : Node2D
         // The log appends and never replaces — the one thing GoldBox's got wrong and this
         // project committed to in Phase 3. The window shows the tail of what has happened
         // so far.
-        var lines = Math.Max(0, (ScreenHeight - top - 20) / 17);
-        var written = log.Take(count).ToArray();
+        //
+        // Narration is *wrapped*, never trimmed. It used to be cut at 78 characters with
+        // an ellipsis, and because whether an attack hit is the last word of the
+        // sentence, the cut reliably removed the one thing the reader needed: "d20 11+5
+        // = 16 vs AC 18 — …" said everything except the answer (#161). A client whose
+        // whole job is to print what the engine explained cannot afford that.
+        var room = Math.Max(0, (ScreenHeight - top - 20) / 17);
+
+        var wrapped = log
+            .Take(count)
+            .SelectMany(step => Wrap(step.Narration, LogWidthCharacters)
+                // A continuation is indented, so a wrapped entry still reads as one.
+                .Select((line, index) => (Text: index == 0 ? line : "  " + line, step.Kind)))
+            .ToArray();
 
         var y = top + 8;
 
-        foreach (var step in written.TakeLast(lines))
+        foreach (var (text, kind) in wrapped.TakeLast(room))
         {
-            var colour = step.Kind switch
+            var colour = kind switch
             {
                 CombatStepKind.Damage or CombatStepKind.Died or CombatStepKind.Downed => MonsterColour,
                 CombatStepKind.Feature or CombatStepKind.Spell or CombatStepKind.Item => PartyColour,
@@ -294,13 +306,56 @@ public abstract partial class FightScreen : Node2D
                 _ => Dim,
             };
 
-            DrawString(TextFont, new Vector2(PanelLeft, y), Trim(step.Narration, 78), fontSize: 12, modulate: colour);
+            DrawString(TextFont, new Vector2(PanelLeft, y), text, fontSize: 12, modulate: colour);
             y += 17;
         }
     }
 
+    /// <summary>How many characters of narration fit across the log panel.</summary>
+    private const int LogWidthCharacters = 78;
+
     protected static string Trim(string text, int width) =>
         text.Length <= width ? text : text[..(width - 1)] + "…";
+
+    /// <summary>
+    /// Breaks text into lines of at most <paramref name="width"/> characters, on word
+    /// boundaries, keeping any newlines the text already had.
+    /// </summary>
+    protected static IReadOnlyList<string> Wrap(string text, int width)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var lines = new List<string>();
+
+        foreach (var paragraph in text.Split('\n'))
+        {
+            if (paragraph.Length == 0)
+            {
+                lines.Add(string.Empty);
+                continue;
+            }
+
+            var line = string.Empty;
+
+            foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (line.Length + word.Length + 1 > width && line.Length > 0)
+                {
+                    lines.Add(line);
+                    line = string.Empty;
+                }
+
+                line += (line.Length > 0 ? " " : string.Empty) + word;
+            }
+
+            if (line.Length > 0)
+            {
+                lines.Add(line);
+            }
+        }
+
+        return lines;
+    }
 
     /// <summary>Renders one frame to a PNG. The verification loop for these screens.</summary>
     protected async Task CaptureFrame(string path)
