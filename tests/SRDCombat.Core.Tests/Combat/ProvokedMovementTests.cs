@@ -58,7 +58,11 @@ public class ProvokedMovementTests
             "archer",
             stats: CombatTestData.Stats(
                 initiativeBonus: 10,
-                attacks: [CombatTestData.RangedAttack(bonus: 4)]),
+                attacks: [CombatTestData.RangedAttack(bonus: 4)],
+                // Dumb on purpose: at the default INT 10 the monster doctrine (#127)
+                // would converge this hand-authored shooter onto the melee enemy, and
+                // this scenario is about what a walk costs, not who to shoot.
+                intelligence: 3),
             x: 1,
             y: 0);
 

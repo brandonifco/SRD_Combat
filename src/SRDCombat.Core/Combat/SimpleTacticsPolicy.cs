@@ -57,10 +57,11 @@ public static class SimpleTacticsPolicy
         // judgement this policy makes — see UseCharacterFeatures.
         UseCharacterFeatures(encounter, actor);
 
-        // The side's shared judgement first: characters converge on the doctrine's
-        // focus target where they can (#123); monsters and the transcript's
-        // hand-authored fighters keep the simple nearest-weakest choice.
-        var target = PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor));
+        // The side's shared judgement first: characters converge on the party
+        // doctrine's focus target where they can (#123), and monsters hunt what
+        // their own doctrine says they are (#127) — a pack flanks, a tactical mind
+        // converges, a beast stays greedy.
+        var target = ChooseTarget(encounter, actor);
 
         if (target is null)
         {
@@ -119,7 +120,7 @@ public static class SimpleTacticsPolicy
             return;
         }
 
-        var closest = PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor));
+        var closest = ChooseTarget(encounter, actor);
 
         if (closest is not null && TryAttack(encounter, actor, closest))
         {
@@ -162,7 +163,7 @@ public static class SimpleTacticsPolicy
         while (!encounter.IsComplete
                && actor.CanAct
                && actor.Features.AttacksRemainingThisAction > 0
-               && PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor)) is { } next
+               && ChooseTarget(encounter, actor) is { } next
                && TryAttack(encounter, actor, next))
         {
             // TryAttack consumes one swing per call.
@@ -734,6 +735,16 @@ public static class SimpleTacticsPolicy
             MoveTowards(encounter, actor, downed[0]);
         }
     }
+
+    /// <summary>
+    /// The Phase 6 split in one dispatch (#127): a character consults the party's
+    /// doctrine, a monster its own, and both fall back to the greedy nearest-weakest
+    /// choice their doctrine declines to override.
+    /// </summary>
+    private static Combatant? ChooseTarget(Encounter encounter, Combatant actor) =>
+        actor.Stats.Character is not null
+            ? PartyDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor))
+            : MonsterDoctrine.ChooseTarget(encounter, actor, NearestEnemy(encounter, actor));
 
     /// <summary>
     /// Chooses what to attack: finish something off if anything is already in reach,

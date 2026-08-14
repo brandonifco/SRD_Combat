@@ -68,13 +68,14 @@ internal static class CombatTestData
         IReadOnlyList<CombatAttack>? attacks = null,
         IReadOnlyDictionary<DamageType, DamageResponse>? damageResponses = null,
         IReadOnlyList<ConditionType>? conditionImmunities = null,
-        CreatureSize size = CreatureSize.Medium) =>
+        CreatureSize size = CreatureSize.Medium,
+        int intelligence = 10) =>
         new(
             armorClass,
             maximumHitPoints,
             speedFeet,
             initiativeBonus,
-            Abilities(),
+            Abilities(intelligence),
             ProficiencyBonus: 2,
             size,
             damageResponses ?? new Dictionary<DamageType, DamageResponse>(),
@@ -103,13 +104,13 @@ internal static class CombatTestData
         int y = 0) =>
         Combatant(id, id, sideId, Stats(maximumHitPoints: maximumHitPoints, diesAtZeroHitPoints: false), x, y);
 
-    private static Dictionary<Ability, MonsterAbility> Abilities() =>
+    private static Dictionary<Ability, MonsterAbility> Abilities(int intelligence = 10) =>
         new()
         {
             [Ability.Strength] = new(14, 2),
             [Ability.Dexterity] = new(14, 2),
             [Ability.Constitution] = new(14, 2),
-            [Ability.Intelligence] = new(10, 0),
+            [Ability.Intelligence] = new(intelligence, 0),
             [Ability.Wisdom] = new(10, 0),
             [Ability.Charisma] = new(10, 0),
         };

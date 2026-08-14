@@ -15,12 +15,12 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the close of #126 (the party knows its own shape, and the median moves again) |
-| Tests | **785 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the close of #127 (the Phase 6 split — the squad-AI series is complete) |
+| Tests | **790 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 8 of 30, best 30, 3 of 120 runs clearing everything, 10 reaching level 4** — `tools/PacingMeasure`, loot on, seeds 1–120, the canonical instrument since #132. The first canonical-instrument clears, from #126's no-healer caution. |
-| Work remaining | **The squad-AI series' last slice, #127** — the Phase 6 split, separate monster doctrine from party doctrine. #122–#126 are done; the series' gains are #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, **6 → 8 canonical with the first full clears**), while both positional slices measured themselves out of the build: #124's screening cost pacing at every strength, and #125's engagement phases found that even a *paying trigger* cannot rescue holding at this game's engagement distances — the two ladders below are required reading before any further positional work. |
+| Pacing | **Median 6 of 30, best 30, 2 of 120 runs clearing everything** — `tools/PacingMeasure`, loot on, seeds 1–120, the canonical instrument since #132. Down from #126's 8 **deliberately**: #127 taught monsters to play their stat blocks, and a warband that converges is a harder fight. Per-band: the pack flank costs 0 median, tactical convergence −2. |
+| Work remaining | **The squad-AI series (#122–#127) is complete.** Its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work); and #127 spent 2 median on purpose making monsters faithful. The next work is a phase: party-side power (#83's direction — the only lever that has ever raised pacing), Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -199,11 +199,27 @@ because a *stuck* turn (nothing in reach, nowhere better to stand) attacks the n
 downed enemy rather than idling to the round limit, with a boundary test pinning that a
 creature mid-approach never diverts to stomp the fallen.
 
+**And #127 closed the series by making the split real, spending pacing on purpose.**
+`MonsterDoctrine` is the monsters' half: a Pack Tactics creature takes the enemy an
+able packmate already stands beside — the exact condition the engine pays Advantage
+for, so for a pack, flanking *is* focus fire — and a stat block with Intelligence 8 or
+better (the stated threshold: the bottom of the humanlike range) converges through the
+same `Converge` core the party uses, while everything dumber stays greedy-simple,
+because a Boar should feel dumber than a squad. Monsters get none of the party's squad
+judgements — no phases, no healer awareness, no patience — deliberately. Measured
+per-band on the canonical instrument: the pack flank costs the party **nothing** on
+median, tactical convergence costs **2** (8 → 6), and the tail counts (best, clears,
+level 4) swing between builds the way #132 warned small tails do. The frozen
+transcript did not churn — its hand-authored fighters now converge and choose the
+same targets those bytes always recorded — and one fixture (the sidestep corridor)
+had to make its hand-authored archer explicitly dumb, because at the test default's
+INT 10 the doctrine re-aimed it mid-scenario.
+
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: characters converge on `PartyDoctrine`'s shared kill — most threat per hit
 point left, falling back to their own reach when the focus target is beyond it, walking
-at the same kill when nothing is — while monsters still take the weakest enemy already
-in reach; it heals a fallen ally,
+at the same kill when nothing is — while monsters hunt what `MonsterDoctrine` says they
+are (a pack flanks, a tactical mind converges, a beast charges); it heals a fallen ally,
 rages, spends Second Wind, drinks and administers potions, casts when its weapon cannot
 reach, reaches for a
 limited-use entry — a thrown Rock, a breath weapon — when nothing else does, never one
@@ -235,7 +251,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 785 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 790 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
