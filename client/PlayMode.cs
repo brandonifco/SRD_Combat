@@ -78,6 +78,9 @@ public partial class PlayMode : FightScreen
     private double _elapsed;
     private double _pace = SecondsPerTurn;
     private readonly HashSet<GridPosition> _reachable = [];
+
+    /// <summary>Squares the active character has Total Cover against — fogged, not merely dim.</summary>
+    private readonly HashSet<GridPosition> _blocked = [];
     private readonly List<(Rect2 Rect, string Caption, Func<ActionRefusal?> Act)> _buttons = [];
     private readonly List<(Rect2 Rect, SpellDefinition Spell)> _spellRows = [];
     private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
@@ -369,113 +372,119 @@ public partial class PlayMode : FightScreen
     /// grid; Cast and Give Potion arm the next click instead.
     /// </summary>
     /// <remarks>
-    /// Filtering by granted features is display, not a rule: a shown button can still be
-    /// refused (no uses left, already moved), and the refusal is the answer. What must
-    /// never happen is a button for a feature the character does not have doing nothing
-    /// silently — absent is honest, inert is not.
+    /// <para>
+    /// <b>Only what can be used is shown.</b> <see cref="TurnOptions"/> decides, so the
+    /// console and this client offer the same set and neither works it out for itself:
+    /// Dodge and Dash leave the row when the Action does, Stand Up appears only while
+    /// Prone, Action Surge only once there is no Action left to surge past. The status
+    /// line above still reads out what is left to spend, so a row that has shrunk still
+    /// explains itself.
+    /// </para>
+    /// <para>
+    /// <b>Every action answers to a key, and the key never moves.</b> D is Dodge
+    /// whenever Dodge is offered; the assignment is a property of the action rather
+    /// than of its place in the row, so nothing is relearned when the row changes or
+    /// the character does.
+    /// </para>
     /// </remarks>
     private void BuildButtons(Combatant active)
     {
         _buttons.Clear();
         _buttonsFor = active.Id;
 
+        if (_encounter is not { } encounter)
+        {
+            return;
+        }
+
+        // Row one is what anybody can do; row two is what this character brought.
+        var universal = new[]
+        {
+            TurnAction.Dodge, TurnAction.Dash, TurnAction.Disengage,
+            TurnAction.StandUp, TurnAction.Escape, TurnAction.EndTurn,
+        };
+
         var x = (float)GridLeft;
 
-        foreach (var (caption, act) in new (string, Func<ActionRefusal?>)[]
+        foreach (var action in TurnOptions.For(encounter, active).Where(universal.Contains))
         {
-            ("Dodge", () => _encounter!.Dodge()),
-            ("Dash", () => _encounter!.Dash()),
-            ("Disengage", () => _encounter!.Disengage()),
-            ("Stand Up", () => _encounter!.StandUp()),
-            ("Escape", () => _encounter!.Escape()),
-            ("End Turn", () => { _encounter!.EndTurn(); return null; }),
-        })
-        {
-            x = AddButton(x, ButtonRowTop, caption, act);
+            x = AddButton(x, ButtonRowTop, action);
         }
 
         x = GridLeft;
-        var row2 = ButtonRowTop + 36;
 
-        void FeatureButton(ClassFeature feature, string caption, Func<ActionRefusal?> act)
+        foreach (var action in TurnOptions.For(encounter, active).Where(action => !universal.Contains(action)))
         {
-            if (active.Stats.Has(feature))
-            {
-                x = AddButton(x, row2, caption, act);
-            }
-        }
-
-        FeatureButton(ClassFeature.Rage, "Rage", () => _encounter!.Rage());
-        FeatureButton(ClassFeature.RecklessAttack, "Reckless", () => _encounter!.RecklessAttack());
-        FeatureButton(ClassFeature.SecondWind, "Second Wind", () => _encounter!.SecondWind());
-        FeatureButton(ClassFeature.ActionSurge, "Action Surge", () => _encounter!.ActionSurge());
-        FeatureButton(ClassFeature.SteadyAim, "Steady Aim", () => _encounter!.SteadyAim());
-        FeatureButton(ClassFeature.CunningAction, "Cunning Dash", () => _encounter!.CunningAction(CunningActionKind.Dash));
-        FeatureButton(ClassFeature.CunningAction, "Cunning Disengage", () => _encounter!.CunningAction(CunningActionKind.Disengage));
-        FeatureButton(ClassFeature.CunningStrike, "Trip", () => _encounter!.CunningStrike(CunningStrikeEffect.Trip));
-        FeatureButton(ClassFeature.ChannelDivinity, "Spark Heal", () =>
-        {
-            _pending = Pending.SparkHealTarget;
-            return null;
-        });
-        FeatureButton(ClassFeature.ChannelDivinity, "Spark Harm", () =>
-        {
-            _pending = Pending.SparkHarmTarget;
-            return null;
-        });
-
-        // A menu is only worth a button when there is a choice inside it: with one
-        // attack, the default click already swings it.
-        if (active.Stats.Attacks.Count > 1)
-        {
-            x = AddButton(x, row2, "Attacks", () =>
-            {
-                _attackMenuOpen = !_attackMenuOpen;
-                _spellMenuOpen = false;
-                return null;
-            });
-        }
-
-        if (active.Stats.Character?.CanCast == true)
-        {
-            x = AddButton(x, row2, "Cast", () =>
-            {
-                _spellMenuOpen = !_spellMenuOpen;
-                _attackMenuOpen = false;
-                return null;
-            });
-        }
-
-        if (active.Inventory.TotalPotions > 0)
-        {
-            x = AddButton(x, row2, "Drink", () =>
-                active.Inventory.Weakest is { } potency
-                    ? _encounter!.DrinkPotion(potency)
-                    : new ActionRefusal("client.no_potion", $"{active.Name} carries no potions."));
-        }
-
-        // Give Potion is offered whenever there is a potion within reach to give,
-        // including one in the pack of the ally who needs it — the engine reaches for
-        // the drinker's own flask first, so a character carrying none can still get a
-        // casualty back up with the casualty's own.
-        if (active.Inventory.TotalPotions > 0 || PotionWithinReach(active))
-        {
-            AddButton(x, row2, "Give Potion", () =>
-            {
-                _pending = Pending.PotionTarget;
-                return null;
-            });
+            x = AddButton(x, ButtonRowTop + 36, action);
         }
     }
 
-    /// <summary>Whether an ally in reach is carrying a potion the active character could administer.</summary>
-    private bool PotionWithinReach(Combatant active) =>
-        _encounter is { } encounter
-        && encounter.Combatants.Any(other => other.SideId == active.SideId
-            && !ReferenceEquals(other, active)
-            && !other.IsDead
-            && other.Inventory.TotalPotions > 0
-            && active.Position.DistanceFeetTo(other.Position) <= PotionRules.ReachFeet);
+    /// <summary>Runs an action, by button or by key. The engine still rules on it.</summary>
+    private ActionRefusal? Invoke(TurnAction action)
+    {
+        var encounter = _encounter!;
+
+        switch (action)
+        {
+            case TurnAction.Dodge: return encounter.Dodge();
+            case TurnAction.Dash: return encounter.Dash();
+            case TurnAction.Disengage: return encounter.Disengage();
+            case TurnAction.StandUp: return encounter.StandUp();
+            case TurnAction.Escape: return encounter.Escape();
+            case TurnAction.EndTurn: encounter.EndTurn(); return null;
+            case TurnAction.Rage: return encounter.Rage();
+            case TurnAction.RecklessAttack: return encounter.RecklessAttack();
+            case TurnAction.SecondWind: return encounter.SecondWind();
+            case TurnAction.ActionSurge: return encounter.ActionSurge();
+            case TurnAction.SteadyAim: return encounter.SteadyAim();
+            case TurnAction.CunningDash: return encounter.CunningAction(CunningActionKind.Dash);
+            case TurnAction.CunningDisengage: return encounter.CunningAction(CunningActionKind.Disengage);
+            case TurnAction.CunningStrikeTrip: return encounter.CunningStrike(CunningStrikeEffect.Trip);
+
+            case TurnAction.Attacks:
+                _attackMenuOpen = !_attackMenuOpen;
+                _spellMenuOpen = false;
+                return null;
+
+            case TurnAction.Cast:
+                _spellMenuOpen = !_spellMenuOpen;
+                _attackMenuOpen = false;
+                return null;
+
+            case TurnAction.Drink:
+                return CommandedCombatant()?.Inventory.Weakest is { } potency
+                    ? encounter.DrinkPotion(potency)
+                    : new ActionRefusal("client.no_potion", "Nothing to drink.");
+
+            case TurnAction.GivePotion: _pending = Pending.PotionTarget; return null;
+            case TurnAction.DivineSparkHeal: _pending = Pending.SparkHealTarget; return null;
+            case TurnAction.DivineSparkHarm: _pending = Pending.SparkHarmTarget; return null;
+
+            default: return null;
+        }
+    }
+
+    /// <summary>The action a keypress means, or null when the key is not bound to a shown one.</summary>
+    private TurnAction? ActionForKey(char typed)
+    {
+        if (CommandedCombatant() is not { } active || _encounter is not { } encounter)
+        {
+            return null;
+        }
+
+        foreach (var action in TurnOptions.For(encounter, active))
+        {
+            if (char.ToUpperInvariant(typed) == TurnOptions.Hotkey(action))
+            {
+                return action;
+            }
+        }
+
+        return null;
+    }
+
+    private float AddButton(float x, float y, TurnAction action) =>
+        AddButton(x, y, $"{TurnOptions.HotkeyLabel(action)} · {TurnOptions.Caption(action)}", () => Invoke(action));
 
     private float AddButton(float x, float y, string caption, Func<ActionRefusal?> act)
     {
@@ -569,6 +578,22 @@ public partial class PlayMode : FightScreen
 
             GetTree().Quit();
             return;
+        }
+
+        // A key runs exactly what its button would, and only while that button is
+        // shown — so a keypress can never reach an action the row is hiding.
+        if (@event is InputEventKey { Pressed: true } key
+            && _phase == Phase.Fighting
+            && !_shopView
+            && _pending == Pending.Nothing)
+        {
+            var typed = key.Keycode == Key.Space ? ' ' : (char)key.Keycode;
+
+            if (ActionForKey(typed) is { } action)
+            {
+                Run(() => Invoke(action));
+                return;
+            }
         }
 
         if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
@@ -852,6 +877,7 @@ public partial class PlayMode : FightScreen
         _notice = refusal is null ? null : $"{refusal.Message}  [{refusal.Code}]";
         _elapsed = 0;
         _reachable.Clear();
+        _blocked.Clear();
 
         var commanded = CommandedCombatant();
 
@@ -860,7 +886,10 @@ public partial class PlayMode : FightScreen
             ClearPending();
         }
 
-        if (commanded is not null && commanded.Id != _buttonsFor)
+        // Rebuilt after every action, not just on a change of character: the row now
+        // shows only what can be used, and spending the Action is exactly what takes
+        // Dodge and Dash out of it.
+        if (commanded is not null)
         {
             BuildButtons(commanded);
         }
@@ -890,6 +919,28 @@ public partial class PlayMode : FightScreen
             }
         }
 
+        // Squares this character has Total Cover against — nothing standing there can be
+        // shot, targeted by a spell, or caught by an area, and the engine refuses all
+        // three. Shading them says so before a turn is spent finding out. CoverRules is
+        // the engine's own judgement; this only asks it a question per square.
+        if (commanded is { } shooter && _encounter is { } field)
+        {
+            for (var x = 0; x < GridWidth; x++)
+            {
+                for (var y = 0; y < GridHeight; y++)
+                {
+                    var square = new GridPosition(x, y);
+
+                    if (square != shooter.Position
+                        && CoverRules.Between(field.Battlefield, shooter.Position, square, field.Combatants)
+                            == CoverDegree.Total)
+                    {
+                        _blocked.Add(square);
+                    }
+                }
+            }
+        }
+
         QueueRedraw();
     }
 
@@ -914,6 +965,16 @@ public partial class PlayMode : FightScreen
             DrawRect(
                 new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
                 new Color(PartyColour, 0.16f));
+        }
+
+        // Fog over what this character cannot reach with anything at range: Total Cover
+        // refuses an attack, a spell and an area alike, so a square behind the wall is
+        // not a target and should not look like one.
+        foreach (var square in _blocked)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                new Color(0f, 0f, 0f, 0.55f));
         }
 
         var tokens = TokensFrom(encounter, _labels);
