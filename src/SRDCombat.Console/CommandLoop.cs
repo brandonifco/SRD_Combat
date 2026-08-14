@@ -119,6 +119,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
             "cunning" => CunningAction(words),
             "drink" => Drink(active, words),
             "trip" => encounter.CunningStrike(CunningStrikeEffect.Trip),
+            "spark" => Spark(active, words),
             "end" or "e" => EndTurn(),
             "look" or "l" => Look(),
             "help" or "?" => Help(),
@@ -257,6 +258,41 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
             : new ActionRefusal("client.no_target", $"Nobody here is called '{words[1]}'.");
     }
 
+    /// <summary>
+    /// Divine Spark: heal an ally or harm an enemy.
+    /// </summary>
+    /// <remarks>
+    /// The mode defaults from the target's side — an ally is healed, an enemy harmed
+    /// with Radiant — because that is the choice a player would make every time; a
+    /// trailing word overrides it, so healing an enemy or burning Necrotic is still a
+    /// command away. The engine rules on everything else.
+    /// </remarks>
+    private ActionRefusal? Spark(Combatant active, string[] words)
+    {
+        if (words.Length < 2)
+        {
+            return new ActionRefusal("client.usage", "spark <letter> [heal|necrotic|radiant]");
+        }
+
+        if (Find(words[1]) is not { } target)
+        {
+            return new ActionRefusal("client.no_target", $"Nobody here is called '{words[1]}'.");
+        }
+
+        var mode = words.Length > 2 ? words[2].ToLowerInvariant() : null;
+
+        return mode switch
+        {
+            "heal" => encounter.DivineSpark(target, DivineSparkUse.Heal),
+            "necrotic" => encounter.DivineSpark(target, DivineSparkUse.Harm, DamageType.Necrotic),
+            "radiant" => encounter.DivineSpark(target, DivineSparkUse.Harm, DamageType.Radiant),
+            null => target.SideId == active.SideId
+                ? encounter.DivineSpark(target, DivineSparkUse.Heal)
+                : encounter.DivineSpark(target, DivineSparkUse.Harm),
+            _ => new ActionRefusal("client.usage", "spark <letter> [heal|necrotic|radiant]"),
+        };
+    }
+
     private ActionRefusal? CunningAction(string[] words)
     {
         if (words.Length < 2)
@@ -307,6 +343,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         Display.Say("use <entry> <letter>    use a stat block entry by name");
         Display.Say("dodge / dash / disengage / stand / escape");
         Display.Say("rage / reckless / secondwind / surge / aim / trip");
+        Display.Say("spark <letter> [heal|necrotic|radiant]  Divine Spark; allies healed, enemies harmed");
         Display.Say("cunning <dash|disengage>");
         Display.Say("drink [letter]          drink a potion, or give one to somebody adjacent");
         Display.Say("look                    redraw the grid");

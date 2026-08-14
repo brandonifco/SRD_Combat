@@ -335,7 +335,8 @@ public sealed class GauntletRun
                 pair.state.SecondWindRemaining,
                 pair.state.ActionSurgeRemaining,
                 pair.state.SpellSlotsRemaining,
-                pair.state.Potions)))
+                pair.state.Potions,
+                pair.state.ChannelDivinityRemaining)))
             .ToArray();
 
         return EncounterFactory.Build(_content, survivors, step.Difficulty, random);

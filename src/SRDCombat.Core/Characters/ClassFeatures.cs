@@ -111,6 +111,32 @@ public enum ClassFeature
     /// the slot's level more.
     /// </summary>
     DiscipleOfLife,
+
+    /// <summary>
+    /// Cleric: divine energy fuelling magical effects, twice per rest arc — one use
+    /// back on a Short Rest, all on a Long, the Second Wind pattern. Divine Spark
+    /// executes whole at this game's levels; Turn Undead does not — see the registry's
+    /// remarks for why.
+    /// </summary>
+    ChannelDivinity,
+}
+
+/// <summary>What Divine Spark's rolled total is spent on.</summary>
+/// <remarks>
+/// "You either restore Hit Points to the creature equal to that total or force the
+/// creature to make a Constitution saving throw" — one roll, two uses, the chooser's
+/// choice, so the choice is a parameter rather than two features.
+/// </remarks>
+public enum DivineSparkUse
+{
+    /// <summary>Restore hit points equal to 1d8 + the Cleric's Wisdom modifier.</summary>
+    Heal,
+
+    /// <summary>
+    /// Force a Constitution saving throw: the total as Necrotic or Radiant damage on a
+    /// failure, half (round down) on a success.
+    /// </summary>
+    Harm,
 }
 
 /// <summary>
@@ -187,6 +213,18 @@ public static class ClassFeatureRegistry
             ["Tactical Mind"] = ClassFeature.TacticalMind,
             ["Ability Score Improvement"] = ClassFeature.AbilityScoreImprovement,
             ["Weapon Mastery"] = ClassFeature.WeaponMastery,
+
+            // Channel Divinity maps under the Cunning Strike precedent: the feature is
+            // claimed while one of its printed effects is not. Divine Spark executes
+            // whole at levels 1-5 (its dice first grow at Cleric level 7). Turn Undead
+            // is refused rather than approximated: its Frightened-plus-Incapacitated
+            // rider prints three early outs the model cannot express — "ends early on
+            // the creature if it takes any damage, if you have the Incapacitated
+            // condition, or if you die" — plus a flee behaviour ("tries to move as far
+            // from you as it can"), and imposing the minute without the outs would hold
+            // an Undead the book lets a single hit set free. Sear Undead stays on
+            // UnimplementedFeatures with it, being a rider on Turn Undead.
+            ["Channel Divinity"] = ClassFeature.ChannelDivinity,
 
             // Subclass features. The SRD prints exactly one subclass per class, so a
             // level 3+ character simply has it — there is no choice for a draft to

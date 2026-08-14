@@ -129,6 +129,23 @@ public class GauntletTests
     }
 
     [Fact]
+    public void ChannelDivinityRestoresOneOnAShortRestAndAllOnALong()
+    {
+        // Channel Divinity prints the Rage and Second Wind pattern word for word: one
+        // expended use back on a Short Rest, all of them on a Long.
+        var member = PregeneratedParty.Build(Content, level: 3)
+            .Single(candidate => candidate.Draft.Name == "Aldous");
+
+        var spent = CharacterState.Fresh(member) with { ChannelDivinityRemaining = 0 };
+
+        var afterShort = spent.AfterRest(member, RestKind.Short, new SeededRandomSource(1), hitDieSides: 8);
+        Assert.Equal(1, afterShort.ChannelDivinityRemaining);
+
+        var afterLong = spent.AfterRest(member, RestKind.Long, new SeededRandomSource(1), hitDieSides: 8);
+        Assert.Equal(member.Combatant.Stats.Character!.ChannelDivinityUses, afterLong.ChannelDivinityRemaining);
+    }
+
+    [Fact]
     public void AShortRestSpendsHitDiceToHealAndNotBeyondTheMaximum()
     {
         var member = PregeneratedParty.Build(Content, level: 5)

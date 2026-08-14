@@ -164,7 +164,11 @@ public static class PregeneratedParty
             sheet.Has(ClassFeature.SecondWind) ? row.ResourceCount("Second Wind") ?? 2 : 0,
             sheet.Has(ClassFeature.ActionSurge) ? 1 : 0,
             spells.Count > 0 ? spells : null,
-            spells.Count > 0 ? SpellcastingRules.AbilityFor(classId) : null);
+            spells.Count > 0 ? SpellcastingRules.AbilityFor(classId) : null,
+            // The Cleric table prints a Channel Divinity column from level 2; the
+            // feature gate keeps a class that never grants it at zero even if a
+            // like-named column ever appeared.
+            sheet.Has(ClassFeature.ChannelDivinity) ? row.ResourceCount("Channel Divinity") ?? 0 : 0);
     }
 
     /// <summary>

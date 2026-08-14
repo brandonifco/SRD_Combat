@@ -106,6 +106,7 @@ public sealed record CombatAttack(
 /// <param name="SpellcastingAbility">The ability the character casts with. Null for a non-caster.</param>
 /// <param name="SpellSaveDifficultyClass">The DC a target must beat to resist this caster's spells.</param>
 /// <param name="SpellAttackBonus">The bonus added to this caster's spell attack rolls.</param>
+/// <param name="ChannelDivinityUses">Channel Divinity uses per rest arc, from the class table's column.</param>
 public sealed record CombatantFeatures(
     IReadOnlyList<ClassFeature> Features,
     int AttacksPerAction,
@@ -119,7 +120,8 @@ public sealed record CombatantFeatures(
     IReadOnlyDictionary<int, int>? SpellSlots = null,
     Ability? SpellcastingAbility = null,
     int SpellSaveDifficultyClass = 0,
-    int SpellAttackBonus = 0)
+    int SpellAttackBonus = 0,
+    int ChannelDivinityUses = 0)
 {
     public bool Has(ClassFeature feature) => Features.Contains(feature);
 
@@ -281,7 +283,8 @@ public sealed record CombatantStats(
         int secondWindUses = 0,
         int actionSurgeUses = 0,
         IReadOnlyList<SpellDefinition>? spells = null,
-        Ability? spellcastingAbility = null)
+        Ability? spellcastingAbility = null,
+        int channelDivinityUses = 0)
     {
         ArgumentNullException.ThrowIfNull(sheet);
 
@@ -329,7 +332,8 @@ public sealed record CombatantStats(
                 spellcastingAbility is { } attackAbility
                     ? Rules.SpellcastingRules.AttackBonus(sheet.ProficiencyBonus, sheet.Modifier(attackAbility))
                         + sheet.SpellAttackItemBonus
-                    : 0),
+                    : 0,
+                channelDivinityUses),
         };
     }
 
@@ -516,6 +520,9 @@ public sealed class FeatureState
 
     /// <summary>Action Surge uses left this rest.</summary>
     public int ActionSurgeRemaining { get; internal set; }
+
+    /// <summary>Channel Divinity uses left this rest.</summary>
+    public int ChannelDivinityRemaining { get; internal set; }
 
     /// <summary>Sneak Attack is once per turn, not once per attack.</summary>
     public bool SneakAttackUsedThisTurn { get; internal set; }
@@ -774,6 +781,7 @@ public sealed record ActiveCondition(
 /// <param name="RagesRemaining">Rages left, or null for all of them.</param>
 /// <param name="SecondWindRemaining">Second Wind uses left, or null for all.</param>
 /// <param name="ActionSurgeRemaining">Action Surge uses left, or null for all.</param>
+/// <param name="ChannelDivinityRemaining">Channel Divinity uses left, or null for all.</param>
 /// <param name="SpellSlotsRemaining">Slots left by level, or null for a full complement.</param>
 /// <param name="Potions">
 /// Potions of Healing carried in, by potency. Null and empty both mean none — unlike the
@@ -786,7 +794,8 @@ public sealed record CombatantCarryOver(
     int? SecondWindRemaining = null,
     int? ActionSurgeRemaining = null,
     IReadOnlyDictionary<int, int>? SpellSlotsRemaining = null,
-    IReadOnlyDictionary<HealingPotion, int>? Potions = null);
+    IReadOnlyDictionary<HealingPotion, int>? Potions = null,
+    int? ChannelDivinityRemaining = null);
 
 /// <summary>
 /// What a combatant is carrying that a fight can consume.
@@ -900,6 +909,7 @@ public sealed class Combatant
             Features.RagesRemaining = character.RageUses;
             Features.SecondWindRemaining = character.SecondWindUses;
             Features.ActionSurgeRemaining = character.ActionSurgeUses;
+            Features.ChannelDivinityRemaining = character.ChannelDivinityUses;
 
             foreach (var (level, slots) in character.SpellSlots)
             {
@@ -926,6 +936,7 @@ public sealed class Combatant
         Features.RagesRemaining = carriedOver.RagesRemaining ?? Features.RagesRemaining;
         Features.SecondWindRemaining = carriedOver.SecondWindRemaining ?? Features.SecondWindRemaining;
         Features.ActionSurgeRemaining = carriedOver.ActionSurgeRemaining ?? Features.ActionSurgeRemaining;
+        Features.ChannelDivinityRemaining = carriedOver.ChannelDivinityRemaining ?? Features.ChannelDivinityRemaining;
 
         if (carriedOver.SpellSlotsRemaining is { } slots)
         {

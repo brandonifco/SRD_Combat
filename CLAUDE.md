@@ -15,12 +15,12 @@ questions. Everything below is operational detail that doc doesn't carry.
 
 | | |
 | --- | --- |
-| Branch | `main` at the economy's first slice (gold, the Long Rest merchant, and 14 full clears) |
-| Tests | **806 passing**, 1 skipped by design (the transcript fixture writer) |
+| Branch | `main` at the party-power phase's first slice (Channel Divinity — Divine Spark, #151) |
+| Tests | **832 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 7 of 30, best 30, 12 of 120 runs clearing everything, 24 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC; level-4 runs 3 → 25), and the median crept 6 → 7 on cleaner purchases. The step before: #127 spent 2 median deliberately teaching monsters their stat blocks. |
-| Work remaining | **The squad-AI series (#122–#127) is complete.** Its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work); and #127 spent 2 median on purpose making monsters faithful. The next work is a phase: party-side power (#83's direction — the only lever that has ever raised pacing), Phase 5/7 polish, or a human finally playing a run to the end. |
+| Pacing | **Median 8 of 30, best 30, 14 of 120 runs clearing everything, 31 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The step here: Divine Spark (#151) moved every figure at once (median 7 → 8, clears 12 → 14, level-4 24 → 31) — a slot-free heal is the cautious-healer finding one rung cheaper. Before that the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Work remaining | **The party-power phase (#83's direction) is underway** — Divine Spark is its first slice, and it is the only lever that has ever raised pacing. The squad-AI series (#122–#127) is complete: its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work). Also open: Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -273,7 +273,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 806 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 832 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -728,6 +728,22 @@ so *it* can tell what is left; they do not belong in a status report.
   **Disciple of Life** (+2 + slot level on every slot-cast heal). The Thief's level 3
   features genuinely do nothing in a fight — Fast Hands picks locks, Second-Story Work
   climbs — and stay on `UnimplementedFeatures`, with a test asserting exactly that.
+- **Channel Divinity executes as Divine Spark; Turn Undead is a written refusal.** The
+  spark is a Magic action at another creature within 30 feet — 1d8 + Wisdom as a heal,
+  or a Constitution save for that much Necrotic or Radiant, half rounding down — with
+  the uses column read off the class table and restored one-on-Short-all-on-Long, the
+  Second Wind pattern the text prints word for word. Three readings worth keeping:
+  **Magic Resistance applies although it is no spell** (the printed feature calls
+  itself divine energy fuelling *magical effects* — the one non-spell path that passes
+  `magicalEffect: true` into the shared save loop), **Disciple of Life does not feed
+  it** ("a spell you cast with a spell slot", and this is neither), and every refusal
+  fires before the use is spent, the potion precedent. Turn Undead's rider prints
+  three early outs the condition model cannot express — ends on any damage, on the
+  Cleric's Incapacitation, on the Cleric's death — plus a flee behaviour, so it stays
+  refused with the reason on the registry, and Sear Undead stays reported with it. The
+  policy uses only the heal, on fallen allies — spending the cheapest revival resource
+  on damage is the trade the slot-reserve measurements warn against — and it moved
+  everything at once: median 7 → 8, clears 12 → 14, level-4 runs 24 → 31 (#151).
 - **The Ability Score Improvement is a draft choice, and the count comes from the class
   table.** "+2 to one ability, or +1 to two, never above 20", taken at level 4 by every
   class. Two readings are written down on the resolver: **how many the character is
