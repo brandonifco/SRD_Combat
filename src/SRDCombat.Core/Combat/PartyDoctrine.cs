@@ -22,6 +22,29 @@ public enum PartyRole
 }
 
 /// <summary>
+/// The side's posture this round: fire from standoff, or close and fight.
+/// </summary>
+/// <remarks>
+/// Squad AI slice 4 (#125), shipped as arithmetic the movement policy does not yet
+/// consult — the same verdict as #124's screening, reached the same way. Every wiring
+/// of Hold into <c>SimpleTacticsPolicy</c> was measured over the recorded seeds and
+/// none paid: front liners standing the screen behind any entry condition halved the
+/// median or worse, and the forms that preserved the median were the ones that never
+/// fired. The structural reason is on <see cref="PartyDoctrine.Phase"/>.
+/// </remarks>
+public enum EngagementPhase
+{
+    /// <summary>
+    /// The party out-ranges the enemy and nothing threatens anyone yet: ranged
+    /// members fire from where they stand, front liners stand the screen line.
+    /// </summary>
+    Hold,
+
+    /// <summary>Close and fight — the default whenever holding does not pay.</summary>
+    Commit,
+}
+
+/// <summary>
 /// The party's shared judgement: what the squad, rather than the soldier, would decide.
 /// </summary>
 /// <remarks>
@@ -92,6 +115,128 @@ public static class PartyDoctrine
             ?? 1;
 
         return hardest * swings;
+    }
+
+    /// <summary>
+    /// The side's posture: <see cref="EngagementPhase.Hold"/> only while holding pays
+    /// twice over — the party's expected ranged damage per round exceeds the enemies'
+    /// by more than the front-line output holding idles, and no enemy is within one
+    /// move and a reach of contact with anyone. Everything else is
+    /// <see cref="EngagementPhase.Commit"/>, including every monster's turn. A
+    /// melee-heavy party commits early by arithmetic rather than by a special rule:
+    /// its ranged margin can never cover what its front line is not swinging.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Not yet consulted by movement, and the reason is measured.</b> Six wirings
+    /// were built and dismantled over the recorded seeds 1–40 against main's 8: hold
+    /// on any positive ranged margin with front liners standing the lane, median 4;
+    /// requiring the enemy to have no ranged answer at all, 6; the screen placed
+    /// forward as an interceptor, 3; and this final arithmetic — which never fires
+    /// for the pregenerated party, correctly reading two heavy melee as too expensive
+    /// to idle — left the median at exactly 8 while a ranged-heavy created party it
+    /// does fire for measured 3 against its own baseline 3. Holding never paid in any
+    /// form, only ever cost.
+    /// </para>
+    /// <para>
+    /// The structural reason, worth keeping for whoever revisits this: the sides
+    /// start one move apart, so there are no standoff rounds for a phase to spend —
+    /// an enemy that cannot be held off for even one free round makes every hold a
+    /// donation of the front line's output. A battlefield with longer engagement
+    /// distances, or a monster doctrine that itself holds (#127), is what would give
+    /// this phase a theatre; the arithmetic is ready for the day one exists.
+    /// </para>
+    /// </remarks>
+    public static EngagementPhase Phase(Encounter encounter, Combatant actor)
+    {
+        ArgumentNullException.ThrowIfNull(encounter);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        if (actor.Stats.Character is null)
+        {
+            return EngagementPhase.Commit;
+        }
+
+        var enemies = encounter.EnemiesOf(actor).Where(enemy => !enemy.IsDead).ToArray();
+
+        if (enemies.Length == 0)
+        {
+            return EngagementPhase.Commit;
+        }
+
+        var allies = encounter.Combatants
+            .Where(ally => ally.SideId == actor.SideId
+                && ally.IsActive
+                && ally.Stats.Character is not null)
+            .ToArray();
+
+        var partyRanged = allies.Sum(RangedThreatPerRound);
+        var enemyRanged = enemies.Sum(RangedThreatPerRound);
+
+        // The exchange, per round of standoff: holding earns the ranged margin and
+        // idles the front line's whole output. A melee-heavy party commits early
+        // because its margin can never cover what its front line is not swinging.
+        var idledFrontLine = allies
+            .Where(ally => RoleOf(ally) == PartyRole.FrontLine)
+            .Sum(ThreatPerRound);
+
+        if (partyRanged - enemyRanged <= idledFrontLine)
+        {
+            return EngagementPhase.Commit;
+        }
+
+        var backs = allies.Where(ally => RoleOf(ally) != PartyRole.FrontLine).ToArray();
+
+        if (backs.Length == 0)
+        {
+            return EngagementPhase.Commit;
+        }
+
+        var breached = enemies.Any(enemy => allies.Any(ally =>
+            enemy.Position.DistanceFeetTo(ally.Position)
+                <= enemy.Stats.SpeedFeet + MovementRules.MeleeReachFeet(enemy)));
+
+        return breached ? EngagementPhase.Commit : EngagementPhase.Hold;
+    }
+
+    /// <summary>
+    /// Roughly how much damage this creature deals per round from standoff: its best
+    /// available ranged attack's average times the swings its action buys, or its best
+    /// at-will damaging cantrip when that is bigger. Zero for a melee-only creature,
+    /// which is what makes the phase arithmetic read a melee-heavy side as one that
+    /// should not be holding.
+    /// </summary>
+    /// <remarks>
+    /// The same altitude as <see cref="ThreatPerRound"/>: an estimate for comparing
+    /// against numbers made the same way, not a simulation. Slotted spells are not
+    /// counted — a standoff lasts rounds and slots do not — and neither are limited-use
+    /// entries, so a creature whose thrown Rock is spent counts as the melee creature
+    /// it now is.
+    /// </remarks>
+    public static double RangedThreatPerRound(Combatant combatant)
+    {
+        ArgumentNullException.ThrowIfNull(combatant);
+
+        var weapon = combatant.Stats.Attacks
+            .Where(attack => attack.NormalRangeFeet is not null)
+            .Where(attack => combatant.Uses.IsAvailable(attack.Name))
+            .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+            .DefaultIfEmpty(0)
+            .Max();
+
+        var swings = combatant.Stats.Multiattack?.AttackCount
+            ?? combatant.Stats.Character?.AttacksPerAction
+            ?? 1;
+
+        var cantrip = combatant.Stats.Character?.Spells
+            .Where(spell => spell.IsCantrip)
+            .Where(spell => (spell.TargetRangeFeet ?? 0) > Battlefield.FeetPerSquare)
+            .Select(spell => spell.Damage.Sum(damage => damage.Amount.Average)
+                + (spell.Save?.FailureDamage.Sum(damage => damage.Amount.Average) ?? 0))
+            .DefaultIfEmpty(0)
+            .Max() ?? 0;
+
+        return Math.Max(weapon * swings, cantrip);
     }
 
     /// <summary>
