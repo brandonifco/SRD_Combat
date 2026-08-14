@@ -269,6 +269,11 @@ public static partial class SpellParser
             var isSpellAttack = SpellAttackPattern().IsMatch(body);
             var save = SpellEffectParser.ParseSave(body, classified.AppliedConditions);
 
+            // An attack spell's rider is read by the spell grammar — the shared
+            // grammar's head-clause rule refuses "On a hit," sentences it cannot
+            // account for — and only a rider parsed whole replaces the refused one.
+            var attackRider = isSpellAttack ? SpellEffectParser.ParseAttackRider(body) : null;
+
             // Healing is read only when the spell neither attacks nor forces a save, so
             // a spell that damages on a save and heals on a success cannot be mistaken
             // for a healing spell.
@@ -305,7 +310,7 @@ public static partial class SpellParser
                 Save = save,
                 Heal = heal,
                 Damage = SpellEffectParser.ParseDamage(body),
-                AppliedConditions = classified.AppliedConditions,
+                AppliedConditions = attackRider is not null ? [attackRider] : classified.AppliedConditions,
                 IsSpellAttack = isSpellAttack,
                 UnmodelledClauses = mechanics == EntryMechanics.Unmodelled
                     ? classified.UnmodelledClauses

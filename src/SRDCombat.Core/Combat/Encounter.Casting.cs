@@ -435,7 +435,10 @@ public sealed partial class Encounter
         CombatantFeatures character)
     {
         // A spell attack uses the caster's own bonus rather than a weapon's, so it is
-        // built here rather than read from the spell.
+        // built here rather than read from the spell. Its riders come across under the
+        // same filter a monster's attack riders pass on the way to a CombatAttack —
+        // only conditions the engine can impose to the letter — and ImposeRiders then
+        // treats a spell's hit exactly like a bite's.
         var attack = new CombatAttack(
             spell.Name,
             spell.RangeFeet is null ? AttackKind.Melee : AttackKind.Ranged,
@@ -443,7 +446,8 @@ public sealed partial class Encounter
             spell.RangeFeet is null ? Battlefield.FeetPerSquare : null,
             spell.RangeFeet,
             spell.RangeFeet,
-            spell.Damage);
+            spell.Damage,
+            spell.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray());
 
         ResolveAttack(caster, attack, target, isOpportunityAttack: false, isSpellAttack: true);
     }

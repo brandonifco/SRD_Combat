@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **No open GitHub issues.** Every phase has met its printed end state; the standing direction is party-side depth — widening the verified spellbook (`PreparableSpells`) is where the pacing evidence points. |
+| Work remaining | **#119 — Revivify**, the survey's best find: the printed answer to the death spiral is a level 3 Cleric spell, and death is why runs end. Every phase has met its printed end state. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -672,7 +672,17 @@ so *it* can tell what is left; they do not belong in a status report.
   spell list. The registry's bar and its per-spell exclusion reasons are on the class,
   including the two pregen-blessed entries whose gaps are now stated rather than
   silent: Guiding Bolt's Advantage rider does not execute, and Spirit Guardians is
-  cast as a one-time Emanation rather than its printed persistent aura.
+  cast as a one-time Emanation rather than its printed persistent aura. **The first
+  widening pass took the Wizard from seven to nine** — Shatter's "A Construct has
+  Disadvantage on the save" now rides `SaveEffect.ConstructsSaveAtDisadvantage`
+  against the stats' own creature type, and Ray of Sickness's Poisoned rider is
+  parsed whole by the spell grammar (the shared grammar's head-clause rule rightly
+  refuses "On a hit," sentences — spells print that where stat blocks print `Hit:`)
+  and imposed by the same path a bite's rider takes. **Do not re-survey the launch
+  lists hoping for free adds**: every remaining condition rider on them is
+  extraction-refused for a modelled reason — repeat-save outs, "for the duration",
+  chooser's-choice conditions — so the next widening needs the model to grow a shape,
+  and the survey's best find is filed as an issue (Revivify).
 - **The pregen Cleric prepares six of its printed nine, and the shortfall is not a
   choice.** Of the 109 spells on the Cleric list, six have an effect the engine executes:
   Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds and Spirit

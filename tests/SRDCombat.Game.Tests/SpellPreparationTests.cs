@@ -57,6 +57,44 @@ public class SpellPreparationTests
         Assert.Empty(PreparableSpells.For(Content, "class.fighter"));
 
     [Fact]
+    public void TheWizardsMenuIsTheVerifiedNine()
+    {
+        // Pinned by name like the Cleric's: Ray of Sickness and Shatter joined when
+        // their one blocking clause each got a printed-sentence wire (the attack rider,
+        // the Construct disadvantage), and a silently different menu should be a test
+        // change, not a surprise.
+        var menu = PreparableSpells.For(Content, "class.wizard")
+            .Select(spell => spell.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                "Acid Splash", "Burning Hands", "Fire Bolt", "Fireball", "Lightning Bolt",
+                "Mind Spike", "Poison Spray", "Ray of Sickness", "Shatter",
+            ],
+            menu);
+    }
+
+    [Fact]
+    public void TheWidenedSpellsCarryTheirWiresInContent()
+    {
+        // The two clauses that were each spell's whole blocker, now structured — and
+        // exactly one spell carries each, so nothing else was swept in.
+        var sickness = Content.SpellsById["spell.ray-of-sickness"];
+        var rider = Assert.Single(sickness.AppliedConditions);
+        Assert.Equal(ConditionType.Poisoned, rider.Condition);
+        Assert.True(ConditionRules.CanBeImposed(rider));
+
+        Assert.True(Content.SpellsById["spell.shatter"].Save!.ConstructsSaveAtDisadvantage);
+
+        Assert.Single(
+            Content.Spells,
+            spell => spell.IsSpellAttack && spell.AppliedConditions.Any(ConditionRules.CanBeImposed));
+        Assert.Single(Content.Spells, spell => spell.Save?.ConstructsSaveAtDisadvantage == true);
+    }
+
+    [Fact]
     public void PreparesInChosenOrderUpToThePrintedColumns()
     {
         var draft = Cleric() with

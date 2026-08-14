@@ -27,13 +27,22 @@ namespace SRDCombat.Game;
 /// Elven Chain's training override and (before #106) the Wand's cover clause used.
 /// Excluded by that bar, with the failing clause: Thunderwave (pushes 10 feet — forced
 /// movement does not exist), Ray of Frost and Chill Touch (Speed and healing-denial
-/// riders on a hit — attack riders are not imposed), Ray of Sickness (its Poisoned
-/// rider likewise), Scorching Ray (three rays at chosen targets — one casting call, one
-/// target), Acid Arrow (delayed damage, and damage on a miss), Chromatic Orb (a damage
-/// type chosen at casting, and a leap), Shatter (Constructs save at Disadvantage, and
-/// Constructs are in the bestiary), Flaming Sphere, Web, Vampiric Touch, Phantasmal
-/// Force, Bestow Curse, Ensnaring Strike (persistent or triggered effects with no
-/// model).
+/// riders on a hit, neither being a condition the model holds), Scorching Ray (three
+/// rays at chosen targets — one casting call, one target), Acid Arrow (delayed damage,
+/// and damage on a miss), Chromatic Orb (a damage type chosen at casting, and a leap),
+/// Flaming Sphere, Web, Vampiric Touch, Phantasmal Force, Bestow Curse, Ensnaring
+/// Strike (persistent or triggered effects with no model). Every condition rider on the
+/// launch lists' save spells is extraction-refused — repeat-save outs, "for the
+/// duration", chooser's-choice conditions — so none of those spells can join until the
+/// model grows the missing shape.
+/// </para>
+/// <para>
+/// <b>Two entries joined when their one blocking clause got a printed-sentence wire</b>
+/// (the widening pass): Shatter, whose "A Construct has Disadvantage on the save" rides
+/// <c>SaveEffect.ConstructsSaveAtDisadvantage</c> and executes against the stats' own
+/// creature type; and Ray of Sickness, whose "has the Poisoned condition until the end
+/// of your next turn" is the bestiary's own attack-rider shape, parsed whole by the
+/// spell grammar and imposed by the same path a bite's rider takes.
 /// </para>
 /// <para>
 /// <b>Two entries predate the bar and carry stated gaps rather than silent ones.</b>
@@ -65,7 +74,9 @@ public static class PreparableSpells
                 "spell.fire-bolt",
                 "spell.poison-spray",
                 "spell.burning-hands",
+                "spell.ray-of-sickness",
                 "spell.mind-spike",
+                "spell.shatter",
                 "spell.fireball",
                 "spell.lightning-bolt",
             ],
