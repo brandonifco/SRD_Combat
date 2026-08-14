@@ -51,6 +51,44 @@ public enum FightingStyle
 }
 
 /// <summary>
+/// The Cleric's Divine Order, chosen at level 1: "You have dedicated yourself to one of
+/// the following sacred roles of your choice."
+/// </summary>
+/// <remarks>
+/// <para>
+/// Both printed roles execute, which is why — unlike <see cref="FightingStyle"/> — no
+/// option here is a recorded-but-inert pick. <see cref="Protector"/> grows the printed
+/// proficiency lines the creation menus and the shop read (proficiency itself is
+/// assumed at resolution, the reading stated on the resolver's attack builder), and
+/// <see cref="Thaumaturge"/> grows the Cantrips column by one and puts its Wisdom-based
+/// bonus on the sheet's Arcana and Religion skills.
+/// </para>
+/// <para>
+/// <see cref="Unspecified"/> is still the honest default: a draft that never chose
+/// keeps "Divine Order" reported on <c>CharacterSheet.UnimplementedFeatures</c>,
+/// because a choice nobody made must not quietly resolve to either role.
+/// </para>
+/// </remarks>
+public enum DivineOrder
+{
+    /// <summary>No role chosen; the printed feature stays reported as unimplemented.</summary>
+    Unspecified,
+
+    /// <summary>
+    /// "Trained for battle, you gain proficiency with Martial weapons and training with
+    /// Heavy armor."
+    /// </summary>
+    Protector,
+
+    /// <summary>
+    /// "You know one extra cantrip from the Cleric spell list. In addition, your
+    /// mystical connection to the divine gives you a bonus to your Intelligence (Arcana
+    /// or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1)."
+    /// </summary>
+    Thaumaturge,
+}
+
+/// <summary>
 /// One taking of the Ability Score Improvement feat.
 /// </summary>
 /// <remarks>
@@ -148,6 +186,16 @@ public sealed record CharacterDraft
     /// feature then stays reported on <c>CharacterSheet.UnimplementedFeatures</c>.
     /// </remarks>
     public FightingStyle FightingStyle { get; init; } = FightingStyle.Unspecified;
+
+    /// <summary>
+    /// The Cleric's Divine Order, for classes that grant one.
+    /// </summary>
+    /// <remarks>
+    /// Validated like <see cref="FightingStyle"/>: naming a role the class never
+    /// granted is refused by the resolver, and <see cref="DivineOrder.Unspecified"/>
+    /// leaves the printed feature reported as unimplemented.
+    /// </remarks>
+    public DivineOrder DivineOrder { get; init; } = DivineOrder.Unspecified;
 
     /// <summary>Ids of weapons the character is carrying.</summary>
     public IReadOnlyList<string> WeaponIds { get; init; } = [];

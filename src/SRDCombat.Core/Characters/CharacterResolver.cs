@@ -80,6 +80,7 @@ public static class CharacterResolver
 
         var expertise = ResolveExpertise(draft, content.Background, features);
         var fightingStyle = ResolveFightingStyle(draft, features);
+        var divineOrder = ResolveDivineOrder(draft, features);
 
         var (armorClass, armorSource) = ResolveArmorClass(draft, content, scores, features, fightingStyle, magicItems);
 
@@ -98,7 +99,7 @@ public static class CharacterResolver
             SpeedFeet = ResolveSpeed(draft, content, features),
             Size = content.Species.Sizes.Count > 0 ? content.Species.Sizes[0] : CreatureSize.Medium,
             SavingThrows = ResolveSavingThrows(content.Class, scores, proficiency, magicItems),
-            Skills = ResolveSkills(draft, content.Background, scores, proficiency, expertise),
+            Skills = ResolveSkills(draft, content.Background, scores, proficiency, expertise, divineOrder),
             Attacks = ResolveAttacks(
                 draft,
                 content,
@@ -109,9 +110,10 @@ public static class CharacterResolver
                 ResolveWeaponMasteries(draft, content, features)),
             Features = features,
             FightingStyle = fightingStyle,
+            DivineOrder = divineOrder,
             ExpertiseSkills = expertise,
             SpellSlots = levelRow.SpellSlots,
-            UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, draft.Level),
+            UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, draft.Level, divineOrder),
             UnspentFeatChoices = GrantsOf(content.Class, draft.Level, ClassFeature.AbilityScoreImprovement)
                 - improvementsTaken,
             MagicItemNames = magicItems.Select(item => ItemDisplayName(item)).ToArray(),
@@ -679,10 +681,19 @@ public static class CharacterResolver
         BackgroundDefinition background,
         IReadOnlyDictionary<Ability, int> scores,
         int proficiency,
-        IReadOnlyList<string> expertise)
+        IReadOnlyList<string> expertise,
+        DivineOrder divineOrder)
     {
         var proficient = ProficientSkills(draft, background);
         var expert = new HashSet<string>(expertise, StringComparer.OrdinalIgnoreCase);
+
+        // Thaumaturge: "a bonus to your Intelligence (Arcana or Religion) checks. The
+        // bonus equals your Wisdom modifier (minimum of +1)." Read as a bonus both
+        // skills carry whenever their check is rolled — the parenthesis names the two
+        // checks the bonus rides, not a pick between them.
+        var thaumaturgy = divineOrder == DivineOrder.Thaumaturge
+            ? Math.Max(1, AbilityRules.ModifierFor(scores[Ability.Wisdom]))
+            : 0;
 
         return SkillRules.AllSkills
             .Select(skill =>
@@ -695,10 +706,12 @@ public static class CharacterResolver
                 // ResolveExpertise has already refused a draft for getting wrong.
                 var multiplier = expert.Contains(skill) ? 2 : 1;
 
+                var divine = skill is "Arcana" or "Religion" ? thaumaturgy : 0;
+
                 return new SkillBonus(
                     skill,
                     ability,
-                    AbilityRules.ModifierFor(scores[ability]) + (isProficient ? proficiency * multiplier : 0),
+                    AbilityRules.ModifierFor(scores[ability]) + (isProficient ? proficiency * multiplier : 0) + divine,
                     isProficient);
             })
             .ToArray();
@@ -808,6 +821,29 @@ public static class CharacterResolver
         }
 
         return draft.FightingStyle;
+    }
+
+    /// <summary>
+    /// The Divine Order the character actually has, refusing one they were never
+    /// granted — the Fighting Style rule with a different feature behind it.
+    /// </summary>
+    private static DivineOrder ResolveDivineOrder(
+        CharacterDraft draft,
+        IReadOnlyList<GrantedFeature> features)
+    {
+        if (draft.DivineOrder == DivineOrder.Unspecified)
+        {
+            return DivineOrder.Unspecified;
+        }
+
+        if (!features.Any(granted => granted.Feature == ClassFeature.DivineOrder))
+        {
+            throw new ArgumentException(
+                "This character has no feature granting a Divine Order.",
+                nameof(draft));
+        }
+
+        return draft.DivineOrder;
     }
 
     /// <summary>
@@ -939,14 +975,22 @@ public static class CharacterResolver
     /// Printed features the class grants that this engine does not implement. The gap,
     /// stated on the sheet rather than left invisible.
     /// </summary>
-    private static IReadOnlyList<string> ResolveUnimplementedFeatures(ClassDefinition definition, int level) =>
+    private static IReadOnlyList<string> ResolveUnimplementedFeatures(
+        ClassDefinition definition,
+        int level,
+        DivineOrder divineOrder) =>
         definition.Levels
             .Where(row => row.Level <= level)
             .SelectMany(row => row.FeatureNames)
             .Concat(definition.SubclassFeatures
                 .Where(feature => feature.GrantedAtLevel is { } granted && granted <= level)
                 .Select(feature => feature.Name))
-            .Where(name => ClassFeatureRegistry.Resolve(name) is null)
+            .Where(name => ClassFeatureRegistry.Resolve(name) is null
+                // A registered name whose choice was never made executes nothing, and a
+                // gap nothing executes must stay visible: Divine Order rejoins the
+                // report while the draft holds Unspecified.
+                || (ClassFeatureRegistry.Resolve(name) == ClassFeature.DivineOrder
+                    && divineOrder == DivineOrder.Unspecified))
             // Subclass placeholders are not features in their own right.
             .Where(name => !name.Contains("Subclass", StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.Ordinal)

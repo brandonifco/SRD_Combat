@@ -43,6 +43,7 @@ public partial class CreateMode : FightScreen
         IncreaseSecondary,
         Skills,
         Style,
+        Order,
         Weapon,
         Armor,
         Shield,
@@ -67,6 +68,7 @@ public partial class CreateMode : FightScreen
     private Ability? _secondaryIncrease;
     private readonly List<string> _skills = [];
     private FightingStyle _style = FightingStyle.Unspecified;
+    private DivineOrder _divineOrder = DivineOrder.Unspecified;
     private string? _weaponId;
     private string? _armorId;
     private bool _shield;
@@ -246,14 +248,23 @@ public partial class CreateMode : FightScreen
                     1 => FightingStyle.Defense,
                     _ => FightingStyle.Unspecified,
                 };
+                _step = AfterStyle();
+                break;
+            case Step.Order:
+                _divineOrder = _browsed switch
+                {
+                    0 => DivineOrder.Protector,
+                    1 => DivineOrder.Thaumaturge,
+                    _ => DivineOrder.Unspecified,
+                };
                 _step = Step.Weapon;
                 break;
             case Step.Weapon:
-                _weaponId = CharacterCreation.WeaponOptions(_content, _class!)[_browsed].Id;
+                _weaponId = CharacterCreation.WeaponOptions(_content, _class!, _divineOrder)[_browsed].Id;
                 _step = Step.Armor;
                 break;
             case Step.Armor:
-                var armors = CharacterCreation.ArmorOptions(_content, _class!);
+                var armors = CharacterCreation.ArmorOptions(_content, _class!, _divineOrder);
                 _armorId = _browsed < armors.Count ? armors[_browsed].Id : null;
                 _step = CharacterCreation.MayCarryShield(_class!) ? Step.Shield : AfterShield();
                 break;
@@ -347,10 +358,17 @@ public partial class CreateMode : FightScreen
             return;
         }
 
-        _step = CharacterCreation.GrantsFightingStyle(_class!, 1) ? Step.Style : Step.Weapon;
+        _step = CharacterCreation.GrantsFightingStyle(_class!, 1) ? Step.Style : AfterStyle();
         _browsed = -1;
         _rowScroll = 0;
     }
+
+    /// <summary>
+    /// Divine Order sits between Style and Weapon on purpose: Protector widens the
+    /// weapon and armor menus the next two steps draw.
+    /// </summary>
+    private Step AfterStyle() =>
+        CharacterCreation.GrantsDivineOrder(_class!, 1) ? Step.Order : Step.Weapon;
 
     private Step AfterShield() =>
         CharacterCreation.MasteryAllowance(_class!, 1) > 0 ? Step.Mastery
@@ -391,6 +409,7 @@ public partial class CreateMode : FightScreen
             IncreaseChoice = _increaseShape,
             ChosenSkills = [.. _skills],
             FightingStyle = _style,
+            DivineOrder = _divineOrder,
             WeaponIds = _weaponId is null ? [] : [_weaponId],
             ArmorId = _armorId,
             HasShield = _shield,
@@ -436,6 +455,7 @@ public partial class CreateMode : FightScreen
         _increaseShape = AbilityIncreaseChoice.TwoAndOne;
         _skills.Clear();
         _style = FightingStyle.Unspecified;
+        _divineOrder = DivineOrder.Unspecified;
         _weaponId = null;
         _armorId = null;
         _shield = false;
@@ -667,6 +687,11 @@ public partial class CreateMode : FightScreen
             Line($"Prepares: {string.Join(", ", caster.Spells.Select(spell => spell.Name))}.", Dim);
         }
 
+        if (sheet.DivineOrder != DivineOrder.Unspecified)
+        {
+            Line($"Divine Order: {sheet.DivineOrder}.", Dim);
+        }
+
         if (sheet.UnimplementedFeatures.Count > 0)
         {
             y += 6;
@@ -734,7 +759,7 @@ public partial class CreateMode : FightScreen
 
         switch (_step)
         {
-            case Step.Class or Step.Species or Step.Background or Step.Style or Step.Weapon or Step.Armor:
+            case Step.Class or Step.Species or Step.Background or Step.Style or Step.Order or Step.Weapon or Step.Armor:
                 if (_browsed >= 0)
                 {
                     Action(new Vector2(RowsX, y), $"Take {Trim(RowCaptions()[_browsed], 22)}", Take);
@@ -831,10 +856,16 @@ public partial class CreateMode : FightScreen
             "Defense — +1 AC while wearing armor",
             "Skip — take an unexecuted printed style",
         ],
-        Step.Weapon => CharacterCreation.WeaponOptions(_content, _class!)
+        Step.Order =>
+        [
+            "Protector — Martial weapons and Heavy armor",
+            "Thaumaturge — an extra cantrip, Arcana/Religion bonus",
+            "Skip — leave the printed feature unimplemented",
+        ],
+        Step.Weapon => CharacterCreation.WeaponOptions(_content, _class!, _divineOrder)
             .Select(weapon => $"{weapon.Name} ({weapon.Damage} {weapon.DamageType})")
             .ToArray(),
-        Step.Armor => CharacterCreation.ArmorOptions(_content, _class!)
+        Step.Armor => CharacterCreation.ArmorOptions(_content, _class!, _divineOrder)
             .Select(armor => $"{armor.Name} ({armor.Category})")
             .Append("No armor")
             .ToArray(),
@@ -855,10 +886,14 @@ public partial class CreateMode : FightScreen
             Step.Skills => $"Proficiency in {SkillOptions()[Math.Min(_browsed, SkillOptions().Count - 1)]}.",
             Step.Style => "The Fighting Style feat. The two listed are the styles the engine executes; " +
                 "Skip records an unexecuted printed style, reported on the sheet.",
-            Step.Weapon => DescribeWeapon(CharacterCreation.WeaponOptions(_content, _class!)[_browsed]),
-            Step.Armor => _browsed < CharacterCreation.ArmorOptions(_content, _class!).Count
-                ? $"{CharacterCreation.ArmorOptions(_content, _class!)[_browsed].Name}, " +
-                  $"{CharacterCreation.ArmorOptions(_content, _class!)[_browsed].Category} armor."
+
+            // The printed feature text itself, per the charter — both roles execute, so
+            // unlike Style there is no inert pick here.
+            Step.Order => CharacterCreation.DivineOrderText(_class!),
+            Step.Weapon => DescribeWeapon(CharacterCreation.WeaponOptions(_content, _class!, _divineOrder)[_browsed]),
+            Step.Armor => _browsed < CharacterCreation.ArmorOptions(_content, _class!, _divineOrder).Count
+                ? $"{CharacterCreation.ArmorOptions(_content, _class!, _divineOrder)[_browsed].Name}, " +
+                  $"{CharacterCreation.ArmorOptions(_content, _class!, _divineOrder)[_browsed].Category} armor."
                 : "No armor: Unarmored Defense where a class grants it, bare AC otherwise.",
             Step.Mastery => $"{MasteryRows()[_browsed].Name}: the {MasteryRows()[_browsed].Mastery} mastery property.",
             Step.Spells => DescribeSpell(SpellRows()[_browsed]),
@@ -902,7 +937,8 @@ public partial class CreateMode : FightScreen
 
     private int SkillAllowance() => CharacterCreation.SkillChoices(_class!).Count;
 
-    private IReadOnlyList<WeaponDefinition> MasteryRows() => CharacterCreation.MasteryOptions(_content, _class!);
+    private IReadOnlyList<WeaponDefinition> MasteryRows() =>
+        CharacterCreation.MasteryOptions(_content, _class!, _divineOrder);
 
     private IReadOnlyList<SpellDefinition> SpellRows() => CharacterCreation.SpellOptions(_content, _class!);
 
@@ -924,6 +960,7 @@ public partial class CreateMode : FightScreen
         Step.IncreaseShape or Step.IncreasePrimary or Step.IncreaseSecondary => "background increases",
         Step.Skills => "skills",
         Step.Style => "fighting style",
+        Step.Order => "divine order",
         Step.Weapon => "weapon",
         Step.Armor => "armor",
         Step.Shield => "shield",
@@ -1082,6 +1119,16 @@ public partial class CreateMode : FightScreen
             await Frame();
 
             if (_step == Step.Style)
+            {
+                ClickRow(0);
+                await Frame();
+                ClickTake();
+                await Frame();
+            }
+
+            // The Cleric's Divine Order: the probe takes Protector, so the widened
+            // weapon and armor menus are the ones it walks next.
+            if (_step == Step.Order)
             {
                 ClickRow(0);
                 await Frame();

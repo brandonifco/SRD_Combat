@@ -179,7 +179,21 @@ internal static class PartyCreator
             draft = draft with { FightingStyle = style.Value };
         }
 
-        var gear = ChooseGear(content, @class);
+        // Divine Order comes before gear on purpose: Protector widens the weapon and
+        // armor menus about to be shown.
+        if (CharacterCreation.GrantsDivineOrder(@class, level: 1))
+        {
+            var order = ChooseDivineOrder(@class);
+
+            if (order is null)
+            {
+                return null;
+            }
+
+            draft = draft with { DivineOrder = order.Value };
+        }
+
+        var gear = ChooseGear(content, @class, draft.DivineOrder);
 
         if (gear is null)
         {
@@ -193,7 +207,7 @@ internal static class PartyCreator
             HasShield = gear.Value.Shield,
         };
 
-        var masteries = ChooseMasteries(content, @class);
+        var masteries = ChooseMasteries(content, @class, draft.DivineOrder);
 
         if (masteries is null)
         {
@@ -202,7 +216,7 @@ internal static class PartyCreator
 
         draft = draft with { WeaponMasteryIds = masteries };
 
-        var spells = ChooseSpells(content, @class);
+        var spells = ChooseSpells(content, @class, draft.DivineOrder);
 
         if (spells is null)
         {
@@ -435,11 +449,45 @@ internal static class PartyCreator
         }
     }
 
+    /// <summary>
+    /// Divine Order, offered with the SRD's own sentence for each role — the charter's
+    /// "every choice carries its printed description".
+    /// </summary>
+    private static DivineOrder? ChooseDivineOrder(ClassDefinition @class)
+    {
+        while (true)
+        {
+            System.Console.WriteLine();
+            System.Console.WriteLine("Divine Order — both printed roles execute:");
+            System.Console.WriteLine(CharacterCreation.DivineOrderText(@class));
+            System.Console.WriteLine("  1. Protector — Martial weapons and Heavy armor training");
+            System.Console.WriteLine("  2. Thaumaturge — one extra cantrip, and a Wisdom bonus to Arcana and Religion");
+            System.Console.WriteLine("  0. Skip — leave the printed feature unimplemented on the sheet");
+
+            var answer = Ask("  Role: ");
+
+            switch (answer?.Trim())
+            {
+                case null:
+                    return null;
+                case "0":
+                    return DivineOrder.Unspecified;
+                case "1":
+                    return DivineOrder.Protector;
+                case "2":
+                    return DivineOrder.Thaumaturge;
+                default:
+                    break;
+            }
+        }
+    }
+
     private static (IReadOnlyList<string> WeaponIds, string? ArmorId, bool Shield)? ChooseGear(
         SrdContent content,
-        ClassDefinition @class)
+        ClassDefinition @class,
+        DivineOrder divineOrder)
     {
-        var weapon = Choose("Weapon", CharacterCreation.WeaponOptions(content, @class), DescribeWeapon);
+        var weapon = Choose("Weapon", CharacterCreation.WeaponOptions(content, @class, divineOrder), DescribeWeapon);
 
         if (weapon is null)
         {
@@ -447,7 +495,7 @@ internal static class PartyCreator
         }
 
         string? armorId = null;
-        var armorOptions = CharacterCreation.ArmorOptions(content, @class);
+        var armorOptions = CharacterCreation.ArmorOptions(content, @class, divineOrder);
 
         if (armorOptions.Count > 0)
         {
@@ -488,7 +536,10 @@ internal static class PartyCreator
         return ([weapon.Id], armorId, shield);
     }
 
-    private static IReadOnlyList<string>? ChooseMasteries(SrdContent content, ClassDefinition @class)
+    private static IReadOnlyList<string>? ChooseMasteries(
+        SrdContent content,
+        ClassDefinition @class,
+        DivineOrder divineOrder)
     {
         var allowance = CharacterCreation.MasteryAllowance(@class, level: 1);
 
@@ -497,7 +548,7 @@ internal static class PartyCreator
             return [];
         }
 
-        var options = CharacterCreation.MasteryOptions(content, @class);
+        var options = CharacterCreation.MasteryOptions(content, @class, divineOrder);
         var chosen = new List<string>();
 
         System.Console.WriteLine();
@@ -534,7 +585,10 @@ internal static class PartyCreator
         return chosen;
     }
 
-    private static IReadOnlyList<string>? ChooseSpells(SrdContent content, ClassDefinition @class)
+    private static IReadOnlyList<string>? ChooseSpells(
+        SrdContent content,
+        ClassDefinition @class,
+        DivineOrder divineOrder)
     {
         var options = CharacterCreation.SpellOptions(content, @class);
 
@@ -543,7 +597,7 @@ internal static class PartyCreator
             return [];
         }
 
-        var (cantrips, prepared) = CharacterCreation.SpellAllowances(@class, level: 1);
+        var (cantrips, prepared) = CharacterCreation.SpellAllowances(@class, level: 1, divineOrder);
         var chosen = new List<string>();
 
         System.Console.WriteLine();

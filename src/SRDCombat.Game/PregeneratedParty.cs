@@ -294,6 +294,12 @@ public static class PregeneratedParty
         // The Acolyte offers Intelligence, Wisdom and Charisma — no Constitution, which
         // the resolver refuses outright rather than quietly dropping.
         SecondaryIncrease = Ability.Intelligence,
+        // Protector, not Thaumaturge: the shop can then armor the party's one healer —
+        // Strength 13 meets Chain Mail's printed requirement exactly, and AC is what
+        // keeps the Cleric standing through the casualty cascades that end runs.
+        // Thaumaturge's extra cantrip has no second executable attack cantrip worth
+        // taking, and its Arcana/Religion bonus rides checks no fight rolls.
+        DivineOrder = DivineOrder.Protector,
         ChosenSkills = ["Insight", "Religion"],
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Wisdom),
         WeaponIds = ["weapon.mace"],

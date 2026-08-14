@@ -87,6 +87,31 @@ public class ShopTests
     }
 
     [Fact]
+    public void ProtectorPutsTheClericInHeavyArmor()
+    {
+        // The slice's whole point (#157): the pregen Cleric takes Protector, so the
+        // merchant may sell it the Chain Mail its printed role trains it for — Chain
+        // Shirt and Shield at AC 15 becomes Chain Mail and Shield at AC 18, bought
+        // with the run's own gold.
+        var run = FundedRun(100_000);
+        var aldous = run.Party.ToList().FindIndex(member => member.Draft.Name == "Aldous");
+
+        var mail = Shop.Offers(Content, run.Party, run.States)
+            .Single(offer => offer.MemberIndex == aldous
+                && offer.NewDraft is { ArmorId: "armor.chain-mail" });
+
+        var before = run.Party[aldous].Sheet.ArmorClass;
+
+        Assert.Null(run.Purchase(mail));
+        Assert.Equal(18, run.Party[aldous].Sheet.ArmorClass);
+        Assert.True(run.Party[aldous].Sheet.ArmorClass > before);
+
+        // Strength 13 meets Chain Mail's printed requirement exactly, so nothing else
+        // got worse — the offer gate's own strictly-better claim, spot-checked.
+        Assert.Equal(30, run.Party[aldous].Sheet.SpeedFeet);
+    }
+
+    [Fact]
     public void AnEmptyPurseRefusesCleanly()
     {
         var run = GauntletRun.Start(Content, GauntletLadder.Default());

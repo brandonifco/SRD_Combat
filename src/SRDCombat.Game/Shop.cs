@@ -210,7 +210,9 @@ public static class Shop
         // Armor, unless a magic suit is already on the body.
         if (!OwnsAnyArmorItem(content, member.Draft))
         {
-            foreach (var armor in CharacterCreation.ArmorOptions(content, @class))
+            // The draft's Divine Order rides along: a Protector Cleric may be sold the
+            // Heavy armor its printed role trains it for.
+            foreach (var armor in CharacterCreation.ArmorOptions(content, @class, member.Draft.DivineOrder))
             {
                 if (string.Equals(armor.Id, member.Draft.ArmorId, StringComparison.Ordinal))
                 {
@@ -259,7 +261,7 @@ public static class Shop
 
         // Weapons: a candidate replaces the owned weapon of its own kind, so a better
         // blade never costs the Rogue its bow.
-        foreach (var weapon in CharacterCreation.WeaponOptions(content, @class))
+        foreach (var weapon in CharacterCreation.WeaponOptions(content, @class, member.Draft.DivineOrder))
         {
             if (member.Draft.WeaponIds.Contains(weapon.Id, StringComparer.Ordinal))
             {
