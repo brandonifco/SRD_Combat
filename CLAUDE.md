@@ -820,7 +820,7 @@ so *it* can tell what is left; they do not belong in a status report.
   including the two pregen-blessed entries whose gaps are now stated rather than
   silent: Guiding Bolt's Advantage rider does not execute, and Spirit Guardians is
   cast as a one-time Emanation rather than its printed persistent aura. **The first
-  widening pass took the Wizard from seven to nine** — Shatter's "A Construct has
+  widening passes took the Wizard from seven to nine, then ten with Hold Person** — Shatter's "A Construct has
   Disadvantage on the save" now rides `SaveEffect.ConstructsSaveAtDisadvantage`
   against the stats' own creature type, and Ray of Sickness's Poisoned rider is
   parsed whole by the spell grammar (the shared grammar's head-clause rule rightly
@@ -830,10 +830,31 @@ so *it* can tell what is left; they do not belong in a status report.
   extraction-refused for a modelled reason — repeat-save outs, "for the duration",
   chooser's-choice conditions — so the next widening needs the model to grow a shape,
   and the survey's best find is filed as an issue (Revivify).
+- **Hold Person executes whole, and it grew the condition model two shapes.** A
+  failed save imposes Paralyzed with three printed ways out, whichever comes first:
+  the caster's Concentration breaks (`ConditionDuration.WhileConcentrating` — the
+  sweep runs wherever Concentration ends), the bearer's repeated save succeeds
+  (`RepeatSaveAtTurnEnd` — rolled at the end of each of the bearer's turns, skipped
+  turns included, honouring the auto-fail clause so a Strength-save variant would
+  never open), or the tenth bearer turn ends ("up to 1 minute"). The extraction
+  template matches the corpus exactly twice — Hold Person and Hold Monster — and Hold
+  Person's "Choose a Humanoid" rides `SpellDefinition.TargetCreatureType`, refused at
+  casting with `spell.wrong_target_type`. Hold Monster stays off the menus: a level 5
+  spell in a game whose Wizard slots stop at level 3, the same line the loot table
+  draws at Very Rare. Wiring save-spell riders on also armed a latent Eyebite bug —
+  its per-turn effect *menu* read as three clean riders — defused at extraction with a
+  chooser's-choice refusal. And the completion rule was wrong the moment holding
+  worked: a side of held creatures used to read as defeated (`IsActive`), which made
+  Hold Person an instant-victory button; standing now means alive and above 0 hit
+  points, and what ends the fight for a held creature is the enemy walking over and
+  finishing it, which the stuck-turn rule already does. The policy never casts it —
+  no damage, no value it can price — so canonical pacing is unmoved (7/30/9/25) and
+  the spell's customers are humans and the policy's future CC valuation.
 - **The pregen Cleric prepares seven of its printed nine, and the shortfall is not a
-  choice.** Of the 109 spells on the Cleric list, seven have an effect the engine
+  choice.** Of the 109 spells on the Cleric list, eight have an effect the engine
   executes: Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds,
-  Spirit Guardians and, since #119, Revivify — "a creature that has died within the
+  Hold Person (on the creation menu since the repeat-save slice; the pregen's own
+  loadout is unchanged), Spirit Guardians and, since #119, Revivify — "a creature that has died within the
   last minute returns to life with 1 Hit Point", the minute being ten rounds on the
   same clock conditions ride, the death round stamped by the encounter, and a death
   the fight never saw reading as too long ago because refusing a legal revival is

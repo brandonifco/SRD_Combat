@@ -144,7 +144,7 @@ public class CharacterCreationTests
     {
         var cleric = Content.ClassesById["class.cleric"];
 
-        Assert.Equal(7, CharacterCreation.SpellOptions(Content, cleric).Count);
+        Assert.Equal(8, CharacterCreation.SpellOptions(Content, cleric).Count);
 
         var (cantrips, prepared) = CharacterCreation.SpellAllowances(cleric, level: 1);
         Assert.Equal(3, cantrips);

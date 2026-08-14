@@ -321,6 +321,8 @@ public static partial class SpellParser
                 SourcePage = page,
             };
 
+            spell = SpellEffectParser.StructureHeldConditions(spell);
+
             spell = spell with
             {
                 UpcastDicePerSlotLevel = ParseSlotScaling(spell),

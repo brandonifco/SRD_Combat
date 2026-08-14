@@ -4253,13 +4253,16 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
-            "condition": "Unconscious"
+            "condition": "Unconscious",
+            "unmodelledRequirement": "one of several effects of the caster's choice"
           },
           {
-            "condition": "Frightened"
+            "condition": "Frightened",
+            "unmodelledRequirement": "one of several effects of the caster's choice"
           },
           {
-            "condition": "Poisoned"
+            "condition": "Poisoned",
+            "unmodelledRequirement": "one of several effects of the caster's choice"
           }
         ],
         "coverIgnored": false,
@@ -6469,7 +6472,15 @@
         "appliedConditions": [
           {
             "condition": "Paralyzed",
-            "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration"
+            "duration": {
+              "clock": "EndOfTurn",
+              "owner": "Bearer",
+              "turnsAhead": 10,
+              "outlastsFight": false,
+              "whileGrappleHolds": false,
+              "whileConcentrating": true,
+              "repeatSaveAtTurnEnd": true
+            }
           }
         ],
         "coverIgnored": false,
@@ -6505,6 +6516,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetCreatureType": "Humanoid",
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a straight piece of iron",
       "durationText": "Concentration, up to 1 minute",
@@ -6518,7 +6530,15 @@
         "appliedConditions": [
           {
             "condition": "Paralyzed",
-            "unmodelledRequirement": "The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration"
+            "duration": {
+              "clock": "EndOfTurn",
+              "owner": "Bearer",
+              "turnsAhead": 10,
+              "outlastsFight": false,
+              "whileGrappleHolds": false,
+              "whileConcentrating": true,
+              "repeatSaveAtTurnEnd": true
+            }
           }
         ],
         "coverIgnored": false,
@@ -9876,7 +9896,9 @@
             "owner": "Source",
             "turnsAhead": 1,
             "outlastsFight": false,
-            "whileGrappleHolds": false
+            "whileGrappleHolds": false,
+            "whileConcentrating": false,
+            "repeatSaveAtTurnEnd": false
           }
         }
       ],

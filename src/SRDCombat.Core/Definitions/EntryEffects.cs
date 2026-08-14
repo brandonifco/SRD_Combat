@@ -209,11 +209,14 @@ public enum ConditionDurationOwner
 /// printed duration is still recorded rather than rounded to a number no fight reaches.
 /// </para>
 /// <para>
-/// Still unmodelled and staying in <see cref="AppliedCondition.UnmodelledRequirement"/>:
-/// "until the grapple ends" (which needs the grapple), "until the web is destroyed"
-/// (which needs an object with hit points), and any duration printed with an early out —
-/// "until it takes damage", a repeated save — because imposing the timer without the way
-/// out would hold the condition longer than the book says.
+/// The repeated save became a modelled way out with Hold Person:
+/// <see cref="RepeatSaveAtTurnEnd"/> rolls the same save at the end of each of the
+/// bearer's turns, and <see cref="WhileConcentrating"/> ties the condition's life to
+/// its caster's Concentration. Still unmodelled and staying in
+/// <see cref="AppliedCondition.UnmodelledRequirement"/>: "until the grapple ends"
+/// outside its sibling grapple, "until the web is destroyed" (which needs an object
+/// with hit points), and "until it takes damage" — an early out with no die to roll,
+/// which the model still has no hook for.
 /// </para>
 /// </remarks>
 /// <param name="Clock">Which boundary of the owner's turn it ends on.</param>
@@ -237,11 +240,28 @@ public sealed record ConditionDuration(
     ConditionDurationOwner Owner,
     int TurnsAhead = 1,
     bool OutlastsFight = false,
-    bool WhileGrappleHolds = false)
+    bool WhileGrappleHolds = false,
+    bool WhileConcentrating = false,
+    bool RepeatSaveAtTurnEnd = false)
 {
     /// <summary>"for N minutes": ten of the bearer's turns per minute, ending at the end of a turn.</summary>
     public static ConditionDuration ForMinutes(int minutes) =>
         new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, minutes * 10);
+
+    /// <summary>
+    /// Hold Person's whole printed clock: "for the duration" on a Concentration spell
+    /// capped at 1 minute, with "the target repeats the save at the end of each of its
+    /// turns, ending the spell on itself on a success". Three ways out, whichever
+    /// comes first — the caster's Concentration breaks, the bearer's save succeeds,
+    /// or the bearer's tenth turn ends.
+    /// </summary>
+    public static ConditionDuration ConcentrationUpToOneMinuteWithRepeatSave { get; } =
+        new(
+            ConditionClock.EndOfTurn,
+            ConditionDurationOwner.Bearer,
+            TurnsAhead: 10,
+            WhileConcentrating: true,
+            RepeatSaveAtTurnEnd: true);
 
     /// <summary>"for 1 hour" and longer: printed time no fight reaches.</summary>
     public static ConditionDuration BeyondTheFight { get; } =

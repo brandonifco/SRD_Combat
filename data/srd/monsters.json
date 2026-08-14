@@ -992,7 +992,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -2296,7 +2298,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -2462,7 +2466,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 0,
                   "outlastsFight": false,
-                  "whileGrappleHolds": true
+                  "whileGrappleHolds": true,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -2481,7 +2487,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": false,
-                "whileGrappleHolds": true
+                "whileGrappleHolds": true,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -4508,7 +4516,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -6016,7 +6026,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -6031,7 +6043,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -6296,7 +6310,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -6311,7 +6327,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -7828,7 +7846,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -7843,7 +7863,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -7992,7 +8014,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -9113,7 +9137,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -9147,7 +9173,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 0,
                   "outlastsFight": false,
-                  "whileGrappleHolds": true
+                  "whileGrappleHolds": true,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -9166,7 +9194,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": false,
-                "whileGrappleHolds": true
+                "whileGrappleHolds": true,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -10563,7 +10593,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -10582,7 +10614,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -11705,7 +11739,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -13041,7 +13077,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -13056,7 +13094,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -13295,7 +13335,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -13310,7 +13352,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -13646,7 +13690,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -13665,7 +13711,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -17065,7 +17113,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -17080,7 +17130,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -17843,7 +17895,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -17858,7 +17912,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -18041,7 +18097,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -20669,7 +20727,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -21455,7 +21515,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 0,
                   "outlastsFight": false,
-                  "whileGrappleHolds": true
+                  "whileGrappleHolds": true,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -21474,7 +21536,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": false,
-                "whileGrappleHolds": true
+                "whileGrappleHolds": true,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -21846,7 +21910,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -21865,7 +21931,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -22601,7 +22669,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -23057,7 +23127,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -23072,7 +23144,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -23270,7 +23344,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -23285,7 +23361,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -24331,7 +24409,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -24528,7 +24608,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -24543,7 +24625,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -25010,7 +25094,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -25025,7 +25111,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -25171,7 +25259,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -25186,7 +25276,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -25313,7 +25405,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -25332,7 +25426,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -26085,7 +26181,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 0,
                   "outlastsFight": true,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               },
               {
@@ -26104,7 +26202,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": true,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             },
             {
@@ -26238,7 +26338,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": false,
-                "whileGrappleHolds": true
+                "whileGrappleHolds": true,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -26424,7 +26526,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -27474,7 +27578,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": false,
-                "whileGrappleHolds": true
+                "whileGrappleHolds": true,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -28260,7 +28366,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 0,
                   "outlastsFight": false,
-                  "whileGrappleHolds": true
+                  "whileGrappleHolds": true,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -28279,7 +28387,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 0,
                 "outlastsFight": false,
-                "whileGrappleHolds": true
+                "whileGrappleHolds": true,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -28630,7 +28740,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -28645,7 +28757,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -30595,7 +30709,9 @@
                   "owner": "Bearer",
                   "turnsAhead": 10,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -30610,7 +30726,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 10,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -31056,7 +31174,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -31075,7 +31195,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -31590,7 +31712,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -34441,7 +34565,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -34460,7 +34586,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -37304,7 +37432,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -40505,7 +40635,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -42714,7 +42846,9 @@
                 "owner": "Bearer",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -43764,7 +43898,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -43779,7 +43915,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],
@@ -46338,7 +46476,9 @@
                   "owner": "Source",
                   "turnsAhead": 1,
                   "outlastsFight": false,
-                  "whileGrappleHolds": false
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false
                 }
               }
             ],
@@ -46357,7 +46497,9 @@
                 "owner": "Source",
                 "turnsAhead": 1,
                 "outlastsFight": false,
-                "whileGrappleHolds": false
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false
               }
             }
           ],

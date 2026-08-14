@@ -96,6 +96,18 @@ public sealed partial class Encounter
                 $"That square is beyond {spell.Name}'s {pointRange} ft. range.");
         }
 
+        // "Choose a Humanoid that you can see within range": the printed target-type
+        // gate, refused before anything is spent. A point-aimed cast has no creature
+        // to check; the spells that print the gate all name a single target.
+        if (spell.TargetCreatureType is { } requiredType
+            && target is not null
+            && target.Stats.Type != requiredType)
+        {
+            return new ActionRefusal(
+                "spell.wrong_target_type",
+                $"{spell.Name} targets a {requiredType}; {target.Name} is not one.");
+        }
+
         var resolution = ResolveSpellShape(spell, target);
 
         if (resolution is not null)
@@ -531,6 +543,7 @@ public sealed partial class Encounter
                 CombatStepKind.Spell,
                 $"{caster.Name}'s Concentration on {existing} ends.",
                 caster);
+            SweepConcentrationConditions(caster);
         }
 
         caster.Features.ConcentratingOn = spell.Name;
@@ -570,10 +583,20 @@ public sealed partial class Encounter
     {
         var difficultyClass = save.DifficultyClass ?? character.SpellSaveDifficultyClass;
 
-        // Spells pass no riders yet: executing the conditions a spell's save imposes is
-        // its own piece of work, and landing it as a side effect of sharing this loop
-        // would be a rules change nothing decided.
-        ResolveSaveEffect(caster, spell.Name, save, difficultyClass, point, target, CombatStepKind.Spell, []);
+        // A spell's save imposes every rider the engine can execute, the same filter
+        // an attack's riders pass — the "own piece of work" the earlier version of
+        // this comment deferred. Hold Person's Paralyzed is the first customer: its
+        // duration carries the Concentration tie and the repeated save, and the loop
+        // below records both on the imposed condition.
+        ResolveSaveEffect(
+            caster,
+            spell.Name,
+            save,
+            difficultyClass,
+            point,
+            target,
+            CombatStepKind.Spell,
+            save.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray());
     }
 
     private IReadOnlyList<Combatant> CreaturesIn(IReadOnlyList<GridPosition> squares)
@@ -598,6 +621,7 @@ public sealed partial class Encounter
         {
             combatant.Features.ConcentratingOn = null;
             Add(CombatStepKind.Spell, $"{combatant.Name} loses Concentration on {spellName}.", combatant);
+            SweepConcentrationConditions(combatant);
             return;
         }
 
@@ -619,5 +643,6 @@ public sealed partial class Encounter
             CombatStepKind.Spell,
             $"{combatant.Name} loses Concentration on {spellName}: {roll} vs DC {difficultyClass}.",
             combatant);
+        SweepConcentrationConditions(combatant);
     }
 }

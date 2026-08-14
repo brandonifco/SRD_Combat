@@ -13,12 +13,13 @@ public class SpellPreparationTests
     private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
 
     [Fact]
-    public void TheClericsMenuIsTheVerifiedSeven()
+    public void TheClericsMenuIsTheVerifiedEight()
     {
         // The honest menu character creation can offer a Cleric, pinned by name so a
         // change to what is verified is a visible test change rather than a silently
-        // different menu. Revivify joined with #119. CLAUDE.md carries this list in
-        // prose; this is the assertion behind it.
+        // different menu. Revivify joined with #119; Hold Person when repeat saves and
+        // Concentration-tied conditions landed. CLAUDE.md carries this list in prose;
+        // this is the assertion behind it.
         var menu = PreparableSpells.For(Content, "class.cleric")
             .Select(spell => spell.Name)
             .OrderBy(name => name, StringComparer.Ordinal)
@@ -26,8 +27,8 @@ public class SpellPreparationTests
 
         Assert.Equal(
             [
-                "Cure Wounds", "Guiding Bolt", "Healing Word", "Inflict Wounds", "Revivify",
-                "Sacred Flame", "Spirit Guardians",
+                "Cure Wounds", "Guiding Bolt", "Healing Word", "Hold Person", "Inflict Wounds",
+                "Revivify", "Sacred Flame", "Spirit Guardians",
             ],
             menu);
     }
@@ -74,12 +75,14 @@ public class SpellPreparationTests
         Assert.Empty(PreparableSpells.For(Content, "class.fighter"));
 
     [Fact]
-    public void TheWizardsMenuIsTheVerifiedNine()
+    public void TheWizardsMenuIsTheVerifiedTen()
     {
         // Pinned by name like the Cleric's: Ray of Sickness and Shatter joined when
-        // their one blocking clause each got a printed-sentence wire (the attack rider,
-        // the Construct disadvantage), and a silently different menu should be a test
-        // change, not a surprise.
+        // their one blocking clause each got a printed-sentence wire, Hold Person with
+        // repeat saves, and a silently different menu should be a test change, not a
+        // surprise. Hold Monster stays off deliberately: it is a level 5 spell, and a
+        // level 5 Wizard's slots stop at level 3 — beyond this game's tier, the same
+        // line the loot table draws at Very Rare.
         var menu = PreparableSpells.For(Content, "class.wizard")
             .Select(spell => spell.Name)
             .OrderBy(name => name, StringComparer.Ordinal)
@@ -87,8 +90,8 @@ public class SpellPreparationTests
 
         Assert.Equal(
             [
-                "Acid Splash", "Burning Hands", "Fire Bolt", "Fireball", "Lightning Bolt",
-                "Mind Spike", "Poison Spray", "Ray of Sickness", "Shatter",
+                "Acid Splash", "Burning Hands", "Fire Bolt", "Fireball", "Hold Person",
+                "Lightning Bolt", "Mind Spike", "Poison Spray", "Ray of Sickness", "Shatter",
             ],
             menu);
     }
