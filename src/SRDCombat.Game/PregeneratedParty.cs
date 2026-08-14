@@ -207,6 +207,11 @@ public static class PregeneratedParty
             // used to be permanent until the next Long Rest; now the ten-round window
             // is a fight the party can win.
             "spell.revivify",
+
+            // Hold Person (#145): the first control spell the policy knows how to
+            // price — a held Humanoid's whole action economy, against the swing the
+            // slot replaces.
+            "spell.hold-person",
         ],
         _ => [],
     };

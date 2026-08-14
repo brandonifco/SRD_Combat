@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **806 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 7 of 30, best 30, 9 of 120 runs clearing everything, 25 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC; level-4 runs 3 → 25), and the median crept 6 → 7 on cleaner purchases. The step before: #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Pacing | **Median 7 of 30, best 30, 12 of 120 runs clearing everything, 24 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC; level-4 runs 3 → 25), and the median crept 6 → 7 on cleaner purchases. The step before: #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The squad-AI series (#122–#127) is complete.** Its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work); and #127 spent 2 median on purpose making monsters faithful. The next work is a phase: party-side power (#83's direction — the only lever that has ever raised pacing), Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -604,10 +604,17 @@ the wrapped-spell-line lesson applied to riders, which is how the Quasit's Scare
 this rule's own original example — finally rides. The join is anchored to the exact
 sentences, and the duration lands only alongside the printed cap ("After 1 minute, it
 succeeds automatically."); a repeat with no clock is still refused. And in an *attack*
-entry a "Failure:" sentence belongs to an embedded saving throw — the Ghast's Claw rolls
-a DC 10 Constitution save gated on "non-Undead creature", both printed in sentences of
-their own — so riding the attack with it would paralyze on every hit with no save
-rolled. A third rule joined with #22: **a rider behind a deeper failure tier — "Second
+entry a "Failure:" sentence belongs to an embedded saving throw — riding the attack
+with it directly would paralyze on every hit with no save rolled. That rule has its
+structured exception too, closed with #146: the Ghast's Claw carries
+`EmbeddedAttackSave` whole — the "non-Undead creature" gate (a creature type the stats
+can test), the printed DC 10, and the Failure rider — rolled by `ResolveAttack` after
+the damage, its span lifted from the rider pass so the sentences are structured once,
+and it made the Ghast the pool's first `Complete` embedded-save creature (canonical
+measurement unmoved, 7/30/9/25). The Ghoul's Claw is one word beyond the bar —
+"isn't an Undead **or elf**" names a species no combatant carries — and stays refused
+with its sentences counted, as do the Cockatrice's tiers, the Death Dog's rest-denying
+poison, the Bearded Devil's wound and the lycanthropes' curses. A third rule joined with #22: **a rider behind a deeper failure tier — "Second
 Failure: The target has the Unconscious condition for 1 minute" — is refused whatever
 its duration**, because the save model rolls one failure and the rider would land a
 whole tier early: a wyrmling's breath putting targets to sleep on the first failed save.
@@ -857,14 +864,20 @@ so *it* can tell what is left; they do not belong in a status report.
   worked: a side of held creatures used to read as defeated (`IsActive`), which made
   Hold Person an instant-victory button; standing now means alive and above 0 hit
   points, and what ends the fight for a held creature is the enemy walking over and
-  finishing it, which the stuck-turn rule already does. The policy never casts it —
-  no damage, no value it can price — so canonical pacing is unmoved (7/30/9/25) and
-  the spell's customers are humans and the policy's future CC valuation.
+  finishing it, which the stuck-turn rule already does. The policy prices it now
+  (#145): a hold is worth the target's `ThreatPerRound` for two held rounds — a
+  stated crude constant, since the repeat save gives the victim a fresh roll every
+  turn — discounted by the save chance and competing against the swing under the
+  same 1.5× slot margin, with the printed target-type gate filtered before the
+  engine is asked and the cautious healer's reserve still outranking every hold.
+  Measured: median 7 held, **full clears 9 → 12** — the slot pays where the economy
+  paid, in runs deep enough to afford it.
 - **The pregen Cleric prepares seven of its printed nine, and the shortfall is not a
   choice.** Of the 109 spells on the Cleric list, eight have an effect the engine
   executes: Sacred Flame, Guiding Bolt, Cure Wounds, Healing Word, Inflict Wounds,
-  Hold Person (on the creation menu since the repeat-save slice; the pregen's own
-  loadout is unchanged), Spirit Guardians and, since #119, Revivify — "a creature that has died within the
+  Hold Person (on the creation menu since the repeat-save slice, and in the pregen's
+  own loadout since #145 taught the policy to price it), Spirit Guardians and, since
+  #119, Revivify — "a creature that has died within the
   last minute returns to life with 1 Hit Point", the minute being ten rounds on the
   same clock conditions ride, the death round stamped by the encounter, and a death
   the fight never saw reading as too long ago because refusing a legal revival is
