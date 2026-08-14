@@ -50,6 +50,12 @@ public sealed record SavedRun
 
     /// <summary>Everyone who has ever fallen, in order — the history, not the state.</summary>
     public IReadOnlyList<string> Casualties { get; init; } = [];
+
+    /// <summary>
+    /// The party's purse in copper. Defaults to empty, so a save written before gold
+    /// existed loads as a party that has not been paid yet rather than being refused.
+    /// </summary>
+    public int GoldCopper { get; init; }
 }
 
 /// <summary>
