@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **The squad-AI series, #125–#127** — engagement phases, composition-aware doctrine, the Phase 6 split. #122–#124 are done; #123 (focus fire) **doubled the median, 4 → 8**, and #124's screening *behavior* was measured, found to cost pacing at every strength, and shipped as infrastructure only — the ladder below is required reading before #125. |
+| Work remaining | **The squad-AI series, #126–#127** — composition-aware doctrine and the Phase 6 split. #122–#125 are done; #123 (focus fire) **doubled the median, 4 → 8**, and both positional slices measured themselves out of the build: #124's screening cost pacing at every strength, and #125's engagement phases found that even a *paying trigger* cannot rescue holding at this game's engagement distances — the two ladders below are required reading before any further positional work. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -132,6 +132,25 @@ shipped as infrastructure only: `PartyRole` (from the kit, healing outranking al
 `EnemyLanes` (each enemy's cheapest path to the back rank, the asker lifted from the
 board so its own body does not divert the lane it wants to stand in), and
 `ScreenDistanceFeet`, all tested, none yet consulted by movement.
+
+**#125 then built the trigger and measured it out too, which settles the question #124
+left open.** A HOLD/COMMIT phase with a paying entry condition — the party's expected
+ranged damage per round against the enemies', per the base-of-fire doctrine — was wired
+into movement six ways on the same seeds, against main's 8: hold on any positive ranged
+margin with front liners standing the lane, **4**; requiring the enemy to have no
+ranged answer at all, **6** (an enemy with one bow otherwise duels from spawn while the
+party's melee idles indefinitely); the screen placed forward as an interceptor, **3**;
+the ranged-members-hold half alone, **8** — because a bow always reaches from spawn,
+that half is a no-op, meaning *every* cost was the front line idling. The shipped form
+prices holding honestly — the ranged margin must exceed the front-line output holding
+idles, and contact must not be one enemy move away — and it never fires for the
+pregenerated party (median exactly 8, policy byte-identical), while a ranged-heavy
+created party it does fire for measured 3 against its own baseline 3. **The structural
+finding: the sides start one move apart, so there are no standoff rounds for a phase to
+spend, and holding is always a donation of melee output.** `EngagementPhase`,
+`PartyDoctrine.Phase` and `RangedThreatPerRound` ship tested and unconsulted; a longer
+battlefield or a monster doctrine that itself holds (#127) is what would give them a
+theatre.
 
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: characters converge on `PartyDoctrine`'s shared kill — most threat per hit
