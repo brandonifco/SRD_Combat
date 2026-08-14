@@ -16,10 +16,10 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at the economy's first slice (gold, the Long Rest merchant, and 14 full clears) |
-| Tests | **804 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **806 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 6 of 30, best 30, 14 of 120 runs clearing everything, 25 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The median holds at 6 (the level-1 wall kills before the first shop opens) while the economy transformed the tail: full clears went 2 → 14 and level-4 runs 3 → 25 when the party started buying gear. The step before that: #127 spent 2 median deliberately teaching monsters their stat blocks (pack flank 0, tactical convergence −2). |
+| Pacing | **Median 7 of 30, best 30, 9 of 120 runs clearing everything, 25 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, seeds 1–120. The economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC; level-4 runs 3 → 25), and the median crept 6 → 7 on cleaner purchases. The step before: #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The squad-AI series (#122–#127) is complete.** Its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work); and #127 spent 2 median on purpose making monsters faithful. The next work is a phase: party-side power (#83's direction — the only lever that has ever raised pacing), Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -224,7 +224,11 @@ Healing at their exact printed prices** (`Shop`, in `Game`). An offer must impro
 buyer with the resolver as judge: a purchase is a draft change re-resolved (the loot
 pattern), gear outside the class's printed proficiency lines is never offered, and the
 resolved sheet must come out strictly better — AC or same-kind damage up, neither the
-other nor Speed down. The Speed clause and the Barbarian are the gate's own lesson:
+other nor Speed down. The resolver also refuses a draft pairing a shield with a
+Two-Handed weapon — "requires two hands when you attack with it", and a donned shield
+is strapped to one — a gap that held silently until the shop sold Brenna a Maul to
+carry beside her shield, because nothing before the merchant ever handed a
+shield-bearer a two-hander. The Speed clause and the Barbarian are the gate's own lesson:
 Chain Mail *is* a legitimate offer for an unarmored 14, and Heavy armor's Fast
 Movement cost is what the AC number cannot see. The auto-buyer (`Shop.AutoBuy`, biggest
 improvement first, then potions to a cap of 2 per member) runs in the canonical
@@ -269,7 +273,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 804 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 806 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 

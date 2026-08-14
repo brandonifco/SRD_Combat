@@ -136,6 +136,26 @@ public class ShopTests
         Assert.Equal("0 CP", Shop.Price(0));
     }
 
+    [Fact]
+    public void TheShopNeverSellsAHandThePartyDoesNotHave()
+    {
+        // Brenna carries a shield, Korrin a Greataxe: no two-hander is offered to
+        // her, and no shield to him — the resolver's hands rule, seen through the
+        // stall. The gap this pins: the shop once sold both.
+        var run = GauntletRun.Start(Content, GauntletLadder.Default());
+        var offers = Shop.Offers(Content, run.Party, run.States);
+        var brenna = run.Party.ToList().FindIndex(member => member.Draft.Name == "Brenna");
+        var korrin = run.Party.ToList().FindIndex(member => member.Draft.Name == "Korrin");
+
+        Assert.DoesNotContain(offers, offer => offer.MemberIndex == brenna
+            && offer.NewDraft is { } draft
+            && draft.WeaponIds.Any(id =>
+                Content.WeaponsById[id].Properties.HasFlag(Core.Definitions.WeaponProperty.TwoHanded)));
+
+        Assert.DoesNotContain(offers, offer => offer.MemberIndex == korrin
+            && offer.NewDraft is { HasShield: true });
+    }
+
     /// <summary>
     /// A fresh run holding this much copper, funded through the save round trip — the
     /// one honest door into the purse, since the run itself only earns by winning.
