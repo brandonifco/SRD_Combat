@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **Phase 5's charter is met in both clients** — `--create` builds a party in the console and under the mouse, every option with its printed text, browsing ≠ committing. **#116** (class feature prose carries leaked table fragments, visible now that creation ships prose verbatim) is the open work. |
+| Work remaining | **No open GitHub issues.** Every phase has met its printed end state; the standing direction is party-side depth — widening the verified spellbook (`PreparableSpells`) is where the pacing evidence points. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -786,6 +786,20 @@ output against the book, never by the parser complaining.
   adjacency check and gobbled body prose into ten other classes' rows. The validator
   that should have existed all along is `class.feature.no_heading`: every level-table
   name must match a feature heading in the class's own prose.
+- **The two-column pass slices the full-width table into itself, and the leak wore
+  prose's clothes for the chapter's whole life (#116).** Once a feature heading opened,
+  every later column line was appended to its prose — including the sliced fragments of
+  the class's advancement table, so ten features across nine classes ended in runs of
+  bare per-level numbers, and the Wizard's Signature Spells carried six kilobytes of
+  spell-list table. Invisible until Phase 5 put feature text verbatim on a creation
+  screen; caught by the Godot probe's own capture. The fix is a font test, per this
+  file's oldest lesson: prose in the player-facing chapters is the **Cambria** family
+  and every table is **GillSans**, so a feature appends only Cambria lines — which also
+  drops the mis-glued sidebars ("Breaking Your Oath" had been scrambled into Channel
+  Divinity) and in-feature sub-tables like Font of Magic's costs, absent and honest
+  where appended they were garbled digits. The validator is `class.feature.table_noise`:
+  five consecutive bare numbers occur in no legitimate feature prose, because print
+  punctuates its lists.
 
 **The general lesson: write the validator that asserts the shape of what should have
 been found.** Every one of these was caught that way — "every species has at least one
@@ -1086,11 +1100,13 @@ dotnet run --project tools/SrdExtract -- --out data/srd
 
 It refuses to write when validation reports errors (`--force` overrides). A clean run
 reports 330 monsters, 339 spells, 38 weapons, 13 armor, **258 magic items**, 0 errors,
-and **12 warnings, all expected**:
-the Archmage's XP, which is a real SRD inconsistency, nine spells whose component
+and **15 warnings, all expected**:
+the Archmage's XP, which is a real SRD inconsistency, twelve spells whose component
 line is truncated at a column break in the source, and two magic items (Figurine of
 Wondrous Power, Ioun Stone) whose "Rarity Varies" tiers live in a table in the body
-rather than on the type line.
+rather than on the type line. (This paragraph said "12 warnings, nine spells" for some
+time while the machine said 15 — checked when #116's fix was suspected of adding three
+and turned out to have added none. Trust the run over this prose.)
 
 **Why fonts matter more than text here.** The SRD's typography is a reliable parsing
 signal, and the parser is built on it (`StatBlockFonts`): `GillSans-SemiBold` at ~10.2pt
