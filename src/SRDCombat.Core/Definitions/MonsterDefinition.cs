@@ -112,7 +112,34 @@ public sealed record MonsterAttack(
     int? ReachFeet,
     int? NormalRangeFeet,
     int? LongRangeFeet,
-    IReadOnlyList<AttackDamage> Damage);
+    IReadOnlyList<AttackDamage> Damage)
+{
+    /// <summary>
+    /// The saving throw a hit forces — the Ghast's Claw: "If the target is a
+    /// non-Undead creature, it is subjected to the following effect. Constitution
+    /// Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the
+    /// end of its next turn." Null for the overwhelming majority of attacks, which
+    /// print no embedded save.
+    /// </summary>
+    public EmbeddedAttackSave? EmbeddedSave { get; init; }
+}
+
+/// <summary>
+/// A saving throw rolled when an attack hits, with the printed gate on who rolls it.
+/// </summary>
+/// <remarks>
+/// Structured only when every part is expressible: the gate must be a creature-type
+/// exclusion the stats carry ("non-Undead creature"), and the failure a rider the
+/// model imposes to the letter. The Ghoul's Claw is one word beyond that bar — "isn't
+/// an Undead or elf" names a species, which no combatant carries — and stays refused
+/// with its sentence counted, exactly as it was before the Ghast's could ride.
+/// </remarks>
+/// <param name="Save">The save, with its printed DC and the failure's riders.</param>
+/// <param name="ExcludedTargetType">
+/// The creature type the printed gate exempts — Undead for the Ghast. Null when
+/// everyone rolls.
+/// </param>
+public sealed record EmbeddedAttackSave(SaveEffect Save, CreatureType? ExcludedTargetType);
 
 /// <summary>
 /// A condition that must hold for a damage component to apply at all.

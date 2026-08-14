@@ -13168,20 +13168,36 @@
                 "type": "Slashing",
                 "printedAverage": 10
               }
-            ]
+            ],
+            "embeddedSave": {
+              "save": {
+                "ability": "Constitution",
+                "difficultyClass": 10,
+                "failureDamage": [],
+                "successOutcome": "NoEffect",
+                "appliedConditions": [
+                  {
+                    "condition": "Paralyzed",
+                    "duration": {
+                      "clock": "EndOfTurn",
+                      "owner": "Bearer",
+                      "turnsAhead": 1,
+                      "outlastsFight": false,
+                      "whileGrappleHolds": false,
+                      "whileConcentrating": false,
+                      "repeatSaveAtTurnEnd": false
+                    }
+                  }
+                ],
+                "coverIgnored": false,
+                "constructsSaveAtDisadvantage": false
+              },
+              "excludedTargetType": "Undead"
+            }
           },
           "mechanics": "Attack",
-          "appliedConditions": [
-            {
-              "condition": "Paralyzed",
-              "unmodelledRequirement": "Failure: The target has the Paralyzed condition until the end of its next turn."
-            }
-          ],
-          "unmodelledClauses": [
-            "If the target is a non-Undead creature, it is subjected to the following effect",
-            "Constitution Saving Throw: DC 10",
-            "Failure: The target has the Paralyzed condition until the end of its next turn."
-          ]
+          "appliedConditions": [],
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 287

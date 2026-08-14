@@ -84,11 +84,26 @@ internal static partial class EntryMechanicsParser
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
         var attack = StatBlockLineGrammar.ParseAttack(text);
-        var conditions = ParseAppliedConditions(text, attackEntry: attack is not null);
+
+        // The embedded saving throw — the Ghast's Claw — is structured before the
+        // rider pass, and its span is lifted out of the text the riders and the
+        // unmodelled-clause scan see: its three sentences are the save's now, and the
+        // rider inside them must not also be parsed (and refused) as the attack's own.
+        var riderText = text;
+
+        if (attack is not null && ParseEmbeddedSave(text) is { } embedded)
+        {
+            attack = attack with { EmbeddedSave = embedded.Save };
+            riderText = text.Replace(embedded.MatchedSpan, string.Empty, StringComparison.Ordinal);
+        }
+
+        var conditions = ParseAppliedConditions(riderText, attackEntry: attack is not null);
 
         if (attack is not null)
         {
-            return Build(bareName, section, text, EntryMechanics.Attack, usage, conditions, attack: attack);
+            return Build(bareName, section, riderText, EntryMechanics.Attack, usage, conditions, attack: attack)
+                with
+                { Text = text };
         }
 
         if (ParseReaction(text) is { } reaction)
@@ -834,6 +849,53 @@ internal static partial class EntryMechanicsParser
     // "DC 12.", and decimal-free numbers are safe, but "ft." is everywhere.
     [GeneratedRegex(@"(?<!\bft)(?<!\bMr)(?<!\bDr)\.\s+(?=[A-Z0-9])")]
     private static partial Regex SentenceBoundary();
+
+    /// <summary>
+    /// Reads the Ghast Claw's whole embedded-save package, or nothing: the printed
+    /// creature-type gate, the save line with its DC, and a Failure rider the model
+    /// imposes to the letter. Anything less than the whole — the Ghoul's "or elf",
+    /// the Cockatrice's failure tiers, a lycanthrope's curse — matches nothing and
+    /// stays refused with its sentences counted.
+    /// </summary>
+    private static (EmbeddedAttackSave Save, string MatchedSpan)? ParseEmbeddedSave(string text)
+    {
+        var match = EmbeddedSavePattern().Match(text);
+
+        if (!match.Success
+            || !Enum.TryParse<Ability>(match.Groups["ability"].Value, ignoreCase: true, out var ability)
+            || !Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: true, out var condition)
+            || !Enum.TryParse<CreatureType>(match.Groups["exempt"].Value, ignoreCase: true, out var exempt))
+        {
+            return null;
+        }
+
+        var rider = new AppliedCondition(
+            condition,
+            Duration: new ConditionDuration(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer));
+
+        if (!ConditionRules.CanBeImposed(rider))
+        {
+            return null;
+        }
+
+        var save = new SaveEffect(
+            ability,
+            int.Parse(match.Groups["dc"].Value, CultureInfo.InvariantCulture),
+            Area: null,
+            FailureDamage: [],
+            SuccessOutcome: SaveSuccessOutcome.NoEffect,
+            AppliedConditions: [rider]);
+
+        return (new EmbeddedAttackSave(save, exempt), match.Value);
+    }
+
+    // The Ghast's Claw, whole: gate, save line and Failure rider, at the end of the
+    // entry. "non-Undead" is the one gate shape whose exemption the stats can test.
+    [GeneratedRegex(
+        @"If the target is a non-(?<exempt>[A-Z][a-z]+) creature, it is subjected to the following effect\. " +
+        @"(?<ability>[A-Z][a-z]+) Saving Throw: DC (?<dc>\d+)\. " +
+        @"Failure: The target has the (?<condition>[A-Z][a-z]+) condition until the end of its next turn\.$")]
+    private static partial Regex EmbeddedSavePattern();
 
     /// <summary>
     /// The printed cap on a repeated save, exactly as the stat blocks phrase it. Its
