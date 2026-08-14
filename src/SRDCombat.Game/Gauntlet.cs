@@ -224,6 +224,7 @@ public sealed class GauntletRun
         var run = new GauntletRun(content, saved.Ladder, party, [.. saved.Members.Select(member => member.State)])
         {
             Cleared = saved.Cleared,
+            GoldCopper = saved.GoldCopper,
         };
 
         run._casualties.AddRange(saved.Casualties);
@@ -244,6 +245,7 @@ public sealed class GauntletRun
         Cleared = Cleared,
         Members = [.. Party.Zip(_states, (member, state) => new SavedMember(member.Draft, state))],
         Casualties = [.. _casualties],
+        GoldCopper = GoldCopper,
     };
 
     /// <summary>The rungs, in order.</summary>
@@ -257,6 +259,13 @@ public sealed class GauntletRun
 
     /// <summary>How many rungs have been cleared.</summary>
     public int Cleared { get; private set; }
+
+    /// <summary>
+    /// The party's shared purse, in copper so every printed price is exact. Gold is a
+    /// party resource rather than a per-member one because its only use is the Long
+    /// Rest shop, and the shop equips whoever the purchase improves.
+    /// </summary>
+    public int GoldCopper { get; private set; }
 
     /// <summary>How the run ended, or that it has not.</summary>
     public RunOutcome Outcome { get; private set; } = RunOutcome.InProgress;
@@ -385,6 +394,7 @@ public sealed class GauntletRun
         }
 
         AwardExperience(fight);
+        AwardGold(fight);
 
         var step = Ladder[Cleared];
         Cleared++;
@@ -477,6 +487,79 @@ public sealed class GauntletRun
 
         Party = party;
         _lootFound.Add($"{party[index].Draft.Name} finds {award.Description}");
+    }
+
+    /// <summary>
+    /// Awards the fight's winnings: one gold piece per ten points of the defeated
+    /// monsters' printed XP.
+    /// </summary>
+    /// <remarks>
+    /// A stated design rate, like the loot table's — the SRD prints monster XP and
+    /// equipment prices but no link between them ("contains treasure of the GM's
+    /// choice"). One-tenth calibrates the Equipment chapter's own price ladder to the
+    /// run: a level 1 cycle's ~1,400 XP buys a suit of Chain Mail or a couple of
+    /// potions, and Plate's 1,500 GP stays a whole run's ambition.
+    /// </remarks>
+    private void AwardGold(Fight fight) =>
+        GoldCopper += fight.Built.Monsters.Sum(monster => monster.ExperiencePoints) * 10;
+
+    /// <summary>
+    /// Buys one <see cref="ShopOffer"/>: the purse pays the printed price, and the
+    /// gear arrives as a draft change re-resolved — the loot award's own pattern —
+    /// or the potion goes into the named member's pack.
+    /// </summary>
+    /// <returns>Null on success, or the refusal — an empty purse refuses cleanly.</returns>
+    public ActionRefusal? Purchase(ShopOffer offer)
+    {
+        ArgumentNullException.ThrowIfNull(offer);
+
+        if (offer.CostCopper > GoldCopper)
+        {
+            return new ActionRefusal(
+                "shop.cannot_afford",
+                $"That costs {Shop.Price(offer.CostCopper)} and the purse holds {Shop.Price(GoldCopper)}.");
+        }
+
+        if (offer.Potion is { } potency)
+        {
+            GoldCopper -= offer.CostCopper;
+            _states[offer.MemberIndex] = _states[offer.MemberIndex].Carrying(potency);
+            _lootFound.Add(offer.Description.Replace(" — ", ", bought for "));
+            return null;
+        }
+
+        if (offer.NewDraft is not { } draft)
+        {
+            return new ActionRefusal("shop.empty_offer", "That offer carries nothing to buy.");
+        }
+
+        var party = Party.ToArray();
+        var before = party[offer.MemberIndex].Sheet.MaximumHitPoints;
+
+        party[offer.MemberIndex] = PregeneratedParty.Resolve(
+            _content,
+            draft,
+            _states[offer.MemberIndex].Level,
+            x: 0,
+            y: offer.MemberIndex);
+
+        // Bought gear can raise the hit point maximum the way found gear can; the
+        // extra arrives as extra hit points, not as healing, exactly like a level's.
+        var gained = Math.Max(0, party[offer.MemberIndex].Sheet.MaximumHitPoints - before);
+
+        if (gained > 0)
+        {
+            _states[offer.MemberIndex] = _states[offer.MemberIndex] with
+            {
+                CurrentHitPoints = _states[offer.MemberIndex].CurrentHitPoints + gained,
+            };
+        }
+
+        GoldCopper -= offer.CostCopper;
+        Party = party;
+        _lootFound.Add(offer.Description.Replace(" — ", ", bought for "));
+
+        return null;
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 
 // The pacing series' instrument, committed so the methodology is code rather than
@@ -44,7 +45,16 @@ for (var seed = firstSeed; seed <= lastSeed; seed++)
 
     while (run.Next is not null)
     {
-        run.PrepareForNext(random);
+        var rest = run.PrepareForNext(random);
+
+        // The Long Rest merchant is part of the game as played: the canonical run
+        // spends its winnings the way the auto-buyer does, so the economy's effect on
+        // pacing is measured rather than accrued and ignored.
+        if (rest == RestKind.Long)
+        {
+            Shop.AutoBuy(content, run);
+        }
+
         var fight = run.BeginNext(random);
 
         if (fight.Built.Monsters.Count == 0)
