@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **The squad-AI series, #124–#127** — roles + screening, engagement phases, composition-aware doctrine, the Phase 6 monster/party split. #122 and #123 are done, and #123 (coordinated focus fire) **doubled the measured median, 4 → 8** — the largest single jump ever recorded. |
+| Work remaining | **The squad-AI series, #125–#127** — engagement phases, composition-aware doctrine, the Phase 6 split. #122–#124 are done; #123 (focus fire) **doubled the median, 4 → 8**, and #124's screening *behavior* was measured, found to cost pacing at every strength, and shipped as infrastructure only — the ladder below is required reading before #125. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -116,6 +116,22 @@ promised: a dead enemy loses its whole action economy, so the party converging o
 most threat-per-hit-point kill beats the same attacks spread — and only the party
 consults the doctrine, so the whole gain lands on their side. The corroboration of the
 party-power thesis could not be cleaner: one targeting rule, doubled median.
+
+**And #124 measured the opposite lesson, term by term, before shipping none of it.**
+The screening behavior — front liners standing in enemy lanes, the back rank holding
+behind its screen, the Support engaging only what breaches — was built whole and then
+dismantled under measurement, every variant deterministic on the same seeds: full
+discipline **3.5** (the median halved), lane demoted to a tiebreak below closing **4**,
+the Support's engagement restriction removed **6**, the hold-behind-screen ordering
+removed **6.5**, and only with the last term — a lane *tiebreak* below Distance — gone
+did it return to **8**. Even the mildest positional preference costs pacing in fights
+this small, because the fastest way to protect a back rank at this scale is killing
+things, which focus fire already coordinates. **Holding a position needs a reason to
+hold** — a trigger, which is what engagement phases (#125) are — and #124 therefore
+shipped as infrastructure only: `PartyRole` (from the kit, healing outranking all),
+`EnemyLanes` (each enemy's cheapest path to the back rank, the asker lifted from the
+board so its own body does not divert the lane it wants to stand in), and
+`ScreenDistanceFeet`, all tested, none yet consulted by movement.
 
 **What does not exist yet.** `SimpleTacticsPolicy` is still a placeholder, but no longer a
 naive one: characters converge on `PartyDoctrine`'s shared kill — most threat per hit

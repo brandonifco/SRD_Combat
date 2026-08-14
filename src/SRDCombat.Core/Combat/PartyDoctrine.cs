@@ -3,6 +3,25 @@ using SRDCombat.Core.Rules;
 namespace SRDCombat.Core.Combat;
 
 /// <summary>
+/// What a character is for, derived from what it carries — never from its class name,
+/// so a created party with an odd composition still gets sensible doctrine.
+/// </summary>
+public enum PartyRole
+{
+    /// <summary>Melee-primary: stands where the enemy must walk.</summary>
+    FrontLine,
+
+    /// <summary>Ranged-primary: shoots from standoff.</summary>
+    Skirmisher,
+
+    /// <summary>Carries healing or revival: keeps the others alive, fights second.</summary>
+    Support,
+
+    /// <summary>Carries area damage: never ahead of the screen.</summary>
+    Artillery,
+}
+
+/// <summary>
 /// The party's shared judgement: what the squad, rather than the soldier, would decide.
 /// </summary>
 /// <remarks>
@@ -73,6 +92,127 @@ public static class PartyDoctrine
             ?? 1;
 
         return hardest * swings;
+    }
+
+    /// <summary>
+    /// The role this character's own kit assigns it, by a stated precedence: healing
+    /// outranks everything (a party's one healer is its Support whatever else it
+    /// carries), then area damage, then a ranged primary weapon, then the front line.
+    /// A monster has no role; the caller's <c>Stats.Character</c> gate keeps it from
+    /// asking.
+    /// </summary>
+    public static PartyRole RoleOf(Combatant combatant)
+    {
+        ArgumentNullException.ThrowIfNull(combatant);
+
+        if (combatant.Stats.Character is not { } character)
+        {
+            return PartyRole.FrontLine;
+        }
+
+        if (character.Spells.Any(spell => spell.Heal is not null || spell.Revival is not null))
+        {
+            return PartyRole.Support;
+        }
+
+        if (character.Spells.Any(spell => spell.Save?.Area is not null))
+        {
+            return PartyRole.Artillery;
+        }
+
+        var longestReach = combatant.Stats.Attacks
+            .Select(attack => attack.MaximumRangeFeet)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return longestReach > Battlefield.FeetPerSquare ? PartyRole.Skirmisher : PartyRole.FrontLine;
+    }
+
+    /// <summary>
+    /// The squares the enemies would walk to reach this side's back rank: each living
+    /// enemy's cheapest path to its nearest non-front-line member, unioned. A front
+    /// liner standing on one of these is a screen — and a gap between generated walls
+    /// becomes a held doorway without any code knowing what a doorway is.
+    /// </summary>
+    /// <remarks>
+    /// The paths are computed as if the asking front liner were not on the board —
+    /// otherwise its own body diverts the lane it is trying to stand in — and with the
+    /// destination member lifted too, since a path may not end on an occupied square.
+    /// An enemy's path is where it would go <em>today</em>: the lanes shift as the
+    /// fight moves, and the front liner shifts with them.
+    /// </remarks>
+    public static IReadOnlySet<GridPosition> EnemyLanes(Encounter encounter, Combatant actor)
+    {
+        ArgumentNullException.ThrowIfNull(encounter);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        var backs = encounter.Combatants
+            .Where(ally => ally.SideId == actor.SideId
+                && ally.Id != actor.Id
+                && ally.IsActive
+                && ally.Stats.Character is not null
+                && RoleOf(ally) != PartyRole.FrontLine)
+            .ToArray();
+
+        var lanes = new HashSet<GridPosition>();
+
+        if (backs.Length == 0)
+        {
+            return lanes;
+        }
+
+        foreach (var enemy in encounter.EnemiesOf(actor).Where(enemy => !enemy.IsDead))
+        {
+            var back = backs
+                .OrderBy(candidate => enemy.Position.DistanceFeetTo(candidate.Position))
+                .ThenBy(candidate => candidate.Id, StringComparer.Ordinal)
+                .First();
+
+            var path = MovementRules.FindPath(
+                encounter.Battlefield,
+                enemy,
+                back.Position,
+                budgetFeet: 1000,
+                encounter.Combatants
+                    .Where(other => other.Id != actor.Id && other.Id != back.Id)
+                    .ToArray());
+
+            foreach (var step in path?.Steps ?? [])
+            {
+                lanes.Add(step);
+            }
+        }
+
+        return lanes;
+    }
+
+    /// <summary>
+    /// The closest any living front liner on this side currently stands to an enemy —
+    /// the screen's depth. Null when the side has no front line, in which case nobody
+    /// can be behind it.
+    /// </summary>
+    public static int? ScreenDistanceFeet(Encounter encounter, Combatant actor)
+    {
+        ArgumentNullException.ThrowIfNull(encounter);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        var enemies = encounter.EnemiesOf(actor).Where(enemy => !enemy.IsDead).ToArray();
+
+        if (enemies.Length == 0)
+        {
+            return null;
+        }
+
+        var distances = encounter.Combatants
+            .Where(ally => ally.SideId == actor.SideId
+                && ally.Id != actor.Id
+                && ally.IsActive
+                && ally.Stats.Character is not null
+                && RoleOf(ally) == PartyRole.FrontLine)
+            .Select(ally => enemies.Min(enemy => ally.Position.DistanceFeetTo(enemy.Position)))
+            .ToArray();
+
+        return distances.Length > 0 ? distances.Min() : null;
     }
 
     /// <summary>
