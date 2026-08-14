@@ -68,6 +68,21 @@ public sealed partial class Encounter
                 $"{target.Name} is beyond {spell.Name}'s {range} ft. range.");
         }
 
+        // A point-aimed cast answers to the same printed range as a targeted one. This
+        // check went unwritten for as long as only the policy cast spells — it always
+        // named a creature — and a client aiming at bare ground must not slip past the
+        // rule the creature-aimed path enforces. Gated on the spell having an area:
+        // anything else aimed at a point is missing its creature, and the shape
+        // resolution's needs-target refusal is the answer that teaches that rule.
+        if (target is null && !spell.IsSelfRanged && spell.Save?.Area is not null
+            && spell.TargetRangeFeet is { } pointRange
+            && caster.Position.DistanceFeetTo(point) > pointRange)
+        {
+            return new ActionRefusal(
+                "spell.out_of_range",
+                $"That square is beyond {spell.Name}'s {pointRange} ft. range.");
+        }
+
         var resolution = ResolveSpellShape(spell, target);
 
         if (resolution is not null)

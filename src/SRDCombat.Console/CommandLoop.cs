@@ -171,12 +171,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
     {
         if (words.Length < 3)
         {
-            return new ActionRefusal("client.usage", "cast <spell name> <target letter>");
-        }
-
-        if (Find(words[^1]) is not { } target)
-        {
-            return new ActionRefusal("client.no_target", $"Nobody here is called '{words[^1]}'.");
+            return new ActionRefusal("client.usage", "cast <spell name> <target letter | x,y>");
         }
 
         var wanted = string.Join(' ', words[1..^1]);
@@ -184,9 +179,34 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         var spell = active.Stats.Character?.Spells.FirstOrDefault(candidate =>
             candidate.Name.StartsWith(wanted, StringComparison.OrdinalIgnoreCase));
 
-        return spell is null
-            ? new ActionRefusal("client.no_spell", $"{active.Name} knows no spell called '{wanted}'.")
+        if (spell is null)
+        {
+            return new ActionRefusal("client.no_spell", $"{active.Name} knows no spell called '{wanted}'.");
+        }
+
+        // An area spell may be aimed at a bare square — "cast fireball 4,2" — and the
+        // engine's point overload decides whether the spell supports it. Everything
+        // else still names a creature by its letter.
+        if (SquareArgument(words[^1]) is { } point)
+        {
+            return encounter.CastSpell(spell.Id, point);
+        }
+
+        return Find(words[^1]) is not { } target
+            ? new ActionRefusal("client.no_target", $"Nobody here is called '{words[^1]}'.")
             : encounter.CastSpell(spell.Id, target);
+    }
+
+    /// <summary>Reads "x,y" as a grid square; null when the token is not one.</summary>
+    private static GridPosition? SquareArgument(string token)
+    {
+        var parts = token.Split(',');
+
+        return parts.Length == 2
+            && int.TryParse(parts[0], out var x)
+            && int.TryParse(parts[1], out var y)
+                ? new GridPosition(x, y)
+                : null;
     }
 
     private ActionRefusal? UseEntry(Combatant active, string[] words)
@@ -272,6 +292,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         Display.Say("move <x> <y>            walk, provoking Opportunity Attacks");
         Display.Say("attack <letter> [name]  attack; defaults to the best that reaches");
         Display.Say("cast <spell> <letter>   cast a spell at someone");
+        Display.Say("cast <spell> <x,y>      aim an area spell at a bare square");
         Display.Say("use <entry> <letter>    use a stat block entry by name");
         Display.Say("dodge / dash / disengage / stand / escape");
         Display.Say("rage / reckless / secondwind / surge / aim / trip");

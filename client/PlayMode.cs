@@ -522,11 +522,19 @@ public partial class PlayMode : FightScreen
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
         {
             var aimed = TokenTarget(pixel);
+            var ground = SquareAt(pixel);
             ClearPending();
 
             if (aimed is { } target)
             {
                 Run(() => encounter.CastSpell(spell.Id, target));
+            }
+            else if (spell.Save?.Area is not null && ground is { } spot)
+            {
+                // An area spell aimed at bare ground: the engine's point overload
+                // rules on it — range, shape and who the area catches are all its
+                // answers, not this client's.
+                Run(() => encounter.CastSpell(spell.Id, spot));
             }
             else
             {
