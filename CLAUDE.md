@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **715 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Work remaining | **Phase 5 (character creation) is underway** — the draft chooses its spells and the choice-enumeration layer is in; the console `--create` flow is next. No open GitHub issues. |
+| Work remaining | **Phase 5's charter is met in the console** (`--create` builds a party, every option with its printed text, browsing ≠ committing); a Godot creation screen is the phase's remaining polish. No open GitHub issues. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
 action economy, attacks, damage, death saves and opportunity attacks. Characters resolve
@@ -1123,9 +1123,13 @@ dotnet run --project src/SRDCombat.Console
 
 `--seed 12345` replays a run exactly; `--level 1..5` starts partway up the ladder;
 `--one-fight` plays a single encounter instead of the run, with
-`--difficulty low|moderate|high`; the seed is printed at the start of every
+`--difficulty low|moderate|high`; `--create` builds your own party of four at the
+keyboard first (Phase 5) — every option shown with its printed SRD text, browsing and
+committing as separate actions per the charter, the drafts riding the ordinary save;
+the seed is printed at the start of every
 run, so *"it happened on seed 12345"* is a complete bug report. The content directory is
-found by walking up for `data/srd`, so it runs from anywhere in the repo.
+found by walking up for `data/srd`, so it runs from anywhere in the repo. Creation runs
+before the seed's dice are touched, so a created party replays exactly like a pregen one.
 
 **The run autosaves** to `srdcombat-save.json` (or `--save <path>`) after every cleared
 fight, and `--continue` resumes it. **A save is drafts plus progress, never resolved

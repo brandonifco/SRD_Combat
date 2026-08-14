@@ -1,4 +1,5 @@
 using SRDCombat.Content;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
@@ -149,7 +150,7 @@ public sealed class GauntletRun
         Party = party;
     }
 
-    /// <summary>Starts a run with a fresh party.</summary>
+    /// <summary>Starts a run with the pregenerated party.</summary>
     public static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<LadderStep>? ladder = null,
@@ -157,14 +158,45 @@ public sealed class GauntletRun
     {
         ArgumentNullException.ThrowIfNull(content);
 
+        return Start(content, PregeneratedParty.Build(content, startingLevel), ladder);
+    }
+
+    /// <summary>
+    /// Starts a run with a created party — the drafts a creation flow built. Everything
+    /// downstream is indifferent to where a draft came from: the save carries drafts
+    /// whoever wrote them, levelling re-resolves them, and defeat-means-reload needs
+    /// nothing new.
+    /// </summary>
+    public static GauntletRun Start(
+        SrdContent content,
+        IReadOnlyList<CharacterDraft> drafts,
+        IReadOnlyList<LadderStep>? ladder = null,
+        int startingLevel = 1)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(drafts);
+        ArgumentOutOfRangeException.ThrowIfZero(drafts.Count);
+
+        return Start(
+            content,
+            drafts
+                .Select((draft, index) => PregeneratedParty.Resolve(
+                    content, draft, startingLevel, x: 0, y: index))
+                .ToArray(),
+            ladder);
+    }
+
+    private static GauntletRun Start(
+        SrdContent content,
+        IReadOnlyList<PartyMember> party,
+        IReadOnlyList<LadderStep>? ladder)
+    {
         var rungs = ladder ?? GauntletLadder.Default();
 
         if (rungs.Count == 0)
         {
             throw new ArgumentException("A run needs at least one rung.", nameof(ladder));
         }
-
-        var party = PregeneratedParty.Build(content, startingLevel);
 
         return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)]);
     }

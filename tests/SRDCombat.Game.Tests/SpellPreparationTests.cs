@@ -184,6 +184,23 @@ public class SpellPreparationTests
         Assert.NotEmpty(member.Combatant.Stats.Character!.Spells);
     }
 
+    [Fact]
+    public void ARunStartsFromCreatedDrafts()
+    {
+        // The overload the creation flow calls: four drafts in, a run whose party is
+        // those characters, everything downstream indifferent to where a draft came
+        // from.
+        var drafts = Enumerable.Range(1, 4)
+            .Select(index => Cleric() with { Name = $"Made {index}" })
+            .ToArray();
+
+        var run = GauntletRun.Start(Content, drafts);
+
+        Assert.Equal(4, run.Party.Count);
+        Assert.Equal("Made 1", run.Party[0].Draft.Name);
+        Assert.NotNull(run.Next);
+    }
+
     /// <summary>The pregen Cleric's shape, rebuilt here because the original is private.</summary>
     private static CharacterDraft Cleric() => new()
     {

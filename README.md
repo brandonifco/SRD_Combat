@@ -68,7 +68,8 @@ dotnet run --project src/SRDCombat.Console
 ```
 
 Both builds must produce **0 warnings** — `TreatWarningsAsErrors` is on. `--seed <n>`
-makes a run reproducible, which is a complete bug report; `--continue` resumes the
+makes a run reproducible, which is a complete bug report; `--create` builds your own
+party of four at the keyboard, every option with its printed text; `--continue` resumes the
 autosave. The Godot client has its own [README](client/README.md), including the one
 build step a first launch needs.
 
