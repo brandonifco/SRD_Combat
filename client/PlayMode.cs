@@ -119,6 +119,13 @@ public partial class PlayMode : FightScreen
 
     private float ButtonRowTop => GridTop + (GridHeight * CellPixels) + 14f;
 
+    /// <summary>
+    /// How wide a shop row is. Generous on purpose: an offer's effect line names both
+    /// weapons with their whole damage expressions, and a row that clipped it would
+    /// hide the very number the shopper opened the stall to compare.
+    /// </summary>
+    private const int ShopRowWidth = 700;
+
     protected override void OnReady()
     {
         _seed = SeedArgument();
@@ -1030,18 +1037,37 @@ public partial class PlayMode : FightScreen
 
         foreach (var offer in offers)
         {
-            var rect = new Rect2(GridLeft, y, 340, 19);
+            // What the price buys, under the price. The lines are the offer's own —
+            // a shopper choosing between a suit of armor and a blade is comparing
+            // rules, and rules are never this client's to compute.
+            var effects = offer.Effect.Lines;
+            var affordable = offer.CostCopper <= run.GoldCopper;
+            var rect = new Rect2(GridLeft, y, ShopRowWidth, 19 + (effects.Count * 15));
+
             _shopRows.Add((rect, offer));
 
             DrawRect(rect, GridLine);
             DrawString(
                 TextFont,
                 new Vector2(rect.Position.X + 8, rect.Position.Y + 14),
-                Trim(offer.Description, 60),
+                offer.Description,
                 fontSize: 12,
-                modulate: offer.CostCopper <= run.GoldCopper ? Ink : Dim);
+                modulate: affordable ? Ink : Dim);
 
-            y += 21;
+            var line = rect.Position.Y + 28;
+
+            foreach (var effect in effects)
+            {
+                DrawString(
+                    TextFont,
+                    new Vector2(rect.Position.X + 20, line),
+                    effect,
+                    fontSize: 11,
+                    modulate: affordable ? Dim : new Color(Dim, 0.55f));
+                line += 15;
+            }
+
+            y += rect.Size.Y + 4;
         }
 
         if (_shopNotice is { } notice)

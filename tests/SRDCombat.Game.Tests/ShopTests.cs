@@ -1,6 +1,8 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Combat;
+using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 
 namespace SRDCombat.Game.Tests;
@@ -84,6 +86,116 @@ public class ShopTests
             after.Sheet.ArmorClass > before.Sheet.ArmorClass
             || after.Combatant.Stats.Attacks.Max(a => a.Damage.Sum(d => d.Amount.Average))
                 > before.Combatant.Stats.Attacks.Max(a => a.Damage.Sum(d => d.Amount.Average)));
+    }
+
+    [Fact]
+    public void EveryOfferSaysWhatItWouldChange()
+    {
+        var run = FundedRun(100_000);
+        var offers = Shop.Offers(Content, run.Party, run.States);
+
+        Assert.NotEmpty(offers);
+
+        // A price with nothing beside it is a price tag with no goods behind it:
+        // every offer explains itself, and the numbers agree with the sheets.
+        Assert.All(offers, offer =>
+        {
+            Assert.NotEmpty(offer.Effect.Lines);
+            Assert.Equal(run.Party[offer.MemberIndex].Sheet.ArmorClass, offer.Effect.ArmorClassBefore);
+            Assert.Equal(run.Party[offer.MemberIndex].Sheet.SpeedFeet, offer.Effect.SpeedFeetBefore);
+        });
+
+        // A gear offer's "after" is the re-resolved sheet, never a guess.
+        Assert.All(offers.Where(offer => offer.NewDraft is not null), offer =>
+        {
+            var resolved = PregeneratedParty.Resolve(
+                Content,
+                offer.NewDraft!,
+                run.States[offer.MemberIndex].Level);
+
+            Assert.Equal(resolved.Sheet.ArmorClass, offer.Effect.ArmorClassAfter);
+            Assert.Equal(resolved.Sheet.SpeedFeet, offer.Effect.SpeedFeetAfter);
+        });
+    }
+
+    [Fact]
+    public void AnArmorOfferShowsItsArmorClassAndAWeaponOfferItsDamageRange()
+    {
+        var run = FundedRun(100_000);
+        var offers = Shop.Offers(Content, run.Party, run.States);
+
+        var mail = offers.Single(offer => offer.NewDraft is { ArmorId: "armor.chain-mail" }
+            && run.Party[offer.MemberIndex].Draft.Name == "Aldous");
+
+        // Chain Shirt and Shield at 15 becomes Chain Mail and Shield at 18.
+        Assert.Equal(3, mail.Effect.ArmorClassDelta);
+        Assert.Contains(mail.Effect.Lines, line => line.Contains("AC 15 to 18", StringComparison.Ordinal));
+        Assert.Null(mail.Effect.Attack);
+
+        // A weapon offer names both attacks with their whole damage expressions, the
+        // range each rolls, and what the swap is worth per hit.
+        var weapon = offers.First(offer => offer.Effect.Attack is not null);
+        var change = weapon.Effect.Attack!;
+
+        Assert.NotEqual(change.FromName, change.ToName);
+        Assert.True(change.AverageDelta > 0, "the gate only offers a harder-hitting weapon");
+
+        var line = Assert.Single(weapon.Effect.Lines, candidate => candidate.Contains("per hit", StringComparison.Ordinal));
+
+        Assert.Contains($"{change.ToDamage.Minimum}-{change.ToDamage.Maximum}", line, StringComparison.Ordinal);
+        Assert.Contains($"{change.FromDamage.Minimum}-{change.FromDamage.Maximum}", line, StringComparison.Ordinal);
+        Assert.Contains($"+{change.AverageDelta}", line, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AWeaponSwapSaysWhichMasteryItWouldCost()
+    {
+        // The damage numbers hide the larger half of this trade: Korrin's Greataxe
+        // carries Cleave, a whole second attack, and a Maul buys one point of average
+        // damage by selling it.
+        var run = FundedRun(100_000);
+        var korrin = run.Party.ToList().FindIndex(member => member.Draft.Name == "Korrin");
+
+        var maul = Shop.Offers(Content, run.Party, run.States)
+            .Single(offer => offer.MemberIndex == korrin
+                && offer.NewDraft is { } draft
+                && draft.WeaponIds.Contains("weapon.maul", StringComparer.Ordinal));
+
+        Assert.True(maul.Effect.Attack!.ChangesMastery);
+        Assert.Equal(WeaponMastery.Cleave, maul.Effect.Attack.FromMastery);
+        Assert.Equal(WeaponMastery.Topple, maul.Effect.Attack.ToMastery);
+        Assert.Contains(
+            maul.Effect.Lines,
+            line => line.Contains("mastery Cleave becomes Topple", StringComparison.Ordinal));
+
+        // A swap that keeps the property says nothing about mastery — Sable's
+        // Shortsword and a Rapier both carry Vex.
+        var sable = run.Party.ToList().FindIndex(member => member.Draft.Name == "Sable");
+
+        var rapier = Shop.Offers(Content, run.Party, run.States)
+            .Single(offer => offer.MemberIndex == sable
+                && offer.NewDraft is { } draft
+                && draft.WeaponIds.Contains("weapon.rapier", StringComparer.Ordinal));
+
+        Assert.False(rapier.Effect.Attack!.ChangesMastery);
+        Assert.DoesNotContain(rapier.Effect.Lines, line => line.Contains("mastery", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void APotionOfferShowsWhatItRestores()
+    {
+        var run = FundedRun(100_000);
+
+        var potion = Shop.Offers(Content, run.Party, run.States)
+            .Single(offer => offer.Potion is not null);
+
+        Assert.Equal(PotionRules.Healing(HealingPotion.Standard), potion.Effect.Healing);
+
+        // "2d4 + 2" restores between 4 and 10.
+        Assert.Contains(
+            potion.Effect.Lines,
+            line => line.Contains("2d4 + 2", StringComparison.Ordinal)
+                && line.Contains("(4-10)", StringComparison.Ordinal));
     }
 
     [Fact]

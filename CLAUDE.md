@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at the first played run's two fixes — Rage's duration (#159) and the pregens' spell preparation (#160) — after the party-power slices #151, #153, #155 and #157 |
-| Tests | **850 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **854 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **Median 10.5 of 30, best 30, 33 of 120 runs clearing everything, 44 reaching level 4** (fresh seeds 121–240: 8 · 26 · 36) — `tools/PacingMeasure`, loot on + the Long Rest merchant. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
@@ -259,6 +259,19 @@ closing through provocation stays possible because the cost is a preference amon
 candidates, never a veto on moving at all. Measured: median 3.5 → 4 over the recorded
 seeds — modest because both sides got smarter at once.
 
+**An offer says what it would change, and saying so found two more bugs.** A shop row
+used to read `Chain Mail for Brenna — 75 GP` and nothing else, which is a price tag with
+no goods behind it. `ShopOffer.Effect` now carries the comparison — armor class before
+and after, Speed (so Heavy armor shows its cost in feet), the attack a swap replaces with
+both damage expressions, their **ranges** and averages, and the mastery property the swap
+silently changes — computed in `Game` off the two resolved sheets, because two clients
+formatting it separately would be two places for it to drift. Building it surfaced
+**#164** (armor's printed Strength requirement is extracted, validated and never
+enforced, so Plate is offered to a Strength 13 Cleric for free) and **#165** (the
+auto-buyer sells Cleave and Vex for one point of average damage, because `Score` counts
+damage and cannot see a mastery). Both are the same lesson as the played run: *a number
+nobody displays is a number nobody checks.*
+
 **A human has now played this game, and it paid for itself in two fights.** On
 2026-08-14 the Godot client was driven through the real input path — synthesized clicks,
 a screenshot read between each — for the first time. Fight 1 turned up Rage ending on a
@@ -285,7 +298,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 850 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 854 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
