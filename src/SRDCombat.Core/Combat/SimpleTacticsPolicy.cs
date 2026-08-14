@@ -109,7 +109,7 @@ public static class SimpleTacticsPolicy
             return;
         }
 
-        MoveTowards(encounter, actor, target);
+        var moved = MoveTowards(encounter, actor, target);
 
         // The move may have provoked an Opportunity Attack that dropped us, or ended the
         // fight outright, so re-check before swinging.
@@ -124,6 +124,13 @@ public static class SimpleTacticsPolicy
         if (closest is not null && TryAttack(encounter, actor, closest))
         {
             SpendRemainingAttacks(encounter, actor);
+        }
+        else if (!moved)
+        {
+            // Stuck: nothing active in reach and nowhere better to stand. A downed
+            // enemy is the one target the ordinary flow cannot see, and ignoring it
+            // has produced a literal stalemate — see FinishTheDowned.
+            FinishTheDowned(encounter, actor);
         }
 
         encounter.EndTurn();
@@ -608,6 +615,65 @@ public static class SimpleTacticsPolicy
     }
 
     /// <summary>
+    /// The last resort of a stuck turn: attack the nearest downed enemy in reach, the
+    /// one target the ordinary flow cannot see.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>EnemiesOf</c> hides the Unconscious, deliberately, so every targeting path
+    /// ignores a character at 0 hit points — and that produced a fight that could not
+    /// end: generated walls formed a pocket whose one doorway was plugged by an
+    /// unconscious character (a body occupies its square since the 0-hit-point
+    /// occupancy fix), a Giant Vulture stood beside the body for fifty rounds without
+    /// swinging, and both sides idled to the round limit. The engine has always
+    /// allowed the attack — "an Unconscious creature is a legal target, and hitting
+    /// one is how death saves fail" — the policy just never asked.
+    /// </para>
+    /// <para>
+    /// The gate is what keeps this from changing ordinary fights: it fires only when
+    /// the turn produced nothing — no active enemy in reach after the move, and no
+    /// move worth making — which in an open field essentially never happens. A
+    /// monster mid-approach never diverts to stomp the fallen; only a creature with
+    /// literally nothing else to do finishes what is at its feet, and a downed
+    /// character in a doorway stops being a wall the fight cannot pass.
+    /// </para>
+    /// </remarks>
+    private static void FinishTheDowned(Encounter encounter, Combatant actor)
+    {
+        if (!actor.Turn.HasAction && actor.Features.AttacksRemainingThisAction <= 0)
+        {
+            return;
+        }
+
+        var downed = encounter.Combatants
+            .Where(other => other.SideId != actor.SideId
+                && !other.IsDead
+                && !other.IsActive)
+            .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
+            .ThenBy(other => other.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        // Nearest first, and stop at the first swing that lands.
+        foreach (var body in downed)
+        {
+            if (TryAttack(encounter, actor, body))
+            {
+                return;
+            }
+        }
+
+        // None in reach: spend the stuck turn closing on the nearest instead, so the
+        // swing comes next round rather than never. This is not a redundancy of the
+        // approach that got us here — the ordinary walk steers by shelter as well as
+        // distance, so a stuck creature can be standing one sheltered square off the
+        // body it needs to clear.
+        if (downed.Length > 0)
+        {
+            MoveTowards(encounter, actor, downed[0]);
+        }
+    }
+
+    /// <summary>
     /// Chooses what to attack: finish something off if anything is already in reach,
     /// otherwise close on the nearest.
     /// </summary>
@@ -795,7 +861,7 @@ public static class SimpleTacticsPolicy
     /// return lines suffer the most cover — ranking above closeness, because once a
     /// square delivers the attack, closing further buys a ranged creature nothing.
     /// </remarks>
-    private static void MoveTowards(Encounter encounter, Combatant actor, Combatant target)
+    private static bool MoveTowards(Encounter encounter, Combatant actor, Combatant target)
     {
         var reach = ReachOf(actor);
         var others = OthersThan(encounter, actor);
@@ -821,10 +887,10 @@ public static class SimpleTacticsPolicy
             .ThenBy(option => option.Square.Y)
             .FirstOrDefault();
 
-        if (best is not null)
-        {
-            encounter.Move(best.Square);
-        }
+        // Whether the actor actually went anywhere is the caller's stalemate signal:
+        // a turn that neither attacked nor moved is stuck, and a refused move is not
+        // a move.
+        return best is not null && encounter.Move(best.Square) is null;
     }
 
     /// <summary>
