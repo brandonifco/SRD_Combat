@@ -309,6 +309,17 @@ because a combatant otherwise has no road back to "Fighter"), and the console pr
 the same lines in its turn header, where the banner's attack line replaced the bare
 attack-names list it used to print.
 
+**The log is colour-coded, off the fight's own names.** Party names blue, monster names
+orange, the named thing being used — weapon, spell, feature, mastery — violet, damage
+bright red and a miss yellow, with round-beginnings and the fight's end still gold.
+`LogHighlighter` in the client builds its terms by *asking the encounter*: the
+combatants' names, their attacks', their spells', their stat-block entries', and their
+features' (off the `ClassFeature` enum, whose PascalCase is the printed name). **Nothing
+parses the narration's grammar**, which is the point — a reworded sentence loses a
+highlight rather than gaining a wrong one. Damage and the miss are matched as text
+because neither is a name, and both fail the same safe way: no match leaves the line in
+its base colour.
+
 **The board can wear real art now, and it is bigger.** The square is no longer a
 constant: it is derived to fill a fixed board area (`BoardWidth`/`BoardHeight` on
 `FightScreen`), which took today's nine-by-seven field from 42 pixels a square to 66 —
