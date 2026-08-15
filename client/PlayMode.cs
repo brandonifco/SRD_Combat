@@ -143,7 +143,10 @@ public partial class PlayMode : FightScreen
 
     protected override string Title => "SRD_Combat — playing";
 
-    private float ButtonRowTop => GridTop + (GridHeight * CellPixels) + 14f;
+    /// <summary>Baseline of the active-combatant banner, directly under the grid.</summary>
+    private float BannerTop => GridTop + (GridHeight * CellPixels) + 20f;
+
+    private float ButtonRowTop => BannerTop + 42f;
 
     /// <summary>
     /// How wide a shop row is. Generous on purpose: an offer's effect line names both
@@ -1188,6 +1191,32 @@ public partial class PlayMode : FightScreen
         DrawTokens(tokens, active?.Id);
         DrawTurnOrder(tokens, active?.Id);
         DrawLog(encounter.Log, encounter.Log.Count, tokens.Count);
+
+        // Who is up, and with what — class and level for a character, AC, hit points,
+        // and the attacks they carry. TurnBanner composes it so the console client and
+        // this screen cannot drift; the letter is this fight's label for the token.
+        if (active is { } upNow)
+        {
+            var lines = TurnBanner.Lines(upNow);
+            var colour = upNow.SideId == PregeneratedParty.SideId ? PartyColour : MonsterColour;
+
+            DrawString(
+                TextFont,
+                new Vector2(GridLeft, BannerTop),
+                Trim($"{_labels.Of(upNow)}  {lines[0]}", 90),
+                fontSize: 13,
+                modulate: colour);
+
+            if (lines.Count > 1)
+            {
+                DrawString(
+                    TextFont,
+                    new Vector2(GridLeft, BannerTop + 18),
+                    Trim(lines[1], 95),
+                    fontSize: 12,
+                    modulate: Dim);
+            }
+        }
 
         if (commanded is { } character)
         {

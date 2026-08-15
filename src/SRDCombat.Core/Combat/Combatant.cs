@@ -132,6 +132,13 @@ public sealed record CombatantFeatures(
 {
     public bool Has(ClassFeature feature) => Features.Contains(feature);
 
+    /// <summary>
+    /// The class's printed name, carried for display — a client saying whose turn it is
+    /// has nowhere else to read "Fighter" from. Null only on test doubles built without
+    /// a sheet.
+    /// </summary>
+    public string? ClassName { get; init; }
+
     /// <summary>Spells the character can cast. Never null.</summary>
     public IReadOnlyList<SpellDefinition> Spells { get; init; } = Spells ?? [];
 
@@ -340,7 +347,10 @@ public sealed record CombatantStats(
                     ? Rules.SpellcastingRules.AttackBonus(sheet.ProficiencyBonus, sheet.Modifier(attackAbility))
                         + sheet.SpellAttackItemBonus
                     : 0,
-                channelDivinityUses),
+                channelDivinityUses)
+            {
+                ClassName = sheet.ClassName,
+            },
         };
     }
 
