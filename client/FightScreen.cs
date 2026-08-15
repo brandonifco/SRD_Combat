@@ -62,17 +62,36 @@ public abstract partial class FightScreen : Node2D
     protected static readonly Color Ink = new("d8d8e0");
     protected static readonly Color Dim = new("8a8a96");
 
-    /// <summary>Seconds a walking token spends on each square of its recorded path.</summary>
-    protected const double SecondsPerWalkSquare = 0.1;
+    /// <summary>
+    /// Seconds a walking token spends crossing each square of its recorded path.
+    /// </summary>
+    /// <remarks>
+    /// This was a tenth of a second, and at that speed a whole move was over in a third
+    /// of one — measured at thirteen frames for a five-square walk, which reads as a
+    /// token teleporting rather than walking, because it is barely longer than the eye
+    /// takes to find what moved. A move is worth watching: it is the one part of a turn
+    /// with a route rather than a result.
+    /// </remarks>
+    protected const double SecondsPerWalkSquare = 0.2;
 
     /// <summary>
     /// One thing the board plays out before the next beat: a walk along a recorded
-    /// route, or a swing at a target. Queued in log order, so an Opportunity Attack
+    /// route, or a pose struck at somebody. Queued in log order, so an Opportunity Attack
     /// plays where it interrupted the walk that provoked it.
     /// </summary>
-    private abstract record Act;
+    /// <param name="Step">
+    /// The log entry this act is the picture of. It is what holds the narration back
+    /// until the animation has played — see <see cref="RevealedLogCount"/>.
+    /// </param>
+    /// <param name="RevealThrough">
+    /// How much of the log this act has earned the right to print when it finishes: its
+    /// own line and everything that followed as a consequence of it, so a swing's last
+    /// frame prints the roll, the damage and the death together.
+    /// </param>
+    private abstract record Act(int Step, int RevealThrough);
 
-    private sealed record WalkAct(string WalkerId, IReadOnlyList<GridPosition> Path) : Act;
+    private sealed record WalkAct(int Step, int RevealThrough, string WalkerId, IReadOnlyList<GridPosition> Path)
+        : Act(Step, RevealThrough);
 
     /// <summary>A one-shot pose: a strip played once through, then done.</summary>
     /// <param name="FacesLeft">
@@ -80,7 +99,8 @@ public abstract partial class FightScreen : Node2D
     /// they shared a column, or when facing is not the pose's business — the actor then
     /// keeps its side's default facing.
     /// </param>
-    private sealed record PoseAct(string ActorId, Pose Pose, bool? FacesLeft = null) : Act;
+    private sealed record PoseAct(int Step, int RevealThrough, string ActorId, Pose Pose, bool? FacesLeft = null)
+        : Act(Step, RevealThrough);
 
     /// <summary>The one-shot animations, each with its own strip and its own tempo.</summary>
     protected enum Pose
@@ -98,6 +118,10 @@ public abstract partial class FightScreen : Node2D
     }
 
     private readonly Queue<Act> _pendingActs = new();
+
+    /// <summary>The act being played out, which is what the log is waiting on.</summary>
+    private Act? _playing;
+
     private string? _walkerId;
     private IReadOnlyList<GridPosition>? _walkPath;
     private double _walkElapsed;
@@ -116,6 +140,34 @@ public abstract partial class FightScreen : Node2D
     private double _poseElapsed;
 
     /// <summary>
+    /// How much of the log the screen may show, so that the narration lands with the
+    /// picture of it rather than ahead of it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// An attack resolves in the engine the instant it is asked for: the roll, the
+    /// damage and the death are all in the log before a single frame of the swing has
+    /// been drawn. Printing them straight away tells the reader the outcome while the
+    /// weapon is still going up, which makes the animation decoration rather than the
+    /// event. So each queued act remembers the log entry it is the picture of, and the
+    /// log is held at that line until the act finishes — an attack's rolled result and
+    /// the damage it dealt appear on the swing's last frame.
+    /// </para>
+    /// <para>
+    /// It delays lines; it never reorders or drops them. Anything with no animation to
+    /// wait for — a creature with no art, a Dodge, the whole log during a probe, where
+    /// nothing is queued at all — appears at once, exactly as before.
+    /// </para>
+    /// </remarks>
+    protected int RevealedLogCount { get; private set; } = ShowEveryLine;
+
+    /// <summary>Nothing is being held back.</summary>
+    private const int ShowEveryLine = int.MaxValue;
+
+    /// <summary>The log length the queue is working towards: what shows once it drains.</summary>
+    private int _revealTarget = ShowEveryLine;
+
+    /// <summary>
     /// How long each pose takes, whatever its strip's frame count — the strip is fitted
     /// to the time rather than the time to the strip, so a fourteen-frame Priest attack
     /// and a five-frame Goblin one take the same beat. A flinch is brief because it
@@ -129,8 +181,17 @@ public abstract partial class FightScreen : Node2D
         _ => 0,
     };
 
-    /// <summary>Seconds per Walk-strip frame — quicker than idle, so legs visibly move.</summary>
-    private const double SecondsPerWalkFrame = 0.07;
+    /// <summary>
+    /// How much of a Walk strip one square costs. Half a cycle: a walk cycle is two
+    /// paces, and a pace covers about half a five-foot square.
+    /// </summary>
+    /// <remarks>
+    /// The cycle advances with the *distance covered*, not with the clock, which is what
+    /// stops the legs skating — tie them to a timer and any change to how fast a token
+    /// crosses the ground leaves them running on the spot or gliding with their feet
+    /// still. This way the two can never disagree.
+    /// </remarks>
+    private const float WalkCyclesPerSquare = 0.5f;
 
     /// <summary>Seconds each frame of an idle or walk loop is shown.</summary>
     private const double SecondsPerAnimationFrame = 0.12;
@@ -311,14 +372,19 @@ public abstract partial class FightScreen : Node2D
     /// </remarks>
     protected void QueueActs(IReadOnlyList<CombatStep> log, int from, int to, IReadOnlyList<Token> tokens)
     {
+        var idle = !ActInProgress;
+        var first = -1;
+
         for (var index = Math.Max(0, from); index < to && index < log.Count; index++)
         {
+            var before = _pendingActs.Count;
+
             switch (log[index])
             {
                 // One square is no journey: a walk cut short before it left its first
                 // square would animate nothing, so it is not queued at all.
                 case { Kind: CombatStepKind.Move, ActorId: { } walkerId, Path.Count: > 1 } step:
-                    _pendingActs.Enqueue(new WalkAct(walkerId, step.Path));
+                    _pendingActs.Enqueue(new WalkAct(index, Consequences(log, index, to), walkerId, step.Path));
                     break;
 
                 case
@@ -327,17 +393,39 @@ public abstract partial class FightScreen : Node2D
                     ActorId: { } attackerId,
                     TargetId: { } strickenId,
                 }:
-                    QueuePose(tokens, attackerId, Pose.Swing, facing: strickenId);
+                    QueuePose(log, index, to, tokens, attackerId, Pose.Swing, facing: strickenId);
                     break;
 
                 case { Kind: CombatStepKind.Damage, TargetId: { } victimId }:
-                    QueuePose(tokens, victimId, Pose.Flinch);
+                    QueuePose(log, index, to, tokens, victimId, Pose.Flinch);
                     break;
 
                 case { Kind: CombatStepKind.Died or CombatStepKind.Downed, ActorId: { } fallenId }:
-                    QueuePose(tokens, fallenId, Pose.Fall);
+                    QueuePose(log, index, to, tokens, fallenId, Pose.Fall);
                     break;
             }
+
+            if (first < 0 && _pendingActs.Count > before)
+            {
+                first = index;
+            }
+        }
+
+        // Where the log gets to once everything queued has played. Always the newest
+        // slice's end, so a click that lands mid-animation still has its lines waiting.
+        _revealTarget = to;
+
+        // Hold the narration at the first act's own line — that line is the outcome of
+        // the animation about to play. Only when starting fresh: mid-chain, the acts
+        // already queued are carrying the log forward and must not be wound back.
+        if (idle && first >= 0)
+        {
+            RevealedLogCount = first;
+        }
+        else if (!ActInProgress)
+        {
+            // A slice with nothing to animate waits for nothing.
+            RevealedLogCount = to;
         }
 
         // Start immediately so the very next frame draws the walker on its starting
@@ -349,9 +437,43 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>
+    /// How far the log may be printed once the act at <paramref name="step"/> finishes:
+    /// its own line, and every line after it that is the *outcome* of it rather than a
+    /// new thing happening.
+    /// </summary>
+    /// <remarks>
+    /// This is what puts the damage on the swing's last frame. An attack resolves into
+    /// several lines — the roll, the damage, sometimes a death — and they are all one
+    /// moment of the fight, so they print together when the blow lands. Anything else
+    /// (the next creature's turn, a walk) is a new moment and waits for its own act.
+    /// </remarks>
+    private static int Consequences(IReadOnlyList<CombatStep> log, int step, int to)
+    {
+        var through = step + 1;
+
+        while (through < to && through < log.Count && log[through].Kind is
+                   CombatStepKind.Damage
+                   or CombatStepKind.Died
+                   or CombatStepKind.Downed
+                   or CombatStepKind.Condition)
+        {
+            through++;
+        }
+
+        return through;
+    }
+
+    /// <summary>
     /// Queues one pose for one combatant, when that combatant's art can show it.
     /// </summary>
-    private void QueuePose(IReadOnlyList<Token> tokens, string actorId, Pose pose, string? facing = null)
+    private void QueuePose(
+        IReadOnlyList<CombatStep> log,
+        int step,
+        int to,
+        IReadOnlyList<Token> tokens,
+        string actorId,
+        Pose pose,
+        string? facing = null)
     {
         if (FindToken(tokens, actorId) is not { } actor
             || _sprites.ForToken(actor.IsParty, actor.ClassName, actor.Name) is not { } art)
@@ -379,7 +501,7 @@ public abstract partial class FightScreen : Node2D
             ? other.X < actor.X
             : (bool?)null;
 
-        _pendingActs.Enqueue(new PoseAct(actorId, pose, facesLeft));
+        _pendingActs.Enqueue(new PoseAct(step, Consequences(log, step, to), actorId, pose, facesLeft));
     }
 
     private static Token? FindToken(IReadOnlyList<Token> tokens, string id)
@@ -403,6 +525,32 @@ public abstract partial class FightScreen : Node2D
         _walkerId = null;
         _poseActorId = null;
         _pose = Pose.None;
+        _playing = null;
+
+        // Nothing is playing, so nothing is owed a picture: the log is whole again.
+        RevealedLogCount = ShowEveryLine;
+        _revealTarget = ShowEveryLine;
+    }
+
+    /// <summary>
+    /// Lets the log catch up with the act that has just finished — its own line and its
+    /// consequences — or all the way, when it was the last thing owed a picture.
+    /// </summary>
+    private void ReleaseLogAfterAct(Act finished) =>
+        RevealedLogCount = _pendingActs.Count > 0
+            ? Math.Max(RevealedLogCount, finished.RevealThrough)
+            : _revealTarget;
+
+    /// <summary>Ends the playing act: the log catches up, and the next one begins.</summary>
+    private void Finish()
+    {
+        if (_playing is { } finished)
+        {
+            ReleaseLogAfterAct(finished);
+        }
+
+        _playing = null;
+        StartNextAct();
     }
 
     /// <summary>Advances the playing act; true when the screen should redraw.</summary>
@@ -416,7 +564,7 @@ public abstract partial class FightScreen : Node2D
             {
                 _poseActorId = null;
                 _pose = Pose.None;
-                StartNextAct();
+                Finish();
             }
 
             return true;
@@ -434,7 +582,7 @@ public abstract partial class FightScreen : Node2D
         {
             _walkPath = null;
             _walkerId = null;
-            StartNextAct();
+            Finish();
             return true;
         }
 
@@ -478,7 +626,15 @@ public abstract partial class FightScreen : Node2D
             return false;
         }
 
-        switch (_pendingActs.Dequeue())
+        var starting = _pendingActs.Dequeue();
+
+        _playing = starting;
+
+        // Everything before this act's own line has already happened on screen, so it
+        // can be read; the act's own line is the one being held for its last frame.
+        RevealedLogCount = Math.Max(RevealedLogCount, starting.Step);
+
+        switch (starting)
         {
             case PoseAct pose:
                 _poseActorId = pose.ActorId;
@@ -611,10 +767,13 @@ public abstract partial class FightScreen : Node2D
         }
     }
 
+    /// <summary>How far along its route the walker has come, in squares.</summary>
+    private double SquaresWalked() => _walkElapsed / SecondsPerWalkSquare;
+
     /// <summary>Where the walking token is drawn, part-way between two squares.</summary>
     private Vector2 WalkingCentre(IReadOnlyList<GridPosition> path)
     {
-        var progress = Math.Min(_walkElapsed / SecondsPerWalkSquare, path.Count - 1);
+        var progress = Math.Min(SquaresWalked(), path.Count - 1);
         var index = Math.Min((int)progress, path.Count - 2);
         var fraction = (float)(progress - index);
 
@@ -732,7 +891,7 @@ public abstract partial class FightScreen : Node2D
             : fallen
                 ? (lying ? 0 : last)
                 : walking
-                    ? (int)(_walkElapsed / SecondsPerWalkFrame) % strip.FrameCount
+                    ? (int)(SquaresWalked() * WalkCyclesPerSquare * strip.FrameCount) % strip.FrameCount
                     : _animationFrame % strip.FrameCount;
 
         var modulate = token.IsDead ? new Color(0.5f, 0.5f, 0.55f) : Colors.White;
@@ -854,8 +1013,10 @@ public abstract partial class FightScreen : Node2D
         // whole job is to print what the engine explained cannot afford that.
         var room = Math.Max(0, (ScreenHeight - top - 20) / 17);
 
+        // Held back to whatever the animation has actually shown, so the narration and
+        // the picture of it land together.
         var wrapped = log
-            .Take(count)
+            .Take(Math.Min(count, RevealedLogCount))
             .SelectMany(step => Wrap(step.Narration, LogWidthCharacters)
                 // A continuation is indented, so a wrapped entry still reads as one.
                 .Select((line, index) => (Text: index == 0 ? line : "  " + line, step.Kind)))
