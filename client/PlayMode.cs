@@ -1382,7 +1382,15 @@ public partial class PlayMode : FightScreen
 
         var y = top + 6;
 
-        foreach (var spell in features.Spells.OrderBy(spell => spell.Level).ThenBy(spell => spell.Name, StringComparer.Ordinal))
+        // Only what could be cast this instant — the same rule that decides whether
+        // the Cast button is there at all, so the list can never offer a row whose only
+        // possible answer is a refusal.
+        var castable = features.Spells
+            .Where(spell => TurnOptions.CanCastNow(character, spell))
+            .OrderBy(spell => spell.Level)
+            .ThenBy(spell => spell.Name, StringComparer.Ordinal);
+
+        foreach (var spell in castable)
         {
             var rect = new Rect2(GridLeft, y, 260, 20);
             _spellRows.Add((rect, spell));
