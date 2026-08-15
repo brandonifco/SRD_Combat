@@ -92,13 +92,14 @@ public partial class WatchMode : FightScreen
             QueueRedraw();
         }
 
-        // The walk keeps playing even when paused, so a token never freezes mid-hop.
-        if (AdvanceWalks(delta))
+        // The walk or swing keeps playing even when paused, so a token never freezes
+        // mid-stride or mid-blow.
+        if (AdvanceActs(delta))
         {
             QueueRedraw();
         }
 
-        if (!_playing || _index >= _snapshots.Count - 1 || WalkInProgress)
+        if (!_playing || _index >= _snapshots.Count - 1 || ActInProgress)
         {
             return;
         }
@@ -113,9 +114,10 @@ public partial class WatchMode : FightScreen
         _elapsed = 0;
         _index++;
 
-        // The turn just revealed may have walked somebody; play the route its Move
-        // step recorded rather than teleporting the token to the snapshot's square.
-        QueueWalks(_log, _snapshots[_index - 1].LogCount, _snapshots[_index].LogCount);
+        // The turn just revealed may have walked or swung; play the route its Move
+        // step recorded and the attacks it landed rather than teleporting the token to
+        // the snapshot's square.
+        QueueActs(_log, _snapshots[_index - 1].LogCount, _snapshots[_index].LogCount, _snapshots[_index].Tokens);
         QueueRedraw();
     }
 
@@ -138,22 +140,22 @@ public partial class WatchMode : FightScreen
             case Key.Right:
                 _playing = false;
                 _index = Math.Min(_snapshots.Count - 1, _index + 1);
-                ClearWalks();
+                ClearActs();
                 break;
             case Key.Left:
                 _playing = false;
                 _index = Math.Max(0, _index - 1);
-                ClearWalks();
+                ClearActs();
                 break;
             case Key.Home:
                 _playing = false;
                 _index = 0;
-                ClearWalks();
+                ClearActs();
                 break;
             case Key.End:
                 _playing = false;
                 _index = _snapshots.Count - 1;
-                ClearWalks();
+                ClearActs();
                 break;
             case Key.Escape:
                 GetTree().Quit();

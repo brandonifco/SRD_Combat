@@ -43,7 +43,22 @@ public abstract partial class FightScreen : Node2D
     /// <summary>Seconds a walking token spends on each square of its recorded path.</summary>
     protected const double SecondsPerWalkSquare = 0.1;
 
-    private readonly Queue<(string WalkerId, IReadOnlyList<GridPosition> Path)> _pendingWalks = new();
+    /// <summary>
+    /// One thing the board plays out before the next beat: a walk along a recorded
+    /// route, or a swing at a target. Queued in log order, so an Opportunity Attack
+    /// plays where it interrupted the walk that provoked it.
+    /// </summary>
+    private abstract record Act;
+
+    private sealed record WalkAct(string WalkerId, IReadOnlyList<GridPosition> Path) : Act;
+
+    /// <param name="FacesLeft">
+    /// Which way the swing faces, read from where the two stood when it was queued.
+    /// Null when they shared a column — the actor keeps its side's default facing.
+    /// </param>
+    private sealed record SwingAct(string ActorId, bool? FacesLeft) : Act;
+
+    private readonly Queue<Act> _pendingActs = new();
     private string? _walkerId;
     private IReadOnlyList<GridPosition>? _walkPath;
     private double _walkElapsed;
@@ -55,6 +70,16 @@ public abstract partial class FightScreen : Node2D
     /// default facing.
     /// </summary>
     private bool? _walkerFacesLeft;
+
+    private string? _swingActorId;
+    private bool? _swingFacesLeft;
+    private double _swingElapsed;
+
+    /// <summary>How long one swing takes, whatever its strip's frame count.</summary>
+    private const double SecondsPerSwing = 0.45;
+
+    /// <summary>Seconds per Walk-strip frame — quicker than idle, so legs visibly move.</summary>
+    private const double SecondsPerWalkFrame = 0.07;
 
     /// <summary>Seconds each frame of an idle or walk loop is shown.</summary>
     private const double SecondsPerAnimationFrame = 0.12;
@@ -203,48 +228,98 @@ public abstract partial class FightScreen : Node2D
     protected static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
         [.. encounter.TurnOrder.Select(combatant => TokenFrom(combatant, labels))];
 
-    /// <summary>Whether a walk is playing or waiting to play.</summary>
-    protected bool WalkInProgress => _walkPath is not null || _pendingWalks.Count > 0;
+    /// <summary>Whether a walk or a swing is playing or waiting to play.</summary>
+    protected bool ActInProgress => _walkPath is not null || _swingActorId is not null || _pendingActs.Count > 0;
 
     /// <summary>
-    /// Queues the walk carried by each new Move step in a slice of the log, so the token
-    /// can hop square to square instead of teleporting. The path is the engine's own
-    /// record of the route — the screen replays it, never recomputes it.
+    /// Queues what a slice of the log should play out on the board, in log order: each
+    /// Move step's walk — the engine's own record of the route, replayed and never
+    /// recomputed — and each attack's swing, Opportunity Attacks included, facing
+    /// whichever side of the attacker its target stood on. A swing is queued only for
+    /// an actor whose art has an Attack strip: holding the beat for a circle with
+    /// nothing to show would be dead time.
     /// </summary>
-    protected void QueueWalks(IReadOnlyList<CombatStep> log, int from, int to)
+    protected void QueueActs(IReadOnlyList<CombatStep> log, int from, int to, IReadOnlyList<Token> tokens)
     {
         for (var index = Math.Max(0, from); index < to && index < log.Count; index++)
         {
-            // One square is no journey: a walk cut short before it left its first
-            // square would animate nothing, so it is not queued at all.
-            if (log[index] is { Kind: CombatStepKind.Move, ActorId: { } walkerId, Path.Count: > 1 } step)
+            switch (log[index])
             {
-                _pendingWalks.Enqueue((walkerId, step.Path));
+                // One square is no journey: a walk cut short before it left its first
+                // square would animate nothing, so it is not queued at all.
+                case { Kind: CombatStepKind.Move, ActorId: { } walkerId, Path.Count: > 1 } step:
+                    _pendingActs.Enqueue(new WalkAct(walkerId, step.Path));
+                    break;
+
+                case
+                {
+                    Kind: CombatStepKind.Attack or CombatStepKind.OpportunityAttack,
+                    ActorId: { } actorId,
+                    TargetId: { } targetId,
+                }:
+                    if (FindToken(tokens, actorId) is { } actor
+                        && _sprites.ForToken(actor.IsParty, actor.ClassName, actor.Name)?.Attack is not null)
+                    {
+                        var facesLeft = FindToken(tokens, targetId) is { } target && target.X != actor.X
+                            ? target.X < actor.X
+                            : (bool?)null;
+
+                        _pendingActs.Enqueue(new SwingAct(actorId, facesLeft));
+                    }
+
+                    break;
             }
         }
 
         // Start immediately so the very next frame draws the walker on its starting
         // square — waiting for the first advance would flash it at the destination.
-        if (_walkPath is null)
+        if (_walkPath is null && _swingActorId is null)
         {
-            StartNextWalk();
+            StartNextAct();
         }
     }
 
-    /// <summary>Forgets every walk — for scrubbing, where snapping is the point.</summary>
-    protected void ClearWalks()
+    private static Token? FindToken(IReadOnlyList<Token> tokens, string id)
     {
-        _pendingWalks.Clear();
-        _walkPath = null;
-        _walkerId = null;
+        foreach (var token in tokens)
+        {
+            if (token.Id == id)
+            {
+                return token;
+            }
+        }
+
+        return null;
     }
 
-    /// <summary>Advances the playing walk; true when the screen should redraw.</summary>
-    protected bool AdvanceWalks(double delta)
+    /// <summary>Forgets every queued act — for scrubbing, where snapping is the point.</summary>
+    protected void ClearActs()
     {
+        _pendingActs.Clear();
+        _walkPath = null;
+        _walkerId = null;
+        _swingActorId = null;
+    }
+
+    /// <summary>Advances the playing act; true when the screen should redraw.</summary>
+    protected bool AdvanceActs(double delta)
+    {
+        if (_swingActorId is not null)
+        {
+            _swingElapsed += delta;
+
+            if (_swingElapsed >= SecondsPerSwing)
+            {
+                _swingActorId = null;
+                StartNextAct();
+            }
+
+            return true;
+        }
+
         if (_walkPath is null)
         {
-            return StartNextWalk();
+            return StartNextAct();
         }
 
         _walkElapsed += delta;
@@ -254,24 +329,26 @@ public abstract partial class FightScreen : Node2D
         {
             _walkPath = null;
             _walkerId = null;
+            StartNextAct();
             return true;
         }
 
-        if (square == _walkSquare)
+        if (square != _walkSquare)
         {
-            return false;
+            // The sprite faces the way it is going; a purely vertical step keeps the
+            // last facing rather than snapping back to the side's default mid-walk.
+            var dx = _walkPath[square].X - _walkPath[_walkSquare].X;
+
+            if (dx != 0)
+            {
+                _walkerFacesLeft = dx < 0;
+            }
+
+            _walkSquare = square;
         }
 
-        // The sprite faces the way it is going; a purely vertical step keeps the last
-        // facing rather than snapping back to the side's default mid-walk.
-        var dx = _walkPath[square].X - _walkPath[_walkSquare].X;
-
-        if (dx != 0)
-        {
-            _walkerFacesLeft = dx < 0;
-        }
-
-        _walkSquare = square;
+        // A walk redraws every frame, not only on square boundaries: the token's pixel
+        // position glides between squares, so every tick moves it.
         return true;
     }
 
@@ -289,29 +366,42 @@ public abstract partial class FightScreen : Node2D
             token.Id == walkerId ? token with { X = square.X, Y = square.Y } : token)];
     }
 
-    private bool StartNextWalk()
+    private bool StartNextAct()
     {
-        if (_pendingWalks.Count == 0)
+        if (_pendingActs.Count == 0)
         {
             return false;
         }
 
-        (_walkerId, _walkPath) = _pendingWalks.Dequeue();
-        _walkElapsed = 0;
-        _walkSquare = 0;
-        _walkerFacesLeft = null;
-
-        // Face the route's first horizontal leg from the very first frame, so a walker
-        // does not set off looking the wrong way and turn mid-stride.
-        for (var index = 1; index < _walkPath.Count; index++)
+        switch (_pendingActs.Dequeue())
         {
-            var dx = _walkPath[index].X - _walkPath[index - 1].X;
-
-            if (dx != 0)
-            {
-                _walkerFacesLeft = dx < 0;
+            case SwingAct swing:
+                _swingActorId = swing.ActorId;
+                _swingFacesLeft = swing.FacesLeft;
+                _swingElapsed = 0;
                 break;
-            }
+
+            case WalkAct walk:
+                _walkerId = walk.WalkerId;
+                _walkPath = walk.Path;
+                _walkElapsed = 0;
+                _walkSquare = 0;
+                _walkerFacesLeft = null;
+
+                // Face the route's first horizontal leg from the very first frame, so a
+                // walker does not set off looking the wrong way and turn mid-stride.
+                for (var index = 1; index < walk.Path.Count; index++)
+                {
+                    var dx = walk.Path[index].X - walk.Path[index - 1].X;
+
+                    if (dx != 0)
+                    {
+                        _walkerFacesLeft = dx < 0;
+                        break;
+                    }
+                }
+
+                break;
         }
 
         return true;
@@ -371,7 +461,12 @@ public abstract partial class FightScreen : Node2D
     {
         foreach (var token in tokens)
         {
-            var centre = CentreOf(new GridPosition(token.X, token.Y));
+            // The walker glides: its pixel position interpolates along the recorded
+            // path rather than snapping square to square, which is what makes the walk
+            // read as walking once a figure with legs is doing it.
+            var centre = token.Id == _walkerId && _walkPath is { } path
+                ? WalkingCentre(path)
+                : CentreOf(new GridPosition(token.X, token.Y));
 
             // Three states worth telling apart at a glance: fighting, down but alive,
             // and dead. A character at 0 hit points is the one a watcher most needs to
@@ -402,12 +497,22 @@ public abstract partial class FightScreen : Node2D
                 ? 0f
                 : Math.Clamp(token.HitPoints / (float)token.MaximumHitPoints, 0f, 1f);
 
-            var barLeft = GridLeft + (token.X * CellPixels) + 6;
-            var barTop = GridTop + (token.Y * CellPixels) + CellPixels - 8;
+            var barLeft = centre.X - (CellPixels / 2f) + 6;
+            var barTop = centre.Y + (CellPixels / 2f) - 8;
 
             DrawRect(new Rect2(barLeft, barTop, CellPixels - 12, 3), GridLine);
             DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, 3), colour);
         }
+    }
+
+    /// <summary>Where the walking token is drawn, part-way between two squares.</summary>
+    private Vector2 WalkingCentre(IReadOnlyList<GridPosition> path)
+    {
+        var progress = Math.Min(_walkElapsed / SecondsPerWalkSquare, path.Count - 1);
+        var index = Math.Min((int)progress, path.Count - 2);
+        var fraction = (float)(progress - index);
+
+        return CentreOf(path[index]).Lerp(CentreOf(path[index + 1]), fraction);
     }
 
     /// <summary>The token as it always drew: a filled or hollow circle with its letter.</summary>
@@ -437,19 +542,27 @@ public abstract partial class FightScreen : Node2D
     /// <summary>The token as animated art, with the letter kept in the cell's corner.</summary>
     /// <remarks>
     /// The states map to the sheets: standing cycles Idle, the walking token cycles Walk
-    /// along its hop, and dead or down holds the Dead sheet's last frame — a body on the
+    /// as it glides its route, the swinging one plays Attack once through facing its
+    /// target, and dead or down holds the Dead sheet's last frame — a body on the
     /// ground — dimmed for the dead, ringed in <see cref="DownColour"/> for the downed so
     /// "still saveable" stays visible at a glance. A pack with no Dead sheet (the
     /// Priests) lies its idle frame on its back instead.
     /// </remarks>
     private void DrawSpriteToken(SpriteLibrary.CharacterArt art, Token token, Vector2 centre, Color colour)
     {
-        var walking = token.Id == _walkerId && !token.IsDead && !token.IsDown;
-        var facesLeft = walking && _walkerFacesLeft is { } turned ? turned : !token.IsParty;
+        var standing = !token.IsDead && !token.IsDown;
+        var walking = token.Id == _walkerId && standing;
+        var swinging = token.Id == _swingActorId && standing && art.Attack is not null;
+
+        var facesLeft = swinging && _swingFacesLeft is { } toward ? toward
+            : walking && _walkerFacesLeft is { } turned ? turned
+            : !token.IsParty;
 
         var strip = token.IsDead || token.IsDown
             ? art.Dead
-            : walking && art.Walk is not null ? art.Walk : art.Idle;
+            : swinging ? art.Attack
+            : walking && art.Walk is not null ? art.Walk
+            : art.Idle;
 
         // The one gap in the packs: no Dead sheet means the fallen draw their idle
         // frame rotated onto its back rather than dropping back to a circle.
@@ -466,9 +579,16 @@ public abstract partial class FightScreen : Node2D
             return;
         }
 
+        // Each state keeps its own clock: a swing plays its whole strip exactly once
+        // across its fixed duration whatever the frame count, a walk cycles at its own
+        // quicker cadence, idling ticks the shared loop, and the fallen hold still.
         var frame = token.IsDead || token.IsDown
             ? (lying ? 0 : strip.FrameCount - 1)
-            : _animationFrame % strip.FrameCount;
+            : swinging
+                ? Math.Min((int)(_swingElapsed / SecondsPerSwing * strip.FrameCount), strip.FrameCount - 1)
+                : walking
+                    ? (int)(_walkElapsed / SecondsPerWalkFrame) % strip.FrameCount
+                    : _animationFrame % strip.FrameCount;
 
         var modulate = token.IsDead
             ? new Color(0.5f, 0.5f, 0.55f)
@@ -483,7 +603,9 @@ public abstract partial class FightScreen : Node2D
             (CellPixels + SpriteOverflow) / bounds.Size.Y,
             (CellPixels * 1.5f) / bounds.Size.X);
 
-        var anchor = new Vector2(centre.X, GridTop + ((token.Y + 1) * CellPixels) - 2);
+        // Off the centre rather than the grid square, so a gliding walker's feet move
+        // with it instead of stair-stepping a square behind.
+        var anchor = new Vector2(centre.X, centre.Y + (CellPixels / 2f) - 2);
         var boundsCentreX = bounds.Position.X + (bounds.Size.X / 2f);
 
         if (lying)
