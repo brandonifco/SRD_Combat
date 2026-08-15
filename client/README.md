@@ -75,6 +75,34 @@ screen's probe takes over.
 godot --path client -- --seed=12345
 ```
 
+## Sprite art
+
+The tokens can be animated pixel-art figures instead of circles: an idle loop while
+standing, the walk cycle riding the engine's own recorded path, and a body on the
+ground when down or dead — dimmed for the dead, ringed for the still-saveable. The
+party faces right and the monsters left (the columns the factory places), and a walker
+faces the way it is going. The art is the free Craftpix character packs, and the maps
+are curated in `SpriteLibrary`: party art by class name, monster art by **exact**
+stat-block name, and anything unmapped keeps the circle-and-letter token — a red
+dragon sprite on a Green Dragon Wyrmling would be the display lying, so only the
+colours the packs actually hold are mapped.
+
+**The PNGs are deliberately not in the repository.** Craftpix's free license permits
+using the art in a game but not redistributing the assets, and this repo is public —
+the same line the SRD PDF sits behind. To light the sprites up, download the packs
+from [craftpix.net](https://craftpix.net/freebies/) (the free 2D character sets:
+Knight, Gladiator, Elf, Priest, Goblin, Orc, Skeleton, Zombie, Dragon, and the three
+mages) and unpack them so each character's folder of animation strips sits at:
+
+```
+client/assets/sprites/<Character>/Idle.png (Walk.png, Dead.png, ...)
+```
+
+The directory is gitignored. A machine without it — CI, a fresh clone — draws the
+circle tokens it always drew; every lookup is a fallback, nothing is load-bearing.
+`--probe` and `--capture` freeze the animation clock for the same reason they skip
+the walk hop: a verification image must not depend on when the frame was taken.
+
 An armed area spell may be aimed at a *bare square* as well as a creature — click the
 spell, then click the ground where it should erupt; the engine's point overload rules
 on range, shape and who the area catches. A spell with no area still needs a creature,

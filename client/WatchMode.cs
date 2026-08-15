@@ -85,6 +85,13 @@ public partial class WatchMode : FightScreen
 
     public override void _Process(double delta)
     {
+        // The idle loop ticks even when playback is paused: a paused fight is a frozen
+        // moment, not frozen people.
+        if (AdvanceSpriteAnimation(delta))
+        {
+            QueueRedraw();
+        }
+
         // The walk keeps playing even when paused, so a token never freezes mid-hop.
         if (AdvanceWalks(delta))
         {

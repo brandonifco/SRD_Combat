@@ -618,6 +618,13 @@ public partial class PlayMode : FightScreen
             return;
         }
 
+        // The idle and walk loops tick whatever else the beat is doing — a fight where
+        // nothing is happening is still a fight where everyone is breathing.
+        if (AdvanceSpriteAnimation(delta))
+        {
+            QueueRedraw();
+        }
+
         // A walk plays out before anything else happens: the token hops square to
         // square, and the next beat — the policy's turn, the fight's end — waits for it.
         if (AdvanceWalks(delta))
