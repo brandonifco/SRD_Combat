@@ -49,6 +49,26 @@ public abstract partial class FightScreen : Node2D
     private double _walkElapsed;
     private int _walkSquare;
 
+    /// <summary>
+    /// Which way the walking token faces, from the last horizontal step it took. Null
+    /// until the route turns horizontal — a purely vertical walk keeps the side's
+    /// default facing.
+    /// </summary>
+    private bool? _walkerFacesLeft;
+
+    /// <summary>Seconds each frame of an idle or walk loop is shown.</summary>
+    private const double SecondsPerAnimationFrame = 0.12;
+
+    private SpriteLibrary _sprites = null!;
+    private double _animationClock;
+    private int _animationFrame;
+
+    /// <summary>
+    /// Off during a probe or a capture, exactly like the walk hop: a verification image
+    /// read the instant after a click must not depend on when the frame was taken.
+    /// </summary>
+    private bool _animateSprites;
+
     protected Font TextFont { get; private set; } = null!;
     protected int GridWidth { get; private set; }
     protected int GridHeight { get; private set; }
@@ -76,12 +96,43 @@ public abstract partial class FightScreen : Node2D
         int MaximumHitPoints,
         bool IsDead,
         bool IsDown,
-        string Conditions);
+        string Conditions,
+        string? ClassName);
 
     public override void _Ready()
     {
         TextFont = ThemeDB.GetFallbackFont();
+
+        // Pixel art scaled with linear filtering smears; nearest keeps the pixels.
+        TextureFilter = TextureFilterEnum.Nearest;
+
+        _sprites = SpriteLibrary.Load();
+        _animateSprites = !HasArgument("probe") && ArgumentValue("capture") is null;
+
         OnReady();
+    }
+
+    /// <summary>
+    /// Advances the idle and walk loops; true when a new frame means a redraw. Called
+    /// from each screen's <c>_Process</c> — the base class deliberately has none.
+    /// </summary>
+    protected bool AdvanceSpriteAnimation(double delta)
+    {
+        if (!_animateSprites || _sprites.IsEmpty)
+        {
+            return false;
+        }
+
+        _animationClock += delta;
+        var frame = (int)(_animationClock / SecondsPerAnimationFrame);
+
+        if (frame == _animationFrame)
+        {
+            return false;
+        }
+
+        _animationFrame = frame;
+        return true;
     }
 
     /// <summary>The subclass's setup, run once the shared pieces exist.</summary>
@@ -145,7 +196,8 @@ public abstract partial class FightScreen : Node2D
         combatant.Stats.MaximumHitPoints,
         combatant.IsDead,
         !combatant.IsDead && combatant.CurrentHitPoints == 0,
-        string.Join(", ", combatant.Conditions));
+        string.Join(", ", combatant.Conditions),
+        combatant.Stats.Character?.ClassName);
 
     /// <summary>Initiative order, not build order: it is what a watcher actually tracks.</summary>
     protected static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
@@ -210,6 +262,15 @@ public abstract partial class FightScreen : Node2D
             return false;
         }
 
+        // The sprite faces the way it is going; a purely vertical step keeps the last
+        // facing rather than snapping back to the side's default mid-walk.
+        var dx = _walkPath[square].X - _walkPath[_walkSquare].X;
+
+        if (dx != 0)
+        {
+            _walkerFacesLeft = dx < 0;
+        }
+
         _walkSquare = square;
         return true;
     }
@@ -238,6 +299,21 @@ public abstract partial class FightScreen : Node2D
         (_walkerId, _walkPath) = _pendingWalks.Dequeue();
         _walkElapsed = 0;
         _walkSquare = 0;
+        _walkerFacesLeft = null;
+
+        // Face the route's first horizontal leg from the very first frame, so a walker
+        // does not set off looking the wrong way and turn mid-stride.
+        for (var index = 1; index < _walkPath.Count; index++)
+        {
+            var dx = _walkPath[index].X - _walkPath[index - 1].X;
+
+            if (dx != 0)
+            {
+                _walkerFacesLeft = dx < 0;
+                break;
+            }
+        }
+
         return true;
     }
 
@@ -307,22 +383,14 @@ public abstract partial class FightScreen : Node2D
                 DrawCircle(centre, (CellPixels / 2f) - 2, ActiveRing, filled: false, width: 2);
             }
 
-            if (token.IsDown)
+            if (_sprites.ForToken(token.IsParty, token.ClassName, token.Name) is { } art)
             {
-                // Hollow: down but not gone.
-                DrawCircle(centre, (CellPixels / 2f) - 7, colour, filled: false, width: 2);
+                DrawSpriteToken(art, token, centre, colour);
             }
             else
             {
-                DrawCircle(centre, (CellPixels / 2f) - 7, colour);
+                DrawCircleToken(token, centre, colour);
             }
-
-            DrawString(
-                TextFont,
-                centre + new Vector2(-5, 5),
-                token.Label.ToString(),
-                fontSize: 15,
-                modulate: token.IsDead || token.IsDown ? Dim : Background);
 
             // A hit point bar under each standing token: the one number a watcher tracks.
             if (token.IsDead || token.IsDown)
@@ -340,6 +408,121 @@ public abstract partial class FightScreen : Node2D
             DrawRect(new Rect2(barLeft, barTop, CellPixels - 12, 3), GridLine);
             DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, 3), colour);
         }
+    }
+
+    /// <summary>The token as it always drew: a filled or hollow circle with its letter.</summary>
+    private void DrawCircleToken(Token token, Vector2 centre, Color colour)
+    {
+        if (token.IsDown)
+        {
+            // Hollow: down but not gone.
+            DrawCircle(centre, (CellPixels / 2f) - 7, colour, filled: false, width: 2);
+        }
+        else
+        {
+            DrawCircle(centre, (CellPixels / 2f) - 7, colour);
+        }
+
+        DrawString(
+            TextFont,
+            centre + new Vector2(-5, 5),
+            token.Label.ToString(),
+            fontSize: 15,
+            modulate: token.IsDead || token.IsDown ? Dim : Background);
+    }
+
+    /// <summary>How much taller than its cell a standing figure may draw.</summary>
+    private const float SpriteOverflow = 10f;
+
+    /// <summary>The token as animated art, with the letter kept in the cell's corner.</summary>
+    /// <remarks>
+    /// The states map to the sheets: standing cycles Idle, the walking token cycles Walk
+    /// along its hop, and dead or down holds the Dead sheet's last frame — a body on the
+    /// ground — dimmed for the dead, ringed in <see cref="DownColour"/> for the downed so
+    /// "still saveable" stays visible at a glance. A pack with no Dead sheet (the
+    /// Priests) lies its idle frame on its back instead.
+    /// </remarks>
+    private void DrawSpriteToken(SpriteLibrary.CharacterArt art, Token token, Vector2 centre, Color colour)
+    {
+        var walking = token.Id == _walkerId && !token.IsDead && !token.IsDown;
+        var facesLeft = walking && _walkerFacesLeft is { } turned ? turned : !token.IsParty;
+
+        var strip = token.IsDead || token.IsDown
+            ? art.Dead
+            : walking && art.Walk is not null ? art.Walk : art.Idle;
+
+        // The one gap in the packs: no Dead sheet means the fallen draw their idle
+        // frame rotated onto its back rather than dropping back to a circle.
+        var lying = (token.IsDead || token.IsDown) && art.Dead is null;
+
+        if (lying)
+        {
+            strip = art.Idle;
+        }
+
+        if (strip is null)
+        {
+            DrawCircleToken(token, centre, colour);
+            return;
+        }
+
+        var frame = token.IsDead || token.IsDown
+            ? (lying ? 0 : strip.FrameCount - 1)
+            : _animationFrame % strip.FrameCount;
+
+        var modulate = token.IsDead
+            ? new Color(0.5f, 0.5f, 0.55f)
+            : Colors.White;
+
+        var bounds = strip.Bounds;
+
+        // Scale by what the frame actually holds: the figure fills the cell, may stand
+        // a little taller than it, and is capped sideways so a dragon does not blanket
+        // its neighbours.
+        var scale = Math.Min(
+            (CellPixels + SpriteOverflow) / bounds.Size.Y,
+            (CellPixels * 1.5f) / bounds.Size.X);
+
+        var anchor = new Vector2(centre.X, GridTop + ((token.Y + 1) * CellPixels) - 2);
+        var boundsCentreX = bounds.Position.X + (bounds.Size.X / 2f);
+
+        if (lying)
+        {
+            // On its back: rotated a quarter turn about the cell's centre.
+            DrawSetTransform(centre, Mathf.Pi / 2f, new Vector2(scale, scale));
+            DrawTextureRectRegion(
+                strip.Texture,
+                new Rect2(-boundsCentreX, -(bounds.Position.Y + (bounds.Size.Y / 2f)), strip.FrameSize, strip.FrameSize),
+                new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize),
+                token.IsDead ? modulate : Colors.White);
+        }
+        else
+        {
+            // Feet planted on the cell's bottom edge; the horizontal flip happens in
+            // the transform's scale, about the figure's own centre line.
+            DrawSetTransform(anchor, 0f, new Vector2(facesLeft ? -scale : scale, scale));
+            DrawTextureRectRegion(
+                strip.Texture,
+                new Rect2(-boundsCentreX, -bounds.End.Y, strip.FrameSize, strip.FrameSize),
+                new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize),
+                modulate);
+        }
+
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+
+        if (token.IsDown)
+        {
+            DrawCircle(centre, (CellPixels / 2f) - 7, DownColour, filled: false, width: 2);
+        }
+
+        // The letter stays — it is how the log names this combatant — tucked into the
+        // cell's corner where it does not sit on the figure's face.
+        DrawString(
+            TextFont,
+            new Vector2(centre.X - (CellPixels / 2f) + 3, centre.Y - (CellPixels / 2f) + 11),
+            token.Label.ToString(),
+            fontSize: 11,
+            modulate: token.IsDead || token.IsDown ? Dim : colour);
     }
 
     protected void DrawTurnOrder(IReadOnlyList<Token> tokens, string? activeId)

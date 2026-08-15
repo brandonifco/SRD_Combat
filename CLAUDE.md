@@ -309,6 +309,20 @@ because a combatant otherwise has no road back to "Fighter"), and the console pr
 the same lines in its turn header, where the banner's attack line replaced the bare
 attack-names list it used to print.
 
+**The board can wear real art now.** The tokens draw as animated pixel-art figures —
+an idle loop, the walk cycle riding the engine's recorded path, a body on the ground
+when down or dead — from the free Craftpix character packs, mapped in the client's
+`SpriteLibrary`: party art by class name (all twelve classes covered), monster art by
+**exact** stat-block name (goblins, skeletons, zombies, the Gladiator, the Knight, the
+Mage, the Priests, the Scout, and only the two dragon colours the packs actually hold —
+a red sprite on a Green Dragon Wyrmling would be the display lying). **The PNGs are
+deliberately not in the repo**: Craftpix's free license permits use in a game but not
+redistribution, and the repo is public — the same line the SRD PDF sits behind, and the
+same fallback shape: `client/assets/sprites/` is gitignored, a machine without it draws
+the circle-and-letter tokens it always drew, and `--probe`/`--capture` freeze the
+animation clock so a verification image cannot depend on when the frame was taken. See
+the client README for where the packs come from and where they go.
+
 **Movement is visible now.** A `Move` step carries the squares the mover actually
 occupied (`CombatStep.Path`, starting square first, cut short where an Opportunity
 Attack dropped them) — the engine's own record of the route, so no client recomputes

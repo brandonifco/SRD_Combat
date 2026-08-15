@@ -19,6 +19,12 @@ artifacts/
 # Local SRD reference extractions (regenerate with tools/srd-extract)
 reference/
 
+# Sprite art (Craftpix free packs). The license permits use in a game but not
+# redistribution of the source assets, so the PNGs stay out of this public repo the
+# way the SRD PDF does. The client falls back to circle tokens when they are absent.
+# See client/README.md for where to get them and where they go.
+client/assets/sprites/
+
 # Scratch
 *.log
 *.tmp
