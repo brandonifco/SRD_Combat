@@ -144,6 +144,15 @@ internal static class Display
         System.Console.WriteLine();
         WriteColoured($"── {combatant.Name}'s turn ──" + Environment.NewLine, ConsoleColor.Yellow);
 
+        // Who this is and what they fight with — class and level for a character, AC,
+        // hit points, each attack with its damage. TurnBanner composes it so this
+        // client and the Godot screen cannot drift. Its second line carries the attack
+        // names the `attack` command takes, which is why no separate list is printed.
+        foreach (var line in TurnBanner.Lines(combatant))
+        {
+            System.Console.WriteLine("  " + line);
+        }
+
         var parts = new List<string>
         {
             $"{combatant.Turn.MovementFeet} ft. movement",
@@ -152,12 +161,6 @@ internal static class Display
         };
 
         System.Console.WriteLine("  " + string.Join(" · ", parts));
-
-        if (combatant.Stats.Attacks.Count > 0)
-        {
-            System.Console.WriteLine(
-                "  attacks: " + string.Join(", ", combatant.Stats.Attacks.Select(attack => attack.Name)));
-        }
 
         if (combatant.Stats.Character is { Spells.Count: > 0 } character)
         {
