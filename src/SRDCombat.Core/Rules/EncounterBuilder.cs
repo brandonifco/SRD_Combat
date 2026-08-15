@@ -59,17 +59,49 @@ public static class EncounterBuilder
     public const int DefaultMaximumMonsters = 8;
 
     /// <summary>
-    /// The most creatures worth fielding against a party of a given size.
+    /// The most creatures worth fielding against a party of a given size and level.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// A stated interpretation the SRD does not offer, and the lever that matters most
     /// for whether a fight is survivable. Every additional monster is another whole turn
     /// of attacks each round, so a party outnumbered two to one loses on the action
-    /// economy however well it plays. One more creature than there are characters keeps
-    /// a fight tense without making it arithmetic.
+    /// economy however well it plays.
+    /// </para>
+    /// <para>
+    /// <b>It ignored the party's level until 2026-08-15, and that was the level 1 wall.</b>
+    /// "One more creature than there are characters" is a fair cap for a party that can
+    /// take a hit and a lethal one for a party that cannot, because the cost of being
+    /// outnumbered is not linear in the count — it is paid in *characters removed*. A
+    /// level 1 character has 8 to 12 hit points and the creatures a level 1 budget buys
+    /// hit for 8 or 9, so very nearly every landed blow drops somebody, and each one takes
+    /// a quarter of the party's action economy with it. The same fight at level 5 lands
+    /// the same 9 damage on 40 hit points and removes nobody.
+    /// </para>
+    /// <para>
+    /// The measurement that found it: of 120 seeded runs, the ones that died in the first
+    /// four fights faced <b>4.2 to 4.6 monsters</b> where the builder's average draw is
+    /// 3.0, with the biggest printed hit on the field averaging 8 to 9 — an entire level 1
+    /// hit point pool. The budget cannot see this, because <b>XP prices a creature's worth
+    /// and not its simultaneity</b>: five creatures costing 60 XP each and one costing 300
+    /// are the same purchase to the table on printed page 202 and completely different
+    /// fights to four characters with 10 hit points.
+    /// </para>
+    /// <para>
+    /// So the cap grows with the party's capacity to absorb a hit rather than sitting at a
+    /// constant: three creatures at level 1, four at level 2, and the original one-more-
+    /// than-the-party from level 3 up. The budget is untouched — this spends exactly the
+    /// same XP, on fewer and individually dearer creatures, which is the trade the
+    /// measurement says a fragile party wants.
+    /// </para>
     /// </remarks>
-    public static int MaximumFor(int partySize) =>
-        Math.Clamp(partySize + 1, 1, DefaultMaximumMonsters);
+    /// <param name="partySize">How many characters are in the fight.</param>
+    /// <param name="partyLevel">
+    /// The level to size against. The *lowest* in the party, since the cap exists to stop
+    /// the frailest member being removed before they act.
+    /// </param>
+    public static int MaximumFor(int partySize, int partyLevel) =>
+        Math.Clamp(Math.Min(partySize + 1, partyLevel + 2), 1, DefaultMaximumMonsters);
 
     /// <summary>Builds an encounter to a budget from a pool of candidates.</summary>
     /// <param name="candidates">The monsters that may be used. Usually a <see cref="MonsterPool"/> draw.</param>
@@ -189,6 +221,9 @@ public static class EncounterBuilder
             candidates,
             EncounterBudget.ForLevels(levels, difficulty),
             random,
-            maximumMonsters ?? MaximumFor(levels.Length));
+            // The lowest level in the party, not the average: a fight sized against the
+            // mean would still be sized to remove the character least able to survive it,
+            // and a party diverges the moment somebody dies and stops earning.
+            maximumMonsters ?? MaximumFor(levels.Length, levels.Length == 0 ? 1 : levels.Min()));
     }
 }

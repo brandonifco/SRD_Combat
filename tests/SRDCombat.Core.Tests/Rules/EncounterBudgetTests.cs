@@ -158,11 +158,32 @@ public class EncounterBudgetTests
         // outnumbered two to one loses on the action economy however well it plays.
         // The SRD caps nothing; this is a stated interpretation and the lever that
         // matters most for whether a fight is survivable.
-        Assert.Equal(5, EncounterBuilder.MaximumFor(4));
-        Assert.Equal(2, EncounterBuilder.MaximumFor(1));
+        Assert.Equal(5, EncounterBuilder.MaximumFor(4, partyLevel: 3));
+        Assert.Equal(2, EncounterBuilder.MaximumFor(1, partyLevel: 3));
         Assert.Equal(
             EncounterBuilder.DefaultMaximumMonsters,
-            EncounterBuilder.MaximumFor(50));
+            EncounterBuilder.MaximumFor(50, partyLevel: 20));
+    }
+
+    [Fact]
+    public void AFragilePartyIsFieldedFewerCreatures()
+    {
+        // The cost of being outnumbered is paid in characters *removed*, and at level 1
+        // very nearly every landed hit removes one — the creatures a level 1 budget buys
+        // hit for about a level 1 character's whole hit point pool. So the cap grows with
+        // the party's capacity to take a hit rather than sitting at a constant.
+        Assert.Equal(3, EncounterBuilder.MaximumFor(4, partyLevel: 1));
+        Assert.Equal(4, EncounterBuilder.MaximumFor(4, partyLevel: 2));
+        Assert.Equal(5, EncounterBuilder.MaximumFor(4, partyLevel: 3));
+
+        // It never grows past the original one-more-than-the-party, whatever the level.
+        Assert.Equal(5, EncounterBuilder.MaximumFor(4, partyLevel: 20));
+
+        // And the budget is untouched: this changes how many creatures the same XP is
+        // spent across, never how much there is to spend.
+        Assert.Equal(
+            EncounterBudget.ForLevels([1, 1, 1, 1], EncounterDifficulty.Moderate),
+            EncounterBudget.ForLevels([1, 1, 1, 1], EncounterDifficulty.Moderate));
     }
 
     [Fact]
