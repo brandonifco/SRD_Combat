@@ -37,6 +37,37 @@ public sealed record Fight(Encounter Encounter, IReadOnlyList<PartyMember> Party
 /// seeded from the same dice as everything else, with its own interpretations stated on
 /// the class.
 /// </para>
+/// <para>
+/// <b>Six squares is exactly one move, and widening it was measured and rejected —
+/// conditionally (2026-08-15).</b> A standard Speed of 30 crosses the whole gap on round
+/// one, so there is no approach to make and a bow's 80/320-foot range is spent before the
+/// first die is rolled. That is the best available explanation for the entire squad-AI
+/// series measuring *against* position, and #125 had already written the mechanism down:
+/// "the sides start one move apart, so there are no standoff rounds for a phase to spend."
+/// So the obvious fix was tried — separation raised, depth raised to keep the field from
+/// becoming a corridor, both columns centred so the flanking room is on both flanks.
+/// Measured on <c>tools/PacingMeasure</c>, seeds 1-120, loot on, one build:
+/// </para>
+/// <para>
+/// From level 1 — 30 ft: median 24, 54 clears. 45 ft: median 4, 30 clears. 60 ft:
+/// median 8, 42 clears.<br/>
+/// From level 3 — 30 ft: median 13, 27 clears. 45 ft: median 18, 36 clears. 60 ft:
+/// median 23.5, 45 clears.
+/// </para>
+/// <para>
+/// <b>The sign flips with the party's level, which is the finding.</b> A wider field is
+/// worth nearly double the clears to a level 3 party (27 to 45) and costs a level 1 party
+/// most of its run. Every variant ended in defeat and not one in the policy's round limit
+/// — the new <c>ended:</c> line in the instrument is what proves that, so this is
+/// lethality and not a battlefield the pathfinder cannot cross. The mechanism is that
+/// crossing open ground costs a round in which the party's melee contributes nothing while
+/// anything with a ranged attack shoots for free, and a level 1 party has no hit points to
+/// spend on that round. So the board is *not* the first problem: the opening is (#83, and
+/// the 35-of-120 runs that die by fight 4 on the shipped board). <b>Widening is worth
+/// revisiting the moment the level 1 wall is fixed, and not before</b> — it is one
+/// constant, and the ladder above is the bar to beat. Depth and centring alone, at 30 ft,
+/// measured 22/51 against the baseline's 24/54: inside noise, no benefit, not shipped.
+/// </para>
 /// </remarks>
 public static class EncounterFactory
 {
