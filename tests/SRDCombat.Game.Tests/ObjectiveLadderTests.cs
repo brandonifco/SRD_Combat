@@ -88,6 +88,29 @@ public class ObjectiveLadderTests
     }
 
     [Fact]
+    public void ABossFightFieldsAnEscort()
+    {
+        // A lone marked leader is the easiest fight on the ladder — four characters
+        // focus-firing the only enemy action economy on the field, in a fight that ends
+        // the moment it dies. Three is leader plus a pair.
+        foreach (var seed in Enumerable.Range(1, 20))
+        {
+            var party = PregeneratedParty.Build(Content, level: 3);
+
+            var fight = EncounterFactory.Build(
+                Content,
+                party,
+                EncounterDifficulty.High,
+                new SeededRandomSource(seed),
+                objective: ObjectiveSpec.KillLeader);
+
+            Assert.True(
+                fight.Built.Monsters.Count >= 3,
+                $"seed {seed} built a boss fight of {fight.Built.Monsters.Count}");
+        }
+    }
+
+    [Fact]
     public void AFightWithNoObjectiveIsUnchanged()
     {
         var party = PregeneratedParty.Build(Content, level: 2);

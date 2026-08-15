@@ -80,6 +80,29 @@ top design problem: 84 of 120 runs clear everything. And **the median is useless
 it was pinned at 30 before this change and after it, so the shape line is the only figure
 that moved. Read `shape:`.
 
+**The back half grew teeth the same day, from the same diagnosis run at the other end.**
+With the wall down, 84 of 120 runs cleared everything, and instrumenting *why* found the
+mirror image of the wall: the count draw was uniform over 1..max, so two fights in five
+put one or two creatures against four coordinated characters — and those fights are free
+(measured per-count: a lone creature ends with the party at **89%** of its hit points, two
+at 83%, five at 70%, because focus fire deletes a lone creature's whole action economy).
+Same root cause as the wall, other side: **XP prices worth, not simultaneity.** Two
+changes, both count bounds, neither touching the printed budget:
+`EncounterBuilder.MinimumFor` — from level 3, a fight of four characters aims for at
+least two creatures (level 1–2 keep their floor of one; the fragile opening was fixed by
+lowering its ceiling, and raising its floor would claw that back) — and **a boss fight
+fields an escort**: a KillLeader rung builds at least three creatures, because a lone
+marked leader compounds "ends when one creature dies" into the easiest fight on the
+ladder. Measured on seeds 1–120, cumulatively: clears **84 → 76** (floor) **→ 72**
+(escort), middle runs **25 → 33 → 35**, the opening untouched (died-by-fight-4 11 → 13,
+inside the documented ±2). The day's whole arc, same seeds, same instrument: **35 / 31 /
+54 in the morning, 13 / 35 / 72 now** — the early deaths quartered, the middle the
+second-largest group for the first time. Still open: 60% of runs clear everything, and
+the per-band line the instrument now prints (hp-left is flat ~78% in every band) says
+late fights still are not close; the next teeth must come from somewhere other than
+count, since four-plus-one is already the ceiling the action economy tolerates. The
+median measured nothing through any of this — it has been pinned at 30 for three slices.
+
 **Not every rung is a deathmatch any more, and the two that are not were measured apart.**
 `EncounterObjective` is what ends a fight: `Defeat` (last side standing, the only rule
 there used to be), `SurviveRounds` and `KillLeader`. Two rungs of every five carry one —

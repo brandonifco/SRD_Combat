@@ -50,6 +50,7 @@ var results = new List<(int Cleared, int Level, RunEnd End)>();
 // the average draw is 3.0, which is invisible in "fights cleared" and invisible to the XP
 // budget, because XP prices a creature's worth and not how many act each round.
 var deaths = new List<(int Fight, string Difficulty, int Count, int Biggest)>();
+var fights = new List<(int Fight, string Difficulty, double HpLeft, int Downed, int Rounds, int Monsters)>();
 
 for (var seed = firstSeed; seed <= lastSeed; seed++)
 {
@@ -93,6 +94,19 @@ for (var seed = firstSeed; seed <= lastSeed; seed++)
 
         var fightNumber = run.Cleared + 1;
         var thisStep = step;
+
+        var heroes = fight.Encounter.Combatants
+            .Where(c => c.SideId == PregeneratedParty.SideId)
+            .ToArray();
+
+        fights.Add((
+            fightNumber,
+            thisStep.Difficulty.ToString(),
+            heroes.Sum(c => (double)c.CurrentHitPoints)
+                / Math.Max(1, heroes.Sum(c => c.Stats.MaximumHitPoints)),
+            heroes.Count(c => c.CurrentHitPoints == 0 || c.IsDead),
+            fight.Encounter.Round,
+            fight.Built.Monsters.Count));
 
         run.CompleteFight(fight, noLoot ? null : random);
 
@@ -163,6 +177,27 @@ foreach (var group in deaths.Where(d => d.Fight <= 4)
     Console.WriteLine(
         $"  died fight {group.Key.Fight} ({group.Key.Difficulty}): {group.Count()} runs, "
         + $"avg {group.Average(d => d.Count):F1} monsters, avg biggest hit {group.Average(d => d.Biggest):F1}");
+}
+
+Console.WriteLine("  by monster count (fights won, party hp left at end, characters downed):");
+
+foreach (var group in fights.GroupBy(f => f.Monsters).OrderBy(g => g.Key))
+{
+    Console.WriteLine(
+        $"    {group.Key} monsters: {group.Count(),4} won   "
+        + $"hp left {group.Average(f => f.HpLeft),5:P0}   "
+        + $"downed/fight {group.Average(f => (double)f.Downed):F2}");
+}
+
+Console.WriteLine("  per band (fights cleared, party hp left at end, characters downed, rounds):");
+
+foreach (var band in fights.GroupBy(f => (f.Fight - 1) / 5).OrderBy(g => g.Key))
+{
+    Console.WriteLine(
+        $"    fights {band.Key * 5 + 1,2}-{band.Key * 5 + 5,2}: {band.Count(),4} won   "
+        + $"hp left {band.Average(f => f.HpLeft),5:P0}   "
+        + $"downed/fight {band.Average(f => (double)f.Downed):F2}   "
+        + $"rounds {band.Average(f => (double)f.Rounds):F1}");
 }
 
 return 0;
