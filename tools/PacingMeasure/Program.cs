@@ -25,6 +25,14 @@ using SRDCombat.Game;
 var noLoot = args.Contains("--no-loot");
 var (firstSeed, lastSeed) = SeedRange(args);
 
+// The party starts at level 1 unless told otherwise. --start-level exists to separate
+// "this change is bad" from "this change is bad for a level 1 party", which the canonical
+// form cannot tell apart: most runs die in the opening cycle, so a change that only hurts
+// the fragile opening moves every figure exactly as a change that hurts everywhere does.
+// Compare like with like — a level 3 start is its own baseline, not comparable to a
+// level 1 one, because the budget re-prices every encounter against the party's level.
+var startLevel = StartLevel(args);
+
 var contentDirectory = args.FirstOrDefault(argument => !argument.StartsWith('-')
         && !IsSeedValue(args, argument))
     ?? FindContentDirectory();
@@ -36,12 +44,13 @@ if (contentDirectory is null || !Directory.Exists(contentDirectory))
 }
 
 var content = ContentLoader.Load(contentDirectory);
-var results = new List<(int Cleared, int Level)>();
+var results = new List<(int Cleared, int Level, RunEnd End)>();
 
 for (var seed = firstSeed; seed <= lastSeed; seed++)
 {
     var random = new SeededRandomSource(seed);
-    var run = GauntletRun.Start(content, GauntletLadder.Default(), 1);
+    var run = GauntletRun.Start(content, GauntletLadder.Default(), startLevel);
+    var end = RunEnd.Cleared;
 
     while (run.Next is not null)
     {
@@ -59,15 +68,20 @@ for (var seed = firstSeed; seed <= lastSeed; seed++)
 
         if (fight.Built.Monsters.Count == 0)
         {
+            end = RunEnd.NoFight;
             break;
         }
 
         SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
 
         // The policy's round limit fired: the fight cannot resolve, so the run's story
-        // ends here with whatever it had cleared.
+        // ends here with whatever it had cleared. Counted separately from defeat rather
+        // than folded into it: a party that died and a fight that would not resolve look
+        // identical in "fights cleared" and mean opposite things about a change. A
+        // battlefield the policy cannot cross shows up here and nowhere else.
         if (!fight.Encounter.IsComplete)
         {
+            end = RunEnd.Stalled;
             break;
         }
 
@@ -75,13 +89,14 @@ for (var seed = firstSeed; seed <= lastSeed; seed++)
 
         if (run.Outcome != RunOutcome.InProgress)
         {
+            end = run.Outcome == RunOutcome.Defeated ? RunEnd.Defeated : RunEnd.Cleared;
             break;
         }
     }
 
     var level = run.Party.Max(member => member.Sheet.Level);
-    results.Add((run.Cleared, level));
-    Console.WriteLine($"seed {seed}: cleared {run.Cleared}, level {level}");
+    results.Add((run.Cleared, level, end));
+    Console.WriteLine($"seed {seed}: cleared {run.Cleared}, level {level}, {end}");
 }
 
 var sorted = results.Select(result => result.Cleared).OrderBy(cleared => cleared).ToArray();
@@ -93,10 +108,34 @@ var median = sorted.Length % 2 == 0
     : sorted[sorted.Length / 2];
 
 Console.WriteLine(
-    $"seeds {firstSeed}-{lastSeed} ({(noLoot ? "no loot" : "loot")}): " +
+    $"seeds {firstSeed}-{lastSeed} ({(noLoot ? "no loot" : "loot")}" +
+    $"{(startLevel == 1 ? string.Empty : $", from level {startLevel}")}): " +
     $"median {median}  best {sorted[^1]}  " +
     $"cleared-all {results.Count(result => result.Cleared >= 30)}  " +
     $"reached-L4 {results.Count(result => result.Level >= 4)}");
+
+// The shape, because the median is the wrong summary for this distribution and is about
+// to stop working as an instrument entirely. Runs do not spread around a centre: they
+// pile at "died in the opening" and at "cleared everything", so the median reports which
+// pile is bigger rather than how far a run gets. Once clears pass half the seeds it pins
+// to 30 and can never move again — at 54 of 120 that is about seven runs away. Read these
+// three numbers, not the median, when judging a change.
+var diedEarly = results.Count(result => result.Cleared <= 4);
+var clearedAll = results.Count(result => result.Cleared >= 30);
+
+Console.WriteLine(
+    $"  shape: died-by-fight-4 {diedEarly}  middle {results.Count - diedEarly - clearedAll}  " +
+    $"cleared-all {clearedAll}  (of {results.Count})");
+
+// Why the runs ended. A change that makes fights unresolvable and a change that makes
+// them lethal both lower every figure above; only this line tells them apart.
+Console.WriteLine(
+    "  ended: " + string.Join(
+        "  ",
+        Enum.GetValues<RunEnd>()
+            .Select(reason => (Reason: reason, Count: results.Count(result => result.End == reason)))
+            .Where(entry => entry.Count > 0)
+            .Select(entry => $"{entry.Reason} {entry.Count}")));
 
 return 0;
 
@@ -122,12 +161,29 @@ static (int First, int Last) SeedRange(string[] args)
     return (1, 40);
 }
 
+static int StartLevel(string[] args)
+{
+    var index = Array.FindIndex(args, argument => argument is "--start-level");
+
+    if (index >= 0 && index + 1 < args.Length)
+    {
+        if (int.TryParse(args[index + 1], out var level) && level is >= 1 and <= 5)
+        {
+            return level;
+        }
+
+        Console.Error.WriteLine($"Cannot read '{args[index + 1]}' as a level 1-5; using 1.");
+    }
+
+    return 1;
+}
+
 // The value following --seeds is not a content path, whatever it looks like.
 static bool IsSeedValue(string[] args, string argument)
 {
     var index = Array.IndexOf(args, argument);
 
-    return index > 0 && args[index - 1] is "--seeds";
+    return index > 0 && args[index - 1] is "--seeds" or "--start-level";
 }
 
 // Walks up from the working directory looking for data/srd, the way the console does.
@@ -148,4 +204,20 @@ static string? FindContentDirectory()
     }
 
     return null;
+}
+
+/// <summary>Why a run stopped, so that defeat and an unresolvable fight stay distinct.</summary>
+internal enum RunEnd
+{
+    /// <summary>The ladder ran out — the party survived everything put in front of it.</summary>
+    Cleared,
+
+    /// <summary>The party was defeated.</summary>
+    Defeated,
+
+    /// <summary>The policy's round limit fired: a fight that could not resolve.</summary>
+    Stalled,
+
+    /// <summary>The builder produced no monsters, which should not happen.</summary>
+    NoFight,
 }
