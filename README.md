@@ -8,19 +8,27 @@ and collect weapons, armour, spells and magic items along the way. It is a comba
 no exploration, no dialogue, no overland travel. Everything between fights exists to
 serve the next fight.
 
-**Status: playable end to end** (as of 2026-08-13). The whole gauntlet runs in the
+**Status: playable end to end** (as of 2026-08-15). The whole gauntlet runs in the
 console client and under the mouse in the Godot client, with wounds, spent resources
 and the fallen carried between fights, rests that restore what the printed rules say,
-levels earned by experience, and loot. Automated runs have cleared all thirty rungs;
-no human has yet played a run to its end. The open fronts are character creation (the
-party is pre-made today) and party-side depth — most spells and higher-level class
-features are not yet implemented, and the pacing numbers say that is what decides how
-far a run gets.
+levels earned by experience, and loot. Character creation is in both clients — build
+your own party of four, every option shown with its printed SRD text — or take the
+pre-made one. Automated runs clear the ladder routinely (median 24 fights of 30, and
+54 of 120 seeded runs clear all thirty); no human has yet played a run to its end.
+
+The open front is **party-side depth**: 17 spells of the book's 339 have an effect the
+engine executes, six of the twelve classes are offered, and most class features past
+the first few levels are reported as unimplemented rather than silently approximated.
+The pacing numbers say that is what decides how far a run gets. They also say the
+difficulty is not yet a curve — runs mostly either end in the first four fights or
+clear all thirty, with little in between.
 
 ## What it is
 
 - **A full tactical grid** — squares, movement, reach, opportunity attacks, conditions,
-  concentration, area-of-effect spells. (Cover is not modelled yet.)
+  concentration, area-of-effect spells, and cover: the printed degrees judged along the
+  line of fire, raising AC and Dexterity saves, with Total Cover refusing the shot
+  outright rather than letting it miss.
 - **Levels 1–5**, the tier the SRD supports best for pure combat.
 - **A persistent party of four** advancing across a run — autosaved after every cleared
   fight, resumed with `--continue`, and defeat means reload rather than reset.

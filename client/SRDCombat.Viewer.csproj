@@ -1,11 +1,30 @@
 <Project Sdk="Godot.NET.Sdk/4.4.0">
 
   <!--
-    Deliberately outside SRDCombat.sln. CI runs bare `dotnet restore`, `build` and `test`
-    from the repository root, which resolve the solution — so a project that is not in it
-    is invisible to the gate that protects the engine, and cannot break a merge on a
-    runner that has .NET 8 and no Godot. See README.md beside this file and the plan
-    doc's Phase 7 section.
+    In SRDCombat.sln, so CI compiles it. This project sat *outside* the solution until
+    2026-08-15, on the stated reasoning that including it could break a merge on a
+    runner that has .NET 8 and no Godot. That reasoning was wrong, and the plan doc's
+    Phase 7 section had already recorded why: `Godot.NET.Sdk` is a NuGet package, so the
+    build needs no Godot installed. Checked rather than argued — a cold build with
+    `client/obj` and `.godot/mono/temp` deleted resolves GodotSharp.dll from
+    `~/.nuget/packages/godotsharp/4.4.0/lib/net8.0/`, never from the Godot on PATH, and
+    succeeds on net8.0 with 0 warnings. Two documents disagreeing about a fact is what
+    settling it empirically is for.
+
+    The cost of the exclusion was the whole point: CI runs bare `dotnet restore`, `build`
+    and `test` from the repository root, which resolve the solution, so 5,065 lines — the
+    entire graphical client, every line a player touches — were never compiled by the gate
+    that protects the engine. Nothing stopped a `Core` signature change from breaking the
+    client silently, and no test covers it either way. See README.md beside this file.
+
+    **The solution maps `Release|Any CPU` to this project's `Debug`, and that is correct
+    rather than a slip to tidy.** Godot.NET.Sdk defines `Debug;ExportDebug;ExportRelease`
+    and no plain `Release` — confirmed with `dotnet msbuild -getProperty:Configurations` —
+    so pointing the solution's Release leg at a `Release` that does not exist here would
+    fail the build. Both CI legs therefore compile this project in `Debug`, which costs
+    nothing: the point of gating it is catching a compile break, and a break breaks in
+    either configuration. The `ExportRelease` configuration is what a shipped build would
+    use, and nothing exports the client yet.
 
     Directory.Build.props still reaches here — MSBuild walks up from the *project's*
     directory, not from wherever the build was launched — so TargetFramework, Nullable,

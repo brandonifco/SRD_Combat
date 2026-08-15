@@ -400,12 +400,17 @@ than random, and it is deliberately after a playable ladder rather than before i
 
 **Phase 7 — Godot client.** *Ends when:* a fight can be played with a mouse.
 
-**Keep the Godot project out of `SRDCombat.sln`.** CI runs bare `dotnet restore`, `build`
-and `test` from the repository root, so every project in the solution is built on a runner
-that has .NET 8 and no Godot. A client that stays outside the solution cannot break the
-gate that protects the engine, and the only shared file it needs to touch is `.gitignore`.
-This was checked rather than assumed — see the Environment section of `CLAUDE.md` for what
-a trial project proved, including that no engine change is required to draw a fight.
+**~~Keep the Godot project out of `SRDCombat.sln`.~~ Reversed 2026-08-15 — the Godot
+project belongs *in* the solution.** The original reasoning was that CI runs bare
+`dotnet restore`, `build` and `test` from the repository root, so a client outside the
+solution could never break the gate protecting the engine on a runner with .NET 8 and no
+Godot. **The premise contradicted the trial recorded two paragraphs below**: the Godot
+SDK is a NuGet package, so the build needs no Godot installed at all. Verified on a cold
+build — `GodotSharp.dll` resolves from `~/.nuget/packages/`, not from the Godot on
+`PATH`, and the client compiles on net8.0 with 0 warnings. The exclusion bought nothing
+and cost the gate 5,065 lines of the only graphical client, which no test covers either.
+**The lesson is this file's own: when two documents disagree about something buildable,
+build it rather than re-reading them.**
 
 **Started 2026-08-12 with a read-only slice.** `client/` watches a seeded fight: the
 engine resolves it once, forwards, and the viewer scrubs through per-turn snapshots —
