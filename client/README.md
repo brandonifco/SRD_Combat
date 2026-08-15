@@ -97,7 +97,18 @@ standing, the walk cycle as the token glides the engine's recorded path, a swing
 every attack (Opportunity Attacks included, faced at the target), a flinch as damage
 lands, and the body going down when a creature drops — settling into a corpse, dimmed
 for the dead and ringed for the still-saveable. The party faces right and the monsters
-left (the columns the factory places), and a walker faces the way it is going.
+left (the columns the factory places), and a walker faces the way it is going. The walk
+cycle advances with the *distance covered* rather than with a timer, so the legs can
+never skate: change how fast a token crosses the ground and the stride follows.
+
+**The log waits for the picture.** An attack resolves in the engine the instant it is
+asked for — the roll, the damage and the death are all written before a frame of the
+swing is drawn — so printing them straight away tells the reader the outcome while the
+weapon is still going up. Each queued act remembers the log line it is the picture of,
+and the narration is held there until the animation finishes: the rolled result and the
+damage it dealt appear together, on the swing's last frame. Lines are delayed, never
+reordered or dropped, and anything with no animation to wait for (a creature with no
+art, a Dodge, the whole log during a probe) appears at once as it always did.
 
 **Every animation of one character is drawn at one size, through one transform.** The
 packs turn out to be canvas-aligned — across every strip the game draws, the figure's

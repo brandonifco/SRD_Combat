@@ -341,6 +341,20 @@ the circle-and-letter tokens it always drew, and `--probe`/`--capture` freeze th
 animation clock so a verification image cannot depend on when the frame was taken. See
 the client README for where the packs come from and where they go.
 
+**The log waits for the picture, and the walk is slow enough to see.** Both came from
+playing it: a move was over in a third of a second — thirteen frames for five squares,
+measured — which reads as teleporting rather than walking, so a square now takes a fifth
+of a second to cross and the walk cycle advances with the *distance covered* rather than
+a timer, which is what stops legs skating when either speed changes. And the narration
+used to arrive ahead of its own animation, because the engine resolves an attack whole
+the instant it is asked: roll, damage and death are all in the log before a frame of the
+swing is drawn, which makes the animation decoration rather than the event. Each queued
+act now remembers the log line it is the picture of, and the log is held there until the
+act finishes — the rolled result and the damage print together on the swing's last
+frame, with an act's *consequences* (Damage, Died, Downed, Condition) released alongside
+it because they are one moment of the fight. Lines are delayed, never reordered or
+dropped, and anything with no animation to wait for appears at once, the probe included.
+
 **Three findings from measuring the art are worth not rediscovering, because each was a
 bug the obvious approach shipped.** *The packs are canvas-aligned*: across every strip
 the game draws, the figure's feet sit on the canvas's bottom edge, so a character is
