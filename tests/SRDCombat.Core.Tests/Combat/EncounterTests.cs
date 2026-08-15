@@ -83,6 +83,46 @@ public class EncounterTests
     }
 
     [Fact]
+    public void Move_CarriesTheWalkedSquaresOnTheStep()
+    {
+        var (encounter, _, _) = TwoCombatants(heroX: 0, monsterX: 9);
+
+        Assert.Null(encounter.Move(new GridPosition(3, 0)));
+
+        // Starting square first, destination last, one square at a time: the step is
+        // the engine's own record of the route, which is what lets a client show the
+        // walk without recomputing any movement rule. The exact squares between are
+        // the path finder's business — three squares east has more than one legal
+        // 15 ft. route — so the test pins the shape rather than one tie-break.
+        var move = encounter.Log.Single(step => step.Kind == CombatStepKind.Move);
+        var path = Assert.IsAssignableFrom<IReadOnlyList<GridPosition>>(move.Path);
+
+        Assert.Equal(4, path.Count);
+        Assert.Equal(new GridPosition(0, 0), path[0]);
+        Assert.Equal(new GridPosition(3, 0), path[^1]);
+
+        for (var square = 1; square < path.Count; square++)
+        {
+            Assert.True(path[square - 1].IsAdjacentTo(path[square]));
+        }
+    }
+
+    [Fact]
+    public void StandingUp_CarriesNoPath()
+    {
+        var (encounter, hero, _) = TwoCombatants(heroX: 0, monsterX: 9);
+        hero.AddCondition(ConditionType.Prone);
+
+        Assert.Null(encounter.StandUp());
+
+        // Standing up is a Move step in the log but nobody crossed a square, so there
+        // is no route for a client to animate.
+        var move = encounter.Log.Single(step => step.Kind == CombatStepKind.Move);
+
+        Assert.Null(move.Path);
+    }
+
+    [Fact]
     public void Dash_GrantsAnotherSpeedOfMovement()
     {
         var (encounter, hero, _) = TwoCombatants(heroX: 0, monsterX: 9);

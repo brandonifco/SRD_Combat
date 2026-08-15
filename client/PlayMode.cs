@@ -109,6 +109,16 @@ public partial class PlayMode : FightScreen
     private string? _notice;
     private bool _probeStarted;
 
+    /// <summary>How much of the fight's log has already been scanned for walks to play.</summary>
+    private int _walkStepsSeen;
+
+    /// <summary>
+    /// Off during a probe: the probe reads a capture the instant after each click, and a
+    /// token photographed mid-hop is a token that looks like it never arrived. The same
+    /// reason the monsters hurry.
+    /// </summary>
+    private bool _animateWalks = true;
+
     private GauntletRun? _run;
     private Fight? _fight;
     private SeededRandomSource _dice = null!;
@@ -152,6 +162,7 @@ public partial class PlayMode : FightScreen
         if (HasArgument("probe"))
         {
             _pace = 0.05;
+            _animateWalks = false;
         }
 
         if (HasArgument("one-fight"))
@@ -163,6 +174,7 @@ public partial class PlayMode : FightScreen
             _labels = Labels.For(_encounter.Combatants);
             AdoptBattlefield(_encounter);
             _subtitle = $"one fight — seed {_seed} — the party against {RosterOf(fight)}";
+            _walkStepsSeen = 0;
 
             RefreshAfterAction(null);
             return;
@@ -331,6 +343,11 @@ public partial class PlayMode : FightScreen
         _phase = Phase.Fighting;
         _fightEndHandled = false;
         _buttonsFor = null;
+
+        // A fresh fight is a fresh log: nothing has been scanned for walks, and any
+        // hop the last fight left half-played dies with it.
+        _walkStepsSeen = 0;
+        ClearWalks();
 
         RefreshAfterAction(null);
     }
@@ -595,6 +612,18 @@ public partial class PlayMode : FightScreen
         if (_phase != Phase.Fighting || _encounter is not { } encounter)
         {
             RunProbeIfAsked();
+            return;
+        }
+
+        // A walk plays out before anything else happens: the token hops square to
+        // square, and the next beat — the policy's turn, the fight's end — waits for it.
+        if (AdvanceWalks(delta))
+        {
+            QueueRedraw();
+        }
+
+        if (WalkInProgress)
+        {
             return;
         }
 
@@ -1019,6 +1048,18 @@ public partial class PlayMode : FightScreen
         _reachable.Clear();
         _blocked.Clear();
 
+        // Whatever just happened, any walk it wrote gets played: the Move step carries
+        // the route, and the token hops it instead of teleporting.
+        if (_encounter is { } fought)
+        {
+            if (_animateWalks)
+            {
+                QueueWalks(fought.Log, _walkStepsSeen, fought.Log.Count);
+            }
+
+            _walkStepsSeen = fought.Log.Count;
+        }
+
         var commanded = CommandedCombatant();
 
         if (commanded is null || commanded.Id != _buttonsFor)
@@ -1131,7 +1172,7 @@ public partial class PlayMode : FightScreen
                 width: 3f);
         }
 
-        var tokens = TokensFrom(encounter, _labels);
+        var tokens = WithWalk(TokensFrom(encounter, _labels));
 
         if (commanded is not null && _pending == Pending.Nothing)
         {

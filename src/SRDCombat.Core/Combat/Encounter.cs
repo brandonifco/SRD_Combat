@@ -869,6 +869,10 @@ public sealed partial class Encounter
         var start = mover.Position;
         var travelled = 0;
 
+        // The squares actually occupied, start first, recorded onto the Move step so a
+        // client can show the walk without recomputing the route.
+        var walked = new List<GridPosition> { start };
+
         foreach (var step in path.Steps)
         {
             var from = mover.Position;
@@ -888,13 +892,15 @@ public sealed partial class Encounter
                     Add(
                         CombatStepKind.Move,
                         $"{mover.Name} stops at {mover.Position}.",
-                        mover);
+                        mover,
+                        path: walked);
                     return;
                 }
             }
 
             travelled += Battlefield.EnterCostFeet(step);
             mover.MoveTo(step);
+            walked.Add(step);
         }
 
         mover.Turn.SpendMovement(path.CostFeet);
@@ -902,7 +908,8 @@ public sealed partial class Encounter
         Add(
             CombatStepKind.Move,
             $"{mover.Name} moves from {start} to {mover.Position} ({path.CostFeet} ft.).",
-            mover);
+            mover,
+            path: walked);
 
         _ = travelled;
     }
@@ -1870,6 +1877,11 @@ public sealed partial class Encounter
                 : $"The fight ends in victory for {WinningSide}.");
     }
 
-    private void Add(CombatStepKind kind, string narration, Combatant? actor = null, Combatant? target = null) =>
-        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id));
+    private void Add(
+        CombatStepKind kind,
+        string narration,
+        Combatant? actor = null,
+        Combatant? target = null,
+        IReadOnlyList<GridPosition>? path = null) =>
+        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path));
 }

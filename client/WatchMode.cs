@@ -85,7 +85,13 @@ public partial class WatchMode : FightScreen
 
     public override void _Process(double delta)
     {
-        if (!_playing || _index >= _snapshots.Count - 1)
+        // The walk keeps playing even when paused, so a token never freezes mid-hop.
+        if (AdvanceWalks(delta))
+        {
+            QueueRedraw();
+        }
+
+        if (!_playing || _index >= _snapshots.Count - 1 || WalkInProgress)
         {
             return;
         }
@@ -99,6 +105,10 @@ public partial class WatchMode : FightScreen
 
         _elapsed = 0;
         _index++;
+
+        // The turn just revealed may have walked somebody; play the route its Move
+        // step recorded rather than teleporting the token to the snapshot's square.
+        QueueWalks(_log, _snapshots[_index - 1].LogCount, _snapshots[_index].LogCount);
         QueueRedraw();
     }
 
@@ -114,21 +124,29 @@ public partial class WatchMode : FightScreen
             case Key.Space:
                 _playing = !_playing;
                 break;
+
+            // Scrubbing snaps: a walk belongs to playback, and a token still hopping
+            // an old route over a hand-picked snapshot would be showing two moments at
+            // once. Pausing is different — that hop settles on its own.
             case Key.Right:
                 _playing = false;
                 _index = Math.Min(_snapshots.Count - 1, _index + 1);
+                ClearWalks();
                 break;
             case Key.Left:
                 _playing = false;
                 _index = Math.Max(0, _index - 1);
+                ClearWalks();
                 break;
             case Key.Home:
                 _playing = false;
                 _index = 0;
+                ClearWalks();
                 break;
             case Key.End:
                 _playing = false;
                 _index = _snapshots.Count - 1;
+                ClearWalks();
                 break;
             case Key.Escape:
                 GetTree().Quit();
@@ -155,7 +173,7 @@ public partial class WatchMode : FightScreen
             (_playing ? "playing" : "paused") + "   [space] play/pause  [←/→] step  [esc] quit");
 
         DrawGrid();
-        DrawTokens(snapshot.Tokens, snapshot.ActiveId);
+        DrawTokens(WithWalk(snapshot.Tokens), snapshot.ActiveId);
         DrawTurnOrder(snapshot.Tokens, snapshot.ActiveId);
         DrawLog(_log, snapshot.LogCount, _snapshots[0].Tokens.Count);
     }

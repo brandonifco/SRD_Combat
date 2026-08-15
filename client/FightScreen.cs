@@ -40,6 +40,15 @@ public abstract partial class FightScreen : Node2D
     protected static readonly Color Ink = new("d8d8e0");
     protected static readonly Color Dim = new("8a8a96");
 
+    /// <summary>Seconds a walking token spends on each square of its recorded path.</summary>
+    protected const double SecondsPerWalkSquare = 0.1;
+
+    private readonly Queue<(string WalkerId, IReadOnlyList<GridPosition> Path)> _pendingWalks = new();
+    private string? _walkerId;
+    private IReadOnlyList<GridPosition>? _walkPath;
+    private double _walkElapsed;
+    private int _walkSquare;
+
     protected Font TextFont { get; private set; } = null!;
     protected int GridWidth { get; private set; }
     protected int GridHeight { get; private set; }
@@ -141,6 +150,96 @@ public abstract partial class FightScreen : Node2D
     /// <summary>Initiative order, not build order: it is what a watcher actually tracks.</summary>
     protected static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
         [.. encounter.TurnOrder.Select(combatant => TokenFrom(combatant, labels))];
+
+    /// <summary>Whether a walk is playing or waiting to play.</summary>
+    protected bool WalkInProgress => _walkPath is not null || _pendingWalks.Count > 0;
+
+    /// <summary>
+    /// Queues the walk carried by each new Move step in a slice of the log, so the token
+    /// can hop square to square instead of teleporting. The path is the engine's own
+    /// record of the route — the screen replays it, never recomputes it.
+    /// </summary>
+    protected void QueueWalks(IReadOnlyList<CombatStep> log, int from, int to)
+    {
+        for (var index = Math.Max(0, from); index < to && index < log.Count; index++)
+        {
+            // One square is no journey: a walk cut short before it left its first
+            // square would animate nothing, so it is not queued at all.
+            if (log[index] is { Kind: CombatStepKind.Move, ActorId: { } walkerId, Path.Count: > 1 } step)
+            {
+                _pendingWalks.Enqueue((walkerId, step.Path));
+            }
+        }
+
+        // Start immediately so the very next frame draws the walker on its starting
+        // square — waiting for the first advance would flash it at the destination.
+        if (_walkPath is null)
+        {
+            StartNextWalk();
+        }
+    }
+
+    /// <summary>Forgets every walk — for scrubbing, where snapping is the point.</summary>
+    protected void ClearWalks()
+    {
+        _pendingWalks.Clear();
+        _walkPath = null;
+        _walkerId = null;
+    }
+
+    /// <summary>Advances the playing walk; true when the screen should redraw.</summary>
+    protected bool AdvanceWalks(double delta)
+    {
+        if (_walkPath is null)
+        {
+            return StartNextWalk();
+        }
+
+        _walkElapsed += delta;
+        var square = (int)(_walkElapsed / SecondsPerWalkSquare);
+
+        if (square >= _walkPath.Count)
+        {
+            _walkPath = null;
+            _walkerId = null;
+            return true;
+        }
+
+        if (square == _walkSquare)
+        {
+            return false;
+        }
+
+        _walkSquare = square;
+        return true;
+    }
+
+    /// <summary>The tokens with the walking one drawn where its hop has reached.</summary>
+    protected IReadOnlyList<Token> WithWalk(IReadOnlyList<Token> tokens)
+    {
+        if (_walkPath is not { } path || _walkerId is not { } walkerId)
+        {
+            return tokens;
+        }
+
+        var square = path[Math.Min(_walkSquare, path.Count - 1)];
+
+        return [.. tokens.Select(token =>
+            token.Id == walkerId ? token with { X = square.X, Y = square.Y } : token)];
+    }
+
+    private bool StartNextWalk()
+    {
+        if (_pendingWalks.Count == 0)
+        {
+            return false;
+        }
+
+        (_walkerId, _walkPath) = _pendingWalks.Dequeue();
+        _walkElapsed = 0;
+        _walkSquare = 0;
+        return true;
+    }
 
     protected Vector2 CentreOf(GridPosition square) => new(
         GridLeft + (square.X * CellPixels) + (CellPixels / 2f),
