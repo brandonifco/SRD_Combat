@@ -53,6 +53,34 @@ Moderate rung drops a Potion of Healing**, handed to whoever carries the fewest.
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
+**Not every rung is a deathmatch any more, and the two that are not were measured apart.**
+`EncounterObjective` is what ends a fight: `Defeat` (last side standing, the only rule
+there used to be), `SurviveRounds` and `KillLeader`. Two rungs of every five carry one —
+the High milestone is a boss fight where the **dearest creature by printed XP** is marked
+and the rest break off when it drops, and one routine Low rung is a three-round holding
+action. Three readings are on the type: **an objective can only ever win**, never lose, so
+being wiped out still loses whatever it says and `CheckForCompletion` settles the
+last-side-standing question *first*; **the other side's objective is always Defeat**, which
+is what makes "survive three rounds" a different fight rather than a shorter one; and
+**rewards did not move**, because `GauntletRun` already paid from `fight.Built.Monsters` —
+the encounter as built, not the corpses — so a fight won by outlasting an enemy that walks
+away pays exactly what killing it would have. The policy plays to them: `FocusTarget`
+returns the marked leader for the objective's own side, because a doctrine that kept
+picking on threat-per-hit-point would win a boss fight only by accident. Measured on
+seeds 1-120 against the same build's 24/54: **Survive(3) alone 26/59, KillLeader alone
+30/65, both 30/65** — the boss rung is the whole effect and the two do not add, because
+**the median saturated**. That is the failure the instrument was warned about one slice
+earlier: at 65 clears of 120 the median pins to 30 and can never move again, so the
+`shape:` line is now the figure to read. **Objectives bought variety and cost difficulty**
+— the back half got easier (middle runs 31 → 18) while **the opening did not move at all**
+(died-by-fight-4 35 → 37), which is the level 1 wall being untouched by anything that
+happens after it. Wiring them also found a real gap: `CheckForCompletion` was called by
+Move, Attack and death saves but **never by the casting path**, so a spell that killed the
+last enemy left the fight running until something else asked. A turn boundary now asks —
+but only about the objective, because asking the whole question there ends the fight before
+a downed character's turn begins, and their turn is where the Death Saving Throw and its
+natural 20 live. The test that caught that is `ADyingCharacterRollsADeathSaveAtTheStartOfItsTurn`.
+
 **Automated runs still lose, and the pacing history is worth reading as a whole.** Measured
 over the same 40 seeds throughout (an unrecorded set — and 40-seed medians carry about
 ±2 of noise, a #132 finding this table predates), median fights cleared of 30:
