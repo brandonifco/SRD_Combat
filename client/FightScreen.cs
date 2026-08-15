@@ -19,13 +19,35 @@ namespace SRDCombat.Viewer;
 /// </remarks>
 public abstract partial class FightScreen : Node2D
 {
-    protected const int CellPixels = 42;
     protected const int GridLeft = 24;
     protected const int GridTop = 96;
-    protected const int PanelLeft = 610;
-    protected const int ScreenWidth = 1280;
-    protected const int ScreenHeight = 760;
+    protected const int PanelLeft = 664;
+    protected const int ScreenWidth = 1600;
+    protected const int ScreenHeight = 950;
     protected const double SecondsPerTurn = 0.6;
+
+    /// <summary>
+    /// The room the board has. The square size is derived to fill it rather than fixed,
+    /// so a battlefield of any shape uses the whole area — and a future field wider than
+    /// today's nine squares shrinks its squares instead of growing into the side panel.
+    /// </summary>
+    private const int BoardWidth = 616;
+    private const int BoardHeight = 470;
+
+    /// <summary>
+    /// Bounds on the derived square. The ceiling keeps a small skirmish from drawing
+    /// squares so large the figures look like portraits; the floor keeps a huge field
+    /// legible rather than letting it vanish.
+    /// </summary>
+    private const int LargestCell = 72;
+    private const int SmallestCell = 24;
+
+    /// <summary>
+    /// The board square, in pixels. Set from the battlefield's shape, so it is only
+    /// meaningful once a fight has been adopted; the default is what an empty screen
+    /// draws its (nonexistent) grid at.
+    /// </summary>
+    protected int CellPixels { get; private set; } = 48;
 
     protected static readonly Color Background = new("16161d");
     protected static readonly Color GridLine = new("2c2c38");
@@ -52,11 +74,28 @@ public abstract partial class FightScreen : Node2D
 
     private sealed record WalkAct(string WalkerId, IReadOnlyList<GridPosition> Path) : Act;
 
+    /// <summary>A one-shot pose: a strip played once through, then done.</summary>
     /// <param name="FacesLeft">
-    /// Which way the swing faces, read from where the two stood when it was queued.
-    /// Null when they shared a column — the actor keeps its side's default facing.
+    /// Which way it faces, read from where the two stood when it was queued. Null when
+    /// they shared a column, or when facing is not the pose's business — the actor then
+    /// keeps its side's default facing.
     /// </param>
-    private sealed record SwingAct(string ActorId, bool? FacesLeft) : Act;
+    private sealed record PoseAct(string ActorId, Pose Pose, bool? FacesLeft = null) : Act;
+
+    /// <summary>The one-shot animations, each with its own strip and its own tempo.</summary>
+    protected enum Pose
+    {
+        None,
+
+        /// <summary>The Attack strip, played at whatever it swings.</summary>
+        Swing,
+
+        /// <summary>The Hurt strip: a flinch as damage lands.</summary>
+        Flinch,
+
+        /// <summary>The Dead strip, played through as the body goes down.</summary>
+        Fall,
+    }
 
     private readonly Queue<Act> _pendingActs = new();
     private string? _walkerId;
@@ -71,12 +110,24 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     private bool? _walkerFacesLeft;
 
-    private string? _swingActorId;
-    private bool? _swingFacesLeft;
-    private double _swingElapsed;
+    private string? _poseActorId;
+    private Pose _pose;
+    private bool? _poseFacesLeft;
+    private double _poseElapsed;
 
-    /// <summary>How long one swing takes, whatever its strip's frame count.</summary>
-    private const double SecondsPerSwing = 0.45;
+    /// <summary>
+    /// How long each pose takes, whatever its strip's frame count — the strip is fitted
+    /// to the time rather than the time to the strip, so a fourteen-frame Priest attack
+    /// and a five-frame Goblin one take the same beat. A flinch is brief because it
+    /// interrupts nothing; a fall is slow because it is the last thing a creature does.
+    /// </summary>
+    private static double SecondsFor(Pose pose) => pose switch
+    {
+        Pose.Swing => 0.45,
+        Pose.Flinch => 0.22,
+        Pose.Fall => 0.6,
+        _ => 0,
+    };
 
     /// <summary>Seconds per Walk-strip frame — quicker than idle, so legs visibly move.</summary>
     private const double SecondsPerWalkFrame = 0.07;
@@ -208,6 +259,11 @@ public abstract partial class FightScreen : Node2D
         BlockedSquares = encounter.Battlefield.Blocked;
         DifficultSquares = encounter.Battlefield.DifficultTerrain;
         LowObstacleSquares = encounter.Battlefield.LowObstacles;
+
+        CellPixels = Math.Clamp(
+            Math.Min(BoardWidth / Math.Max(1, GridWidth), BoardHeight / Math.Max(1, GridHeight)),
+            SmallestCell,
+            LargestCell);
     }
 
     protected static Token TokenFrom(Combatant combatant, Labels labels) => new(
@@ -228,17 +284,23 @@ public abstract partial class FightScreen : Node2D
     protected static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
         [.. encounter.TurnOrder.Select(combatant => TokenFrom(combatant, labels))];
 
-    /// <summary>Whether a walk or a swing is playing or waiting to play.</summary>
-    protected bool ActInProgress => _walkPath is not null || _swingActorId is not null || _pendingActs.Count > 0;
+    /// <summary>Whether a walk or a pose is playing or waiting to play.</summary>
+    protected bool ActInProgress => _walkPath is not null || _poseActorId is not null || _pendingActs.Count > 0;
 
     /// <summary>
-    /// Queues what a slice of the log should play out on the board, in log order: each
-    /// Move step's walk — the engine's own record of the route, replayed and never
-    /// recomputed — and each attack's swing, Opportunity Attacks included, facing
-    /// whichever side of the attacker its target stood on. A swing is queued only for
-    /// an actor whose art has an Attack strip: holding the beat for a circle with
-    /// nothing to show would be dead time.
+    /// Queues what a slice of the log should play out on the board, in log order — so a
+    /// blow lands after the walk that closed the distance, and an Opportunity Attack
+    /// plays where it interrupted the walk that provoked it.
     /// </summary>
+    /// <remarks>
+    /// Four kinds of step have a body to them. A Move carries the engine's own record of
+    /// the route, replayed and never recomputed. An attack swings, faced at its target.
+    /// Damage makes its victim flinch. Dropping — dead, or merely down — plays the body
+    /// going down instead of cutting straight to a corpse. Each is queued only when the
+    /// actor's art actually holds that strip, because holding the beat for a token with
+    /// nothing to show is dead time; and a flinch is skipped for a victim the same blow
+    /// felled, whose fall says it better.
+    /// </remarks>
     protected void QueueActs(IReadOnlyList<CombatStep> log, int from, int to, IReadOnlyList<Token> tokens)
     {
         for (var index = Math.Max(0, from); index < to && index < log.Count; index++)
@@ -254,29 +316,62 @@ public abstract partial class FightScreen : Node2D
                 case
                 {
                     Kind: CombatStepKind.Attack or CombatStepKind.OpportunityAttack,
-                    ActorId: { } actorId,
-                    TargetId: { } targetId,
+                    ActorId: { } attackerId,
+                    TargetId: { } strickenId,
                 }:
-                    if (FindToken(tokens, actorId) is { } actor
-                        && _sprites.ForToken(actor.IsParty, actor.ClassName, actor.Name)?.Attack is not null)
-                    {
-                        var facesLeft = FindToken(tokens, targetId) is { } target && target.X != actor.X
-                            ? target.X < actor.X
-                            : (bool?)null;
+                    QueuePose(tokens, attackerId, Pose.Swing, facing: strickenId);
+                    break;
 
-                        _pendingActs.Enqueue(new SwingAct(actorId, facesLeft));
-                    }
+                case { Kind: CombatStepKind.Damage, TargetId: { } victimId }:
+                    QueuePose(tokens, victimId, Pose.Flinch);
+                    break;
 
+                case { Kind: CombatStepKind.Died or CombatStepKind.Downed, ActorId: { } fallenId }:
+                    QueuePose(tokens, fallenId, Pose.Fall);
                     break;
             }
         }
 
         // Start immediately so the very next frame draws the walker on its starting
         // square — waiting for the first advance would flash it at the destination.
-        if (_walkPath is null && _swingActorId is null)
+        if (_walkPath is null && _poseActorId is null)
         {
             StartNextAct();
         }
+    }
+
+    /// <summary>
+    /// Queues one pose for one combatant, when that combatant's art can show it.
+    /// </summary>
+    private void QueuePose(IReadOnlyList<Token> tokens, string actorId, Pose pose, string? facing = null)
+    {
+        if (FindToken(tokens, actorId) is not { } actor
+            || _sprites.ForToken(actor.IsParty, actor.ClassName, actor.Name) is not { } art)
+        {
+            return;
+        }
+
+        var strip = pose switch
+        {
+            Pose.Swing => art.Attack,
+
+            // A blow that felled its victim skips the flinch: the fall queued right
+            // behind it is the better telling, and the token is already on the floor.
+            Pose.Flinch => actor.IsDead || actor.IsDown ? null : art.Hurt,
+            Pose.Fall => art.Dead,
+            _ => null,
+        };
+
+        if (strip is null)
+        {
+            return;
+        }
+
+        var facesLeft = facing is not null && FindToken(tokens, facing) is { } other && other.X != actor.X
+            ? other.X < actor.X
+            : (bool?)null;
+
+        _pendingActs.Enqueue(new PoseAct(actorId, pose, facesLeft));
     }
 
     private static Token? FindToken(IReadOnlyList<Token> tokens, string id)
@@ -298,19 +393,21 @@ public abstract partial class FightScreen : Node2D
         _pendingActs.Clear();
         _walkPath = null;
         _walkerId = null;
-        _swingActorId = null;
+        _poseActorId = null;
+        _pose = Pose.None;
     }
 
     /// <summary>Advances the playing act; true when the screen should redraw.</summary>
     protected bool AdvanceActs(double delta)
     {
-        if (_swingActorId is not null)
+        if (_poseActorId is not null)
         {
-            _swingElapsed += delta;
+            _poseElapsed += delta;
 
-            if (_swingElapsed >= SecondsPerSwing)
+            if (_poseElapsed >= SecondsFor(_pose))
             {
-                _swingActorId = null;
+                _poseActorId = null;
+                _pose = Pose.None;
                 StartNextAct();
             }
 
@@ -375,10 +472,11 @@ public abstract partial class FightScreen : Node2D
 
         switch (_pendingActs.Dequeue())
         {
-            case SwingAct swing:
-                _swingActorId = swing.ActorId;
-                _swingFacesLeft = swing.FacesLeft;
-                _swingElapsed = 0;
+            case PoseAct pose:
+                _poseActorId = pose.ActorId;
+                _pose = pose.Pose;
+                _poseFacesLeft = pose.FacesLeft;
+                _poseElapsed = 0;
                 break;
 
             case WalkAct walk:
@@ -536,37 +634,67 @@ public abstract partial class FightScreen : Node2D
             modulate: token.IsDead || token.IsDown ? Dim : Background);
     }
 
-    /// <summary>How much taller than its cell a standing figure may draw.</summary>
-    private const float SpriteOverflow = 10f;
+    /// <summary>
+    /// The figure height, in source pixels, that a square is sized around. It is what a
+    /// standing human is drawn at across every one of these packs, so measuring against
+    /// it puts one pixel scale on the whole board: a goblin then reads shorter than an
+    /// orc because the artist drew it shorter, and every pack keeps the same pixel size,
+    /// which is what makes them look like one set of art rather than several.
+    /// </summary>
+    private const float NominalStature = 64f;
+
+    /// <summary>How much of a square's height that nominal figure fills.</summary>
+    private const float StatureFraction = 0.95f;
+
+    /// <summary>
+    /// How far past its square a figure may draw before it is shrunk to fit. Generous —
+    /// a tall orc standing over its square looks right, and only something built on a
+    /// different scale entirely (the dragon, half as tall as it is wide) is cut down.
+    /// </summary>
+    private const float WidestSpan = 1.6f;
+    private const float TallestSpan = 1.45f;
 
     /// <summary>The token as animated art, with the letter kept in the cell's corner.</summary>
     /// <remarks>
+    /// <para>
     /// The states map to the sheets: standing cycles Idle, the walking token cycles Walk
-    /// as it glides its route, the swinging one plays Attack once through facing its
-    /// target, and dead or down holds the Dead sheet's last frame — a body on the
-    /// ground — dimmed for the dead, ringed in <see cref="DownColour"/> for the downed so
-    /// "still saveable" stays visible at a glance. A pack with no Dead sheet (the
-    /// Priests) lies its idle frame on its back instead.
+    /// as it glides its route, and the one-shot poses each play their strip once through
+    /// — Attack faced at its target, Hurt as a blow lands, Dead as the body goes down.
+    /// Once down it holds the Dead sheet's last frame, dimmed for the dead and ringed in
+    /// <see cref="DownColour"/> for the downed so "still saveable" reads at a glance. A
+    /// pack with no Dead sheet (the Priests) lies its idle frame on its back instead.
+    /// </para>
+    /// <para>
+    /// <b>Every strip is drawn through one transform</b>, built from the figure's
+    /// measurements rather than the strip's own — see <see cref="SpriteLibrary.Figure"/>
+    /// for why. That is what keeps a character exactly one size whatever it is doing,
+    /// and what lets the swing's drawn lunge actually carry the body forward.
+    /// </para>
     /// </remarks>
     private void DrawSpriteToken(SpriteLibrary.CharacterArt art, Token token, Vector2 centre, Color colour)
     {
-        var standing = !token.IsDead && !token.IsDown;
-        var walking = token.Id == _walkerId && standing;
-        var swinging = token.Id == _swingActorId && standing && art.Attack is not null;
+        var fallen = token.IsDead || token.IsDown;
+        var posing = token.Id == _poseActorId ? _pose : Pose.None;
+        var walking = token.Id == _walkerId && !fallen;
 
-        var facesLeft = swinging && _swingFacesLeft is { } toward ? toward
-            : walking && _walkerFacesLeft is { } turned ? turned
-            : !token.IsParty;
+        // A fall belongs to the moment of dropping; the flinch and swing belong to a
+        // combatant still on its feet.
+        if (posing is Pose.Fall ? !fallen : fallen)
+        {
+            posing = Pose.None;
+        }
 
-        var strip = token.IsDead || token.IsDown
-            ? art.Dead
-            : swinging ? art.Attack
-            : walking && art.Walk is not null ? art.Walk
-            : art.Idle;
+        var strip = posing switch
+        {
+            Pose.Swing => art.Attack,
+            Pose.Flinch => art.Hurt,
+            Pose.Fall => art.Dead,
+            _ => fallen ? art.Dead : walking && art.Walk is not null ? art.Walk : art.Idle,
+        };
 
         // The one gap in the packs: no Dead sheet means the fallen draw their idle
         // frame rotated onto its back rather than dropping back to a circle.
-        var lying = (token.IsDead || token.IsDown) && art.Dead is null;
+        var lying = fallen && art.Dead is null;
 
         if (lying)
         {
@@ -579,34 +707,33 @@ public abstract partial class FightScreen : Node2D
             return;
         }
 
-        // Each state keeps its own clock: a swing plays its whole strip exactly once
-        // across its fixed duration whatever the frame count, a walk cycles at its own
-        // quicker cadence, idling ticks the shared loop, and the fallen hold still.
-        var frame = token.IsDead || token.IsDown
-            ? (lying ? 0 : strip.FrameCount - 1)
-            : swinging
-                ? Math.Min((int)(_swingElapsed / SecondsPerSwing * strip.FrameCount), strip.FrameCount - 1)
+        var facesLeft = posing is Pose.Swing && _poseFacesLeft is { } toward ? toward
+            : walking && _walkerFacesLeft is { } turned ? turned
+            : !token.IsParty;
+
+        // A fall runs only as far as the body settles and stops there, rather than
+        // playing on into the frames where the pack takes the body away.
+        var last = posing is Pose.Fall || (fallen && !lying) ? art.Repose : strip.FrameCount - 1;
+
+        // Each state keeps its own clock: a one-shot pose plays its strip exactly once
+        // across its own duration whatever the frame count, a walk cycles at its own
+        // quicker cadence, idling ticks the shared loop, and the fallen hold the frame
+        // they came to rest on.
+        var frame = posing is not Pose.None
+            ? Math.Min((int)(_poseElapsed / SecondsFor(posing) * (last + 1)), last)
+            : fallen
+                ? (lying ? 0 : last)
                 : walking
                     ? (int)(_walkElapsed / SecondsPerWalkFrame) % strip.FrameCount
                     : _animationFrame % strip.FrameCount;
 
-        var modulate = token.IsDead
-            ? new Color(0.5f, 0.5f, 0.55f)
-            : Colors.White;
-
-        var bounds = strip.Bounds;
-
-        // Scale by what the frame actually holds: the figure fills the cell, may stand
-        // a little taller than it, and is capped sideways so a dragon does not blanket
-        // its neighbours.
-        var scale = Math.Min(
-            (CellPixels + SpriteOverflow) / bounds.Size.Y,
-            (CellPixels * 1.5f) / bounds.Size.X);
+        var modulate = token.IsDead ? new Color(0.5f, 0.5f, 0.55f) : Colors.White;
+        var figure = art.Figure;
+        var scale = ScaleFor(figure);
 
         // Off the centre rather than the grid square, so a gliding walker's feet move
         // with it instead of stair-stepping a square behind.
         var anchor = new Vector2(centre.X, centre.Y + (CellPixels / 2f) - 2);
-        var boundsCentreX = bounds.Position.X + (bounds.Size.X / 2f);
 
         if (lying)
         {
@@ -614,18 +741,19 @@ public abstract partial class FightScreen : Node2D
             DrawSetTransform(centre, Mathf.Pi / 2f, new Vector2(scale, scale));
             DrawTextureRectRegion(
                 strip.Texture,
-                new Rect2(-boundsCentreX, -(bounds.Position.Y + (bounds.Size.Y / 2f)), strip.FrameSize, strip.FrameSize),
+                new Rect2(-figure.CentreX, -(figure.GroundY - (figure.Stature / 2f)), strip.FrameSize, strip.FrameSize),
                 new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize),
-                token.IsDead ? modulate : Colors.White);
+                modulate);
         }
         else
         {
-            // Feet planted on the cell's bottom edge; the horizontal flip happens in
-            // the transform's scale, about the figure's own centre line.
+            // The figure's own ground line on the square's floor and its own centre line
+            // on the square's centre; the horizontal flip is the transform's negative
+            // scale, which mirrors about that same centre line.
             DrawSetTransform(anchor, 0f, new Vector2(facesLeft ? -scale : scale, scale));
             DrawTextureRectRegion(
                 strip.Texture,
-                new Rect2(-boundsCentreX, -bounds.End.Y, strip.FrameSize, strip.FrameSize),
+                new Rect2(-figure.CentreX, -figure.GroundY, strip.FrameSize, strip.FrameSize),
                 new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize),
                 modulate);
         }
@@ -645,6 +773,33 @@ public abstract partial class FightScreen : Node2D
             token.Label.ToString(),
             fontSize: 11,
             modulate: token.IsDead || token.IsDown ? Dim : colour);
+    }
+
+    /// <summary>
+    /// How much to magnify one figure: the board's shared pixel scale, cut down only for
+    /// a creature that would not fit its square at it.
+    /// </summary>
+    /// <remarks>
+    /// The result is snapped to a quarter step. Pixel art enlarged by an arbitrary
+    /// fraction gives its source pixels uneven sizes on screen — some one screen pixel,
+    /// some two — which crawls as the frames cycle; a clean ratio keeps the grid of
+    /// pixels even. At today's board a square comes out 66 pixels, which puts the shared
+    /// scale on exactly 1.0: the art is drawn at its own resolution.
+    /// </remarks>
+    private float ScaleFor(SpriteLibrary.Figure figure)
+    {
+        var shared = StatureFraction * CellPixels / NominalStature;
+
+        var fits = Math.Min(
+            WidestSpan * CellPixels / figure.Breadth,
+            TallestSpan * CellPixels / figure.Stature);
+
+        return shared <= fits
+            ? Math.Max(0.25f, MathF.Round(shared * 4f) / 4f)
+
+            // Snapped *down* for an oversized figure: rounding to the nearest quarter
+            // could round back up past the very bound being applied.
+            : Math.Max(0.25f, MathF.Floor(fits * 4f) / 4f);
     }
 
     protected void DrawTurnOrder(IReadOnlyList<Token> tokens, string? activeId)
@@ -715,8 +870,13 @@ public abstract partial class FightScreen : Node2D
         }
     }
 
-    /// <summary>How many characters of narration fit across the log panel.</summary>
-    private const int LogWidthCharacters = 78;
+    /// <summary>
+    /// How many characters of narration fit across the log panel. Measured against the
+    /// panel's real width rather than guessed — the fallback font at this size runs
+    /// about 5.7 pixels to the character — and kept short of the edge, because the
+    /// figure is an average and a line of wide letters must not run off the screen.
+    /// </summary>
+    private const int LogWidthCharacters = 120;
 
     protected static string Trim(string text, int width) =>
         text.Length <= width ? text : text[..(width - 1)] + "…";

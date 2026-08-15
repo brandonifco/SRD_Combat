@@ -309,12 +309,16 @@ because a combatant otherwise has no road back to "Fighter"), and the console pr
 the same lines in its turn header, where the banner's attack line replaced the bare
 attack-names list it used to print.
 
-**The board can wear real art now.** The tokens draw as animated pixel-art figures —
-an idle loop, the walk cycle playing as the token glides the engine's recorded path,
-a swing played once through for every attack (Opportunity Attacks included, faced
-toward the target, queued in log order with the walks so each holds the next beat),
-and a body on the ground when down or dead — from the free Craftpix character packs,
-mapped in the client's
+**The board can wear real art now, and it is bigger.** The square is no longer a
+constant: it is derived to fill a fixed board area (`BoardWidth`/`BoardHeight` on
+`FightScreen`), which took today's nine-by-seven field from 42 pixels a square to 66 —
+two and a half times the area, in a window grown to 1600×950 — and means a field wider
+than today's shrinks its squares instead of growing into the side panel. The tokens draw
+as animated pixel-art figures: an idle loop, the walk cycle playing as the token glides
+the engine's recorded path, a swing for every attack (Opportunity Attacks included,
+faced at the target), a flinch as damage lands, and the body going down when a creature
+drops — all queued in log order so each holds the next beat, from the free Craftpix
+character packs, mapped in the client's
 `SpriteLibrary`: party art by class name (all twelve classes covered), monster art by
 **exact** stat-block name (goblins, skeletons, zombies, the Gladiator, the Knight, the
 Mage, the Priests, the Scout, and only the two dragon colours the packs actually hold —
@@ -325,6 +329,25 @@ same fallback shape: `client/assets/sprites/` is gitignored, a machine without i
 the circle-and-letter tokens it always drew, and `--probe`/`--capture` freeze the
 animation clock so a verification image cannot depend on when the frame was taken. See
 the client README for where the packs come from and where they go.
+
+**Three findings from measuring the art are worth not rediscovering, because each was a
+bug the obvious approach shipped.** *The packs are canvas-aligned*: across every strip
+the game draws, the figure's feet sit on the canvas's bottom edge, so a character is
+measured **once** — from the strips in which it stands — and every strip is drawn
+through that one transform. Measuring each strip on its own and centring it, which is
+what the first slice did, both deletes the motion the artist drew (a Knight's swing
+lunges twenty pixels forward) and *changes the figure's size mid-animation*, because an
+extended sword widens the box the body is scaled to fit. *One pixel scale serves the
+whole board*: the packs are drawn at the same resolution, a standing human being 64
+source pixels whatever its canvas, so scaling everyone by the same ratio keeps the art
+coherent and keeps a goblin correctly shorter than an orc — only a creature too big for
+its square is cut down, and the ratio is snapped to a quarter step so enlarged pixel art
+does not crawl. *A death strip's last frame is not a corpse*: every pack ends by sinking
+or fading the body away, so holding the final frame left a killed goblin as a
+seven-pixel smear; the body settles instead on the fullest frame in which it is actually
+down. And the measurement that matters more than any of them: a **crouching idle** (the
+Wild Zombie kneels to feed, and walks on all fours) is why stature is taken from the
+taller of Idle and Walk rather than from Idle alone.
 
 **Movement is visible now.** A `Move` step carries the squares the mover actually
 occupied (`CombatStep.Path`, starting square first, cut short where an Opportunity

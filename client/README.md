@@ -77,13 +77,31 @@ godot --path client -- --seed=12345
 
 ## Sprite art
 
-The tokens can be animated pixel-art figures instead of circles: an idle loop while
-standing, the walk cycle playing as the token glides the engine's own recorded path,
-a swing played once through for every attack — Opportunity Attacks included, facing
-whichever side the target stood on — and a body on the ground when down or dead,
-dimmed for the dead, ringed for the still-saveable. The party faces right and the
-monsters left (the columns the factory places), a walker faces the way it is going,
-and walks and swings play in log order, each holding the next beat until it lands. The art is the free Craftpix character packs, and the maps
+The tokens can be animated pixel-art figures instead of circles. Five animations play,
+queued in the log's own order so each lands where it belongs: an idle loop while
+standing, the walk cycle as the token glides the engine's recorded path, a swing for
+every attack (Opportunity Attacks included, faced at the target), a flinch as damage
+lands, and the body going down when a creature drops — settling into a corpse, dimmed
+for the dead and ringed for the still-saveable. The party faces right and the monsters
+left (the columns the factory places), and a walker faces the way it is going.
+
+**Every animation of one character is drawn at one size, through one transform.** The
+packs turn out to be canvas-aligned — across every strip the game draws, the figure's
+feet rest on the canvas's bottom edge — so a character is measured once, from the
+strips in which it is standing, and every strip is then drawn through that. What
+differs between strips is motion the artist drew: a Knight's swing lunges twenty pixels
+forward, a walk cycle strides and bobs, a slain goblin sprawls sideways. Measuring each
+strip on its own and re-centring it, which is what this did at first, deletes that
+motion and makes the figure change size mid-swing, because an extended sword widens the
+box that the body is scaled to fit.
+
+The board shares one pixel scale, set so a standing human fills its square, and only a
+creature too big for a square (the dragon, half as tall as it is wide) is cut down to
+fit. That keeps every pack at the same pixel size — they are drawn at the same
+resolution — so a goblin reads shorter than an orc because the artist drew it shorter.
+A death animation settles on the last frame that is still a body, not the final one:
+every pack ends by sinking or fading the corpse away, and holding that frame left a
+killed goblin as a smear on the floor. The art is the free Craftpix character packs, and the maps
 are curated in `SpriteLibrary`: party art by class name, monster art by **exact**
 stat-block name, and anything unmapped keeps the circle-and-letter token — a red
 dragon sprite on a Green Dragon Wyrmling would be the display lying, so only the
@@ -97,8 +115,13 @@ Knight, Gladiator, Elf, Priest, Goblin, Orc, Skeleton, Zombie, Dragon, and the t
 mages) and unpack them so each character's folder of animation strips sits at:
 
 ```
-client/assets/sprites/<Character>/Idle.png (Walk.png, Dead.png, ...)
+client/assets/sprites/<Character>/Idle.png (Walk.png, Attack.png, Hurt.png, Dead.png)
 ```
+
+`Idle.png` is the only one a character cannot do without — it is what a standing token
+shows, and what the figure is measured from. Everything else degrades on its own: no
+`Attack.png` and that creature never swings, no `Hurt.png` and it never flinches, no
+`Dead.png` (the Priest packs ship neither) and it lies its idle frame on its back.
 
 The directory is gitignored. A machine without it — CI, a fresh clone — draws the
 circle tokens it always drew; every lookup is a fallback, nothing is load-bearing.
