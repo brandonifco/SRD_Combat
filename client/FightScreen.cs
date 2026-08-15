@@ -252,8 +252,16 @@ public abstract partial class FightScreen : Node2D
             .Select(group => group.Count() > 1 ? $"{group.Count()} {group.Key}s" : group.Key));
 
     /// <summary>Takes the battlefield's shape so the grid can be drawn.</summary>
+    /// <summary>
+    /// The colours the log is read with, rebuilt per fight because the names are the
+    /// fight's own. <see cref="LogHighlighter.None"/> until there is a fight.
+    /// </summary>
+    protected LogHighlighter Highlighter { get; private set; } = LogHighlighter.None;
+
     protected void AdoptBattlefield(Encounter encounter)
     {
+        Highlighter = LogHighlighter.For(encounter, PregeneratedParty.SideId);
+
         GridWidth = encounter.Battlefield.Width;
         GridHeight = encounter.Battlefield.Height;
         BlockedSquares = encounter.Battlefield.Blocked;
@@ -857,18 +865,35 @@ public abstract partial class FightScreen : Node2D
 
         foreach (var (text, kind) in wrapped.TakeLast(room))
         {
+            // What a line is *about* still tints it — a round beginning and a fight
+            // ending are headings, and the roll that opens an attack is quieter than
+            // its outcome. Within the line, the names and the outcome are picked out
+            // by the highlighter, which is where the reader's eye actually goes.
             var colour = kind switch
             {
-                CombatStepKind.Damage or CombatStepKind.Died or CombatStepKind.Downed => MonsterColour,
-                CombatStepKind.Feature or CombatStepKind.Spell or CombatStepKind.Item => PartyColour,
                 CombatStepKind.RoundStarted or CombatStepKind.EncounterEnded => ActiveRing,
+                CombatStepKind.Died or CombatStepKind.Downed => Ink,
                 _ => Dim,
             };
 
-            DrawString(TextFont, new Vector2(PanelLeft, y), text, fontSize: 12, modulate: colour);
+            var x = (float)PanelLeft;
+
+            foreach (var span in Highlighter.Spans(text, colour))
+            {
+                DrawString(TextFont, new Vector2(x, y), span.Text, fontSize: LogFontSize, modulate: span.Colour);
+                x += TextFont.GetStringSize(span.Text, fontSize: LogFontSize).X;
+            }
+
             y += 17;
         }
     }
+
+    /// <summary>
+    /// The log's type size. Named because the span-by-span drawing has to *measure* in
+    /// the same size it draws in — one place for both, or coloured runs would drift out
+    /// of step with the text they follow.
+    /// </summary>
+    private const int LogFontSize = 12;
 
     /// <summary>
     /// How many characters of narration fit across the log panel. Measured against the

@@ -51,6 +51,20 @@ Prone. The status line above still reads out what is left, so a row that has shr
 why. A key is a property of its action rather than of its place in the row, so `D` is
 Dodge whenever Dodge is offered and never anything else.
 
+The log is colour-coded: party names blue, monster names orange, and the named thing
+being used — a weapon, a spell, a feature, a mastery property — violet, with **damage in
+bright red and a miss in yellow**, the two outcomes a reader scans for. A round beginning
+and a fight ending stay gold, and a creature dropping is brightened, because those are
+the headings of the fight.
+
+**The terms are the fight's own, not a reading of the sentences.** `LogHighlighter`
+asks the encounter for its combatants, their attacks, their spells, their stat-block
+entries and their features, and colours the text by matching those names; the feature
+names come off the `ClassFeature` enum, whose PascalCase is the printed name. Nothing
+parses the engine's phrasing, so a reworded narration loses a highlight rather than
+gaining a wrong one. Damage and the miss are the two exceptions and are matched as text,
+because neither is a name — and they fail the same safe way.
+
 Faint blue squares are where a walk could end; ringed enemies are ones an attack
 reaches; a **shaded** square is one this character has Total Cover against, which refuses
 an attack, a spell and an area alike. Both are advice, not rules — a click anywhere is sent to the engine, and **a
