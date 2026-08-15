@@ -31,24 +31,61 @@ public sealed class SpriteLibrary
     /// <param name="Texture">The whole sheet.</param>
     /// <param name="FrameCount">How many frames the sheet holds (width over height).</param>
     /// <param name="FrameSize">The square frame edge in pixels — the sheet's height.</param>
-    /// <param name="Bounds">
-    /// The union of every frame's opaque pixels, in frame-local coordinates. The frames
-    /// are mostly empty air — a 128-pixel frame holds a figure of perhaps half that — so
-    /// the screen scales and anchors by what is actually drawn, and the union rather
-    /// than a per-frame box keeps the feet planted while the frames cycle.
+    public sealed record Strip(Texture2D Texture, int FrameCount, int FrameSize);
+
+    /// <summary>
+    /// Where one character stands in its own canvas, and how big it is — measured once
+    /// and shared by every strip, which is what keeps a figure the same size and in the
+    /// same place whatever it is doing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The packs are canvas-aligned, and that is the whole basis of this.</b> Measured
+    /// across every strip the game draws, the figure's lowest opaque pixel sits on the
+    /// canvas's bottom edge — so the canvas carries the ground line, and a strip needs no
+    /// bounds of its own. What differs between strips is *motion the artist drew*: the
+    /// Knight's swing lunges some twenty pixels forward, the Elf's shifts the other way,
+    /// a walk cycle strides and bobs. Measuring each strip separately and re-centring it —
+    /// which is what this did at first — deletes exactly that motion and, worse, changes
+    /// the figure's size between animations, because an extended sword makes the attack
+    /// strip's box wider and scales the whole body down to fit it.
+    /// </para>
+    /// <para>
+    /// So the metrics come from the *standing* strips only (Idle, and Walk for a creature
+    /// whose idle is a crouch — the Wild Zombie kneels to feed and walks on all fours),
+    /// and every strip is then drawn through the one transform.
+    /// </para>
+    /// </remarks>
+    /// <param name="CentreX">
+    /// The figure's own centre line in canvas pixels — measured, never assumed, because
+    /// the packs do not agree on it (the Knight stands at 33 of its 128, the Goblin at 62).
     /// </param>
-    public sealed record Strip(Texture2D Texture, int FrameCount, int FrameSize, Rect2I Bounds);
+    /// <param name="GroundY">The canvas row the figure's feet rest on.</param>
+    /// <param name="Stature">How tall the figure stands, in canvas pixels.</param>
+    /// <param name="Breadth">How wide it stands — what decides whether it fits a square.</param>
+    public sealed record Figure(float CentreX, float GroundY, int Stature, int Breadth);
 
     /// <summary>The animations one combatant's art carries. Any of them may be missing.</summary>
     /// <remarks>
     /// The Priest packs genuinely have no Dead or Hurt sheet — the screen substitutes a
     /// rotated idle frame for a fallen priest rather than a circle, so a downed Cleric
-    /// still reads as a body on the ground. Attack is the first strip the pack offers
-    /// under its three spellings (<c>Attack.png</c>, <c>Attack_1.png</c>,
-    /// <c>Attack 1.png</c> — the packs disagree with each other, not with themselves);
-    /// a combatant whose pack has none simply never swings on screen.
+    /// still reads as a body on the ground, and simply skips the flinch. Attack is the
+    /// first strip the pack offers under its three spellings (<c>Attack.png</c>,
+    /// <c>Attack_1.png</c>, <c>Attack 1.png</c> — the packs disagree with each other, not
+    /// with themselves); a combatant whose pack has none simply never swings on screen.
     /// </remarks>
-    public sealed record CharacterArt(Strip? Idle, Strip? Walk, Strip? Dead, Strip? Attack);
+    /// <param name="Repose">
+    /// The frame of <paramref name="Dead"/> a body settles on — see
+    /// <see cref="RestingFrame"/>. Zero when there is no death strip.
+    /// </param>
+    public sealed record CharacterArt(
+        Strip? Idle,
+        Strip? Walk,
+        Strip? Dead,
+        Strip? Attack,
+        Strip? Hurt,
+        Figure Figure,
+        int Repose);
 
     /// <summary>Party art by class name — the SRD prints twelve, the packs cover them all.</summary>
     private static readonly Dictionary<string, string> ByClassName = new(StringComparer.Ordinal)
@@ -73,9 +110,11 @@ public sealed class SpriteLibrary
     /// </summary>
     private static readonly Dictionary<string, string> ByMonsterName = new(StringComparer.Ordinal)
     {
-        ["Goblin Minion"] = "Goblin_1",
-        ["Goblin Warrior"] = "Goblin_2",
-        ["Goblin Boss"] = "Goblin_3",
+        // The three goblin packs are a small crouching one, a plain one and an armoured
+        // one carrying a shield, so they sort onto the three printed goblins by build.
+        ["Goblin Minion"] = "Goblin_3",
+        ["Goblin Warrior"] = "Goblin_1",
+        ["Goblin Boss"] = "Goblin_2",
         ["Skeleton"] = "Skeleton_Warrior",
         ["Zombie"] = "Zombie Man",
         ["Ogre Zombie"] = "Wild Zombie",
@@ -138,26 +177,61 @@ public sealed class SpriteLibrary
                 continue;
             }
 
-            var art = new CharacterArt(
-                LoadStrip(Path.Combine(directory, "Idle.png")),
-                LoadStrip(Path.Combine(directory, "Walk.png")),
-                LoadStrip(Path.Combine(directory, "Dead.png")),
-                LoadStrip(Path.Combine(directory, "Attack.png"))
-                    ?? LoadStrip(Path.Combine(directory, "Attack_1.png"))
-                    ?? LoadStrip(Path.Combine(directory, "Attack 1.png")));
+            var idle = LoadStrip(Path.Combine(directory, "Idle.png"));
 
             // Idle is the one animation a token cannot do without: it is the frame a
-            // standing combatant shows every moment it is not walking.
-            if (art.Idle is not null)
+            // standing combatant shows every moment it is doing nothing else, and the
+            // figure's measurements are taken from it.
+            if (idle is null)
             {
-                loaded[folder] = art;
+                continue;
             }
+
+            var walk = LoadStrip(Path.Combine(directory, "Walk.png"));
+            var deadPath = Path.Combine(directory, "Dead.png");
+            var dead = LoadStrip(deadPath);
+
+            var figure = Measure(
+                Path.Combine(directory, "Idle.png"),
+                walk is null ? null : Path.Combine(directory, "Walk.png"),
+                idle.FrameSize);
+
+            loaded[folder] = new CharacterArt(
+                idle,
+                walk,
+                dead,
+                LoadStrip(Path.Combine(directory, "Attack.png"))
+                    ?? LoadStrip(Path.Combine(directory, "Attack_1.png"))
+                    ?? LoadStrip(Path.Combine(directory, "Attack 1.png")),
+                LoadStrip(Path.Combine(directory, "Hurt.png")),
+                figure,
+                dead is null ? 0 : RestingFrame(deadPath, figure));
         }
 
         return new SpriteLibrary(loaded);
     }
 
     private static Strip? LoadStrip(string path)
+    {
+        if (LoadImage(path) is not { } image)
+        {
+            return null;
+        }
+
+        var frameSize = image.GetHeight();
+
+        if (frameSize == 0 || image.GetWidth() < frameSize)
+        {
+            return null;
+        }
+
+        return new Strip(
+            ImageTexture.CreateFromImage(image),
+            image.GetWidth() / frameSize,
+            frameSize);
+    }
+
+    private static Image? LoadImage(string path)
     {
         if (!File.Exists(path))
         {
@@ -172,53 +246,180 @@ public sealed class SpriteLibrary
         }
 
         image.Convert(Image.Format.Rgba8);
-
-        var frameSize = image.GetHeight();
-
-        if (frameSize == 0 || image.GetWidth() < frameSize)
-        {
-            return null;
-        }
-
-        var frameCount = image.GetWidth() / frameSize;
-
-        return new Strip(
-            ImageTexture.CreateFromImage(image),
-            frameCount,
-            frameSize,
-            OpaqueBounds(image, frameCount, frameSize));
+        return image;
     }
 
     /// <summary>
-    /// The union of every frame's opaque pixels, folded into one frame's coordinates.
+    /// Measures where the figure stands and how big it is, from the strips in which it
+    /// is standing up.
     /// </summary>
-    private static Rect2I OpaqueBounds(Image image, int frameCount, int frameSize)
+    /// <remarks>
+    /// Stature is the taller of the two strips' typical frames rather than the idle's
+    /// alone, which is what a crouching idle needs: the Wild Zombie kneels to feed, and
+    /// measured on that pose it would be drawn at half the size it walks at. Each strip
+    /// is summarised by its *median* frame so that one lunging or crouching frame cannot
+    /// set the size of the whole character.
+    /// </remarks>
+    private static Figure Measure(string idlePath, string? walkPath, int frameSize)
     {
+        var idle = FrameBoxes(idlePath);
+        var walk = walkPath is null ? [] : FrameBoxes(walkPath);
+
+        var standing = walk.Count > 0 && Median(walk, box => box.Size.Y) > Median(idle, box => box.Size.Y)
+            ? walk
+            : idle;
+
+        // The ground line is the canvas's own, which is where every strip these packs
+        // ship puts the feet; falling back to the measured bottom keeps a pack that
+        // padded its canvas from floating above the floor.
+        var ground = standing.Count == 0 ? frameSize : standing.Max(box => box.End.Y);
+
+        return new Figure(
+            idle.Count == 0 ? frameSize / 2f : Median(idle, box => box.Position.X + (box.Size.X / 2)),
+            Math.Max(ground, frameSize * 0.75f),
+            Math.Max(1, Median(standing, box => box.Size.Y)),
+            Math.Max(1, Median(standing, box => box.Size.X)));
+    }
+
+    /// <summary>
+    /// The frame of a death strip that a body should settle on and hold.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not the last one</b>, which is what this held at first and what made a killed
+    /// goblin a red smear on the floor. Every pack's death animation ends by taking the
+    /// body away — sinking it, or fading it out — so the final frame is a seven-pixel
+    /// remnant rather than a corpse. The frame worth keeping is the most substantial one
+    /// in which the creature is actually *down*: of the frames below half its standing
+    /// height, the one with the most pixels still drawn. A pack whose body never drops
+    /// that low (the Knights lie propped on an elbow) falls back to the fullest frame of
+    /// the strip's second half, which skips the fade for the same reason.
+    /// </remarks>
+    private static int RestingFrame(string deadPath, Figure figure)
+    {
+        var frames = FrameWeights(deadPath);
+
+        if (frames.Count == 0)
+        {
+            return 0;
+        }
+
+        var lying = frames
+            .Where(frame => frame.Height * 2 < figure.Stature)
+            .ToArray();
+
+        var candidates = lying.Length > 0
+            ? lying
+            : [.. frames.Skip(frames.Count / 2)];
+
+        return candidates.MaxBy(frame => frame.Pixels).Index;
+    }
+
+    /// <summary>Each frame's height and how much of it is actually drawn.</summary>
+    private static List<(int Index, int Height, int Pixels)> FrameWeights(string path)
+    {
+        var frames = new List<(int, int, int)>();
+
+        if (LoadImage(path) is not { } image)
+        {
+            return frames;
+        }
+
         var data = image.GetData();
         var width = image.GetWidth();
-        int minX = frameSize, minY = frameSize, maxX = -1, maxY = -1;
+        var frameSize = image.GetHeight();
 
-        for (var y = 0; y < frameSize; y++)
+        if (frameSize == 0 || width < frameSize)
         {
-            for (var x = 0; x < width; x++)
-            {
-                if (data[(((y * width) + x) * 4) + 3] < 32)
-                {
-                    continue;
-                }
+            return frames;
+        }
 
-                var frameX = x % frameSize;
-                minX = Math.Min(minX, frameX);
-                minY = Math.Min(minY, y);
-                maxX = Math.Max(maxX, frameX);
-                maxY = Math.Max(maxY, y);
+        for (var frame = 0; frame < width / frameSize; frame++)
+        {
+            int top = frameSize, bottom = -1, pixels = 0;
+
+            for (var y = 0; y < frameSize; y++)
+            {
+                for (var x = 0; x < frameSize; x++)
+                {
+                    // Weighed by opacity rather than counted: these strips fade a body
+                    // out as well as flattening it, and a ghost is not a corpse either.
+                    var alpha = data[(((y * width) + (frame * frameSize) + x) * 4) + 3];
+
+                    if (alpha < 32)
+                    {
+                        continue;
+                    }
+
+                    pixels += alpha;
+                    top = Math.Min(top, y);
+                    bottom = Math.Max(bottom, y);
+                }
+            }
+
+            frames.Add((frame, bottom < top ? 0 : (bottom - top) + 1, pixels));
+        }
+
+        return frames;
+    }
+
+    private static int Median(IReadOnlyList<Rect2I> boxes, Func<Rect2I, int> of)
+    {
+        if (boxes.Count == 0)
+        {
+            return 1;
+        }
+
+        var sorted = boxes.Select(of).Order().ToArray();
+        return sorted[sorted.Length / 2];
+    }
+
+    /// <summary>Each frame's opaque box, in that frame's own coordinates.</summary>
+    private static List<Rect2I> FrameBoxes(string path)
+    {
+        var boxes = new List<Rect2I>();
+
+        if (LoadImage(path) is not { } image)
+        {
+            return boxes;
+        }
+
+        var data = image.GetData();
+        var width = image.GetWidth();
+        var frameSize = image.GetHeight();
+
+        if (frameSize == 0 || width < frameSize)
+        {
+            return boxes;
+        }
+
+        for (var frame = 0; frame < width / frameSize; frame++)
+        {
+            int minX = frameSize, minY = frameSize, maxX = -1, maxY = -1;
+
+            for (var y = 0; y < frameSize; y++)
+            {
+                for (var x = 0; x < frameSize; x++)
+                {
+                    if (data[(((y * width) + (frame * frameSize) + x) * 4) + 3] < 32)
+                    {
+                        continue;
+                    }
+
+                    minX = Math.Min(minX, x);
+                    minY = Math.Min(minY, y);
+                    maxX = Math.Max(maxX, x);
+                    maxY = Math.Max(maxY, y);
+                }
+            }
+
+            // An empty frame is a legitimate part of a strip (a flash of nothing between
+            // poses); it contributes no measurement rather than a zero-sized figure.
+            if (maxX >= minX)
+            {
+                boxes.Add(new Rect2I(minX, minY, (maxX - minX) + 1, (maxY - minY) + 1));
             }
         }
 
-        // A fully transparent sheet would be a broken export; treat the whole frame as
-        // the figure rather than dividing by an empty box downstream.
-        return maxX < minX
-            ? new Rect2I(0, 0, frameSize, frameSize)
-            : new Rect2I(minX, minY, (maxX - minX) + 1, (maxY - minY) + 1);
+        return boxes;
     }
 }
