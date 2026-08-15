@@ -101,6 +101,19 @@ left (the columns the factory places), and a walker faces the way it is going. T
 cycle advances with the *distance covered* rather than with a timer, so the legs can
 never skate: change how fast a token crosses the ground and the stride follows.
 
+**One clock runs the board, at six frames a second**
+(`FightScreen.AnimationFramesPerSecond`), and it is the only number to change to
+re-pace the whole screen. Idle, walk, swing, flinch and fall all advance at that rate;
+a pose therefore lasts as long as its own frames take, so a five-frame Goblin swing is
+a beat and a fourteen-frame Priest attack is nearly four. Even how fast the ground goes
+by comes off it — a square costs the paces that cover it, which works out at two thirds
+of a second, so a thirty-foot move is about four. Each of those used to be its own
+number: idle ticked at eight a second, a walk cycle at twenty, and a pose was squeezed
+into a fixed duration whatever its length, which had the Priest's attack flickering past
+at thirty frames a second. The turn beat (`SecondsPerTurn`) is deliberately *not* tied to
+it: that is the gap when nothing is animating, and dead air should not grow with the
+animation.
+
 **The log waits for the picture.** An attack resolves in the engine the instant it is
 asked for — the roll, the damage and the death are all written before a frame of the
 swing is drawn — so printing them straight away tells the reader the outcome while the

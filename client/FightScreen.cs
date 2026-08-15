@@ -63,16 +63,37 @@ public abstract partial class FightScreen : Node2D
     protected static readonly Color Dim = new("8a8a96");
 
     /// <summary>
+    /// How many frames a second every sprite animation advances at.
+    /// </summary>
+    /// <remarks>
+    /// <b>One clock for the whole board</b> — idle, walk, swing, flinch and fall alike.
+    /// Each used to keep its own: idle ticked at eight a second, a walk cycle at twenty,
+    /// and a pose was fitted to a fixed duration whatever its length, so the Priest's
+    /// fourteen-frame attack flickered past at thirty frames a second while the Goblin's
+    /// five-frame one ambled at eleven. Pinning them all to one rate is what gives the
+    /// board a single deliberate cadence, and it makes the tempo one number to change:
+    /// everything below is derived from it, including how long a pose lasts and how fast
+    /// the ground goes by.
+    /// </remarks>
+    protected const double AnimationFramesPerSecond = 6;
+
+    /// <summary>
     /// Seconds a walking token spends crossing each square of its recorded path.
     /// </summary>
     /// <remarks>
-    /// This was a tenth of a second, and at that speed a whole move was over in a third
-    /// of one — measured at thirteen frames for a five-square walk, which reads as a
-    /// token teleporting rather than walking, because it is barely longer than the eye
-    /// takes to find what moved. A move is worth watching: it is the one part of a turn
-    /// with a route rather than a result.
+    /// <b>Derived rather than chosen</b>, because a walk's speed and its stride are the
+    /// same fact: a square costs the paces that cover it, and those paces take as long as
+    /// the shared rate says. Picking the two apart is what makes legs skate. The frame
+    /// count is the typical walk cycle across these packs rather than any one strip's,
+    /// so every creature crosses the ground at the same speed however its art was drawn —
+    /// a tactical board where a move's length depended on the sprite would be a board
+    /// that lied about distance.
     /// </remarks>
-    protected const double SecondsPerWalkSquare = 0.2;
+    protected const double SecondsPerWalkSquare =
+        TypicalWalkCycleFrames * WalkCyclesPerSquare / AnimationFramesPerSecond;
+
+    /// <summary>Frames in a walk cycle in these packs — most are eight.</summary>
+    private const double TypicalWalkCycleFrames = 8;
 
     /// <summary>
     /// One thing the board plays out before the next beat: a walk along a recorded
@@ -99,8 +120,18 @@ public abstract partial class FightScreen : Node2D
     /// they shared a column, or when facing is not the pose's business — the actor then
     /// keeps its side's default facing.
     /// </param>
-    private sealed record PoseAct(int Step, int RevealThrough, string ActorId, Pose Pose, bool? FacesLeft = null)
-        : Act(Step, RevealThrough);
+    /// <param name="Frames">
+    /// How many frames this pose plays — the strip's, except a fall, which stops where
+    /// the body settles. It is what decides how long the pose lasts, at the board's
+    /// shared rate.
+    /// </param>
+    private sealed record PoseAct(
+        int Step,
+        int RevealThrough,
+        string ActorId,
+        Pose Pose,
+        int Frames,
+        bool? FacesLeft = null) : Act(Step, RevealThrough);
 
     /// <summary>The one-shot animations, each with its own strip and its own tempo.</summary>
     protected enum Pose
@@ -138,6 +169,7 @@ public abstract partial class FightScreen : Node2D
     private Pose _pose;
     private bool? _poseFacesLeft;
     private double _poseElapsed;
+    private int _poseFrames;
 
     /// <summary>
     /// How much of the log the screen may show, so that the narration lands with the
@@ -168,18 +200,11 @@ public abstract partial class FightScreen : Node2D
     private int _revealTarget = ShowEveryLine;
 
     /// <summary>
-    /// How long each pose takes, whatever its strip's frame count — the strip is fitted
-    /// to the time rather than the time to the strip, so a fourteen-frame Priest attack
-    /// and a five-frame Goblin one take the same beat. A flinch is brief because it
-    /// interrupts nothing; a fall is slow because it is the last thing a creature does.
+    /// How long a pose lasts: as long as its own frames take at the shared rate. The
+    /// time follows the strip rather than the strip being squeezed into a time, which is
+    /// what keeps a long animation from flickering and a short one from crawling.
     /// </summary>
-    private static double SecondsFor(Pose pose) => pose switch
-    {
-        Pose.Swing => 0.45,
-        Pose.Flinch => 0.22,
-        Pose.Fall => 0.6,
-        _ => 0,
-    };
+    private static double SecondsFor(int frames) => frames / AnimationFramesPerSecond;
 
     /// <summary>
     /// How much of a Walk strip one square costs. Half a cycle: a walk cycle is two
@@ -192,9 +217,6 @@ public abstract partial class FightScreen : Node2D
     /// still. This way the two can never disagree.
     /// </remarks>
     private const float WalkCyclesPerSquare = 0.5f;
-
-    /// <summary>Seconds each frame of an idle or walk loop is shown.</summary>
-    private const double SecondsPerAnimationFrame = 0.12;
 
     private SpriteLibrary _sprites = null!;
     private double _animationClock;
@@ -261,7 +283,7 @@ public abstract partial class FightScreen : Node2D
         }
 
         _animationClock += delta;
-        var frame = (int)(_animationClock / SecondsPerAnimationFrame);
+        var frame = (int)(_animationClock * AnimationFramesPerSecond);
 
         if (frame == _animationFrame)
         {
@@ -501,7 +523,11 @@ public abstract partial class FightScreen : Node2D
             ? other.X < actor.X
             : (bool?)null;
 
-        _pendingActs.Enqueue(new PoseAct(step, Consequences(log, step, to), actorId, pose, facesLeft));
+        // A fall plays only as far as the body settles; everything else plays whole.
+        var frames = pose is Pose.Fall ? art.Repose + 1 : strip.FrameCount;
+
+        _pendingActs.Enqueue(
+            new PoseAct(step, Consequences(log, step, to), actorId, pose, frames, facesLeft));
     }
 
     private static Token? FindToken(IReadOnlyList<Token> tokens, string id)
@@ -560,7 +586,7 @@ public abstract partial class FightScreen : Node2D
         {
             _poseElapsed += delta;
 
-            if (_poseElapsed >= SecondsFor(_pose))
+            if (_poseElapsed >= SecondsFor(_poseFrames))
             {
                 _poseActorId = null;
                 _pose = Pose.None;
@@ -640,6 +666,7 @@ public abstract partial class FightScreen : Node2D
                 _poseActorId = pose.ActorId;
                 _pose = pose.Pose;
                 _poseFacesLeft = pose.FacesLeft;
+                _poseFrames = pose.Frames;
                 _poseElapsed = 0;
                 break;
 
@@ -887,7 +914,7 @@ public abstract partial class FightScreen : Node2D
         // quicker cadence, idling ticks the shared loop, and the fallen hold the frame
         // they came to rest on.
         var frame = posing is not Pose.None
-            ? Math.Min((int)(_poseElapsed / SecondsFor(posing) * (last + 1)), last)
+            ? Math.Min((int)(_poseElapsed * AnimationFramesPerSecond), last)
             : fallen
                 ? (lying ? 0 : last)
                 : walking

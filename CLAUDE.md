@@ -341,6 +341,18 @@ the circle-and-letter tokens it always drew, and `--probe`/`--capture` freeze th
 animation clock so a verification image cannot depend on when the frame was taken. See
 the client README for where the packs come from and where they go.
 
+**The whole board animates off one clock, at six frames a second.**
+`FightScreen.AnimationFramesPerSecond` is the single knob: idle, walk, swing, flinch and
+fall all advance at that rate, a pose lasts as long as its own frames take at it (a
+five-frame Goblin swing is a beat, a fourteen-frame Priest attack nearly four), and even
+the ground speed derives from it — a square costs the paces that cover it, two thirds of
+a second, so a thirty-foot move is about four. Each of those was its own number before,
+and they disagreed: idle ticked at eight a second, a walk cycle at twenty, and a pose was
+squeezed into a fixed duration whatever its length, so the Priest's attack flickered past
+at thirty frames a second while the Goblin's ambled at eleven. `SecondsPerTurn` is
+deliberately outside it — that is the gap when nothing is animating, and dead air should
+not grow with the animation.
+
 **The log waits for the picture, and the walk is slow enough to see.** Both came from
 playing it: a move was over in a third of a second — thirteen frames for five squares,
 measured — which reads as teleporting rather than walking, so a square now takes a fifth
