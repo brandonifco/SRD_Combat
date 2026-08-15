@@ -196,16 +196,27 @@ other side of it: the post-fight interlude with its save, or the defeat screen. 
 clears fight 1 that way; the default seed loses it — both ends of `HandleFightEnd` have
 been watched.
 
-## Why this project is not in SRDCombat.sln
+## Why this project *is* in SRDCombat.sln
 
-Deliberately. CI runs bare `dotnet restore`, `build` and `test` from the repository root,
-which resolve the solution — so every project *in* the solution is built and gated on a
-runner that has .NET 8 and no Godot. A client that stays outside the solution cannot
-break the gate that protects the engine, and the engine's gate never waits on Godot. The
-decision and the trial that proved it are in the plan doc's Phase 7 section and the
-Environment section of `CLAUDE.md`.
+**It was deliberately outside until 2026-08-15, and that was a mistake.** The stated
+reasoning was that CI runs bare `dotnet restore`, `build` and `test` from the repository
+root, which resolve the solution, so a client left out of it could never break the gate
+protecting the engine on a runner with .NET 8 and no Godot.
 
-Two things that arrangement does **not** cost:
+The premise was false, and the plan doc's own Phase 7 trial had already recorded why:
+`Godot.NET.Sdk` is a NuGet package, so **the build needs no Godot installed**. Checked
+rather than argued — a cold build with `client/obj` and `.godot/mono/temp` deleted
+resolves `GodotSharp.dll` from `~/.nuget/packages/godotsharp/4.4.0/lib/net8.0/`, never
+from the Godot on `PATH`, and succeeds on net8.0 with 0 warnings. Two documents
+disagreeing about a buildable fact is what settling it empirically is for.
+
+What the exclusion cost was the whole point of having a gate: **5,065 lines — every line
+a player actually touches — were never compiled by CI.** Nothing stopped a `Core`
+signature change from breaking the client silently, and no test covers it from either
+side. Building it is now the cheapest guard available; a test project for it is not yet
+written, and that gap is real.
+
+Two things the arrangement never cost, and still does not:
 
 - **The build discipline.** `Directory.Build.props` reaches this project anyway — MSBuild
   walks up from the project's own directory — so `TreatWarningsAsErrors`, `Nullable` and
