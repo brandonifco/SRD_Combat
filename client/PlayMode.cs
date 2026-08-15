@@ -347,10 +347,10 @@ public partial class PlayMode : FightScreen
         _fightEndHandled = false;
         _buttonsFor = null;
 
-        // A fresh fight is a fresh log: nothing has been scanned for walks, and any
-        // hop the last fight left half-played dies with it.
+        // A fresh fight is a fresh log: nothing has been scanned for acts, and any
+        // walk or swing the last fight left half-played dies with it.
         _walkStepsSeen = 0;
-        ClearWalks();
+        ClearActs();
 
         RefreshAfterAction(null);
     }
@@ -625,14 +625,15 @@ public partial class PlayMode : FightScreen
             QueueRedraw();
         }
 
-        // A walk plays out before anything else happens: the token hops square to
-        // square, and the next beat — the policy's turn, the fight's end — waits for it.
-        if (AdvanceWalks(delta))
+        // A walk or a swing plays out before anything else happens: the token glides
+        // its route or lands its blow, and the next beat — the policy's turn, the
+        // fight's end — waits for it.
+        if (AdvanceActs(delta))
         {
             QueueRedraw();
         }
 
-        if (WalkInProgress)
+        if (ActInProgress)
         {
             return;
         }
@@ -1058,13 +1059,14 @@ public partial class PlayMode : FightScreen
         _reachable.Clear();
         _blocked.Clear();
 
-        // Whatever just happened, any walk it wrote gets played: the Move step carries
-        // the route, and the token hops it instead of teleporting.
+        // Whatever just happened, the board plays it out: each Move step's walk — the
+        // step carries the route, so the token glides it instead of teleporting — and
+        // each attack's swing, in log order.
         if (_encounter is { } fought)
         {
             if (_animateWalks)
             {
-                QueueWalks(fought.Log, _walkStepsSeen, fought.Log.Count);
+                QueueActs(fought.Log, _walkStepsSeen, fought.Log.Count, TokensFrom(fought, _labels));
             }
 
             _walkStepsSeen = fought.Log.Count;

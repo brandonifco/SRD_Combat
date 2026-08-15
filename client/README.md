@@ -78,10 +78,12 @@ godot --path client -- --seed=12345
 ## Sprite art
 
 The tokens can be animated pixel-art figures instead of circles: an idle loop while
-standing, the walk cycle riding the engine's own recorded path, and a body on the
-ground when down or dead — dimmed for the dead, ringed for the still-saveable. The
-party faces right and the monsters left (the columns the factory places), and a walker
-faces the way it is going. The art is the free Craftpix character packs, and the maps
+standing, the walk cycle playing as the token glides the engine's own recorded path,
+a swing played once through for every attack — Opportunity Attacks included, facing
+whichever side the target stood on — and a body on the ground when down or dead,
+dimmed for the dead, ringed for the still-saveable. The party faces right and the
+monsters left (the columns the factory places), a walker faces the way it is going,
+and walks and swings play in log order, each holding the next beat until it lands. The art is the free Craftpix character packs, and the maps
 are curated in `SpriteLibrary`: party art by class name, monster art by **exact**
 stat-block name, and anything unmapped keeps the circle-and-letter token — a red
 dragon sprite on a Green Dragon Wyrmling would be the display lying, so only the

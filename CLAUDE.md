@@ -310,8 +310,11 @@ the same lines in its turn header, where the banner's attack line replaced the b
 attack-names list it used to print.
 
 **The board can wear real art now.** The tokens draw as animated pixel-art figures —
-an idle loop, the walk cycle riding the engine's recorded path, a body on the ground
-when down or dead — from the free Craftpix character packs, mapped in the client's
+an idle loop, the walk cycle playing as the token glides the engine's recorded path,
+a swing played once through for every attack (Opportunity Attacks included, faced
+toward the target, queued in log order with the walks so each holds the next beat),
+and a body on the ground when down or dead — from the free Craftpix character packs,
+mapped in the client's
 `SpriteLibrary`: party art by class name (all twelve classes covered), monster art by
 **exact** stat-block name (goblins, skeletons, zombies, the Gladiator, the Knight, the
 Mage, the Priests, the Scout, and only the two dragon colours the packs actually hold —

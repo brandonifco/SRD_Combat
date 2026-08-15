@@ -43,9 +43,12 @@ public sealed class SpriteLibrary
     /// <remarks>
     /// The Priest packs genuinely have no Dead or Hurt sheet — the screen substitutes a
     /// rotated idle frame for a fallen priest rather than a circle, so a downed Cleric
-    /// still reads as a body on the ground.
+    /// still reads as a body on the ground. Attack is the first strip the pack offers
+    /// under its three spellings (<c>Attack.png</c>, <c>Attack_1.png</c>,
+    /// <c>Attack 1.png</c> — the packs disagree with each other, not with themselves);
+    /// a combatant whose pack has none simply never swings on screen.
     /// </remarks>
-    public sealed record CharacterArt(Strip? Idle, Strip? Walk, Strip? Dead);
+    public sealed record CharacterArt(Strip? Idle, Strip? Walk, Strip? Dead, Strip? Attack);
 
     /// <summary>Party art by class name — the SRD prints twelve, the packs cover them all.</summary>
     private static readonly Dictionary<string, string> ByClassName = new(StringComparer.Ordinal)
@@ -138,7 +141,10 @@ public sealed class SpriteLibrary
             var art = new CharacterArt(
                 LoadStrip(Path.Combine(directory, "Idle.png")),
                 LoadStrip(Path.Combine(directory, "Walk.png")),
-                LoadStrip(Path.Combine(directory, "Dead.png")));
+                LoadStrip(Path.Combine(directory, "Dead.png")),
+                LoadStrip(Path.Combine(directory, "Attack.png"))
+                    ?? LoadStrip(Path.Combine(directory, "Attack_1.png"))
+                    ?? LoadStrip(Path.Combine(directory, "Attack 1.png")));
 
             // Idle is the one animation a token cannot do without: it is the frame a
             // standing combatant shows every moment it is not walking.
