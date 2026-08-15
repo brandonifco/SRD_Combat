@@ -19,7 +19,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | Tests | **881 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
-| Pacing | **Median 11 of 30, best 30, 40 of 120 runs clearing everything, 51 reaching level 4** (fresh seeds 121–240: 8 · 34 · 44) — `tools/PacingMeasure`, loot on + the Long Rest merchant. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
+| Pacing | **Median 24 of 30, best 30, 54 of 120 runs clearing everything, 63 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, after the straight-routes tie-break (#184). **Two warnings about the line below.** First, this figure's own baseline is *not* the one this row used to quote: measured on the same build, the same seeds and the same command immediately before the change, `main` read **median 19, best 30, 51 clears, 60 at level 4**, where this row had long said 11 · 30 · 40 · 51. Nothing between those two states touched `Core` or `Game` — every slice was the Godot client — so the 11 was simply stale or measured another way, and the *comparison* (19 → 24, 51 → 54, 60 → 63) is what the tie-break is worth. Second, and the general lesson: **quote a bar you measured yourself, on the build in front of you.** A number carried in prose across a dozen slices is a number nobody re-ran. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
 | Work remaining | **The party-power phase (#83's direction) is underway** — Divine Spark is its first slice, and it is the only lever that has ever raised pacing. The squad-AI series (#122–#127) is complete: its gains were #123 (focus fire, 4 → 6 canonical) and #126 (no-healer caution, 6 → 8); its negative results were #124/#125 (positional discipline measured itself out — the ladders below are required reading before any positional work). Also open: Phase 5/7 polish, or a human finally playing a run to the end. |
 
 **What works today.** A fight runs end to end, headless. Grid movement, initiative, the
@@ -341,12 +341,13 @@ the circle-and-letter tokens it always drew, and `--probe`/`--capture` freeze th
 animation clock so a verification image cannot depend on when the frame was taken. See
 the client README for where the packs come from and where they go.
 
-**The whole board animates off one clock, at six frames a second.**
+**The whole board animates off one clock, at ten frames a second.**
 `FightScreen.AnimationFramesPerSecond` is the single knob: idle, walk, swing, flinch and
 fall all advance at that rate, a pose lasts as long as its own frames take at it (a
-five-frame Goblin swing is a beat, a fourteen-frame Priest attack nearly four), and even
-the ground speed derives from it — a square costs the paces that cover it, two thirds of
-a second, so a thirty-foot move is about four. Each of those was its own number before,
+five-frame Goblin swing is half a second, a fourteen-frame Priest attack a second and a
+half), and even the ground speed derives from it — a square costs the paces that cover
+it, two fifths of a second, so a thirty-foot move is about two and a half. It shipped at
+six, which was measured at four seconds for a full move and played too slow. Each of those was its own number before,
 and they disagreed: idle ticked at eight a second, a walk cycle at twenty, and a pose was
 squeezed into a fixed duration whatever its length, so the Priest's attack flickered past
 at thirty frames a second while the Goblin's ambled at eleven. `SecondsPerTurn` is
@@ -1298,6 +1299,19 @@ default — deliberate).
   of sixty seeded runs crashed. `MovementRules.FindPath` now treats anyone not dead as
   occupying, and keys its blockers as a lookup so that a duplicated square is survivable
   rather than fatal whatever produces it.
+- **A cheapest route is not automatically a sensible-looking one, and the tie-break that
+  fixes it paid for itself.** Every square costs the same five feet, diagonals included,
+  so whenever one axis decides the distance a route may drift sideways and back *for
+  free*: `(1,2)` to `(6,1)` came out as `(2,1) (3,0) (4,1) (5,1) (6,1)`, five steps and
+  twenty-five feet like the straight route, visibly strolling to the top row and back.
+  Nobody noticed while tokens teleported; the moment they walked, it read as the
+  pathfinder being broken. `FindPath` now carries a second key — how many times a step
+  moves *away* from the destination on an axis — which orders equal costs and can never
+  beat cost, so the route is still the cheapest one. **It is not cosmetic:** measured on
+  the canonical instrument against a same-build baseline, median **19 → 24**, clears
+  **51 → 54**, level-4 runs **60 → 63**. The mechanism is Opportunity Attacks — a route
+  that does not wander spends fewer steps leaving a threatened square — and it lands on
+  the party because they are the side closing distance under fire.
 - **All randomness goes through `IRandomSource`.** Never reach for `Random.Shared`
   anywhere in `Core`; determinism is what the transcripts rest on. `ScriptedRandomSource`
   throws when a test rolls more dice than it scripted — if that fires, the test's premise
