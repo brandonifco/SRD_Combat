@@ -75,7 +75,7 @@ public abstract partial class FightScreen : Node2D
     /// everything below is derived from it, including how long a pose lasts and how fast
     /// the ground goes by.
     /// </remarks>
-    protected const double AnimationFramesPerSecond = 6;
+    protected const double AnimationFramesPerSecond = 10;
 
     /// <summary>
     /// Seconds a walking token spends crossing each square of its recorded path.

@@ -21,6 +21,19 @@ public static class MovementRules
     /// and fast enough.
     /// </para>
     /// <para>
+    /// <b>Equal-cost routes are not equally good to look at, so ties are broken.</b>
+    /// Every square costs the same five feet, diagonals included, which means a route
+    /// may drift a row out of its way and back for free whenever the other axis is the
+    /// one deciding the distance: <c>(1,2)</c> to <c>(6,1)</c> came out as
+    /// <c>(2,1) (3,0) (4,1) (5,1) (6,1)</c>, five steps and twenty-five feet like the
+    /// straight one, but it visibly strolls up to the top row and comes back. The cost
+    /// was right and the picture was wrong, and on a board where a token now walks its
+    /// route rather than appearing at the end of it, the picture is what a player reads.
+    /// So the search carries a second key — how many times a step moves *away* from the
+    /// destination on an axis — and prefers the route that never does. It orders equal
+    /// costs and can never beat cost, so what comes back is still the cheapest way there.
+    /// </para>
+    /// <para>
     /// Occupancy follows the SRD with one deliberate simplification. A creature may move
     /// through an ally's space, which counts as Difficult Terrain, and may never end its
     /// move in an occupied square. Moving through a <em>hostile</em> creature's space is
@@ -61,21 +74,22 @@ public static class MovementRules
             return null;
         }
 
-        var best = new Dictionary<GridPosition, int> { [mover.Position] = 0 };
+        var start = (Cost: 0, Wandered: 0);
+        var best = new Dictionary<GridPosition, (int Cost, int Wandered)> { [mover.Position] = start };
         var cameFrom = new Dictionary<GridPosition, GridPosition>();
-        var queue = new PriorityQueue<GridPosition, int>();
-        queue.Enqueue(mover.Position, 0);
+        var queue = new PriorityQueue<GridPosition, (int Cost, int Wandered)>();
+        queue.Enqueue(mover.Position, start);
 
-        while (queue.TryDequeue(out var current, out var cost))
+        while (queue.TryDequeue(out var current, out var reached))
         {
-            if (cost > best.GetValueOrDefault(current, int.MaxValue))
+            if (Beats(best.GetValueOrDefault(current, (int.MaxValue, int.MaxValue)), reached))
             {
                 continue;
             }
 
             if (current == destination)
             {
-                return new MovementPath(Reconstruct(cameFrom, mover.Position, destination), cost);
+                return new MovementPath(Reconstruct(cameFrom, mover.Position, destination), reached.Cost);
             }
 
             foreach (var next in current.Neighbours())
@@ -99,21 +113,48 @@ public static class MovementRules
                     ? Battlefield.FeetPerSquare * 2
                     : field.EnterCostFeet(next);
 
-                var total = cost + stepCost;
+                var candidate = (
+                    Cost: reached.Cost + stepCost,
+                    Wandered: reached.Wandered + AxesOpened(current, next, destination));
 
-                if (total > budgetFeet || total >= best.GetValueOrDefault(next, int.MaxValue))
+                if (candidate.Cost > budgetFeet
+                    || !Beats(candidate, best.GetValueOrDefault(next, (int.MaxValue, int.MaxValue))))
                 {
                     continue;
                 }
 
-                best[next] = total;
+                best[next] = candidate;
                 cameFrom[next] = current;
-                queue.Enqueue(next, total);
+                queue.Enqueue(next, candidate);
             }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// Whether one route to a square is preferable to another: cheaper, or the same
+    /// price and less roundabout. Cost always decides first, so the second key can only
+    /// choose between routes that cost the same.
+    /// </summary>
+    private static bool Beats((int Cost, int Wandered) candidate, (int Cost, int Wandered) rival) =>
+        candidate.Cost != rival.Cost ? candidate.Cost < rival.Cost : candidate.Wandered < rival.Wandered;
+
+    /// <summary>
+    /// How many of the two axes a step moves *away* from the destination on — nought for
+    /// a step that closes the gap or holds it, one for a sidestep, two for a step that
+    /// retreats on both.
+    /// </summary>
+    /// <remarks>
+    /// This is the whole of the tie-break, and it is deliberately blunt. It says nothing
+    /// about the *order* of a route's steps, so going diagonally first and then straight
+    /// scores the same as the other way round and either is fine to watch; what it rules
+    /// out is the one thing that reads as a mistake, a token walking away from where it
+    /// is going and back again because the detour happened to be free.
+    /// </remarks>
+    private static int AxesOpened(GridPosition from, GridPosition to, GridPosition destination) =>
+        (Math.Abs(to.X - destination.X) > Math.Abs(from.X - destination.X) ? 1 : 0)
+        + (Math.Abs(to.Y - destination.Y) > Math.Abs(from.Y - destination.Y) ? 1 : 0);
 
     /// <summary>
     /// The furthest a creature can reach with a melee attack, in feet. Used to decide
