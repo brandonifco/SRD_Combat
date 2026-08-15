@@ -78,10 +78,38 @@ public static class PartyDoctrine
     /// Ties break on lower hit points, then identifier, so the same seed always
     /// produces the same fight.
     /// </remarks>
+    /// <remarks>
+    /// <para>
+    /// <b>An objective outranks the threat arithmetic.</b> When the side's own objective
+    /// is to kill one marked enemy, that enemy *is* the shared target — the fight ends
+    /// when it dies, so no amount of threat-per-hit-point elsewhere is worth more. Without
+    /// this the doctrine would keep picking the most dangerous enemy and win a
+    /// kill-the-leader fight only by accident, which is the whole difference between an
+    /// objective the party plays to and one it merely happens to satisfy.
+    /// </para>
+    /// <para>
+    /// Only the objective's own side is redirected. Monsters consult
+    /// <c>MonsterDoctrine</c> and have no objectives of their own, so the marked creature
+    /// does not become a target its own allies converge on.
+    /// </para>
+    /// </remarks>
     public static Combatant? FocusTarget(Encounter encounter, Combatant actor)
     {
         ArgumentNullException.ThrowIfNull(encounter);
         ArgumentNullException.ThrowIfNull(actor);
+
+        if (encounter.Objective is { Kind: ObjectiveKind.KillLeader, LeaderId: { } leaderId }
+            && string.Equals(encounter.Objective.SideId, actor.SideId, StringComparison.Ordinal))
+        {
+            var leader = encounter.EnemiesOf(actor)
+                .FirstOrDefault(enemy => !enemy.IsDead
+                    && string.Equals(enemy.Id, leaderId, StringComparison.Ordinal));
+
+            if (leader is not null)
+            {
+                return leader;
+            }
+        }
 
         return encounter.EnemiesOf(actor)
             .Where(enemy => !enemy.IsDead)

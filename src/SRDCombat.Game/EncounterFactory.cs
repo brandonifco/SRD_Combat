@@ -87,12 +87,18 @@ public static class EncounterFactory
     /// to; the budget stops the fight being unfair, and this stops it containing a
     /// creature the party could not meaningfully hurt.
     /// </param>
+    /// <param name="objective">
+    /// What wins the fight, or null for last-side-standing. Resolved here rather than by
+    /// the caller because a "kill the leader" rung cannot name a leader until the monsters
+    /// have been drawn.
+    /// </param>
     public static Fight Build(
         SrdContent content,
         IReadOnlyList<PartyMember> party,
         EncounterDifficulty difficulty,
         IRandomSource random,
-        decimal maximumChallengeRating = 4m)
+        decimal maximumChallengeRating = 4m,
+        ObjectiveSpec? objective = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(party);
@@ -146,8 +152,61 @@ public static class EncounterFactory
         }
 
         return new Fight(
-            Encounter.Start(battlefield, combatants, random),
+            Encounter.Start(battlefield, combatants, random, Resolve(objective, built, party)),
             placed,
             built);
+    }
+
+    /// <summary>
+    /// Turns a rung's <see cref="ObjectiveSpec"/> into the fight's own objective, now that
+    /// there are monsters to mark.
+    /// </summary>
+    /// <remarks>
+    /// <b>The leader is the dearest monster in the encounter, by printed XP.</b> A stated
+    /// reading with two arguments: the SRD prints an XP value on every stat block and that
+    /// value *is* the book's own ranking of how much creature you are facing, so the
+    /// toughest thing on the field is the thing worth calling the leader; and it needs no
+    /// new content, unlike a "leader" flag nothing in the SRD prints. Ties go to the
+    /// earliest, so a seed always marks the same creature. Deliberately not
+    /// <c>PartyDoctrine.ThreatPerRound</c>, which ranks by damage alone and would crown a
+    /// glass cannon over the creature that is plainly the boss.
+    /// </remarks>
+    private static EncounterObjective? Resolve(
+        ObjectiveSpec? objective,
+        BuiltEncounter built,
+        IReadOnlyList<PartyMember> party)
+    {
+        if (objective is null || party.Count == 0)
+        {
+            return null;
+        }
+
+        var sideId = party[0].Combatant.SideId;
+
+        switch (objective.Kind)
+        {
+            case ObjectiveKind.SurviveRounds:
+                return EncounterObjective.SurviveRounds(sideId, objective.Rounds);
+
+            case ObjectiveKind.KillLeader:
+            {
+                var leader = built.Monsters
+                    .Select((monster, index) => (monster, index))
+                    .OrderByDescending(entry => entry.monster.ExperiencePoints)
+                    .ThenBy(entry => entry.index)
+                    .Select(entry => (int?)entry.index)
+                    .FirstOrDefault();
+
+                // No monsters is a degenerate encounter the caller already guards; an
+                // unmarkable leader falls back to last-side-standing rather than shipping
+                // an objective nothing can satisfy.
+                return leader is { } index
+                    ? EncounterObjective.KillLeader(sideId, $"monster{index}")
+                    : null;
+            }
+
+            default:
+                return null;
+        }
     }
 }

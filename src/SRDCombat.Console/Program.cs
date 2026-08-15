@@ -147,6 +147,13 @@ while (run.Next is { } step)
         return 1;
     }
 
+    // The objective, when the rung is not a plain deathmatch. Printed before the first
+    // turn because a goal nobody is told about is a goal nobody can play to.
+    if (fight.Encounter.Objective.Kind != ObjectiveKind.Defeat)
+    {
+        Console.WriteLine($"Objective: {fight.Encounter.ObjectiveDescription}");
+    }
+
     var levelUpsBefore = run.LevelUps.Count;
     var lootBefore = run.LootFound.Count;
     var result = PlayFight(fight, random);

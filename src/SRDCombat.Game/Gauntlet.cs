@@ -14,7 +14,36 @@ namespace SRDCombat.Game;
 /// </remarks>
 /// <param name="Difficulty">How hard it should be.</param>
 /// <param name="RestBefore">The rest the party gets before it, if any.</param>
-public sealed record LadderStep(EncounterDifficulty Difficulty, RestKind? RestBefore = null);
+/// <param name="Objective">
+/// What wins it, or null for last-side-standing. A *spec* rather than an
+/// <see cref="EncounterObjective"/> because a rung is written before its monsters exist,
+/// and "kill the leader" cannot name a leader until there is one to mark —
+/// <see cref="EncounterFactory"/> resolves it at build time.
+/// </param>
+public sealed record LadderStep(
+    EncounterDifficulty Difficulty,
+    RestKind? RestBefore = null,
+    ObjectiveSpec? Objective = null);
+
+/// <summary>
+/// A rung's objective before it has a battlefield: the kind, and the number a
+/// <see cref="ObjectiveKind.SurviveRounds"/> needs.
+/// </summary>
+/// <remarks>
+/// The split exists because a ladder is authored ahead of the fights it describes. This
+/// says "this rung is a hold-the-line fight"; <see cref="EncounterFactory"/> turns it into
+/// an <see cref="EncounterObjective"/> once there are monsters to mark and a side to own it.
+/// </remarks>
+/// <param name="Kind">What ends the fight.</param>
+/// <param name="Rounds">Rounds to survive, for <see cref="ObjectiveKind.SurviveRounds"/>.</param>
+public sealed record ObjectiveSpec(ObjectiveKind Kind, int Rounds = 0)
+{
+    /// <summary>Outlast the enemy for a stated number of rounds.</summary>
+    public static ObjectiveSpec Survive(int rounds) => new(ObjectiveKind.SurviveRounds, rounds);
+
+    /// <summary>Kill the toughest creature on the field and the rest break off.</summary>
+    public static ObjectiveSpec KillLeader { get; } = new(ObjectiveKind.KillLeader);
+}
 
 /// <summary>How a run ended, or that it has not.</summary>
 public enum RunOutcome
@@ -95,6 +124,19 @@ public static class GauntletLadder
                         ? RestKind.Long
                         : RestKind.Short;
 
+                // Two rungs of every five are not deathmatches, which is the whole point:
+                // thirty fights with one identical goal is one fight played thirty times.
+                // The High milestone becomes a boss fight — the dearest creature on the
+                // field is marked and the rest break off when it drops — and one routine
+                // Low rung becomes a holding action. The other three are unchanged, so a
+                // cycle still asks for a straight kill more often than not.
+                var objective = slot switch
+                {
+                    2 => ObjectiveSpec.Survive(3),
+                    FightsPerCycle - 1 => ObjectiveSpec.KillLeader,
+                    _ => null,
+                };
+
                 return new LadderStep(
                     slot switch
                     {
@@ -102,7 +144,8 @@ public static class GauntletLadder
                         1 or 3 => EncounterDifficulty.Moderate,
                         _ => EncounterDifficulty.High,
                     },
-                    rest);
+                    rest,
+                    objective);
             })
             .ToArray();
     }
@@ -339,7 +382,12 @@ public sealed class GauntletRun
                 pair.state.ChannelDivinityRemaining)))
             .ToArray();
 
-        return EncounterFactory.Build(_content, survivors, step.Difficulty, random);
+        return EncounterFactory.Build(
+            _content,
+            survivors,
+            step.Difficulty,
+            random,
+            objective: step.Objective);
     }
 
     /// <summary>

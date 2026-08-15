@@ -342,7 +342,14 @@ public partial class PlayMode : FightScreen
         _encounter = fight.Encounter;
         _labels = Labels.For(_encounter.Combatants);
         AdoptBattlefield(_encounter);
-        _subtitle = $"fight {run.Cleared + 1} of {run.Ladder.Count} — seed {_seed} — the party against {RosterOf(fight)}";
+        // The objective rides the subtitle when the rung is not a plain deathmatch: it is
+        // the one line already on screen for the whole fight, and a goal shown once before
+        // the first turn is a goal forgotten by round three. The wording comes from the
+        // encounter so the two clients cannot word it differently.
+        _subtitle = $"fight {run.Cleared + 1} of {run.Ladder.Count} — seed {_seed} — "
+            + (_encounter.Objective.Kind == ObjectiveKind.Defeat
+                ? $"the party against {RosterOf(fight)}"
+                : _encounter.ObjectiveDescription);
         _phase = Phase.Fighting;
         _fightEndHandled = false;
         _buttonsFor = null;

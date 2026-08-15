@@ -64,14 +64,49 @@ public sealed partial class Encounter
     /// <summary>The side still standing, once the fight is over.</summary>
     public string? WinningSide { get; private set; }
 
+    /// <summary>
+    /// What ends this fight. <see cref="EncounterObjective.Defeat"/> — last side standing —
+    /// unless one was passed to <see cref="Start"/>.
+    /// </summary>
+    public EncounterObjective Objective { get; private init; } = EncounterObjective.Defeat;
+
+    /// <summary>
+    /// The objective as one line, with the marked creature named.
+    /// </summary>
+    /// <remarks>
+    /// Composed here because only the encounter can turn a leader's id into a leader's
+    /// name, and two clients each doing that lookup would be two places for it to drift —
+    /// the same reason <c>TurnBanner</c> and <c>ShopOffer.Effect</c> live where they do.
+    /// </remarks>
+    public string ObjectiveDescription => Objective.Describe(
+        Objective.LeaderId is { } leaderId
+            ? _combatants
+                .FirstOrDefault(combatant => string.Equals(combatant.Id, leaderId, StringComparison.Ordinal))
+                ?.Name
+            : null);
+
     /// <summary>Sets up a fight and rolls initiative.</summary>
-    public static Encounter Start(Battlefield battlefield, IEnumerable<Combatant> combatants, IRandomSource random)
+    /// <param name="battlefield">The ground it is fought over.</param>
+    /// <param name="combatants">Everyone in it.</param>
+    /// <param name="random">The dice, seeded so the fight replays.</param>
+    /// <param name="objective">
+    /// What ends it. Defaults to last-side-standing, which is what every fight was before
+    /// objectives existed, so an unchanged caller gets unchanged behaviour.
+    /// </param>
+    public static Encounter Start(
+        Battlefield battlefield,
+        IEnumerable<Combatant> combatants,
+        IRandomSource random,
+        EncounterObjective? objective = null)
     {
         ArgumentNullException.ThrowIfNull(battlefield);
         ArgumentNullException.ThrowIfNull(combatants);
         ArgumentNullException.ThrowIfNull(random);
 
-        var encounter = new Encounter(battlefield, combatants, random);
+        var encounter = new Encounter(battlefield, combatants, random)
+        {
+            Objective = objective ?? EncounterObjective.Defeat,
+        };
 
         if (encounter._combatants.Count == 0)
         {
@@ -477,6 +512,26 @@ public sealed partial class Encounter
 
         EndBrokenGrapples();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
+
+        // The objective catch-all, and deliberately *only* the objective half. Move and
+        // Attack ask after themselves but the casting and entry paths never did, so a
+        // Sacred Flame that kills the marked leader would otherwise leave the fight
+        // running until somebody swung or the round rolled over.
+        //
+        // Asking the whole of CheckForCompletion here instead is wrong, and the test that
+        // caught it is worth keeping in mind: a party whose last member is at 0 hit points
+        // is already "not standing", so a full check at this boundary ends the fight
+        // before that character's turn begins — and their turn is where the Death Saving
+        // Throw is rolled, including the natural 20 that puts them back on their feet.
+        // The last-side-standing rule keeps its existing call sites and its existing
+        // timing; only the objective is asked early.
+        CheckObjectiveMet();
+
+        if (IsComplete)
+        {
+            return;
+        }
+
         AdvanceTurn();
     }
 
@@ -828,6 +883,18 @@ public sealed partial class Encounter
 
         _turnIndex = 0;
         Round++;
+
+        // A survival objective is met by time passing rather than by anything anybody
+        // does, so it is the one completion check no action can trigger: without this the
+        // fight would run on until somebody landed a hit and CheckForCompletion was asked
+        // for another reason.
+        CheckForCompletion();
+
+        if (IsComplete)
+        {
+            return false;
+        }
+
         Add(CombatStepKind.RoundStarted, $"Round {Round.ToString(CultureInfo.InvariantCulture)} begins.");
         return true;
     }
@@ -1862,19 +1929,80 @@ public sealed partial class Encounter
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
-        if (standing.Length > 1)
+        if (standing.Length <= 1)
+        {
+            IsComplete = true;
+            WinningSide = standing.Length == 1 ? standing[0] : null;
+
+            Add(
+                CombatStepKind.EncounterEnded,
+                WinningSide is null
+                    ? "The fight ends with nobody left standing."
+                    : $"The fight ends in victory for {WinningSide}.");
+
+            return;
+        }
+
+        // Both sides still stand, so only an objective can end it here. Asked *after* the
+        // last-side-standing question on purpose: being wiped out loses whatever the
+        // objective says, and a side with nobody left cannot meet one.
+        CheckObjectiveMet();
+    }
+
+    /// <summary>
+    /// Ends the fight if the objective's own side has met it. Never ends it any other
+    /// way — the last-side-standing rule is <see cref="CheckForCompletion"/>'s, and
+    /// keeping the two separate is what lets a turn boundary ask about the objective
+    /// without disturbing when a downed character rolls its Death Saving Throw.
+    /// </summary>
+    private void CheckObjectiveMet()
+    {
+        if (IsComplete || Objective.SideId is not { } side)
+        {
+            return;
+        }
+
+        var standing = _combatants
+            .Where(combatant => !combatant.IsDead && combatant.CurrentHitPoints > 0)
+            .Select(combatant => combatant.SideId)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (!standing.Contains(side, StringComparer.Ordinal))
+        {
+            return;
+        }
+
+        var (met, ending) = Objective.Kind switch
+        {
+            // Inclusive: surviving 3 rounds means the fourth never begins. Round has
+            // already been incremented past the one just played when this is asked at a
+            // round boundary, which is what makes the comparison a bare greater-than.
+            ObjectiveKind.SurviveRounds => (
+                Round > Objective.Rounds,
+                $"The fight ends: {side} held out for "
+                    + $"{Objective.Rounds.ToString(CultureInfo.InvariantCulture)} rounds."),
+
+            // A leader that is not on the field at all counts as down: the marked
+            // combatant can only leave the list by dying, and reading a missing id as
+            // "not yet" would make the objective unwinnable rather than already won.
+            ObjectiveKind.KillLeader => (
+                !_combatants.Any(combatant =>
+                    string.Equals(combatant.Id, Objective.LeaderId, StringComparison.Ordinal)
+                    && !combatant.IsDead),
+                $"The fight ends: the leader is down and the rest break off. Victory for {side}."),
+
+            _ => (false, string.Empty),
+        };
+
+        if (!met)
         {
             return;
         }
 
         IsComplete = true;
-        WinningSide = standing.Length == 1 ? standing[0] : null;
-
-        Add(
-            CombatStepKind.EncounterEnded,
-            WinningSide is null
-                ? "The fight ends with nobody left standing."
-                : $"The fight ends in victory for {WinningSide}.");
+        WinningSide = side;
+        Add(CombatStepKind.EncounterEnded, ending);
     }
 
     private void Add(
