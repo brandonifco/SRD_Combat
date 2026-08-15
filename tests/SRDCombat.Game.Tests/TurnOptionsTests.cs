@@ -75,6 +75,46 @@ public class TurnOptionsTests
     }
 
     [Fact]
+    public void CastGoesAwayOnceTheActionIsSpent()
+    {
+        // Found in play: asking "is either action free?" left Cast on the row after an
+        // Action spell, because the Bonus Action was still in hand. It opened the list
+        // and met "action.spent" on whatever was picked.
+        var (encounter, cleric) = CasterFight();
+
+        Assert.Contains(TurnAction.Cast, TurnOptions.For(encounter, cleric));
+
+        Assert.Null(encounter.Dodge());
+
+        Assert.DoesNotContain(TurnAction.Cast, TurnOptions.For(encounter, cleric));
+    }
+
+    [Fact]
+    public void ABonusActionSpellKeepsCastAliveAfterTheAction()
+    {
+        // The other half of the same rule: Healing Word is a Bonus Action, so spending
+        // the Action must not take the whole menu away.
+        var (encounter, cleric) = CasterFight(bonusActionSpell: true);
+
+        Assert.Null(encounter.Dodge());
+
+        Assert.Contains(TurnAction.Cast, TurnOptions.For(encounter, cleric));
+    }
+
+    [Fact]
+    public void ASlottedSpellWithNoSlotLeftIsNotCastable()
+    {
+        var (encounter, cleric) = CasterFight(slots: 0);
+
+        Assert.DoesNotContain(TurnAction.Cast, TurnOptions.For(encounter, cleric));
+
+        // And the predicate says so per spell, which is what filters the menu.
+        Assert.All(
+            cleric.Stats.Character!.Spells,
+            spell => Assert.False(TurnOptions.CanCastNow(cleric, spell)));
+    }
+
+    [Fact]
     public void StandUpIsOfferedOnlyWhileProne()
     {
         var (encounter, fighter) = Fight();
@@ -136,6 +176,73 @@ public class TurnOptionsTests
 
             Assert.True(refusal is not null, $"{action} was hidden but the engine allowed it");
         }
+    }
+
+    /// <summary>A Cleric carrying one slotted spell, acting first.</summary>
+    private static (Encounter Encounter, Combatant Cleric) CasterFight(
+        bool bonusActionSpell = false,
+        int slots = 2)
+    {
+        var abilities = Enum.GetValues<Ability>().ToDictionary(ability => ability, _ => new MonsterAbility(12, 1));
+
+        var spell = new SpellDefinition
+        {
+            Id = "spell.test-bolt",
+            Name = "Test Bolt",
+            Level = 1,
+            School = MagicSchool.Evocation,
+            Classes = ["Cleric"],
+            CastingTime = bonusActionSpell ? SpellCastingTime.BonusAction : SpellCastingTime.Action,
+            CastingTimeText = "Action",
+            RangeText = "60 feet",
+            RangeFeet = 60,
+            Components = SpellComponents.Verbal,
+            DurationText = "Instantaneous",
+            Text = "Test Bolt",
+            Mechanics = EntryMechanics.Attack,
+            IsSpellAttack = true,
+            Damage = [new AttackDamage(DiceExpression.Parse("1d8"), DamageType.Radiant, 4)],
+            SourcePage = 1,
+        };
+
+        var stats = new CombatantStats(
+            16, 30, 30, 10, abilities, 2, CreatureSize.Medium,
+            new Dictionary<DamageType, DamageResponse>(), [],
+            [new CombatAttack("Mace", AttackKind.Melee, 4, 5, null, null,
+                [new AttackDamage(DiceExpression.Parse("1d6 + 1"), DamageType.Bludgeoning, 4)])],
+            DiesAtZeroHitPoints: false)
+        {
+            Character = new CombatantFeatures(
+                [],
+                AttacksPerAction: 1,
+                SneakAttackDamage: null,
+                RageDamageBonus: 0,
+                RageUses: 0,
+                SecondWindUses: 0,
+                ActionSurgeUses: 0,
+                Level: 3,
+                Spells: [spell],
+                SpellSlots: new Dictionary<int, int> { [1] = slots },
+                SpellcastingAbility: Ability.Wisdom,
+                SpellSaveDifficultyClass: 13,
+                SpellAttackBonus: 5),
+        };
+
+        var cleric = new Combatant("aldous", "Aldous", "party", stats, new GridPosition(0, 0));
+
+        var monster = new Combatant(
+            "goblin",
+            "Goblin",
+            "monsters",
+            new CombatantStats(
+                13, 20, 30, -10, abilities, 2, CreatureSize.Medium,
+                new Dictionary<DamageType, DamageResponse>(), [],
+                [new CombatAttack("Scimitar", AttackKind.Melee, 4, 5, null, null,
+                    [new AttackDamage(DiceExpression.Parse("1d6 + 2"), DamageType.Slashing, 5)])],
+                DiesAtZeroHitPoints: true),
+            new GridPosition(6, 0));
+
+        return (Encounter.Start(new Battlefield(10, 8), [cleric, monster], new SeededRandomSource(3)), cleric);
     }
 
     /// <summary>A Fighter with Second Wind and Action Surge, acting first.</summary>

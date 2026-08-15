@@ -164,8 +164,12 @@ public static class TurnOptions
                 actor.Stats.Attacks.Count > 0
                 && (turn.HasAction || features.AttacksRemainingThisAction > 0),
 
-            // Some spells are cast with a Bonus Action, so either will do.
-            TurnAction.Cast => character is { CanCast: true } && (turn.HasAction || turn.HasBonusAction),
+            // Offered only while there is a spell that could actually be cast. Asking
+            // "is either action free?" was not enough: after an Action spell the Bonus
+            // Action is still in hand, so Cast stayed on the row, opened the list, and
+            // met "action.spent" on whatever was picked.
+            TurnAction.Cast => character is { CanCast: true }
+                && character.Spells.Any(spell => CanCastNow(actor, spell)),
 
             TurnAction.Drink => turn.HasBonusAction && actor.Inventory.TotalPotions > 0,
 
@@ -212,6 +216,51 @@ public static class TurnOptions
 
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Whether this caster could cast this spell right now — the casting time is still
+    /// in hand, and a slot of its level or higher is left.
+    /// </summary>
+    /// <remarks>
+    /// The menu shows what this admits and the Cast button appears only while something
+    /// does, so a spell list can no longer offer a row whose only possible answer is a
+    /// refusal. Extended casting times are excluded outright: a spell taking a minute
+    /// is refused as too slow in a fight, and the engine says so.
+    /// </remarks>
+    public static bool CanCastNow(Combatant actor, SpellDefinition spell)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        ArgumentNullException.ThrowIfNull(spell);
+
+        var affordable = spell.CastingTime switch
+        {
+            SpellCastingTime.Action => actor.Turn.HasAction,
+            SpellCastingTime.BonusAction => actor.Turn.HasBonusAction,
+            SpellCastingTime.Reaction => actor.Turn.HasReaction,
+            _ => false,
+        };
+
+        if (!affordable)
+        {
+            return false;
+        }
+
+        if (spell.IsCantrip)
+        {
+            return true;
+        }
+
+        // "You must use a spell slot of the spell's level or higher."
+        for (var level = spell.Level; level <= 9; level++)
+        {
+            if (actor.Features.SpellSlotsRemaining.GetValueOrDefault(level) > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool PotionWithinReach(Encounter encounter, Combatant actor) =>
