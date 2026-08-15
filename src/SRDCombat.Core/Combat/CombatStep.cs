@@ -52,11 +52,19 @@ public enum CombatStepKind
 /// <param name="Narration">A complete, human-readable sentence.</param>
 /// <param name="ActorId">The combatant who acted, when there is one.</param>
 /// <param name="TargetId">The combatant acted upon, when there is one.</param>
+/// <param name="Path">
+/// For a <see cref="CombatStepKind.Move"/> that crossed the grid: every square the mover
+/// occupied, in order, starting square first — cut short where an Opportunity Attack
+/// dropped them. Null on every other step, standing up included. It is here so a client
+/// can show the walk the engine took without recomputing the route, which would be a
+/// second place movement rules live.
+/// </param>
 public sealed record CombatStep(
     CombatStepKind Kind,
     string Narration,
     string? ActorId = null,
-    string? TargetId = null)
+    string? TargetId = null,
+    IReadOnlyList<GridPosition>? Path = null)
 {
     public override string ToString() => Narration;
 }
