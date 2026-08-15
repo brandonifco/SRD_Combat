@@ -45,6 +45,11 @@ if (contentDirectory is null || !Directory.Exists(contentDirectory))
 
 var content = ContentLoader.Load(contentDirectory);
 var results = new List<(int Cleared, int Level, RunEnd End)>();
+// Where the early deaths happen and what they were facing. This is the line that found
+// the level 1 wall: the runs dying in the opening were meeting 4.2 to 4.6 creatures where
+// the average draw is 3.0, which is invisible in "fights cleared" and invisible to the XP
+// budget, because XP prices a creature's worth and not how many act each round.
+var deaths = new List<(int Fight, string Difficulty, int Count, int Biggest)>();
 
 for (var seed = firstSeed; seed <= lastSeed; seed++)
 {
@@ -54,6 +59,7 @@ for (var seed = firstSeed; seed <= lastSeed; seed++)
 
     while (run.Next is not null)
     {
+        var step = run.Next!;
         var rest = run.PrepareForNext(random);
 
         // The Long Rest merchant is part of the game as played: the canonical run
@@ -85,11 +91,24 @@ for (var seed = firstSeed; seed <= lastSeed; seed++)
             break;
         }
 
+        var fightNumber = run.Cleared + 1;
+        var thisStep = step;
+
         run.CompleteFight(fight, noLoot ? null : random);
 
         if (run.Outcome != RunOutcome.InProgress)
         {
             end = run.Outcome == RunOutcome.Defeated ? RunEnd.Defeated : RunEnd.Cleared;
+
+            if (end == RunEnd.Defeated)
+            {
+                deaths.Add((
+                    fightNumber,
+                    thisStep.Difficulty.ToString(),
+                    fight.Built.Monsters.Count,
+                    fight.Built.Monsters.Max(BiggestHit)));
+            }
+
             break;
         }
     }
@@ -137,7 +156,22 @@ Console.WriteLine(
             .Where(entry => entry.Count > 0)
             .Select(entry => $"{entry.Reason} {entry.Count}")));
 
+foreach (var group in deaths.Where(d => d.Fight <= 4)
+    .GroupBy(d => (d.Fight, d.Difficulty))
+    .OrderBy(g => g.Key.Fight))
+{
+    Console.WriteLine(
+        $"  died fight {group.Key.Fight} ({group.Key.Difficulty}): {group.Count()} runs, "
+        + $"avg {group.Average(d => d.Count):F1} monsters, avg biggest hit {group.Average(d => d.Biggest):F1}");
+}
+
 return 0;
+
+static int BiggestHit(SRDCombat.Core.Definitions.MonsterDefinition monster) =>
+    monster.Entries.SelectMany(e => e.Attack is null ? [] : new[] { e.Attack })
+        .Select(a => a.Damage.Sum(d => d.PrintedAverage))
+        .DefaultIfEmpty(0)
+        .Max();
 
 static (int First, int Last) SeedRange(string[] args)
 {

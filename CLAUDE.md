@@ -53,6 +53,33 @@ Moderate rung drops a Potion of Healing**, handed to whoever carries the fewest.
 deliberately thin — it calls the engine's public actions and prints `CombatStep.Narration`,
 **recomputing no rule**, and it shows a refusal *with its code* rather than swallowing it.
 
+**The level 1 wall is fixed, and it was never the ladder or the budget — it was how many
+creatures a fight fields.** `EncounterBuilder.MaximumFor` capped an encounter at one more
+creature than there are characters, level-blind, since it was written. That is a fair cap
+for a party that can take a hit and a lethal one for a party that cannot, because **the
+cost of being outnumbered is paid in characters *removed***: a level 1 character has 8–12
+hit points and the creatures a level 1 budget buys hit for 8–9, so very nearly every landed
+blow drops somebody and takes a quarter of the party's action economy with it. The same
+fight at level 5 lands the same 9 damage on 40 hit points and removes nobody. **The budget
+cannot see this, because XP prices a creature's worth and not its simultaneity** — five
+creatures at 60 XP and one at 300 are the same purchase on printed page 202 and completely
+different fights to four characters with 10 hit points. The cap now grows with the party's
+capacity to absorb a hit: **three creatures at level 1, four at level 2, and the original
+one-more-than-the-party from level 3 up**, sized against the party's *lowest* level. The
+printed budget is untouched; the same XP is simply spent across fewer, individually dearer
+creatures. Measured on seeds 1–120 against the same build: **runs dying by fight 4 fell
+37 → 11, full clears rose 65 → 84, level-4 runs 73 → 95, and deaths in fight 1 stopped
+entirely.** That is the largest single move the early game has ever recorded. **It was
+found by instrumenting rather than guessing** — `PacingMeasure` now reports what the dying
+runs were facing, and the answer was that they met **4.2–4.6 creatures where the average
+draw is 3.0**, a fact invisible in "fights cleared" and invisible to the budget. Two
+warnings for the next reader. **The +19 clears are not the whole game getting easier** —
+the cap binds only at levels 1–2 and is byte-identical from level 3 — it is more runs
+getting *past* the wall into a back half that was already a victory lap, which is now the
+top design problem: 84 of 120 runs clear everything. And **the median is useless here**:
+it was pinned at 30 before this change and after it, so the shape line is the only figure
+that moved. Read `shape:`.
+
 **Not every rung is a deathmatch any more, and the two that are not were measured apart.**
 `EncounterObjective` is what ends a fight: `Defeat` (last side standing, the only rule
 there used to be), `SurviveRounds` and `KillLeader`. Two rungs of every five carry one —
