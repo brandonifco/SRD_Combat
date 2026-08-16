@@ -463,7 +463,7 @@ which is exactly the shape of hand-drawn art for one creature, and meant such a 
 loaded as null and kept drawing a lettered circle. A narrow sheet is now read as one
 frame and padded to square, **horizontally centred and not vertically**, because the
 packs are canvas-aligned with the feet on the bottom edge and every metric in
-`SpriteLibrary` is measured from there. **Eleven creatures ship this way** — Gnoll Warrior, Black
+`SpriteLibrary` is measured from there. **Fifteen creatures ship this way** — Gnoll Warrior, Black
 Bear, Brown Bear, Giant Wasp, Dire Wolf, Giant Eagle, Giant Hyena, Ape — chosen because
 they are among the pool's most-drawn and every one was a bare circle beside a party in
 full animation. **The asymmetry between narrow and wide art is the thing to know**: a
@@ -475,14 +475,16 @@ negative already in the assets (`Wanderer Magican/Charge_1.png`, 576×128, four 
 frames wide), which is this file's oldest lesson about heuristics arriving from a new
 direction. Wide drawings are therefore squared **on disk** at install, bottom-aligned and
 centred; unpadded, they load as a one-frame strip cropped to the left edge — most of a
-wolf. **A third install step arrived with the Hobgoblin Warrior, and it is the one most likely
-to be forgotten**: the drawing must stand about **64 pixels tall**, because
-`NominalStature` is 64 and the board uses *one shared pixel scale* — art drawn larger is
-simply drawn larger, never normalised. The hobgoblin came in at 92 pixels of stature
-against the Gnoll Warrior's 66 and would have towered 40% over it, two Medium creatures
-side by side. Nothing catches it: both scale to 1.0 by `ScaleFor`'s arithmetic, and the
-oversize ceiling only bites near 96 pixels, long after it looks wrong. The installed
-humanoids sit at 63–67 and a new one should be checked against them.
+wolf. **Stature is drawn rather than normalised, and that is a look rather than a bug.**
+`NominalStature` is 64 and the board uses one shared pixel scale, so a figure drawn
+taller simply is taller — `ScaleFor`'s oversize ceiling only engages near 96 pixels. The
+installed set runs 38 (Giant Eagle) to 92 (Hobgoblin Warrior) with the humanoids mostly
+at 60-67. **The hobgoblin was rescaled to match its neighbours and then restored**, on
+the instruction that the art is the author's call and sizing would be handled later:
+worth recording, because "the numbers disagree" is not on its own a reason to alter
+somebody's drawing, and the same reflex had earlier declined a goblin drawing purely
+because an animated pack existed. **Fifteen creatures now carry hand-drawn stills**,
+including Goblin Warrior and Scout, which took drawings over packs by preference.
 The second install-time step is the **flip**: these four were drawn facing left and
 the convention is that art faces right, so a monster squared up to the party would
 otherwise be mirrored away from it. They do not
