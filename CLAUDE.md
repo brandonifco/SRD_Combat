@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` after the 2026-08-16 play session — the first in which a person drove the Godot client through real fights and said what was wrong. Four slices came out of it: the code is **MIT licensed** with `data/` staying CC-BY (#202), movement executes the printed *Moving around Other Creatures* clauses so bodies no longer wall a corridor off (#203), the encounter draw **favours the classic bestiary over ordinary animals** (#204), and the **opening cycle rests Long** so a level 1 party is not ground down by attrition it cannot heal (#205) |
-| Tests | **921 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **925 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **The ladder has a difficulty curve for the first time, and warband rungs (#207) are what gave it one.** Current `main`, measured 2026-08-16, `tools/PacingMeasure`, loot on: seeds 1–120 read **median 18, 38 of 120 clearing everything, 56 reaching level 4, 3 dying by fight 4**; seeds 200–320 read **18, 43, 60, and 9**. **The median measures again** — it had been pinned at 30 of 30 for several slices, where a saturated statistic reads identically whether a change helped, hurt or did nothing. Read the `shape:` and per-band lines with it: `died-by-fight-4` for the opening, `cleared-all` for the ending, hp-left per band for whether a fight was ever close. **The per-band line is the one that changed**: party hit points left used to be flat at 75–81% in *every* band from fights 1–5 to 26–30 — fight 27 was not harder than fight 3, only longer — and now runs **86% → 79% → 72% → 74% → 70% → 71%**. The distribution moved with it: runs ending in the middle rather than at either extreme went **47 → 79** of 120, so the old die-early-or-clear-everything split is gone. Five slices on 2026-08-16, each against a same-build baseline taken immediately before: **movement's printed pass-through clauses** (#203) clears 72 → 76; **the classic-monster weight** (#204) clears 76 → 66, a *difficulty* gain from a flavour change, because a classic monster carries more mechanics per XP than an animal; **resting Long through the opening cycle** (#205) died-by-fight-4 15 → 1 and 14 → 6; and **warbands** (#207) clears 72 → 38 and 78 → 43. **Warbands also proved the cliff the XP budget cannot see**: five creatures leave the party at 75% of its hit points and down 0.25 of a character, **six leave it at 51% and down 1.11**. That is why the warband rung is budgeted *Low* — at Moderate it took clears to **12** and was simply unwinnable. Two standing lessons, earned expensively: **quote a bar you measured yourself, on the build in front of you** — this row once carried `median 24, 54 clears` across several slices while the build read 30/72/93; and **a played run is a first-class instrument** — two partial human sessions found four real bugs, and the 2026-08-16 session produced three of the day's five slices from complaints no automated measurement could have voiced. Earlier history, kept for its reasoning rather than its numbers: the economy transformed the tail (full clears 2 → 14), #127 spent 2 median deliberately teaching monsters their stat blocks, and seed-set × build interaction swings a 120-seed figure by a few points — measure on two ranges before believing one. |
@@ -612,7 +612,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 921 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 925 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -1514,13 +1514,33 @@ this project may relicense Wizards' content, which it may not.
   had to be constructed for it is worth knowing about: **a sealed side of the field is
   not stuck**, because the policy simply repositions within it. Stuck means a cell whose
   only non-wall neighbour is the body itself, diagonals included.
-- **The wake-up displacement problem does not exist, and does not need a rule.** Asked
-  for during the 2026-08-16 play session as "a character standing on a fallen comrade
-  should be moved aside when they come round". Because ending a move on anyone is refused,
-  nobody can *be* standing on a downed creature when it is healed, so the case never
-  arises — and print's own answer where a shared square is somehow reached is the Prone
-  condition, not a shove to the nearest free square. No nearest-viable-square search, and
-  so no tie-break for the transcripts to depend on.
+- **A move may end on a fallen comrade — the engine's one deliberate contradiction of a
+  printed sentence — and it brought the displacement rule with it.** The print is explicit:
+  "You can't willingly end a move in a space occupied by another creature." Asked for
+  during the 2026-08-16 play session, **twice, after the printed reading had been
+  explained**, and shipped as the player's call: standing over a fallen friend is what a
+  player expects to be able to do, and being refused reads as the grid being broken rather
+  than as a rule. **Scoped as narrowly as the request was** — only a *fallen ally*
+  (`CanEndOn` = ally **and** Incapacitated), so a downed enemy still refuses and the
+  printed sentence governs every other case. The narrowness is load-bearing twice over:
+  it was implemented for any downed creature first, and that broke both stalemate tests,
+  because a monster able to *stop* on the body it is trying to get past deletes the only
+  scenario the stuck-turn last resort is tested against.
+  **This is also the bullet that reversed** — an earlier version of this file, written
+  the same day, argued the wake-up case was impossible and needed no rule. That was true
+  only while ending a move on anyone was refused. Allowing it reopens two able creatures
+  in one square, which is exactly the crash that took down two of sixty seeded runs when
+  occupancy was last read as "active", so `Encounter.ClearSharedSquares` now displaces
+  whoever is standing on a creature that comes round, swept beside `EndBrokenGrapples` at
+  every state-change point. **Who stays is a stated reading**: fewest hit points keeps the
+  square, ties on identifier so a seed replays — in practice the one who just came round
+  is at 1 hit point and the one standing over them is not, which puts the move on the
+  character who chose to stand there, as asked. Displacement is free (no movement spent,
+  no Opportunity Attack, because the creature did not choose to go) and is **narrated**,
+  since a token moving on its own is otherwise indistinguishable from a bug. One trap for
+  the next test-writer: **the sweep runs from `Encounter.Start`**, so two combatants
+  constructed in the same square are separated before a test body begins — the stacking
+  has to be done by moving. Measured neutral: median 18 → 19, clears 38 → 35, no stalls.
 - **A cheapest route is not automatically a sensible-looking one, and the tie-break that
   fixes it paid for itself.** Every square costs the same five feet, diagonals included,
   so whenever one axis decides the distance a route may drift sideways and back *for

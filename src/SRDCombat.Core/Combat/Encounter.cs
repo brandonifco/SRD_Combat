@@ -181,6 +181,7 @@ public sealed partial class Encounter
 
         // Walking away from a grappled creature can be what ends the grapple.
         EndBrokenGrapples();
+        ClearSharedSquares();
         CheckForCompletion();
         return null;
     }
@@ -511,6 +512,7 @@ public sealed partial class Encounter
         }
 
         EndBrokenGrapples();
+        ClearSharedSquares();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
 
         // The objective catch-all, and deliberately *only* the objective half. Move and
@@ -646,6 +648,111 @@ public sealed partial class Encounter
     /// grapple that survives its grappler is the failure this exists to prevent, and it
     /// would be invisible: the victim simply never moves again.
     /// </remarks>
+    /// <summary>
+    /// Restores the one-able-creature-per-square invariant after somebody comes round
+    /// underneath somebody else.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The price of the house rule in <see cref="MovementRules.FindPath"/>. A move may
+    /// finish on a downed creature, so a downed creature can be healed while another
+    /// stands in its square — and two able creatures in one square is the exact state
+    /// that took down two of sixty seeded runs when occupancy was last read as "active".
+    /// This is what the play session meant by "the character standing on top should just
+    /// be moved to the nearest viable location".
+    /// </para>
+    /// <para>
+    /// <b>Who stays is a stated reading.</b> The creature with the fewest hit points
+    /// keeps the square, ties broken on identifier so a seed always replays. In practice
+    /// that is the one who just came round — a revived creature is at 1 hit point and
+    /// the one standing over it is not — which puts the displacement on the character
+    /// who chose to stand there, as asked. It is a reading rather than a derivation
+    /// because the encounter does not record who entered a square first, and inventing
+    /// that bookkeeping to serve one sweep would cost more than the tie-break does.
+    /// </para>
+    /// <para>
+    /// The step is narrated rather than silent: a token moving on its own is otherwise
+    /// indistinguishable from a bug, and this engine has no other rule that relocates a
+    /// creature outside its own turn. Displacement is free — it spends no movement and
+    /// provokes no Opportunity Attack, because the creature did not choose to go.
+    /// </para>
+    /// </remarks>
+    private void ClearSharedSquares()
+    {
+        var crowded = _combatants
+            .Where(combatant => !combatant.IsDead
+                && !combatant.HasCondition(ConditionType.Incapacitated))
+            .GroupBy(combatant => combatant.Position)
+            .Where(group => group.Count() > 1)
+            .ToArray();
+
+        foreach (var group in crowded)
+        {
+            var stays = group
+                .OrderBy(combatant => combatant.CurrentHitPoints)
+                .ThenBy(combatant => combatant.Id, StringComparer.Ordinal)
+                .First();
+
+            foreach (var displaced in group.Where(c => !ReferenceEquals(c, stays)))
+            {
+                if (NearestFreeSquare(displaced.Position) is not { } square)
+                {
+                    // Nowhere to put them. Leaving the square shared is survivable —
+                    // FindPath keys its blockers as a lookup precisely so that this is
+                    // not fatal — and is better than throwing inside a fight.
+                    continue;
+                }
+
+                displaced.MoveTo(square);
+
+                Add(
+                    CombatStepKind.Move,
+                    $"{stays.Name} comes round, and {displaced.Name} steps aside.",
+                    displaced);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The closest square to <paramref name="from"/> that is passable and unoccupied,
+    /// searched outward so the displaced creature moves as little as possible.
+    /// </summary>
+    private GridPosition? NearestFreeSquare(GridPosition from)
+    {
+        var taken = _combatants
+            .Where(combatant => !combatant.IsDead)
+            .Select(combatant => combatant.Position)
+            .ToHashSet();
+
+        var seen = new HashSet<GridPosition> { from };
+        var queue = new Queue<GridPosition>();
+        queue.Enqueue(from);
+
+        while (queue.TryDequeue(out var current))
+        {
+            // Ordered so the search is deterministic whatever the neighbour order is.
+            foreach (var next in current.Neighbours()
+                .Where(seen.Add)
+                .OrderBy(square => square.X)
+                .ThenBy(square => square.Y))
+            {
+                if (!Battlefield.IsPassable(next))
+                {
+                    continue;
+                }
+
+                if (!taken.Contains(next))
+                {
+                    return next;
+                }
+
+                queue.Enqueue(next);
+            }
+        }
+
+        return null;
+    }
+
     private void EndBrokenGrapples()
     {
         foreach (var victim in _combatants)
@@ -783,6 +890,7 @@ public sealed partial class Encounter
             ExpireConditions(combatant, ConditionClock.StartOfTurn);
             ExpireSapsFrom(combatant);
             EndBrokenGrapples();
+        ClearSharedSquares();
 
             // "At the start of each of the monster's turns, roll 1d6" — its turn starts
             // even when it cannot act, so the roll comes before those branches. A dead
@@ -1505,6 +1613,7 @@ public sealed partial class Encounter
 
         // The blow may have dropped a grappler, in this fight or another one.
         EndBrokenGrapples();
+        ClearSharedSquares();
 
         // Cleave last, once everything belonging to the first blow has landed — it is
         // its own attack roll against a second creature, and it must not recurse.
@@ -1610,6 +1719,7 @@ public sealed partial class Encounter
         }
 
         EndBrokenGrapples();
+        ClearSharedSquares();
     }
 
     /// <summary>
@@ -1897,6 +2007,7 @@ public sealed partial class Encounter
 
         // The damage may have dropped a grappler, in this fight or another one.
         EndBrokenGrapples();
+        ClearSharedSquares();
     }
 
     /// <summary>Narrates a duration the way the SRD prints it.</summary>

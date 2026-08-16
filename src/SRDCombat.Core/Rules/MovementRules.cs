@@ -95,9 +95,26 @@ public static class MovementRules
             .Where(other => other.Id != mover.Id && !other.IsDead)
             .ToLookup(other => other.Position);
 
-        // "You can't willingly end a move in a space occupied by another creature" —
-        // whoever it is, however incapable they are.
-        if (occupants.Contains(destination))
+        // A move may end on a downed creature, and nowhere else.
+        //
+        // This is a HOUSE RULE and the one place this engine knowingly contradicts a
+        // printed sentence: "You can't willingly end a move in a space occupied by
+        // another creature." Asked for during the 2026-08-16 play session, twice, after
+        // the printed reading had been explained — standing over a fallen friend is
+        // what a player expects to be able to do, and being unable to finish a move on
+        // a body reads as the grid being broken rather than as a rule.
+        //
+        // Scoped as narrowly as the want allows: only a creature with the Incapacitated
+        // condition may be stood on. Everyone else still refuses, so this widens exactly
+        // one case and the printed sentence governs every other. It deliberately uses
+        // the same predicate as the pass-through clause above, so "can I walk through
+        // it" and "can I stop on it" cannot drift apart.
+        //
+        // The cost is real and is paid in Encounter.ClearSharedSquares: allowing this
+        // reopens two creatures in one square, which is the crash that took down two of
+        // sixty seeded runs when occupancy was last read as "active". A creature that
+        // comes round underneath somebody now displaces them.
+        if (occupants[destination].Any(other => !CanEndOn(mover, other)))
         {
             return null;
         }
@@ -131,10 +148,13 @@ public static class MovementRules
 
                 if (occupied)
                 {
-                    // Never end on someone, and pass through only what the printed
-                    // clause names: an ally, or anyone with the Incapacitated condition.
-                    if (next == destination
-                        || !occupants[next].All(other => CanPassThrough(mover, other)))
+                    // Pass through only what the printed clause names — an ally, or
+                    // anyone Incapacitated — and stop only on the downed.
+                    var blocked = next == destination
+                        ? occupants[next].Any(other => !CanEndOn(mover, other))
+                        : occupants[next].Any(other => !CanPassThrough(mover, other));
+
+                    if (blocked)
                     {
                         continue;
                     }
@@ -185,6 +205,28 @@ public static class MovementRules
     /// </remarks>
     private static bool CanPassThrough(Combatant mover, Combatant other) =>
         IsAllyOf(mover, other) || other.HasCondition(ConditionType.Incapacitated);
+
+    /// <summary>
+    /// Whether a move may <em>finish</em> in a square this creature is standing in.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Only over a <em>fallen ally</em>, and this is the engine's one deliberate
+    /// contradiction of a printed sentence — see the note in <see cref="FindPath"/>.
+    /// </para>
+    /// <para>
+    /// Both halves of the condition are the scope the request actually had: "I want to
+    /// be able to walk into a space where a fallen comrade lays." A downed *enemy* is
+    /// left alone, so standing over a body to defend it works and standing on a corpse
+    /// you made does not. That narrowness is worth keeping for a second reason — the
+    /// stuck-turn last resort in <c>SimpleTacticsPolicy</c> exists because a creature
+    /// with nowhere to go must still be able to act, and letting a monster *stop* on
+    /// the body it is trying to get past would quietly delete the only scenario that
+    /// rule is tested against.
+    /// </para>
+    /// </remarks>
+    private static bool CanEndOn(Combatant mover, Combatant other) =>
+        IsAllyOf(mover, other) && other.HasCondition(ConditionType.Incapacitated);
 
     /// <summary>
     /// Whether one route to a square is preferable to another: cheaper, or the same
