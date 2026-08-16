@@ -161,6 +161,21 @@ shows, and what the figure is measured from. Everything else degrades on its own
 `Attack.png` and that creature never swings, no `Hurt.png` and it never flinches, no
 `Dead.png` (the Priest packs ship neither) and it lies its idle frame on its back.
 
+**Projectiles have a folder of their own**, because any archer fires the same arrow and
+keying the sheet to a stat block would tie a Rogue's shortbow to the Skeleton Archer's
+presence on disk:
+
+```
+client/assets/sprites/Projectiles/Arrow.png   a ranged weapon attack
+client/assets/sprites/Projectiles/Bolt.png    a spell attack (a strip; it loops in flight)
+```
+
+Both are optional like everything else — without them a ranged attack simply swings and
+lands with nothing drawn crossing the gap. Both must be drawn **pointing right**: the
+client rotates them along the flight, the same convention the walk cycle's facing rests
+on. `Arrow.png` in the Skeleton Archer pack and `Magic_arrow.png` in the Wanderer Magican
+pack are the two this was built against.
+
 The directory is gitignored. A machine without it — CI, a fresh clone — draws the
 circle tokens it always drew; every lookup is a fallback, nothing is load-bearing.
 `--probe` and `--capture` freeze the animation clock for the same reason they skip

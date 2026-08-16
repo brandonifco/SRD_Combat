@@ -480,6 +480,28 @@ now the order of the fight: walk, swing, damage on the swing's last frame, then 
 Holds clear when the act queue drains (which also covers a victim whose art lacks the
 strip), on scrub, and on a slice with nothing to animate; the probe never engages them,
 because a capture read the instant after a click must show final state.
+**Ranged attacks throw something across the board (2026-08-15).** `CombatStep.Ranged` is
+a `RangedAttackKind` — None, Weapon or Spell — set from the engine's *own* predicate
+(`CombatAttack.IsRangedAttackRoll`, the one the printed close-combat Disadvantage hangs
+on), recorded for the reason `Path` is: **so no client works it out.** A client reading
+the gap instead would call a Halberd's ten-foot reach a shot and would still have to know
+which of an attacker's attacks was swung — both pinned by tests. Weapon and Spell are told
+apart *here* rather than downstream because the only other way for a client to know is to
+read the narration, and this project does not parse its own prose. The client flies the
+art: an arrow for a weapon, a bolt for a spell, rotated along the flight (both sheets draw
+their projectile pointing right, the same convention the walk's facing rests on), drawn
+after the tokens so it passes in front, at a speed derived from
+`AnimationFramesPerSecond` and floored at two frames so a point-blank shot is still seen.
+The art lives in `client/assets/sprites/Projectiles/` — its own folder rather than
+borrowed from the Skeleton Archer that ships the arrow, since tying a Rogue's shortbow to
+a monster's presence on disk would be absurd — and, like every sheet, it is optional.
+**The reveal order needed a second look**: with something in flight the swing earns only
+its own line, because the roll is settled when the bow twangs but the damage is the
+picture of the arrow *landing*. Verified by watching it — a temporary probe burst with
+animation on, capturing fourteen frames across one shot; the permanent probe still runs
+with animation off, so **nothing guards this from regressing** beyond the engine-side
+tests.
+
 **And the tokens draw in layers, from the same session.** Two combatants really can share
 a square — `MovementRules` counts only creatures that are *not dead* as occupying, so a
 corpse lies flat and is walked over — while `DrawTokens` iterated in initiative order, so

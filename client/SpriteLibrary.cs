@@ -132,8 +132,21 @@ public sealed class SpriteLibrary
 
     private readonly Dictionary<string, CharacterArt> _bySheetFolder;
 
-    private SpriteLibrary(Dictionary<string, CharacterArt> bySheetFolder) =>
+    private SpriteLibrary(Dictionary<string, CharacterArt> bySheetFolder, Strip? arrow, Strip? bolt)
+    {
         _bySheetFolder = bySheetFolder;
+        Arrow = arrow;
+        Bolt = bolt;
+    }
+
+    /// <summary>
+    /// The arrow that crosses the board for a ranged weapon attack, drawn pointing right
+    /// and rotated along its flight. Null when the art is absent.
+    /// </summary>
+    public Strip? Arrow { get; }
+
+    /// <summary>The bolt a spell attack throws — a looping strip, rotated the same way.</summary>
+    public Strip? Bolt { get; }
 
     /// <summary>Whether any art loaded at all — false means every token is a circle.</summary>
     public bool IsEmpty => _bySheetFolder.Count == 0;
@@ -165,8 +178,16 @@ public sealed class SpriteLibrary
 
         if (!Directory.Exists(root))
         {
-            return new SpriteLibrary(loaded);
+            return new SpriteLibrary(loaded, null, null);
         }
+
+        // The two projectiles, in a folder of their own rather than borrowed from the
+        // creature that happens to ship them: any archer fires the same arrow, and a
+        // sheet keyed to a stat block would tie a Rogue's shortbow to the Skeleton
+        // Archer's presence on disk. Both are optional, like every other sheet.
+        var projectiles = Path.Combine(root, "Projectiles");
+        var arrow = LoadStrip(Path.Combine(projectiles, "Arrow.png"));
+        var bolt = LoadStrip(Path.Combine(projectiles, "Bolt.png"));
 
         foreach (var folder in ByClassName.Values.Concat(ByMonsterName.Values).Distinct())
         {
@@ -208,7 +229,7 @@ public sealed class SpriteLibrary
                 dead is null ? 0 : RestingFrame(deadPath, figure));
         }
 
-        return new SpriteLibrary(loaded);
+        return new SpriteLibrary(loaded, arrow, bolt);
     }
 
     private static Strip? LoadStrip(string path)
