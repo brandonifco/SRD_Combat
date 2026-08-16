@@ -456,6 +456,28 @@ the circle-and-letter tokens it always drew, and `--probe`/`--capture` freeze th
 animation clock so a verification image cannot depend on when the frame was taken. See
 the client README for where the packs come from and where they go.
 
+**A single drawing is a complete token, and a resting token faces the nearest enemy
+(2026-08-16).** Two changes from one request. First, `LoadStrip` reads a sheet as frames
+of height × height across, so anything *narrower* than it is tall was rejected outright —
+which is exactly the shape of hand-drawn art for one creature, and meant such a file
+loaded as null and kept drawing a lettered circle. A narrow sheet is now read as one
+frame and padded to square, **horizontally centred and not vertically**, because the
+packs are canvas-aligned with the feet on the bottom edge and every metric in
+`SpriteLibrary` is measured from there. Four creatures ship this way — Gnoll Warrior,
+Black Bear, Brown Bear, Giant Wasp — chosen because they are among the pool's
+most-drawn and every one was a bare circle beside a party in full animation. They do not
+animate and do not need to: each pose already falls back to Idle. **Goblins were asked
+for and deliberately not taken**, because `Goblin_1/2/3` already cover all three goblin
+stat blocks with full animation, and a still frame would have been a downgrade.
+Second, **facing**. It ran off the token's *side* — monsters faced left, the party right
+— which is right only because the sides spawn in columns, and wrong the moment anyone
+walks past anyone; a creature standing east of the character it was about to bite was
+drawn looking away from it. The swing already faced its victim and a walk faces its last
+horizontal step, so `RestingFacesLeft` is the third case: stand still and look at the
+nearest living enemy. Ties and a shared column keep the old side default, because a
+figure drawn edge-on has no better answer and flipping on a tie makes tokens twitch as
+others move around them; the dead are not looked at, the downed are.
+
 **The whole board animates off one clock, at ten frames a second.**
 `FightScreen.AnimationFramesPerSecond` is the single knob: idle, walk, swing, flinch and
 fall all advance at that rate, a pose lasts as long as its own frames take at it (a
