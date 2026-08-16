@@ -115,6 +115,48 @@ public class EncounterBudgetTests
     }
 
     [Fact]
+    public void ClassicMonstersAreDrawnOftenerThanAnimals()
+    {
+        // Six creatures of one price, so the slot's share admits all of them and the
+        // dearest band comes down to the first two by id: one Beast, one not.
+        var candidates = new[]
+        {
+            Monster("a", 50),
+            Monster("b", 50, CreatureType.Fiend),
+            Monster("c", 50),
+            Monster("d", 50),
+            Monster("e", 50),
+            Monster("f", 50),
+        };
+
+        var drawn = Enumerable.Range(1, 600)
+            .Select(seed => EncounterBuilder.Build(
+                candidates,
+                budget: 100,
+                new SeededRandomSource(seed),
+                maximumMonsters: 1,
+                minimumMonsters: 1))
+            .Select(built => built.Monsters.Single().Id)
+            .ToArray();
+
+        var fiends = drawn.Count(id => id == "b");
+        var beasts = drawn.Count(id => id == "a");
+
+        // Weighted three to one, so a comfortable band either side of it — this asserts
+        // the preference exists and points the right way, not a precise ratio.
+        Assert.True(
+            fiends > beasts * 2,
+            $"the Fiend was drawn {fiends} times against the Beast's {beasts}.");
+
+        // And it is a preference, never a filter: a band of nothing but animals still
+        // yields an animal rather than nothing at all.
+        var animalsOnly = new[] { Monster("a", 50), Monster("b", 50), Monster("c", 50) };
+
+        Assert.NotEmpty(
+            EncounterBuilder.Build(animalsOnly, 100, new SeededRandomSource(1), 1, 1).Monsters);
+    }
+
+    [Fact]
     public void TheCountIsChosenBeforeTheCreaturesAndVaries()
     {
         // The correction this replaced: picking uniformly among everything affordable
@@ -272,12 +314,15 @@ public class EncounterBudgetTests
         Assert.All(built.Monsters, monster => Assert.Equal("real", monster.Id));
     }
 
-    private static MonsterDefinition Monster(string id, int experiencePoints) => new()
+    private static MonsterDefinition Monster(
+        string id,
+        int experiencePoints,
+        CreatureType type = CreatureType.Beast) => new()
     {
         Id = id,
         Name = id,
         Sizes = [CreatureSize.Medium],
-        Type = CreatureType.Beast,
+        Type = type,
         Alignment = "Unaligned",
         ArmorClass = 12,
         InitiativeBonus = 0,
