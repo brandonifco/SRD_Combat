@@ -513,7 +513,7 @@ public partial class PlayMode : FightScreen
                 {
                     _attackMenuOpen = false;
                     _pendingAttack = swinging.Stats.Attacks[0];
-                    _pending = Pending.AttackTarget;
+                    ArmTargeting(Pending.AttackTarget);
                     return null;
                 }
 
@@ -531,11 +531,82 @@ public partial class PlayMode : FightScreen
                     ? encounter.DrinkPotion(potency)
                     : new ActionRefusal("client.no_potion", "Nothing to drink.");
 
-            case TurnAction.GivePotion: _pending = Pending.PotionTarget; return null;
-            case TurnAction.DivineSparkHeal: _pending = Pending.SparkHealTarget; return null;
-            case TurnAction.DivineSparkHarm: _pending = Pending.SparkHarmTarget; return null;
+            case TurnAction.GivePotion: ArmTargeting(Pending.PotionTarget); return null;
+            case TurnAction.DivineSparkHeal: ArmTargeting(Pending.SparkHealTarget); return null;
+            case TurnAction.DivineSparkHarm: ArmTargeting(Pending.SparkHarmTarget); return null;
 
             default: return null;
+        }
+    }
+
+    /// <summary>
+    /// Arms a targeting mode and points the cursor at the nearest thing it could be
+    /// used on.
+    /// </summary>
+    /// <remarks>
+    /// <b>Every road into targeting comes through here</b>, so the cursor is never left
+    /// wherever the last action happened to leave it — which is what made choosing a
+    /// target from the keyboard a hunt across the board before anything could be aimed.
+    /// Nearest first because the nearest enemy is the one being asked about far more
+    /// often than not; Tab walks the rest.
+    /// </remarks>
+    private void ArmTargeting(Pending pending)
+    {
+        _pending = pending;
+
+        if (PendingTargets() is [var nearest, ..])
+        {
+            _cursor = nearest.Position;
+        }
+
+        QueueRedraw();
+    }
+
+    /// <summary>
+    /// Whom the armed action could be pointed at, nearest first, or empty when nothing
+    /// is armed.
+    /// </summary>
+    /// <remarks>
+    /// The list is <c>TargetChoice</c>'s, in <c>Game</c>, so this screen holds no opinion
+    /// about who may be aimed at — and the engine still refuses anything that reaches it
+    /// by another road, exactly as it does for every other client convenience.
+    /// </remarks>
+    private IReadOnlyList<Combatant> PendingTargets()
+    {
+        if (_encounter is not { } encounter || CommandedCombatant() is not { } actor)
+        {
+            return [];
+        }
+
+        return _pending switch
+        {
+            Pending.AttackTarget =>
+                TargetChoice.For(encounter, actor, TargetKind.Attack, attack: _pendingAttack),
+            Pending.SpellTarget =>
+                TargetChoice.For(encounter, actor, TargetKind.Spell, spell: _pendingSpell),
+            Pending.PotionTarget => TargetChoice.For(encounter, actor, TargetKind.Potion),
+            Pending.SparkHealTarget => TargetChoice.For(encounter, actor, TargetKind.SparkHeal),
+            Pending.SparkHarmTarget => TargetChoice.For(encounter, actor, TargetKind.SparkHarm),
+            _ => [],
+        };
+    }
+
+    /// <summary>Moves the cursor to the next target in the ring, wrapping round.</summary>
+    private void CycleTarget()
+    {
+        if (PendingTargets() is not { Count: > 0 } targets)
+        {
+            return;
+        }
+
+        var here = _cursor is { } caret
+            ? targets.FirstOrDefault(target => target.Position == caret)?.Id
+            : null;
+
+        if (TargetChoice.Next(targets, here) is { } next)
+        {
+            _cursor = next.Position;
+            QueueRedraw();
         }
     }
 
@@ -554,7 +625,7 @@ public partial class PlayMode : FightScreen
         }
         else
         {
-            _pending = Pending.SpellTarget;
+            ArmTargeting(Pending.SpellTarget);
         }
 
         QueueRedraw();
@@ -564,7 +635,7 @@ public partial class PlayMode : FightScreen
     {
         _slotMenuOpen = false;
         _pendingSlot = level;
-        _pending = Pending.SpellTarget;
+        ArmTargeting(Pending.SpellTarget);
         QueueRedraw();
     }
 
@@ -572,7 +643,7 @@ public partial class PlayMode : FightScreen
     {
         _attackMenuOpen = false;
         _pendingAttack = attack;
-        _pending = Pending.AttackTarget;
+        ArmTargeting(Pending.AttackTarget);
         QueueRedraw();
     }
 
@@ -786,6 +857,16 @@ public partial class PlayMode : FightScreen
                 Key.Down => new GridPosition(0, 1),
                 _ => (GridPosition?)null,
             };
+
+            // Tab walks the ring of things the armed action could be used on. Only while
+            // something is armed: with nothing to aim, Tab has nothing to mean, and a key
+            // that does something different depending on invisible state is worse than a
+            // key that does nothing.
+            if (key.Keycode == Key.Tab && _pending != Pending.Nothing)
+            {
+                CycleTarget();
+                return;
+            }
 
             // An open menu takes the arrows first: while a spell list is up, Up and Down
             // belong to it rather than to the board behind it.
@@ -1865,18 +1946,18 @@ public partial class PlayMode : FightScreen
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
         {
             return _pendingSlot is { } slot
-                ? $"choose a target for {spell.Name} (level {slot} slot) — click it, or arrows and Enter; Esc cancels"
-                : $"choose a target for {spell.Name} — click it, or arrows and Enter; Esc cancels";
+                ? $"choose a target for {spell.Name} (level {slot} slot) — click it, Tab cycles, Enter takes it; Esc cancels"
+                : $"choose a target for {spell.Name} — click it, Tab cycles, Enter takes it; Esc cancels";
         }
 
         if (_pending == Pending.AttackTarget && _pendingAttack is { } attack)
         {
-            return $"choose a target for {attack.Name} — click it, or arrows and Enter; Esc cancels";
+            return $"choose a target for {attack.Name} — click it, Tab cycles, Enter takes it; Esc cancels";
         }
 
         if (_pending == Pending.PotionTarget)
         {
-            return "choose who drinks the potion — click it, or arrows and Enter; Esc cancels";
+            return "choose who drinks the potion — click it, Tab cycles, Enter takes it; Esc cancels";
         }
 
         if (commanded is { } active)
