@@ -73,12 +73,37 @@ public class MovementRulesTests
         var ally = CombatTestData.Combatant("ally", x: 1, y: 0);
         var enemy = CombatTestData.Combatant("enemy", sideId: CombatTestData.Monsters, x: 1, y: 0);
 
-        // Through the ally: allowed, and the occupied square costs double.
+        // Through the ally: allowed, and it costs the ordinary five feet a square. The
+        // printed Difficult Terrain clause for another creature's space exempts allies
+        // — "unless that creature is Tiny or your ally" — so two steps are ten feet.
         var throughAlly = MovementRules.FindPath(field, mover, new GridPosition(2, 0), 30, [mover, ally]);
-        Assert.Equal(15, throughAlly?.CostFeet);
+        Assert.Equal(10, throughAlly?.CostFeet);
 
-        // Through the enemy on a one-square-wide corridor: no route at all.
+        // Through an able enemy on a one-square-wide corridor: no route at all.
         Assert.Null(MovementRules.FindPath(field, mover, new GridPosition(2, 0), 30, [mover, enemy]));
+    }
+
+    [Fact]
+    public void FindPath_MayPassThroughADownedEnemyButNeverEndOnOne()
+    {
+        // "During your move, you can pass through the space of ... a creature that has
+        // the Incapacitated condition" — the printed clause names a condition and not a
+        // side, so a body in a doorway stops walling a corridor off.
+        var field = new Battlefield(3, 1);
+        var mover = CombatTestData.Combatant("m", x: 0, y: 0);
+        var enemy = CombatTestData.Combatant("enemy", sideId: CombatTestData.Monsters, x: 1, y: 0);
+
+        enemy.AddCondition(ConditionType.Unconscious);
+
+        // Passable — and still Difficult Terrain, because the exemption is for allies
+        // and this is not one: five feet for the clear square, ten for the body's.
+        var through = MovementRules.FindPath(field, mover, new GridPosition(2, 0), 30, [mover, enemy]);
+        Assert.Equal(15, through?.CostFeet);
+
+        // "You can't willingly end a move in a space occupied by another creature."
+        // Ending on the body stays refused however incapable its occupant is, which is
+        // what makes it impossible for it to wake up underneath somebody.
+        Assert.Null(MovementRules.FindPath(field, mover, new GridPosition(1, 0), 30, [mover, enemy]));
     }
 
     [Fact]

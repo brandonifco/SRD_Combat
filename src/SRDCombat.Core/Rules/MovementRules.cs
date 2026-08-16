@@ -34,11 +34,36 @@ public static class MovementRules
     /// costs and can never beat cost, so what comes back is still the cheapest way there.
     /// </para>
     /// <para>
-    /// Occupancy follows the SRD with one deliberate simplification. A creature may move
-    /// through an ally's space, which counts as Difficult Terrain, and may never end its
-    /// move in an occupied square. Moving through a <em>hostile</em> creature's space is
-    /// treated as impossible; RAW allows it when the creatures differ by two size
-    /// categories, which is not modelled yet.
+    /// Occupancy follows the printed <em>Moving around Other Creatures</em> rule: "you
+    /// can pass through the space of an ally, a creature that has the Incapacitated
+    /// condition, a Tiny creature, or a creature that is two sizes larger or smaller
+    /// than you", "another creature's space is Difficult Terrain for you unless that
+    /// creature is Tiny or your ally", and "you can't willingly end a move in a space
+    /// occupied by another creature".
+    /// </para>
+    /// <para>
+    /// Two of the four pass-through clauses are modelled: <b>ally</b> and
+    /// <b>Incapacitated</b>. The Incapacitated clause names no side, so a downed
+    /// <em>enemy</em> is walked through exactly like a downed friend — which is the
+    /// point of it. Without that, a body dropped in a doorway walls a side off, and the
+    /// tactics policy's stuck-turn rule was carrying the workaround for a gap that
+    /// belonged here. <b>Tiny</b> and <b>two size categories apart</b> stay unmodelled
+    /// and so still block; both would only widen what is passable, never narrow it.
+    /// </para>
+    /// <para>
+    /// The Difficult Terrain clause exempts allies, so squeezing past your own front
+    /// line costs the ordinary five feet. Everyone else's space — a downed enemy's
+    /// included — costs double, and never more: difficult terrain does not stack with
+    /// itself, so an occupied square that is <em>also</em> rough ground is still just
+    /// double.
+    /// </para>
+    /// <para>
+    /// Ending a move on anyone stays refused, which is what makes the wake-up case
+    /// impossible rather than merely unlikely: if nobody may finish a turn standing on
+    /// a downed creature, no downed creature can regain consciousness underneath one,
+    /// and no displacement rule is needed. The print's own answer for a shared square
+    /// arrived at some other way is the Prone condition, not a shove to the nearest
+    /// free square.
     /// </para>
     /// </remarks>
     public static MovementPath? FindPath(
@@ -64,12 +89,15 @@ public static class MovementRules
         //
         // Keyed as a lookup rather than a dictionary for the same reason: two creatures
         // sharing a square is a state this method must survive rather than throw on,
-        // whatever produced it. The one it reports is arbitrary, and both block equally.
-        var blockers = combatants
+        // whatever produced it. Every occupant of a square is consulted, so a square
+        // holding both a friend and a stranger is judged by the stranger.
+        var occupants = combatants
             .Where(other => other.Id != mover.Id && !other.IsDead)
-            .ToLookup(other => other.Position, other => other.SideId);
+            .ToLookup(other => other.Position);
 
-        if (blockers.Contains(destination))
+        // "You can't willingly end a move in a space occupied by another creature" —
+        // whoever it is, however incapable they are.
+        if (occupants.Contains(destination))
         {
             return null;
         }
@@ -99,18 +127,24 @@ public static class MovementRules
                     continue;
                 }
 
-                if (blockers.Contains(next))
+                var occupied = occupants.Contains(next);
+
+                if (occupied)
                 {
-                    // Never end on someone; only pass through an ally.
-                    if (next == destination || blockers[next].Any(sideId => sideId != mover.SideId))
+                    // Never end on someone, and pass through only what the printed
+                    // clause names: an ally, or anyone with the Incapacitated condition.
+                    if (next == destination
+                        || !occupants[next].All(other => CanPassThrough(mover, other)))
                     {
                         continue;
                     }
                 }
 
-                // An occupied square costs the same as Difficult Terrain to cross.
-                var stepCost = blockers.Contains(next)
-                    ? Battlefield.FeetPerSquare * 2
+                // "Another creature's space is Difficult Terrain for you unless that
+                // creature is Tiny or your ally." Difficult terrain does not stack, so
+                // an occupied square that is also rough ground costs double once.
+                var stepCost = occupied && !occupants[next].All(other => IsAllyOf(mover, other))
+                    ? Math.Max(Battlefield.FeetPerSquare * 2, field.EnterCostFeet(next))
                     : field.EnterCostFeet(next);
 
                 var candidate = (
@@ -131,6 +165,26 @@ public static class MovementRules
 
         return null;
     }
+
+    /// <summary>Whether two creatures are on the same side.</summary>
+    private static bool IsAllyOf(Combatant mover, Combatant other) =>
+        string.Equals(other.SideId, mover.SideId, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Whether the printed rule lets <paramref name="mover"/> walk through
+    /// <paramref name="other"/>'s space: "an ally, a creature that has the Incapacitated
+    /// condition, a Tiny creature, or a creature that is two sizes larger or smaller
+    /// than you".
+    /// </summary>
+    /// <remarks>
+    /// The first two clauses are modelled. The Incapacitated one deliberately ignores
+    /// sides — the printed sentence names a condition, not a friend — so a downed enemy
+    /// is as passable as a downed ally, and a body can no longer plug a corridor. Tiny
+    /// and the two-size clause are not modelled and so still block; both would only make
+    /// more squares passable, never fewer, so their absence is the conservative gap.
+    /// </remarks>
+    private static bool CanPassThrough(Combatant mover, Combatant other) =>
+        IsAllyOf(mover, other) || other.HasCondition(ConditionType.Incapacitated);
 
     /// <summary>
     /// Whether one route to a square is preferable to another: cheaper, or the same

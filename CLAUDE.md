@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at the turn-banner slice — both clients say who is acting with class, AC, hit points and each attack's damage, off one `TurnBanner` in `Game` — after movement animation (#175), the shop's honesty pass (#164, #165, #166) and the first played run's fixes #159 and #160 |
-| Tests | **881 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **917 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **Median 24 of 30, best 30, 54 of 120 runs clearing everything, 63 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, after the straight-routes tie-break (#184). **Two warnings about the line below.** First, this figure's own baseline is *not* the one this row used to quote: measured on the same build, the same seeds and the same command immediately before the change, `main` read **median 19, best 30, 51 clears, 60 at level 4**, where this row had long said 11 · 30 · 40 · 51. Nothing between those two states touched `Core` or `Game` — every slice was the Godot client — so the 11 was simply stale or measured another way, and the *comparison* (19 → 24, 51 → 54, 60 → 63) is what the tie-break is worth. Second, and the general lesson: **quote a bar you measured yourself, on the build in front of you.** A number carried in prose across a dozen slices is a number nobody re-ran. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
@@ -610,7 +610,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 876 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 917 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -1477,13 +1477,48 @@ this project may relicense Wizards' content, which it may not.
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
   `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
   every CR 0–4 monster can take a turn without throwing.
-- **A creature at 0 hit points still occupies its square.** Reading occupancy as "active"
-  let a mover end its turn standing on an unconscious creature, which was invisible until
-  healing existed — the downed creature then stood up *inside* someone else and the next
-  path find threw on two combatants in one square, taking down a whole run mid-fight. Two
-  of sixty seeded runs crashed. `MovementRules.FindPath` now treats anyone not dead as
-  occupying, and keys its blockers as a lookup so that a duplicated square is survivable
-  rather than fatal whatever produces it.
+- **A creature at 0 hit points still occupies its square, and may be walked *through*
+  but never stopped on.** Reading occupancy as "active" let a mover end its turn standing
+  on an unconscious creature, which was invisible until healing existed — the downed
+  creature then stood up *inside* someone else and the next path find threw on two
+  combatants in one square, taking down a whole run mid-fight. Two of sixty seeded runs
+  crashed. `MovementRules.FindPath` treats anyone not dead as occupying, and keys its
+  blockers as a lookup so that a duplicated square is survivable rather than fatal
+  whatever produces it.
+- **The printed *Moving around Other Creatures* rule is executed, and two of its clauses
+  were missing for the chapter's whole life.** "During your move, you can pass through the
+  space of an ally, a creature that has the Incapacitated condition, a Tiny creature, or a
+  creature that is two sizes larger or smaller than you"; "another creature's space is
+  Difficult Terrain for you **unless that creature is Tiny or your ally**"; "you can't
+  willingly end a move in a space occupied by another creature". The pathfinder had only
+  ever exempted **allies**, and charged them Difficult Terrain it should not have. So
+  **a downed enemy walled a corridor off** — the printed clause names a *condition*, not a
+  side — and **squeezing past your own front line cost double**, quietly shortening every
+  repositioning move the party made. Both now follow print; Tiny and the two-size clause
+  stay unmodelled and so still block, which is the conservative direction since modelling
+  them can only make more squares passable. **Measured, seeds 1-120, against a
+  same-build baseline taken immediately before:** clears **72 → 76**, level-4 runs
+  **86 → 95**, died-by-fight-4 **13 → 11**, median pinned at 30 throughout. A party
+  buff, as expected — they are the side that clusters and repositions under fire, so
+  the ally exemption lands on them. Note the direction: this makes an already-easy
+  game slightly easier, and it shipped anyway, because the bar here is what the book
+  prints and the remedy for "too easy" is not declining to execute a printed rule.
+- **That fix belongs to a bug the tactics policy had been carrying.** The stalemate #126
+  found — "a fight that could not end", a wall pocket whose one doorway was plugged by an
+  unconscious character — was a *movement* gap, and the stuck-turn last resort was a
+  workaround for it. The last resort is still needed and still tested (walls alone can
+  seal a pocket, an able enemy can hold a corridor), but its original scenario no longer
+  stalemates, so `StalemateTests` seals its pocket with stone instead — and the test that
+  had to be constructed for it is worth knowing about: **a sealed side of the field is
+  not stuck**, because the policy simply repositions within it. Stuck means a cell whose
+  only non-wall neighbour is the body itself, diagonals included.
+- **The wake-up displacement problem does not exist, and does not need a rule.** Asked
+  for during the 2026-08-16 play session as "a character standing on a fallen comrade
+  should be moved aside when they come round". Because ending a move on anyone is refused,
+  nobody can *be* standing on a downed creature when it is healed, so the case never
+  arises — and print's own answer where a shared square is somehow reached is the Prone
+  condition, not a shove to the nearest free square. No nearest-viable-square search, and
+  so no tie-break for the transcripts to depend on.
 - **A cheapest route is not automatically a sensible-looking one, and the tie-break that
   fixes it paid for itself.** Every square costs the same five feet, diagonals included,
   so whenever one axis decides the distance a route may drift sideways and back *for
