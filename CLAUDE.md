@@ -496,10 +496,13 @@ because a capture read the instant after a click must show final state.
 **The battlefield wears the terrain packs, and the grid lines are gone (2026-08-15).**
 `SpriteLibrary.GroundTheme` is one look — a 16-pixel ground tile, a wall's scenery and a
 low obstacle's — and one is chosen per battlefield **from the field's own shape**, so a
-fight always redraws the ground it had and the next one differs. **The ground tiles are
-flat fills on purpose:** the packs' textured tiles are edge and cliff pieces that repeat
-visibly across a field and turn a tactical board into wallpaper, so flat ground recedes and
-the scenery carries the scene. That is also why the grid lines went — they were how a
+fight always redraws the ground it had and the next one differs. **The ground tiles are cut from the packs' own tilesets**, chosen by
+*seam continuity* — how well a tile's opposite edges match, so it repeats without seams —
+and then by grain. That second filter is the one worth keeping: a tile with a distinct
+motif (the mossy stone's green clumps) tiles seamlessly and still reads as **wallpaper**,
+because the motif lands in the same place every sixteen pixels and the eye finds the
+lattice. Fine cobble and gravel do not. The first attempt used flat single-colour fills to
+dodge the problem entirely and was simply worse art; the ground recedes and the scenery carries the scene. That is also why the grid lines went — they were how a
 *bare* board showed its squares, and over real ground they are a mesh laid on a picture;
 squares stay legible from the cursor ring, the reachable highlight and a token centred in
 its cell. **Difficult terrain keeps a wash over its tile**, because art may not cost a

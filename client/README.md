@@ -173,15 +173,17 @@ client/assets/sprites/Terrain/Bush.png              stands on a low obstacle
 ```
 
 One theme is chosen per battlefield from the field's own shape, so a fight always redraws
-the ground it had and the next fight — a different field — differs. **The ground tiles are
-deliberately flat fills.** The packs' textured tiles are edge and cliff pieces; laid across
-a field they repeat visibly and turn a tactical board into wallpaper. Flat ground recedes,
-the scenery carries the scene, and the board stays readable — which is why there are no
-grid lines over it either. Difficult terrain keeps a dark wash whatever the theme, because
+the ground it had and the next fight — a different field — differs. **The ground tiles are cut from the packs' own
+tilesets**, picked by seam continuity — how well a tile's opposite edges match, so it
+repeats without a seam — and then by grain. The grain matters as much: a tile with a
+distinct motif tiles seamlessly and still reads as wallpaper, because the motif lands in
+the same place every sixteen pixels and the eye finds the lattice. Fine cobble and gravel
+do not. The ground recedes, the scenery carries the scene, and the board stays readable —
+which is why there are no grid lines over it either. Difficult terrain keeps a dark wash whatever the theme, because
 art must not cost a player the one thing that square was telling them.
 
 Cut from `Tiled_files/` in the packs, and reproducible — the grounds are single 16-pixel
-tiles at `Ground_grass.png (2,25)`, `Ground_rocks.png (2,2)` and `Water_coasts.png (14,2)`;
+tiles at `Ground_grass.png (13,1)`, `Ground_rocks.png (1,9)` and `ground_grasss.png (51,3)`;
 the scenery is cropped from `Trees_rocks.png` at `(0,0)-(68,80)`, `(0,240)-(70,304)` and
 `(94,130)-(126,158)`, each trimmed to its own alpha. Without the folder the board falls
 back to the flat colours and outlines it always drew.
