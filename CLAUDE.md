@@ -463,9 +463,21 @@ which is exactly the shape of hand-drawn art for one creature, and meant such a 
 loaded as null and kept drawing a lettered circle. A narrow sheet is now read as one
 frame and padded to square, **horizontally centred and not vertically**, because the
 packs are canvas-aligned with the feet on the bottom edge and every metric in
-`SpriteLibrary` is measured from there. Four creatures ship this way — Gnoll Warrior,
-Black Bear, Brown Bear, Giant Wasp — chosen because they are among the pool's
-most-drawn and every one was a bare circle beside a party in full animation. They do not
+`SpriteLibrary` is measured from there. **Eight creatures ship this way** — Gnoll Warrior, Black
+Bear, Brown Bear, Giant Wasp, Dire Wolf, Giant Eagle, Giant Hyena, Ape — chosen because
+they are among the pool's most-drawn and every one was a bare circle beside a party in
+full animation. **The asymmetry between narrow and wide art is the thing to know**: a
+sheet narrower than one frame *cannot* be a strip, so padding it is an inference rather
+than a guess and the loader does it; a *wide* sheet is genuinely ambiguous, since 640×128
+is a five-frame walk and 64×46 is one drawing. The tempting rule — "a strip's width is an
+exact multiple of its height" — was written, then thrown away on finding its false
+negative already in the assets (`Wanderer Magican/Charge_1.png`, 576×128, four and a half
+frames wide), which is this file's oldest lesson about heuristics arriving from a new
+direction. Wide drawings are therefore squared **on disk** at install, bottom-aligned and
+centred; unpadded, they load as a one-frame strip cropped to the left edge — most of a
+wolf. The second install-time step is the **flip**: these four were drawn facing left and
+the convention is that art faces right, so a monster squared up to the party would
+otherwise be mirrored away from it. They do not
 animate and do not need to: each pose already falls back to Idle. **Goblins were asked
 for and deliberately not taken**, because `Goblin_1/2/3` already cover all three goblin
 stat blocks with full animation, and a still frame would have been a downgrade.
