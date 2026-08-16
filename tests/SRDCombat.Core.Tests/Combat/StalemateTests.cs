@@ -12,31 +12,62 @@ namespace SRDCombat.Core.Tests.Combat;
 /// beside the body for fifty rounds without swinging, and both sides idled to the
 /// round limit.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>The doorway half of that diagnosis was a movement bug, and it is fixed at the
+/// rule now.</b> The printed <em>Moving around Other Creatures</em> clause lets anyone
+/// pass through the space of "a creature that has the Incapacitated condition",
+/// naming a condition rather than a side, and <see cref="MovementRules"/> only ever
+/// exempted allies — so a body really did wall a corridor off, and the last resort was
+/// carrying a workaround for a gap that belonged in the pathfinder.
+/// <see cref="ABodyInADoorwayNoLongerStalematesTheFight"/> pins the new behaviour.
+/// </para>
+/// <para>
+/// The last resort is still needed and still tested: walls alone can seal a pocket,
+/// an able enemy can hold a corridor, and the size clauses that would let a creature
+/// squeeze past are not modelled. What changed is that a fallen body is no longer one
+/// of the ways a fight can wedge itself shut, so the scenario below seals its pocket
+/// with stone instead.
+/// </para>
+/// </remarks>
 public class StalemateTests
 {
     [Fact]
-    public void AStuckCreatureFinishesTheDownedEnemyPluggingTheDoorway()
+    public void AStuckCreatureFinishesADownedEnemyWhenWallsLeaveNothingElse()
     {
-        // A sealed wall with one gap at (4,2), the gap occupied by a downed character:
-        // the monster east of it cannot reach the hero west of it, cannot get closer,
-        // and used to stand there for the rest of the fight.
-        var gate = CombatTestData.Character("gate", x: 4, y: 2);
-        var hero = CombatTestData.Character("hero", x: 0, y: 2);
+        // A dead-end cell at (1,1) walled on every side but one, and that one square
+        // holds a downed character. The monster can move nowhere — passing through the
+        // body is legal now, but there is only stone on the far side of it, and ending
+        // on it never was — and the hero is across the map. Nothing to do but swing.
+        //
+        // Sealing the pocket with stone alone was not enough to wedge a turn: with a
+        // whole side of the field still open the monster simply repositioned, which is
+        // the policy working. Stuck has to mean stuck.
+        var gate = CombatTestData.Character("gate", x: 2, y: 1);
+        var hero = CombatTestData.Character("hero", x: 8, y: 2);
 
         var monster = CombatTestData.Combatant(
             "monster",
             sideId: CombatTestData.Monsters,
             stats: CombatTestData.Stats(initiativeBonus: 10),
-            x: 5,
-            y: 2);
+            x: 1,
+            y: 1);
 
         var encounter = Encounter.Start(
             new Battlefield(10, 5, blocked:
             [
-                new GridPosition(4, 0),
-                new GridPosition(4, 1),
-                new GridPosition(4, 3),
-                new GridPosition(4, 4),
+                new GridPosition(0, 0),
+                new GridPosition(1, 0),
+                new GridPosition(2, 0),
+                new GridPosition(0, 1),
+                new GridPosition(0, 2),
+                new GridPosition(1, 2),
+                new GridPosition(2, 2),
+                // The far side of the body, diagonals included — a diagonal step is a
+                // step, so leaving one of these open is an escape route.
+                new GridPosition(3, 0),
+                new GridPosition(3, 1),
+                new GridPosition(3, 2),
             ]),
             [gate, hero, monster],
             // Three initiative rolls; the monster's swing at the body — Advantage
@@ -51,7 +82,8 @@ public class StalemateTests
         SimpleTacticsPolicy.TakeTurn(encounter);
 
         // A Critical Hit on a creature already at 0 hit points is two failed Death
-        // Saving Throws — the doorway is two such swings from clearing.
+        // Saving Throws, and the monster never left its square because it could not.
+        Assert.Equal(new GridPosition(1, 1), monster.Position);
         Assert.Equal(2, gate.DeathSaveFailures);
     }
 
@@ -87,18 +119,19 @@ public class StalemateTests
     }
 
     [Fact]
-    public void AnApproachingCreatureReachesTheDoorwayAndThenClearsIt()
+    public void ABodyInADoorwayNoLongerStalematesTheFight()
     {
-        // The same pocket with the monster a stretch of corridor away. The ordinary
-        // approach walks it to the wall — and to a *sheltered* corner square, which is
-        // why the last resort needs its own walk: the stuck creature is standing one
-        // square off the body it needs to clear, steps beside it on its next stuck
-        // turn, and swings on the one after.
+        // The original stalemate, exactly as it was found: a wall with one gap at
+        // (4,2) and an unconscious character lying in the gap. It used to wall the
+        // monster out, because only allies could be walked through.
+        //
+        // The printed clause covers "a creature that has the Incapacitated condition"
+        // whatever side it is on, so the body is now a doorway with a cost rather than
+        // a door. The monster walks it and the fight goes on being a fight.
         var gate = CombatTestData.Character("gate", x: 4, y: 2);
 
-        // Slowed to a crawl so it stays west of the wall: a creature may pass through
-        // a downed ally's square, so a full-speed hero would walk the doorway itself
-        // and hand the monster an ordinary fight instead of a stalemate.
+        // Slowed to a crawl so it stays west of the wall and the monster has to come
+        // through the gap to find it.
         var hero = CombatTestData.Combatant(
             "hero",
             stats: CombatTestData.Stats(speedFeet: 5, diesAtZeroHitPoints: false),
@@ -121,29 +154,40 @@ public class StalemateTests
                 new GridPosition(4, 4),
             ]),
             [gate, hero, monster],
-            // Initiatives; a Death Saving Throw for the gate at each round's turning;
-            // each swing is two d20s at Advantage and two crit d8s. The gate's own
-            // saves keep succeeding — it even stabilizes once — and the swings still
-            // finish it, because a Stable creature hit while down is dying again.
-            new ScriptedRandomSource(
-                1, 1, 15, 10, 10, 15, 15, 4, 4, 10, 15, 15, 4, 4, 10, 15, 15, 4, 4));
+            new ScriptedRandomSource(1, 1, 15));
 
         DamageRules.Apply(gate, 20, DamageType.Slashing);
+        Assert.True(gate.IsDying);
 
-        // First turn: the approach ends at the wall, sheltered but out of reach.
-        SimpleTacticsPolicy.TakeTurn(encounter);
-        Assert.Equal(5, monster.Position.X);
-        Assert.Equal(0, gate.DeathSaveFailures);
+        // The route, not the policy's taste in squares: which square this monster
+        // prefers to stand on is a cover judgement that predates this rule and is
+        // tested elsewhere. What the doorway bug broke was whether a route existed at
+        // all, and that is what is asserted here.
+        var route = MovementRules.FindPath(
+            encounter.Battlefield,
+            monster,
+            new GridPosition(3, 2),
+            budgetFeet: 60,
+            encounter.Combatants);
 
-        // Play on: the stuck turns walk to the body and then swing until the doorway
-        // clears — which is the whole point, a fight that can end again.
-        var guard = 0;
+        Assert.NotNull(route);
 
-        while (!gate.IsDead && guard++ < 20)
-        {
-            SimpleTacticsPolicy.TakeTurn(encounter);
-        }
+        // It really does go through the body's square rather than round it — there is
+        // no way round, which is what made this a stalemate.
+        Assert.Contains(new GridPosition(4, 2), route.Steps);
 
-        Assert.True(gate.IsDead);
+        // And the body's square is Difficult Terrain, because the printed exemption is
+        // for allies and a downed enemy is not one: four clear squares at five feet
+        // and the doorway at ten.
+        Assert.Equal(30, route.CostFeet);
+
+        // Ending on the body stays refused, which is what keeps a healed creature from
+        // waking up underneath somebody.
+        Assert.Null(MovementRules.FindPath(
+            encounter.Battlefield,
+            monster,
+            new GridPosition(4, 2),
+            budgetFeet: 60,
+            encounter.Combatants));
     }
 }
