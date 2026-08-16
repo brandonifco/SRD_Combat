@@ -1017,10 +1017,30 @@ public abstract partial class FightScreen : Node2D
         // squares land on different tiles instead of striping along a row or column.
         var pick = Math.Abs(((at.X * 73) ^ (at.Y * 151)) + (at.X * at.Y * 31)) % ground.FrameCount;
 
+        // And a second, independent hash for which way up it goes. Four quarter turns
+        // and a mirror give eight orientations from every tile, so the same stone never
+        // lies the same way twice in a row — a set of four becomes thirty-two looks, and
+        // the directional grain the artist drew stops running the same way across the
+        // whole field. Kept apart from the tile hash on purpose: sharing one would tie
+        // orientation to choice and put every instance of a tile the same way up again.
+        var turns = Math.Abs((at.X * 17) ^ (at.Y * 89)) % 4;
+        var mirrored = (Math.Abs((at.X * 41) + (at.Y * 103)) & 1) == 1;
+
+        var centre = square.Position + (square.Size / 2);
+
+        // The mirror rides the transform's scale rather than a negative width on the
+        // destination rectangle: Godot draws nothing at all for a rect of negative
+        // width, which showed up as a checkerboard of holes where half the squares
+        // should have been.
+        DrawSetTransform(centre, turns * Mathf.Pi / 2, new Vector2(mirrored ? -1 : 1, 1));
+
+        // Drawn about the centre, so a quarter turn lands the tile back on its own square.
         DrawTextureRectRegion(
             ground.Texture,
-            square,
+            new Rect2(-square.Size.X / 2, -square.Size.Y / 2, square.Size.X, square.Size.Y),
             new Rect2(pick * ground.FrameSize, 0, ground.FrameSize, ground.FrameSize));
+
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
     /// <summary>

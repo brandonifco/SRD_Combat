@@ -179,8 +179,10 @@ repeats without a seam — and then by grain. The grain matters as much: a tile 
 distinct motif tiles seamlessly and still reads as wallpaper, because the motif lands in
 the same place every sixteen pixels and the eye finds the lattice. Fine cobble and gravel
 do not — and one tile over a whole field is a lattice however fine, so the board picks from
-the strip per square by hashing the coordinates, which keeps a square's tile steady for the
-whole fight instead of crawling. The ground recedes, the scenery carries the scene, and the board stays readable —
+the strip per square by hashing the coordinates — and turns and mirrors it, eight
+orientations per tile, which is what stops the grain running the same way everywhere.
+Hashed rather than rolled, so a square keeps its tile and its facing for the whole fight
+instead of crawling underfoot. The ground recedes, the scenery carries the scene, and the board stays readable —
 which is why there are no grid lines over it either. Difficult terrain keeps a dark wash whatever the theme, because
 art must not cost a player the one thing that square was telling them.
 
