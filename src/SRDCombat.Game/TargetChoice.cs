@@ -146,18 +146,42 @@ public static class TargetChoice
                 && (ReferenceEquals(candidate, actor) || distance <= PotionRules.ReachFeet)
                 && (candidate.Inventory.TotalPotions > 0 || actor.Inventory.TotalPotions > 0),
 
-            // A spell's own printed range, and its own idea of whom it is for. Self-range
-            // spells have no target but the caster. Which side a spell wants is a
-            // judgement the definition does not carry, so both are offered and the
-            // engine rules — the generous direction, on purpose.
+            // A spell's own printed range, and its own shape deciding which side it
+            // wants. Self-range spells have no target but the caster.
             TargetKind.Spell => spell is null
                 || (spell.IsSelfRanged
                     ? ReferenceEquals(candidate, actor)
-                    : spell.TargetRangeFeet is not { } range || distance <= range),
+                    : (spell.TargetRangeFeet is not { } range || distance <= range)
+                        && WantsSide(spell, enemy)),
 
             _ => false,
         };
     }
+
+    /// <summary>
+    /// Whether a spell wants this side, read from the spell's own shape.
+    /// </summary>
+    /// <remarks>
+    /// <b>Found by casting Guiding Bolt.</b> Range alone made every ally a candidate and
+    /// the caster the nearest of them — distance zero — so arming a spell attack left the
+    /// cursor exactly where it started and looked like no default at all. A spell's
+    /// mechanics say who it is for without any guessing: one that resolves through an
+    /// attack roll or a saving throw is aimed at an enemy, and one that restores hit
+    /// points at a friend. Anything else stays generous and offers both, since an
+    /// unrecognised shape is a reason to offer more rather than less.
+    /// <para>
+    /// This narrows the *ring* — where the cursor starts and what Tab walks — and narrows
+    /// nothing else. A click still reaches anyone on the board, and the engine still
+    /// rules on it; a Fireball dropped on your own front line remains a decision the
+    /// player is allowed to make.
+    /// </para>
+    /// </remarks>
+    private static bool WantsSide(SpellDefinition spell, bool enemy) => spell.Mechanics switch
+    {
+        EntryMechanics.Attack or EntryMechanics.SavingThrow => enemy,
+        EntryMechanics.Healing => !enemy,
+        _ => true,
+    };
 
     /// <summary>Divine Spark's printed range, restated here only to filter candidates.</summary>
     private const int DivineSparkRangeFeet = 30;

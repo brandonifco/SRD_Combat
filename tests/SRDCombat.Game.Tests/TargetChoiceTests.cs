@@ -68,6 +68,36 @@ public class TargetChoiceTests
         Assert.Equal("near", TargetChoice.Next(targets, "far")?.Id);
     }
 
+    [Theory]
+    [InlineData(EntryMechanics.Attack, Monsters)]
+    [InlineData(EntryMechanics.SavingThrow, Monsters)]
+    [InlineData(EntryMechanics.Healing, Party)]
+    public void ASpellsShapeDecidesWhichSideItAimsAt(EntryMechanics mechanics, string wanted)
+    {
+        // Found by casting Guiding Bolt: range alone made every ally a candidate and the
+        // caster the nearest of them, at distance zero, so arming a spell attack left the
+        // cursor where it already was and read as no default at all.
+        var (encounter, actor) = Fight();
+
+        var targets = TargetChoice.For(encounter, actor, TargetKind.Spell, spell: Spell(mechanics));
+
+        Assert.NotEmpty(targets);
+        Assert.All(targets, target => Assert.Equal(wanted, target.SideId));
+    }
+
+    [Fact]
+    public void ASpellOfAnUnrecognisedShapeStaysGenerous()
+    {
+        // An unfamiliar shape is a reason to offer more rather than less: the engine
+        // still rules, and a candidate it refuses costs only a message.
+        var (encounter, actor) = Fight();
+
+        var targets = TargetChoice.For(encounter, actor, TargetKind.Spell, spell: Spell(EntryMechanics.Unmodelled));
+
+        Assert.Contains(targets, target => target.SideId == Party);
+        Assert.Contains(targets, target => target.SideId == Monsters);
+    }
+
     [Fact]
     public void CyclingAnEmptyRingIsNotAnError()
     {
@@ -108,6 +138,24 @@ public class TargetChoiceTests
     private static CombatAttack Sword =>
         new("Longsword", AttackKind.Melee, 5, 5, null, null,
             [new AttackDamage(DiceExpression.Parse("1d8 + 3"), DamageType.Slashing, 7)]);
+
+    private static SpellDefinition Spell(EntryMechanics mechanics) => new()
+    {
+        Id = "spell.test",
+        Name = "Test",
+        Level = 1,
+        School = MagicSchool.Evocation,
+        Classes = ["Cleric"],
+        CastingTime = SpellCastingTime.Action,
+        CastingTimeText = "Action",
+        RangeText = "120 feet",
+        RangeFeet = 120,
+        Components = SpellComponents.Verbal,
+        DurationText = "Instantaneous",
+        Text = "Test",
+        Mechanics = mechanics,
+        SourcePage = 1,
+    };
 
     private static CombatAttack Bow =>
         new("Shortbow", AttackKind.Ranged, 5, null, 80, 320,
