@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` at the turn-banner slice — both clients say who is acting with class, AC, hit points and each attack's damage, off one `TurnBanner` in `Game` — after movement animation (#175), the shop's honesty pass (#164, #165, #166) and the first played run's fixes #159 and #160 |
-| Tests | **918 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **919 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **Median 24 of 30, best 30, 54 of 120 runs clearing everything, 63 reaching level 4** — `tools/PacingMeasure`, loot on + the Long Rest merchant, after the straight-routes tie-break (#184). **Two warnings about the line below.** First, this figure's own baseline is *not* the one this row used to quote: measured on the same build, the same seeds and the same command immediately before the change, `main` read **median 19, best 30, 51 clears, 60 at level 4**, where this row had long said 11 · 30 · 40 · 51. Nothing between those two states touched `Core` or `Game` — every slice was the Godot client — so the 11 was simply stale or measured another way, and the *comparison* (19 → 24, 51 → 54, 60 → 63) is what the tie-break is worth. Second, and the general lesson: **quote a bar you measured yourself, on the build in front of you.** A number carried in prose across a dozen slices is a number nobody re-ran. **This is the largest jump this instrument has ever recorded, it moved both seed ranges the same way, and it was not a feature — it was two bugs found by a person playing the game for two fights** (#159, #160): before them the same build read 6 · 16 · 24 and 6 · 12 · 25. Rage was the driver: it had been ending on a missed swing and even on the turn it was entered, so the Barbarian was paying a use for a feature that mostly did not run. **Nothing in eight slices of deliberate party-power work moved pacing a fraction as far as playing the game once did** — the standing "no human has played a run to the end" item was worth more than the queue above it, and the next person to pick this up should treat a played run as a first-class instrument rather than a nicety. The four slices before that read, on canonical/fresh seeds: Divine Spark (#151) 7 → 8 canonical, every figure up at once; the Vex clock fix (#153) 8 → 7 canonical but **4 → 8 in its favour on fresh seeds** (main 4/10/26, fix 8/14/32); Guiding Bolt's rider (#155) 6/6 medians on both ranges against that build's 7/8; and Divine Order (#157) holding 6/6 while **full clears rose on both ranges** (13 → 16 canonical, 12 → 13 fresh) — the economy pattern exactly, since Chain Mail costs deep-run money and the gain lands in the tail that can afford it. All four are strictly party-positive mechanisms, and every extra die reshuffles each later roll, so the seed-set × build interaction swings a 120-seed median by ±1–2 — #132's lesson at this scale, and the reason #153/#155 shipped on print-faithfulness with the numbers recorded rather than on a verdict. Before all this the economy transformed the tail (full clears 2 → 14 before the hands rule, 9 after it took back the illegal Greataxe-and-shield AC), and #127 spent 2 median deliberately teaching monsters their stat blocks. |
@@ -610,7 +610,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 918 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 919 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -1606,6 +1606,30 @@ cost real time:
   a Long; Action Surge returns whole on **either**; spell slots on a Long Rest only. And
   a 2024 change worth not re-learning — **a Long Rest restores *all* spent Hit Point
   Dice**, where earlier editions returned half. `RestRules` holds each with its citation.
+- **The opening cycle rests Long throughout, and it is the largest single fix the early
+  game has had since the creature cap.** Reported from play on 2026-08-16 — "level 1
+  characters die too quick, especially for the first few matches" — and the instrument
+  agreed, `died-by-fight-4` being the run's largest failure cohort. **The cause is neither
+  the ladder's difficulty nor the budget**: a level 1 character has exactly **one Hit
+  Die**, a Short Rest spends it, and Hit Dice return **only on a Long Rest** — so the
+  party got one real heal per five-fight cycle and then fought rungs 2, 3 and 4 on the
+  remainder, against budgets priced for a party at full strength, because **the budget
+  cannot see hit points**. Resting Long here **costs no fidelity at all**: how often a
+  party rests is the GM's call, which is to say this project's, exactly like `LootTable`'s
+  award rates — nothing about what a rest *restores* moves. It is tied to the cycle rather
+  than to party level because the ladder is built once and never sees a level, and by its
+  own XP arithmetic the opening cycle is levels 1–2. Measured on **two** seed ranges:
+  died-by-fight-4 **15 → 1** (seeds 1–120) and **14 → 6** (seeds 200–320) — the second
+  range is why the "1" is not the number to quote — with the opening band's hit points
+  left rising 78% → 87% and 79% → 85%. **Two weaker variants were measured and rejected**:
+  one extra Long Rest at fight 3 (deaths 15 → 10) and a Hit Die returned on Short Rests at
+  levels 1–2 (15 → 11, and a house rule where this is not). This beat both on early deaths
+  *and* on back-half inflation. **That inflation is the honest cost and every variant had
+  it**: clears rise 66 → 72 and 71 → 78, because more runs survive to reach an ending that
+  is already too easy (#192). **The opening and the ending are one problem wearing two
+  faces** — the ending needs its own teeth rather than a lethal first cycle standing in
+  for them, which is the argument for horde encounters at level 3+ rather than for
+  clawing this back.
 - **Both rests need a hit point to start**, so a downed character cannot rest their way
   back. That would strand a party, which is why the stated reading of "a Stable creature
   regains 1 Hit Point after 1d4 hours" is that **the gap between two rungs is at least
