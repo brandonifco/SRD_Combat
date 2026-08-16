@@ -193,6 +193,51 @@ public class MovementRulesTests
     }
 
     [Fact]
+    public void AMoveMayEndOnAFallenAllyButNotOnAFallenEnemy()
+    {
+        // A house rule, and the engine's one deliberate contradiction of a printed
+        // sentence — "you can't willingly end a move in a space occupied by another
+        // creature". Asked for during the 2026-08-16 play session: standing over a
+        // fallen friend is what a player expects to be able to do, and being refused
+        // reads as the grid being broken rather than as a rule.
+        var field = new Battlefield(8, 8);
+        var mover = CombatTestData.Combatant("mover");
+
+        var friend = CombatTestData.Combatant(
+            "friend",
+            stats: CombatTestData.Stats(diesAtZeroHitPoints: false),
+            x: 2);
+
+        var foe = CombatTestData.Combatant(
+            "foe",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(diesAtZeroHitPoints: false),
+            x: 2);
+
+        DamageRules.Apply(friend, friend.Stats.MaximumHitPoints, DamageType.Bludgeoning);
+        DamageRules.Apply(foe, foe.Stats.MaximumHitPoints, DamageType.Bludgeoning);
+
+        Assert.NotNull(MovementRules.FindPath(field, mover, friend.Position, 30, [mover, friend]));
+
+        // Deliberately not widened to the enemy: the request was about a comrade, and a
+        // monster able to stop on the body it is trying to get past would delete the
+        // only scenario the stuck-turn last resort is tested against.
+        Assert.Null(MovementRules.FindPath(field, mover, foe.Position, 30, [mover, foe]));
+    }
+
+    [Fact]
+    public void AnAbleAllyStillBlocksTheEndOfAMove()
+    {
+        // The house rule is scoped to the *fallen*. An ally on their feet is still
+        // somewhere you may pass through and not somewhere you may stop.
+        var field = new Battlefield(8, 8);
+        var mover = CombatTestData.Combatant("mover");
+        var friend = CombatTestData.Combatant("friend", x: 2);
+
+        Assert.Null(MovementRules.FindPath(field, mover, friend.Position, 30, [mover, friend]));
+    }
+
+    [Fact]
     public void ADownedCreatureStillOccupiesItsSquare()
     {
         // Reading occupancy as "active" let a creature end its move standing on an
