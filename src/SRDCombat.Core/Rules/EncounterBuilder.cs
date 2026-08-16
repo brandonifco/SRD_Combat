@@ -103,20 +103,49 @@ public static class EncounterBuilder
     public static int MaximumFor(int partySize, int partyLevel) =>
         Math.Clamp(Math.Min(partySize + 1, partyLevel + 2), 1, DefaultMaximumMonsters);
 
+    /// <summary>
+    /// The fewest creatures worth fielding against a party of a given size and level.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <see cref="MaximumFor"/>, added when the back half's flatness was
+    /// measured (2026-08-15). The count draw was uniform over 1..max, so two fights in
+    /// five put one or two creatures against four coordinated characters — and those
+    /// fights are free: measured over 120 seeded runs, single-creature fights ended with
+    /// the party at <b>89%</b> of its hit points and two-creature fights at 83%, against
+    /// 70% for five, because focus fire deletes a lone creature's whole action economy
+    /// before it has taken two turns. The budget cannot see this for the same reason it
+    /// could not see the level 1 wall: XP prices worth, not simultaneity. So once the
+    /// party can absorb being outnumbered — the same level 3 boundary the cap uses — a
+    /// fight fields at least two creatures. Level 1 keeps its floor of one: the fragile
+    /// opening was fixed by lowering its ceiling, and raising its floor would claw that
+    /// back.
+    /// </remarks>
+    /// <param name="partySize">How many characters are in the fight.</param>
+    /// <param name="partyLevel">The level to size against — the party's lowest.</param>
+    public static int MinimumFor(int partySize, int partyLevel) =>
+        partyLevel >= 3 && partySize >= 3 ? 2 : 1;
+
     /// <summary>Builds an encounter to a budget from a pool of candidates.</summary>
     /// <param name="candidates">The monsters that may be used. Usually a <see cref="MonsterPool"/> draw.</param>
     /// <param name="budget">The XP to spend, from <see cref="EncounterBudget.For"/>.</param>
     /// <param name="random">The dice. Determinism is what makes a fight reproducible from its seed.</param>
     /// <param name="maximumMonsters">The most creatures to field.</param>
+    /// <param name="minimumMonsters">
+    /// The fewest to aim for. A target, not a guarantee — a budget too small to buy two
+    /// of anything still fields what it can afford.
+    /// </param>
     public static BuiltEncounter Build(
         IEnumerable<MonsterDefinition> candidates,
         int budget,
         IRandomSource random,
-        int maximumMonsters = DefaultMaximumMonsters)
+        int maximumMonsters = DefaultMaximumMonsters,
+        int minimumMonsters = 1)
     {
         ArgumentNullException.ThrowIfNull(candidates);
         ArgumentNullException.ThrowIfNull(random);
         ArgumentOutOfRangeException.ThrowIfLessThan(maximumMonsters, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(minimumMonsters, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(minimumMonsters, maximumMonsters);
 
         // Ordered before anything is chosen: the caller's sequence might be a LINQ query
         // whose order is incidental, and a reproducible fight cannot rest on that.
@@ -126,8 +155,9 @@ public static class EncounterBuilder
             .ThenBy(monster => monster.Id, StringComparer.Ordinal)
             .ToArray();
 
-        // How many creatures, decided before which ones. Roll(n) returns 1..n.
-        var targetCount = random.Roll(maximumMonsters);
+        // How many creatures, decided before which ones. Roll(n) returns 1..n, so this
+        // draws uniformly over minimum..maximum.
+        var targetCount = minimumMonsters + random.Roll(maximumMonsters - minimumMonsters + 1) - 1;
 
         var chosen = new List<MonsterDefinition>();
         var remaining = budget;
@@ -211,11 +241,14 @@ public static class EncounterBuilder
         IEnumerable<int> partyLevels,
         EncounterDifficulty difficulty,
         IRandomSource random,
-        int? maximumMonsters = null)
+        int? maximumMonsters = null,
+        int? minimumMonsters = null)
     {
         ArgumentNullException.ThrowIfNull(partyLevels);
 
         var levels = partyLevels.ToArray();
+        var lowest = levels.Length == 0 ? 1 : levels.Min();
+        var maximum = maximumMonsters ?? MaximumFor(levels.Length, lowest);
 
         return Build(
             candidates,
@@ -224,6 +257,7 @@ public static class EncounterBuilder
             // The lowest level in the party, not the average: a fight sized against the
             // mean would still be sized to remove the character least able to survive it,
             // and a party diverges the moment somebody dies and stops earning.
-            maximumMonsters ?? MaximumFor(levels.Length, levels.Length == 0 ? 1 : levels.Min()));
+            maximum,
+            Math.Min(minimumMonsters ?? MinimumFor(levels.Length, lowest), maximum));
     }
 }

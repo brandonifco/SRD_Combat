@@ -187,6 +187,54 @@ public class EncounterBudgetTests
     }
 
     [Fact]
+    public void AStrongPartyIsNeverFieldedALoneCreature()
+    {
+        // The mirror of the fragile-party cap: single-creature fights against a
+        // coordinated party of four ended at 89% of the party's hit points, because focus
+        // fire deletes the only enemy action economy on the field. From level 3 a fight
+        // aims for at least two.
+        Assert.Equal(1, EncounterBuilder.MinimumFor(4, partyLevel: 1));
+        Assert.Equal(1, EncounterBuilder.MinimumFor(4, partyLevel: 2));
+        Assert.Equal(2, EncounterBuilder.MinimumFor(4, partyLevel: 3));
+        Assert.Equal(2, EncounterBuilder.MinimumFor(4, partyLevel: 5));
+
+        // A tiny party keeps its floor of one — two creatures against two characters is
+        // not the same trade.
+        Assert.Equal(1, EncounterBuilder.MinimumFor(2, partyLevel: 5));
+    }
+
+    [Fact]
+    public void TheMinimumIsATargetNotAGuarantee()
+    {
+        // A budget that cannot afford two of anything still fields what it can: the
+        // floor shapes the draw, never conjures XP.
+        var built = EncounterBuilder.Build(
+            [Monster("dear", 400)],
+            budget: 450,
+            new SeededRandomSource(1),
+            maximumMonsters: 5,
+            minimumMonsters: 2);
+
+        Assert.Single(built.Monsters);
+    }
+
+    [Fact]
+    public void AMinimumOfTwoNeverDrawsOne()
+    {
+        foreach (var seed in Enumerable.Range(1, 30))
+        {
+            var built = EncounterBuilder.Build(
+                [Monster("a", 50), Monster("b", 100), Monster("c", 200)],
+                budget: 600,
+                new SeededRandomSource(seed),
+                maximumMonsters: 5,
+                minimumMonsters: 2);
+
+            Assert.True(built.Monsters.Count >= 2, $"seed {seed} drew {built.Monsters.Count}");
+        }
+    }
+
+    [Fact]
     public void ABudgetTooSmallForAnythingBuysNothing()
     {
         var built = EncounterBuilder.Build([Monster("a", 50)], budget: 10, new SeededRandomSource(1));

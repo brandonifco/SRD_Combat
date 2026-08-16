@@ -107,11 +107,19 @@ public static class EncounterFactory
 
         // Each character's own level, because a party diverges once somebody dies and
         // stops earning experience.
+        //
+        // A boss fight fields an escort: a KillLeader rung ends when one creature dies,
+        // which already makes it cheaper than the same encounter fought to the last —
+        // measured at +11 full clears on its own when objectives landed — and a *lone*
+        // marked creature compounds that into the easiest fight on the ladder, four
+        // characters focus-firing the only enemy action economy on the field. Three is
+        // leader plus a pair, and the printed budget still prices every one of them.
         var built = EncounterBuilder.ForLevels(
             MonsterPool.Draw(content.Monsters, maximumChallengeRating),
             party.Select(member => member.Sheet.Level),
             difficulty,
-            random);
+            random,
+            minimumMonsters: objective?.Kind == ObjectiveKind.KillLeader ? 3 : null);
 
         var separation = StartingSeparationFeet / Battlefield.FeetPerSquare;
 
