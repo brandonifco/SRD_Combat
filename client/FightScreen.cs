@@ -981,7 +981,7 @@ public abstract partial class FightScreen : Node2D
                     continue;
                 }
 
-                DrawGroundTile(theme.Ground, square, position);
+                DrawGroundUnder(theme.Ground, square, position);
 
                 // Difficult ground is a rule, not a decoration: it survives the art.
                 if (DifficultSquares.Contains(position))
@@ -1011,6 +1011,47 @@ public abstract partial class FightScreen : Node2D
     /// scattering the set across the field. The mix is what stops a single tile reading as
     /// a lattice of its own — the finer version of the problem grid lines had.
     /// </remarks>
+    /// <summary>
+    /// Lays the ground under one movement square, as several smaller tiles.
+    /// </summary>
+    /// <remarks>
+    /// <b>A ground tile is not a movement square.</b> One 16-pixel tile stretched over a
+    /// 66-pixel cell is a four-times blow-up, and every pixel the artist drew comes out as
+    /// a visible block; a square's worth of ground is drawn as
+    /// <see cref="GroundTilesPerSquare"/> across instead, which more than halves the
+    /// magnification and lets the texture read as stone rather than as pixels. It also
+    /// takes the ground off the movement grid's rhythm, which is the point: the board's
+    /// squares are a rule, and the ground is scenery that should not be quietly announcing
+    /// where they are.
+    /// </remarks>
+    private void DrawGroundUnder(SpriteLibrary.Strip ground, Rect2 square, GridPosition at)
+    {
+        var size = square.Size.X / GroundTilesPerSquare;
+
+        for (var dx = 0; dx < GroundTilesPerSquare; dx++)
+        {
+            for (var dy = 0; dy < GroundTilesPerSquare; dy++)
+            {
+                DrawGroundTile(
+                    ground,
+                    new Rect2(
+                        square.Position.X + (dx * size),
+                        square.Position.Y + (dy * size),
+                        size,
+                        size),
+                    // Hashed in ground-tile space, not square space, so neighbouring
+                    // squares' tiles carry on the same scatter rather than repeating a
+                    // block of four.
+                    new GridPosition(
+                        (at.X * GroundTilesPerSquare) + dx,
+                        (at.Y * GroundTilesPerSquare) + dy));
+            }
+        }
+    }
+
+    /// <summary>How many ground tiles span one movement square, each way.</summary>
+    private const int GroundTilesPerSquare = 3;
+
     private void DrawGroundTile(SpriteLibrary.Strip ground, Rect2 square, GridPosition at)
     {
         // A cheap spatial hash. The multipliers are odd and unequal so neighbouring
