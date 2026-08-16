@@ -118,11 +118,48 @@ public static class GauntletLadder
                 // No rest before the first fight; Long Rests bracket each High milestone
                 // — before it and at the start of the next cycle — with Short Rests
                 // between the routine fights.
+                //
+                // The opening cycle is the exception, and it rests Long throughout.
+                // Reported from play on 2026-08-16 as "level 1 characters die too
+                // quick, especially for the first few matches", and the instrument
+                // agreed: died-by-fight-4 was the largest single failure cohort in the
+                // whole run.
+                //
+                // The cause is not the ladder's difficulty and not the budget. A level
+                // 1 character has exactly ONE Hit Die, a Short Rest spends it, and Hit
+                // Dice come back only on a Long Rest — so the party got one real heal
+                // per five-fight cycle and then fought fights 2, 3 and 4 on whatever
+                // was left. Meanwhile the XP budget prices every one of those fights
+                // for a party at full strength, because it cannot see hit points.
+                //
+                // Resting Long here costs no fidelity at all: how often a party rests
+                // is the GM's call, which is to say this project's, exactly like
+                // LootTable's award rates. Nothing about what a rest *restores* moves.
+                // Tied to the cycle rather than to party level because the ladder is
+                // built once and never sees a level — and by its own XP arithmetic the
+                // opening cycle is levels 1-2, which is the tier meant.
+                //
+                // Measured on two seed ranges against a same-build baseline:
+                // died-by-fight-4 15 -> 1 (seeds 1-120) and 14 -> 6 (seeds 200-320),
+                // with the opening band's hit points left rising 78% -> 87% and 79% ->
+                // 85%. Two weaker variants were measured and rejected — one extra Long
+                // Rest at fight 3, and a Hit Die returned on Short Rests at levels 1-2
+                // — because this beat both on early deaths *and* on how much it
+                // inflated the back half.
+                //
+                // That inflation is the honest cost and it is not a defect of this
+                // change: full clears rise 66 -> 72 and 71 -> 78, because more runs
+                // survive to reach an ending that is already too easy (#192). Every
+                // variant tried did it, by the same mechanism. The opening and the
+                // ending are one problem wearing two faces, and the ending needs its
+                // own teeth rather than a lethal first cycle standing in for them.
                 RestKind? rest = index == 0
                     ? null
-                    : slot == 0 || slot == FightsPerCycle - 1
+                    : index < FightsPerCycle
                         ? RestKind.Long
-                        : RestKind.Short;
+                        : slot == 0 || slot == FightsPerCycle - 1
+                            ? RestKind.Long
+                            : RestKind.Short;
 
                 // Two rungs of every five are not deathmatches, which is the whole point:
                 // thirty fights with one identical goal is one fight played thirty times.

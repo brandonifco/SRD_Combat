@@ -57,12 +57,35 @@ public class GauntletTests
         var ladder = GauntletLadder.Default();
 
         Assert.Null(ladder[0].RestBefore);
-        Assert.Equal(RestKind.Short, ladder[1].RestBefore);
 
         // The High milestone is entered fresh, and the next cycle opens rested — which
         // is also where anyone who fell to the set piece rejoins.
         Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerCycle - 1].RestBefore);
         Assert.Equal(RestKind.Long, ladder[GauntletLadder.FightsPerCycle].RestBefore);
+
+        // From the second cycle on, the routine rungs rest Short.
+        Assert.Equal(RestKind.Short, ladder[GauntletLadder.FightsPerCycle + 1].RestBefore);
+    }
+
+    [Fact]
+    public void TheOpeningCycleRestsLongThroughout()
+    {
+        // A level 1 character carries exactly one Hit Die, a Short Rest spends it, and
+        // Hit Dice return only on a Long Rest — so short-resting through the opening
+        // gave the party one real heal and then three fights on the remainder, against
+        // budgets priced for a party at full strength. died-by-fight-4 was the run's
+        // largest failure cohort until this changed.
+        var ladder = GauntletLadder.Default();
+
+        for (var index = 1; index < GauntletLadder.FightsPerCycle; index++)
+        {
+            Assert.Equal(RestKind.Long, ladder[index].RestBefore);
+        }
+
+        // And it really is only the opening: the second cycle's routine rungs are
+        // Short again, so this is a starting-tier concession rather than a new cadence.
+        Assert.Equal(RestKind.Short, ladder[GauntletLadder.FightsPerCycle + 1].RestBefore);
+        Assert.Equal(RestKind.Short, ladder[GauntletLadder.FightsPerCycle + 2].RestBefore);
     }
 
     [Fact]
