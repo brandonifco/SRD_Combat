@@ -112,6 +112,68 @@ public static class TurnOptions
         _ => action.ToString(),
     };
 
+    /// <summary>
+    /// What the action actually does, in one sentence, for a hint a player can read
+    /// without leaving the fight.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Beside <see cref="Caption"/> rather than in a client, the same reason
+    /// <c>TurnBanner</c> and <c>ShopOffer.Effect</c> are: a second client wording these
+    /// separately would be a second place for them to drift from the rules they describe.
+    /// </para>
+    /// <para>
+    /// <b>These paraphrase the printed rules; they are not a second copy of them.</b> The
+    /// engine remains the authority on what an action does, and a hint saying otherwise
+    /// is a bug in the hint. Each names the concrete consequence a player is choosing
+    /// between — what it costs, and what changes — because "Dodge: you dodge" is the kind
+    /// of tooltip that teaches nobody anything.
+    /// </para>
+    /// </remarks>
+    public static string Hint(TurnAction action) => action switch
+    {
+        TurnAction.Dodge =>
+            "Action. Until your next turn, attacks against you have Disadvantage and your "
+            + "Dexterity saves have Advantage.",
+        TurnAction.Dash => "Action. Move again this turn — double your Speed.",
+        TurnAction.Disengage => "Action. Your movement provokes no Opportunity Attacks this turn.",
+        TurnAction.StandUp => "Costs half your Speed. Gets you up from Prone.",
+        TurnAction.Escape =>
+            "Action. Athletics or Acrobatics against the grapple's DC to break free.",
+        TurnAction.EndTurn => "Finish here and pass to the next creature.",
+        TurnAction.Attacks =>
+            "Action. Attack a creature in reach. A bow within 5 feet of an enemy rolls at "
+            + "Disadvantage.",
+        TurnAction.Cast => "Action. Cast a spell you have prepared, spending a slot unless it is a cantrip.",
+        TurnAction.Drink => "Bonus Action. Drink a Potion of Healing from your own pack.",
+        TurnAction.GivePotion =>
+            "Bonus Action. Pour a potion into an ally within 5 feet — this is how somebody "
+            + "at 0 hit points gets back up.",
+        TurnAction.Rage =>
+            "Bonus Action. Bonus damage on Strength attacks and resistance to Bludgeoning, "
+            + "Piercing and Slashing. Attack or force a save each turn to keep it going.",
+        TurnAction.RecklessAttack =>
+            "Free. Advantage on your Strength attacks this turn — and every attack against "
+            + "you has Advantage until your next.",
+        TurnAction.SecondWind => "Bonus Action. Heal yourself 1d10 plus your Fighter level.",
+        TurnAction.ActionSurge => "Free. Take one more Action this turn.",
+        TurnAction.SteadyAim =>
+            "Bonus Action. Advantage on your next attack, but your Speed drops to 0 for the "
+            + "turn. Only before you have moved.",
+        TurnAction.CunningDash => "Bonus Action. Dash, without spending your Action.",
+        TurnAction.CunningDisengage => "Bonus Action. Disengage, without spending your Action.",
+        TurnAction.CunningStrikeTrip =>
+            "Spends a Sneak Attack die. On a hit, a Large or smaller target makes a Dexterity "
+            + "save or falls Prone.",
+        TurnAction.DivineSparkHeal =>
+            "Bonus Action, one Channel Divinity use. Heal a creature within 30 feet 1d8 plus "
+            + "your Wisdom modifier.",
+        TurnAction.DivineSparkHarm =>
+            "Bonus Action, one Channel Divinity use. A creature within 30 feet makes a "
+            + "Constitution save or takes 1d8 plus your Wisdom modifier, half on a success.",
+        _ => string.Empty,
+    };
+
     /// <summary>How the key reads on a button — "Space" is not a character.</summary>
     public static string HotkeyLabel(TurnAction action) =>
         Hotkey(action) == ' ' ? "Space" : Hotkey(action).ToString();
