@@ -1,5 +1,21 @@
 # Third-party content notices
 
+## What this file governs, and what it does not
+
+This project carries two licences, over two disjoint sets of files.
+
+- **Code is MIT** ([LICENSE](LICENSE)): `src/`, `client/`, `tools/`, `tests/`,
+  `scripts/`. Original work, and the project's to license.
+- **Content is CC-BY-4.0**: `data/`, derived from SRD 5.2.1 as described below. Not
+  the project's to relicense, and the attribution below travels with it.
+
+The MIT licence is deliberately not extended over `data/`. CC-BY-4.0 does permit
+adapted material to be offered under different terms, so doing so would be lawful —
+but the content is a structured transformation of someone else's document, and saying
+so plainly costs nothing and misleads nobody. A reuser needs to know which half of
+this repository carries an attribution obligation; splitting it here is how they find
+out without reading a licence-detection heuristic's guess.
+
 ## System Reference Document 5.2.1
 
 Game content in this repository — including monster stat blocks, spells, weapons,

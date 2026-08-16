@@ -1440,9 +1440,22 @@ engine models more, like the monster pool; the book's spell count is not one of 
 `SpellValidator.ExpectedSpellCount` now asserts it exactly.
 
 Decided at kickoff and no longer open: **six launch classes** (Fighter, Rogue, Cleric,
-Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle)
-and **no code licence for now** (public repo, no `LICENSE`, all rights reserved by
-default — deliberate).
+Wizard, Barbarian, Ranger — they cover every mechanical shape the engine must handle).
+
+**The kickoff's other decision was reversed on 2026-08-16: the code is MIT.** It had
+been "no code licence for now" — public repo, no `LICENSE`, all rights reserved by
+default, deliberate rather than an oversight. What that missed is that the default is
+not neutral: it applied all-rights-reserved to the one artifact here with value outside
+this repository. An SRD 5.2.1 engine in C# needs no Wizards licence to exist — that is
+the whole point of CC-BY content, and it is why Solasta needed a deal and this does not
+— and `src/SRDCombat.Core` has **no project references at all**, so it is genuinely
+liftable rather than theoretically so. Unlicensed, none of that could be used.
+**The licence is scoped to code, and the scope is the part to keep right**: `LICENSE`
+is verbatim MIT so GitHub's detector recognises it, and the code/content split is
+stated in `README.md` and at the top of `NOTICE.md` instead of inside the licence
+text. `data/` stays CC-BY-4.0. A blanket MIT over the repository would have been
+lawful — CC-BY-4.0 permits adapted material under other terms — and would have implied
+this project may relicense Wizards' content, which it may not.
 
 ## Working on the combat engine
 
