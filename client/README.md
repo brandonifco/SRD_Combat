@@ -171,10 +171,27 @@ ship this way (Gnoll Warrior, Black Bear, Brown Bear, Giant Wasp), chosen becaus
 are among the most-drawn monsters in the pool and every one of them was a bare circle
 beside a party in full animation.
 
-Two things such a drawing must get right, both inherited from the packs rather than
-invented here: the figure's **feet sit on the bottom edge** of the canvas (padding grows
-the canvas upward, so a drawing floating in the middle of its image will hover above the
-ground), and the figure **faces right** — the screen mirrors it when it should look left.
+Three things such a drawing must get right, the first two inherited from the packs rather
+than invented here.
+
+**Feet on the bottom edge** of the canvas. Padding grows the canvas upward, so a drawing
+floating in the middle of its image hovers above the ground.
+
+**Drawn facing right.** The screen mirrors it when it should look left, so art drawn
+facing left comes out backwards — a monster squared up to the party gets flipped away
+from them. Flip it once when you install it rather than teaching the screen about
+exceptions.
+
+**Square it yourself if it is wider than tall.** The loader pads a *narrow* sheet,
+because nothing narrower than one frame can be a strip — that inference is safe. A
+*wide* sheet is genuinely ambiguous: `640x128` is five frames of a walk cycle, and
+`64x46` is one drawing, and no rule tells them apart without guessing. The obvious
+guess — "a strip's width is an exact multiple of its height" — has a false negative
+sitting in these very assets (`Wanderer Magican/Charge_1.png` is 576x128, four and a
+half frames wide), which is this project's oldest lesson about heuristics. So a wide
+drawing is padded to a square canvas on disk, bottom-aligned and horizontally centred,
+before it goes in. Otherwise it loads as a one-frame strip cropped to its left edge, and
+you get most of a wolf.
 
 **The battlefield has its own art too**, from the Tiled tilesets in the same free packs:
 
