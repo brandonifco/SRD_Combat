@@ -16,17 +16,19 @@ your own party of four, every option shown with its printed SRD text — or take
 pre-made one. A human has played the opening rungs; nobody has yet played a run to its
 end.
 
-Automated runs clear the ladder routinely: on seeds 1–120, **72 of 120 runs clear all
-thirty fights and 93 reach level 4**; on seeds 200–320, 78 and 97. The median is not
-quoted because it is pinned at 30 of 30 and can no longer measure anything.
+Automated runs on seeds 1–120 clear a median of **18 fights of 30**, with 38 of 120 runs
+clearing all thirty and 56 reaching level 4; seeds 200–320 read 18, 43 and 60.
 
-**The open problem is that difficulty is not a curve.** Party hit points left at the
-end of a fight measures 75–81% in *every* band from fights 1–5 to 26–30, while rounds
-per fight climb from 3 to 6 — so late fights are longer rather than harder. The cause
-is structural: the thirty-fight ladder is **one five-fight cycle played six times**, so
-a player has seen the whole run's shape by the end of fight 5, and the XP budget
-re-prices each fight against the party's current level, which makes bigger numbers on
-both sides no change at all.
+**The ladder is a curve now.** Each five-fight cycle carries a **warband rung** — six to
+ten cheap creatures on the same printed XP budget, from level 3 up, because being
+outnumbered is the one kind of difficulty the budget structurally cannot price. Party hit
+points left at the end of a fight used to measure a flat 75–81% in every band of the run;
+it now falls from 86% in the opening five fights to 71% in the last five. Runs ending
+somewhere in the middle, rather than dying at once or clearing everything, went from 47 of
+120 to 79.
+
+The ladder is still one five-fight cycle repeated six times, so structural variety between
+cycles is the open problem.
 
 Behind it is **party-side depth**: 17 spells of the book's 339 have an effect the
 engine executes, six of the twelve classes are offered, and most class features past
