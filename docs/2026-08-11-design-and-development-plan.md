@@ -31,7 +31,7 @@ These were decided with the user on 2026-08-11 and are not open questions.
 | Decision | Choice | Why |
 | --- | --- | --- |
 | Launch class roster | **Six: Fighter, Rogue, Cleric, Wizard, Barbarian, Ranger** | Covers every mechanical *shape* the engine must handle — weapon mastery, sneak attack, prepared divine casting, prepared arcane casting, rage, half-casting. The other six SRD classes then become content rather than engineering. |
-| Code licence | **None for now** | The repository is public with no `LICENSE`, so all rights are reserved by default. Deliberate, not an oversight. The SRD's CC-BY-4.0 obligation is separate and satisfied by `NOTICE.md`. |
+| Code licence | **MIT** (was: none, reversed 2026-08-16) | Originally "none for now" — public repo, no `LICENSE`, all rights reserved by default, deliberate rather than an oversight. Reversed because that default quietly destroyed the project's most reusable asset: an SRD 5.2.1 (2024 rules) engine in C# needs no Wizards licence to exist, which is exactly what makes it worth building on, and all-rights-reserved made it legally unusable by anyone who wanted to. `src/SRDCombat.Core` has no project references, so it is genuinely liftable. The licence is scoped to code; `data/` stays CC-BY-4.0 under `NOTICE.md`, which the SRD's obligation requires and which MIT would have obscured. |
 
 ## Why SRD 5.2.1 is a better rulebase than 5.1
 

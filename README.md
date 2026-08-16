@@ -88,6 +88,18 @@ the governing document. Read it before starting work.
 
 ## Licensing
 
-Game content is derived from SRD 5.2.1 under CC-BY-4.0 — see [NOTICE.md](NOTICE.md)
-for the required attribution. The source code carries no licence file, so all rights
-are reserved.
+Two licences apply, to two different things.
+
+**The source code is MIT** — see [LICENSE](LICENSE). That covers everything under
+`src/`, `client/`, `tools/`, `tests/` and `scripts/`: the rules engine, both clients,
+the extractor and the test suite. Build on it.
+
+**The game content is derived from SRD 5.2.1 under CC-BY-4.0** and stays that way — see
+[NOTICE.md](NOTICE.md) for the required attribution, which you must carry if you
+redistribute it. That covers everything under `data/`, which is a structured
+transformation of the SRD rather than original work, and is not the project's to
+relicense.
+
+The engine is the part worth reusing, and it is the MIT part: `src/SRDCombat.Core` has
+no project references at all — it owns the rule types, and the content layer loads into
+them — so it stands alone without the SRD-derived data.
