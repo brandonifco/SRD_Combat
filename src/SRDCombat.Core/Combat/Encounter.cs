@@ -1273,6 +1273,16 @@ public sealed partial class Encounter
 
         var verb = isOpportunityAttack ? "swings at" : "attacks";
 
+        // Whether something crossed the distance, recorded for the client the way a
+        // Move's route is: the engine's own predicate, so nothing downstream has to
+        // guess from the gap and get a reach weapon wrong. A spell attack counts —
+        // a Guiding Bolt crosses the room exactly as an arrow does.
+        var ranged = isSpellAttack
+            ? RangedAttackKind.Spell
+            : attack.IsRangedAttackRoll(attacker.Position.DistanceFeetTo(target.Position))
+                ? RangedAttackKind.Weapon
+                : RangedAttackKind.None;
+
         if (!result.Hit)
         {
             var reason = result.Roll.IsNatural1 ? " — a natural 1, an automatic miss" : string.Empty;
@@ -1282,7 +1292,8 @@ public sealed partial class Encounter
                 $"{attacker.Name} {verb} {target.Name} with {attack.Name}{modeNote}: {result.Roll} vs AC " +
                 $"{result.TargetArmorClass}{coverNote} — miss{reason}.",
                 attacker,
-                target);
+                target,
+                ranged: ranged);
 
             ApplyGraze(attacker, attack, target);
             return;
@@ -1295,7 +1306,8 @@ public sealed partial class Encounter
             $"{attacker.Name} {verb} {target.Name} with {attack.Name}{modeNote}: {result.Roll} vs AC " +
             $"{result.TargetArmorClass}{coverNote} — hit{criticalNote}",
             attacker,
-            target);
+            target,
+            ranged: ranged);
 
         // Sap and Topple both read "if you hit a creature with this weapon", so they
         // land on the hit itself rather than on damage being dealt.
@@ -2010,6 +2022,7 @@ public sealed partial class Encounter
         string narration,
         Combatant? actor = null,
         Combatant? target = null,
-        IReadOnlyList<GridPosition>? path = null) =>
-        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path));
+        IReadOnlyList<GridPosition>? path = null,
+        RangedAttackKind ranged = RangedAttackKind.None) =>
+        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged));
 }

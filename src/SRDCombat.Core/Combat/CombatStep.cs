@@ -64,7 +64,43 @@ public sealed record CombatStep(
     string Narration,
     string? ActorId = null,
     string? TargetId = null,
-    IReadOnlyList<GridPosition>? Path = null)
+    IReadOnlyList<GridPosition>? Path = null,
+    RangedAttackKind Ranged = RangedAttackKind.None)
 {
+    /// <summary>
+    /// Whether an attack step was a <em>ranged</em> attack roll, and of which sort —
+    /// something crossed the distance rather than a blade reaching it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Recorded here for the reason <see cref="Path"/> is: so no client has to work it
+    /// out. The answer is the engine's own — <c>CombatAttack.IsRangedAttackRoll</c>, the
+    /// same predicate the printed "Ranged Attacks in Close Combat" Disadvantage hangs on
+    /// — and a client guessing from the gap instead would read a Halberd's ten-foot reach
+    /// as a shot, and would still have to know which of an attacker's attacks was used.
+    /// </para>
+    /// <para>
+    /// <b>Weapon and spell are told apart here rather than downstream</b>, because the
+    /// only other way for a client to know is to read the narration, and this project
+    /// does not parse its own prose — a reworded sentence would silently change what the
+    /// screen draws. Which art each kind gets is the client's business; that there
+    /// <em>was</em> a spell attack is the engine's.
+    /// </para>
+    /// </remarks>
+    public RangedAttackKind Ranged { get; init; } = Ranged;
+
     public override string ToString() => Narration;
+}
+
+/// <summary>Whether an attack crossed a distance, and by what means.</summary>
+public enum RangedAttackKind
+{
+    /// <summary>Not a ranged attack roll — a blade, a claw, a reach weapon.</summary>
+    None,
+
+    /// <summary>A ranged weapon attack: a bow, a sling, a thrown spear.</summary>
+    Weapon,
+
+    /// <summary>A spell attack roll, which crosses the room the same way.</summary>
+    Spell,
 }

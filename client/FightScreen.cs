@@ -114,6 +114,15 @@ public abstract partial class FightScreen : Node2D
     private sealed record WalkAct(int Step, int RevealThrough, string WalkerId, IReadOnlyList<GridPosition> Path)
         : Act(Step, RevealThrough);
 
+    /// <summary>Something crossing the board from a shooter to whatever it was aimed at.</summary>
+    /// <param name="Spell">A bolt rather than an arrow — spell attacks throw light, not wood.</param>
+    private sealed record ShotAct(
+        int Step,
+        int RevealThrough,
+        GridPosition From,
+        GridPosition To,
+        bool Spell) : Act(Step, RevealThrough);
+
     /// <summary>A one-shot pose: a strip played once through, then done.</summary>
     /// <param name="FacesLeft">
     /// Which way it faces, read from where the two stood when it was queued. Null when
@@ -176,6 +185,27 @@ public abstract partial class FightScreen : Node2D
     private IReadOnlyList<GridPosition>? _walkPath;
     private double _walkElapsed;
     private int _walkSquare;
+
+    /// <summary>The shot in flight: where from, where to, how far along, and which art.</summary>
+    private GridPosition? _shotFrom;
+    private GridPosition _shotTo;
+    private bool _shotIsSpell;
+    private double _shotElapsed;
+    private double _shotSeconds;
+
+    /// <summary>
+    /// How long a shot takes to cross one square, in seconds.
+    /// </summary>
+    /// <remarks>
+    /// Quicker than a walk on purpose — an arrow ambling at walking pace reads as a
+    /// lobbed pebble — but derived from the same board clock rather than picked, so one
+    /// knob still governs the whole tempo. Floored at two frames' worth, because a shot
+    /// at an adjacent enemy would otherwise be over before a frame of it drew.
+    /// </remarks>
+    private const double SecondsPerShotSquare = 1 / AnimationFramesPerSecond;
+
+    /// <summary>The least time a shot may take, however short the distance.</summary>
+    private const double MinimumShotSeconds = 2 / AnimationFramesPerSecond;
 
     /// <summary>
     /// Which way the walking token faces, from the last horizontal step it took. Null
@@ -395,7 +425,8 @@ public abstract partial class FightScreen : Node2D
         [.. encounter.TurnOrder.Select(combatant => TokenFrom(combatant, labels))];
 
     /// <summary>Whether a walk or a pose is playing or waiting to play.</summary>
-    protected bool ActInProgress => _walkPath is not null || _poseActorId is not null || _pendingActs.Count > 0;
+    protected bool ActInProgress =>
+        _walkPath is not null || _poseActorId is not null || _shotFrom is not null || _pendingActs.Count > 0;
 
     /// <summary>
     /// Queues what a slice of the log should play out on the board, in log order — so a
@@ -433,9 +464,46 @@ public abstract partial class FightScreen : Node2D
                     Kind: CombatStepKind.Attack or CombatStepKind.OpportunityAttack,
                     ActorId: { } attackerId,
                     TargetId: { } strickenId,
-                }:
-                    QueuePose(log, index, to, tokens, attackerId, Pose.Swing, facing: strickenId);
+                } attackStep:
+                {
+                    // The shot follows the swing and precedes the damage, which is the
+                    // order the fight happens in: the bow comes up, the arrow crosses,
+                    // and only then does anybody flinch. Whether it *was* a shot is the
+                    // engine's answer, carried on the step beside the route a Move
+                    // carries — nothing here infers it from the gap.
+                    var shot = attackStep.Ranged is not RangedAttackKind.None
+                        && ShotArt(attackStep.Ranged) is not null
+                        && FindToken(tokens, attackerId) is not null
+                        && FindToken(tokens, strickenId) is not null;
+
+                    // With something in flight, the swing earns only its own line: the
+                    // roll is settled when the bow twangs, but the damage is the picture
+                    // of the arrow *landing*, so it waits for the shot. Without a shot
+                    // the swing keeps its consequences, exactly as before.
+                    QueuePose(
+                        log,
+                        index,
+                        to,
+                        tokens,
+                        attackerId,
+                        Pose.Swing,
+                        facing: strickenId,
+                        revealThrough: shot ? index + 1 : null);
+
+                    if (shot
+                        && FindToken(tokens, attackerId) is { } shooter
+                        && FindToken(tokens, strickenId) is { } struck)
+                    {
+                        _pendingActs.Enqueue(new ShotAct(
+                            index,
+                            Consequences(log, index, to),
+                            new GridPosition(shooter.X, shooter.Y),
+                            new GridPosition(struck.X, struck.Y),
+                            attackStep.Ranged is RangedAttackKind.Spell));
+                    }
+
                     break;
+                }
 
                 case { Kind: CombatStepKind.Damage, TargetId: { } victimId }:
                     HoldAppearance(victimId);
@@ -519,7 +587,8 @@ public abstract partial class FightScreen : Node2D
         IReadOnlyList<Token> tokens,
         string actorId,
         Pose pose,
-        string? facing = null)
+        string? facing = null,
+        int? revealThrough = null)
     {
         if (FindToken(tokens, actorId) is not { } actor
             || _sprites.ForToken(actor.IsParty, actor.ClassName, actor.Name) is not { } art)
@@ -551,7 +620,13 @@ public abstract partial class FightScreen : Node2D
         var frames = pose is Pose.Fall ? art.Repose + 1 : strip.FrameCount;
 
         _pendingActs.Enqueue(
-            new PoseAct(step, Consequences(log, step, to), actorId, pose, frames, facesLeft));
+            new PoseAct(
+                step,
+                revealThrough ?? Consequences(log, step, to),
+                actorId,
+                pose,
+                frames,
+                facesLeft));
     }
 
     private static Token? FindToken(IReadOnlyList<Token> tokens, string id)
@@ -614,6 +689,7 @@ public abstract partial class FightScreen : Node2D
     {
         _pendingActs.Clear();
         _heldAppearances.Clear();
+        _shotFrom = null;
         _walkPath = null;
         _walkerId = null;
         _poseActorId = null;
@@ -649,6 +725,20 @@ public abstract partial class FightScreen : Node2D
     /// <summary>Advances the playing act; true when the screen should redraw.</summary>
     protected bool AdvanceActs(double delta)
     {
+        if (_shotFrom is not null)
+        {
+            _shotElapsed += delta;
+
+            if (_shotElapsed >= _shotSeconds)
+            {
+                _shotFrom = null;
+                Finish();
+            }
+
+            // Every frame: the projectile's whole point is that it is between squares.
+            return true;
+        }
+
         if (_poseActorId is not null)
         {
             _poseElapsed += delta;
@@ -734,6 +824,17 @@ public abstract partial class FightScreen : Node2D
 
         switch (starting)
         {
+            case ShotAct shot:
+                _shotFrom = shot.From;
+                _shotTo = shot.To;
+                _shotIsSpell = shot.Spell;
+                _shotElapsed = 0;
+                _shotSeconds = Math.Max(
+                    MinimumShotSeconds,
+                    shot.From.DistanceFeetTo(shot.To) / (double)Battlefield.FeetPerSquare
+                        * SecondsPerShotSquare);
+                break;
+
             case PoseAct pose:
                 // The flinch and the fall are the pictures the hold was waiting for:
                 // releasing it now is what makes the hit points drop as the flinch
@@ -885,6 +986,59 @@ public abstract partial class FightScreen : Node2D
             DrawRect(new Rect2(barLeft, barTop, CellPixels - 12, 3), GridLine);
             DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, 3), colour);
         }
+
+        // After the tokens, so a shot passes in front of what it flies over.
+        DrawShot();
+    }
+
+    /// <summary>The art a ranged attack of this kind flies, or null when it is absent.</summary>
+    private SpriteLibrary.Strip? ShotArt(RangedAttackKind kind) => kind switch
+    {
+        RangedAttackKind.Weapon => _sprites.Arrow,
+        RangedAttackKind.Spell => _sprites.Bolt ?? _sprites.Arrow,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Draws the shot in flight, rotated to point the way it is going.
+    /// </summary>
+    /// <remarks>
+    /// Drawn after the tokens so it passes in front of whatever it flies over, and
+    /// rotated because both sheets draw their projectile pointing right — the same
+    /// convention the walk cycle's facing rests on. A spell bolt cycles its strip as it
+    /// travels; the arrow is a single frame and simply flies.
+    /// </remarks>
+    private void DrawShot()
+    {
+        if (_shotFrom is not { } from
+            || ShotArt(_shotIsSpell ? RangedAttackKind.Spell : RangedAttackKind.Weapon) is not { } strip)
+        {
+            return;
+        }
+
+        var start = CentreOf(from);
+        var end = CentreOf(_shotTo);
+        var progress = (float)Math.Clamp(_shotElapsed / _shotSeconds, 0, 1);
+        var at = start.Lerp(end, progress);
+
+        var frame = strip.FrameCount <= 1
+            ? 0
+            : (int)(_shotElapsed * AnimationFramesPerSecond) % strip.FrameCount;
+
+        // Scaled to the square rather than drawn at source size: these sheets are far
+        // larger than a 66-pixel cell, and a projectile wider than the board would be
+        // the whole screen flashing rather than something crossing it.
+        var scale = (CellPixels * 0.7f) / strip.FrameSize;
+        var size = strip.FrameSize * scale;
+
+        DrawSetTransform(at, (end - start).Angle(), Vector2.One);
+
+        DrawTextureRectRegion(
+            strip.Texture,
+            new Rect2(-size / 2, -size / 2, size, size),
+            new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize));
+
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
     /// <summary>How far along its route the walker has come, in squares.</summary>
