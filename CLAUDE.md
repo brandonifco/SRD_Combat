@@ -385,7 +385,16 @@ just the caption repeated; on a creature, the `TurnBanner` lines, so an enemy ca
 sized up before anything is committed. The clock restarts only on real movement (three
 pixels of slack, because a resting hand is never quite still), a click dismisses rather
 than leaving the hint over its own result, and the panel flips above the pointer near the
-window's bottom edge. **And a turn holding nothing but the way out of it ends itself** —
+window's bottom edge. **Arming an action aims it, and Tab walks the rest.** Every road into targeting goes
+through one method, so the cursor is never left wherever the last action put it — it lands
+on the nearest thing the armed action could be used on, and Tab cycles the ring, wrapping
+round. Who is a candidate is `TargetChoice` in `Game`, beside `AttackChoice` and with the
+same standing: **a convenience, not a rule.** Every predicate reads the engine's own
+numbers rather than restating one — an attack's reach is `CombatAttack.CanReach`, the very
+method `Encounter.Attack` refuses on, so the offer and the refusal cannot disagree — and
+where a judgement is unavoidable it is the *generous* one, because a candidate the engine
+then refuses costs a refusal message while one wrongly omitted costs a player a move they
+never saw offered. Ties break on identifier so the ring is the same every time. **And a turn holding nothing but the way out of it ends itself** —
 asking a player to click End Turn when the row holds only End Turn is asking them to
 confirm a decision they were never offered. It first shipped gated on leftover movement
 too, on the reasoning that `TurnOptions` is the buttons and **walking is not a button**,

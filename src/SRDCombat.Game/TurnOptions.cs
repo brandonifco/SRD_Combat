@@ -129,42 +129,53 @@ public static class TurnOptions
     /// between — what it costs, and what changes — because "Dodge: you dodge" is the kind
     /// of tooltip that teaches nobody anything.
     /// </para>
+    /// <para>
+    /// <b>Where an action has a right moment in the turn, the hint says so.</b> Several
+    /// of these buy nothing at all taken in the wrong order — Reckless Attack after the
+    /// swing it was meant to help, Disengage after the movement that already provoked,
+    /// Rage after the attacks its damage would have ridden — and none of that is visible
+    /// from a name on a button. Two orderings are worth stating everywhere they apply:
+    /// <em>move before you act</em>, because acting is what leaves only End Turn on the
+    /// row and the turn then ends itself; and <em>arm the free riders first</em>, since
+    /// Reckless, Rage and a Cunning Strike all attach to attacks made after them.
+    /// </para>
     /// </remarks>
     public static string Hint(TurnAction action) => action switch
     {
         TurnAction.Dodge =>
             "Action. Until your next turn, attacks against you have Disadvantage and your "
             + "Dexterity saves have Advantage.",
-        TurnAction.Dash => "Action. Move again this turn — double your Speed.",
-        TurnAction.Disengage => "Action. Your movement provokes no Opportunity Attacks this turn.",
+        TurnAction.Dash => "Action. Move again this turn — double your Speed. Take it before you walk, not after.",
+        TurnAction.Disengage => "Action. Your movement provokes no Opportunity Attacks this turn. Take it before you walk away, or the swing has already happened.",
         TurnAction.StandUp => "Costs half your Speed. Gets you up from Prone.",
         TurnAction.Escape =>
             "Action. Athletics or Acrobatics against the grapple's DC to break free.",
         TurnAction.EndTurn => "Finish here and pass to the next creature.",
         TurnAction.Attacks =>
             "Action. Attack a creature in reach. A bow within 5 feet of an enemy rolls at "
-            + "Disadvantage.",
-        TurnAction.Cast => "Action. Cast a spell you have prepared, spending a slot unless it is a cantrip.",
+            + "Disadvantage. Move first — the turn ends itself once nothing but End Turn is left.",
+        TurnAction.Cast => "Action. Cast a spell you have prepared, spending a slot unless it is a cantrip. Move first — the turn ends itself once nothing but End Turn is left.",
         TurnAction.Drink => "Bonus Action. Drink a Potion of Healing from your own pack.",
         TurnAction.GivePotion =>
             "Bonus Action. Pour a potion into an ally within 5 feet — this is how somebody "
             + "at 0 hit points gets back up.",
         TurnAction.Rage =>
             "Bonus Action. Bonus damage on Strength attacks and resistance to Bludgeoning, "
-            + "Piercing and Slashing. Attack or force a save each turn to keep it going.",
+            + "Piercing and Slashing. Rage first, then attack — the bonus only reaches swings made after it. "
+            + "Attack or force a save each turn to keep it going.",
         TurnAction.RecklessAttack =>
             "Free. Advantage on your Strength attacks this turn — and every attack against "
-            + "you has Advantage until your next.",
-        TurnAction.SecondWind => "Bonus Action. Heal yourself 1d10 plus your Fighter level.",
-        TurnAction.ActionSurge => "Free. Take one more Action this turn.",
+            + "you has Advantage until your next. Declare it before your first swing; after it, it buys nothing.",
+        TurnAction.SecondWind => "Bonus Action. Heal yourself 1d10 plus your Fighter level. Worth spending before you end a turn on low hit points, not after somebody drops you.",
+        TurnAction.ActionSurge => "Free. Take one more Action this turn. Only once your Action is spent — that is what it surges past.",
         TurnAction.SteadyAim =>
             "Bonus Action. Advantage on your next attack, but your Speed drops to 0 for the "
             + "turn. Only before you have moved.",
-        TurnAction.CunningDash => "Bonus Action. Dash, without spending your Action.",
-        TurnAction.CunningDisengage => "Bonus Action. Disengage, without spending your Action.",
+        TurnAction.CunningDash => "Bonus Action. Dash, without spending your Action. Before you walk, like any Dash.",
+        TurnAction.CunningDisengage => "Bonus Action. Disengage, without spending your Action. Before you walk away, not after.",
         TurnAction.CunningStrikeTrip =>
             "Spends a Sneak Attack die. On a hit, a Large or smaller target makes a Dexterity "
-            + "save or falls Prone.",
+            + "save or falls Prone. Arm it before the attack it rides on.",
         TurnAction.DivineSparkHeal =>
             "Bonus Action, one Channel Divinity use. Heal a creature within 30 feet 1d8 plus "
             + "your Wisdom modifier.",
