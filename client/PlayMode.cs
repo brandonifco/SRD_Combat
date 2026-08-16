@@ -71,6 +71,20 @@ public partial class PlayMode : FightScreen
         RunOver,
     }
 
+    /// <summary>
+    /// The card that holds after a fight, until the player says go on.
+    /// </summary>
+    /// <remarks>
+    /// <b>A fight used to end straight into the results.</b> The last blow landed and the
+    /// screen was already listing experience and loot, which reads as the game bailing out
+    /// — worst of all on an objective rung, where a fight can end with enemies still on
+    /// their feet and nothing on screen saying why. The card names the outcome and waits,
+    /// and only when it is dismissed is the fight actually completed: the experience, the
+    /// loot and the autosave all happen on the far side of it, so the player sees the
+    /// result before the reckoning.
+    /// </remarks>
+    private bool _outcomeCard;
+
     private Encounter? _encounter;
     private Labels _labels = null!;
     private string _subtitle = string.Empty;
@@ -400,6 +414,28 @@ public partial class PlayMode : FightScreen
         if (_run is not { } run || _fight is not { } fight || _encounter is not { } encounter)
         {
             QueueRedraw();
+            return;
+        }
+
+        // Hold on the outcome first. The probe has nobody to press the key, so it takes
+        // the old path straight through rather than stalling forever on a card.
+        if (!HasArgument("probe"))
+        {
+            _outcomeCard = true;
+            QueueRedraw();
+            return;
+        }
+
+        CompleteAndReport();
+    }
+
+    /// <summary>Finishes the fight the card was announcing: rewards, save, interlude.</summary>
+    private void CompleteAndReport()
+    {
+        _outcomeCard = false;
+
+        if (_run is not { } run || _fight is not { } fight || _encounter is not { } encounter)
+        {
             return;
         }
 
@@ -833,6 +869,13 @@ public partial class PlayMode : FightScreen
                 return;
             }
 
+            if (_outcomeCard)
+            {
+                CompleteAndReport();
+                QueueRedraw();
+                return;
+            }
+
             if (_pending != Pending.Nothing || _spellMenuOpen || _attackMenuOpen || _slotMenuOpen)
             {
                 ClearPending();
@@ -841,6 +884,15 @@ public partial class PlayMode : FightScreen
             }
 
             GetTree().Quit();
+            return;
+        }
+
+        if (@event is InputEventKey { Pressed: true } && _outcomeCard)
+        {
+            // Any key moves on: the card asks nothing of the player but acknowledgement,
+            // so hunting for the right one would be its own small annoyance.
+            CompleteAndReport();
+            QueueRedraw();
             return;
         }
 
@@ -934,6 +986,13 @@ public partial class PlayMode : FightScreen
                 }
             }
 
+            return;
+        }
+
+        if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } && _outcomeCard)
+        {
+            CompleteAndReport();
+            QueueRedraw();
             return;
         }
 
@@ -1546,6 +1605,10 @@ public partial class PlayMode : FightScreen
                 modulate: MonsterColour);
         }
 
+        // Over the board, under nothing: the fight is finished and this is the only
+        // thing being asked.
+        DrawOutcomeCard();
+
         // Last, so it sits over everything it might explain.
         DrawHint();
     }
@@ -1596,6 +1659,59 @@ public partial class PlayMode : FightScreen
 
     /// <summary>How wide a hint runs before it wraps, in characters.</summary>
     private const int HintWidthCharacters = 52;
+
+    /// <summary>
+    /// The card that names how the fight ended and waits to be dismissed.
+    /// </summary>
+    /// <remarks>
+    /// It says *why* as well as what, because an objective rung can end with enemies
+    /// still standing and a bare "you win" over a field of live goblins is the confusing
+    /// part rather than the satisfying one.
+    /// </remarks>
+    private void DrawOutcomeCard()
+    {
+        if (!_outcomeCard || _encounter is not { } encounter)
+        {
+            return;
+        }
+
+        var won = encounter.WinningSide == PregeneratedParty.SideId;
+        var heading = won ? "BATTLE WON" : "BATTLE LOST";
+
+        var why = encounter.Objective.Kind switch
+        {
+            ObjectiveKind.SurviveRounds when won =>
+                $"The party held out for {encounter.Objective.Rounds} rounds.",
+            ObjectiveKind.KillLeader when won =>
+                "The leader is down — the rest break off.",
+            _ => won ? "Every enemy is down." : "The party has fallen.",
+        };
+
+        const int width = 460;
+        const int height = 132;
+        var left = GridLeft + ((GridWidth * CellPixels) - width) / 2f;
+        var top = GridTop + ((GridHeight * CellPixels) - height) / 2f;
+        var card = new Rect2(left, top, width, height);
+
+        DrawRect(card, Background);
+        DrawRect(card, won ? ActiveRing : MonsterColour, filled: false, width: 2);
+
+        DrawString(
+            TextFont,
+            new Vector2(left + 24, top + 46),
+            heading,
+            fontSize: 30,
+            modulate: won ? ActiveRing : MonsterColour);
+
+        DrawString(TextFont, new Vector2(left + 24, top + 78), why, fontSize: 13, modulate: Ink);
+
+        DrawString(
+            TextFont,
+            new Vector2(left + 24, top + 106),
+            "any key or click for the results",
+            fontSize: 12,
+            modulate: Dim);
+    }
 
     /// <summary>The between-fights screen: the run's own words, and a way onward.</summary>
     private void DrawInterlude()
@@ -1938,9 +2054,11 @@ public partial class PlayMode : FightScreen
 
         if (_encounter is { IsComplete: true } encounter)
         {
-            return encounter.WinningSide == PregeneratedParty.SideId
-                ? "the party wins — [esc] quit"
-                : "the party has fallen — [esc] quit";
+            return _outcomeCard
+                ? "the fight is over — any key or click for the results"
+                : encounter.WinningSide == PregeneratedParty.SideId
+                    ? "the party wins — [esc] quit"
+                    : "the party has fallen — [esc] quit";
         }
 
         if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
