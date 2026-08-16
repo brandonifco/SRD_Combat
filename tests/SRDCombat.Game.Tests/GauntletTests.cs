@@ -26,12 +26,17 @@ public class GauntletTests
 
         Assert.True(ladder.Count >= 30, "The default run is too short to reach level 5.");
 
-        // Routine fights alternate Low and Moderate; High is the set piece closing each
-        // cycle, never a routine rung. The decision and its measurement are #65.
+        // High is the set piece closing each cycle, never a routine rung. The decision
+        // and its measurement are #65.
+        //
+        // The fourth rung was Moderate until the warband landed; it is budgeted Low now
+        // because a Moderate budget divided across six to ten bodies is unwinnable, and
+        // the count is where that rung's difficulty comes from.
         Assert.Equal(EncounterDifficulty.Low, ladder[0].Difficulty);
         Assert.Equal(EncounterDifficulty.Moderate, ladder[1].Difficulty);
         Assert.Equal(EncounterDifficulty.Low, ladder[2].Difficulty);
-        Assert.Equal(EncounterDifficulty.Moderate, ladder[3].Difficulty);
+        Assert.Equal(EncounterDifficulty.Low, ladder[3].Difficulty);
+        Assert.True(ladder[3].Horde);
         Assert.Equal(EncounterDifficulty.High, ladder[GauntletLadder.FightsPerCycle - 1].Difficulty);
         Assert.Equal(EncounterDifficulty.Low, ladder[GauntletLadder.FightsPerCycle].Difficulty);
 
@@ -65,6 +70,62 @@ public class GauntletTests
 
         // From the second cycle on, the routine rungs rest Short.
         Assert.Equal(RestKind.Short, ladder[GauntletLadder.FightsPerCycle + 1].RestBefore);
+    }
+
+    [Fact]
+    public void EveryCycleCarriesOneWarbandRung()
+    {
+        var ladder = GauntletLadder.Default();
+
+        for (var cycle = 0; cycle * GauntletLadder.FightsPerCycle < ladder.Count; cycle++)
+        {
+            var rungs = ladder
+                .Skip(cycle * GauntletLadder.FightsPerCycle)
+                .Take(GauntletLadder.FightsPerCycle)
+                .ToArray();
+
+            Assert.Single(rungs, rung => rung.Horde);
+
+            // Budgeted Low rather than Moderate. A Moderate budget spread across six to
+            // ten bodies measured as unwinnable — full clears 72 of 120 down to 12 —
+            // because the per-count numbers are a cliff at six, not a slope.
+            Assert.Equal(EncounterDifficulty.Low, rungs.Single(rung => rung.Horde).Difficulty);
+        }
+    }
+
+    [Fact]
+    public void AWarbandWaitsForAPartyThatCanSurviveBeingOutnumbered()
+    {
+        var horde = GauntletLadder.Default().First(step => step.Horde);
+        var random = new SeededRandomSource(11);
+
+        // Below the gate the request is ignored, because the fragile tier pays for being
+        // outnumbered in characters removed — that is the level 1 wall, and handing it
+        // ten enemies would rebuild it deliberately.
+        var early = EncounterFactory.Build(
+            Content,
+            PregeneratedParty.Build(Content, level: 1),
+            horde.Difficulty,
+            random,
+            objective: horde.Objective,
+            horde: true);
+
+        Assert.True(
+            early.Built.Monsters.Count <= EncounterBuilder.DefaultMaximumMonsters,
+            $"a level 1 party was handed {early.Built.Monsters.Count} creatures.");
+
+        // At the gate it really is a warband, above what an ordinary rung may field.
+        var later = EncounterFactory.Build(
+            Content,
+            PregeneratedParty.Build(Content, level: EncounterFactory.HordeMinimumLevel),
+            horde.Difficulty,
+            new SeededRandomSource(11),
+            objective: horde.Objective,
+            horde: true);
+
+        Assert.True(
+            later.Built.Monsters.Count >= EncounterFactory.HordeMinimum,
+            $"a warband fielded only {later.Built.Monsters.Count} creatures.");
     }
 
     [Fact]

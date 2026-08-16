@@ -77,6 +77,25 @@ public static class EncounterFactory
     /// <summary>The side identifier the monsters fight under.</summary>
     public const string MonsterSideId = "monsters";
 
+    /// <summary>
+    /// The level from which a warband rung is honoured. The same boundary
+    /// <c>EncounterBuilder.MaximumFor</c> and <c>MinimumFor</c> already draw, for the
+    /// same measured reason: below level 3 the cost of being outnumbered is paid in
+    /// characters removed, and handing a fragile party ten enemies would rebuild the
+    /// level 1 wall deliberately.
+    /// </summary>
+    public const int HordeMinimumLevel = 3;
+
+    /// <summary>The fewest creatures a warband fields.</summary>
+    public const int HordeMinimum = 6;
+
+    /// <summary>
+    /// The most a warband fields. Above <c>EncounterBuilder.DefaultMaximumMonsters</c>
+    /// on purpose — that ceiling is what an ordinary rung tolerates, and exceeding it is
+    /// the entire point of this rung.
+    /// </summary>
+    public const int HordeMaximum = 10;
+
     /// <summary>Builds a fight for a party at a difficulty, drawing from the curated pool.</summary>
     /// <param name="content">Loaded SRD content.</param>
     /// <param name="party">The characters, already resolved.</param>
@@ -92,13 +111,20 @@ public static class EncounterFactory
     /// the caller because a "kill the leader" rung cannot name a leader until the monsters
     /// have been drawn.
     /// </param>
+    /// <param name="horde">
+    /// Whether this rung is a warband: many cheap creatures on the same printed budget.
+    /// Honoured only from <see cref="HordeMinimumLevel"/>; below it the request is
+    /// ignored rather than refused, because the ladder is built once and cannot know
+    /// what level the party will actually arrive at.
+    /// </param>
     public static Fight Build(
         SrdContent content,
         IReadOnlyList<PartyMember> party,
         EncounterDifficulty difficulty,
         IRandomSource random,
         decimal maximumChallengeRating = 4m,
-        ObjectiveSpec? objective = null)
+        ObjectiveSpec? objective = null,
+        bool horde = false)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(party);
@@ -114,12 +140,31 @@ public static class EncounterFactory
         // marked creature compounds that into the easiest fight on the ladder, four
         // characters focus-firing the only enemy action economy on the field. Three is
         // leader plus a pair, and the printed budget still prices every one of them.
+        // A warband fields many cheap creatures on the same printed budget, and it is
+        // gated on the party being able to survive being outnumbered — the same level 3
+        // boundary MaximumFor and MinimumFor already draw, and for the same measured
+        // reason. Below it, the cost of being outnumbered is paid in characters removed:
+        // a level 1 character has 8-12 hit points and the creatures a level 1 budget
+        // buys hit for 8-9, so nearly every landed blow takes a quarter of the party's
+        // action economy with it. Handing that party ten enemies would rebuild the level
+        // 1 wall on purpose.
+        //
+        // No selection rule is needed to make the creatures cheap: the builder already
+        // sizes each slot against its share of what is left, so ten slots out of one
+        // Moderate budget ask for creatures a tenth of it — which is the goblin-and-
+        // skeleton band the pool is thickest in. The count is the whole change.
+        var lowestLevel = party.Min(member => member.Sheet.Level);
+        var isHorde = horde && lowestLevel >= HordeMinimumLevel;
+
         var built = EncounterBuilder.ForLevels(
             MonsterPool.Draw(content.Monsters, maximumChallengeRating),
             party.Select(member => member.Sheet.Level),
             difficulty,
             random,
-            minimumMonsters: objective?.Kind == ObjectiveKind.KillLeader ? 3 : null);
+            maximumMonsters: isHorde ? HordeMaximum : null,
+            minimumMonsters: isHorde
+                ? HordeMinimum
+                : objective?.Kind == ObjectiveKind.KillLeader ? 3 : null);
 
         var separation = StartingSeparationFeet / Battlefield.FeetPerSquare;
 

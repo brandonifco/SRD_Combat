@@ -20,10 +20,16 @@ namespace SRDCombat.Game;
 /// and "kill the leader" cannot name a leader until there is one to mark —
 /// <see cref="EncounterFactory"/> resolves it at build time.
 /// </param>
+/// <param name="Horde">
+/// Whether this rung is a warband: many cheap creatures instead of a few dear ones, on
+/// the same printed budget. Ignored below level 3 — see
+/// <c>EncounterFactory.HordeMinimum</c> for why the fragile tier is exempt.
+/// </param>
 public sealed record LadderStep(
     EncounterDifficulty Difficulty,
     RestKind? RestBefore = null,
-    ObjectiveSpec? Objective = null);
+    ObjectiveSpec? Objective = null,
+    bool Horde = false);
 
 /// <summary>
 /// A rung's objective before it has a battlefield: the kind, and the number a
@@ -177,12 +183,43 @@ public static class GauntletLadder
                 return new LadderStep(
                     slot switch
                     {
-                        0 or 2 => EncounterDifficulty.Low,
-                        1 or 3 => EncounterDifficulty.Moderate,
+                        // The warband rung is budgeted Low, not Moderate, and this is
+                        // the difference between a rung and a wall. At a Moderate
+                        // budget spread over six to ten bodies the fight is simply
+                        // unwinnable: measured, it took full clears from 72 of 120 to
+                        // **12**, because the per-count numbers are a cliff rather than
+                        // a slope — five creatures leave the party at 75% of its hit
+                        // points and down 0.25 of a character, six leave it at 51% and
+                        // down 1.11. Crossing from five to six is worth more than every
+                        // difficulty step on the ladder.
+                        //
+                        // A Low budget across many bodies is also the honest shape of
+                        // the thing: a goblin warband is not a deadly enemy, it is a lot
+                        // of weak ones. Same printed budget rules, same spend, just
+                        // divided further.
+                        0 or 2 or 3 => EncounterDifficulty.Low,
+                        1 => EncounterDifficulty.Moderate,
                         _ => EncounterDifficulty.High,
                     },
                     rest,
-                    objective);
+                    objective,
+                    // The fourth rung is a warband. It is the third distinct *shape* in
+                    // a cycle, after the holding action and the boss, and shapes are the
+                    // answer to this ladder's oldest problem: thirty fights built from
+                    // one five-rung cycle repeated six times means a player has seen the
+                    // whole run by the end of fight 5. Difficulty alone cannot fix that,
+                    // because the budget re-prices every fight against the party's level
+                    // — bigger numbers on both sides is no change at all.
+                    //
+                    // It is also the one kind of difficulty the budget structurally
+                    // cannot price. "XP prices worth, not simultaneity" is a finding
+                    // this project has now reached from four directions: the level 1
+                    // wall, the count floor, the boss escort, and the per-count
+                    // measurement where a lone creature leaves the party at 89% of its
+                    // hit points and five leave it at 70%. A warband spends the same
+                    // printed XP across many bodies, so it is harder without being
+                    // richer, and no printed rule is bent to do it.
+                    Horde: slot == 3);
             })
             .ToArray();
     }
@@ -424,7 +461,8 @@ public sealed class GauntletRun
             survivors,
             step.Difficulty,
             random,
-            objective: step.Objective);
+            objective: step.Objective,
+            horde: step.Horde);
     }
 
     /// <summary>
