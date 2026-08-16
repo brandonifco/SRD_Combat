@@ -458,6 +458,13 @@ now the order of the fight: walk, swing, damage on the swing's last frame, then 
 Holds clear when the act queue drains (which also covers a victim whose art lacks the
 strip), on scrub, and on a slice with nothing to animate; the probe never engages them,
 because a capture read the instant after a click must show final state.
+**And the tokens draw in layers, from the same session.** Two combatants really can share
+a square — `MovementRules` counts only creatures that are *not dead* as occupying, so a
+corpse lies flat and is walked over — while `DrawTokens` iterated in initiative order, so
+which of them landed on top was whatever the dice had decided that fight: a character who
+stepped onto a fallen goblin was drawn *behind* it. Dead draw first, then the downed, then
+the living, stable within each layer so everything else keeps initiative order. It settles
+the gliding walker's overlap of squares it merely passes through, too.
 
 **Three findings from measuring the art are worth not rediscovering, because each was a
 bug the obvious approach shipped.** *The packs are canvas-aligned*: across every strip
