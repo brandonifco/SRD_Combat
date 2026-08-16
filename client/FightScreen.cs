@@ -833,7 +833,15 @@ public abstract partial class FightScreen : Node2D
         // rolled back to how it *looked*, and how it looked is this list, exactly.
         _lastShownTokens = tokens;
 
-        foreach (var token in tokens)
+        // Bodies first, then the living over them. Two combatants really can share a
+        // square: MovementRules counts only creatures that are *not dead* as occupying,
+        // so a corpse lies flat and is walked over. The list arrives in initiative
+        // order, so which of them landed on top was whatever the dice had decided that
+        // fight — a character who stepped onto a fallen goblin was drawn behind it.
+        // A gliding walker overlaps squares it merely passes through, so this settles
+        // that case too. OrderBy is stable, so everything within a layer still draws in
+        // initiative order.
+        foreach (var token in tokens.OrderBy(token => token.IsDead ? 0 : token.IsDown ? 1 : 2))
         {
             // The walker glides: its pixel position interpolates along the recorded
             // path rather than snapping square to square, which is what makes the walk
