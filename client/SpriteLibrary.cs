@@ -137,6 +137,15 @@ public sealed class SpriteLibrary
         ["Sahuagin Warrior"] = "Sahuagin_Warrior",
         ["Giant Wolf Spider"] = "Giant_Wolf_Spider",
         ["Berserker"] = "Berserker",
+        ["Animated Armor"] = "Animated_Armor",
+
+        // One drawing for both printed bugbears. A Bugbear Stalker is a bugbear, and the
+        // alternative is leaving it a lettered circle beside a Warrior that has a body —
+        // the initiative list and the token's own letter still tell them apart. This is
+        // the opposite call to the goblins, where three distinct packs were worth keeping
+        // because the builds are what distinguishes the three printed goblins on sight.
+        ["Bugbear Warrior"] = "Bugbear",
+        ["Bugbear Stalker"] = "Bugbear",
         ["Skeleton"] = "Skeleton_Warrior",
         ["Zombie"] = "Zombie Man",
         ["Ogre Zombie"] = "Wild Zombie",

@@ -182,6 +182,14 @@ facing left comes out backwards — a monster squared up to the party gets flipp
 from them. Flip it once when you install it rather than teaching the screen about
 exceptions.
 
+**Check the facing at 3x or larger, or by rendering it.** Judging a 64-pixel animal from
+a thumbnail is unreliable, and two of the first batch went in backwards on exactly that
+mistake — a Dire Wolf and a Giant Hyena, both side-on quadrupeds, both read the wrong way
+round until a player said the wolf was facing away. Most of the set is front-facing,
+where the flip does not matter; it is the side-on animals that bite. `RestingFacesLeft`
+and the mirroring were correct throughout — the asset was simply backwards, which is
+worth remembering before going to debug the code.
+
 **Stature is drawn, not normalised — worth knowing, yours to decide.** `NominalStature`
 is 64 and the board uses one shared pixel scale, so a figure drawn taller simply *is*
 taller on screen; nothing rescales it. The installed set runs from 38 (Giant Eagle) to 92
