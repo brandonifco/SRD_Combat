@@ -161,6 +161,21 @@ shows, and what the figure is measured from. Everything else degrades on its own
 `Attack.png` and that creature never swings, no `Hurt.png` and it never flinches, no
 `Dead.png` (the Priest packs ship neither) and it lies its idle frame on its back.
 
+**A single drawing is a complete token.** A strip is read as frames of `height × height`
+across, so a sheet *narrower* than it is tall is not a strip at all — it is one standing
+figure, and it is padded out to a square frame rather than rejected. That is the whole
+setup for hand-drawn art of one creature: drop a single PNG in as `Idle.png` and the
+creature stops being a lettered circle. It will not animate, and it does not need to —
+every pose already falls back to `Idle` when its own strip is missing. Four creatures
+ship this way (Gnoll Warrior, Black Bear, Brown Bear, Giant Wasp), chosen because they
+are among the most-drawn monsters in the pool and every one of them was a bare circle
+beside a party in full animation.
+
+Two things such a drawing must get right, both inherited from the packs rather than
+invented here: the figure's **feet sit on the bottom edge** of the canvas (padding grows
+the canvas upward, so a drawing floating in the middle of its image will hover above the
+ground), and the figure **faces right** — the screen mirrors it when it should look left.
+
 **The battlefield has its own art too**, from the Tiled tilesets in the same free packs:
 
 ```

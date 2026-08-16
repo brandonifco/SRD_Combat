@@ -115,6 +115,15 @@ public sealed class SpriteLibrary
         ["Goblin Minion"] = "Goblin_3",
         ["Goblin Warrior"] = "Goblin_1",
         ["Goblin Boss"] = "Goblin_2",
+
+        // Hand-drawn single frames rather than animated packs, added 2026-08-16 because
+        // these four are among the creatures most often drawn and every one of them was
+        // showing as a bare lettered circle beside a party in full animation. A still
+        // token that looks like the thing it is beats a moving one that does not.
+        ["Gnoll Warrior"] = "Gnoll_Warrior",
+        ["Black Bear"] = "Black_Bear",
+        ["Brown Bear"] = "Brown_Bear",
+        ["Giant Wasp"] = "Giant_Wasp",
         ["Skeleton"] = "Skeleton_Warrior",
         ["Zombie"] = "Zombie Man",
         ["Ogre Zombie"] = "Wild Zombie",
@@ -291,9 +300,31 @@ public sealed class SpriteLibrary
 
         var frameSize = image.GetHeight();
 
-        if (frameSize == 0 || image.GetWidth() < frameSize)
+        if (frameSize == 0)
         {
             return null;
+        }
+
+        // A sheet narrower than it is tall is not a strip at all — it is a single
+        // standing figure, which is what hand-drawn art for one creature looks like
+        // beside the packs' animated rows. It is padded out to a square frame rather
+        // than rejected, so one drawing is a complete (if motionless) token: every
+        // metric in this file is measured from a square frame, and every pose falls back
+        // to Idle when its own strip is missing.
+        //
+        // Padded horizontally centred and *not* vertically, because the packs are
+        // canvas-aligned with the figure's feet on the bottom edge and Figure's ground
+        // line depends on it. Growing the canvas upward keeps the feet where they are.
+        if (image.GetWidth() < frameSize)
+        {
+            var square = Image.CreateEmpty(frameSize, frameSize, false, image.GetFormat());
+            square.Fill(new Color(0, 0, 0, 0));
+            square.BlitRect(
+                image,
+                new Rect2I(0, 0, image.GetWidth(), image.GetHeight()),
+                new Vector2I((frameSize - image.GetWidth()) / 2, 0));
+
+            image = square;
         }
 
         return new Strip(

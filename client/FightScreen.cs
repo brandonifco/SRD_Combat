@@ -658,6 +658,50 @@ public abstract partial class FightScreen : Node2D
                 facesLeft));
     }
 
+    /// <summary>
+    /// Which way a token that is neither walking nor swinging should face: toward the
+    /// nearest living enemy.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This used to be the token's *side* — monsters faced left, the party faced right —
+    /// which is right only because the sides spawn in columns and stops being right the
+    /// moment anybody walks past anybody. A creature standing east of the character it
+    /// is about to bite was drawn looking away from them.
+    /// </para>
+    /// <para>
+    /// The swing already faces its victim and a walk faces its last step, so this is the
+    /// third case: standing still. Ties and a shared column keep the side's old default,
+    /// because a figure drawn exactly edge-on has no better answer and flipping on a
+    /// tie would make tokens twitch as others moved around them. The dead are not
+    /// looked at — a corpse is not something to square up to — but the *downed* are,
+    /// since they are still in the fight.
+    /// </para>
+    /// </remarks>
+    private static bool RestingFacesLeft(IReadOnlyList<Token> tokens, Token token)
+    {
+        var nearest = int.MaxValue;
+        var facesLeft = !token.IsParty;
+
+        foreach (var other in tokens)
+        {
+            if (other.IsParty == token.IsParty || other.IsDead || other.X == token.X)
+            {
+                continue;
+            }
+
+            var distance = Math.Abs(other.X - token.X) + Math.Abs(other.Y - token.Y);
+
+            if (distance < nearest)
+            {
+                nearest = distance;
+                facesLeft = other.X < token.X;
+            }
+        }
+
+        return facesLeft;
+    }
+
     private static Token? FindToken(IReadOnlyList<Token> tokens, string id)
     {
         foreach (var token in tokens)
@@ -1142,7 +1186,7 @@ public abstract partial class FightScreen : Node2D
 
             if (_sprites.ForToken(token.IsParty, token.ClassName, token.Name) is { } art)
             {
-                DrawSpriteToken(art, token, centre, colour);
+                DrawSpriteToken(art, token, centre, colour, RestingFacesLeft(tokens, token));
             }
             else
             {
@@ -1291,7 +1335,12 @@ public abstract partial class FightScreen : Node2D
     /// and what lets the swing's drawn lunge actually carry the body forward.
     /// </para>
     /// </remarks>
-    private void DrawSpriteToken(SpriteLibrary.CharacterArt art, Token token, Vector2 centre, Color colour)
+    private void DrawSpriteToken(
+        SpriteLibrary.CharacterArt art,
+        Token token,
+        Vector2 centre,
+        Color colour,
+        bool restingFacesLeft)
     {
         var fallen = token.IsDead || token.IsDown;
         var posing = token.Id == _poseActorId ? _pose : Pose.None;
@@ -1329,7 +1378,7 @@ public abstract partial class FightScreen : Node2D
 
         var facesLeft = posing is Pose.Swing && _poseFacesLeft is { } toward ? toward
             : walking && _walkerFacesLeft is { } turned ? turned
-            : !token.IsParty;
+            : restingFacesLeft;
 
         // A fall runs only as far as the body settles and stops there, rather than
         // playing on into the frames where the pack takes the body away.
