@@ -95,6 +95,27 @@ public partial class PlayMode : FightScreen
     /// </summary>
     private int _menuIndex;
     private readonly List<(Rect2 Rect, string Caption, Func<ActionRefusal?> Act)> _buttons = [];
+
+    /// <summary>
+    /// What each button explains about itself when the pointer rests on it, by caption.
+    /// </summary>
+    /// <remarks>
+    /// Kept beside the buttons rather than inside them because a caption is what the
+    /// click path already matches on, and the probe drives buttons by caption too.
+    /// </remarks>
+    private readonly Dictionary<string, string> _buttonHints = [];
+
+    /// <summary>Where the pointer is, and how long it has rested there.</summary>
+    /// <remarks>
+    /// <b>Hints wait, deliberately.</b> A tooltip that appears the instant the pointer
+    /// crosses something turns a glance across the row into a flicker of popups; a pause
+    /// is the player asking. Movement past <see cref="HoverJitterPixels"/> restarts the
+    /// clock, so a hand that never quite stops still settles.
+    /// </remarks>
+    private Vector2 _pointer;
+    private double _hoverElapsed;
+    private string? _hint;
+
     private readonly List<(Rect2 Rect, SpellDefinition Spell)> _spellRows = [];
     private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
     private readonly List<(Rect2 Rect, int Level)> _slotRows = [];
@@ -430,6 +451,7 @@ public partial class PlayMode : FightScreen
     private void BuildButtons(Combatant active)
     {
         _buttons.Clear();
+        _buttonHints.Clear();
         _buttonsFor = active.Id;
 
         if (_encounter is not { } encounter)
@@ -598,12 +620,23 @@ public partial class PlayMode : FightScreen
     }
 
     private float AddButton(float x, float y, TurnAction action) =>
-        AddButton(x, y, $"{TurnOptions.HotkeyLabel(action)} · {TurnOptions.Caption(action)}", () => Invoke(action));
+        AddButton(
+            x,
+            y,
+            $"{TurnOptions.HotkeyLabel(action)} · {TurnOptions.Caption(action)}",
+            () => Invoke(action),
+            TurnOptions.Hint(action));
 
-    private float AddButton(float x, float y, string caption, Func<ActionRefusal?> act)
+    private float AddButton(float x, float y, string caption, Func<ActionRefusal?> act, string? hint = null)
     {
         var width = TextFont.GetStringSize(caption, fontSize: 13).X + 22;
         _buttons.Add((new Rect2(x, y, width, 28), caption, act));
+
+        if (!string.IsNullOrWhiteSpace(hint))
+        {
+            _buttonHints[caption] = hint;
+        }
+
         return x + width + 8;
     }
 
@@ -627,6 +660,10 @@ public partial class PlayMode : FightScreen
 
         // The idle and walk loops tick whatever else the beat is doing — a fight where
         // nothing is happening is still a fight where everyone is breathing.
+        // The hover clock runs whatever else the board is doing — a player reading the
+        // row while the monsters take their turns is exactly who a hint is for.
+        AdvanceHover(delta);
+
         if (AdvanceSpriteAnimation(delta))
         {
             QueueRedraw();
@@ -657,8 +694,30 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        if (CommandedCombatant() is not null)
+        if (CommandedCombatant() is { } commanded)
         {
+            // A turn with nothing in it but the way out of it ends itself. Asking a
+            // player to click End Turn when the row holds only End Turn is asking them
+            // to confirm a decision they were never offered — and it happens most to the
+            // character having the worst time of it, whose Action, Bonus Action and
+            // movement are all spent. Paced like anyone else's turn rather than snapped
+            // through, so the board can be read on the way past; and gated behind
+            // ActInProgress above, so the last blow's animation always finishes first.
+            if (NothingLeftButEndTurn(commanded))
+            {
+                _elapsed += delta;
+
+                if (_elapsed < _pace)
+                {
+                    return;
+                }
+
+                _elapsed = 0;
+                encounter.EndTurn();
+                RefreshAfterAction(null);
+                return;
+            }
+
             RunProbeIfAsked();
             return;
         }
@@ -778,10 +837,133 @@ public partial class PlayMode : FightScreen
             }
         }
 
+        if (@event is InputEventMouseMotion motion)
+        {
+            // Only real movement restarts the clock. Godot reports motion for sub-pixel
+            // drift too, and a hand resting on a button is never perfectly still.
+            if (_pointer.DistanceTo(motion.Position) > HoverJitterPixels)
+            {
+                _pointer = motion.Position;
+                _hoverElapsed = 0;
+
+                if (_hint is not null)
+                {
+                    _hint = null;
+                    QueueRedraw();
+                }
+            }
+
+            return;
+        }
+
         if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
         {
+            // A click is an answer, not a question: whatever the pointer was explaining
+            // goes away rather than hanging over the result.
+            _hint = null;
+            _hoverElapsed = 0;
             HandleClick(click.Position);
         }
+    }
+
+    /// <summary>
+    /// Whether this character has no choice left to make but ending the turn.
+    /// </summary>
+    /// <remarks>
+    /// <b>Two questions, because the button row only answers one of them.</b>
+    /// <c>TurnOptions</c> is the buttons, and walking is not a button — it is a click on
+    /// the board — so a row holding only End Turn says nothing about whether the
+    /// character can still reposition. <see cref="_reachable"/> is the other half, and it
+    /// excludes the mover's own square (<c>MovementRules.FindPath</c> refuses a
+    /// destination equal to the origin), so empty really does mean nowhere to go.
+    /// <para>
+    /// Anything the player has half-started — an armed attack, an open menu — counts as
+    /// a choice in progress and holds the turn open, so the screen never closes over
+    /// something somebody was in the middle of.
+    /// </para>
+    /// </remarks>
+    private bool NothingLeftButEndTurn(Combatant commanded) =>
+        _pending == Pending.Nothing
+        && !_spellMenuOpen
+        && !_attackMenuOpen
+        && !_slotMenuOpen
+        && _reachable.Count == 0
+        && _encounter is { } encounter
+        && TurnOptions.For(encounter, commanded) is [TurnAction.EndTurn];
+
+    /// <summary>How long the pointer must rest before a hint appears, in seconds.</summary>
+    private const double HoverDelaySeconds = 2;
+
+    /// <summary>How far the pointer may drift and still count as resting.</summary>
+    private const float HoverJitterPixels = 3;
+
+    /// <summary>
+    /// Counts the pointer's rest and raises a hint once it has been still long enough.
+    /// </summary>
+    private void AdvanceHover(double delta)
+    {
+        if (_hoverElapsed >= HoverDelaySeconds)
+        {
+            // Already asked and answered. The hint is *not* re-read every frame: it is
+            // taken once when the pause completes, so it cannot flicker as the fight
+            // changes underneath a motionless pointer.
+            return;
+        }
+
+        _hoverElapsed += delta;
+
+        if (_hoverElapsed < HoverDelaySeconds)
+        {
+            return;
+        }
+
+        _hint = HintAt(_pointer);
+
+        if (_hint is not null)
+        {
+            QueueRedraw();
+        }
+    }
+
+    /// <summary>
+    /// What the pointer is resting on, or null where nothing has anything to say.
+    /// </summary>
+    /// <remarks>
+    /// Read at the moment the hint is shown rather than cached on hover, so a hint
+    /// cannot outlive what it describes: a creature that dies while the pointer sits on
+    /// it stops claiming to be standing.
+    /// </remarks>
+    private string? HintAt(Vector2 pixel)
+    {
+        if (_phase != Phase.Fighting || _shopView)
+        {
+            return null;
+        }
+
+        foreach (var (rect, caption, _) in _buttons)
+        {
+            if (rect.HasPoint(pixel) && _buttonHints.TryGetValue(caption, out var hint))
+            {
+                return hint;
+            }
+        }
+
+        if (_encounter is not { } encounter || SquareAt(pixel) is not { } square)
+        {
+            return null;
+        }
+
+        // Whoever is standing there, preferring the living: a corpse and a character can
+        // share a square, and the one being asked about is the one on their feet.
+        var occupant = encounter.Combatants
+            .Where(combatant => combatant.Position == square)
+            .OrderBy(combatant => combatant.IsDead ? 1 : 0)
+            .FirstOrDefault();
+
+        // The banner is what the screen already says about whoever is acting — name,
+        // class, armour class, hit points and every attack with its damage — so hovering
+        // asks the same question of somebody else and gets an answer worded once.
+        return occupant is null ? null : string.Join("\n", TurnBanner.Lines(occupant));
     }
 
     private void ClearPending()
@@ -1274,7 +1456,57 @@ public partial class PlayMode : FightScreen
                 fontSize: 13,
                 modulate: MonsterColour);
         }
+
+        // Last, so it sits over everything it might explain.
+        DrawHint();
     }
+
+    /// <summary>
+    /// The hint the pointer has earned, in a panel beside it.
+    /// </summary>
+    /// <remarks>
+    /// Placed against the pointer rather than in a fixed corner — a tip you have to look
+    /// away to read is a tip you stop reading — and nudged back inside the window rather
+    /// than being allowed off the edge, since the row it explains runs to the screen's
+    /// bottom right where a naive panel would fall straight off.
+    /// </remarks>
+    private void DrawHint()
+    {
+        if (_hint is not { } hint)
+        {
+            return;
+        }
+
+        var lines = hint.Split('\n')
+            .SelectMany(line => Wrap(line, HintWidthCharacters))
+            .ToArray();
+
+        var width = lines.Max(line => TextFont.GetStringSize(line, fontSize: 12).X) + 20;
+        var height = (lines.Length * 17) + 14;
+
+        var x = Math.Min(_pointer.X + 16, ScreenWidth - width - 8);
+        var y = _pointer.Y + 22 + height > ScreenHeight
+            ? _pointer.Y - height - 10
+            : _pointer.Y + 22;
+
+        var panel = new Rect2(Math.Max(8, x), Math.Max(8, y), width, height);
+
+        DrawRect(panel, Background);
+        DrawRect(panel, ActiveRing, filled: false, width: 1);
+
+        for (var index = 0; index < lines.Length; index++)
+        {
+            DrawString(
+                TextFont,
+                new Vector2(panel.Position.X + 10, panel.Position.Y + 18 + (index * 17)),
+                lines[index],
+                fontSize: 12,
+                modulate: Ink);
+        }
+    }
+
+    /// <summary>How wide a hint runs before it wraps, in characters.</summary>
+    private const int HintWidthCharacters = 52;
 
     /// <summary>The between-fights screen: the run's own words, and a way onward.</summary>
     private void DrawInterlude()
@@ -1685,6 +1917,9 @@ public partial class PlayMode : FightScreen
         ClickButton("Stand Up");
         await CaptureFrame(Path.Combine(directory, "play-2-refused.png"));
 
+        await HoverFirstButton();
+        await CaptureFrame(Path.Combine(directory, "play-2b-hint.png"));
+
         if (CommandedCombatant() is { } active
             && NearestEnemyOf(active) is { } target)
         {
@@ -1804,5 +2039,34 @@ public partial class PlayMode : FightScreen
             Position = position,
             GlobalPosition = position,
         });
+    }
+
+    /// <summary>
+    /// Rests the pointer on the first action button and waits out the hover delay, so a
+    /// capture catches the hint actually drawn.
+    /// </summary>
+    /// <remarks>
+    /// Through the real input path like every other probe step — a synthesized motion
+    /// event, not a poke at <c>_hint</c> — because the thing worth verifying is that
+    /// resting a pointer produces a hint, not that a field can be assigned. The wait is
+    /// real time rather than a frozen clock: the hover delay is deliberately measured in
+    /// seconds a person waits, and <c>--probe</c> freezes only the *animation* clock.
+    /// </remarks>
+    private async Task HoverFirstButton()
+    {
+        if (_buttons.Count == 0)
+        {
+            return;
+        }
+
+        var centre = _buttons[0].Rect.Position + (_buttons[0].Rect.Size / 2);
+
+        GetViewport().PushInput(new InputEventMouseMotion
+        {
+            Position = centre,
+            GlobalPosition = centre,
+        });
+
+        await ToSignal(GetTree().CreateTimer(HoverDelaySeconds + 0.4), SceneTreeTimer.SignalName.Timeout);
     }
 }

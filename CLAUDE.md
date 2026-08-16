@@ -376,6 +376,28 @@ spell and an area alike. And `AttackChoice` no longer fires a bow point blank: a
 roll within 5 feet of an enemy has Disadvantage, so a penalised attack sorts below every
 unpenalised one and the Rogue's blade wins the tie its bow used to take alphabetically.
 
+**The row explains itself on hover, and ends itself when it is empty** (both 2026-08-15,
+both asked for during the play session). Rest the pointer for two seconds and a panel
+appears beside it: on a button, `TurnOptions.Hint` — what the action costs and what it
+changes, in `Game` beside `Caption` for the reason `TurnBanner` is, so two clients cannot
+word a rule differently, with a test asserting *every* action has one and that it is not
+just the caption repeated; on a creature, the `TurnBanner` lines, so an enemy can be
+sized up before anything is committed. The clock restarts only on real movement (three
+pixels of slack, because a resting hand is never quite still), a click dismisses rather
+than leaving the hint over its own result, and the panel flips above the pointer near the
+window's bottom edge. **And a turn holding nothing but the way out of it ends itself** —
+asking a player to click End Turn when the row holds only End Turn is asking them to
+confirm a decision they were never offered. The predicate needs *two* questions, which is
+the trap worth knowing: `TurnOptions` is the buttons, and **walking is not a button**, so
+a row holding only End Turn says nothing about whether the character can still
+reposition; `_reachable` is the other half, and it is trustworthy here precisely because
+`MovementRules.FindPath` refuses a destination equal to the origin, so empty really means
+nowhere to go. Anything half-started — an armed attack, an open menu — holds the turn
+open. It is paced like any other turn rather than snapped through, and gated behind the
+act queue, so the last blow's animation always finishes first. The probe now hovers a
+button and captures the hint (`play-2b-hint.png`), through the real input path like every
+other probe step.
+
 **The screen says who is acting, and with what.** `TurnBanner` in `Game` composes it —
 name, class and level when the actor is a character, armor class, hit points, and each
 attack with its damage expression, a conditional component saying when it applies so

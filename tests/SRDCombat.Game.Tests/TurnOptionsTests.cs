@@ -17,6 +17,25 @@ namespace SRDCombat.Game.Tests;
 public class TurnOptionsTests
 {
     [Fact]
+    public void EveryActionExplainsItself()
+    {
+        // A hint is what the hover shows, so an action with none is an action the player
+        // is asked to take on faith. Asserted over the whole enum, so a new action cannot
+        // ship silently unexplained — which is the same guard the key uniqueness test is.
+        foreach (var action in Enum.GetValues<TurnAction>())
+        {
+            var hint = TurnOptions.Hint(action);
+
+            Assert.False(
+                string.IsNullOrWhiteSpace(hint),
+                $"{action} has no hint; a button nobody can read is a rule held silently.");
+
+            // A hint that only repeats the caption teaches nothing.
+            Assert.NotEqual(TurnOptions.Caption(action), hint, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
     public void EveryActionHasItsOwnKey()
     {
         // "D is always Dodge" only holds if no two actions ever want D. Unique across
