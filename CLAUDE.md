@@ -445,6 +445,19 @@ act finishes — the rolled result and the damage print together on the swing's 
 frame, with an act's *consequences* (Damage, Died, Downed, Condition) released alongside
 it because they are one moment of the fight. Lines are delayed, never reordered or
 dropped, and anything with no animation to wait for appears at once, the probe included.
+**The tokens wait for the picture too (2026-08-15, from the first live play session).**
+Holding the log was only half of it: the board itself drew from live state, and the
+engine resolves a monster's whole turn the instant it is asked — so a player their attack
+would fell was drawn on the floor, hit points empty, *before the monster took a step*,
+and the walk, swing and fall then played over a corpse. `WithHeldAppearances` is
+`WithWalk`'s idea applied to consequences: when a Damage, Died or Downed step is queued,
+the victim's *shown* token — hit points, posture, conditions, never position — is held as
+it last drew, and released the moment its flinch or fall act starts, so the hit points
+drop as the flinch plays and the body drops when the fall does. The order on screen is
+now the order of the fight: walk, swing, damage on the swing's last frame, then the fall.
+Holds clear when the act queue drains (which also covers a victim whose art lacks the
+strip), on scrub, and on a slice with nothing to animate; the probe never engages them,
+because a capture read the instant after a click must show final state.
 
 **Three findings from measuring the art are worth not rediscovering, because each was a
 bug the obvious approach shipped.** *The packs are canvas-aligned*: across every strip

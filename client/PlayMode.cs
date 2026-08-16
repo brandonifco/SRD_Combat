@@ -1191,7 +1191,12 @@ public partial class PlayMode : FightScreen
                 width: 3f);
         }
 
-        var tokens = WithWalk(TokensFrom(encounter, _labels));
+        // Holds first, then the walk: a held token is how somebody *looked* before a
+        // blow whose picture has not played, and where anybody stands is the walk's own
+        // question. Together they make the screen tell the fight in order — the walk,
+        // the swing, the damage on its last frame, and only then the fall — where live
+        // state alone showed the victim on the floor before the monster took a step.
+        var tokens = WithWalk(WithHeldAppearances(TokensFrom(encounter, _labels)));
 
         if (commanded is not null && _pending == Pending.Nothing)
         {

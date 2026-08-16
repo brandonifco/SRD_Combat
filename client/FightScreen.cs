@@ -150,6 +150,25 @@ public abstract partial class FightScreen : Node2D
 
     private readonly Queue<Act> _pendingActs = new();
 
+    /// <summary>
+    /// Tokens shown as they were <em>before</em> a blow whose picture has not played yet,
+    /// keyed by combatant id.
+    /// </summary>
+    /// <remarks>
+    /// The engine resolves an action whole the instant it is asked, so by the time the
+    /// monster's walk starts playing, its victim's live state already says 0 hit points
+    /// and down — and a board drawn from live state showed the player falling over
+    /// <em>before the monster had taken a step</em>. This is <see cref="WithWalk"/>'s
+    /// idea applied to consequences: the walk defers the mover's position until the hop
+    /// plays, and this defers the victim's hit points, posture and conditions until the
+    /// flinch or fall that depicts them begins. Position deliberately stays live — a
+    /// held token is a record of how someone <em>looked</em>, never of where they stand.
+    /// </remarks>
+    private readonly Dictionary<string, Token> _heldAppearances = [];
+
+    /// <summary>The token list most recently drawn — the pre-action state a hold captures.</summary>
+    private IReadOnlyList<Token>? _lastShownTokens;
+
     /// <summary>The act being played out, which is what the log is waiting on.</summary>
     private Act? _playing;
 
@@ -419,10 +438,12 @@ public abstract partial class FightScreen : Node2D
                     break;
 
                 case { Kind: CombatStepKind.Damage, TargetId: { } victimId }:
+                    HoldAppearance(victimId);
                     QueuePose(log, index, to, tokens, victimId, Pose.Flinch);
                     break;
 
                 case { Kind: CombatStepKind.Died or CombatStepKind.Downed, ActorId: { } fallenId }:
+                    HoldAppearance(fallenId);
                     QueuePose(log, index, to, tokens, fallenId, Pose.Fall);
                     break;
             }
@@ -446,8 +467,11 @@ public abstract partial class FightScreen : Node2D
         }
         else if (!ActInProgress)
         {
-            // A slice with nothing to animate waits for nothing.
+            // A slice with nothing to animate waits for nothing — and holds nothing:
+            // with no act coming to release them, held appearances would freeze the
+            // board on a moment already past.
             RevealedLogCount = to;
+            _heldAppearances.Clear();
         }
 
         // Start immediately so the very next frame draws the walker on its starting
@@ -543,10 +567,53 @@ public abstract partial class FightScreen : Node2D
         return null;
     }
 
+    /// <summary>
+    /// Remembers how a combatant looked before the blow whose picture is still queued.
+    /// First capture wins: the earliest pre-state is the one every later act in the
+    /// chain is deferring.
+    /// </summary>
+    private void HoldAppearance(string combatantId)
+    {
+        if (_heldAppearances.ContainsKey(combatantId) || _lastShownTokens is null)
+        {
+            return;
+        }
+
+        if (FindToken(_lastShownTokens, combatantId) is { } shown)
+        {
+            _heldAppearances[combatantId] = shown;
+        }
+    }
+
+    /// <summary>
+    /// The tokens with every not-yet-depicted consequence rolled back to how it looked
+    /// when last shown: hit points, posture and conditions. Position stays live — where
+    /// someone stands is <see cref="WithWalk"/>'s question, not this one's.
+    /// </summary>
+    protected IReadOnlyList<Token> WithHeldAppearances(IReadOnlyList<Token> tokens)
+    {
+        if (_heldAppearances.Count == 0)
+        {
+            return tokens;
+        }
+
+        return [.. tokens.Select(token =>
+            _heldAppearances.TryGetValue(token.Id, out var held)
+                ? token with
+                {
+                    HitPoints = held.HitPoints,
+                    IsDead = held.IsDead,
+                    IsDown = held.IsDown,
+                    Conditions = held.Conditions,
+                }
+                : token)];
+    }
+
     /// <summary>Forgets every queued act — for scrubbing, where snapping is the point.</summary>
     protected void ClearActs()
     {
         _pendingActs.Clear();
+        _heldAppearances.Clear();
         _walkPath = null;
         _walkerId = null;
         _poseActorId = null;
@@ -649,6 +716,11 @@ public abstract partial class FightScreen : Node2D
     {
         if (_pendingActs.Count == 0)
         {
+            // Everything queued has played, so nothing held is owed a picture any more.
+            // This also covers a victim whose flinch or fall was never queued because
+            // its art lacks the strip: the consequence appears when the chain ends,
+            // which is still after the blow rather than before the walk.
+            _heldAppearances.Clear();
             return false;
         }
 
@@ -663,6 +735,15 @@ public abstract partial class FightScreen : Node2D
         switch (starting)
         {
             case PoseAct pose:
+                // The flinch and the fall are the pictures the hold was waiting for:
+                // releasing it now is what makes the hit points drop as the flinch
+                // plays, and what lets the fall pose see a fallen combatant — the pose
+                // is cancelled for anyone still standing.
+                if (pose.Pose is Pose.Flinch or Pose.Fall)
+                {
+                    _heldAppearances.Remove(pose.ActorId);
+                }
+
                 _poseActorId = pose.ActorId;
                 _pose = pose.Pose;
                 _poseFacesLeft = pose.FacesLeft;
@@ -748,6 +829,10 @@ public abstract partial class FightScreen : Node2D
 
     protected void DrawTokens(IReadOnlyList<Token> tokens, string? activeId)
     {
+        // What the board shows is what a hold captures: the next blow's victim must be
+        // rolled back to how it *looked*, and how it looked is this list, exactly.
+        _lastShownTokens = tokens;
+
         foreach (var token in tokens)
         {
             // The walker glides: its pixel position interpolates along the recorded
