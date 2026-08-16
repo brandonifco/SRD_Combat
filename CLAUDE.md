@@ -463,7 +463,7 @@ which is exactly the shape of hand-drawn art for one creature, and meant such a 
 loaded as null and kept drawing a lettered circle. A narrow sheet is now read as one
 frame and padded to square, **horizontally centred and not vertically**, because the
 packs are canvas-aligned with the feet on the bottom edge and every metric in
-`SpriteLibrary` is measured from there. **Eight creatures ship this way** — Gnoll Warrior, Black
+`SpriteLibrary` is measured from there. **Eleven creatures ship this way** — Gnoll Warrior, Black
 Bear, Brown Bear, Giant Wasp, Dire Wolf, Giant Eagle, Giant Hyena, Ape — chosen because
 they are among the pool's most-drawn and every one was a bare circle beside a party in
 full animation. **The asymmetry between narrow and wide art is the thing to know**: a
@@ -475,7 +475,15 @@ negative already in the assets (`Wanderer Magican/Charge_1.png`, 576×128, four 
 frames wide), which is this file's oldest lesson about heuristics arriving from a new
 direction. Wide drawings are therefore squared **on disk** at install, bottom-aligned and
 centred; unpadded, they load as a one-frame strip cropped to the left edge — most of a
-wolf. The second install-time step is the **flip**: these four were drawn facing left and
+wolf. **A third install step arrived with the Hobgoblin Warrior, and it is the one most likely
+to be forgotten**: the drawing must stand about **64 pixels tall**, because
+`NominalStature` is 64 and the board uses *one shared pixel scale* — art drawn larger is
+simply drawn larger, never normalised. The hobgoblin came in at 92 pixels of stature
+against the Gnoll Warrior's 66 and would have towered 40% over it, two Medium creatures
+side by side. Nothing catches it: both scale to 1.0 by `ScaleFor`'s arithmetic, and the
+oversize ceiling only bites near 96 pixels, long after it looks wrong. The installed
+humanoids sit at 63–67 and a new one should be checked against them.
+The second install-time step is the **flip**: these four were drawn facing left and
 the convention is that art faces right, so a monster squared up to the party would
 otherwise be mirrored away from it. They do not
 animate and do not need to: each pose already falls back to Idle. **Goblins were asked
