@@ -387,13 +387,17 @@ pixels of slack, because a resting hand is never quite still), a click dismisses
 than leaving the hint over its own result, and the panel flips above the pointer near the
 window's bottom edge. **And a turn holding nothing but the way out of it ends itself** —
 asking a player to click End Turn when the row holds only End Turn is asking them to
-confirm a decision they were never offered. The predicate needs *two* questions, which is
-the trap worth knowing: `TurnOptions` is the buttons, and **walking is not a button**, so
-a row holding only End Turn says nothing about whether the character can still
-reposition; `_reachable` is the other half, and it is trustworthy here precisely because
-`MovementRules.FindPath` refuses a destination equal to the origin, so empty really means
-nowhere to go. Anything half-started — an armed attack, an open menu — holds the turn
-open. It is paced like any other turn rather than snapped through, and gated behind the
+confirm a decision they were never offered. It first shipped gated on leftover movement
+too, on the reasoning that `TurnOptions` is the buttons and **walking is not a button**,
+so a row holding only End Turn says nothing about whether the character can still
+reposition. Sound reasoning, wrong behaviour, and **the play session caught it within a
+fight**: *attacking spends the Action and never the movement*, so a character who swings
+from where they stand keeps a full Speed and every such turn — nearly every turn — still
+had to be dismissed by hand. The row is now the whole question. The cost is stated rather
+than hidden: a character who attacks *before* moving no longer steps away afterwards,
+which is the XCOM convention and predictable, where a rule that sometimes ends the turn
+on a number the row never showed is not. Anything half-started — an armed attack, an open
+menu — holds the turn open. It is paced like any other turn rather than snapped through, and gated behind the
 act queue, so the last blow's animation always finishes first. The probe now hovers a
 button and captures the hint (`play-2b-hint.png`), through the real input path like every
 other probe step.

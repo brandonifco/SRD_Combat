@@ -870,12 +870,21 @@ public partial class PlayMode : FightScreen
     /// Whether this character has no choice left to make but ending the turn.
     /// </summary>
     /// <remarks>
-    /// <b>Two questions, because the button row only answers one of them.</b>
-    /// <c>TurnOptions</c> is the buttons, and walking is not a button — it is a click on
-    /// the board — so a row holding only End Turn says nothing about whether the
-    /// character can still reposition. <see cref="_reachable"/> is the other half, and it
-    /// excludes the mover's own square (<c>MovementRules.FindPath</c> refuses a
-    /// destination equal to the origin), so empty really does mean nowhere to go.
+    /// <b>The row is the whole question, and leftover movement is deliberately not part
+    /// of it.</b> This first shipped also requiring <c>_reachable</c> to be empty, on the
+    /// reasoning that walking is not a button so a row holding only End Turn says nothing
+    /// about whether the character can still reposition. That reasoning is sound and the
+    /// behaviour was wrong: <b>attacking spends the Action, never the movement</b>, so a
+    /// character who swings from where they stand keeps a full Speed and every such turn
+    /// still had to be dismissed by hand — which is nearly every turn, and exactly the
+    /// friction this exists to remove.
+    /// <para>
+    /// The cost is stated rather than hidden: a character who attacks *before* moving no
+    /// longer gets to step away afterwards. That is the XCOM convention — acting ends
+    /// your turn — and it is predictable, which beats a rule that sometimes ends the turn
+    /// and sometimes does not depending on a number the row never showed. Move first,
+    /// then act.
+    /// </para>
     /// <para>
     /// Anything the player has half-started — an armed attack, an open menu — counts as
     /// a choice in progress and holds the turn open, so the screen never closes over
@@ -887,7 +896,6 @@ public partial class PlayMode : FightScreen
         && !_spellMenuOpen
         && !_attackMenuOpen
         && !_slotMenuOpen
-        && _reachable.Count == 0
         && _encounter is { } encounter
         && TurnOptions.For(encounter, commanded) is [TurnAction.EndTurn];
 
