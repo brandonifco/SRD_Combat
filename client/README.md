@@ -182,14 +182,13 @@ facing left comes out backwards — a monster squared up to the party gets flipp
 from them. Flip it once when you install it rather than teaching the screen about
 exceptions.
 
-**Draw the figure about 64 pixels tall.** `NominalStature` is 64 and the board uses one
-shared pixel scale for everything, so a creature drawn larger is simply *drawn larger* —
-it is not normalised. A Hobgoblin Warrior arrived at 92 pixels of stature against the
-Gnoll Warrior's 66 and would have towered 40% over it, two Medium creatures side by side.
-Both scale to 1.0 by the arithmetic in `ScaleFor`, so nothing catches it; the ceiling only
-bites near 96 pixels, late enough to look wrong long before it applies. Check a new
-drawing against the ones already installed — the humanoids sit at 63-67 — and rescale it
-before installing rather than expecting the screen to cope.
+**Stature is drawn, not normalised — worth knowing, yours to decide.** `NominalStature`
+is 64 and the board uses one shared pixel scale, so a figure drawn taller simply *is*
+taller on screen; nothing rescales it. The installed set runs from 38 (Giant Eagle) to 92
+(Hobgoblin Warrior), and the humanoids mostly sit at 60-67. Two Medium creatures drawn at
+66 and 92 will stand noticeably different heights side by side. That is a look, not a
+bug — the oversize ceiling in `ScaleFor` only engages near 96 pixels — so measure against
+the set if you want them to match, and don't if you don't.
 
 **Square it yourself if it is wider than tall.** The loader pads a *narrow* sheet,
 because nothing narrower than one frame can be a strip — that inference is safe. A

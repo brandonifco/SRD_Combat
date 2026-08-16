@@ -112,8 +112,12 @@ public sealed class SpriteLibrary
     {
         // The three goblin packs are a small crouching one, a plain one and an armoured
         // one carrying a shield, so they sort onto the three printed goblins by build.
+        // The Warrior takes a hand-drawn still instead: asked for directly, on the
+        // stated preference that the drawing is liked better than the animation. The
+        // Minion and Boss keep their packs because they are what tells the three goblins
+        // apart on the board, not because a pack outranks a drawing.
         ["Goblin Minion"] = "Goblin_3",
-        ["Goblin Warrior"] = "Goblin_1",
+        ["Goblin Warrior"] = "Goblin_Drawn",
         ["Goblin Boss"] = "Goblin_2",
 
         // Hand-drawn single frames rather than animated packs, added 2026-08-16 because
@@ -131,6 +135,8 @@ public sealed class SpriteLibrary
         ["Hobgoblin Warrior"] = "Hobgoblin_Warrior",
         ["Tough"] = "Tough",
         ["Sahuagin Warrior"] = "Sahuagin_Warrior",
+        ["Giant Wolf Spider"] = "Giant_Wolf_Spider",
+        ["Berserker"] = "Berserker",
         ["Skeleton"] = "Skeleton_Warrior",
         ["Zombie"] = "Zombie Man",
         ["Ogre Zombie"] = "Wild Zombie",
@@ -141,7 +147,7 @@ public sealed class SpriteLibrary
         ["Priest"] = "Priests_2",
         ["Priest Acolyte"] = "Priests_3",
         ["Cultist"] = "Priests_3",
-        ["Scout"] = "Elf_2",
+        ["Scout"] = "Scout_Human",
         ["Red Dragon Wyrmling"] = "Dragon_1",
         ["White Dragon Wyrmling"] = "Dragon_2",
     };
