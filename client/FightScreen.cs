@@ -981,7 +981,7 @@ public abstract partial class FightScreen : Node2D
                     continue;
                 }
 
-                DrawTextureRect(theme.Ground, square, tile: false);
+                DrawGroundTile(theme.Ground, square, position);
 
                 // Difficult ground is a rule, not a decoration: it survives the art.
                 if (DifficultSquares.Contains(position))
@@ -999,6 +999,28 @@ public abstract partial class FightScreen : Node2D
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Lays one of the theme's ground tiles on a square, chosen by where the square is.
+    /// </summary>
+    /// <remarks>
+    /// <b>Which tile is a function of the square, not of the draw.</b> The board is
+    /// redrawn many times a second, so rolling for it would make the ground crawl; hashing
+    /// the coordinates gives the same square the same tile for the whole fight while
+    /// scattering the set across the field. The mix is what stops a single tile reading as
+    /// a lattice of its own — the finer version of the problem grid lines had.
+    /// </remarks>
+    private void DrawGroundTile(SpriteLibrary.Strip ground, Rect2 square, GridPosition at)
+    {
+        // A cheap spatial hash. The multipliers are odd and unequal so neighbouring
+        // squares land on different tiles instead of striping along a row or column.
+        var pick = Math.Abs(((at.X * 73) ^ (at.Y * 151)) + (at.X * at.Y * 31)) % ground.FrameCount;
+
+        DrawTextureRectRegion(
+            ground.Texture,
+            square,
+            new Rect2(pick * ground.FrameSize, 0, ground.FrameSize, ground.FrameSize));
     }
 
     /// <summary>

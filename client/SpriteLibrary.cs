@@ -156,10 +156,14 @@ public sealed class SpriteLibrary
     /// one battle is woodland and the next is bare rock.
     /// </remarks>
     /// <param name="Name">The theme's name, for the record.</param>
-    /// <param name="Ground">A 16-pixel tile drawn under every square.</param>
+    /// <param name="Ground">
+    /// A strip of interchangeable 16-pixel tiles. Several rather than one, because a
+    /// single tile laid over a whole field is still a lattice — just a finer one than
+    /// grid lines were. The board picks per square.
+    /// </param>
     /// <param name="Wall">What stands where the battlefield is impassable.</param>
     /// <param name="Low">What stands on a low obstacle — smaller, since it does not block.</param>
-    public sealed record GroundTheme(string Name, Texture2D Ground, Texture2D? Wall, Texture2D? Low);
+    public sealed record GroundTheme(string Name, Strip Ground, Texture2D? Wall, Texture2D? Low);
 
     /// <summary>The battlefield looks available, or empty when the art is absent.</summary>
     public IReadOnlyList<GroundTheme> Themes { get; }
@@ -225,7 +229,7 @@ public sealed class SpriteLibrary
 
         foreach (var (name, wall) in new[] { ("Woodland", tree), ("Rocky", rock), ("Barren", rock) })
         {
-            if (LoadTexture(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
+            if (LoadStrip(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
             {
                 themes.Add(new GroundTheme(name, ground, wall, bush));
             }

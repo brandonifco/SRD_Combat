@@ -496,7 +496,7 @@ because a capture read the instant after a click must show final state.
 **The battlefield wears the terrain packs, and the grid lines are gone (2026-08-15).**
 `SpriteLibrary.GroundTheme` is one look — a 16-pixel ground tile, a wall's scenery and a
 low obstacle's — and one is chosen per battlefield **from the field's own shape**, so a
-fight always redraws the ground it had and the next one differs. **The ground tiles are cut from the packs' own tilesets**, chosen by
+fight always redraws the ground it had and the next one differs. **The ground is a *set* of tiles, not one**, cut from the packs' own tilesets and chosen by
 *seam continuity* — how well a tile's opposite edges match, so it repeats without seams —
 and then by grain. That second filter is the one worth keeping: a tile with a distinct
 motif (the mossy stone's green clumps) tiles seamlessly and still reads as **wallpaper**,
