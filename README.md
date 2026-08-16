@@ -8,20 +8,29 @@ and collect weapons, armour, spells and magic items along the way. It is a comba
 no exploration, no dialogue, no overland travel. Everything between fights exists to
 serve the next fight.
 
-**Status: playable end to end** (as of 2026-08-15). The whole gauntlet runs in the
+**Status: playable end to end** (as of 2026-08-16). The whole gauntlet runs in the
 console client and under the mouse in the Godot client, with wounds, spent resources
 and the fallen carried between fights, rests that restore what the printed rules say,
 levels earned by experience, and loot. Character creation is in both clients — build
 your own party of four, every option shown with its printed SRD text — or take the
-pre-made one. Automated runs clear the ladder routinely (median 24 fights of 30, and
-54 of 120 seeded runs clear all thirty); no human has yet played a run to its end.
+pre-made one. A human has played the opening rungs; nobody has yet played a run to its
+end.
 
-The open front is **party-side depth**: 17 spells of the book's 339 have an effect the
+Automated runs clear the ladder routinely: on seeds 1–120, **72 of 120 runs clear all
+thirty fights and 93 reach level 4**; on seeds 200–320, 78 and 97. The median is not
+quoted because it is pinned at 30 of 30 and can no longer measure anything.
+
+**The open problem is that difficulty is not a curve.** Party hit points left at the
+end of a fight measures 75–81% in *every* band from fights 1–5 to 26–30, while rounds
+per fight climb from 3 to 6 — so late fights are longer rather than harder. The cause
+is structural: the thirty-fight ladder is **one five-fight cycle played six times**, so
+a player has seen the whole run's shape by the end of fight 5, and the XP budget
+re-prices each fight against the party's current level, which makes bigger numbers on
+both sides no change at all.
+
+Behind it is **party-side depth**: 17 spells of the book's 339 have an effect the
 engine executes, six of the twelve classes are offered, and most class features past
 the first few levels are reported as unimplemented rather than silently approximated.
-The pacing numbers say that is what decides how far a run gets. They also say the
-difficulty is not yet a curve — runs mostly either end in the first four fights or
-clear all thirty, with little in between.
 
 ## What it is
 
