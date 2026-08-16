@@ -52,6 +52,12 @@ public abstract partial class FightScreen : Node2D
     protected static readonly Color Background = new("16161d");
     protected static readonly Color GridLine = new("2c2c38");
     protected static readonly Color Difficult = new("2a2438");
+
+    /// <summary>
+    /// What difficult ground looks like over real terrain: dark enough to read as rough
+    /// going, sheer enough to leave the tile underneath recognisable.
+    /// </summary>
+    protected static readonly Color DifficultWash = new(0.10f, 0.06f, 0.16f, 0.45f);
     protected static readonly Color Blocked = new("3a2a2a");
     protected static readonly Color LowObstacle = new("4a4032");
     protected static readonly Color PartyColour = new("5a9fd4");
@@ -281,6 +287,19 @@ public abstract partial class FightScreen : Node2D
     protected int GridWidth { get; private set; }
     protected int GridHeight { get; private set; }
     protected IReadOnlyCollection<GridPosition> BlockedSquares { get; private set; } = [];
+    /// <summary>
+    /// This battlefield's look, or null when no terrain art is installed.
+    /// </summary>
+    /// <remarks>
+    /// <b>One theme for the whole fight, and it is the battlefield that picks it.</b>
+    /// Derived from the field's own shape and its obstacles rather than from a counter,
+    /// so the same fight always looks the same — a reload shows the ground it showed
+    /// before — and consecutive fights differ because their fields do. Choosing it from
+    /// the fight's dice would have been the obvious alternative and is worse: the client
+    /// would have to be handed a number it has no other use for.
+    /// </remarks>
+    protected SpriteLibrary.GroundTheme? Theme { get; private set; }
+
     protected IReadOnlyCollection<GridPosition> DifficultSquares { get; private set; } = [];
     protected IReadOnlyCollection<GridPosition> LowObstacleSquares { get; private set; } = [];
 
@@ -399,6 +418,16 @@ public abstract partial class FightScreen : Node2D
         BlockedSquares = encounter.Battlefield.Blocked;
         DifficultSquares = encounter.Battlefield.DifficultTerrain;
         LowObstacleSquares = encounter.Battlefield.LowObstacles;
+
+        // The field's own shape picks its look, so a fight always draws the ground it
+        // drew before and the next one — a different field — differs.
+        Theme = _sprites.Themes.Count == 0
+            ? null
+            : _sprites.Themes[Math.Abs(
+                (GridWidth * 31)
+                + (GridHeight * 17)
+                + (BlockedSquares.Count * 7)
+                + DifficultSquares.Count) % _sprites.Themes.Count];
 
         CellPixels = Math.Clamp(
             Math.Min(BoardWidth / Math.Max(1, GridWidth), BoardHeight / Math.Max(1, GridHeight)),
@@ -901,32 +930,99 @@ public abstract partial class FightScreen : Node2D
         DrawString(TextFont, new Vector2(GridLeft, 78), statusLine, fontSize: 12, modulate: Dim);
     }
 
+    /// <summary>
+    /// The ground, and what stands on it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>No grid lines.</b> They were how a bare board showed its squares, and with real
+    /// ground under everything they were a mesh laid over a picture. Squares stay legible
+    /// from what is on them — the cursor's ring, the reachable highlight, a token sitting
+    /// centred in its cell — rather than from ruling every one of them.
+    /// </para>
+    /// <para>
+    /// <b>The rules stay visible, which is what the colours were for.</b> Difficult ground
+    /// keeps a wash over its tile: art may not cost a player the one thing the square was
+    /// telling them. A wall and a low obstacle say it with a sprite instead, since a tree
+    /// filling a square and a bush sitting in one read as blocked and passable without
+    /// anything being written down. With no art loaded every square falls back to the flat
+    /// colours and the outline it always had.
+    /// </para>
+    /// </remarks>
     protected void DrawGrid()
     {
+        var theme = Theme;
+
         for (var x = 0; x < GridWidth; x++)
         {
             for (var y = 0; y < GridHeight; y++)
             {
                 var square = new Rect2(GridLeft + (x * CellPixels), GridTop + (y * CellPixels), CellPixels, CellPixels);
                 var position = new GridPosition(x, y);
+                var blocked = BlockedSquares.Contains(position);
+                var low = LowObstacleSquares.Contains(position);
 
-                if (BlockedSquares.Contains(position))
+                if (theme is null)
                 {
-                    DrawRect(square, Blocked);
-                }
-                else if (LowObstacleSquares.Contains(position))
-                {
-                    DrawRect(square, LowObstacle);
-                }
-                else if (DifficultSquares.Contains(position))
-                {
-                    DrawRect(square, Difficult);
+                    if (blocked)
+                    {
+                        DrawRect(square, Blocked);
+                    }
+                    else if (low)
+                    {
+                        DrawRect(square, LowObstacle);
+                    }
+                    else if (DifficultSquares.Contains(position))
+                    {
+                        DrawRect(square, Difficult);
+                    }
+
+                    DrawRect(square, GridLine, filled: false, width: 1);
+                    continue;
                 }
 
-                DrawRect(square, GridLine, filled: false, width: 1);
+                DrawTextureRect(theme.Ground, square, tile: false);
+
+                // Difficult ground is a rule, not a decoration: it survives the art.
+                if (DifficultSquares.Contains(position))
+                {
+                    DrawRect(square, DifficultWash);
+                }
+
+                if (blocked && theme.Wall is { } wall)
+                {
+                    DrawStanding(wall, square, WallScale);
+                }
+                else if (low && theme.Low is { } bush)
+                {
+                    DrawStanding(bush, square, LowScale);
+                }
             }
         }
     }
+
+    /// <summary>
+    /// Draws a piece of scenery standing on a square: sized to the cell and set on its
+    /// floor, so a tree grows up out of its square rather than floating in the middle.
+    /// </summary>
+    private void DrawStanding(Texture2D texture, Rect2 square, float fraction)
+    {
+        var width = square.Size.X * fraction;
+        var height = texture.GetHeight() * width / texture.GetWidth();
+
+        DrawTextureRect(
+            texture,
+            new Rect2(
+                square.Position.X + ((square.Size.X - width) / 2),
+                square.Position.Y + square.Size.Y - height,
+                width,
+                height),
+            tile: false);
+    }
+
+    /// <summary>How much of a square a wall's scenery fills, and a low obstacle's.</summary>
+    private const float WallScale = 1.0f;
+    private const float LowScale = 0.6f;
 
     protected void DrawTokens(IReadOnlyList<Token> tokens, string? activeId)
     {

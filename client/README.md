@@ -161,6 +161,31 @@ shows, and what the figure is measured from. Everything else degrades on its own
 `Attack.png` and that creature never swings, no `Hurt.png` and it never flinches, no
 `Dead.png` (the Priest packs ship neither) and it lies its idle frame on its back.
 
+**The battlefield has its own art too**, from the Tiled tilesets in the same free packs:
+
+```
+client/assets/sprites/Terrain/Ground_Woodland.png   16x16, laid under every square
+client/assets/sprites/Terrain/Ground_Rocky.png      16x16
+client/assets/sprites/Terrain/Ground_Barren.png     16x16
+client/assets/sprites/Terrain/Tree.png              stands on an impassable square
+client/assets/sprites/Terrain/Rock.png              the same, for the rockier themes
+client/assets/sprites/Terrain/Bush.png              stands on a low obstacle
+```
+
+One theme is chosen per battlefield from the field's own shape, so a fight always redraws
+the ground it had and the next fight — a different field — differs. **The ground tiles are
+deliberately flat fills.** The packs' textured tiles are edge and cliff pieces; laid across
+a field they repeat visibly and turn a tactical board into wallpaper. Flat ground recedes,
+the scenery carries the scene, and the board stays readable — which is why there are no
+grid lines over it either. Difficult terrain keeps a dark wash whatever the theme, because
+art must not cost a player the one thing that square was telling them.
+
+Cut from `Tiled_files/` in the packs, and reproducible — the grounds are single 16-pixel
+tiles at `Ground_grass.png (2,25)`, `Ground_rocks.png (2,2)` and `Water_coasts.png (14,2)`;
+the scenery is cropped from `Trees_rocks.png` at `(0,0)-(68,80)`, `(0,240)-(70,304)` and
+`(94,130)-(126,158)`, each trimmed to its own alpha. Without the folder the board falls
+back to the flat colours and outlines it always drew.
+
 **Projectiles have a folder of their own**, because any archer fires the same arrow and
 keying the sheet to a stat block would tie a Rogue's shortbow to the Skeleton Archer's
 presence on disk:

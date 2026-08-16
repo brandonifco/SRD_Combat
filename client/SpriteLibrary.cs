@@ -132,12 +132,37 @@ public sealed class SpriteLibrary
 
     private readonly Dictionary<string, CharacterArt> _bySheetFolder;
 
-    private SpriteLibrary(Dictionary<string, CharacterArt> bySheetFolder, Strip? arrow, Strip? bolt)
+    private SpriteLibrary(
+        Dictionary<string, CharacterArt> bySheetFolder,
+        Strip? arrow,
+        Strip? bolt,
+        IReadOnlyList<GroundTheme> themes)
     {
         _bySheetFolder = bySheetFolder;
         Arrow = arrow;
         Bolt = bolt;
+        Themes = themes;
     }
+
+    /// <summary>
+    /// One look for a battlefield: the ground under everything, and the two things that
+    /// stand on it.
+    /// </summary>
+    /// <remarks>
+    /// <b>Ground is a flat tile on purpose.</b> The pack's textured tiles are edge and
+    /// cliff pieces — laid across a field they repeat visibly and turn a tactical board
+    /// into wallpaper. A plain fill recedes, the obstacles carry the scene, and what a
+    /// player needs to read at a glance stays readable. A theme is picked per fight, so
+    /// one battle is woodland and the next is bare rock.
+    /// </remarks>
+    /// <param name="Name">The theme's name, for the record.</param>
+    /// <param name="Ground">A 16-pixel tile drawn under every square.</param>
+    /// <param name="Wall">What stands where the battlefield is impassable.</param>
+    /// <param name="Low">What stands on a low obstacle — smaller, since it does not block.</param>
+    public sealed record GroundTheme(string Name, Texture2D Ground, Texture2D? Wall, Texture2D? Low);
+
+    /// <summary>The battlefield looks available, or empty when the art is absent.</summary>
+    public IReadOnlyList<GroundTheme> Themes { get; }
 
     /// <summary>
     /// The arrow that crosses the board for a ranged weapon attack, drawn pointing right
@@ -178,7 +203,7 @@ public sealed class SpriteLibrary
 
         if (!Directory.Exists(root))
         {
-            return new SpriteLibrary(loaded, null, null);
+            return new SpriteLibrary(loaded, null, null, []);
         }
 
         // The two projectiles, in a folder of their own rather than borrowed from the
@@ -188,6 +213,23 @@ public sealed class SpriteLibrary
         var projectiles = Path.Combine(root, "Projectiles");
         var arrow = LoadStrip(Path.Combine(projectiles, "Arrow.png"));
         var bolt = LoadStrip(Path.Combine(projectiles, "Bolt.png"));
+
+        // The battlefield's own art, themed. A theme needs its ground; the things that
+        // stand on it are optional, and a theme missing them simply has bare ground.
+        var terrain = Path.Combine(root, "Terrain");
+        var tree = LoadTexture(Path.Combine(terrain, "Tree.png"));
+        var rock = LoadTexture(Path.Combine(terrain, "Rock.png"));
+        var bush = LoadTexture(Path.Combine(terrain, "Bush.png"));
+
+        var themes = new List<GroundTheme>();
+
+        foreach (var (name, wall) in new[] { ("Woodland", tree), ("Rocky", rock), ("Barren", rock) })
+        {
+            if (LoadTexture(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
+            {
+                themes.Add(new GroundTheme(name, ground, wall, bush));
+            }
+        }
 
         foreach (var folder in ByClassName.Values.Concat(ByMonsterName.Values).Distinct())
         {
@@ -229,8 +271,12 @@ public sealed class SpriteLibrary
                 dead is null ? 0 : RestingFrame(deadPath, figure));
         }
 
-        return new SpriteLibrary(loaded, arrow, bolt);
+        return new SpriteLibrary(loaded, arrow, bolt, themes);
     }
+
+    /// <summary>One whole image as a texture, or null when it is not there.</summary>
+    private static Texture2D? LoadTexture(string path) =>
+        LoadImage(path) is { } image ? ImageTexture.CreateFromImage(image) : null;
 
     private static Strip? LoadStrip(string path)
     {
