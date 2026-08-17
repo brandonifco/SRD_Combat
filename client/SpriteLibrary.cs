@@ -139,6 +139,12 @@ public sealed class SpriteLibrary
         ["Berserker"] = "Berserker",
         ["Animated Armor"] = "Animated_Armor",
         ["Awakened Tree"] = "Awakened_Tree",
+        ["Bandit Captain"] = "Bandit_Captain",
+        ["Black Dragon Wyrmling"] = "Black_Dragon_Wyrmling",
+        ["Archelon"] = "Archelon",
+        ["Azer Sentinel"] = "Azer_Sentinel",
+        ["Ankheg"] = "Ankheg",
+        ["Giant Vulture"] = "Giant_Vulture",
 
         // One drawing for both printed bugbears. A Bugbear Stalker is a bugbear, and the
         // alternative is leaving it a lettered circle beside a Warrior that has a body —
