@@ -16,6 +16,14 @@ so plainly costs nothing and misleads nobody. A reuser needs to know which half 
 this repository carries an attribution obligation; splitting it here is how they find
 out without reading a licence-detection heuristic's guess.
 
+## Hand-drawn creature art
+
+The single-frame creature drawings under `client/assets/sprites/` (the folders named
+for individual creatures — `Ankheg/`, `Barbarian_Drawn/`, `Dire_Wolf/` and so on) are
+this project's own work and travel with the repository. They are not Craftpix assets
+and not SRD content. The Craftpix animation packs remain excluded from the repository
+entirely, because their free licence permits use in a game but not redistribution.
+
 ## System Reference Document 5.2.1
 
 Game content in this repository — including monster stat blocks, spells, weapons,

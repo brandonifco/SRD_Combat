@@ -23,7 +23,35 @@ reference/
 # redistribution of the source assets, so the PNGs stay out of this public repo the
 # way the SRD PDF does. The client falls back to circle tokens when they are absent.
 # See client/README.md for where to get them and where they go.
-client/assets/sprites/
+# The Craftpix packs may not be redistributed, so the directory is ignored —
+# but the hand-drawn art is this project's own and travels with the repo.
+# A directory ignore cannot be negated from inside, hence the /* form.
+client/assets/sprites/*
+!client/assets/sprites/Animated_Armor/
+!client/assets/sprites/Ankheg/
+!client/assets/sprites/Ape/
+!client/assets/sprites/Archelon/
+!client/assets/sprites/Awakened_Tree/
+!client/assets/sprites/Azer_Sentinel/
+!client/assets/sprites/Bandit_Captain/
+!client/assets/sprites/Barbarian_Drawn/
+!client/assets/sprites/Berserker/
+!client/assets/sprites/Black_Bear/
+!client/assets/sprites/Black_Dragon_Wyrmling/
+!client/assets/sprites/Brown_Bear/
+!client/assets/sprites/Bugbear/
+!client/assets/sprites/Dire_Wolf/
+!client/assets/sprites/Giant_Eagle/
+!client/assets/sprites/Giant_Hyena/
+!client/assets/sprites/Giant_Vulture/
+!client/assets/sprites/Giant_Wasp/
+!client/assets/sprites/Giant_Wolf_Spider/
+!client/assets/sprites/Gnoll_Warrior/
+!client/assets/sprites/Goblin_Drawn/
+!client/assets/sprites/Hobgoblin_Warrior/
+!client/assets/sprites/Sahuagin_Warrior/
+!client/assets/sprites/Scout_Human/
+!client/assets/sprites/Tough/
 
 # Scratch
 *.log
