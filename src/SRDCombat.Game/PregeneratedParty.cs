@@ -240,7 +240,16 @@ public static class PregeneratedParty
         ChosenSkills = ["Athletics", "Perception"],
         FightingStyle = FightingStyle.Defense,
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
-        WeaponIds = ["weapon.longsword"],
+        // The Javelin is the printed Fighter's ranged half — starting option A hands one
+        // eight of them — and without it three of the four pregens could not act at all
+        // on the approach round. That is very likely part of why every ranged and
+        // positional experiment in this project measured as worthless: #125 concluded
+        // "there are no standoff rounds for a phase to spend", and a party with one bow
+        // between four has nothing to spend them on either.
+        //
+        // The Longsword stays rather than taking option A wholesale, because the
+        // Longsword is chosen for its mastery and the swap would cost it.
+        WeaponIds = ["weapon.longsword", "weapon.javelin"],
         // The Longsword's Sap: the enemy it hits swings back at Disadvantage.
         WeaponMasteryIds = ["weapon.longsword"],
         ArmorId = "armor.chain-mail",
@@ -259,7 +268,10 @@ public static class PregeneratedParty
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Athletics", "Survival"],
         AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
-        WeaponIds = ["weapon.greataxe"],
+        // Greataxe and four Handaxes is the printed starting kit exactly — option A —
+        // and the axes were simply missing. They are Thrown at 20/60, so the Barbarian
+        // has something to do before contact.
+        WeaponIds = ["weapon.greataxe", "weapon.handaxe"],
         // The Greataxe's Cleave: the swing carries through into a second enemy beside
         // the first. Refused until Cleave executed; the Barbarian held the feature
         // unusable from the day masteries landed until #81 closed.

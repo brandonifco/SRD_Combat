@@ -1530,6 +1530,34 @@ this project may relicense Wizards' content, which it may not.
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
   `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
   every CR 0–4 monster can take a turn without throwing.
+- **"Attack from where we stand if anything reaches" was a load-bearing accident, and
+  equipping the party from the printed starting kits exposed it.** Asked from play: "why
+  is Sable the only character with a ranged weapon option?" The answer was that only the
+  Rogue's loadout matched the book — the printed Fighter gets **8 Javelins** (option A) or
+  a **Longbow** (B), the printed Barbarian gets **4 Handaxes**, and both were simply
+  missing. Adding them took full clears from **38 of 120 to 2**.
+  **The equipment was not the bug.** The policy's turn attacked from the current square
+  whenever *any* attack reached, and only moved when nothing did. That is correct exactly
+  as long as a melee character owns nothing but melee attacks — nothing reaches, so it
+  walks. Give a Fighter a Javelin that reaches 120 feet at long range and the test
+  inverts: something always reaches from the spawn square, so the front line never closed
+  and spent whole fights lobbing its weakest attack at Disadvantage instead of walking in
+  behind a Greataxe. `WouldRatherClose` is the guard — walk when a harder-hitting attack
+  exists than anything reaching from here and there is movement left to go and use it —
+  and a **tie deliberately keeps the creature still**, which is what leaves a genuine
+  archer shooting, since the Rogue's Shortsword and Shortbow average the same.
+  `ReachOf` was fixed alongside it for the same reason: it planned around the
+  *longest*-reaching attack where `TryAttack` swings the *hardest*-hitting one, so the two
+  disagreed about what the walk was for.
+  **Measured, and the honest figure is not a win.** Against the same build without the
+  thrown weapons: clears **38 → 31** and **46 → 29**, median **23 → 21** and **23 → 18**,
+  died-by-fight-4 **1 → 5** and **7 → 6**. So the printed kit still costs the *automated*
+  party something even with the guard in. It ships because the equipment is what the book
+  prints and because a human wants the option — the standing caution applies exactly here,
+  that every pacing figure is a floor set by a placeholder policy rather than a verdict.
+  The next available gain is priced but not taken: `TryAttack` sorts on average damage and
+  cannot see that a throw at long range rolls at Disadvantage, so it will lob a Javelin 60
+  feet when closing or waiting would pay better.
 - **A creature at 0 hit points still occupies its square, and may be walked *through*
   but never stopped on.** Reading occupancy as "active" let a mover end its turn standing
   on an unconscious creature, which was invisible until healing existed — the downed
