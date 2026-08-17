@@ -1530,6 +1530,31 @@ this project may relicense Wizards' content, which it may not.
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
   `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
   every CR 0–4 monster can take a turn without throwing.
+- **The battlefield is 18 × 12 with the sides 60 feet apart — both axes doubled on
+  2026-08-17, at the player's direction.** The note `EncounterFactory` carried said
+  exactly when to do this: widening measured worth double the clears to a level 3 party
+  and ruinous to a level 1 one, "worth revisiting the moment the level 1 wall is fixed,
+  and not before" — and #205 fixed it. Both spawn columns are centred with
+  `MarginSquares` (3) of flank on each side, so going round is a real option. Measured
+  on both ranges: clears **31 → 22** and **29 → 13**, median **21 → 14** and **18 → 13**,
+  **no stalls on 241 runs** — the board is crossable, just dearer to cross, because the
+  approach costs two rounds instead of one and anything with a bow or a breath weapon
+  collects on both. The early game is *fine* (died-by-fight-4 held at 4–11, opening band
+  hp 85%) and the late bands are the ones paying (67% hp-left, 6.9 rounds), which is a
+  curve pointing the right way. **The automated numbers are floors, and this change more
+  than most is for the human player**: an 18 × 12 field is where positioning, kiting and
+  screening can exist at all.
+- **HOLD was wired, measured on the wide board with the armed party, and unwired again
+  — #125's verdict survives its premises changing.** Both reasons it originally lost are
+  gone (one bow between four; a board one move wide), so it got its fair test:
+  `PartyDoctrine.Phase` consulted at the top of the policy's close-or-shoot gate, seeds
+  1–120 — **byte-identical outcomes, the phase never fired once.** The arithmetic says
+  why, and it is worth keeping: holding earns the *ranged margin* and idles the front
+  line's whole melee output, but the back rank shoots whether the party holds or commits,
+  so the margin can never cover a front-liner's greatsword unless the party is
+  ranged-heavy — which the pregens are not, javelins or no. The phase machinery stays
+  built and unconsulted, per the Revivify precedent: its customer is a created
+  ranged-heavy party, not this one.
 - **"Attack from where we stand if anything reaches" was a load-bearing accident, and
   equipping the party from the printed starting kits exposed it.** Asked from play: "why
   is Sable the only character with a ranged weapon option?" The answer was that only the
