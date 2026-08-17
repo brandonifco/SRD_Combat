@@ -1751,6 +1751,29 @@ cost real time:
   — multiattacks, riders, bosses — so the same budget buys a harder fight. It moves the
   back half toward #192 and the opening *away* from the level 1 complaint in the same
   breath; those are separate levers and the second one is still open.
+- **The dearest band is chosen by price, not by count, and the count version was hiding
+  half the bestiary.** `EncounterBuilder` fills each slot from the dearer end of what fits
+  its share — the printed "spend as much of your XP budget as you can" — and it used to
+  take the first third of a list sorted by price *and then by identifier*. That cut falls
+  inside a tie: where a dozen creatures cost the same, only the alphabetically earliest
+  entered the band and the rest **could never be drawn at all**. Measured over 6,000
+  generated encounters, the game fielded **68 distinct creatures out of a pool of 117**,
+  and the most frequently drawn read Ankheg, Archelon, Azer, Awakened, Bandit, Basilisk —
+  which is not a coincidence but an alphabet. Found while ranking which monsters most
+  deserved hand-drawn art, which is the second time a *display* question has surfaced an
+  engine bug (#164/#165 were the first). The count now only decides the price to beat and
+  everything at that price comes with it; nothing about spending the budget is given up,
+  since every creature admitted still costs at least what the count demanded. The
+  identifier still orders what survives, because `PickByTaste` walks the candidates
+  accumulating weight and a seed has to replay exactly — it is only the *cut* that must
+  not fall inside a tie, and the dice stream is unchanged in length because `Roll` takes
+  one value whatever its bound. **Measured: distinct creatures 68 → 83 of 117**, the
+  common draws now spread across the alphabet (Hippogriff, Spy, Goblin Boss, Giant Eagle,
+  Sphinx of Wonder), and on pacing, both ranges moving together: median **18 → 23**,
+  level-4 runs **56 → 72** and **60 → 78**, full clears **38 → 38** and **43 → 46**,
+  died-by-fight-4 **3 → 1** and **9 → 7**. Runs go *deeper* without finishing more often,
+  so the middle band stays fat — the newly reachable creatures are on average a little
+  less dangerous per XP than the alphabetically early ones they now share the band with.
 - **Coverage is not appropriateness either — that is `PlausibleFoes`, the third axis.**
   The builder used to field a Camel: mechanically `Complete`, narratively absurd. **Most
   of the fix is derived rather than judged**, which is why it is worth knowing about: the
