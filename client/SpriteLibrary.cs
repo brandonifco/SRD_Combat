@@ -92,7 +92,9 @@ public sealed class SpriteLibrary
     {
         ["Fighter"] = "Knight_1",
         ["Paladin"] = "Knight_2",
-        ["Barbarian"] = "Gladiator_1",
+        // Hand-drawn set — the four single frames the play sessions asked for. Each
+        // pose is one frame, which the loader pads and plays across its duration.
+        ["Barbarian"] = "Barbarian_Drawn",
         ["Monk"] = "Gladiator_2",
         ["Rogue"] = "Elf_1",
         ["Bard"] = "Elf_2",
