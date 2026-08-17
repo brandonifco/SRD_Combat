@@ -495,25 +495,16 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        // Row one is what anybody can do; row two is what this character brought.
-        var universal = new[]
-        {
-            TurnAction.Dodge, TurnAction.Dash, TurnAction.Disengage,
-            TurnAction.StandUp, TurnAction.Escape, TurnAction.EndTurn,
-        };
-
+        // One row, in TurnOptions' own order. It was two — anybody's actions above,
+        // this character's below — until the fullscreen layout: the board is as tall as
+        // the screen allows, so the rows under it are down to a strict budget, and a
+        // fullscreen width holds every button a turn can offer side by side with room
+        // to spare.
         var x = (float)GridLeft;
 
-        foreach (var action in TurnOptions.For(encounter, active).Where(universal.Contains))
+        foreach (var action in TurnOptions.For(encounter, active))
         {
             x = AddButton(x, ButtonRowTop, action);
-        }
-
-        x = GridLeft;
-
-        foreach (var action in TurnOptions.For(encounter, active).Where(action => !universal.Contains(action)))
-        {
-            x = AddButton(x, ButtonRowTop + 36, action);
         }
     }
 
@@ -1585,7 +1576,7 @@ public partial class PlayMode : FightScreen
 
             DrawString(
                 TextFont,
-                new Vector2(GridLeft, ButtonRowTop + 36 + 28 + 20),
+                new Vector2(GridLeft, ButtonRowTop + 28 + 16),
                 ResourceLine(character),
                 fontSize: 12,
                 modulate: Dim);
@@ -1599,7 +1590,7 @@ public partial class PlayMode : FightScreen
         {
             DrawString(
                 TextFont,
-                new Vector2(GridLeft, ButtonRowTop + 36 + 28 + 42),
+                new Vector2(GridLeft, ButtonRowTop + 28 + 38),
                 Trim(notice, 78),
                 fontSize: 13,
                 modulate: MonsterColour);
@@ -1904,7 +1895,14 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        var top = ButtonRowTop + 36 + 28 + 54;
+        // Over the board, as an overlay. These lists used to live under the second
+        // button row; fullscreen gave that ground to the board, and every row below
+        // already paints its own filled backdrop, so only the header needs one.
+        var top = GridTop + 28;
+
+        DrawRect(
+            new Rect2(GridLeft - 8, top - 24, 470, 30),
+            new Color(Background.R, Background.G, Background.B, 0.9f));
 
         DrawString(TextFont, new Vector2(GridLeft, top - 6), "SPELLS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
 
@@ -1950,7 +1948,14 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        var top = ButtonRowTop + 36 + 28 + 54;
+        // Over the board, as an overlay. These lists used to live under the second
+        // button row; fullscreen gave that ground to the board, and every row below
+        // already paints its own filled backdrop, so only the header needs one.
+        var top = GridTop + 28;
+
+        DrawRect(
+            new Rect2(GridLeft - 8, top - 24, 470, 30),
+            new Color(Background.R, Background.G, Background.B, 0.9f));
 
         DrawString(TextFont, new Vector2(GridLeft, top - 6), "ATTACKS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
 
@@ -2005,7 +2010,14 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        var top = ButtonRowTop + 36 + 28 + 54;
+        // Over the board, as an overlay. These lists used to live under the second
+        // button row; fullscreen gave that ground to the board, and every row below
+        // already paints its own filled backdrop, so only the header needs one.
+        var top = GridTop + 28;
+
+        DrawRect(
+            new Rect2(GridLeft - 8, top - 24, 470, 30),
+            new Color(Background.R, Background.G, Background.B, 0.9f));
 
         DrawString(
             TextFont,

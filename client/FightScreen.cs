@@ -21,9 +21,9 @@ public abstract partial class FightScreen : Node2D
 {
     protected const int GridLeft = 24;
     protected const int GridTop = 96;
-    protected const int PanelLeft = 664;
-    protected const int ScreenWidth = 1600;
-    protected const int ScreenHeight = 950;
+    protected const int PanelLeft = 1470;
+    protected const int ScreenWidth = 1920;
+    protected const int ScreenHeight = 1080;
     protected const double SecondsPerTurn = 0.6;
 
     /// <summary>
@@ -31,8 +31,8 @@ public abstract partial class FightScreen : Node2D
     /// so a battlefield of any shape uses the whole area — and a future field wider than
     /// today's nine squares shrinks its squares instead of growing into the side panel.
     /// </summary>
-    private const int BoardWidth = 616;
-    private const int BoardHeight = 470;
+    private const int BoardWidth = 1500;
+    private const int BoardHeight = 864;
 
     /// <summary>
     /// Bounds on the derived square. The ceiling keeps a small skirmish from drawing
@@ -1486,6 +1486,15 @@ public abstract partial class FightScreen : Node2D
 
     protected void DrawTurnOrder(IReadOnlyList<Token> tokens, string? activeId)
     {
+        // The panel is an overlay now, not a reserved column: fullscreen gave the board
+        // the whole width, so the initiative list and the log float over the field's
+        // right edge on a translucent backdrop. Translucent rather than opaque so the
+        // ground still reads as continuing underneath — the panel shares the space, it
+        // does not take it back.
+        DrawRect(
+            new Rect2(PanelLeft - 16, 8, ScreenWidth - PanelLeft + 8, ScreenHeight - 16),
+            new Color(Background.R, Background.G, Background.B, 0.85f));
+
         DrawString(TextFont, new Vector2(PanelLeft, GridTop - 8), "INITIATIVE", fontSize: 12, modulate: Dim);
 
         var y = GridTop + 16;
@@ -1577,7 +1586,9 @@ public abstract partial class FightScreen : Node2D
     /// about 5.7 pixels to the character — and kept short of the edge, because the
     /// figure is an average and a line of wide letters must not run off the screen.
     /// </summary>
-    private const int LogWidthCharacters = 120;
+    // Sized to the overlay strip the log now lives in, not the old dedicated column —
+    // a wrapped line that outruns its backdrop would spill onto the battlefield.
+    private const int LogWidthCharacters = 56;
 
     protected static string Trim(string text, int width) =>
         text.Length <= width ? text : text[..(width - 1)] + "…";

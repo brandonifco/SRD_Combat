@@ -15,8 +15,9 @@ project/assembly_name="SRDCombat.Viewer"
 
 [display]
 
-window/size/viewport_width=1600
-window/size/viewport_height=950
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=3
 
 [rendering]
 
