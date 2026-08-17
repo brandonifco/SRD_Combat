@@ -72,7 +72,14 @@ public sealed record Fight(Encounter Encounter, IReadOnlyList<PartyMember> Party
 public static class EncounterFactory
 {
     /// <summary>How far apart the two sides start, in feet.</summary>
-    public const int StartingSeparationFeet = 30;
+    public const int StartingSeparationFeet = 60;
+
+    /// <summary>
+    /// Clear squares outside each spawn column. Two flanks of this rather than one
+    /// square of shoulder room, so a creature can go round a screen instead of only
+    /// through it.
+    /// </summary>
+    public const int MarginSquares = 3;
 
     /// <summary>The side identifier the monsters fight under.</summary>
     public const string MonsterSideId = "monsters";
@@ -168,16 +175,32 @@ public static class EncounterFactory
 
         var separation = StartingSeparationFeet / Battlefield.FeetPerSquare;
 
-        // Wide enough for both columns and the gap, deep enough for the larger side plus
-        // room to go round rather than only through.
-        var width = separation + 3;
-        var height = Math.Max(party.Count, Math.Max(built.Monsters.Count, 1)) + 2;
+        // Both axes doubled (2026-08-17). The old board was 9 by 6 or so: the sides
+        // stood one move apart, which is why #125 found "there are no standoff rounds
+        // for a phase to spend" and why every positional experiment measured against
+        // position. A field this small has no tactics in it beyond walking forward.
+        //
+        // Widening was measured and rejected once before, and the note left on it said
+        // exactly when to come back: worth double the clears to a level 3 party and
+        // ruinous to a level 1 one, so "worth revisiting the moment the level 1 wall is
+        // fixed, and not before". #205 fixed it.
+        //
+        // MarginSquares on each flank rather than one, so going round is a real option
+        // and not a squeeze along the wall.
+        var width = separation + (MarginSquares * 2);
+        var side = Math.Max(party.Count, Math.Max(built.Monsters.Count, 1));
+        var height = (side * 2) + (MarginSquares * 2);
+
+        // Both columns centred, so the flanking room is on both flanks. Off-centre
+        // columns give one side a wall to hide against and the other open ground, which
+        // is a difference the fight never earned.
+        var top = Math.Max(1, (height - side) / 2);
 
         var partySpawns = party
-            .Select((_, index) => new GridPosition(1, index + 1))
+            .Select((_, index) => new GridPosition(MarginSquares, top + index))
             .ToArray();
         var monsterSpawns = built.Monsters
-            .Select((_, index) => new GridPosition(1 + separation, index + 1))
+            .Select((_, index) => new GridPosition(MarginSquares + separation, top + index))
             .ToArray();
 
         var battlefield = TerrainGenerator.Generate(
