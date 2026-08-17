@@ -138,6 +138,7 @@ public sealed class SpriteLibrary
         ["Giant Wolf Spider"] = "Giant_Wolf_Spider",
         ["Berserker"] = "Berserker",
         ["Animated Armor"] = "Animated_Armor",
+        ["Awakened Tree"] = "Awakened_Tree",
 
         // One drawing for both printed bugbears. A Bugbear Stalker is a bugbear, and the
         // alternative is leaving it a lettered circle beside a Warrior that has a body —
