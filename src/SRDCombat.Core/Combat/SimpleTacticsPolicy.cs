@@ -93,8 +93,20 @@ public static class SimpleTacticsPolicy
             return;
         }
 
-        // Attack from where we stand if anything reaches.
-        if (TryAttack(encounter, actor, target))
+        // Attack from where we stand if anything reaches — unless standing still is
+        // costing us the better weapon.
+        //
+        // "Anything reaches" was the whole test for as long as a melee character owned
+        // only melee attacks: nothing reached, so it moved. Equip the printed starting
+        // kits and it inverts. A Fighter's Javelin reaches 120 feet, so *something*
+        // always reaches from the spawn square, and the front line spent whole fights
+        // lobbing its weakest attack at long range instead of walking in behind a
+        // Greataxe. Measured on the pregens: full clears fell from 38 of 120 to 2.
+        //
+        // Falling through to the walk loses nothing when closing turns out to be
+        // impossible: the code below re-targets and attacks from wherever the move
+        // ended, which is the same throw from a nearer square.
+        if (!WouldRatherClose(actor, target) && TryAttack(encounter, actor, target))
         {
             SpendRemainingAttacks(encounter, actor);
             encounter.EndTurn();
@@ -885,6 +897,40 @@ public static class SimpleTacticsPolicy
             .FirstOrDefault();
     }
 
+    /// <summary>
+    /// Whether the actor would do better walking in than swinging from here: it owns a
+    /// harder-hitting attack than anything that reaches at this distance, and it still
+    /// has the movement to go and use it.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately compares only average damage, the same figure <see cref="TryAttack"/>
+    /// sorts on, so the two agree about which attack is "better". A tie keeps the
+    /// creature where it stands, which is what leaves a genuine archer shooting: the
+    /// Rogue's Shortsword and Shortbow average the same, so she never closes for the
+    /// blade.
+    /// </remarks>
+    private static bool WouldRatherClose(Combatant actor, Combatant target)
+    {
+        if (actor.Turn.MovementFeet <= 0)
+        {
+            return false;
+        }
+
+        var distance = actor.Position.DistanceFeetTo(target.Position);
+
+        var usable = actor.Stats.Attacks
+            .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
+            .Where(attack => actor.Uses.IsAvailable(attack.Name))
+            .ToArray();
+
+        static double Hardest(IEnumerable<CombatAttack> attacks) => attacks
+            .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return Hardest(usable) > Hardest(usable.Where(attack => attack.CanReach(distance)));
+    }
+
     /// <summary>Attacks with the hardest-hitting attack that can reach the target.</summary>
     private static bool TryAttack(Encounter encounter, Combatant actor, Combatant target)
     {
@@ -1231,8 +1277,27 @@ public static class SimpleTacticsPolicy
             .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
             .ToArray();
 
+        // The reach of the attack this creature would actually *make*, not the longest
+        // one it owns — ordered exactly as TryAttack orders them, hardest-hitting first,
+        // so the walk plans to arrive where the swing it intends can land.
+        //
+        // Taking the maximum instead was a latent bug for as long as no melee character
+        // carried a thrown weapon, and it surfaced the moment the pregens were equipped
+        // from the printed starting kits (a Fighter's Javelins, a Barbarian's Handaxes).
+        // A Javelin reaches 120 feet at long range and the sides start 30 apart, so
+        // every front-liner counted itself "already in reach" from its spawn square,
+        // never closed, and spent the fight lobbing 1d6+3 at Disadvantage instead of
+        // walking in behind a Greataxe. Measured: full clears fell from 38 of 120 to 2.
+        //
+        // Ties break toward the longer reach, which keeps a genuine archer at range —
+        // the Rogue's Shortsword and Shortbow average the same, and she should still
+        // shoot.
         return usable.Length > 0
-            ? usable.Max(attack => attack.MaximumRangeFeet)
+            ? usable
+                .OrderByDescending(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+                .ThenByDescending(attack => attack.MaximumRangeFeet)
+                .First()
+                .MaximumRangeFeet
             : MovementRules.MeleeReachFeet(actor);
     }
 
