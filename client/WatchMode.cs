@@ -99,6 +99,13 @@ public partial class WatchMode : FightScreen
             QueueRedraw();
         }
 
+        // The camera glides after the fight, playing or paused alike — a scrubbed-to
+        // moment is still framed like one.
+        if (AdvanceCamera(delta))
+        {
+            QueueRedraw();
+        }
+
         if (!_playing || _index >= _snapshots.Count - 1 || ActInProgress)
         {
             return;
@@ -123,6 +130,13 @@ public partial class WatchMode : FightScreen
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        // The mouse is the camera's here — this screen is read-only, so a wheel or a
+        // middle-drag is the only thing a mouse can mean.
+        if (HandleCameraInput(@event))
+        {
+            return;
+        }
+
         if (@event is not InputEventKey { Pressed: true } key)
         {
             return;
@@ -176,13 +190,15 @@ public partial class WatchMode : FightScreen
 
         var snapshot = _snapshots[_index];
 
-        DrawChrome(
-            _subtitle,
-            $"round {snapshot.Round}   turn {_index} of {_snapshots.Count - 1}   " +
-            (_playing ? "playing" : "paused") + "   [space] play/pause  [←/→] step  [esc] quit");
-
+        // The field first, floor to ceiling; the heading and panel float over it.
+        DrawBackdrop();
         DrawGrid();
         DrawTokens(WithWalk(snapshot.Tokens), snapshot.ActiveId);
+        DrawHeading(
+            _subtitle,
+            $"round {snapshot.Round}   turn {_index} of {_snapshots.Count - 1}   " +
+            (_playing ? "playing" : "paused")
+            + "   [space] play/pause  [←/→] step  [wheel/middle-drag] camera  [esc] quit");
         DrawTurnOrder(snapshot.Tokens, snapshot.ActiveId);
         DrawLog(_log, snapshot.LogCount, _snapshots[0].Tokens.Count);
     }

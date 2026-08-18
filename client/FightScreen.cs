@@ -19,35 +19,81 @@ namespace SRDCombat.Viewer;
 /// </remarks>
 public abstract partial class FightScreen : Node2D
 {
-    protected const int GridLeft = 24;
-    protected const int GridTop = 96;
+    /// <summary>Where the fixed chrome — headings, menus, interludes — starts.</summary>
+    protected const int UiLeft = 24;
+    protected const int UiTop = 96;
+
     protected const int PanelLeft = 1470;
     protected const int ScreenWidth = 1920;
     protected const int ScreenHeight = 1080;
     protected const double SecondsPerTurn = 0.6;
 
     /// <summary>
-    /// The room the board has. The square size is derived to fill it rather than fixed,
-    /// so a battlefield of any shape uses the whole area — and a future field wider than
-    /// today's nine squares shrinks its squares instead of growing into the side panel.
-    /// </summary>
-    private const int BoardWidth = 1500;
-    private const int BoardHeight = 864;
-
-    /// <summary>
-    /// Bounds on the derived square. The ceiling keeps a small skirmish from drawing
+    /// Bounds on the camera's square. The ceiling keeps a huddle of two from drawing
     /// squares so large the figures look like portraits; the floor keeps a huge field
-    /// legible rather than letting it vanish.
+    /// legible rather than letting it vanish. The manual ceiling is higher on purpose:
+    /// a player leaning in with the wheel has asked for portraits.
     /// </summary>
-    private const int LargestCell = 72;
+    private const int LargestCell = 128;
     private const int SmallestCell = 24;
+    private const int LargestManualCell = 160;
 
     /// <summary>
-    /// The board square, in pixels. Set from the battlefield's shape, so it is only
-    /// meaningful once a fight has been adopted; the default is what an empty screen
-    /// draws its (nonexistent) grid at.
+    /// The stage: the part of the window the camera composes for. The field itself runs
+    /// under every overlay — the panel, the heading, the play screen's bottom strip —
+    /// but the camera aims the fight at the ground between them, so what matters is
+    /// never parked under the log.
     /// </summary>
-    protected int CellPixels { get; private set; } = 48;
+    private const float StageLeft = 0;
+    private const float StageTop = 88;
+    private const float StageRight = PanelLeft - 16;
+    private const float StageBottom = ScreenHeight - 130;
+
+    /// <summary>Empty ground the camera keeps around the fight, in squares.</summary>
+    private const float CameraPaddingSquares = 2.5f;
+
+    /// <summary>How quickly the camera chases its aim, per second. Bigger is snappier.</summary>
+    private const double CameraChaseRate = 4;
+
+    /// <summary>How far the wheel steps the zoom per notch.</summary>
+    private const float WheelZoomFactor = 1.15f;
+
+    /// <summary>
+    /// The board square, in pixels — the camera's zoom, smoothed toward wherever
+    /// <see cref="AimCamera"/> last pointed it. Only meaningful once a fight has been
+    /// adopted; the default is what an empty screen draws its (nonexistent) grid at.
+    /// </summary>
+    protected float CellPixels { get; private set; } = 48;
+
+    /// <summary>The point of the field, in squares, sitting at the stage's centre.</summary>
+    private Vector2 _cameraCentre;
+
+    /// <summary>Where the camera is heading: centre and zoom, smoothed toward.</summary>
+    private Vector2 _cameraAim;
+    private float _cameraCellAim = 48;
+
+    /// <summary>
+    /// True while the player has the camera — a wheel zoom or a drag holds it until the
+    /// next act starts or the turn moves on, which is when the fight takes it back.
+    /// </summary>
+    private bool _cameraManual;
+
+    /// <summary>Whose turn it was when the player took the camera — a change hands it back.</summary>
+    private string? _manualForActiveId;
+
+    private bool _cameraDragging;
+    private Vector2 _dragLast;
+
+    /// <summary>The active combatant most recently drawn — who the camera leans toward.</summary>
+    private string? _lastActiveId;
+
+    /// <summary>
+    /// The board's top-left corner on screen, derived: the camera's centre sits at the
+    /// stage's centre, and everything else is measured off it. A property rather than a
+    /// stored number so no draw can read a stale origin.
+    /// </summary>
+    protected float GridLeft => ((StageLeft + StageRight) / 2f) - (_cameraCentre.X * CellPixels);
+    protected float GridTop => ((StageTop + StageBottom) / 2f) - (_cameraCentre.Y * CellPixels);
 
     protected static readonly Color Background = new("16161d");
     protected static readonly Color GridLine = new("2c2c38");
@@ -429,10 +475,254 @@ public abstract partial class FightScreen : Node2D
                 + (BlockedSquares.Count * 7)
                 + DifficultSquares.Count) % _sprites.Themes.Count];
 
-        CellPixels = Math.Clamp(
-            Math.Min(BoardWidth / Math.Max(1, GridWidth), BoardHeight / Math.Max(1, GridHeight)),
-            SmallestCell,
-            LargestCell);
+        // A fresh fight opens on the whole field, and the camera is handed back: the
+        // first frames then glide in toward wherever the combatants actually are.
+        _cameraCentre = new Vector2(GridWidth / 2f, GridHeight / 2f);
+        _cameraAim = _cameraCentre;
+        CellPixels = MathF.Min(FitFieldCell(), LargestCell);
+        _cameraCellAim = CellPixels;
+        _cameraManual = false;
+        _cameraDragging = false;
+    }
+
+    /// <summary>The square size at which the whole field just fits the stage.</summary>
+    private float FitFieldCell() => Math.Clamp(
+        MathF.Min(
+            (StageRight - StageLeft) / Math.Max(1, GridWidth),
+            (StageBottom - StageTop) / Math.Max(1, GridHeight)),
+        SmallestCell,
+        LargestManualCell);
+
+    /// <summary>
+    /// The automatic zoom's floor: the square size below which the field stops filling
+    /// the window. Vertically that is the whole window, because nothing veils the top
+    /// edge and a bare strip of void reads as a rendering bug; horizontally it is the
+    /// stage, because the ground the panel would need runs behind a veil that all but
+    /// hides it, and demanding the full width would push the floor past the point where
+    /// the fight's spread fits. The wheel may still go below this — a player asking to
+    /// see the whole field letterboxed has asked with their own hand.
+    /// </summary>
+    private float CoverCell() => Math.Clamp(
+        MathF.Max(
+            (StageRight - StageLeft) / Math.Max(1, GridWidth),
+            ScreenHeight / (float)Math.Max(1, GridHeight)),
+        SmallestCell,
+        LargestManualCell);
+
+    /// <summary>
+    /// Points the camera at the fight: zoomed to hold every living combatant with some
+    /// ground around them, centred on them, leaned toward whoever is acting.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Frame everyone, favour the actor.</b> The zoom is chosen first — the tightest
+    /// square size that still shows the whole spread of living combatants, capped so a
+    /// final duel does not become two portraits — and the centre starts on that spread.
+    /// Whatever slack the cap left between the spread and the screen's edges is then
+    /// spent leaning toward the active combatant, so the thing happening is nearest the
+    /// middle without anyone being pushed off.
+    /// </para>
+    /// <para>
+    /// A probe or capture run frames the whole field instead: a verification image must
+    /// show the same board every time, not wherever that seed's fight had drifted to.
+    /// The same framing serves an empty board and a fight with nobody left standing.
+    /// </para>
+    /// </remarks>
+    private void AimCamera()
+    {
+        if (_cameraManual || GridWidth == 0)
+        {
+            return;
+        }
+
+        var living = _lastShownTokens?.Where(token => !token.IsDead).ToList();
+
+        if (!_animateSprites || living is not { Count: > 0 })
+        {
+            _cameraAim = new Vector2(GridWidth / 2f, GridHeight / 2f);
+            _cameraCellAim = MathF.Min(FitFieldCell(), LargestCell);
+            return;
+        }
+
+        var minX = living.Min(token => token.X) + 0.5f - CameraPaddingSquares;
+        var maxX = living.Max(token => token.X) + 0.5f + CameraPaddingSquares;
+        var minY = living.Min(token => token.Y) + 0.5f - CameraPaddingSquares;
+        var maxY = living.Max(token => token.Y) + 0.5f + CameraPaddingSquares;
+
+        var floor = CoverCell();
+        var cell = Math.Clamp(
+            MathF.Min((StageRight - StageLeft) / (maxX - minX), (StageBottom - StageTop) / (maxY - minY)),
+            floor,
+            MathF.Max(LargestCell, floor));
+
+        var centre = new Vector2((minX + maxX) / 2f, (minY + maxY) / 2f);
+
+        if (_lastActiveId is { } activeId
+            && FindToken(living, activeId) is { } actor)
+        {
+            var slackX = MathF.Max(0, ((StageRight - StageLeft) / cell) - (maxX - minX)) / 2f;
+            var slackY = MathF.Max(0, ((StageBottom - StageTop) / cell) - (maxY - minY)) / 2f;
+
+            centre.X += Math.Clamp(actor.X + 0.5f - centre.X, -slackX, slackX);
+            centre.Y += Math.Clamp(actor.Y + 0.5f - centre.Y, -slackY, slackY);
+        }
+
+        _cameraAim = ClampToField(centre, cell);
+        _cameraCellAim = cell;
+    }
+
+    /// <summary>
+    /// Keeps the view on the field, in three tiers per axis: hold the whole window on
+    /// the field when the zoom allows it, settle for holding the stage on it, and
+    /// centre the field when even the stage outruns it — so the camera never wanders
+    /// into the void, and void only ever appears behind a veil or by the player's own
+    /// zoom-out.
+    /// </summary>
+    private Vector2 ClampToField(Vector2 centre, float cell) => new(
+        ClampAxis(centre.X, GridWidth, (StageLeft + StageRight) / 2f, StageLeft, StageRight, ScreenWidth, cell),
+        ClampAxis(centre.Y, GridHeight, (StageTop + StageBottom) / 2f, StageTop, StageBottom, ScreenHeight, cell));
+
+    private static float ClampAxis(
+        float centre,
+        int squares,
+        float stageCentre,
+        float stageLow,
+        float stageHigh,
+        float windowHigh,
+        float cell)
+    {
+        // The camera's centre maps to the stage's centre, so each bound solves "which
+        // centres keep that edge of the screen on the field" for the window's edges
+        // first (the window's low edge is 0), then the stage's.
+        var lowWindow = stageCentre / cell;
+        var highWindow = squares - ((windowHigh - stageCentre) / cell);
+
+        if (lowWindow <= highWindow)
+        {
+            return Math.Clamp(centre, lowWindow, highWindow);
+        }
+
+        var lowStage = (stageCentre - stageLow) / cell;
+        var highStage = squares - ((stageHigh - stageCentre) / cell);
+
+        return lowStage <= highStage
+            ? Math.Clamp(centre, lowStage, highStage)
+            : squares / 2f;
+    }
+
+    /// <summary>
+    /// Glides the camera toward its aim; true when it moved and the screen should
+    /// redraw. A probe or capture snaps instead, exactly like the walk hop: an image
+    /// read the instant after a click must not depend on when the frame was taken.
+    /// </summary>
+    protected bool AdvanceCamera(double delta)
+    {
+        // The player's hold on the camera ends when the turn moves on.
+        if (_cameraManual && _lastActiveId != _manualForActiveId)
+        {
+            _cameraManual = false;
+        }
+
+        AimCamera();
+
+        var centreGap = _cameraAim - _cameraCentre;
+        var cellGap = _cameraCellAim - CellPixels;
+
+        // Within a hundredth of a pixel of the aim: settled, and holding still.
+        if (centreGap.Length() * CellPixels < 0.01f && Math.Abs(cellGap) < 0.01f)
+        {
+            return false;
+        }
+
+        if (!_animateSprites)
+        {
+            _cameraCentre = _cameraAim;
+            CellPixels = _cameraCellAim;
+            return true;
+        }
+
+        var chase = (float)(1 - Math.Exp(-delta * CameraChaseRate));
+
+        _cameraCentre += centreGap * chase;
+        CellPixels += cellGap * chase;
+        return true;
+    }
+
+    /// <summary>
+    /// The player's hand on the camera: the wheel zooms about the pointer, a
+    /// middle-button drag pans. True when the event was the camera's, so the caller
+    /// stops routing it anywhere else; the hold lasts until the fight moves on, when
+    /// <see cref="AdvanceCamera"/> hands the camera back to the automatic framing.
+    /// </summary>
+    protected bool HandleCameraInput(InputEvent @event)
+    {
+        switch (@event)
+        {
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp, Pressed: true } wheelIn:
+                ZoomAt(wheelIn.Position, WheelZoomFactor);
+                return true;
+
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelDown, Pressed: true } wheelOut:
+                ZoomAt(wheelOut.Position, 1f / WheelZoomFactor);
+                return true;
+
+            case InputEventMouseButton { ButtonIndex: MouseButton.Middle } middle:
+                _cameraDragging = middle.Pressed;
+                _dragLast = middle.Position;
+
+                if (middle.Pressed)
+                {
+                    TakeCamera();
+                }
+
+                return true;
+
+            case InputEventMouseMotion motion when _cameraDragging:
+                _cameraCentre = ClampToField(_cameraCentre - ((motion.Position - _dragLast) / CellPixels), CellPixels);
+                _cameraAim = _cameraCentre;
+                _dragLast = motion.Position;
+                QueueRedraw();
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Zooms in place: the square under the pointer stays under the pointer, which is
+    /// what makes the wheel feel like leaning in rather than being teleported.
+    /// </summary>
+    private void ZoomAt(Vector2 pointer, float factor)
+    {
+        if (GridWidth == 0)
+        {
+            return;
+        }
+
+        TakeCamera();
+
+        var floor = MathF.Min(FitFieldCell(), LargestCell);
+        var cell = Math.Clamp(CellPixels * factor, floor, LargestManualCell);
+
+        // The point of the field under the pointer, before and after: solving for the
+        // centre that keeps them the same square.
+        var world = new Vector2((pointer.X - GridLeft) / CellPixels, (pointer.Y - GridTop) / CellPixels);
+
+        CellPixels = cell;
+        _cameraCellAim = cell;
+        _cameraCentre = ClampToField(
+            world + ((new Vector2((StageLeft + StageRight) / 2f, (StageTop + StageBottom) / 2f) - pointer) / cell),
+            cell);
+        _cameraAim = _cameraCentre;
+        QueueRedraw();
+    }
+
+    /// <summary>Marks the camera as the player's until this turn moves on.</summary>
+    private void TakeCamera()
+    {
+        _cameraManual = true;
+        _manualForActiveId = _lastActiveId;
     }
 
     protected static Token TokenFrom(Combatant combatant, Labels labels) => new(
@@ -891,6 +1181,9 @@ public abstract partial class FightScreen : Node2D
 
         _playing = starting;
 
+        // Something is happening: the fight takes the camera back to show it.
+        _cameraManual = false;
+
         // Everything before this act's own line has already happened on screen, so it
         // can be read; the act's own line is the one being held for its last frame.
         RevealedLogCount = Math.Max(RevealedLogCount, starting.Step);
@@ -968,10 +1261,33 @@ public abstract partial class FightScreen : Node2D
 
     protected void DrawChrome(string subtitle, string statusLine)
     {
-        DrawRect(new Rect2(0, 0, ScreenWidth, ScreenHeight), Background);
-        DrawString(TextFont, new Vector2(GridLeft, 34), Title, fontSize: 20, modulate: Ink);
-        DrawString(TextFont, new Vector2(GridLeft, 58), subtitle, fontSize: 13, modulate: Dim);
-        DrawString(TextFont, new Vector2(GridLeft, 78), statusLine, fontSize: 12, modulate: Dim);
+        DrawBackdrop();
+        DrawHeading(subtitle, statusLine);
+    }
+
+    /// <summary>The screen's clear colour. First, under everything.</summary>
+    protected void DrawBackdrop() => DrawRect(new Rect2(0, 0, ScreenWidth, ScreenHeight), Background);
+
+    /// <summary>The translucent wash the overlays share, so the field reads underneath.</summary>
+    protected static readonly Color Veil = new(Background.R, Background.G, Background.B, 0.85f);
+
+    /// <summary>
+    /// The heading, floating over the field's top-left corner. Its backdrop is measured
+    /// to its own text rather than a fixed strip, so it covers no more ground than the
+    /// words need — the field runs everywhere now, and every covered pixel is paid for.
+    /// </summary>
+    protected void DrawHeading(string subtitle, string statusLine)
+    {
+        var width = MathF.Max(
+            TextFont.GetStringSize(Title, fontSize: 20).X,
+            MathF.Max(
+                TextFont.GetStringSize(subtitle, fontSize: 13).X,
+                TextFont.GetStringSize(statusLine, fontSize: 12).X)) + 32;
+
+        DrawRect(new Rect2(8, 8, width, 80), Veil);
+        DrawString(TextFont, new Vector2(UiLeft, 34), Title, fontSize: 20, modulate: Ink);
+        DrawString(TextFont, new Vector2(UiLeft, 58), subtitle, fontSize: 13, modulate: Dim);
+        DrawString(TextFont, new Vector2(UiLeft, 78), statusLine, fontSize: 12, modulate: Dim);
     }
 
     /// <summary>
@@ -1002,6 +1318,14 @@ public abstract partial class FightScreen : Node2D
             for (var y = 0; y < GridHeight; y++)
             {
                 var square = new Rect2(GridLeft + (x * CellPixels), GridTop + (y * CellPixels), CellPixels, CellPixels);
+
+                // Zoomed in, most of the field is off screen; skip what nobody can see.
+                if (square.End.X < 0 || square.End.Y < 0
+                    || square.Position.X > ScreenWidth || square.Position.Y > ScreenHeight)
+                {
+                    continue;
+                }
+
                 var position = new GridPosition(x, y);
                 var blocked = BlockedSquares.Contains(position);
                 var low = LowObstacleSquares.Contains(position);
@@ -1155,7 +1479,10 @@ public abstract partial class FightScreen : Node2D
     {
         // What the board shows is what a hold captures: the next blow's victim must be
         // rolled back to how it *looked*, and how it looked is this list, exactly.
+        // The camera reads the same record — the fight as drawn, walker mid-hop
+        // included, is exactly what it should be framing.
         _lastShownTokens = tokens;
+        _lastActiveId = activeId;
 
         // Depth first: a token further down the board draws over one further up.
         //
@@ -1493,11 +1820,11 @@ public abstract partial class FightScreen : Node2D
         // does not take it back.
         DrawRect(
             new Rect2(PanelLeft - 16, 8, ScreenWidth - PanelLeft + 8, ScreenHeight - 16),
-            new Color(Background.R, Background.G, Background.B, 0.85f));
+            Veil);
 
-        DrawString(TextFont, new Vector2(PanelLeft, GridTop - 8), "INITIATIVE", fontSize: 12, modulate: Dim);
+        DrawString(TextFont, new Vector2(PanelLeft, UiTop - 8), "INITIATIVE", fontSize: 12, modulate: Dim);
 
-        var y = GridTop + 16;
+        var y = UiTop + 16;
 
         foreach (var token in tokens)
         {
@@ -1522,7 +1849,7 @@ public abstract partial class FightScreen : Node2D
 
     protected void DrawLog(IReadOnlyList<CombatStep> log, int count, int tokenCount)
     {
-        var top = GridTop + 16 + (tokenCount * 19) + 26;
+        var top = UiTop + 16 + (tokenCount * 19) + 26;
 
         DrawString(TextFont, new Vector2(PanelLeft, top - 12), "COMBAT LOG", fontSize: 12, modulate: Dim);
 

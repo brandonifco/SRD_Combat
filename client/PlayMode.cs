@@ -178,10 +178,17 @@ public partial class PlayMode : FightScreen
 
     protected override string Title => "SRD_Combat — playing";
 
-    /// <summary>Baseline of the active-combatant banner, directly under the grid.</summary>
-    private float BannerTop => GridTop + (GridHeight * CellPixels) + 20f;
+    /// <summary>
+    /// Baseline of the active-combatant banner. A fixed strip at the window's bottom
+    /// rather than a line under the grid: the field fills the whole window now, so the
+    /// banner, the buttons and the notice float over it on the shared veil.
+    /// </summary>
+    private const float BannerTop = ScreenHeight - 118f;
 
-    private float ButtonRowTop => BannerTop + 42f;
+    private const float ButtonRowTop = BannerTop + 42f;
+
+    /// <summary>The translucent strip the banner, buttons and notice sit on.</summary>
+    private static readonly Rect2 BottomStrip = new(8, BannerTop - 26, PanelLeft - 40, ScreenHeight - (BannerTop - 26) - 8);
 
     /// <summary>
     /// How wide a shop row is. Generous on purpose: an offer's effect line names both
@@ -500,7 +507,7 @@ public partial class PlayMode : FightScreen
         // the screen allows, so the rows under it are down to a strict budget, and a
         // fullscreen width holds every button a turn can offer side by side with room
         // to spare.
-        var x = (float)GridLeft;
+        var x = (float)UiLeft;
 
         foreach (var action in TurnOptions.For(encounter, active))
         {
@@ -775,6 +782,12 @@ public partial class PlayMode : FightScreen
             QueueRedraw();
         }
 
+        // The camera glides after whatever the board is doing, never gating it.
+        if (AdvanceCamera(delta))
+        {
+            QueueRedraw();
+        }
+
         if (ActInProgress)
         {
             return;
@@ -959,6 +972,13 @@ public partial class PlayMode : FightScreen
                     return;
                 }
             }
+        }
+
+        // The camera's inputs — wheel zoom, middle-drag pan — are nobody else's, so
+        // they are settled before the hover clock or a click can misread them.
+        if (_phase == Phase.Fighting && HandleCameraInput(@event))
+        {
+            return;
         }
 
         if (@event is InputEventMouseMotion motion)
@@ -1170,10 +1190,12 @@ public partial class PlayMode : FightScreen
 
         // An armed click resolves first: the next token is the target, anywhere else
         // backs out. Cancelling must never cost anything, so nothing is spent until the
-        // engine call itself.
+        // engine call itself. A click on an overlay is "anywhere else" — the field runs
+        // under the log now, and a cancel aimed at the panel must not land on whatever
+        // square happens to sit beneath it.
         if (_pending != Pending.Nothing)
         {
-            ActivateSquare(SquareAt(pixel));
+            ActivateSquare(OverOverlay(pixel) ? null : SquareAt(pixel));
             return;
         }
 
@@ -1233,8 +1255,20 @@ public partial class PlayMode : FightScreen
             return;
         }
 
+        if (OverOverlay(pixel))
+        {
+            return;
+        }
+
         ActivateSquare(SquareAt(pixel));
     }
+
+    /// <summary>
+    /// Whether a pixel sits on the fixed chrome — the initiative-and-log panel or the
+    /// banner strip — where a click means the chrome, never the square underneath it.
+    /// </summary>
+    private static bool OverOverlay(Vector2 pixel) =>
+        pixel.X >= PanelLeft - 16 || BottomStrip.HasPoint(pixel);
 
     /// <summary>
     /// Acts on one square, whether a mouse clicked it or the keyboard's cursor sat on
@@ -1481,7 +1515,8 @@ public partial class PlayMode : FightScreen
         var active = encounter.ActiveCombatant;
         var commanded = CommandedCombatant();
 
-        DrawChrome(_subtitle, StatusLine(commanded));
+        // The field first, floor to ceiling; every piece of chrome floats over it.
+        DrawBackdrop();
         DrawGrid();
 
         // Advice under the tokens: where a walk could end, and who a click would attack.
@@ -1531,8 +1566,15 @@ public partial class PlayMode : FightScreen
         }
 
         DrawTokens(tokens, active?.Id);
+        DrawHeading(_subtitle, StatusLine(commanded));
         DrawTurnOrder(tokens, active?.Id);
         DrawLog(encounter.Log, encounter.Log.Count, tokens.Count);
+
+        // The bottom strip's own veil, before anything is written on it.
+        if (active is not null || commanded is not null || _notice is not null)
+        {
+            DrawRect(BottomStrip, Veil);
+        }
 
         // Who is up, and with what — class and level for a character, AC, hit points,
         // and the attacks they carry. TurnBanner composes it so the console client and
@@ -1544,7 +1586,7 @@ public partial class PlayMode : FightScreen
 
             DrawString(
                 TextFont,
-                new Vector2(GridLeft, BannerTop),
+                new Vector2(UiLeft, BannerTop),
                 Trim($"{_labels.Of(upNow)}  {lines[0]}", 90),
                 fontSize: 13,
                 modulate: colour);
@@ -1553,7 +1595,7 @@ public partial class PlayMode : FightScreen
             {
                 DrawString(
                     TextFont,
-                    new Vector2(GridLeft, BannerTop + 18),
+                    new Vector2(UiLeft, BannerTop + 18),
                     Trim(lines[1], 95),
                     fontSize: 12,
                     modulate: Dim);
@@ -1576,7 +1618,7 @@ public partial class PlayMode : FightScreen
 
             DrawString(
                 TextFont,
-                new Vector2(GridLeft, ButtonRowTop + 28 + 16),
+                new Vector2(UiLeft, ButtonRowTop + 28 + 16),
                 ResourceLine(character),
                 fontSize: 12,
                 modulate: Dim);
@@ -1590,7 +1632,7 @@ public partial class PlayMode : FightScreen
         {
             DrawString(
                 TextFont,
-                new Vector2(GridLeft, ButtonRowTop + 28 + 38),
+                new Vector2(UiLeft, ButtonRowTop + 28 + 38),
                 Trim(notice, 78),
                 fontSize: 13,
                 modulate: MonsterColour);
@@ -1678,10 +1720,12 @@ public partial class PlayMode : FightScreen
             _ => won ? "Every enemy is down." : "The party has fallen.",
         };
 
+        // Centred on the window, not the field: the camera may have carried the field
+        // anywhere, and the card is being said to the player, not to a square.
         const int width = 460;
         const int height = 132;
-        var left = GridLeft + ((GridWidth * CellPixels) - width) / 2f;
-        var top = GridTop + ((GridHeight * CellPixels) - height) / 2f;
+        var left = (ScreenWidth - width) / 2f;
+        var top = (ScreenHeight - height) / 2f;
         var card = new Rect2(left, top, width, height);
 
         DrawRect(card, Background);
@@ -1713,7 +1757,7 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        var y = GridTop + 8f;
+        var y = UiTop + 8f;
 
         foreach (var line in _interlude)
         {
@@ -1723,13 +1767,13 @@ public partial class PlayMode : FightScreen
                 continue;
             }
 
-            DrawString(TextFont, new Vector2(GridLeft, y), Trim(line, 100), fontSize: 14, modulate: Ink);
+            DrawString(TextFont, new Vector2(UiLeft, y), Trim(line, 100), fontSize: 14, modulate: Ink);
             y += 22;
         }
 
         if (_phase == Phase.Interlude)
         {
-            _continueButton = new Rect2(GridLeft, y + 16, 110, 32);
+            _continueButton = new Rect2(UiLeft, y + 16, 110, 32);
 
             DrawRect(_continueButton, GridLine);
             DrawRect(_continueButton, Dim, filled: false, width: 1);
@@ -1742,7 +1786,7 @@ public partial class PlayMode : FightScreen
 
             if (_shopAvailable)
             {
-                _shopButton = new Rect2(GridLeft + 126, y + 16, 110, 32);
+                _shopButton = new Rect2(UiLeft + 126, y + 16, 110, 32);
 
                 DrawRect(_shopButton, GridLine);
                 DrawRect(_shopButton, Dim, filled: false, width: 1);
@@ -1766,11 +1810,11 @@ public partial class PlayMode : FightScreen
         _shopRows.Clear();
 
         var offers = Shop.Offers(_content!, run.Party, run.States);
-        var y = GridTop + 8f;
+        var y = UiTop + 8f;
 
         DrawString(
             TextFont,
-            new Vector2(GridLeft, y),
+            new Vector2(UiLeft, y),
             $"A merchant is here. The purse holds {Shop.Price(run.GoldCopper)}. Click to buy.",
             fontSize: 14,
             modulate: Ink);
@@ -1781,7 +1825,7 @@ public partial class PlayMode : FightScreen
         {
             DrawString(
                 TextFont,
-                new Vector2(GridLeft, y),
+                new Vector2(UiLeft, y),
                 "Nothing here would improve anybody.",
                 fontSize: 13,
                 modulate: Dim);
@@ -1795,7 +1839,7 @@ public partial class PlayMode : FightScreen
             // rules, and rules are never this client's to compute.
             var effects = offer.Effect.Lines;
             var affordable = offer.CostCopper <= run.GoldCopper;
-            var rect = new Rect2(GridLeft, y, ShopRowWidth, 19 + (effects.Count * 15));
+            var rect = new Rect2(UiLeft, y, ShopRowWidth, 19 + (effects.Count * 15));
 
             _shopRows.Add((rect, offer));
 
@@ -1826,11 +1870,11 @@ public partial class PlayMode : FightScreen
         if (_shopNotice is { } notice)
         {
             y += 6;
-            DrawString(TextFont, new Vector2(GridLeft, y + 12), Trim(notice, 78), fontSize: 13, modulate: MonsterColour);
+            DrawString(TextFont, new Vector2(UiLeft, y + 12), Trim(notice, 78), fontSize: 13, modulate: MonsterColour);
             y += 18;
         }
 
-        _shopBackButton = new Rect2(GridLeft, y + 12, 110, 32);
+        _shopBackButton = new Rect2(UiLeft, y + 12, 110, 32);
 
         DrawRect(_shopBackButton, GridLine);
         DrawRect(_shopBackButton, Dim, filled: false, width: 1);
@@ -1898,13 +1942,13 @@ public partial class PlayMode : FightScreen
         // Over the board, as an overlay. These lists used to live under the second
         // button row; fullscreen gave that ground to the board, and every row below
         // already paints its own filled backdrop, so only the header needs one.
-        var top = GridTop + 28;
+        var top = UiTop + 28;
 
         DrawRect(
-            new Rect2(GridLeft - 8, top - 24, 470, 30),
+            new Rect2(UiLeft - 8, top - 24, 470, 30),
             new Color(Background.R, Background.G, Background.B, 0.9f));
 
-        DrawString(TextFont, new Vector2(GridLeft, top - 6), "SPELLS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
+        DrawString(TextFont, new Vector2(UiLeft, top - 6), "SPELLS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
 
         var y = top + 6;
 
@@ -1918,7 +1962,7 @@ public partial class PlayMode : FightScreen
 
         foreach (var spell in castable)
         {
-            var rect = new Rect2(GridLeft, y, 260, 20);
+            var rect = new Rect2(UiLeft, y, 260, 20);
             _spellRows.Add((rect, spell));
 
             DrawRect(rect, GridLine);
@@ -1951,19 +1995,19 @@ public partial class PlayMode : FightScreen
         // Over the board, as an overlay. These lists used to live under the second
         // button row; fullscreen gave that ground to the board, and every row below
         // already paints its own filled backdrop, so only the header needs one.
-        var top = GridTop + 28;
+        var top = UiTop + 28;
 
         DrawRect(
-            new Rect2(GridLeft - 8, top - 24, 470, 30),
+            new Rect2(UiLeft - 8, top - 24, 470, 30),
             new Color(Background.R, Background.G, Background.B, 0.9f));
 
-        DrawString(TextFont, new Vector2(GridLeft, top - 6), "ATTACKS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
+        DrawString(TextFont, new Vector2(UiLeft, top - 6), "ATTACKS — click one, or arrows and Enter", fontSize: 12, modulate: Dim);
 
         var y = top + 6;
 
         foreach (var attack in character.Stats.Attacks)
         {
-            var rect = new Rect2(GridLeft, y, 300, 20);
+            var rect = new Rect2(UiLeft, y, 300, 20);
             _attackRows.Add((rect, attack));
 
             if (_attackRows.Count - 1 == _menuIndex)
@@ -2013,15 +2057,15 @@ public partial class PlayMode : FightScreen
         // Over the board, as an overlay. These lists used to live under the second
         // button row; fullscreen gave that ground to the board, and every row below
         // already paints its own filled backdrop, so only the header needs one.
-        var top = GridTop + 28;
+        var top = UiTop + 28;
 
         DrawRect(
-            new Rect2(GridLeft - 8, top - 24, 470, 30),
+            new Rect2(UiLeft - 8, top - 24, 470, 30),
             new Color(Background.R, Background.G, Background.B, 0.9f));
 
         DrawString(
             TextFont,
-            new Vector2(GridLeft, top - 6),
+            new Vector2(UiLeft, top - 6),
             $"SLOT for {spell.Name} — click a level, or arrows and Enter",
             fontSize: 12,
             modulate: Dim);
@@ -2030,7 +2074,7 @@ public partial class PlayMode : FightScreen
 
         foreach (var level in SlotLevelsFor(character, spell))
         {
-            var rect = new Rect2(GridLeft, y, 260, 20);
+            var rect = new Rect2(UiLeft, y, 260, 20);
             _slotRows.Add((rect, level));
 
             if (_slotRows.Count - 1 == _menuIndex)
