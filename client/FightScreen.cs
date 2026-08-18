@@ -572,15 +572,27 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>
-    /// Keeps the view on the field, in three tiers per axis: hold the whole window on
-    /// the field when the zoom allows it, settle for holding the stage on it, and
-    /// centre the field when even the stage outruns it — so the camera never wanders
-    /// into the void, and void only ever appears behind a veil or by the player's own
-    /// zoom-out.
+    /// Keeps the view near the field: the stage may overscan each field edge by
+    /// <see cref="CameraOverscanSquares"/>, and a zoom the whole field cannot even
+    /// reach at that allowance is centred instead.
     /// </summary>
+    /// <remarks>
+    /// The first version held the whole window on the field, and it was measurably
+    /// wrong the first time a fight reached an edge: at the zoom floor that clamp pins
+    /// the centre outright, so the camera stopped following and the edge rows played
+    /// out underneath the banner strip — reported from play on 2026-08-18. The
+    /// overscan is against the <i>stage</i> rather than the window because the stage
+    /// already encodes every obstruction: a row on the field's bottom edge stops a
+    /// full square clear of the buttons, and the last column stops clear of the log.
+    /// The cost is a band of void beyond the edge when the fight is pressed against
+    /// it, and that is the right trade — void obstructs nothing.
+    /// </remarks>
     private Vector2 ClampToField(Vector2 centre, float cell) => new(
-        ClampAxis(centre.X, GridWidth, (StageLeft + StageRight) / 2f, StageLeft, StageRight, ScreenWidth, cell),
-        ClampAxis(centre.Y, GridHeight, (StageTop + StageBottom) / 2f, StageTop, StageBottom, ScreenHeight, cell));
+        ClampAxis(centre.X, GridWidth, (StageLeft + StageRight) / 2f, StageLeft, StageRight, cell),
+        ClampAxis(centre.Y, GridHeight, (StageTop + StageBottom) / 2f, StageTop, StageBottom, cell));
+
+    /// <summary>How far past a field edge the stage may scroll, in squares.</summary>
+    private const float CameraOverscanSquares = 1f;
 
     private static float ClampAxis(
         float centre,
@@ -588,25 +600,15 @@ public abstract partial class FightScreen : Node2D
         float stageCentre,
         float stageLow,
         float stageHigh,
-        float windowHigh,
         float cell)
     {
         // The camera's centre maps to the stage's centre, so each bound solves "which
-        // centres keep that edge of the screen on the field" for the window's edges
-        // first (the window's low edge is 0), then the stage's.
-        var lowWindow = stageCentre / cell;
-        var highWindow = squares - ((windowHigh - stageCentre) / cell);
+        // centres keep this stage edge within a square of the field edge".
+        var low = ((stageCentre - stageLow) / cell) - CameraOverscanSquares;
+        var high = squares + CameraOverscanSquares - ((stageHigh - stageCentre) / cell);
 
-        if (lowWindow <= highWindow)
-        {
-            return Math.Clamp(centre, lowWindow, highWindow);
-        }
-
-        var lowStage = (stageCentre - stageLow) / cell;
-        var highStage = squares - ((stageHigh - stageCentre) / cell);
-
-        return lowStage <= highStage
-            ? Math.Clamp(centre, lowStage, highStage)
+        return low <= high
+            ? Math.Clamp(centre, low, high)
             : squares / 2f;
     }
 
