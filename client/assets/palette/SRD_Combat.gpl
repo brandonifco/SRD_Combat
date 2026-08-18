@@ -1,0 +1,61 @@
+GIMP Palette
+Name: SRD Combat Master
+Columns: 4
+# Master palette for SRD_Combat sprite art, 64px nominal stature.
+# Built to sit beside the installed packs: body midtones V 0.25-0.50 / S 0.30-0.50,
+# hue-shifted ramps (shadows cool, lights warm), outlines hue-tinted near-black,
+# highlights V 0.85+ reserved for focal edges. Each row of 4 is one material ramp,
+# shadow -> light. Pick 3-4 ramps + 1 accent per sprite (12-20 colors); the whole
+# palette is a menu, not a per-sprite budget.
+ 23  17  28	outline-violet
+ 32  22  32	outline-plum
+ 28  23  18	outline-warm
+ 16  24  32	outline-cool
+ 92  58  65	skin-shadow
+138  90  78	skin-dark
+198 138 109	skin-mid
+232 183 150	skin-light
+ 46  64  50	greenskin-shadow
+ 74  99  57	greenskin-dark
+111 140  68	greenskin-mid
+163 180  94	greenskin-light
+ 58  42  36	leather-shadow
+ 91  65  48	leather-dark
+125  90  58	leather-mid
+163 128  90	leather-light
+ 46  49  64	steel-shadow
+ 74  79  99	steel-dark
+111 120 144	steel-mid
+167 176 194	steel-light
+ 74  32  40	redcloth-shadow
+115  46  51	redcloth-dark
+160  68  64	redcloth-mid
+201 107  80	redcloth-light
+ 35  44  74	bluecloth-shadow
+ 50  69 110	bluecloth-dark
+ 74 100 148	bluecloth-mid
+111 143 189	bluecloth-light
+ 51  36  74	purple-shadow
+ 76  54 112	purple-dark
+109  79 150	purple-mid
+150 115 184	purple-light
+110  74  30	gold-shadow
+156 111  36	gold-dark
+207 158  50	gold-mid
+242 207  94	gold-light
+ 48  42  52	fur-shadow
+ 80  70  78	fur-dark
+118 105 106	fur-mid
+156 144 138	fur-light
+ 87  80  63	bone-shadow
+133 123  94	bone-dark
+179 167 128	bone-mid
+221 211 172	bone-light
+232 100  31	accent-fire
+124 200  50	accent-toxic
+ 62 207 207	accent-arcane
+217  43  43	accent-blood
+245 239 224	highlight-warm
+233 240 247	highlight-cool
+255 246 216	highlight-hot
+ 22  22  29	board-background-ref
