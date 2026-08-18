@@ -447,7 +447,11 @@ its base colour.
 camera's zoom, glided each frame toward framing every living combatant with padding and
 a lean toward the actor — zooming in as the fight clumps, out as it spreads, never past
 filling the window, so the visible field is a moving window onto the whole one rather
-than the whole one letterboxed. Every other element — heading, initiative, log, banner,
+than the whole one letterboxed. The view may overscan a field edge by one square past
+the *stage* (the ground between the overlays) — the first clamp held the whole window
+on the field, and the first fight to reach an edge played out underneath the banner
+strip because at the zoom floor that clamp pins the camera still; a band of void
+beyond the edge obstructs nothing, which is the trade. Every other element — heading, initiative, log, banner,
 buttons — floats over the field on the shared translucent `Veil`, board space is told
 from UI space by `GridLeft`/`GridTop` (derived from the camera) versus `UiLeft`/`UiTop`
 (fixed), and a click on an overlay never reaches the square underneath it
