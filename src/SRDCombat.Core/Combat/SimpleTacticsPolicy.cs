@@ -903,11 +903,13 @@ public static class SimpleTacticsPolicy
     /// has the movement to go and use it.
     /// </summary>
     /// <remarks>
-    /// Deliberately compares only average damage, the same figure <see cref="TryAttack"/>
-    /// sorts on, so the two agree about which attack is "better". A tie keeps the
-    /// creature where it stands, which is what leaves a genuine archer shooting: the
-    /// Rogue's Shortsword and Shortbow average the same, so she never closes for the
-    /// blade.
+    /// Deliberately compares the same figure <see cref="TryAttack"/> sorts on —
+    /// <see cref="ValueAt"/> — so the two agree about which attack is "better". The
+    /// unreaching side is valued raw, because closing is exactly what removes the
+    /// distance the discount prices. A tie keeps the creature where it stands, which is
+    /// what leaves a genuine archer shooting: the Rogue's Shortsword and Shortbow
+    /// average the same, so she never closes for the blade — while an archer beyond
+    /// normal range does close, since her own bow is worth more from nearer in.
     /// </remarks>
     private static bool WouldRatherClose(Combatant actor, Combatant target)
     {
@@ -923,15 +925,44 @@ public static class SimpleTacticsPolicy
             .Where(attack => actor.Uses.IsAvailable(attack.Name))
             .ToArray();
 
-        static double Hardest(IEnumerable<CombatAttack> attacks) => attacks
+        var hardest = usable
             .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
             .DefaultIfEmpty(0)
             .Max();
 
-        return Hardest(usable) > Hardest(usable.Where(attack => attack.CanReach(distance)));
+        var reaching = usable
+            .Where(attack => attack.CanReach(distance))
+            .Select(attack => ValueAt(attack, distance))
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return hardest > reaching;
     }
 
-    /// <summary>Attacks with the hardest-hitting attack that can reach the target.</summary>
+    /// <summary>
+    /// What an attack is worth at this distance: its average damage, halved when the
+    /// roll would be at long range.
+    /// </summary>
+    /// <remarks>
+    /// The halving is a stated crude constant, like the hold's two held rounds: long
+    /// range imposes Disadvantage, rolling twice and taking the worse roughly squares
+    /// a typical hit chance, and half is close enough for ranking attacks against each
+    /// other. It is what stops a Barbarian lobbing a Handaxe 40 feet at Disadvantage
+    /// when walking in behind the Greataxe pays better — and it is a preference, never
+    /// a veto: with no movement left or nothing better owned, the long throw is still
+    /// taken.
+    /// </remarks>
+    private static double ValueAt(CombatAttack attack, int distanceFeet)
+    {
+        var average = attack.Damage.Sum(damage => damage.Amount.Average);
+
+        return attack.IsAtLongRange(distanceFeet) ? average / 2 : average;
+    }
+
+    /// <summary>
+    /// Attacks with the most valuable attack that can reach the target — average
+    /// damage, discounted at long range per <see cref="ValueAt"/>.
+    /// </summary>
     private static bool TryAttack(Encounter encounter, Combatant actor, Combatant target)
     {
         if (!actor.Turn.HasAction && actor.Features.AttacksRemainingThisAction <= 0)
@@ -947,7 +978,7 @@ public static class SimpleTacticsPolicy
             // A spent "(Recharge 5-6)" attack would be refused, and the refusal would
             // abort the whole attack loop — filter it out so the next-best attack swings.
             .Where(candidate => actor.Uses.IsAvailable(candidate.Name))
-            .OrderByDescending(candidate => candidate.Damage.Sum(damage => damage.Amount.Average))
+            .OrderByDescending(candidate => ValueAt(candidate, distance))
             .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
             .FirstOrDefault();
 
