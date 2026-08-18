@@ -42,7 +42,20 @@ On your turn:
 | **Enter** | take the highlighted menu row, or act on the cursor's square — the same thing a click would do |
 | **a letter** | the action whose button shows it: `D` Dodge, `R` Dash, `G` Disengage, `U` Stand Up, `E` Escape, `A` Attack, `C` Cast, `Q` Drink, `P` Give Potion, `W` Second Wind, `S` Action Surge, `F` Rage, `K` Reckless, `M` Steady Aim, `X`/`Z` Cunning Dash/Disengage, `T` Trip, `H`/`J` Spark Heal/Harm |
 | **Space** | End Turn |
+| **mouse wheel** | zoom the camera, about the pointer |
+| **middle-drag** | pan the camera |
 | Esc | back out of an armed click or open menu; quit when nothing is armed |
+
+**The field fills the window, and a camera frames the fight over it.** Everything else
+— the heading, the initiative list, the log, the banner and the buttons — floats on
+translucent panels with the ground running underneath. The camera zooms to hold every
+living combatant with some ground around them, leaning toward whoever is acting: it
+zooms in as the fight clumps and back out as it spreads, and it never zooms out past
+filling the window, so how much of the field is visible depends on where the fight is
+— scrolling with the action rather than showing the whole board letterboxed. The wheel
+and a middle-drag take the camera by hand; the fight takes it back the moment the next
+animation or turn starts. Zooming the wheel all the way out shows the whole field —
+that letterboxed view is available, it just has to be asked for.
 
 **Only what can be used is shown**, and every button carries its key. The row shrinks as
 the turn is spent — Dodge and Dash go with the Action, Second Wind with the Bonus Action,

@@ -442,11 +442,19 @@ highlight rather than gaining a wrong one. Damage and the miss are matched as te
 because neither is a name, and both fail the same safe way: no match leaves the line in
 its base colour.
 
-**The board can wear real art now, and it is bigger.** The square is no longer a
-constant: it is derived to fill a fixed board area (`BoardWidth`/`BoardHeight` on
-`FightScreen`), which took today's nine-by-seven field from 42 pixels a square to 66 —
-two and a half times the area, in a window grown to 1600×950 — and means a field wider
-than today's shrinks its squares instead of growing into the side panel. The tokens draw
+**The board can wear real art now, and the field fills the window under a camera
+(2026-08-18).** The square is no longer a constant: `CellPixels` on `FightScreen` is the
+camera's zoom, glided each frame toward framing every living combatant with padding and
+a lean toward the actor — zooming in as the fight clumps, out as it spreads, never past
+filling the window, so the visible field is a moving window onto the whole one rather
+than the whole one letterboxed. Every other element — heading, initiative, log, banner,
+buttons — floats over the field on the shared translucent `Veil`, board space is told
+from UI space by `GridLeft`/`GridTop` (derived from the camera) versus `UiLeft`/`UiTop`
+(fixed), and a click on an overlay never reaches the square underneath it
+(`OverOverlay`). The wheel zooms about the pointer and a middle-drag pans — manual hold
+ends when the next act or turn starts — and wheeling all the way out shows the whole
+field, the one framing automatic never picks. A probe or capture snaps the camera and
+frames the whole field, for the same reason those runs freeze the animation clock. The tokens draw
 as animated pixel-art figures: an idle loop, the walk cycle playing as the token glides
 the engine's recorded path, a swing for every attack (Opportunity Attacks included,
 faced at the target), a flinch as damage lands, and the body going down when a creature
