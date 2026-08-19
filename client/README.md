@@ -44,7 +44,7 @@ On your turn:
 | **Space** | End Turn |
 | **mouse wheel** | zoom the camera, about the pointer |
 | **middle-drag** | pan the camera |
-| Esc | back out of an armed click or open menu; quit when nothing is armed |
+| Esc | back out of an armed click or open menu; with nothing armed, ask to quit — Esc again quits, anything else stays |
 
 **The field fills the window, and a camera frames the fight over it.** Everything else
 — the heading, the initiative list, the log, the banner and the buttons — floats on

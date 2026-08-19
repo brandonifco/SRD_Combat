@@ -144,6 +144,9 @@ public partial class PlayMode : FightScreen
     private string? _notice;
     private bool _probeStarted;
 
+    /// <summary>True while the quit card is asking whether Esc really meant it.</summary>
+    private bool _quitAsked;
+
     /// <summary>How much of the fight's log has already been scanned for walks to play.</summary>
     private int _walkStepsSeen;
 
@@ -861,6 +864,29 @@ public partial class PlayMode : FightScreen
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        // The quit card owns every input while it is up: Esc again really quits,
+        // anything else pressed or clicked stays. Reported from play on 2026-08-18
+        // after two accidental exits — Esc is also the key that backs out of an armed
+        // action, so one press past the last thing to cancel used to be the whole game
+        // gone mid-fight, with the run rolled back to the last cleared fight.
+        if (_quitAsked)
+        {
+            if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
+            {
+                GetTree().Quit();
+                return;
+            }
+
+            if (@event is InputEventKey { Pressed: true } or InputEventMouseButton { Pressed: true })
+            {
+                _quitAsked = false;
+                QueueRedraw();
+                return;
+            }
+
+            return;
+        }
+
         if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
             // Esc backs out of whatever is armed before it quits anything — the
@@ -887,7 +913,8 @@ public partial class PlayMode : FightScreen
                 return;
             }
 
-            GetTree().Quit();
+            _quitAsked = true;
+            QueueRedraw();
             return;
         }
 
@@ -1509,6 +1536,7 @@ public partial class PlayMode : FightScreen
         {
             DrawChrome(_subtitle, StatusLine(null));
             DrawInterlude();
+            DrawQuitCard();
             return;
         }
 
@@ -1644,6 +1672,52 @@ public partial class PlayMode : FightScreen
 
         // Last, so it sits over everything it might explain.
         DrawHint();
+
+        DrawQuitCard();
+    }
+
+    /// <summary>
+    /// The card that asks whether Esc really meant to leave. It says what quitting
+    /// costs — the save keeps the state after the last <em>cleared</em> fight, so a
+    /// fight in progress restarts — because that cost is exactly what an accidental
+    /// exit was paying without asking.
+    /// </summary>
+    private void DrawQuitCard()
+    {
+        if (!_quitAsked)
+        {
+            return;
+        }
+
+        const int width = 470;
+        const int height = 118;
+        var left = (ScreenWidth - width) / 2f;
+        var top = (ScreenHeight - height) / 2f;
+        var card = new Rect2(left, top, width, height);
+
+        DrawRect(card, Background);
+        DrawRect(card, ActiveRing, filled: false, width: 2);
+
+        DrawString(
+            TextFont,
+            new Vector2(left + 24, top + 42),
+            "LEAVE THE GAME?",
+            fontSize: 26,
+            modulate: ActiveRing);
+
+        DrawString(
+            TextFont,
+            new Vector2(left + 24, top + 70),
+            "The run is saved after each cleared fight; a fight in progress restarts.",
+            fontSize: 12,
+            modulate: Ink);
+
+        DrawString(
+            TextFont,
+            new Vector2(left + 24, top + 96),
+            "[esc] again quits — any other key or click stays",
+            fontSize: 12,
+            modulate: Dim);
     }
 
     /// <summary>
