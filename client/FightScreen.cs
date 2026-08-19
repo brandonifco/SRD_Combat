@@ -308,6 +308,25 @@ public abstract partial class FightScreen : Node2D
     private static double SecondsFor(int frames) => frames / AnimationFramesPerSecond;
 
     /// <summary>
+    /// The least time a Swing holds, however few frames its strip has.
+    /// </summary>
+    /// <remarks>
+    /// The drawn sets are one frame per pose, and one frame at the shared rate is a
+    /// tenth of a second — the Fighter's attack was reported from play as never seen
+    /// at all. A multi-frame pack is untouched (the shortest swing in the installed
+    /// packs already runs half a second); a single drawing simply holds its pose long
+    /// enough to be read. Swings only: a one-frame flinch reads as the jolt it is, and
+    /// a fall settles into the body lying there, so neither is ever missed.
+    /// </remarks>
+    private const double MinimumSwingSeconds = 0.75;
+
+    /// <summary>A pose's duration: its frames at the shared rate, floored for a Swing.</summary>
+    private static double SecondsForPose(Pose pose, int frames) =>
+        pose == Pose.Swing
+            ? Math.Max(SecondsFor(frames), MinimumSwingSeconds)
+            : SecondsFor(frames);
+
+    /// <summary>
     /// How much of a Walk strip one square costs. Half a cycle: a walk cycle is two
     /// paces, and a pace covers about half a five-foot square.
     /// </summary>
@@ -1099,7 +1118,7 @@ public abstract partial class FightScreen : Node2D
         {
             _poseElapsed += delta;
 
-            if (_poseElapsed >= SecondsFor(_poseFrames))
+            if (_poseElapsed >= SecondsForPose(_pose, _poseFrames))
             {
                 _poseActorId = null;
                 _pose = Pose.None;
