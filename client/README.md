@@ -50,12 +50,13 @@ On your turn:
 — the heading, the initiative list, the log, the banner and the buttons — floats on
 translucent panels with the ground running underneath. The camera zooms to hold every
 living combatant with some ground around them, leaning toward whoever is acting: it
-zooms in as the fight clumps and back out as it spreads, and it never zooms out past
-filling the window, so how much of the field is visible depends on where the fight is
-— scrolling with the action rather than showing the whole board letterboxed. The wheel
-and a middle-drag take the camera by hand; the fight takes it back the moment the next
-animation or turn starts. Zooming the wheel all the way out shows the whole field —
-that letterboxed view is available, it just has to be asked for.
+zooms in as the fight clumps and back out as it spreads, scrolling with the action
+rather than showing the whole board at once. The terrain is drawn to the window's
+edges wherever the camera sits — ground beyond the playable field continues under a
+dark wash, so the boundary reads while the window is always full of battlefield. The
+wheel and a middle-drag take the camera by hand; the fight takes it back the moment
+the next animation or turn starts. Zooming the wheel all the way out shows the whole
+field in its surroundings.
 
 **Only what can be used is shown**, and every button carries its key. The row shrinks as
 the turn is spent — Dodge and Dash go with the Action, Second Wind with the Bonus Action,

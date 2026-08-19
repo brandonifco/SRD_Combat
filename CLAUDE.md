@@ -450,8 +450,13 @@ filling the window, so the visible field is a moving window onto the whole one r
 than the whole one letterboxed. The view may overscan a field edge by one square past
 the *stage* (the ground between the overlays) — the first clamp held the whole window
 on the field, and the first fight to reach an edge played out underneath the banner
-strip because at the zoom floor that clamp pins the camera still; a band of void
-beyond the edge obstructs nothing, which is the trade. Every other element — heading, initiative, log, banner,
+strip because at the zoom floor that clamp pins the camera still. **The ground art runs
+to the window's edges whatever the camera does** (also asked for from play, the same
+day): `DrawGrid` lays terrain on every square the window can see, and the squares
+beyond the field wear `BeyondFieldWash`, so the playable field reads at a glance while
+the view is always full of battlefield and never of void. Rule washes and obstacles
+never appear beyond the field; the bare no-art fallback keeps its old flat-colour
+board. Every other element — heading, initiative, log, banner,
 buttons — floats over the field on the shared translucent `Veil`, board space is told
 from UI space by `GridLeft`/`GridTop` (derived from the camera) versus `UiLeft`/`UiTop`
 (fixed), and a click on an overlay never reaches the square underneath it
