@@ -94,7 +94,15 @@ public sealed class SpriteLibrary
         // through the measured pipeline the Barbarian repaint recorded (crop, box
         // downscale with an unsharp pass at twice target size, quantize to the master
         // palette at client/assets/palette/SRD_Combat.gpl with hard alpha). Each pose
-        // is one frame, which the loader pads and plays across its duration.
+        // is one frame, which the loader pads and plays across its duration. The
+        // Fighter's and Barbarian's frames carry a further consolidation pass (the
+        // 2026-08-19 de-graining, recorded in its commit): the per-pixel quantize left
+        // nearly every pixel differing from its neighbours, which reads as grain at
+        // any non-integer camera scale, so their colors are re-clustered to one shared
+        // ~26-color set across all four poses, isolated pixels are merged into their
+        // neighbourhood's region, the silhouette takes the palette's outline ramp (the
+        // look the Goblin drawing already had), and the source's brightest glints and
+        // darkest structure lines are re-asserted on top of the flattened regions.
         ["Fighter"] = "Fighter_Drawn",
         ["Paladin"] = "Knight_2",
         ["Barbarian"] = "Barbarian_Drawn",
