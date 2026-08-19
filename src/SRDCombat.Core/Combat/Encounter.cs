@@ -591,6 +591,7 @@ public sealed partial class Encounter
                     $"{bearer.Name} automatically fails the {ability} saving throw to shake off " +
                     $"{condition.Condition} ({autoFailing}).",
                     bearer);
+                Escalate(bearer, condition);
                 continue;
             }
 
@@ -611,8 +612,38 @@ public sealed partial class Encounter
                     $"{bearer.Name} repeats the {ability} saving throw: {roll} vs DC {difficultyClass} — " +
                     $"still {condition.Condition}.",
                     bearer);
+                Escalate(bearer, condition);
             }
         }
+    }
+
+    /// <summary>
+    /// Deepens a condition whose repeated save just failed — the two-tier gaze's
+    /// "Second Failure: The target has the Petrified condition instead of the
+    /// Restrained condition."
+    /// </summary>
+    /// <remarks>
+    /// "Instead of" is executed literally: the first condition is removed and the
+    /// deeper one imposed, keeping the source. The deeper condition carries no expiry
+    /// and no repeat of its own — the printed Petrified has no end a fight reaches, so
+    /// it lasts until the encounter does, the same reading every outlasting duration
+    /// gets. Resolving the repeat either way is also why "at the end of its next turn"
+    /// needs no one-shot bookkeeping: success ends the effect, failure replaces it,
+    /// and either way there is nothing left to repeat.
+    /// </remarks>
+    private void Escalate(Combatant bearer, ActiveCondition condition)
+    {
+        if (condition.EscalatesTo is not { } deeper || !bearer.RemoveCondition(condition.Condition))
+        {
+            return;
+        }
+
+        bearer.AddCondition(new ActiveCondition(deeper, condition.SourceId));
+
+        Add(
+            CombatStepKind.Condition,
+            $"{bearer.Name} has the {deeper} condition instead of {condition.Condition}.",
+            bearer);
     }
 
     /// <summary>
@@ -1802,7 +1833,8 @@ public sealed partial class Encounter
                 rider.Condition == ConditionType.Grappled ? grappleRangeFeet : null,
                 rider.Duration is { RepeatSaveAtTurnEnd: true } ? repeatSave!.Value.Ability : null,
                 rider.Duration is { RepeatSaveAtTurnEnd: true } ? repeatSave!.Value.DifficultyClass : null,
-                TiedToConcentration: rider.Duration is { WhileConcentrating: true });
+                TiedToConcentration: rider.Duration is { WhileConcentrating: true },
+                EscalatesTo: rider.EscalatesTo);
 
             if (!target.AddCondition(imposed))
             {
@@ -2015,6 +2047,9 @@ public sealed partial class Encounter
         duration switch
         {
             null => string.Empty,
+            // The two-tier gaze: no calendar, and naming the repeat is what tells a
+            // reader the condition is not simply permanent.
+            { OutlastsFight: true, RepeatSaveAtTurnEnd: true } => " until a repeated save ends it — or worsens it",
             { OutlastsFight: true } => " for the rest of the fight",
             { WhileGrappleHolds: true } => " until the grapple ends",
             { TurnsAhead: 1 } =>

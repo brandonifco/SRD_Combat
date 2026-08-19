@@ -75,6 +75,23 @@ public static class SimpleTacticsPolicy
         // from wherever this leaves us.
         ImproveFiringPosition(encounter, actor, target);
 
+        // A signature Bonus Action costs the Action nothing, so it is spent first when
+        // it reaches from here — the Basilisk's gaze before its bite. The target may
+        // not survive it, so the turn re-chooses before committing the Action.
+        if (TryUseBonusEntry(encounter, actor, target))
+        {
+            if (encounter.IsComplete || !actor.CanAct)
+            {
+                encounter.EndTurn();
+                return;
+            }
+
+            if (target.IsDead && ChooseTarget(encounter, actor) is { } next)
+            {
+                target = next;
+            }
+        }
+
         if (encounter.IsComplete || !actor.CanAct)
         {
             encounter.EndTurn();
@@ -133,6 +150,22 @@ public static class SimpleTacticsPolicy
         }
 
         var closest = ChooseTarget(encounter, actor);
+
+        // The move may have carried a Bonus Action entry into range that was too far
+        // from the spawn square — the same second chance the Attack action gets.
+        if (closest is not null && TryUseBonusEntry(encounter, actor, closest))
+        {
+            if (encounter.IsComplete || !actor.CanAct)
+            {
+                encounter.EndTurn();
+                return;
+            }
+
+            if (closest.IsDead)
+            {
+                closest = ChooseTarget(encounter, actor);
+            }
+        }
 
         if (closest is not null && TryAttack(encounter, actor, closest))
         {
@@ -1044,6 +1077,77 @@ public static class SimpleTacticsPolicy
 
         return entry is not null && encounter.UseEntry(entry.Name, target) is null;
     }
+
+    /// <summary>
+    /// Spends the Bonus Action on a stat-block entry when one reaches the target — the
+    /// Basilisk's Petrifying Gaze beside its Bite, which is the whole reason monsters
+    /// have a bonus-action repertoire at all (#230).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Only <b>limited-use</b> entries, for <see cref="TryUseLimitedEntry"/>'s own
+    /// reason: the unlimited Bonus Action entries in the corpus are form-gated,
+    /// chooser's-choice or otherwise unmodelled, and a printed usage limit is the mark
+    /// of a signature ability. And only entries with an effect the engine will really
+    /// execute — failure damage, or a rider <c>ConditionRules</c> can impose — because
+    /// a Bonus Action spent on a save that changes nothing would be an unimplemented
+    /// rule pantomimed, the failure this project exists to refuse.
+    /// </para>
+    /// <para>
+    /// The area judgement is <see cref="SaveReaches"/>'s, unchanged: a gaze that would
+    /// catch a packmate is not used from here, and repositioning to clear a friendly
+    /// from a cone is judgement this placeholder does not attempt.
+    /// </para>
+    /// </remarks>
+    private static bool TryUseBonusEntry(Encounter encounter, Combatant actor, Combatant target)
+    {
+        if (!actor.Turn.HasBonusAction || target.IsDead)
+        {
+            return false;
+        }
+
+        var distance = actor.Position.DistanceFeetTo(target.Position);
+
+        var entry = actor.Stats.Entries
+            .Where(candidate => candidate.Section == MonsterEntrySection.BonusAction
+                && actor.Uses.Tracks(candidate.Name)
+                && actor.Uses.IsAvailable(candidate.Name)
+                && HasExecutableEffect(candidate))
+            .Select(candidate => new
+            {
+                candidate.Name,
+                Damage = candidate.Mechanics switch
+                {
+                    EntryMechanics.Attack => AttackFor(actor, candidate.Name) is { } attack
+                        && attack.CanReach(distance)
+                            ? attack.Damage.Sum(damage => damage.Amount.Average)
+                            : (int?)null,
+                    EntryMechanics.SavingThrow => SaveReaches(encounter, actor, target, candidate.Save, distance)
+                        ? candidate.Save!.FailureDamage.Sum(damage => damage.Amount.Average)
+                        : null,
+                    _ => null,
+                },
+            })
+            .Where(candidate => candidate.Damage is not null)
+            .OrderByDescending(candidate => candidate.Damage)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .FirstOrDefault();
+
+        return entry is not null && encounter.UseEntry(entry.Name, target) is null;
+    }
+
+    /// <summary>
+    /// Whether using this entry would actually do something: damage, or at least one
+    /// rider the engine can impose.
+    /// </summary>
+    private static bool HasExecutableEffect(MonsterEntry entry) => entry.Mechanics switch
+    {
+        EntryMechanics.Attack => true,
+        EntryMechanics.SavingThrow => entry.Save is { } save
+            && (save.FailureDamage.Count > 0
+                || save.AppliedConditions.Any(ConditionRules.CanBeImposed)),
+        _ => false,
+    };
 
     private static CombatAttack? AttackFor(Combatant actor, string name) =>
         actor.Stats.Attacks.FirstOrDefault(attack =>

@@ -63,7 +63,12 @@ public sealed partial class Encounter
             return new ActionRefusal("entry.unknown", $"{actor.Name} has no entry called '{entryName}'.");
         }
 
-        if (entry.Section != MonsterEntrySection.Action)
+        // An Action entry spends the Action, a Bonus Action entry the Bonus Action —
+        // the Basilisk's Petrifying Gaze is printed under Bonus Actions, and for as
+        // long as this gate stopped at Action, no monster could use its signature
+        // ability at all (#230). Reactions, Legendary Actions and Traits stay refused:
+        // each needs a trigger or an economy the engine does not model.
+        if (entry.Section is not (MonsterEntrySection.Action or MonsterEntrySection.BonusAction))
         {
             return new ActionRefusal(
                 "entry.not_an_action",
@@ -109,9 +114,9 @@ public sealed partial class Encounter
             return new ActionRefusal("entry.needs_target", $"{entry.Name} needs a creature to attack.");
         }
 
-        if (!actor.Turn.HasAction)
+        if (CostUnavailable(actor, entry) is { } spent)
         {
-            return new ActionRefusal("action.spent", $"{actor.Name} has already used its action.");
+            return spent;
         }
 
         // FromMonster builds an attack from every entry carrying attack data, so this
@@ -158,7 +163,7 @@ public sealed partial class Encounter
                 $"{target.Name} has Total Cover from {actor.Name} and can't be targeted directly.");
         }
 
-        actor.Turn.SpendAction();
+        SpendCost(actor, entry);
         actor.Uses.Spend(entry.Name);
         ResolveAttack(actor, attack, target, isOpportunityAttack: false);
         CheckForCompletion();
@@ -236,12 +241,12 @@ public sealed partial class Encounter
             return charmed;
         }
 
-        if (!actor.Turn.HasAction)
+        if (CostUnavailable(actor, entry) is { } spent)
         {
-            return new ActionRefusal("action.spent", $"{actor.Name} has already used its action.");
+            return spent;
         }
 
-        actor.Turn.SpendAction();
+        SpendCost(actor, entry);
         actor.Uses.Spend(entry.Name);
 
         Add(
@@ -263,6 +268,39 @@ public sealed partial class Encounter
 
         CheckForCompletion();
         return null;
+    }
+
+    /// <summary>
+    /// Whether the turn still holds what this entry costs — the Action for an Action
+    /// entry, the Bonus Action for a Bonus Action one.
+    /// </summary>
+    private static ActionRefusal? CostUnavailable(Combatant actor, MonsterEntry entry)
+    {
+        if (entry.Section == MonsterEntrySection.BonusAction)
+        {
+            return actor.Turn.HasBonusAction
+                ? null
+                : new ActionRefusal(
+                    "entry.bonus_action_spent",
+                    $"{actor.Name} has already used its Bonus Action.");
+        }
+
+        return actor.Turn.HasAction
+            ? null
+            : new ActionRefusal("action.spent", $"{actor.Name} has already used its action.");
+    }
+
+    /// <summary>The other half of <see cref="CostUnavailable"/>: spends what it checked.</summary>
+    private static void SpendCost(Combatant actor, MonsterEntry entry)
+    {
+        if (entry.Section == MonsterEntrySection.BonusAction)
+        {
+            actor.Turn.SpendBonusAction();
+        }
+        else
+        {
+            actor.Turn.SpendAction();
+        }
     }
 
     /// <summary>Whether a limited-use entry has a use left, as a refusal when it has not.</summary>

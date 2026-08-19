@@ -29,6 +29,10 @@ namespace SRDCombat.Core.Rules;
 /// </param>
 /// <param name="TargetIsParalyzed">The target is Paralyzed.</param>
 /// <param name="TargetIsStunned">The target is Stunned.</param>
+/// <param name="TargetIsPetrified">
+/// The target is Petrified. Advantage only — the glossary prints no Critical Hit
+/// clause for stone, where Paralyzed and Unconscious both carry one.
+/// </param>
 /// <param name="RangedAttackInCloseCombat">
 /// The attack rolls ranged while an able enemy stands within 5 feet. Printed page 15:
 /// "When you make a ranged attack roll with a weapon, a spell, or some other means, you
@@ -58,7 +62,8 @@ public sealed record AttackCircumstances(
     bool AttackerIsFrightened = false,
     bool TargetIsParalyzed = false,
     bool TargetIsStunned = false,
-    bool RangedAttackInCloseCombat = false);
+    bool RangedAttackInCloseCombat = false,
+    bool TargetIsPetrified = false);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
 /// <param name="Roll">The d20 roll.</param>
@@ -122,6 +127,7 @@ public static class AttackRules
             AttackerIsFrightened: attacker.HasCondition(ConditionType.Frightened),
             TargetIsParalyzed: target.HasCondition(ConditionType.Paralyzed),
             TargetIsStunned: target.HasCondition(ConditionType.Stunned),
+            TargetIsPetrified: target.HasCondition(ConditionType.Petrified),
             RangedAttackInCloseCombat:
                 combatants is not null && InCloseCombat(attacker, attack, distance, combatants));
     }
@@ -197,6 +203,7 @@ public static class AttackRules
             || circumstances.TargetIsBlinded
             || circumstances.TargetIsParalyzed
             || circumstances.TargetIsStunned
+            || circumstances.TargetIsPetrified
             || (circumstances.TargetIsProne && withinFiveFeet);
 
         var disadvantage =

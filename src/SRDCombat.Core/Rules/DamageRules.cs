@@ -56,10 +56,48 @@ public static class DamageRules
         ArgumentNullException.ThrowIfNull(target);
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
 
-        target.Stats.DamageResponses.TryGetValue(type, out var response);
-        var hasResponse = target.Stats.DamageResponses.ContainsKey(type);
+        target.Stats.DamageResponses.TryGetValue(type, out var own);
+        var hasOwnResponse = target.Stats.DamageResponses.ContainsKey(type);
 
-        var effective = ApplyResponse(amount, hasResponse ? response : null);
+        // Petrified prints "You have Resistance to all damage". The printed order of
+        // application (page 17) is Resistance second, Vulnerability third, and multiple
+        // Resistances to one type count as one instance — so the stone and the
+        // creature's own Resistance halve once between them, an Immunity still zeroes,
+        // and a Vulnerability doubles what the halving left (the page's own worked
+        // example is exactly this pairing).
+        var petrified = target.HasCondition(ConditionType.Petrified);
+
+        int effective;
+
+        if (hasOwnResponse && own == DamageResponse.Immunity)
+        {
+            effective = 0;
+        }
+        else
+        {
+            effective = amount;
+
+            if (petrified || (hasOwnResponse && own == DamageResponse.Resistance))
+            {
+                effective /= 2;
+            }
+
+            if (hasOwnResponse && own == DamageResponse.Vulnerability)
+            {
+                effective *= 2;
+            }
+        }
+
+        // What the narration reports: the creature's own response when it has one, and
+        // the stone's Resistance otherwise. The one shape this single value cannot say
+        // is Vulnerability-while-Petrified — the number is right, the note names only
+        // the Vulnerability — which today no combatant can reach, since only characters
+        // are petrified and no character has a Vulnerability.
+        var response = hasOwnResponse
+            ? own
+            : petrified ? DamageResponse.Resistance : (DamageResponse?)null;
+
+        var hasResponse = response is not null;
 
         for (var halving = 0; halving < additionalHalvings; halving++)
         {

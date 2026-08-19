@@ -16,7 +16,7 @@ questions. Everything below is operational detail that doc doesn't carry.
 | | |
 | --- | --- |
 | Branch | `main` after the 2026-08-16 play session — the first in which a person drove the Godot client through real fights and said what was wrong. Four slices came out of it: the code is **MIT licensed** with `data/` staying CC-BY (#202), movement executes the printed *Moving around Other Creatures* clauses so bodies no longer wall a corridor off (#203), the encounter draw **favours the classic bestiary over ordinary animals** (#204), and the **opening cycle rests Long** so a level 1 party is not ground down by attrition it cannot heal (#205) |
-| Tests | **928 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **945 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · **258 magic items** (13 names executed; the rest counted) |
 | Pacing | **The ladder has a difficulty curve for the first time, and warband rungs (#207) are what gave it one.** Current `main`, measured 2026-08-16, `tools/PacingMeasure`, loot on: seeds 1–120 read **median 18, 38 of 120 clearing everything, 56 reaching level 4, 3 dying by fight 4**; seeds 200–320 read **18, 43, 60, and 9**. **The median measures again** — it had been pinned at 30 of 30 for several slices, where a saturated statistic reads identically whether a change helped, hurt or did nothing. Read the `shape:` and per-band lines with it: `died-by-fight-4` for the opening, `cleared-all` for the ending, hp-left per band for whether a fight was ever close. **The per-band line is the one that changed**: party hit points left used to be flat at 75–81% in *every* band from fights 1–5 to 26–30 — fight 27 was not harder than fight 3, only longer — and now runs **86% → 79% → 72% → 74% → 70% → 71%**. The distribution moved with it: runs ending in the middle rather than at either extreme went **47 → 79** of 120, so the old die-early-or-clear-everything split is gone. Five slices on 2026-08-16, each against a same-build baseline taken immediately before: **movement's printed pass-through clauses** (#203) clears 72 → 76; **the classic-monster weight** (#204) clears 76 → 66, a *difficulty* gain from a flavour change, because a classic monster carries more mechanics per XP than an animal; **resting Long through the opening cycle** (#205) died-by-fight-4 15 → 1 and 14 → 6; and **warbands** (#207) clears 72 → 38 and 78 → 43. **A human played the warband ladder on 2026-08-16 and the verdict was "definitely tense.
@@ -681,7 +681,7 @@ curl -fsSL https://mise.run | sh            # once per machine, if mise is absen
 eval "$(~/.local/bin/mise activate bash)"   # append this line to ~/.bashrc too
 mise install                                # pins the SDK to the one CI gates on
 ./scripts/doctor.sh                         # confirms this machine agrees with CI
-dotnet test SRDCombat.sln -c Debug          # expect 928 passing, 1 skipped by design
+dotnet test SRDCombat.sln -c Debug          # expect 945 passing, 1 skipped by design
 dotnet run --project src/SRDCombat.Console
 ```
 
@@ -954,16 +954,24 @@ duration, and anything else printed with the condition (a charge requirement, a 
 chained second condition, a duration of another shape) goes to
 `AppliedCondition.UnmodelledRequirement` and makes the rider unusable rather than
 approximate. *Does the engine execute it?* — `ConditionRules.Executable` is a curated
-allowlist, exactly like `ClassFeatureRegistry`, and holds eleven conditions: Prone,
+allowlist, exactly like `ClassFeatureRegistry`, and holds twelve conditions: Prone,
 Poisoned, Grappled, Restrained, Incapacitated, Unconscious, Blinded, Charmed, Frightened,
-Paralyzed and Stunned. Deliberately absent: Deafened, Invisible and Petrified, each
-needing a model (hearing, sight, objects) that does not exist. **Add a condition there
-only alongside the code that gives it effects.** Forty-five attacks satisfy both checks —
+Paralyzed, Stunned and, since #230's close, **Petrified** — its whole printed page 186:
+Incapacitated brought with it, Speed 0, Advantage on attack rolls against it (and note
+**no Critical Hit clause** — Paralyzed and Unconscious print one, stone does not),
+auto-failed Strength and Dexterity saves, **Resistance to all damage** executed in
+`DamageRules.Apply` under the printed order-of-application and no-stacking rules (page
+17: Resistance second, Vulnerability third, multiple Resistances count once), and
+Immunity to Poisoned as a gate in `Combatant.AddCondition`. Deliberately absent:
+Deafened and Invisible, each needing a model (hearing, sight) that does not exist.
+**Add a condition there only alongside the code that gives it effects.** Forty-five
+attacks satisfy both checks —
 20 Prone, 12 Poisoned, 9 Grappled, and one each of Charmed, Frightened, Paralyzed and
-Incapacitated and 2 Restrained tied to their grapples — and thirty-four failed-save
+Incapacitated and 2 Restrained tied to their grapples — and the failed-save
 riders land: 8 Frightened, 5 each of Grappled and Poisoned, 4 each of Blinded and
 Restrained, 2 each of Charmed, Prone and Stunned, one each of Incapacitated and
-Paralyzed — the three newest riding the stat blocks' own repeat-save clock
+Paralyzed, **plus the two Petrifying Gazes' escalating Restrained → Petrified riders**
+— three of the earlier ones riding the stat blocks' own repeat-save clock
 (`ConditionDuration.RepeatSaveUpToOneMinute`): the Quasit's Scare, the Doppelganger's
 Unsettling Visage, and the Chuul's Poisoned alone under the Whelm precedent, its
 chained Paralyzed still refused. The Vrock's Spores stays refused the conservative
@@ -1028,7 +1036,19 @@ its duration**, because the save model rolls one failure and the rider would lan
 whole tier early: a wyrmling's breath putting targets to sleep on the first failed save.
 That rule is what separates the timers that ride (the Solar's "Blinded for 1 minute",
 the Pseudodragon's "Poisoned for 1 hour" — checked by hand against their follow-on
-sentences) from the ones that must not (every Sleep Breath). And a fourth rule came
+sentences) from the ones that must not (every Sleep Breath). **The tier rule now has
+its own carved exception** (#230's close): the exact two-sentence pair the two
+Petrifying Gazes print — "First Failure: The target has the Restrained condition and
+repeats the save at the end of its next turn if it is still Restrained, ending the
+effect on itself on a success. Second Failure: The target has the Petrified condition
+instead of the Restrained condition." — is matched to the letter and structured as one
+*escalating* rider (`AppliedCondition.EscalatesTo`,
+`ConditionDuration.UntilSavedOrEscalated`): the repeat at the end of the bearer's turn
+ends the effect on a success and swaps Restrained for Petrified on the failure, in
+`Encounter.RollRepeatSaves`. The escalation resolves the repeat either way, which is
+why "its next turn" needs no one-shot bookkeeping; a tiered sentence that differs by a
+word still falls to the tier rule; and an escalating rider is only imposable when its
+deeper condition is executable too (`ConditionRules.CanBeImposed`). And a fourth rule came
 with #24's clause-splitting, caught the same day it was nearly shipped wrong: **a
 rider-free head clause must be fully accounted for by the entry's other grammar — a
 "Hit:" or "Failure:" damage statement — or every rider in the sentence is refused with
@@ -1733,6 +1753,27 @@ cost real time:
   a save entry is credited, and a registry-implemented trait is
   `EntryMechanics.Passive` rather than counted. What remains text on
   `MonsterEntry.Text` is in `UnmodelledClauses`, never silently held.
+- **A monster's Bonus Action entries execute now (#230), and the policy spends them.**
+  `UseEntry` spends the Bonus Action for a `BonusAction`-section entry and the Action
+  for an Action one — the gate that stopped at Action was why the Basilisk never
+  petrified anybody: its gaze is printed under Bonus Actions, as the Medusa's is, and
+  no path could reach it. The policy uses a **limited-use** Bonus Action entry beside
+  its Action (the gaze before the bite), under the same own-side area judgement as a
+  breath weapon — and **never one whose save would change nothing**
+  (`HasExecutableEffect`: failure damage, or a rider `ConditionRules` can impose),
+  because a Bonus Action spent narrating an effectless save is an unimplemented rule
+  pantomimed. Reactions and Legendary Actions stay refused — each needs a trigger or an
+  economy the engine does not model — and **the pool's Playable grade still reads only
+  Action entries**, so a creature whose signature lives elsewhere is still admitted at
+  full printed XP while missing it: that half of #230 is its own open question.
+  **Measured on both canonical ranges against a same-build baseline**: seeds 1–120 read
+  18/15→16/48 (median/clears/L4, opening 4→4) and seeds 200–320 read 13/18→16/41→36 —
+  neutral on one range, slightly harder on the other, which is the expected size of the
+  move: only two creatures in the pool of 117 carry a gaze, so this slice is fidelity
+  and variety rather than a pacing lever. What a played run should notice is different
+  in kind — a fight with a basilisk now carries a second clock, and a petrified
+  character is out for the fight but back for the next one, because conditions end with
+  the encounter (the stated rescue reading, on `ConditionRules`' Petrified bullet).
 - **Encounter building is three published steps, split across three types.** Choose a
   difficulty (the caller's), `EncounterBudget` cross-references printed page 202 and
   multiplies by party size, `EncounterBuilder` spends it, `EncounterFactory` places the
