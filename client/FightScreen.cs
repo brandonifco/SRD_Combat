@@ -1795,6 +1795,15 @@ public abstract partial class FightScreen : Node2D
         var figure = art.Figure;
         var scale = ScaleFor(figure);
 
+        // The ground line was measured in the idle strip's canvas, and a pose sheet may
+        // carry a different canvas height — the hand-drawn Fighter's thrust is 101 rows
+        // to its idle's 76, which put the thrust's bottom edge (and the feet on it) a
+        // third of a square through the floor, so the Fighter appeared to fall on every
+        // swing. Feet sit on every canvas's bottom edge, so the line carries over as a
+        // distance from the bottom, not from the top; for the packs, whose strips all
+        // share one canvas, this is exactly GroundY.
+        var ground = strip.FrameSize - ((art.Idle?.FrameSize ?? strip.FrameSize) - figure.GroundY);
+
         // Off the centre rather than the grid square, so a gliding walker's feet move
         // with it instead of stair-stepping a square behind.
         var anchor = new Vector2(centre.X, centre.Y + (CellPixels / 2f) - 2);
@@ -1805,7 +1814,7 @@ public abstract partial class FightScreen : Node2D
             DrawSetTransform(centre, Mathf.Pi / 2f, new Vector2(scale, scale));
             DrawTextureRectRegion(
                 strip.Texture,
-                new Rect2(-figure.CentreX, -(figure.GroundY - (figure.Stature / 2f)), strip.FrameSize, strip.FrameSize),
+                new Rect2(-figure.CentreX, -(ground - (figure.Stature / 2f)), strip.FrameSize, strip.FrameSize),
                 new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize),
                 modulate);
         }
@@ -1817,7 +1826,7 @@ public abstract partial class FightScreen : Node2D
             DrawSetTransform(anchor, 0f, new Vector2(facesLeft ? -scale : scale, scale));
             DrawTextureRectRegion(
                 strip.Texture,
-                new Rect2(-figure.CentreX, -figure.GroundY, strip.FrameSize, strip.FrameSize),
+                new Rect2(-figure.CentreX, -ground, strip.FrameSize, strip.FrameSize),
                 new Rect2(frame * strip.FrameSize, 0, strip.FrameSize, strip.FrameSize),
                 modulate);
         }
