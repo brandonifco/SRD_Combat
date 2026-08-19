@@ -90,10 +90,13 @@ public sealed class SpriteLibrary
     /// <summary>Party art by class name — the SRD prints twelve, the packs cover them all.</summary>
     private static readonly Dictionary<string, string> ByClassName = new(StringComparer.Ordinal)
     {
-        ["Fighter"] = "Knight_1",
+        // Hand-drawn sets — four single frames each, produced from painted sources
+        // through the measured pipeline the Barbarian repaint recorded (crop, box
+        // downscale with an unsharp pass at twice target size, quantize to the master
+        // palette at client/assets/palette/SRD_Combat.gpl with hard alpha). Each pose
+        // is one frame, which the loader pads and plays across its duration.
+        ["Fighter"] = "Fighter_Drawn",
         ["Paladin"] = "Knight_2",
-        // Hand-drawn set — the four single frames the play sessions asked for. Each
-        // pose is one frame, which the loader pads and plays across its duration.
         ["Barbarian"] = "Barbarian_Drawn",
         ["Monk"] = "Gladiator_2",
         ["Rogue"] = "Elf_1",
