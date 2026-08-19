@@ -23,9 +23,20 @@ public abstract partial class FightScreen : Node2D
     protected const int UiLeft = 24;
     protected const int UiTop = 96;
 
-    protected const int PanelLeft = 1470;
-    protected const int ScreenWidth = 1920;
-    protected const int ScreenHeight = 1080;
+    /// <summary>The initiative-and-log panel's width; its left edge follows the window.</summary>
+    protected const int PanelWidth = 450;
+
+    /// <summary>
+    /// The window's real size, read from the viewport on every use. The chrome anchors
+    /// to the actual edges — the panel to the right, the play screen's buttons to the
+    /// bottom — so no window is too small or too large to show the controls; the field
+    /// underneath pans and zooms to whatever ground is left. These were constants for a
+    /// 1920×1080 design canvas once, and on any screen shorter than that the button row
+    /// sat below the window's edge, invisible at every size the window could take.
+    /// </summary>
+    protected int ScreenWidth => (int)GetViewportRect().Size.X;
+    protected int ScreenHeight => (int)GetViewportRect().Size.Y;
+    protected int PanelLeft => ScreenWidth - PanelWidth;
     protected const double SecondsPerTurn = 0.6;
 
     /// <summary>
@@ -46,8 +57,8 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     private const float StageLeft = 0;
     private const float StageTop = 88;
-    private const float StageRight = PanelLeft - 16;
-    private const float StageBottom = ScreenHeight - 130;
+    private float StageRight => PanelLeft - 16;
+    private float StageBottom => ScreenHeight - 130;
 
     /// <summary>Empty ground the camera keeps around the fight, in squares.</summary>
     private const float CameraPaddingSquares = 2.5f;
@@ -401,8 +412,18 @@ public abstract partial class FightScreen : Node2D
         _sprites = SpriteLibrary.Load();
         _animateSprites = !HasArgument("probe") && ArgumentValue("capture") is null;
 
+        // The chrome anchors to the window's real edges, so a resize moves everything
+        // derived from them; subclasses re-seat whatever they cache (the play screen's
+        // button rects). The floor keeps a shrunken window from folding the stage into
+        // the chrome entirely.
+        GetViewport().SizeChanged += OnResized;
+        GetWindow().MinSize = new Vector2I(960, 540);
+
         OnReady();
     }
+
+    /// <summary>The window changed size; everything anchored to its edges moved.</summary>
+    protected virtual void OnResized() => QueueRedraw();
 
     /// <summary>
     /// Advances the idle and walk loops; true when a new frame means a redraw. Called

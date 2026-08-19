@@ -46,6 +46,14 @@ On your turn:
 | **middle-drag** | pan the camera |
 | Esc | back out of an armed click or open menu; with nothing armed, ask to quit — Esc again quits, anything else stays |
 
+**The chrome anchors to the window's real edges, whatever they are.** The panel keeps
+the right edge, the banner and buttons keep the bottom, and the camera composes the
+fight into whatever ground is left — so the controls are visible at every window size
+and resolution, and the window refuses to shrink below 960×540, where there would be no
+ground left to give. (They were laid out on a fixed 1920×1080 canvas once, and on any
+screen shorter than that the button row sat below the window's bottom edge, invisible
+no matter how the window was sized.)
+
 **The field fills the window, and a camera frames the fight over it.** Everything else
 — the heading, the initiative list, the log, the banner and the buttons — floats on
 translucent panels with the ground running underneath. The camera zooms to hold every
