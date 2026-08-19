@@ -493,21 +493,6 @@ public abstract partial class FightScreen : Node2D
         SmallestCell,
         LargestManualCell);
 
-    /// <summary>
-    /// The automatic zoom's floor: the square size below which the field stops filling
-    /// the window. Vertically that is the whole window, because nothing veils the top
-    /// edge and a bare strip of void reads as a rendering bug; horizontally it is the
-    /// stage, because the ground the panel would need runs behind a veil that all but
-    /// hides it, and demanding the full width would push the floor past the point where
-    /// the fight's spread fits. The wheel may still go below this — a player asking to
-    /// see the whole field letterboxed has asked with their own hand.
-    /// </summary>
-    private float CoverCell() => Math.Clamp(
-        MathF.Max(
-            (StageRight - StageLeft) / Math.Max(1, GridWidth),
-            ScreenHeight / (float)Math.Max(1, GridHeight)),
-        SmallestCell,
-        LargestManualCell);
 
     /// <summary>
     /// Points the camera at the fight: zoomed to hold every living combatant with some
@@ -549,11 +534,17 @@ public abstract partial class FightScreen : Node2D
         var minY = living.Min(token => token.Y) + 0.5f - CameraPaddingSquares;
         var maxY = living.Max(token => token.Y) + 0.5f + CameraPaddingSquares;
 
-        var floor = CoverCell();
+        // Framing everyone outranks filling the window: the zoom goes as far out as
+        // the fight's spread needs. It shipped with a floor that kept the field
+        // filling the window — the reason was that the ground art ended at the field's
+        // edge and anything past it was void — and the first split fight showed the
+        // cost: pinned at that floor, the camera left combatants cut off at the
+        // window's edge and behind the banner. The ground runs to the window's edges
+        // now, so zooming out shows the field in its surroundings and costs nothing.
         var cell = Math.Clamp(
             MathF.Min((StageRight - StageLeft) / (maxX - minX), (StageBottom - StageTop) / (maxY - minY)),
-            floor,
-            MathF.Max(LargestCell, floor));
+            SmallestCell,
+            LargestCell);
 
         var centre = new Vector2((minX + maxX) / 2f, (minY + maxY) / 2f);
 
@@ -705,8 +696,7 @@ public abstract partial class FightScreen : Node2D
 
         TakeCamera();
 
-        var floor = MathF.Min(FitFieldCell(), LargestCell);
-        var cell = Math.Clamp(CellPixels * factor, floor, LargestManualCell);
+        var cell = Math.Clamp(CellPixels * factor, SmallestCell, LargestManualCell);
 
         // The point of the field under the pointer, before and after: solving for the
         // centre that keeps them the same square.
