@@ -186,12 +186,12 @@ public partial class PlayMode : FightScreen
     /// rather than a line under the grid: the field fills the whole window now, so the
     /// banner, the buttons and the notice float over it on the shared veil.
     /// </summary>
-    private const float BannerTop = ScreenHeight - 118f;
+    private float BannerTop => ScreenHeight - 118f;
 
-    private const float ButtonRowTop = BannerTop + 42f;
+    private float ButtonRowTop => BannerTop + 42f;
 
     /// <summary>The translucent strip the banner, buttons and notice sit on.</summary>
-    private static readonly Rect2 BottomStrip = new(8, BannerTop - 26, PanelLeft - 40, ScreenHeight - (BannerTop - 26) - 8);
+    private Rect2 BottomStrip => new(8, BannerTop - 26, PanelLeft - 40, ScreenHeight - (BannerTop - 26) - 8);
 
     /// <summary>
     /// How wide a shop row is. Generous on purpose: an offer's effect line names both
@@ -516,6 +516,21 @@ public partial class PlayMode : FightScreen
         {
             x = AddButton(x, ButtonRowTop, action);
         }
+    }
+
+    /// <summary>
+    /// The button rects are cached at build time and anchored to the window's bottom
+    /// edge, so a resize leaves them where the old edge was — off-screen when the
+    /// window grew shorter. Re-seat them against the new edge.
+    /// </summary>
+    protected override void OnResized()
+    {
+        if (CommandedCombatant() is { } commanded)
+        {
+            BuildButtons(commanded);
+        }
+
+        base.OnResized();
     }
 
     /// <summary>Runs an action, by button or by key. The engine still rules on it.</summary>
@@ -1294,7 +1309,7 @@ public partial class PlayMode : FightScreen
     /// Whether a pixel sits on the fixed chrome — the initiative-and-log panel or the
     /// banner strip — where a click means the chrome, never the square underneath it.
     /// </summary>
-    private static bool OverOverlay(Vector2 pixel) =>
+    private bool OverOverlay(Vector2 pixel) =>
         pixel.X >= PanelLeft - 16 || BottomStrip.HasPoint(pixel);
 
     /// <summary>
