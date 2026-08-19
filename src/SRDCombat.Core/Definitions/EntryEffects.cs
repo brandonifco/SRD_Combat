@@ -284,6 +284,22 @@ public sealed record ConditionDuration(
             ConditionDurationOwner.Bearer,
             TurnsAhead: 10,
             RepeatSaveAtTurnEnd: true);
+
+    /// <summary>
+    /// The two-tier gaze's clock: "repeats the save at the end of its next turn if it
+    /// is still Restrained, ending the effect on itself on a success", with a deeper
+    /// tier waiting on the failure. No calendar at all — the ways out are the repeated
+    /// save and the escalation, and the escalation resolves the repeat either way, so
+    /// "each of its turns" and "its next turn" are the same clock here: there is never
+    /// a second repeat to roll.
+    /// </summary>
+    public static ConditionDuration UntilSavedOrEscalated { get; } =
+        new(
+            ConditionClock.EndOfTurn,
+            ConditionDurationOwner.Bearer,
+            TurnsAhead: 0,
+            OutlastsFight: true,
+            RepeatSaveAtTurnEnd: true);
 }
 
 /// <summary>
@@ -327,12 +343,21 @@ public sealed record ConditionDuration(
 /// trailing clause carrying its own rule. Null when the rider is nothing but the
 /// condition, a size gate and a modelled duration.
 /// </param>
+/// <param name="EscalatesTo">
+/// The condition a failed repeated save deepens this one into — the two-tier gaze's
+/// "Second Failure: The target has the Petrified condition instead of the Restrained
+/// condition." Null for every rider whose repeat can only end the effect. Only set by
+/// the extraction template that matches that exact printed pair, and only meaningful
+/// alongside a <see cref="ConditionDuration.RepeatSaveAtTurnEnd"/> duration: the
+/// escalation <em>is</em> the failure outcome of the repeated save.
+/// </param>
 public sealed record AppliedCondition(
     ConditionType Condition,
     int? EscapeDifficultyClass = null,
     CreatureSize? MaximumTargetSize = null,
     ConditionDuration? Duration = null,
-    string? UnmodelledRequirement = null)
+    string? UnmodelledRequirement = null,
+    ConditionType? EscalatesTo = null)
 {
     /// <summary>
     /// True when everything printed with this condition is expressed by the model, so

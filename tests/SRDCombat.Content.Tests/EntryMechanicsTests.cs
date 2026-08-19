@@ -340,6 +340,36 @@ public class EntryMechanicsTests
     }
 
     [Fact]
+    public void TheTwoTierGazeStructuresAsAnEscalatingRider()
+    {
+        // The carved exception to the tier rule above: "First Failure: The target has
+        // the Restrained condition and repeats the save at the end of its next turn if
+        // it is still Restrained, ending the effect on itself on a success. Second
+        // Failure: The target has the Petrified condition instead of the Restrained
+        // condition." — matched to the letter, and structured as a single escalating
+        // rider rather than two refused ones. The corpus prints it twice; both must
+        // land, and only the reflection clause stays counted.
+        foreach (var id in new[] { "monster.basilisk", "monster.medusa" })
+        {
+            var gaze = Content.MonstersById[id].Entries.Single(entry => entry.Name == "Petrifying Gaze");
+
+            Assert.Equal(MonsterEntrySection.BonusAction, gaze.Section);
+            Assert.Equal(EntryMechanics.SavingThrow, gaze.Mechanics);
+
+            var rider = Assert.Single(gaze.Save!.AppliedConditions);
+
+            Assert.Equal(ConditionType.Restrained, rider.Condition);
+            Assert.Equal(ConditionType.Petrified, rider.EscalatesTo);
+            Assert.True(rider.Duration is { RepeatSaveAtTurnEnd: true, OutlastsFight: true });
+            Assert.True(ConditionRules.CanBeImposed(rider));
+
+            var leftover = Assert.Single(gaze.UnmodelledClauses);
+
+            Assert.Contains("reflection", leftover, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void ACompleteRiderTheEngineCannotExecuteIsStillReportedAsIncomplete()
     {
         // "... the target has the Deafened condition until the start of the swarm's

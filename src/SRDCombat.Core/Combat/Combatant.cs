@@ -817,6 +817,11 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// imposed it: the sweep in <c>Encounter.EndConcentration</c> takes it away the moment
 /// the Concentration ends, however it ended.
 /// </param>
+/// <param name="EscalatesTo">
+/// The condition a failed repeated save deepens this one into — the Basilisk's
+/// Restrained becoming Petrified. Null for every condition whose repeat can only end
+/// it.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
@@ -825,7 +830,8 @@ public sealed record ActiveCondition(
     int? GrappleRangeFeet = null,
     Ability? RepeatSaveAbility = null,
     int? RepeatSaveDifficultyClass = null,
-    bool TiedToConcentration = false);
+    bool TiedToConcentration = false,
+    ConditionType? EscalatesTo = null);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.
@@ -932,6 +938,7 @@ public sealed class Combatant
     private static readonly ConditionType[] BringsIncapacitated =
     [
         ConditionType.Paralyzed,
+        ConditionType.Petrified,
         ConditionType.Stunned,
         ConditionType.Unconscious,
     ];
@@ -1131,6 +1138,15 @@ public sealed class Combatant
         var condition = active.Condition;
 
         if (Stats.ConditionImmunities.Contains(condition))
+        {
+            return false;
+        }
+
+        // Petrified prints "You have Immunity to the Poisoned condition" — the same
+        // gate a stat block's immunity line is, applied for as long as the stone holds.
+        // A Poisoned already in the blood when the stone lands is left as it was found,
+        // because immunity is printed as protection against being affected, not a cure.
+        if (condition == ConditionType.Poisoned && HasCondition(ConditionType.Petrified))
         {
             return false;
         }

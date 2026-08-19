@@ -474,6 +474,25 @@ internal static partial class EntryMechanicsParser
 
         var conditions = new List<AppliedCondition>();
 
+        // The two-tier gaze — the one "First Failure: ... Second Failure: ..." pair the
+        // model expresses, carved as an exact template the way Hold Person's clock was:
+        // the corpus prints this wording twice, on the Basilisk's and the Medusa's
+        // Petrifying Gaze, and it structures as a single escalating rider — Restrained,
+        // repeated at the end of the bearer's next turn, ending on a success and
+        // deepening to Petrified on the failure. The matched sentences are lifted from
+        // the text before the general pass, whose tiered-failure rule would otherwise
+        // rightly refuse them; any tiered sentence that does not match this template to
+        // the letter still falls to that rule.
+        if (text.Contains(PetrifyingTierSentences, StringComparison.Ordinal))
+        {
+            conditions.Add(new AppliedCondition(
+                ConditionType.Restrained,
+                Duration: ConditionDuration.UntilSavedOrEscalated,
+                EscalatesTo: ConditionType.Petrified));
+
+            text = text.Replace(PetrifyingTierSentences, string.Empty, StringComparison.Ordinal);
+        }
+
         // Sentence by sentence, because the rider's gate and its duration are the words
         // on either side of the condition within its own sentence, and nowhere else. A
         // sentence imposing two conditions — "... it has the Grappled condition (escape
@@ -746,6 +765,17 @@ internal static partial class EntryMechanicsParser
     }
 
     /// <summary>The conditions a sentence carries, out of those parsed from the whole entry.</summary>
+    /// <summary>
+    /// The exact printed pair the escalating-rider template matches — the Basilisk's
+    /// and the Medusa's Petrifying Gaze, word for word. Anchored to the letter so a
+    /// third tiered wording arriving from a new direction is refused rather than
+    /// approximated.
+    /// </summary>
+    private const string PetrifyingTierSentences =
+        "First Failure: The target has the Restrained condition and repeats the save at the end of its " +
+        "next turn if it is still Restrained, ending the effect on itself on a success. " +
+        "Second Failure: The target has the Petrified condition instead of the Restrained condition.";
+
     private static IEnumerable<AppliedCondition> ConditionsIn(
         string sentence,
         IReadOnlyList<AppliedCondition> conditions) =>

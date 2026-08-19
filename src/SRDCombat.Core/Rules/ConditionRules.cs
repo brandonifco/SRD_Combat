@@ -16,7 +16,7 @@ namespace SRDCombat.Core.Rules;
 /// failure, and the one this project is built to avoid.
 /// </para>
 /// <para>
-/// Eleven conditions are on it today.
+/// Twelve conditions are on it today.
 /// </para>
 /// <list type="bullet">
 /// <item>
@@ -93,12 +93,22 @@ namespace SRDCombat.Core.Rules;
 /// throws, and Advantage on attack rolls against it. Note what it does not print: no
 /// Speed 0 and no automatic Critical Hits — memory adds both, the glossary has neither.
 /// </item>
+/// <item>
+/// <b>Petrified</b> — brings Incapacitated, Speed 0, Advantage on attack rolls against
+/// it, auto-fails Strength and Dexterity saving throws (all printed page 186, and note
+/// no Critical Hit clause — Paralyzed and Unconscious have one, stone does not),
+/// <b>Resistance to all damage</b> in <c>DamageRules.Apply</c> under the printed order
+/// and no-stacking rules (page 17), and Immunity to the Poisoned condition as a gate in
+/// <c>Combatant.AddCondition</c>. The "Turned to Inanimate Substance" clause — weight,
+/// aging, the stone itself — is read as narratively inert in a fight. It carries no
+/// printed end, so it lasts <c>BeyondTheFight</c>: the encounter's end is the rescue,
+/// which is the same reading every outlasting duration already gets.
+/// </item>
 /// </list>
 /// <para>
-/// Everything else is deliberately absent, and the absences are the point. Deafened,
-/// Invisible and Petrified each need a model (hearing, sight, objects) that does not
-/// exist. Until one does the rider is reported as not modelled rather than imposed as
-/// scenery.
+/// Everything else is deliberately absent, and the absences are the point. Deafened and
+/// Invisible each need a model (hearing, sight) that does not exist. Until one does the
+/// rider is reported as not modelled rather than imposed as scenery.
 /// </para>
 /// </remarks>
 public static class ConditionRules
@@ -111,6 +121,7 @@ public static class ConditionRules
         ConditionType.Grappled,
         ConditionType.Incapacitated,
         ConditionType.Paralyzed,
+        ConditionType.Petrified,
         ConditionType.Poisoned,
         ConditionType.Prone,
         ConditionType.Restrained,
@@ -128,6 +139,7 @@ public static class ConditionRules
         ConditionType.Grappled,
         ConditionType.Restrained,
         ConditionType.Paralyzed,
+        ConditionType.Petrified,
         ConditionType.Unconscious,
     ];
 
@@ -138,6 +150,7 @@ public static class ConditionRules
     private static readonly ConditionType[] AutoFailsStrengthAndDexteritySaves =
     [
         ConditionType.Paralyzed,
+        ConditionType.Petrified,
         ConditionType.Stunned,
         ConditionType.Unconscious,
     ];
@@ -216,7 +229,12 @@ public static class ConditionRules
     {
         ArgumentNullException.ThrowIfNull(condition);
 
-        return condition.IsFullyModelled && IsExecutable(condition.Condition);
+        // An escalating rider is only as executable as the condition it deepens into:
+        // a Restrained the engine could impose whose second tier it could not would
+        // hold its victim while quietly forgetting the worse half of the sentence.
+        return condition.IsFullyModelled
+            && IsExecutable(condition.Condition)
+            && (condition.EscalatesTo is not { } deeper || IsExecutable(deeper));
     }
 
     /// <summary>

@@ -2147,11 +2147,16 @@
             "appliedConditions": [
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success"
-              },
-              {
-                "condition": "Petrified",
-                "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": true,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": true
+                },
+                "escalatesTo": "Petrified"
               }
             ],
             "coverIgnored": false,
@@ -2164,17 +2169,20 @@
           "appliedConditions": [
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success"
-            },
-            {
-              "condition": "Petrified",
-              "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": true,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": true
+              },
+              "escalatesTo": "Petrified"
             }
           ],
           "unmodelledClauses": [
-            "If the basilisk sees its reflection in the Cone, the basilisk must make this save",
-            "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success",
-            "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+            "If the basilisk sees its reflection in the Cone, the basilisk must make this save"
           ]
         }
       ],
@@ -15576,11 +15584,16 @@
             "appliedConditions": [
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success"
-              },
-              {
-                "condition": "Petrified",
-                "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": true,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": true
+                },
+                "escalatesTo": "Petrified"
               }
             ],
             "coverIgnored": false,
@@ -15593,17 +15606,19 @@
           "appliedConditions": [
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success"
-            },
-            {
-              "condition": "Petrified",
-              "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": true,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": true
+              },
+              "escalatesTo": "Petrified"
             }
           ],
-          "unmodelledClauses": [
-            "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success",
-            "Second Failure: The target has the Petrified condition instead of the Restrained condition."
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Trample",
@@ -21779,11 +21794,16 @@
             "appliedConditions": [
               {
                 "condition": "Restrained",
-                "unmodelledRequirement": "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success"
-              },
-              {
-                "condition": "Petrified",
-                "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 0,
+                  "outlastsFight": true,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": true
+                },
+                "escalatesTo": "Petrified"
               }
             ],
             "coverIgnored": false,
@@ -21796,17 +21816,20 @@
           "appliedConditions": [
             {
               "condition": "Restrained",
-              "unmodelledRequirement": "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success"
-            },
-            {
-              "condition": "Petrified",
-              "unmodelledRequirement": "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 0,
+                "outlastsFight": true,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": true
+              },
+              "escalatesTo": "Petrified"
             }
           ],
           "unmodelledClauses": [
-            "If the medusa sees its reflection in the Cone, the medusa must make this save",
-            "First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success",
-            "Second Failure: The target has the Petrified condition instead of the Restrained condition."
+            "If the medusa sees its reflection in the Cone, the medusa must make this save"
           ]
         }
       ],
