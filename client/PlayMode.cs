@@ -1427,10 +1427,14 @@ public partial class PlayMode : FightScreen
                 ? encounter.Attack(attack.Name, somebody)
                 : new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches {somebody.Name}."));
         }
-        else if (occupant is null && at is not null)
+        else if (at is not null
+            && (occupant is null || occupant.HasCondition(ConditionType.Incapacitated)))
         {
             // Sent to the engine whether or not it is highlighted: the refusal is the
-            // rule, the highlight only advice.
+            // rule, the highlight only advice. A square holding a downed comrade is a
+            // destination too — the engine's house rule lets a move end on a fallen
+            // ally, and swallowing that click here left the rule unreachable from the
+            // board: the reachable highlight lit the square and the click did nothing.
             Run(() => encounter.Move(square));
         }
     }
