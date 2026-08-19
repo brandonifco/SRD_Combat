@@ -584,8 +584,9 @@ public abstract partial class FightScreen : Node2D
     /// overscan is against the <i>stage</i> rather than the window because the stage
     /// already encodes every obstruction: a row on the field's bottom edge stops a
     /// full square clear of the buttons, and the last column stops clear of the log.
-    /// The cost is a band of void beyond the edge when the fight is pressed against
-    /// it, and that is the right trade — void obstructs nothing.
+    /// What shows beyond the edge is the terrain continuing under
+    /// <see cref="BeyondFieldWash"/> — <see cref="DrawGrid"/> lays ground to the
+    /// window's edges — so following the fight costs nothing at all.
     /// </remarks>
     private Vector2 ClampToField(Vector2 centre, float cell) => new(
         ClampAxis(centre.X, GridWidth, (StageLeft + StageRight) / 2f, StageLeft, StageRight, cell),
@@ -1315,30 +1316,39 @@ public abstract partial class FightScreen : Node2D
     {
         var theme = Theme;
 
-        for (var x = 0; x < GridWidth; x++)
+        // Every square the window can see, not just the field's own: the ground art
+        // runs to the window's edges however the camera sits, so the view is always
+        // full of battlefield and never of void — asked for from play on 2026-08-18,
+        // the same session that moved the camera past the field's edge. The squares
+        // beyond the field are scenery only: rule washes and obstacles never appear
+        // on them, and a wash marks them as ground the fight cannot use.
+        var xFrom = (int)Math.Floor(-GridLeft / CellPixels);
+        var xTo = (int)Math.Ceiling((ScreenWidth - GridLeft) / CellPixels);
+        var yFrom = (int)Math.Floor(-GridTop / CellPixels);
+        var yTo = (int)Math.Ceiling((ScreenHeight - GridTop) / CellPixels);
+
+        for (var x = xFrom; x < xTo; x++)
         {
-            for (var y = 0; y < GridHeight; y++)
+            for (var y = yFrom; y < yTo; y++)
             {
                 var square = new Rect2(GridLeft + (x * CellPixels), GridTop + (y * CellPixels), CellPixels, CellPixels);
-
-                // Zoomed in, most of the field is off screen; skip what nobody can see.
-                if (square.End.X < 0 || square.End.Y < 0
-                    || square.Position.X > ScreenWidth || square.Position.Y > ScreenHeight)
-                {
-                    continue;
-                }
-
                 var position = new GridPosition(x, y);
-                var blocked = BlockedSquares.Contains(position);
-                var low = LowObstacleSquares.Contains(position);
+                var inside = x >= 0 && x < GridWidth && y >= 0 && y < GridHeight;
 
                 if (theme is null)
                 {
-                    if (blocked)
+                    // The bare fallback board keeps its old shape: flat colours inside
+                    // the field, background beyond it.
+                    if (!inside)
+                    {
+                        continue;
+                    }
+
+                    if (BlockedSquares.Contains(position))
                     {
                         DrawRect(square, Blocked);
                     }
-                    else if (low)
+                    else if (LowObstacleSquares.Contains(position))
                     {
                         DrawRect(square, LowObstacle);
                     }
@@ -1353,23 +1363,36 @@ public abstract partial class FightScreen : Node2D
 
                 DrawGroundUnder(theme.Ground, square, position);
 
+                if (!inside)
+                {
+                    DrawRect(square, BeyondFieldWash);
+                    continue;
+                }
+
                 // Difficult ground is a rule, not a decoration: it survives the art.
                 if (DifficultSquares.Contains(position))
                 {
                     DrawRect(square, DifficultWash);
                 }
 
-                if (blocked && theme.Wall is { } wall)
+                if (BlockedSquares.Contains(position) && theme.Wall is { } wall)
                 {
                     DrawStanding(wall, square, WallScale);
                 }
-                else if (low && theme.Low is { } bush)
+                else if (LowObstacleSquares.Contains(position) && theme.Low is { } bush)
                 {
                     DrawStanding(bush, square, LowScale);
                 }
             }
         }
     }
+
+    /// <summary>
+    /// What ground beyond the field wears: dark enough that the playable field reads
+    /// at a glance, sheer enough that it is plainly the same terrain continuing — the
+    /// world does not end at the battlefield's edge, the fight does.
+    /// </summary>
+    private static readonly Color BeyondFieldWash = new(0f, 0f, 0f, 0.42f);
 
     /// <summary>
     /// Lays one of the theme's ground tiles on a square, chosen by where the square is.
