@@ -54,6 +54,11 @@ client/assets/sprites/*
 !client/assets/sprites/Sahuagin_Warrior/
 !client/assets/sprites/Scout_Human/
 !client/assets/sprites/Tough/
+# Brandon's own ground tiles travel with the repo; the Terrain folder's other
+# occupants (Tree, Rock, Bush) are cut from Craftpix packs and must not.
+!client/assets/sprites/Terrain/
+client/assets/sprites/Terrain/*
+!client/assets/sprites/Terrain/Ground_*.png
 
 # Scratch
 *.log
