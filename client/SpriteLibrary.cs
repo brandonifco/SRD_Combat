@@ -206,8 +206,15 @@ public sealed class SpriteLibrary
     /// the pick is uniform over the strip, so a tile's frequency is set by how many
     /// times it appears there: bases repeat, accents appear once.
     /// </param>
-    /// <param name="Wall">What stands where the battlefield is impassable.</param>
-    /// <param name="Low">What stands on a low obstacle — smaller, since it does not block.</param>
+    /// <param name="Wall">
+    /// What stands where the battlefield is impassable — variants, one chosen per
+    /// footprint by its anchor's hash, so twin pillars on one field need not be twins.
+    /// Empty means no art and the flat colour.
+    /// </param>
+    /// <param name="Low">
+    /// What stands on a low obstacle — smaller, since it does not block. Variants,
+    /// chosen the same way; empty means none.
+    /// </param>
     /// <param name="Difficult">
     /// What Difficult Terrain wears, one drawing per square, variants chosen by the
     /// square's own hash — brambles on the woodland, rubble and scrub when their art
@@ -215,7 +222,11 @@ public sealed class SpriteLibrary
     /// wash: the rule may never go invisible for want of a drawing.
     /// </param>
     public sealed record GroundTheme(
-        string Name, Strip Ground, Texture2D? Wall, Texture2D? Low, IReadOnlyList<Texture2D> Difficult);
+        string Name,
+        Strip Ground,
+        IReadOnlyList<Texture2D> Wall,
+        IReadOnlyList<Texture2D> Low,
+        IReadOnlyList<Texture2D> Difficult);
 
     /// <summary>The battlefield looks available, or empty when the art is absent.</summary>
     public IReadOnlyList<GroundTheme> Themes { get; }
@@ -287,22 +298,35 @@ public sealed class SpriteLibrary
         {
             if (LoadStrip(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
             {
-                var wall = LoadTexture(Path.Combine(terrain, $"Wall_{name}.png")) ?? packWall;
-                var low = LoadTexture(Path.Combine(terrain, $"Low_{name}.png")) ?? bush;
+                // Every slot is a variant list: the base name and its _2 sibling, the
+                // pack cut stepping in only when the theme has no drawing of its own.
+                // The _2 files had sat on disk unloaded since they were drawn — a
+                // variant nobody loads is a variant nobody sees.
+                Texture2D[] Variants(string slot, Texture2D? packFallback)
+                {
+                    var own = new[]
+                        {
+                            LoadTexture(Path.Combine(terrain, $"{slot}_{name}.png")),
+                            LoadTexture(Path.Combine(terrain, $"{slot}_{name}_2.png")),
+                        }
+                        .OfType<Texture2D>()
+                        .ToArray();
 
-                // Difficult Terrain's art, where it exists: brambles you push through
-                // rather than rocks you go around (Brandon's split, 2026-08-20). No
-                // pack fallback on purpose — a theme without the drawing keeps the
-                // wash, because difficult ground is a rule before it is a picture.
-                var difficult = new[]
-                    {
-                        LoadTexture(Path.Combine(terrain, $"Difficult_{name}.png")),
-                        LoadTexture(Path.Combine(terrain, $"Difficult_{name}_2.png")),
-                    }
-                    .OfType<Texture2D>()
-                    .ToArray();
+                    return own.Length > 0 ? own
+                        : packFallback is { } pack ? [pack]
+                        : [];
+                }
 
-                themes.Add(new GroundTheme(name, ground, wall, low, difficult));
+                // Difficult Terrain deliberately has no pack fallback: a theme without
+                // the drawing keeps the wash (brambles you push through rather than
+                // rocks you go around — Brandon's split, 2026-08-20), because
+                // difficult ground is a rule before it is a picture.
+                themes.Add(new GroundTheme(
+                    name,
+                    ground,
+                    Variants("Wall", packWall),
+                    Variants("Low", bush),
+                    Variants("Difficult", null)));
             }
         }
 

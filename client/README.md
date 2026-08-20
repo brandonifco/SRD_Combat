@@ -245,8 +245,10 @@ client/assets/sprites/Terrain/Bush.png                 pack fallback for a theme
 ```
 
 The themes are Woodland, Rocky and Barren; the per-theme files are Brandon's own art
-and travel with the repo, the pack cuts are fallbacks and stay local. `_2` variants
-may sit beside `Difficult_<Theme>.png` and are mixed per square by hash. Brambles are
+and travel with the repo, the pack cuts are fallbacks and stay local. A `_2` variant
+may sit beside any of the per-theme files: difficult art mixes variants per square,
+walls and low obstacles per footprint, both chosen by position hash so a fight always
+redraws the same field. Brambles are
 deliberately *difficult* rather than an obstacle — brush is pushed through, rock is
 gone around — which is why the woodland difficult slot wears what used to be its low
 obstacle.
