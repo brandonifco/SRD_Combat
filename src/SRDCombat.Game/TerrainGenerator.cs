@@ -14,11 +14,14 @@ namespace SRDCombat.Game;
 /// </para>
 /// <list type="bullet">
 /// <item>
-/// <b>Terrain sits strictly between the sides.</b> Features land only on columns between
-/// the two spawn columns, exclusive of both, so nobody starts inside a wall, walled off,
-/// or with their first step already taxed. How far apart the sides begin is
-/// <c>EncounterFactory.StartingSeparationFeet</c>'s decision, and terrain must not
-/// quietly remake it.
+/// <b>Terrain sits strictly between the outermost spawns.</b> Features land only on
+/// columns between the leftmost and rightmost spawn columns, exclusive of both, and never
+/// on a spawn square, so nobody starts inside a wall, walled off, or with their first
+/// step already taxed. For the classic two-column layout that band is exactly the ground
+/// between the sides; for a corner or surrounded layout it is the contested middle the
+/// spawns enclose. How far apart the sides begin is the layout's decision
+/// (<c>EncounterFactory.StartingSeparationFeet</c> and its <c>BattleLayout</c>), and
+/// terrain must not quietly remake it.
 /// </item>
 /// <item>
 /// <b>Obstacles come in clusters, Difficult Terrain in patches.</b> Up to three obstacle

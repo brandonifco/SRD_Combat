@@ -1582,6 +1582,25 @@ this project may relicense Wizards' content, which it may not.
   curve pointing the right way. **The automated numbers are floors, and this change more
   than most is for the human player**: an 18 × 12 field is where positioning, kiting and
   screening can exist at all.
+- **A fight's opening shape is drawn, not fixed (2026-08-19, asked for from play).**
+  `BattleLayout` rides the built `Fight`: half of draws keep the classic facing columns,
+  a quarter split the monsters into two corner groups converging at full separation, and
+  a quarter surround the party — a centre block with monsters at all four compass
+  points, 30 feet out (`SurroundedSeparationFeet`), deliberately half the standard
+  distance because a surround at 60 feet is just four unhurried column fights. **Below
+  level 3 every fight opens as columns and no die is spent**, so a level 1–2 fight
+  replays byte-identically — the same boundary every count bound draws, for the same
+  measured reason: a fragile party pays for being flanked in characters removed.
+  `TerrainGenerator` needed no change: its band generalises to "between the outermost
+  spawn columns", and its connectivity guarantee never cared about the shape. Measured
+  on both canonical ranges against a same-build baseline: medians pinned (18/18,
+  13/13), the opening untouched by construction (died-by-fight-4 4 → 4 and 15 → 15),
+  clears **16 → 19** and **16 → 22**, level-4 runs **48 → 51** and **36 → 43** — a mild
+  party *buff* on both ranges, plausibly focus fire collecting on split groups (defeat
+  in detail) and on a ring that walks into the party's full reach at once. It ships for
+  variety in human play under the printed-kit precedent, and the numbers are floors set
+  by the placeholder policy: a human surrounded at 30 feet is not the instrument's
+  surrounded.
 - **HOLD was wired, measured on the wide board with the armed party, and unwired again
   — #125's verdict survives its premises changing.** Both reasons it originally lost are
   gone (one bow between four; a board one move wide), so it got its fair test:
