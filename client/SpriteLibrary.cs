@@ -200,9 +200,11 @@ public sealed class SpriteLibrary
     /// </remarks>
     /// <param name="Name">The theme's name, for the record.</param>
     /// <param name="Ground">
-    /// A strip of interchangeable 16-pixel tiles. Several rather than one, because a
-    /// single tile laid over a whole field is still a lattice — just a finer one than
-    /// grid lines were. The board picks per square.
+    /// A strip of interchangeable 48-pixel tiles, one per movement square. Several
+    /// rather than one, because a single tile laid over a whole field is still a
+    /// lattice — just a finer one than grid lines were. The board picks per square, and
+    /// the pick is uniform over the strip, so a tile's frequency is set by how many
+    /// times it appears there: bases repeat, accents appear once.
     /// </param>
     /// <param name="Wall">What stands where the battlefield is impassable.</param>
     /// <param name="Low">What stands on a low obstacle — smaller, since it does not block.</param>

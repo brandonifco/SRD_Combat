@@ -565,9 +565,15 @@ Holds clear when the act queue drains (which also covers a victim whose art lack
 strip), on scrub, and on a slice with nothing to animate; the probe never engages them,
 because a capture read the instant after a click must show final state.
 **The battlefield wears the terrain packs, and the grid lines are gone (2026-08-15).**
-`SpriteLibrary.GroundTheme` is one look — a 16-pixel ground tile, a wall's scenery and a
+`SpriteLibrary.GroundTheme` is one look — a strip of ground tiles, a wall's scenery and a
 low obstacle's — and one is chosen per battlefield **from the field's own shape**, so a
-fight always redraws the ground it had and the next one differs. **The ground is a *set* of tiles, not one**, cut from the packs' own tilesets and chosen by
+fight always redraws the ground it had and the next one differs. **Since 2026-08-20 the
+tiles are Brandon's own, 48 pixels drawn one per movement square** (`GroundTilesPerSquare`
+is 1, was 3) — the same effective resolution the 16-pixel pack tiles reached at three
+across, with the seam-on-the-grid risk answered in the art (every variant edge-matches
+every variant) and tile frequency set by repetition within the strip, since the per-square
+pick is uniform over it. Barren wears the first set; Woodland and Rocky await their own
+and fall back to flat colour. **The ground is a *set* of tiles, not one**, originally cut from the packs' own tilesets and chosen by
 *seam continuity* — how well a tile's opposite edges match, so it repeats without seams —
 and then by grain. That second filter is the one worth keeping: a tile with a distinct
 motif (the mossy stone's green clumps) tiles seamlessly and still reads as **wallpaper**,

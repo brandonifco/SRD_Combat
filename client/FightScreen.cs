@@ -1435,17 +1435,17 @@ public abstract partial class FightScreen : Node2D
     /// a lattice of its own — the finer version of the problem grid lines had.
     /// </remarks>
     /// <summary>
-    /// Lays the ground under one movement square, as several smaller tiles.
+    /// Lays the ground under one movement square.
     /// </summary>
     /// <remarks>
-    /// <b>A ground tile is not a movement square.</b> One 16-pixel tile stretched over a
-    /// 66-pixel cell is a four-times blow-up, and every pixel the artist drew comes out as
-    /// a visible block; a square's worth of ground is drawn as
-    /// <see cref="GroundTilesPerSquare"/> across instead, which more than halves the
-    /// magnification and lets the texture read as stone rather than as pixels. It also
-    /// takes the ground off the movement grid's rhythm, which is the point: the board's
-    /// squares are a rule, and the ground is scenery that should not be quietly announcing
-    /// where they are.
+    /// <b>A ground tile is a movement square now, and the art carries what the layout
+    /// used to.</b> The 16-pixel pack tiles were drawn three across per square, which
+    /// halved their magnification and kept texture seams off the grid's rhythm. Brandon's
+    /// hand-made 48-pixel tiles hold a whole square's detail at the same ~1.4x
+    /// magnification the 3x3 layout achieved, so the resolution argument is moot; the
+    /// rhythm risk — every seam now falls on a square boundary — is answered in the art
+    /// instead: every variant edge-matches every variant, and frequency is weighted by
+    /// repeating base tiles within the strip, so no seam or repeat marks the squares out.
     /// </remarks>
     private void DrawGroundUnder(SpriteLibrary.Strip ground, Rect2 square, GridPosition at)
     {
@@ -1473,7 +1473,7 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>How many ground tiles span one movement square, each way.</summary>
-    private const int GroundTilesPerSquare = 3;
+    private const int GroundTilesPerSquare = 1;
 
     private void DrawGroundTile(SpriteLibrary.Strip ground, Rect2 square, GridPosition at)
     {
