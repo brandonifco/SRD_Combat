@@ -1612,11 +1612,12 @@ public abstract partial class FightScreen : Node2D
     private const int GroundTilesPerSquare = 1;
 
     /// <summary>
-    /// Draws one square's Difficult Terrain art: aspect kept, fitted inside the square,
-    /// feet on the square's bottom edge. Fitted rather than footprint-scaled because a
-    /// patch is per-square and amorphous — a lone square is a common draw, so the
-    /// drawing must read alone and may never overhang ground the rule does not cover,
-    /// which is exactly the line that separates it from standing scenery.
+    /// Draws one square's Difficult Terrain art: square-wide, aspect kept, feet on the
+    /// square's bottom edge, standing taller than its square when the drawing does —
+    /// the 48×96 brambles rise a full two squares, the way every standing sprite
+    /// already overdraws upward. It first shipped shrunk to fit inside the square and
+    /// read as weeds rather than brush (Brandon, 2026-08-20); the square the rule
+    /// covers is still exactly the one the art's feet stand on.
     /// </summary>
     private void DrawDifficultArt(IReadOnlyList<Texture2D> variants, Rect2 square, GridPosition at)
     {
@@ -1624,16 +1625,15 @@ public abstract partial class FightScreen : Node2D
         // does not correlate with the tile scatter underneath it.
         var art = variants[Math.Abs(((at.X * 97) ^ (at.Y * 41)) + (at.X * at.Y * 13)) % variants.Count];
         var size = art.GetSize();
-        var scale = Math.Min(square.Size.X / size.X, square.Size.Y / size.Y);
-        var drawn = new Vector2(size.X * scale, size.Y * scale);
+        var height = size.Y * square.Size.X / size.X;
 
         DrawTextureRect(
             art,
             new Rect2(
-                square.Position.X + ((square.Size.X - drawn.X) / 2f),
-                square.Position.Y + square.Size.Y - drawn.Y,
-                drawn.X,
-                drawn.Y),
+                square.Position.X,
+                square.Position.Y + square.Size.Y - height,
+                square.Size.X,
+                height),
             tile: false);
     }
 
