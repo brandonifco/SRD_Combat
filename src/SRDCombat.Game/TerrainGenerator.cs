@@ -24,12 +24,16 @@ namespace SRDCombat.Game;
 /// terrain must not quietly remake it.
 /// </item>
 /// <item>
-/// <b>Obstacles come in clusters, Difficult Terrain in patches.</b> Up to three obstacle
-/// clusters of one to three squares — each cluster drawn as either a wall (Total Cover)
-/// or a low obstacle (Half Cover, shot over rather than blocking), a coin flip per
-/// cluster — and up to two patches of one to four. A draw can also produce a bare field,
-/// on purpose: variety includes the plain, and the numbers are small because the fields
-/// are — a generated battlefield is nine squares wide.
+/// <b>Obstacles are whole footprints, Difficult Terrain comes in patches.</b> Up to
+/// three obstacles — each drawn as either a wall (Total Cover, 2×4 squares) or a low
+/// obstacle (Half Cover, shot over rather than blocking, 2×2 squares), a coin flip per
+/// obstacle — and up to two patches of one to four. The footprint sizes are the drawn
+/// art's own (2026-08-20, at Brandon's direction): a rock wall or a tree blocks every
+/// square its picture covers, which is why placement is all-or-nothing — a footprint
+/// that cannot land whole lands nowhere, so a partial obstacle can never contradict its
+/// art. Footprints also never touch each other, orthogonally or by kind, so a client
+/// can recover each one from the blocked squares as a connected component. A draw can
+/// also produce a bare field, on purpose: variety includes the plain.
 /// </item>
 /// <item>
 /// <b>Every fight stays winnable on foot.</b> An obstacle square — wall or low, both
@@ -99,24 +103,47 @@ public static class TerrainGenerator
             _ => new GridPosition(from.X - 1, from.Y),
         };
 
-        var obstacleClusters = random.Roll(4) - 1;
+        var obstacleCount = random.Roll(4) - 1;
 
-        for (var cluster = 0; cluster < obstacleClusters; cluster++)
+        for (var obstacle = 0; obstacle < obstacleCount; obstacle++)
         {
-            var kind = random.Roll(2) == 1 ? walls : lowObstacles;
-            var current = DrawSquare();
-            var size = random.Roll(3);
+            // The dice are consumed identically whether or not the footprint lands, so
+            // one rejection never re-times every draw after it.
+            var isWall = random.Roll(2) == 1;
+            var anchor = DrawSquare();
+            var (footprintWidth, footprintHeight) = isWall ? (2, 4) : (2, 2);
 
-            for (var grown = 0; grown < size; grown++)
+            var footprint = new List<GridPosition>(footprintWidth * footprintHeight);
+
+            for (var dx = 0; dx < footprintWidth; dx++)
             {
-                if (InRegion(current) && !impassable.Contains(current)
-                    && StaysConnected(impassable, current, spawnSet, width, height))
+                for (var dy = 0; dy < footprintHeight; dy++)
                 {
-                    kind.Add(current);
-                    impassable.Add(current);
+                    footprint.Add(new GridPosition(anchor.X + dx, anchor.Y + dy));
                 }
+            }
 
-                current = Step(current);
+            // All or nothing: every square legal, nothing already standing there, a
+            // clear square of separation from every earlier footprint (which is what
+            // lets a client recover footprints as connected components), and the whole
+            // block placed without cutting any spawn off from any other.
+            var lands = footprint.All(square =>
+                    InRegion(square)
+                    && !impassable.Contains(square)
+                    && !square.Neighbours().Any(impassable.Contains))
+                && StaysConnected(impassable, footprint, spawnSet, width, height);
+
+            if (!lands)
+            {
+                continue;
+            }
+
+            var kind = isWall ? walls : lowObstacles;
+
+            foreach (var square in footprint)
+            {
+                kind.Add(square);
+                impassable.Add(square);
             }
         }
 
@@ -142,11 +169,12 @@ public static class TerrainGenerator
     }
 
     /// <summary>
-    /// Whether every spawn square can still reach every other with this obstacle added.
+    /// Whether every spawn square can still reach every other with this whole footprint
+    /// added.
     /// </summary>
     private static bool StaysConnected(
         HashSet<GridPosition> impassable,
-        GridPosition candidate,
+        IReadOnlyCollection<GridPosition> candidates,
         HashSet<GridPosition> spawns,
         int width,
         int height)
@@ -156,6 +184,7 @@ public static class TerrainGenerator
             return true;
         }
 
+        var candidateSet = new HashSet<GridPosition>(candidates);
         var reached = new HashSet<GridPosition> { spawns.First() };
         var frontier = new Queue<GridPosition>(reached);
 
@@ -164,7 +193,7 @@ public static class TerrainGenerator
             foreach (var next in frontier.Dequeue().Neighbours())
             {
                 if (next.X < 0 || next.X >= width || next.Y < 0 || next.Y >= height
-                    || next == candidate || impassable.Contains(next) || !reached.Add(next))
+                    || candidateSet.Contains(next) || impassable.Contains(next) || !reached.Add(next))
                 {
                     continue;
                 }

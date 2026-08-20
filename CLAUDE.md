@@ -588,7 +588,16 @@ the square where a low obstacle says it with something that plainly does not. **
 per-theme and colour-matched since 2026-08-20** (`Wall_<Theme>.png`/`Low_<Theme>.png`,
 Brandon's drawings): tree and brush on Woodland's grass, red rock wall and boulder on
 Rocky's clay, grey on Barren's gravel — a fight never mixes the families, with the shared
-pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent. With no art
+pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent. **An obstacle
+is a whole footprint since the same day, and the art covers exactly what blocks** — asked
+for from play, after a character walked "onto" a tree whose picture overhung squares its
+one engine square did not block: `TerrainGenerator` now places walls as 2×4 blocks and low
+obstacles as 2×2 (the drawn art's own coverage), all-or-nothing under the connectivity
+guarantee and never touching one another, and the client recovers each footprint from the
+blocked squares as a connected component and dresses it with one drawing — a shorter
+drawing repeats upward to fill its block (two trees on a 2×4 wall read as a copse), and a
+component that is not a whole 2-wide rectangle (a hand-authored map's wall run) falls back
+to the per-square sprites. With no art
 installed every square falls back to the flat colours and the outline it always had.
 
 **Ranged attacks throw something across the board (2026-08-15).** `CombatStep.Ranged` is
@@ -1824,10 +1833,11 @@ cost real time:
   now, and reads like the book's own examples. *Placement:* **the sides start 30 feet
   apart**, the number deciding whether ranged attacks and breath weapons matter at all.
   The ground between them is generated too: `TerrainGenerator` (in `Game`, beside the
-  factory) seeds walls and Difficult Terrain from the fight's own dice, keeps every
-  feature strictly between the spawn columns, and refuses any wall square that would
-  disconnect one spawn from another — so the 30 feet stays crossable by construction,
-  and a bare field remains a possible draw on purpose.
+  factory) seeds obstacles and Difficult Terrain from the fight's own dice, keeps every
+  feature strictly between the spawn columns, and refuses any footprint that would
+  disconnect one spawn from another — placed whole since 2026-08-20, walls as 2×4
+  blocks and low obstacles as 2×2, all-or-nothing, so the gap stays crossable by
+  construction and a bare field remains a possible draw on purpose.
 - **Rests differ per feature, so restoring them is a table and not a reset.** Verified
   against print: Rage and Second Wind each return **one** use on a Short Rest and all on
   a Long; Action Surge returns whole on **either**; spell slots on a Long Rest only. And
