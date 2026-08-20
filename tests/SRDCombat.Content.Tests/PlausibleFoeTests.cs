@@ -43,13 +43,21 @@ public class PlausibleFoeTests
         // A Wolf and a Camel are both Unaligned Beasts, which is exactly why no
         // derivation from type or alignment could have done this.
         Assert.Contains("Wolf", names);
-        Assert.Contains("Brown Bear", names);
         Assert.Contains("Goblin Warrior", names);
 
-        // A weak wild animal is a poor fight, not an absurd one, and stays in.
-        Assert.Contains("Rat", names);
-        Assert.Contains("Raven", names);
-        Assert.Contains("Deer", names);
+        // This axis still admits the wild animals — "a weak wild animal is a poor
+        // fight, not an absurd one" remains its reading — and it is the genre cut one
+        // axis up (TraditionalFoes, 2026-08-20) that now keeps them out of the default
+        // draw. Asserted with the genre cut lifted, so the two axes stay separate.
+        var withoutGenreCut = MonsterPool
+            .Draw(Content.Monsters, TierOneMaximum, traditionalFoesOnly: false)
+            .Select(monster => monster.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains("Brown Bear", withoutGenreCut);
+        Assert.Contains("Rat", withoutGenreCut);
+        Assert.Contains("Raven", withoutGenreCut);
+        Assert.Contains("Deer", withoutGenreCut);
     }
 
     [Fact]

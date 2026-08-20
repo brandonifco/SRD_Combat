@@ -1912,10 +1912,15 @@ cost real time:
   for ordinary animals, so it is one enum comparison and a renamed stat block cannot
   escape it; the cost of deriving rather than curating is that genre-appropriate animals
   (a wolf pack, a giant spider) are swept up too, which is why it is a weight.
-  **A weight and never a filter, and the pool's shape is the reason**: of 117 creatures at
-  CR ≤ 4, 46 are Beasts, and **at CR 0 nineteen of twenty-two are** — excluding them would
-  leave three creatures at the bottom of the ladder and break the pool's own "at least
-  five at every CR" floors. Measured over 6,000 built encounters, the Beast share of
+  **It shipped as a weight and became a filter one slice later, at Brandon's direction**
+  (2026-08-20): `TraditionalFoes` in `Core.Rules` — the fourth curated exclusion list,
+  the `PlausibleFoes` pattern exactly — cuts the 36 mundane animals, prehistorics,
+  bystander NPCs and noble mounts from the default draw outright, leaving 81 traditional
+  creatures; the Giant/Swarm/fantasy variants survive by exact-name matching. The cost
+  the weight was avoiding is now accepted with open eyes: CR 0 and CR 4 each keep three
+  creatures, the pool-floor test carries floors of 3 there with the reasoning inline,
+  and low-CR "expansion" fill-ins are planned to repopulate the thin bands. The weight
+  still applies on top, biasing the surviving draw toward non-Beasts. Measured over 6,000 built encounters, the Beast share of
   drawn creatures falls **43.1% → 23.7%**. And the pacing result is the interesting part:
   on seeds 1–120 against a same-build baseline, clears **76 → 66**, level-4 runs
   **95 → 83**, died-by-fight-4 **11 → 15**. **The genre preference is a difficulty

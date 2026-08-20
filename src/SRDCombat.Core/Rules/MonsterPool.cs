@@ -152,11 +152,19 @@ public static class MonsterPool
     /// stampeding elephant passes false, or simply hands <c>EncounterBuilder</c> its own
     /// sequence.
     /// </param>
+    /// <param name="traditionalFoesOnly">
+    /// Whether to drop the creatures the genre cut excludes — the safari, the
+    /// prehistoric menagerie, the bystanders; see <see cref="TraditionalFoes"/>. True by
+    /// default for the same reason <paramref name="plausibleFoesOnly"/> is: this is the
+    /// bag the <em>random</em> draw comes out of, and an authored fight that wants a
+    /// pack of lions passes false.
+    /// </param>
     public static IReadOnlyList<MonsterDefinition> Draw(
         IEnumerable<MonsterDefinition> monsters,
         decimal maximumChallengeRating,
         MonsterCoverage floor = MonsterCoverage.Playable,
-        bool plausibleFoesOnly = true)
+        bool plausibleFoesOnly = true,
+        bool traditionalFoesOnly = true)
     {
         ArgumentNullException.ThrowIfNull(monsters);
 
@@ -164,6 +172,7 @@ public static class MonsterPool
             .Where(monster => monster.ChallengeRating <= maximumChallengeRating)
             .Where(monster => Admits(monster, floor))
             .Where(monster => !plausibleFoesOnly || PlausibleFoes.Admits(monster))
+            .Where(monster => !traditionalFoesOnly || TraditionalFoes.Admits(monster))
             .OrderBy(monster => monster.ChallengeRating)
             .ThenBy(monster => monster.Name, StringComparer.Ordinal)
             .ToArray();
