@@ -213,6 +213,13 @@ public abstract partial class FightScreen : Node2D
         /// <summary>The Attack strip, played at whatever it swings.</summary>
         Swing,
 
+        /// <summary>
+        /// The Cast strip, played on the engine's SpellCast announcement — the tome
+        /// comes up before the bolt flies or anybody saves. Art most combatants lack;
+        /// without it the step simply plays no pose, as every cast did before.
+        /// </summary>
+        Cast,
+
         /// <summary>The Hurt strip: a flinch as damage lands.</summary>
         Flinch,
 
@@ -331,9 +338,12 @@ public abstract partial class FightScreen : Node2D
     /// </remarks>
     private const double MinimumSwingSeconds = 0.75;
 
-    /// <summary>A pose's duration: its frames at the shared rate, floored for a Swing.</summary>
+    /// <summary>
+    /// A pose's duration: its frames at the shared rate, floored for a Swing — and for
+    /// a Cast, which is one drawn frame with a whole announcement to be the picture of.
+    /// </summary>
     private static double SecondsForPose(Pose pose, int frames) =>
-        pose == Pose.Swing
+        pose is Pose.Swing or Pose.Cast
             ? Math.Max(SecondsFor(frames), MinimumSwingSeconds)
             : SecondsFor(frames);
 
@@ -857,6 +867,10 @@ public abstract partial class FightScreen : Node2D
                     break;
                 }
 
+                case { Kind: CombatStepKind.SpellCast, ActorId: { } casterId }:
+                    QueuePose(log, index, to, tokens, casterId, Pose.Cast);
+                    break;
+
                 case { Kind: CombatStepKind.Damage, TargetId: { } victimId }:
                     HoldAppearance(victimId);
                     QueuePose(log, index, to, tokens, victimId, Pose.Flinch);
@@ -951,6 +965,7 @@ public abstract partial class FightScreen : Node2D
         var strip = pose switch
         {
             Pose.Swing => art.Attack,
+            Pose.Cast => art.Cast,
 
             // A blow that felled its victim skips the flinch: the fall queued right
             // behind it is the better telling, and the token is already on the floor.
@@ -1890,6 +1905,7 @@ public abstract partial class FightScreen : Node2D
         var strip = posing switch
         {
             Pose.Swing => art.Attack,
+            Pose.Cast => art.Cast,
             Pose.Flinch => art.Hurt,
             Pose.Fall => art.Dead,
             _ => fallen ? art.Dead : walking && art.Walk is not null ? art.Walk : art.Idle,

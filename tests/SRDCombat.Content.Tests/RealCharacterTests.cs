@@ -204,7 +204,7 @@ public class RealCharacterTests
 
         Assert.Null(encounter.CastSpell("spell.fireball", midpoint));
 
-        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Spell);
+        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.SpellCast);
         Assert.All(goblins, goblin =>
             Assert.True(goblin.CurrentHitPoints < goblin.Stats.MaximumHitPoints || goblin.IsDead));
 

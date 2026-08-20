@@ -46,7 +46,7 @@ public class CastingTests
 
         Assert.Null(encounter.CastSpell("spell.fire-bolt", target));
 
-        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Spell);
+        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.SpellCast);
         Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Damage);
         Assert.True(target.CurrentHitPoints < target.Stats.MaximumHitPoints);
 
