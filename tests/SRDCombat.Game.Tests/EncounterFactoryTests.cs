@@ -137,4 +137,140 @@ public class EncounterFactoryTests
         Assert.True(fight.Encounter.IsComplete);
         Assert.NotNull(fight.Encounter.WinningSide);
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void BelowLevelThreeEveryFightOpensAsColumns(int level)
+    {
+        // The same boundary every count bound draws, for the same measured reason: a
+        // level 1-2 party pays for being flanked in characters removed, and an ambush
+        // would rebuild the level 1 wall on purpose.
+        var party = PregeneratedParty.Build(Content, level);
+
+        foreach (var seed in Enumerable.Range(1, 30))
+        {
+            var fight = EncounterFactory.Build(Content, party, EncounterDifficulty.Moderate, new SeededRandomSource(seed));
+
+            Assert.Equal(BattleLayout.Columns, fight.Layout);
+
+            var closest = ClosestDistance(fight);
+            Assert.Equal(EncounterFactory.StartingSeparationFeet, closest);
+        }
+    }
+
+    [Fact]
+    public void FromLevelThreeEveryLayoutIsDrawnSometimes()
+    {
+        var party = PregeneratedParty.Build(Content, level: 3);
+
+        var drawn = Enumerable.Range(1, 60)
+            .Select(seed => EncounterFactory.Build(Content, party, EncounterDifficulty.Moderate, new SeededRandomSource(seed)).Layout)
+            .ToHashSet();
+
+        Assert.Contains(BattleLayout.Columns, drawn);
+        Assert.Contains(BattleLayout.CornerGroups, drawn);
+        Assert.Contains(BattleLayout.Surrounded, drawn);
+    }
+
+    [Fact]
+    public void ACornerGroupsFightConvergesFromTwoDirectionsAtFullSeparation()
+    {
+        var fight = FirstWithLayout(BattleLayout.CornerGroups, minimumMonsters: 2);
+
+        var monsters = MonstersOf(fight);
+        var heroes = HeroesOf(fight);
+        var height = fight.Encounter.Battlefield.Height;
+
+        // One group at each end of the far column: somebody starts above the party's
+        // rows and somebody below, which is what makes it a pincer and not a column.
+        Assert.Contains(monsters, monster => monster.Position.Y < heroes.Min(hero => hero.Position.Y));
+        Assert.Contains(monsters, monster => monster.Position.Y > heroes.Max(hero => hero.Position.Y));
+        Assert.All(monsters, monster => Assert.True(monster.Position.Y >= 1 && monster.Position.Y <= height - 2));
+
+        // Flanked, not ambushed: the nearest monster is no closer than the classic line.
+        Assert.True(ClosestDistance(fight) >= EncounterFactory.StartingSeparationFeet);
+    }
+
+    [Fact]
+    public void ASurroundedFightRingsThePartyOnEveryCompassSide()
+    {
+        var fight = FirstWithLayout(BattleLayout.Surrounded, minimumMonsters: 4);
+
+        var monsters = MonstersOf(fight);
+        var heroes = HeroesOf(fight);
+
+        Assert.Contains(monsters, monster => monster.Position.X > heroes.Max(hero => hero.Position.X));
+        Assert.Contains(monsters, monster => monster.Position.X < heroes.Min(hero => hero.Position.X));
+        Assert.Contains(monsters, monster => monster.Position.Y < heroes.Min(hero => hero.Position.Y));
+        Assert.Contains(monsters, monster => monster.Position.Y > heroes.Max(hero => hero.Position.Y));
+
+        // The stated ring, measured from the block's anchor square — the block's far
+        // corner sits one square nearer, never closer than that.
+        Assert.True(
+            ClosestDistance(fight)
+                >= EncounterFactory.SurroundedSeparationFeet - Battlefield.FeetPerSquare);
+    }
+
+    [Fact]
+    public void ASurroundedFightRunsToAConclusion()
+    {
+        // The layout with the most new geometry gets the whole-fight smoke test: a ring
+        // that could strand somebody, stall the policy or wall itself in would fail here.
+        var fight = FirstWithLayout(BattleLayout.Surrounded, minimumMonsters: 1);
+
+        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+
+        Assert.True(fight.Encounter.IsComplete);
+        Assert.NotNull(fight.Encounter.WinningSide);
+    }
+
+    [Fact]
+    public void EveryLayoutPlacesEveryoneOnTheFieldWithoutSharing()
+    {
+        var party = PregeneratedParty.Build(Content, level: 5);
+
+        foreach (var seed in Enumerable.Range(1, 40))
+        {
+            var fight = EncounterFactory.Build(Content, party, EncounterDifficulty.High, new SeededRandomSource(seed));
+
+            var squares = fight.Encounter.Combatants.Select(combatant => combatant.Position).ToArray();
+
+            Assert.Equal(squares.Length, squares.Distinct().Count());
+            Assert.All(
+                fight.Encounter.Combatants,
+                combatant => Assert.True(
+                    fight.Encounter.Battlefield.IsPassable(combatant.Position),
+                    $"{combatant.Name} was placed off the battlefield at {combatant.Position} (layout {fight.Layout}, seed {seed})."));
+        }
+    }
+
+    /// <summary>The first level 3 fight whose draw produced the wanted layout.</summary>
+    private static Fight FirstWithLayout(BattleLayout layout, int minimumMonsters)
+    {
+        var party = PregeneratedParty.Build(Content, level: 3);
+
+        foreach (var seed in Enumerable.Range(1, 200))
+        {
+            var fight = EncounterFactory.Build(Content, party, EncounterDifficulty.Moderate, new SeededRandomSource(seed));
+
+            if (fight.Layout == layout && fight.Built.Monsters.Count >= minimumMonsters)
+            {
+                return fight;
+            }
+        }
+
+        throw new InvalidOperationException($"No seed in 1..200 drew {layout} with {minimumMonsters}+ monsters.");
+    }
+
+    private static Combatant[] HeroesOf(Fight fight) => fight.Encounter.Combatants
+        .Where(combatant => combatant.SideId == PregeneratedParty.SideId)
+        .ToArray();
+
+    private static Combatant[] MonstersOf(Fight fight) => fight.Encounter.Combatants
+        .Where(combatant => combatant.SideId == EncounterFactory.MonsterSideId)
+        .ToArray();
+
+    private static int ClosestDistance(Fight fight) =>
+        HeroesOf(fight).Min(hero => MonstersOf(fight).Min(monster => hero.Position.DistanceFeetTo(monster.Position)));
 }

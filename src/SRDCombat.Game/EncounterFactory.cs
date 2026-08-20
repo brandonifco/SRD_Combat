@@ -10,7 +10,43 @@ namespace SRDCombat.Game;
 /// <param name="Encounter">The fight, with initiative already rolled.</param>
 /// <param name="Party">The party in it.</param>
 /// <param name="Built">The monsters chosen and what they cost.</param>
-public sealed record Fight(Encounter Encounter, IReadOnlyList<PartyMember> Party, BuiltEncounter Built);
+/// <param name="Layout">Where each side stood when initiative was rolled.</param>
+public sealed record Fight(
+    Encounter Encounter,
+    IReadOnlyList<PartyMember> Party,
+    BuiltEncounter Built,
+    BattleLayout Layout = BattleLayout.Columns);
+
+/// <summary>How a fight opens: where each side stands when initiative is rolled.</summary>
+/// <remarks>
+/// The SRD prints no deployment rule, so like the loot rates this is the project's own
+/// design, stated here. Each shape changes the fight's geometry without touching its
+/// budget: the same creatures cost the same printed XP wherever they stand. The draw is
+/// level-gated — below <see cref="EncounterFactory.HordeMinimumLevel"/> every fight opens
+/// as <see cref="Columns"/>, for the measured reason every count bound draws the same
+/// boundary: a level 1–2 party pays for being flanked in characters removed, and an
+/// ambush would rebuild the level 1 wall on purpose.
+/// </remarks>
+public enum BattleLayout
+{
+    /// <summary>Two facing columns, <see cref="EncounterFactory.StartingSeparationFeet"/> apart — the classic line battle.</summary>
+    Columns,
+
+    /// <summary>
+    /// The party's column faces monsters split into two groups at the far corners, so the
+    /// enemy converges from two directions instead of one and the line can be flanked.
+    /// The nearest monster still starts at least the standard separation away.
+    /// </summary>
+    CornerGroups,
+
+    /// <summary>
+    /// The party stands in a block at the field's centre with monsters closing from all
+    /// four compass points, <see cref="EncounterFactory.SurroundedSeparationFeet"/> from
+    /// the block's anchor square — closer than the standard separation on purpose, since
+    /// being surrounded at long range would just be four short column fights.
+    /// </summary>
+    Surrounded,
+}
 
 /// <summary>
 /// Turns a party and a difficulty into a fight on a battlefield.
@@ -22,8 +58,11 @@ public sealed record Fight(Encounter Encounter, IReadOnlyList<PartyMember> Party
 /// <see cref="EncounterBuilder"/> decide how many and which, and this places them.
 /// </para>
 /// <para>
-/// <b>Placement is a stated interpretation, and the distance is the whole of it.</b> The
-/// sides start <see cref="StartingSeparationFeet"/> apart, facing each other in columns.
+/// <b>Placement is a stated interpretation, and the distance is most of it.</b> The
+/// sides start <see cref="StartingSeparationFeet"/> apart — facing columns at half of
+/// fights, and from level 3 a seeded draw can open the fight as a
+/// <see cref="BattleLayout"/> instead: monsters in two corner groups, or the party
+/// surrounded at the centre (see the enum for each shape's reasoning and gates).
 /// That number decides what kind of game this is: at 5 feet every fight is a melee brawl
 /// and a Longbow, a breath weapon and a Rogue's Steady Aim are all wasted; at 200 feet
 /// the first two rounds are walking. Six squares is far enough that closing costs a turn
@@ -73,6 +112,14 @@ public static class EncounterFactory
 {
     /// <summary>How far apart the two sides start, in feet.</summary>
     public const int StartingSeparationFeet = 60;
+
+    /// <summary>
+    /// How far a surrounding monster starts from the party's anchor square, in feet.
+    /// Half the standard separation, deliberately: a surround at 60 feet is four
+    /// unhurried column fights, where at 30 the ring closes before the party has
+    /// finished choosing which way to face — which is what being surrounded is.
+    /// </summary>
+    public const int SurroundedSeparationFeet = 30;
 
     /// <summary>
     /// Clear squares outside each spawn column. Two flanks of this rather than one
@@ -191,17 +238,9 @@ public static class EncounterFactory
         var side = Math.Max(party.Count, Math.Max(built.Monsters.Count, 1));
         var height = (side * 2) + (MarginSquares * 2);
 
-        // Both columns centred, so the flanking room is on both flanks. Off-centre
-        // columns give one side a wall to hide against and the other open ground, which
-        // is a difference the fight never earned.
-        var top = Math.Max(1, (height - side) / 2);
-
-        var partySpawns = party
-            .Select((_, index) => new GridPosition(MarginSquares, top + index))
-            .ToArray();
-        var monsterSpawns = built.Monsters
-            .Select((_, index) => new GridPosition(MarginSquares + separation, top + index))
-            .ToArray();
+        var layout = DrawLayout(random, lowestLevel);
+        var (partySpawns, monsterSpawns) =
+            PlaceSides(layout, party.Count, built.Monsters.Count, width, height, separation);
 
         var battlefield = TerrainGenerator.Generate(
             width,
@@ -230,7 +269,122 @@ public static class EncounterFactory
         return new Fight(
             Encounter.Start(battlefield, combatants, random, Resolve(objective, built, party)),
             placed,
-            built);
+            built,
+            layout);
+    }
+
+    /// <summary>
+    /// Draws the fight's opening shape, or keeps the classic columns below the level
+    /// boundary — where no die is spent at all, so a level 1–2 fight replays exactly as
+    /// it did before layouts existed.
+    /// </summary>
+    /// <remarks>
+    /// Columns stay the commonest draw at half of fights: the varied shapes are meant to
+    /// be met, not to make the line battle the exception — the same reasoning that keeps
+    /// a bare field a possible terrain draw.
+    /// </remarks>
+    private static BattleLayout DrawLayout(IRandomSource random, int lowestLevel) =>
+        lowestLevel < HordeMinimumLevel
+            ? BattleLayout.Columns
+            : random.Roll(4) switch
+            {
+                1 or 2 => BattleLayout.Columns,
+                3 => BattleLayout.CornerGroups,
+                _ => BattleLayout.Surrounded,
+            };
+
+    /// <summary>Where each side starts, under the drawn layout.</summary>
+    private static (GridPosition[] Party, GridPosition[] Monsters) PlaceSides(
+        BattleLayout layout,
+        int partyCount,
+        int monsterCount,
+        int width,
+        int height,
+        int separation)
+    {
+        switch (layout)
+        {
+            case BattleLayout.CornerGroups:
+            {
+                // The party keeps its centred column; the monsters take the far
+                // column's two ends, filled alternately so the groups stay even — one
+                // stack growing down from the top corner, one up from the bottom. The
+                // field is sized at two of the larger side plus both margins, so the
+                // stacks can never meet in the middle.
+                var top = Math.Max(1, (height - partyCount) / 2);
+
+                var partySpawns = Enumerable.Range(0, partyCount)
+                    .Select(index => new GridPosition(MarginSquares, top + index))
+                    .ToArray();
+                var monsterSpawns = Enumerable.Range(0, monsterCount)
+                    .Select(index => new GridPosition(
+                        MarginSquares + separation,
+                        index % 2 == 0 ? 1 + (index / 2) : height - 2 - (index / 2)))
+                    .ToArray();
+
+                return (partySpawns, monsterSpawns);
+            }
+
+            case BattleLayout.Surrounded:
+            {
+                var centre = new GridPosition(width / 2, height / 2);
+                var ring = SurroundedSeparationFeet / Battlefield.FeetPerSquare;
+
+                // The party stands in a block on the centre square — the anchor the
+                // ring is measured from, so the block's far corner is a square nearer
+                // than the stated distance rather than the stated distance being a lie.
+                var partySpawns = Enumerable.Range(0, partyCount)
+                    .Select(index => new GridPosition(centre.X + (index % 2), centre.Y + (index / 2)))
+                    .ToArray();
+
+                // The monsters take the four compass points in turn, each direction
+                // fanning out sideways as it fills: 0, +1, -1, +2… along the axis the
+                // ring does not fix. Ten monsters — the warband ceiling — reach a fan
+                // of one, so nothing can collide with a neighbouring compass point.
+                var monsterSpawns = Enumerable.Range(0, monsterCount)
+                    .Select(index =>
+                    {
+                        var fan = Fan(index / 4);
+
+                        return (index % 4) switch
+                        {
+                            0 => new GridPosition(centre.X + ring, centre.Y + fan),
+                            1 => new GridPosition(centre.X - ring, centre.Y + fan),
+                            2 => new GridPosition(centre.X + fan, centre.Y - ring),
+                            _ => new GridPosition(centre.X + fan, centre.Y + ring),
+                        };
+                    })
+                    .ToArray();
+
+                return (partySpawns, monsterSpawns);
+            }
+
+            default:
+            {
+                // Both columns centred, so the flanking room is on both flanks.
+                // Off-centre columns give one side a wall to hide against and the other
+                // open ground, which is a difference the fight never earned.
+                var side = Math.Max(partyCount, Math.Max(monsterCount, 1));
+                var top = Math.Max(1, (height - side) / 2);
+
+                var partySpawns = Enumerable.Range(0, partyCount)
+                    .Select(index => new GridPosition(MarginSquares, top + index))
+                    .ToArray();
+                var monsterSpawns = Enumerable.Range(0, monsterCount)
+                    .Select(index => new GridPosition(MarginSquares + separation, top + index))
+                    .ToArray();
+
+                return (partySpawns, monsterSpawns);
+            }
+        }
+    }
+
+    /// <summary>The fan sequence 0, +1, −1, +2, −2… for spreading a group along an axis.</summary>
+    private static int Fan(int rank)
+    {
+        var magnitude = (rank + 1) / 2;
+
+        return rank % 2 == 1 ? magnitude : -magnitude;
     }
 
     /// <summary>
