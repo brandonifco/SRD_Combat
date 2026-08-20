@@ -78,19 +78,26 @@ public sealed class SpriteLibrary
     /// The frame of <paramref name="Dead"/> a body settles on — see
     /// <see cref="RestingFrame"/>. Zero when there is no death strip.
     /// </param>
+    /// <param name="Cast">
+    /// The casting pose, played on the engine's <c>SpellCast</c> step. Only the drawn
+    /// sets carry one (the packs never did), and a combatant without it simply casts
+    /// without a pose, exactly as everything did before the Cleric's arrived.
+    /// </param>
     public sealed record CharacterArt(
         Strip? Idle,
         Strip? Walk,
         Strip? Dead,
         Strip? Attack,
         Strip? Hurt,
+        Strip? Cast,
         Figure Figure,
         int Repose);
 
     /// <summary>Party art by class name — the SRD prints twelve, the packs cover them all.</summary>
     private static readonly Dictionary<string, string> ByClassName = new(StringComparer.Ordinal)
     {
-        // Hand-drawn sets — four single frames each, produced from painted sources
+        // Hand-drawn sets — single frames per pose (four, five with a Cast — the
+        // Cleric is the first to carry one), produced from painted sources
         // through the measured pipeline the Barbarian repaint recorded (crop, box
         // downscale with an unsharp pass at twice target size, quantize to the master
         // palette at client/assets/palette/SRD_Combat.gpl with hard alpha). Each pose
@@ -102,7 +109,7 @@ public sealed class SpriteLibrary
         ["Rogue"] = "Rogue_Drawn",
         ["Bard"] = "Elf_2",
         ["Ranger"] = "Elf_3",
-        ["Cleric"] = "Priests_1",
+        ["Cleric"] = "Cleric_Drawn",
         ["Druid"] = "Priests_3",
         ["Wizard"] = "Wanderer Magican",
         ["Sorcerer"] = "Fire Wizard",
@@ -374,6 +381,7 @@ public sealed class SpriteLibrary
                     ?? LoadStrip(Path.Combine(directory, "Attack_1.png"))
                     ?? LoadStrip(Path.Combine(directory, "Attack 1.png")),
                 LoadStrip(Path.Combine(directory, "Hurt.png")),
+                LoadStrip(Path.Combine(directory, "Cast.png")),
                 figure,
                 dead is null ? 0 : RestingFrame(deadPath, figure));
         }

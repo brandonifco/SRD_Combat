@@ -24,7 +24,16 @@ public enum CombatStepKind
     /// <summary>A class feature being used or expiring.</summary>
     Feature,
 
-    /// <summary>A spell being cast, resisted, or lost.</summary>
+    /// <summary>
+    /// The announcement that a creature casts a spell — always the first step a cast
+    /// writes, always carrying the caster alone. Split from <see cref="Spell"/> so a
+    /// client can play a casting pose without parsing the narration, the same reason
+    /// <see cref="CombatStep.Ranged"/> exists: the engine records what happened, no
+    /// client works it out from the words.
+    /// </summary>
+    SpellCast,
+
+    /// <summary>A spell resolving, being resisted, or being lost.</summary>
     Spell,
 
     /// <summary>A spent Recharge ability rolling its d6 at the start of a turn.</summary>

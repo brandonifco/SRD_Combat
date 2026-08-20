@@ -183,7 +183,7 @@ internal static class Display
     {
         CombatStepKind.Damage => ConsoleColor.Red,
         CombatStepKind.Died or CombatStepKind.Downed => ConsoleColor.DarkRed,
-        CombatStepKind.Feature or CombatStepKind.Spell => ConsoleColor.Green,
+        CombatStepKind.Feature or CombatStepKind.Spell or CombatStepKind.SpellCast => ConsoleColor.Green,
         CombatStepKind.Condition => ConsoleColor.Yellow,
         CombatStepKind.RoundStarted or CombatStepKind.EncounterStarted => ConsoleColor.White,
         CombatStepKind.TurnStarted or CombatStepKind.TurnEnded => ConsoleColor.DarkGray,

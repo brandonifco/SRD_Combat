@@ -186,7 +186,7 @@ public sealed partial class Encounter
         // own level: when the level 1 slots are dry, Cure Wounds burns a level 2 slot —
         // and as of upcasting, gets something for it.
         Add(
-            CombatStepKind.Spell,
+            CombatStepKind.SpellCast,
             $"{caster.Name} casts {spell.Name}" +
             (spell.IsCantrip ? " (cantrip)." : $" (level {slotUsed} slot)."),
             caster);
