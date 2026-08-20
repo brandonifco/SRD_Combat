@@ -298,21 +298,29 @@ public sealed class SpriteLibrary
         {
             if (LoadStrip(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
             {
-                // Every slot is a variant list: the base name and its _2 sibling, the
-                // pack cut stepping in only when the theme has no drawing of its own.
-                // The _2 files had sat on disk unloaded since they were drawn — a
-                // variant nobody loads is a variant nobody sees.
+                // Every slot is a variant list: the base name and its numbered
+                // siblings (_2, _3, ... — the rocky rubble ships four), the pack cut
+                // stepping in only when the theme has no drawing of its own. The _2
+                // files had sat on disk unloaded since they were drawn — a variant
+                // nobody loads is a variant nobody sees.
                 Texture2D[] Variants(string slot, Texture2D? packFallback)
                 {
-                    var own = new[]
-                        {
-                            LoadTexture(Path.Combine(terrain, $"{slot}_{name}.png")),
-                            LoadTexture(Path.Combine(terrain, $"{slot}_{name}_2.png")),
-                        }
-                        .OfType<Texture2D>()
-                        .ToArray();
+                    var own = new List<Texture2D>();
 
-                    return own.Length > 0 ? own
+                    if (LoadTexture(Path.Combine(terrain, $"{slot}_{name}.png")) is { } first)
+                    {
+                        own.Add(first);
+                    }
+
+                    for (var variant = 2; variant <= 9; variant++)
+                    {
+                        if (LoadTexture(Path.Combine(terrain, $"{slot}_{name}_{variant}.png")) is { } next)
+                        {
+                            own.Add(next);
+                        }
+                    }
+
+                    return own.Count > 0 ? [.. own]
                         : packFallback is { } pack ? [pack]
                         : [];
                 }
