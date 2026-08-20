@@ -25,7 +25,9 @@ namespace SRDCombat.Game;
 /// </item>
 /// <item>
 /// <b>Obstacles are whole footprints, Difficult Terrain comes in patches.</b> Three to
-/// six obstacle attempts — each drawn as either a wall (Total Cover, 2×4 squares) or a
+/// six obstacle attempts — each drawn as either a wall (Total Cover, 2×4 squares
+/// upright or 4×2 lying across the field, a second coin flip per wall, 2026-08-20 at
+/// Brandon's direction with the landscape wall art) or a
 /// low obstacle (Half Cover, shot over rather than blocking, 2×2 squares), a coin flip
 /// per obstacle — and up to three patches of one to four. The attempt counts were
 /// raised from 0–3 and 0–2 on 2026-08-20, after play found the fields too sparse: with
@@ -113,10 +115,14 @@ public static class TerrainGenerator
         for (var obstacle = 0; obstacle < obstacleCount; obstacle++)
         {
             // The dice are consumed identically whether or not the footprint lands, so
-            // one rejection never re-times every draw after it.
+            // one rejection never re-times every draw after it. A wall rolls one die
+            // more than a low obstacle — its orientation — which is still a fixed
+            // pattern per kind, and the kind itself comes off the same stream.
             var isWall = random.Roll(2) == 1;
+            var isWallHorizontal = isWall && random.Roll(2) == 1;
             var anchor = DrawSquare();
-            var (footprintWidth, footprintHeight) = isWall ? (2, 4) : (2, 2);
+            var (footprintWidth, footprintHeight) =
+                isWall ? isWallHorizontal ? (4, 2) : (2, 4) : (2, 2);
 
             var footprint = new List<GridPosition>(footprintWidth * footprintHeight);
 
