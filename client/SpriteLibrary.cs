@@ -99,7 +99,7 @@ public sealed class SpriteLibrary
         ["Paladin"] = "Knight_2",
         ["Barbarian"] = "Barbarian_Drawn",
         ["Monk"] = "Gladiator_2",
-        ["Rogue"] = "Elf_1",
+        ["Rogue"] = "Rogue_Drawn",
         ["Bard"] = "Elf_2",
         ["Ranger"] = "Elf_3",
         ["Cleric"] = "Priests_1",
