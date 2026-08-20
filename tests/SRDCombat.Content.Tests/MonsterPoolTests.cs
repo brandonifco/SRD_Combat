@@ -34,25 +34,34 @@ public class MonsterPoolTests
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 110,
-            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 116 when the rule was written. " +
-            "It was 131 before #52 dropped the creatures the SRD prices as equipment and #75 " +
-            "dropped the ones with nowhere to fight.");
+            pool.Count >= 75,
+            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 81 when the genre cut " +
+            "landed (2026-08-20, TraditionalFoes), 116 before that cut, and 131 before #52 " +
+            "dropped the creatures the SRD prices as equipment and #75 dropped the ones with " +
+            "nowhere to fight.");
     }
 
     [Fact]
     public void EveryChallengeRatingInTheBandHasSomethingToDrawFrom()
     {
-        // A pool of 116 would still be useless if it were all CR 0. The gauntlet needs a
+        // A pool of 81 would still be useless if it were all CR 0. The gauntlet needs a
         // choice at every step of the ladder, so the floor is per band, not overall.
+        //
+        // CR 0's and CR 4's floors are 3, deliberately below the others': the genre cut
+        // removed the mundane animals that padded both bands — CR 0 keeps Awakened
+        // Shrub, Giant Fire Beetle and Lemure, CR 4 keeps Ettin, Guard Captain and the
+        // Red Dragon Wyrmling — and Brandon accepted the thin bands with expansion
+        // fill-ins planned to repopulate them. If a fill-in lands, raise the floor
+        // with it.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
-        foreach (var rating in new[] { 0m, 0.125m, 0.25m, 0.5m, 1m, 2m, 3m, 4m })
+        foreach (var (rating, floor) in new[]
+                 { (0m, 3), (0.125m, 4), (0.25m, 4), (0.5m, 4), (1m, 4), (2m, 4), (3m, 4), (4m, 3) })
         {
             var atRating = pool.Where(monster => monster.ChallengeRating == rating).ToArray();
 
             Assert.True(
-                atRating.Length >= 4,
+                atRating.Length >= floor,
                 $"CR {rating} has only {atRating.Length} admissible monsters.");
         }
     }
