@@ -593,9 +593,10 @@ player the one thing the square was telling them. **Scenery is
 per-theme and colour-matched since 2026-08-20** (`Wall_<Theme>.png`/`Low_<Theme>.png`,
 Brandon's drawings): tree on Woodland's grass, red rock wall and boulder on
 Rocky's clay, grey on Barren's gravel — a fight never mixes the families, with the shared
-pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent (Woodland's
-low obstacle is on that fallback since the brambles moved; its own drawing is an open
-slot). **An obstacle
+pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent — a state no
+current theme is in: the woodland low obstacle took its own mossy-clump drawings (four
+variants) on 2026-08-20, closing the last open slot, so every scenery drawing on every
+theme is now Brandon's. **An obstacle
 is a whole footprint since the same day, and the art covers exactly what blocks** — asked
 for from play, after a character walked "onto" a tree whose picture overhung squares its
 one engine square did not block: `TerrainGenerator` now places walls as 2×4 blocks and low
