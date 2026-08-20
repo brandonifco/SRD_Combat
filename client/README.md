@@ -239,13 +239,12 @@ client/assets/sprites/Terrain/Ground_<Theme>.png       a strip of interchangeabl
 client/assets/sprites/Terrain/Wall_<Theme>.png         stands on a wall footprint (tree, rock pillar)
 client/assets/sprites/Terrain/Low_<Theme>.png          stands on a low obstacle (boulder)
 client/assets/sprites/Terrain/Difficult_<Theme>.png    one clump per Difficult Terrain square (brambles)
-client/assets/sprites/Terrain/Tree.png                 pack fallback for a theme missing its wall
-client/assets/sprites/Terrain/Rock.png                 the same, for the rockier themes
-client/assets/sprites/Terrain/Bush.png                 pack fallback for a theme missing its low obstacle
 ```
 
 The themes are Woodland, Rocky and Barren; the per-theme files are Brandon's own art
-and travel with the repo, the pack cuts are fallbacks and stay local. Numbered
+and travel with the repo. The Craftpix pack cuts (Tree/Rock/Bush) that once backed a
+theme missing its own drawing were deleted on 2026-08-20 — every theme carries its own
+art now, and a theme without a drawing falls back to the flat colours. Numbered
 variants (`_2` through `_9`) may sit beside any of the per-theme files: difficult art
 mixes variants per square, walls and low obstacles per footprint, both chosen by
 position hash so a fight always redraws the same field. The rocky and barren
@@ -272,12 +271,10 @@ own drawing where one exists — brambles on the woodland — and keeps the dark
 none does yet, because art must not cost a player the one thing that square was telling
 them: the wash is the floor, not a style choice.
 
-Cut from `Tiled_files/` in the packs, and reproducible — each ground is four seam-continuous 16-pixel
-tiles from one sheet, anchored at `Ground_grass.png (13,1)`, `Ground_rocks.png (1,9)` and
-`ground_grasss.png (51,3)` and joined into a strip;
-the scenery is cropped from `Trees_rocks.png` at `(0,0)-(68,80)`, `(0,240)-(70,304)` and
-`(94,130)-(126,158)`, each trimmed to its own alpha. Without the folder the board falls
-back to the flat colours and outlines it always drew.
+Without the Terrain folder the board falls back to the flat colours and outlines it
+always drew. (The original ground strips and scenery were cut from the Craftpix packs'
+`Tiled_files/`; that provenance ended when Brandon's hand-drawn terrain replaced the
+last pack cut on 2026-08-20.)
 
 **Projectiles have a folder of their own**, because any archer fires the same arrow and
 keying the sheet to a stat block would tie a Rogue's shortbow to the Skeleton Archer's

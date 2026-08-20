@@ -290,27 +290,25 @@ public sealed class SpriteLibrary
 
         // The battlefield's own art, themed. A theme needs its ground; the things that
         // stand on it are optional, and a theme missing them simply has bare ground.
-        // Scenery is per-theme by request — grey rock on the grey ground, red rock on
-        // the clay, tree and brush on the grass — so a fight never mixes the families;
-        // the shared pack cuts (Tree/Rock/Bush) stay as the fallback for a machine
-        // that has them and lacks the per-theme files.
+        // Scenery is per-theme — grey rock on the grey ground, red rock on the clay,
+        // tree and brush on the grass — so a fight never mixes the families. The
+        // Craftpix pack cuts (Tree/Rock/Bush) that once backed absent per-theme files
+        // were deleted on 2026-08-20 once every theme carried Brandon's own drawings;
+        // a theme without a drawing now falls back to the flat colours, the same
+        // supported absence as everywhere else in this loader.
         var terrain = Path.Combine(root, "Terrain");
-        var tree = LoadTexture(Path.Combine(terrain, "Tree.png"));
-        var rock = LoadTexture(Path.Combine(terrain, "Rock.png"));
-        var bush = LoadTexture(Path.Combine(terrain, "Bush.png"));
 
         var themes = new List<GroundTheme>();
 
-        foreach (var (name, packWall) in new[] { ("Woodland", tree), ("Rocky", rock), ("Barren", rock) })
+        foreach (var name in new[] { "Woodland", "Rocky", "Barren" })
         {
             if (LoadStrip(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
             {
                 // Every slot is a variant list: the base name and its numbered
-                // siblings (_2, _3, ... — the rocky rubble ships four), the pack cut
-                // stepping in only when the theme has no drawing of its own. The _2
+                // siblings (_2, _3, ... — the rocky rubble ships four). The _2
                 // files had sat on disk unloaded since they were drawn — a variant
                 // nobody loads is a variant nobody sees.
-                Texture2D[] Variants(string slot, Texture2D? packFallback)
+                Texture2D[] Variants(string slot)
                 {
                     var own = new List<Texture2D>();
 
@@ -327,21 +325,15 @@ public sealed class SpriteLibrary
                         }
                     }
 
-                    return own.Count > 0 ? [.. own]
-                        : packFallback is { } pack ? [pack]
-                        : [];
+                    return [.. own];
                 }
 
-                // Difficult Terrain deliberately has no pack fallback: a theme without
-                // the drawing keeps the wash (brambles you push through rather than
-                // rocks you go around — Brandon's split, 2026-08-20), because
-                // difficult ground is a rule before it is a picture.
                 themes.Add(new GroundTheme(
                     name,
                     ground,
-                    Variants("Wall", packWall),
-                    Variants("Low", bush),
-                    Variants("Difficult", null)));
+                    Variants("Wall"),
+                    Variants("Low"),
+                    Variants("Difficult")));
             }
         }
 
