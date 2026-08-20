@@ -100,6 +100,104 @@ public class TerrainGeneratorTests
     }
 
     [Fact]
+    public void ObstaclesAreWholeFootprintsOfTheirArtsSize()
+    {
+        // Walls block 2x4, low obstacles 2x2 — the drawn art's own coverage, which is
+        // the whole point: a picture may never overhang a square a character can stand
+        // on. Asserted on the real board shape as well as the small fixture.
+        for (var seed = 1; seed <= 200; seed++)
+        {
+            foreach (var field in new[] { Generate(seed), GenerateWide(seed) })
+            {
+                foreach (var component in Components([.. field.LowObstacles]))
+                {
+                    AssertWholeRect(component, expectedWidth: 2, expectedHeight: 2, seed);
+                }
+
+                foreach (var component in Components([.. field.Blocked]))
+                {
+                    AssertWholeRect(component, expectedWidth: 2, expectedHeight: 4, seed);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void FootprintsNeverTouchEachOther()
+    {
+        // Separation is what lets a client recover each footprint from the blocked
+        // squares as a connected component and dress it with one drawing. Two
+        // footprints that touched — same kind or different — would merge into one
+        // component of the combined set, and that component could no longer be a
+        // single footprint's whole rectangle.
+        for (var seed = 1; seed <= 200; seed++)
+        {
+            var field = GenerateWide(seed);
+
+            foreach (var component in Components([.. field.Blocked, .. field.LowObstacles]))
+            {
+                var width = component.Max(s => s.X) - component.Min(s => s.X) + 1;
+                var height = component.Max(s => s.Y) - component.Min(s => s.Y) + 1;
+
+                Assert.True(
+                    width == 2 && (height == 2 || height == 4) && component.Count == width * height,
+                    $"Seed {seed}: footprints merged into a {width}x{height} component "
+                    + $"of {component.Count} squares.");
+            }
+        }
+    }
+
+    // The current EncounterFactory board: 18x12, spawn columns near either edge.
+    private static Battlefield GenerateWide(int seed) =>
+        TerrainGenerator.Generate(
+            18,
+            12,
+            [.. Enumerable.Range(4, 4).Select(y => new GridPosition(3, y)),
+             .. Enumerable.Range(4, 4).Select(y => new GridPosition(14, y))],
+            new SeededRandomSource(seed));
+
+    private static void AssertWholeRect(
+        IReadOnlyCollection<GridPosition> component, int expectedWidth, int expectedHeight, int seed)
+    {
+        var width = component.Max(s => s.X) - component.Min(s => s.X) + 1;
+        var height = component.Max(s => s.Y) - component.Min(s => s.Y) + 1;
+
+        Assert.True(
+            width == expectedWidth && height == expectedHeight
+                && component.Count == expectedWidth * expectedHeight,
+            $"Seed {seed}: component of {component.Count} squares spans {width}x{height}, "
+            + $"expected a whole {expectedWidth}x{expectedHeight}.");
+    }
+
+    private static IEnumerable<List<GridPosition>> Components(HashSet<GridPosition> squares)
+    {
+        while (squares.Count > 0)
+        {
+            var component = new List<GridPosition>();
+            var frontier = new Queue<GridPosition>();
+            var seed = squares.First();
+            squares.Remove(seed);
+            frontier.Enqueue(seed);
+
+            while (frontier.Count > 0)
+            {
+                var current = frontier.Dequeue();
+                component.Add(current);
+
+                foreach (var next in current.Neighbours())
+                {
+                    if (squares.Remove(next))
+                    {
+                        frontier.Enqueue(next);
+                    }
+                }
+            }
+
+            yield return component;
+        }
+    }
+
+    [Fact]
     public void BothKindsOfTerrainActuallyOccur()
     {
         // A generator whose guards reject everything would pass every test above while

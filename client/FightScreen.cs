@@ -1404,14 +1404,132 @@ public abstract partial class FightScreen : Node2D
                 {
                     DrawRect(square, DifficultWash);
                 }
+            }
+        }
 
-                if (BlockedSquares.Contains(position) && theme.Wall is { } wall)
+        // Scenery last, over all the ground, one drawing per footprint — see
+        // DrawScenery for why it is no longer one drawing per square. The bare
+        // fallback board painted its flat rectangles in the loop and has no art.
+        if (theme is not null)
+        {
+            DrawScenery(theme);
+        }
+    }
+
+    /// <summary>
+    /// Draws every obstacle's art, one drawing per footprint, southernmost last.
+    /// </summary>
+    /// <remarks>
+    /// <b>An obstacle is a footprint now, and the art covers exactly what blocks.</b>
+    /// The generator places walls as 2×4 blocks and low obstacles as 2×2 (Brandon's
+    /// stated sizes for his drawings), never touching one another, so each footprint
+    /// comes back out of the blocked squares as a connected component. Art is drawn
+    /// footprint-wide, aspect kept, feet on the footprint's bottom edge — repeated
+    /// upward when a shorter drawing (the 1:1 tree on a 2×4 wall) must fill a taller
+    /// block, left to overdraw upward when a taller one (the 2×4 brush on a 2×2 base)
+    /// stands higher than its base, which is what every standing sprite already does.
+    /// A component that is not a full 2-wide rectangle — a hand-authored map's wall
+    /// run, an old save — falls back to the per-square drawing this replaced.
+    /// </remarks>
+    private void DrawScenery(SpriteLibrary.GroundTheme theme)
+    {
+        var pieces = new List<(Rect2 Bounds, Texture2D Art, bool Fill)>();
+
+        if (theme.Wall is { } wall)
+        {
+            CollectScenery(BlockedSquares, wall, fill: true, pieces);
+        }
+
+        if (theme.Low is { } low)
+        {
+            CollectScenery(LowObstacleSquares, low, fill: false, pieces);
+        }
+
+        // Painter's order: what stands further south draws in front.
+        foreach (var (bounds, art, fillHeight) in pieces.OrderBy(piece => piece.Bounds.End.Y))
+        {
+            var height = art.GetHeight() * bounds.Size.X / art.GetWidth();
+            var copies = fillHeight ? Math.Max(1, (int)Math.Round(bounds.Size.Y / height)) : 1;
+
+            for (var copy = 0; copy < copies; copy++)
+            {
+                DrawTextureRect(
+                    art,
+                    new Rect2(
+                        bounds.Position.X,
+                        bounds.End.Y - ((copy + 1) * height),
+                        bounds.Size.X,
+                        height),
+                    tile: false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Splits one kind of obstacle square into footprints and queues their art:
+    /// whole-rectangle components as one piece spanning the block, anything else as
+    /// the old per-square standing sprites.
+    /// </summary>
+    private void CollectScenery(
+        IReadOnlyCollection<GridPosition> squares,
+        Texture2D art,
+        bool fill,
+        List<(Rect2 Bounds, Texture2D Art, bool Fill)> pieces)
+    {
+        var remaining = new HashSet<GridPosition>(squares);
+
+        while (remaining.Count > 0)
+        {
+            var component = new List<GridPosition>();
+            var frontier = new Queue<GridPosition>();
+            var seed = remaining.First();
+            remaining.Remove(seed);
+            frontier.Enqueue(seed);
+
+            while (frontier.Count > 0)
+            {
+                var current = frontier.Dequeue();
+                component.Add(current);
+
+                foreach (var next in current.Neighbours())
                 {
-                    DrawStanding(wall, square, WallScale);
+                    if (remaining.Remove(next))
+                    {
+                        frontier.Enqueue(next);
+                    }
                 }
-                else if (LowObstacleSquares.Contains(position) && theme.Low is { } bush)
+            }
+
+            var minX = component.Min(square => square.X);
+            var maxX = component.Max(square => square.X);
+            var minY = component.Min(square => square.Y);
+            var maxY = component.Max(square => square.Y);
+            var isWholeRect = component.Count == (maxX - minX + 1) * (maxY - minY + 1)
+                && maxX - minX + 1 == 2;
+
+            if (isWholeRect)
+            {
+                pieces.Add((
+                    new Rect2(
+                        GridLeft + (minX * CellPixels),
+                        GridTop + (minY * CellPixels),
+                        (maxX - minX + 1) * CellPixels,
+                        (maxY - minY + 1) * CellPixels),
+                    art,
+                    fill));
+            }
+            else
+            {
+                foreach (var square in component)
                 {
-                    DrawStanding(bush, square, LowScale);
+                    pieces.Add((
+                        new Rect2(
+                            GridLeft + (square.X * CellPixels),
+                            GridTop + (square.Y * CellPixels),
+                            CellPixels,
+                            CellPixels),
+                        art,
+                        false));
                 }
             }
         }
@@ -1506,35 +1624,6 @@ public abstract partial class FightScreen : Node2D
 
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
-
-    /// <summary>
-    /// Draws a piece of scenery standing on a square: sized to the cell and set on its
-    /// floor, so a tree grows up out of its square rather than floating in the middle.
-    /// </summary>
-    private void DrawStanding(Texture2D texture, Rect2 square, float fraction)
-    {
-        var width = square.Size.X * fraction;
-        var height = texture.GetHeight() * width / texture.GetWidth();
-
-        DrawTextureRect(
-            texture,
-            new Rect2(
-                square.Position.X + ((square.Size.X - width) / 2),
-                square.Position.Y + square.Size.Y - height,
-                width,
-                height),
-            tile: false);
-    }
-
-    /// <summary>
-    /// How many squares wide scenery draws, walls and low obstacles alike. Two is
-    /// Brandon's stated size for his drawings: at 48 source pixels per square, the
-    /// 96x96 trees and boulders land on 2x2 tiles and the 48x96 walls and brush on
-    /// 2x4, centred on their square and spilling a half-square each side — display
-    /// only, since the engine's obstacle is still the one square underneath.
-    /// </summary>
-    private const float WallScale = 2.0f;
-    private const float LowScale = 2.0f;
 
     protected void DrawTokens(IReadOnlyList<Token> tokens, string? activeId)
     {
