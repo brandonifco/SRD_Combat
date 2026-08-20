@@ -1335,8 +1335,11 @@ public abstract partial class FightScreen : Node2D
     /// </para>
     /// <para>
     /// <b>The rules stay visible, which is what the colours were for.</b> Difficult ground
-    /// keeps a wash over its tile: art may not cost a player the one thing the square was
-    /// telling them. A wall and a low obstacle say it with a sprite instead, since a tree
+    /// says it with the theme's own drawing where one exists — brambles on the woodland,
+    /// one clump per square — and keeps the wash over its tile where none does yet: art
+    /// may not cost a player the one thing the square was telling them, so the wash is
+    /// the floor, never traded away for a theme that lacks the picture. A wall and a low
+    /// obstacle say it with a sprite the same way, since a tree
     /// filling a square and a bush sitting in one read as blocked and passable without
     /// anything being written down. With no art loaded every square falls back to the flat
     /// colours and the outline it always had.
@@ -1400,9 +1403,19 @@ public abstract partial class FightScreen : Node2D
                 }
 
                 // Difficult ground is a rule, not a decoration: it survives the art.
+                // A theme with difficult drawings says it with them — brambles on the
+                // woodland — and a theme still waiting on art keeps the wash, so the
+                // rule never goes invisible for want of a picture.
                 if (DifficultSquares.Contains(position))
                 {
-                    DrawRect(square, DifficultWash);
+                    if (theme.Difficult.Count > 0)
+                    {
+                        DrawDifficultArt(theme.Difficult, square, position);
+                    }
+                    else
+                    {
+                        DrawRect(square, DifficultWash);
+                    }
                 }
             }
         }
@@ -1592,6 +1605,32 @@ public abstract partial class FightScreen : Node2D
 
     /// <summary>How many ground tiles span one movement square, each way.</summary>
     private const int GroundTilesPerSquare = 1;
+
+    /// <summary>
+    /// Draws one square's Difficult Terrain art: aspect kept, fitted inside the square,
+    /// feet on the square's bottom edge. Fitted rather than footprint-scaled because a
+    /// patch is per-square and amorphous — a lone square is a common draw, so the
+    /// drawing must read alone and may never overhang ground the rule does not cover,
+    /// which is exactly the line that separates it from standing scenery.
+    /// </summary>
+    private void DrawDifficultArt(IReadOnlyList<Texture2D> variants, Rect2 square, GridPosition at)
+    {
+        // The ground tiles' spatial hash, differently seeded so the variant scatter
+        // does not correlate with the tile scatter underneath it.
+        var art = variants[Math.Abs(((at.X * 97) ^ (at.Y * 41)) + (at.X * at.Y * 13)) % variants.Count];
+        var size = art.GetSize();
+        var scale = Math.Min(square.Size.X / size.X, square.Size.Y / size.Y);
+        var drawn = new Vector2(size.X * scale, size.Y * scale);
+
+        DrawTextureRect(
+            art,
+            new Rect2(
+                square.Position.X + ((square.Size.X - drawn.X) / 2f),
+                square.Position.Y + square.Size.Y - drawn.Y,
+                drawn.X,
+                drawn.Y),
+            tile: false);
+    }
 
     private void DrawGroundTile(SpriteLibrary.Strip ground, Rect2 square, GridPosition at)
     {

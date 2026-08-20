@@ -582,13 +582,19 @@ lattice. Fine cobble and gravel do not. The first attempt used flat single-colou
 dodge the problem entirely and was simply worse art; the ground recedes and the scenery carries the scene. That is also why the grid lines went — they were how a
 *bare* board showed its squares, and over real ground they are a mesh laid on a picture;
 squares stay legible from the cursor ring, the reachable highlight and a token centred in
-its cell. **Difficult terrain keeps a wash over its tile**, because art may not cost a
-player the one thing the square was telling them, and a wall says it with scenery filling
-the square where a low obstacle says it with something that plainly does not. **Scenery is
+its cell. **Difficult terrain wears the theme's own drawing where one exists and keeps
+the wash where none does** (`Difficult_<Theme>.png`, one clump per square, `_2` variants
+mixed by hash): the woodland's brambles moved from its low-obstacle slot into the
+difficult slot on 2026-08-20 at Brandon's direction — brush is pushed *through*, rock is
+gone *around* — Rocky and Barren keep the wash until his rubble and scrub drawings land,
+and the wash is the floor rather than a style choice, because art may not cost a
+player the one thing the square was telling them. **Scenery is
 per-theme and colour-matched since 2026-08-20** (`Wall_<Theme>.png`/`Low_<Theme>.png`,
-Brandon's drawings): tree and brush on Woodland's grass, red rock wall and boulder on
+Brandon's drawings): tree on Woodland's grass, red rock wall and boulder on
 Rocky's clay, grey on Barren's gravel — a fight never mixes the families, with the shared
-pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent. **An obstacle
+pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent (Woodland's
+low obstacle is on that fallback since the brambles moved; its own drawing is an open
+slot). **An obstacle
 is a whole footprint since the same day, and the art covers exactly what blocks** — asked
 for from play, after a character walked "onto" a tree whose picture overhung squares its
 one engine square did not block: `TerrainGenerator` now places walls as 2×4 blocks and low

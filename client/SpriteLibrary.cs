@@ -208,7 +208,14 @@ public sealed class SpriteLibrary
     /// </param>
     /// <param name="Wall">What stands where the battlefield is impassable.</param>
     /// <param name="Low">What stands on a low obstacle — smaller, since it does not block.</param>
-    public sealed record GroundTheme(string Name, Strip Ground, Texture2D? Wall, Texture2D? Low);
+    /// <param name="Difficult">
+    /// What Difficult Terrain wears, one drawing per square, variants chosen by the
+    /// square's own hash — brambles on the woodland, rubble and scrub when their art
+    /// arrives. Empty means the theme has no difficult art yet and the board keeps its
+    /// wash: the rule may never go invisible for want of a drawing.
+    /// </param>
+    public sealed record GroundTheme(
+        string Name, Strip Ground, Texture2D? Wall, Texture2D? Low, IReadOnlyList<Texture2D> Difficult);
 
     /// <summary>The battlefield looks available, or empty when the art is absent.</summary>
     public IReadOnlyList<GroundTheme> Themes { get; }
@@ -282,7 +289,20 @@ public sealed class SpriteLibrary
             {
                 var wall = LoadTexture(Path.Combine(terrain, $"Wall_{name}.png")) ?? packWall;
                 var low = LoadTexture(Path.Combine(terrain, $"Low_{name}.png")) ?? bush;
-                themes.Add(new GroundTheme(name, ground, wall, low));
+
+                // Difficult Terrain's art, where it exists: brambles you push through
+                // rather than rocks you go around (Brandon's split, 2026-08-20). No
+                // pack fallback on purpose — a theme without the drawing keeps the
+                // wash, because difficult ground is a rule before it is a picture.
+                var difficult = new[]
+                    {
+                        LoadTexture(Path.Combine(terrain, $"Difficult_{name}.png")),
+                        LoadTexture(Path.Combine(terrain, $"Difficult_{name}_2.png")),
+                    }
+                    .OfType<Texture2D>()
+                    .ToArray();
+
+                themes.Add(new GroundTheme(name, ground, wall, low, difficult));
             }
         }
 
