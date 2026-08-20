@@ -586,8 +586,9 @@ its cell. **Difficult terrain wears the theme's own drawing where one exists and
 the wash where none does** (`Difficult_<Theme>.png`, one clump per square, `_2` variants
 mixed by hash): the woodland's brambles moved from its low-obstacle slot into the
 difficult slot on 2026-08-20 at Brandon's direction — brush is pushed *through*, rock is
-gone *around* — Rocky and Barren keep the wash until his rubble and scrub drawings land,
-and the wash is the floor rather than a style choice, because art may not cost a
+gone *around* — and his rubble sets landed for Rocky and Barren the same day (four
+variants each), so every theme now says the rule with a drawing; the wash remains as
+the floor for any future theme without one, because art may not cost a
 player the one thing the square was telling them. **Scenery is
 per-theme and colour-matched since 2026-08-20** (`Wall_<Theme>.png`/`Low_<Theme>.png`,
 Brandon's drawings): tree on Woodland's grass, red rock wall and boulder on
