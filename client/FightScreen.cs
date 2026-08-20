@@ -1526,9 +1526,15 @@ public abstract partial class FightScreen : Node2D
             tile: false);
     }
 
-    /// <summary>How much of a square a wall's scenery fills, and a low obstacle's.</summary>
-    private const float WallScale = 1.0f;
-    private const float LowScale = 0.6f;
+    /// <summary>
+    /// How many squares wide scenery draws, walls and low obstacles alike. Two is
+    /// Brandon's stated size for his drawings: at 48 source pixels per square, the
+    /// 96x96 trees and boulders land on 2x2 tiles and the 48x96 walls and brush on
+    /// 2x4, centred on their square and spilling a half-square each side — display
+    /// only, since the engine's obstacle is still the one square underneath.
+    /// </summary>
+    private const float WallScale = 2.0f;
+    private const float LowScale = 2.0f;
 
     protected void DrawTokens(IReadOnlyList<Token> tokens, string? activeId)
     {
