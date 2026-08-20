@@ -1927,7 +1927,18 @@ cost real time:
   increase**, because a classic monster carries more mechanics per XP than an animal does
   — multiattacks, riders, bosses — so the same budget buys a harder fight. It moves the
   back half toward #192 and the opening *away* from the level 1 complaint in the same
-  breath; those are separate levers and the second one is still open.
+  breath; those are separate levers and the second one is still open. **And composition
+  is coherent since the same day**: `EncounterThemes` (the fifth curated exclusion-family
+  list) tags every roster creature with the company it keeps — goblinoid warband, undead,
+  outlaws, soldiery, cult-and-fiends, draconic, wild pack, dungeon vermin,
+  arcane-and-animated, savage hunters — and `EncounterBuilder`'s first pick anchors the
+  fight, every later slot drawing only the anchor's companions, judged against the anchor
+  rather than pairwise so a bridge creature (the Worg) can bring both its worlds. A
+  mapped empty set is a loner (Owlbear, Basilisk, Ankheg, Manticore, Hippogriff —
+  same-name company only), a horde of five-plus never anchors on one, an unmapped
+  creature builds unconstrained (the authored escape hatch), and the validator holds the
+  map equal to the pool in both directions. The complaint this answers, from play: "apes
+  fighting alongside giant eagles and scouts, as a group??? that made no sense at all."
 - **The dearest band is chosen by price, not by count, and the count version was hiding
   half the bestiary.** `EncounterBuilder` fills each slot from the dearer end of what fits
   its share — the printed "spend as much of your XP budget as you can" — and it used to

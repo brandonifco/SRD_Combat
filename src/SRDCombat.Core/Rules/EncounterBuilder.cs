@@ -166,9 +166,28 @@ public static class EncounterBuilder
         {
             var share = remaining / (targetCount - slot);
 
+            // The fight's composition has to make sense: the first pick anchors it,
+            // and every later slot draws only companions of that anchor — see
+            // EncounterThemes for the map and the anchor reading. Two refinements
+            // decided here rather than there. A fight of five or more never anchors on
+            // a loner, because "a horde of Owlbears" is a budget accident where "a
+            // horde of goblins" is a warband — the loner still headlines the smaller
+            // fights its budget was buying anyway. And a slot that prices out of
+            // companions ends the fight short rather than seating a stranger, the
+            // same under-spend the thin-budget path already accepts.
             var options = affordable
                 .Where(monster => monster.ExperiencePoints <= remaining)
+                .Where(monster => chosen.Count == 0
+                    ? targetCount < 5 || EncounterThemes.KeepsCompany(monster)
+                    : EncounterThemes.Companions(chosen[0], monster))
                 .ToArray();
+
+            // An anchor must exist whatever the pool holds: a caller whose affordable
+            // candidates are somehow all loners still gets a fight, not an empty one.
+            if (options.Length == 0 && chosen.Count == 0)
+            {
+                options = affordable.Where(monster => monster.ExperiencePoints <= remaining).ToArray();
+            }
 
             if (options.Length == 0)
             {
