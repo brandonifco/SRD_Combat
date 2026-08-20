@@ -235,13 +235,21 @@ you get most of a wolf.
 **The battlefield has its own art too**, from the Tiled tilesets in the same free packs:
 
 ```
-client/assets/sprites/Terrain/Ground_Woodland.png   a strip of 16x16 tiles, mixed per square
-client/assets/sprites/Terrain/Ground_Rocky.png      the same
-client/assets/sprites/Terrain/Ground_Barren.png     the same
-client/assets/sprites/Terrain/Tree.png              stands on an impassable square
-client/assets/sprites/Terrain/Rock.png              the same, for the rockier themes
-client/assets/sprites/Terrain/Bush.png              stands on a low obstacle
+client/assets/sprites/Terrain/Ground_<Theme>.png       a strip of interchangeable 48px tiles, mixed per square
+client/assets/sprites/Terrain/Wall_<Theme>.png         stands on a wall footprint (tree, rock pillar)
+client/assets/sprites/Terrain/Low_<Theme>.png          stands on a low obstacle (boulder)
+client/assets/sprites/Terrain/Difficult_<Theme>.png    one clump per Difficult Terrain square (brambles)
+client/assets/sprites/Terrain/Tree.png                 pack fallback for a theme missing its wall
+client/assets/sprites/Terrain/Rock.png                 the same, for the rockier themes
+client/assets/sprites/Terrain/Bush.png                 pack fallback for a theme missing its low obstacle
 ```
+
+The themes are Woodland, Rocky and Barren; the per-theme files are Brandon's own art
+and travel with the repo, the pack cuts are fallbacks and stay local. `_2` variants
+may sit beside `Difficult_<Theme>.png` and are mixed per square by hash. Brambles are
+deliberately *difficult* rather than an obstacle — brush is pushed through, rock is
+gone around — which is why the woodland difficult slot wears what used to be its low
+obstacle.
 
 One theme is chosen per battlefield from the field's own shape, so a fight always redraws
 the ground it had and the next fight — a different field — differs. **Each ground is a strip of four interchangeable tiles**, cut from the packs' own
@@ -255,8 +263,10 @@ about 1.4 times rather than four — by hashing the coordinates — and turns an
 orientations per tile, which is what stops the grain running the same way everywhere.
 Hashed rather than rolled, so a square keeps its tile and its facing for the whole fight
 instead of crawling underfoot. The ground recedes, the scenery carries the scene, and the board stays readable —
-which is why there are no grid lines over it either. Difficult terrain keeps a dark wash whatever the theme, because
-art must not cost a player the one thing that square was telling them.
+which is why there are no grid lines over it either. Difficult terrain wears the theme's
+own drawing where one exists — brambles on the woodland — and keeps the dark wash where
+none does yet, because art must not cost a player the one thing that square was telling
+them: the wash is the floor, not a style choice.
 
 Cut from `Tiled_files/` in the packs, and reproducible — each ground is four seam-continuous 16-pixel
 tiles from one sheet, anchored at `Ground_grass.png (13,1)`, `Ground_rocks.png (1,9)` and
