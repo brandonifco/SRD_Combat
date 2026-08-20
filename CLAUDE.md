@@ -583,8 +583,12 @@ dodge the problem entirely and was simply worse art; the ground recedes and the 
 *bare* board showed its squares, and over real ground they are a mesh laid on a picture;
 squares stay legible from the cursor ring, the reachable highlight and a token centred in
 its cell. **Difficult terrain keeps a wash over its tile**, because art may not cost a
-player the one thing the square was telling them, and a wall says it with a tree filling
-the square where a low obstacle says it with a bush that plainly does not. With no art
+player the one thing the square was telling them, and a wall says it with scenery filling
+the square where a low obstacle says it with something that plainly does not. **Scenery is
+per-theme and colour-matched since 2026-08-20** (`Wall_<Theme>.png`/`Low_<Theme>.png`,
+Brandon's drawings): tree and brush on Woodland's grass, red rock wall and boulder on
+Rocky's clay, grey on Barren's gravel — a fight never mixes the families, with the shared
+pack cuts (Tree/Rock/Bush) as fallback where the per-theme files are absent. With no art
 installed every square falls back to the flat colours and the outline it always had.
 
 **Ranged attacks throw something across the board (2026-08-15).** `CombatStep.Ranged` is
