@@ -209,6 +209,26 @@ public class TerrainGeneratorTests
     }
 
     [Fact]
+    public void TheWideBoardTypicallyCarriesSeveralObstacles()
+    {
+        // The density complaint from play (2026-08-20): a mean of one footprint per
+        // field read as an empty room. The dial now lands two to three on most fields.
+        // Asserted as a floor over many seeds, not an exact count, so a better landing
+        // rate never fails the build — the monster-pool convention.
+        var fields = Enumerable.Range(1, 200).Select(GenerateWide).ToArray();
+        var footprintCounts = fields
+            .Select(field => Components([.. field.Blocked, .. field.LowObstacles]).Count())
+            .ToArray();
+
+        Assert.True(
+            footprintCounts.Average() >= 2.0,
+            $"Mean footprints per field fell to {footprintCounts.Average():F2}.");
+        Assert.True(
+            footprintCounts.Count(count => count == 0) <= 10,
+            $"{footprintCounts.Count(count => count == 0)} of 200 wide fields were bare.");
+    }
+
+    [Fact]
     public void BareFieldsStayPossible()
     {
         var fields = Enumerable.Range(1, 200).Select(Generate).ToArray();
