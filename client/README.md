@@ -40,6 +40,7 @@ On your turn:
 | click an enemy | attack with the hardest-hitting attack that reaches, never a bow point blank |
 | **arrow keys** | move the cursor around the board — or the highlighted row, while a menu is open |
 | **Enter** | take the highlighted menu row, or act on the cursor's square — the same thing a click would do |
+| **Tab** | cycle the valid targets of whatever is armed; with nothing armed, arm the attack and start cycling — Enter then swings the best weapon at the cursor's target |
 | **a letter** | the action whose button shows it: `D` Dodge, `R` Dash, `G` Disengage, `U` Stand Up, `E` Escape, `A` Attack, `C` Cast, `Q` Drink, `P` Give Potion, `W` Second Wind, `S` Action Surge, `F` Rage, `K` Reckless, `M` Steady Aim, `X`/`Z` Cunning Dash/Disengage, `T` Trip, `H`/`J` Spark Heal/Harm |
 | **Space** | End Turn |
 | **mouse wheel** | zoom the camera, about the pointer |

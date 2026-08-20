@@ -956,13 +956,28 @@ public partial class PlayMode : FightScreen
                 _ => (GridPosition?)null,
             };
 
-            // Tab walks the ring of things the armed action could be used on. Only while
-            // something is armed: with nothing to aim, Tab has nothing to mean, and a key
-            // that does something different depending on invisible state is worse than a
-            // key that does nothing.
-            if (key.Keycode == Key.Tab && _pending != Pending.Nothing)
+            // Tab walks the ring of things the armed action could be used on — and with
+            // nothing armed it arms the attack first (asked for from play, 2026-08-19),
+            // so one key reaches "aim at somebody" from a cold turn. Arming names no
+            // attack: the ring is every living enemy, and Enter picks the best attack
+            // for whoever it lands on, the same answer a bare click on an enemy has
+            // always taken. Gated the way every keypress is — only while the row
+            // actually offers Attacks — so Tab can never reach an action the row hides.
+            if (key.Keycode == Key.Tab)
             {
-                CycleTarget();
+                if (_pending != Pending.Nothing)
+                {
+                    CycleTarget();
+                }
+                else if (OpenMenuLength == 0
+                    && _encounter is { } fight
+                    && CommandedCombatant() is { } swinger
+                    && TurnOptions.For(fight, swinger).Contains(TurnAction.Attacks))
+                {
+                    _pendingAttack = null;
+                    ArmTargeting(Pending.AttackTarget);
+                }
+
                 return;
             }
 
@@ -1331,14 +1346,20 @@ public partial class PlayMode : FightScreen
 
         var square = at ?? new GridPosition(-1, -1);
 
-        if (_pending == Pending.AttackTarget && _pendingAttack is { } chosenAttack)
+        if (_pending == Pending.AttackTarget)
         {
+            var chosen = _pendingAttack;
             var struck = TokenAt(square);
             ClearPending();
 
-            if (struck is { } victim)
+            // A named attack swings at whatever was clicked and the engine rules on
+            // it. Tab's bare arming named no attack, so it keeps the bare click's own
+            // semantics whole: enemies only, best attack for this victim.
+            if (struck is { } victim && (chosen is not null || victim.SideId != active.SideId))
             {
-                Run(() => encounter.Attack(chosenAttack.Name, victim));
+                Run(() => (chosen ?? AttackChoice.BestFor(active, victim, encounter.Combatants)) is { } attack
+                    ? encounter.Attack(attack.Name, victim)
+                    : new ActionRefusal("client.no_attack", $"{active.Name} has no attack that reaches {victim.Name}."));
             }
             else
             {
@@ -2217,9 +2238,11 @@ public partial class PlayMode : FightScreen
                 : $"choose a target for {spell.Name} — click it, Tab cycles, Enter takes it; Esc cancels";
         }
 
-        if (_pending == Pending.AttackTarget && _pendingAttack is { } attack)
+        if (_pending == Pending.AttackTarget)
         {
-            return $"choose a target for {attack.Name} — click it, Tab cycles, Enter takes it; Esc cancels";
+            return _pendingAttack is { } attack
+                ? $"choose a target for {attack.Name} — click it, Tab cycles, Enter takes it; Esc cancels"
+                : "choose a target — Tab cycles, Enter attacks with the best weapon; Esc cancels";
         }
 
         if (_pending == Pending.PotionTarget)
@@ -2241,9 +2264,10 @@ public partial class PlayMode : FightScreen
 
     /// <summary>
     /// Drives the screen through the real input path and captures each result: the
-    /// run's opening interlude, then commanded turns — a refusal on purpose, a walk, a
-    /// swing, a feature, and when a caster's turn comes, the spell menu and a cast. How
-    /// a change to this screen gets checked without a person clicking.
+    /// run's opening interlude, then commanded turns — a refusal on purpose, Tab arming
+    /// and cycling from a cold turn, a walk, a swing, a feature, and when a caster's
+    /// turn comes, the spell menu and a cast. How a change to this screen gets checked
+    /// without a person clicking.
     /// </summary>
     private void RunProbeIfAsked()
     {
@@ -2275,6 +2299,14 @@ public partial class PlayMode : FightScreen
 
         await HoverFirstButton();
         await CaptureFrame(Path.Combine(directory, "play-2b-hint.png"));
+
+        // Tab from a cold turn: the first press arms the attack and aims at the
+        // nearest enemy, the second walks the ring — then Esc backs out, so the rest
+        // of the probe starts from the same clean turn it always did.
+        Press(Key.Tab);
+        Press(Key.Tab);
+        await CaptureFrame(Path.Combine(directory, "play-2c-tab-armed.png"));
+        Press(Key.Escape);
 
         if (CommandedCombatant() is { } active
             && NearestEnemyOf(active) is { } target)
@@ -2383,6 +2415,16 @@ public partial class PlayMode : FightScreen
         {
             Click(button.Rect.GetCenter());
         }
+    }
+
+    /// <summary>A real keypress, pushed through the viewport like every click.</summary>
+    private void Press(Key keycode)
+    {
+        GetViewport().PushInput(new InputEventKey
+        {
+            Keycode = keycode,
+            Pressed = true,
+        });
     }
 
     /// <summary>A real click, pushed through the viewport, not a call around the input layer.</summary>
