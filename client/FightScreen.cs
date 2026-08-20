@@ -1449,15 +1449,17 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     /// <remarks>
     /// <b>An obstacle is a footprint now, and the art covers exactly what blocks.</b>
-    /// The generator places walls as 2×4 blocks and low obstacles as 2×2 (Brandon's
+    /// The generator places walls as 2×4 blocks upright or 4×2 lying across the field,
+    /// and low obstacles as 2×2 (Brandon's
     /// stated sizes for his drawings), never touching one another, so each footprint
     /// comes back out of the blocked squares as a connected component. Art is drawn
-    /// footprint-wide, aspect kept, feet on the footprint's bottom edge — repeated
-    /// upward when a shorter drawing (the 1:1 tree on a 2×4 wall) must fill a taller
-    /// block, left to overdraw upward when a taller one (the 2×4 brush on a 2×2 base)
+    /// across the footprint's short axis, aspect kept, feet on the footprint's bottom
+    /// edge — repeated along the long axis when a shorter drawing (the 1:1 tree on
+    /// either wall shape) must fill it,
+    /// left to overdraw upward when a taller one (the 2×4 brush on a 2×2 base)
     /// stands higher than its base, which is what every standing sprite already does.
-    /// A component that is not a full 2-wide rectangle — a hand-authored map's wall
-    /// run, an old save — falls back to the per-square drawing this replaced.
+    /// A component that is not one of those whole rectangles — a hand-authored map's
+    /// wall run, an old save — falls back to the per-square drawing this replaced.
     /// </remarks>
     private void DrawScenery(SpriteLibrary.GroundTheme theme)
     {
@@ -1473,13 +1475,36 @@ public abstract partial class FightScreen : Node2D
             CollectScenery(LowObstacleSquares, theme.Low, fill: false, pieces);
         }
 
-        // Painter's order: what stands further south draws in front.
-        foreach (var (bounds, art, fillHeight) in pieces.OrderBy(piece => piece.Bounds.End.Y))
+        // Painter's order: what stands further south draws in front. A fill runs along
+        // the footprint's long axis — a tall wall stacks copies upward as it always
+        // has, a wide one lays them left to right, which is what turns a square tree
+        // on a 4×2 footprint into a row of two trees rather than one giant.
+        foreach (var (bounds, art, fillAxis) in pieces.OrderBy(piece => piece.Bounds.End.Y))
         {
-            var height = art.GetHeight() * bounds.Size.X / art.GetWidth();
-            var copies = fillHeight ? Math.Max(1, (int)Math.Round(bounds.Size.Y / height)) : 1;
+            if (bounds.Size.X > bounds.Size.Y)
+            {
+                var width = art.GetWidth() * bounds.Size.Y / art.GetHeight();
+                var copies = fillAxis ? Math.Max(1, (int)Math.Round(bounds.Size.X / width)) : 1;
 
-            for (var copy = 0; copy < copies; copy++)
+                for (var copy = 0; copy < copies; copy++)
+                {
+                    DrawTextureRect(
+                        art,
+                        new Rect2(
+                            bounds.Position.X + (copy * width),
+                            bounds.End.Y - bounds.Size.Y,
+                            width,
+                            bounds.Size.Y),
+                        tile: false);
+                }
+
+                continue;
+            }
+
+            var height = art.GetHeight() * bounds.Size.X / art.GetWidth();
+            var copies2 = fillAxis ? Math.Max(1, (int)Math.Round(bounds.Size.Y / height)) : 1;
+
+            for (var copy = 0; copy < copies2; copy++)
             {
                 DrawTextureRect(
                     art,
@@ -1506,8 +1531,21 @@ public abstract partial class FightScreen : Node2D
         bool fill,
         List<(Rect2 Bounds, Texture2D Art, bool Fill)> pieces)
     {
-        Texture2D At(int x, int y) =>
-            variants[Math.Abs(((x * 89) ^ (y * 59)) + (x * y * 17)) % variants.Count];
+        // A footprint prefers art drawn its way round: a 4×2 wall takes a landscape
+        // variant, a 2×4 a portrait or square one, and either falls back to the whole
+        // list when the theme has none the right way — scaled and repeated rather than
+        // rotated, because turning a drawing sideways is not this code's call.
+        Texture2D At(int x, int y, bool wide)
+        {
+            var pool = variants.Where(v => v.GetWidth() > v.GetHeight() == wide).ToArray();
+
+            if (pool.Length == 0)
+            {
+                pool = [.. variants];
+            }
+
+            return pool[Math.Abs(((x * 89) ^ (y * 59)) + (x * y * 17)) % pool.Length];
+        }
 
         var remaining = new HashSet<GridPosition>(squares);
 
@@ -1537,8 +1575,11 @@ public abstract partial class FightScreen : Node2D
             var maxX = component.Max(square => square.X);
             var minY = component.Min(square => square.Y);
             var maxY = component.Max(square => square.Y);
-            var isWholeRect = component.Count == (maxX - minX + 1) * (maxY - minY + 1)
-                && maxX - minX + 1 == 2;
+            var width = maxX - minX + 1;
+            var height = maxY - minY + 1;
+            var isWholeRect = component.Count == width * height
+                && ((width == 2 && (height == 2 || height == 4))
+                    || (width == 4 && height == 2));
 
             if (isWholeRect)
             {
@@ -1546,9 +1587,9 @@ public abstract partial class FightScreen : Node2D
                     new Rect2(
                         GridLeft + (minX * CellPixels),
                         GridTop + (minY * CellPixels),
-                        (maxX - minX + 1) * CellPixels,
-                        (maxY - minY + 1) * CellPixels),
-                    At(minX, minY),
+                        width * CellPixels,
+                        height * CellPixels),
+                    At(minX, minY, wide: width > height),
                     fill));
             }
             else
@@ -1561,7 +1602,7 @@ public abstract partial class FightScreen : Node2D
                             GridTop + (square.Y * CellPixels),
                             CellPixels,
                             CellPixels),
-                        At(square.X, square.Y),
+                        At(square.X, square.Y, wide: false),
                         false));
                 }
             }

@@ -102,7 +102,8 @@ public class TerrainGeneratorTests
     [Fact]
     public void ObstaclesAreWholeFootprintsOfTheirArtsSize()
     {
-        // Walls block 2x4, low obstacles 2x2 — the drawn art's own coverage, which is
+        // Walls block 2x4 upright or 4x2 lying across the field, low obstacles 2x2 —
+        // the drawn art's own coverage, which is
         // the whole point: a picture may never overhang a square a character can stand
         // on. Asserted on the real board shape as well as the small fixture.
         for (var seed = 1; seed <= 200; seed++)
@@ -111,12 +112,12 @@ public class TerrainGeneratorTests
             {
                 foreach (var component in Components([.. field.LowObstacles]))
                 {
-                    AssertWholeRect(component, expectedWidth: 2, expectedHeight: 2, seed);
+                    AssertWholeRect(component, [(2, 2)], seed);
                 }
 
                 foreach (var component in Components([.. field.Blocked]))
                 {
-                    AssertWholeRect(component, expectedWidth: 2, expectedHeight: 4, seed);
+                    AssertWholeRect(component, [(2, 4), (4, 2)], seed);
                 }
             }
         }
@@ -140,7 +141,8 @@ public class TerrainGeneratorTests
                 var height = component.Max(s => s.Y) - component.Min(s => s.Y) + 1;
 
                 Assert.True(
-                    width == 2 && (height == 2 || height == 4) && component.Count == width * height,
+                    ((width == 2 && (height == 2 || height == 4)) || (width == 4 && height == 2))
+                        && component.Count == width * height,
                     $"Seed {seed}: footprints merged into a {width}x{height} component "
                     + $"of {component.Count} squares.");
             }
@@ -157,16 +159,17 @@ public class TerrainGeneratorTests
             new SeededRandomSource(seed));
 
     private static void AssertWholeRect(
-        IReadOnlyCollection<GridPosition> component, int expectedWidth, int expectedHeight, int seed)
+        IReadOnlyCollection<GridPosition> component,
+        IReadOnlyCollection<(int Width, int Height)> allowed,
+        int seed)
     {
         var width = component.Max(s => s.X) - component.Min(s => s.X) + 1;
         var height = component.Max(s => s.Y) - component.Min(s => s.Y) + 1;
 
         Assert.True(
-            width == expectedWidth && height == expectedHeight
-                && component.Count == expectedWidth * expectedHeight,
+            allowed.Contains((width, height)) && component.Count == width * height,
             $"Seed {seed}: component of {component.Count} squares spans {width}x{height}, "
-            + $"expected a whole {expectedWidth}x{expectedHeight}.");
+            + $"expected a whole {string.Join(" or ", allowed.Select(a => $"{a.Width}x{a.Height}"))}.");
     }
 
     private static IEnumerable<List<GridPosition>> Components(HashSet<GridPosition> squares)
