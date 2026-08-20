@@ -24,16 +24,21 @@ namespace SRDCombat.Game;
 /// terrain must not quietly remake it.
 /// </item>
 /// <item>
-/// <b>Obstacles are whole footprints, Difficult Terrain comes in patches.</b> Up to
-/// three obstacles — each drawn as either a wall (Total Cover, 2×4 squares) or a low
-/// obstacle (Half Cover, shot over rather than blocking, 2×2 squares), a coin flip per
-/// obstacle — and up to two patches of one to four. The footprint sizes are the drawn
+/// <b>Obstacles are whole footprints, Difficult Terrain comes in patches.</b> Three to
+/// six obstacle attempts — each drawn as either a wall (Total Cover, 2×4 squares) or a
+/// low obstacle (Half Cover, shot over rather than blocking, 2×2 squares), a coin flip
+/// per obstacle — and up to three patches of one to four. The attempt counts were
+/// raised from 0–3 and 0–2 on 2026-08-20, after play found the fields too sparse: with
+/// rejection, the old dial landed a mean of one footprint per field and a third of
+/// fields bare, and the new one lands two to three on most fields with four or five
+/// possible. The footprint sizes are the drawn
 /// art's own (2026-08-20, at Brandon's direction): a rock wall or a tree blocks every
 /// square its picture covers, which is why placement is all-or-nothing — a footprint
 /// that cannot land whole lands nowhere, so a partial obstacle can never contradict its
 /// art. Footprints also never touch each other, orthogonally or by kind, so a client
 /// can recover each one from the blocked squares as a connected component. A draw can
-/// also produce a bare field, on purpose: variety includes the plain.
+/// still produce a bare field — rejection can refuse every attempt — but it is rare
+/// rather than a third of draws: variety includes the plain, sparingly.
 /// </item>
 /// <item>
 /// <b>Every fight stays winnable on foot.</b> An obstacle square — wall or low, both
@@ -103,7 +108,7 @@ public static class TerrainGenerator
             _ => new GridPosition(from.X - 1, from.Y),
         };
 
-        var obstacleCount = random.Roll(4) - 1;
+        var obstacleCount = random.Roll(4) + 2;
 
         for (var obstacle = 0; obstacle < obstacleCount; obstacle++)
         {
@@ -147,7 +152,7 @@ public static class TerrainGenerator
             }
         }
 
-        var difficultPatches = random.Roll(3) - 1;
+        var difficultPatches = random.Roll(4) - 1;
 
         for (var patch = 0; patch < difficultPatches; patch++)
         {
