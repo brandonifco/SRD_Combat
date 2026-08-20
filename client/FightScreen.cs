@@ -1448,14 +1448,14 @@ public abstract partial class FightScreen : Node2D
     {
         var pieces = new List<(Rect2 Bounds, Texture2D Art, bool Fill)>();
 
-        if (theme.Wall is { } wall)
+        if (theme.Wall.Count > 0)
         {
-            CollectScenery(BlockedSquares, wall, fill: true, pieces);
+            CollectScenery(BlockedSquares, theme.Wall, fill: true, pieces);
         }
 
-        if (theme.Low is { } low)
+        if (theme.Low.Count > 0)
         {
-            CollectScenery(LowObstacleSquares, low, fill: false, pieces);
+            CollectScenery(LowObstacleSquares, theme.Low, fill: false, pieces);
         }
 
         // Painter's order: what stands further south draws in front.
@@ -1481,14 +1481,19 @@ public abstract partial class FightScreen : Node2D
     /// <summary>
     /// Splits one kind of obstacle square into footprints and queues their art:
     /// whole-rectangle components as one piece spanning the block, anything else as
-    /// the old per-square standing sprites.
+    /// the old per-square standing sprites. Which variant a footprint wears is its
+    /// anchor square's hash — deterministic, so a fight redraws the same pillars, and
+    /// spatial, so twin footprints on one field need not be twins.
     /// </summary>
     private void CollectScenery(
         IReadOnlyCollection<GridPosition> squares,
-        Texture2D art,
+        IReadOnlyList<Texture2D> variants,
         bool fill,
         List<(Rect2 Bounds, Texture2D Art, bool Fill)> pieces)
     {
+        Texture2D At(int x, int y) =>
+            variants[Math.Abs(((x * 89) ^ (y * 59)) + (x * y * 17)) % variants.Count];
+
         var remaining = new HashSet<GridPosition>(squares);
 
         while (remaining.Count > 0)
@@ -1528,7 +1533,7 @@ public abstract partial class FightScreen : Node2D
                         GridTop + (minY * CellPixels),
                         (maxX - minX + 1) * CellPixels,
                         (maxY - minY + 1) * CellPixels),
-                    art,
+                    At(minX, minY),
                     fill));
             }
             else
@@ -1541,7 +1546,7 @@ public abstract partial class FightScreen : Node2D
                             GridTop + (square.Y * CellPixels),
                             CellPixels,
                             CellPixels),
-                        art,
+                        At(square.X, square.Y),
                         false));
                 }
             }
