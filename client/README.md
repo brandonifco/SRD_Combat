@@ -248,8 +248,9 @@ The themes are Woodland, Rocky and Barren; the per-theme files are Brandon's own
 and travel with the repo, the pack cuts are fallbacks and stay local. Numbered
 variants (`_2` through `_9`) may sit beside any of the per-theme files: difficult art
 mixes variants per square, walls and low obstacles per footprint, both chosen by
-position hash so a fight always redraws the same field. The rocky difficult rubble
-ships four. Brambles are
+position hash so a fight always redraws the same field. The rocky and barren
+difficult rubble ship four variants each; all three themes now carry difficult art,
+so the dark wash remains only as the fallback for a theme without a drawing. Brambles are
 deliberately *difficult* rather than an obstacle — brush is pushed through, rock is
 gone around — which is why the woodland difficult slot wears what used to be its low
 obstacle.
