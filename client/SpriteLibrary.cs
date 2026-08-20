@@ -265,6 +265,10 @@ public sealed class SpriteLibrary
 
         // The battlefield's own art, themed. A theme needs its ground; the things that
         // stand on it are optional, and a theme missing them simply has bare ground.
+        // Scenery is per-theme by request — grey rock on the grey ground, red rock on
+        // the clay, tree and brush on the grass — so a fight never mixes the families;
+        // the shared pack cuts (Tree/Rock/Bush) stay as the fallback for a machine
+        // that has them and lacks the per-theme files.
         var terrain = Path.Combine(root, "Terrain");
         var tree = LoadTexture(Path.Combine(terrain, "Tree.png"));
         var rock = LoadTexture(Path.Combine(terrain, "Rock.png"));
@@ -272,11 +276,13 @@ public sealed class SpriteLibrary
 
         var themes = new List<GroundTheme>();
 
-        foreach (var (name, wall) in new[] { ("Woodland", tree), ("Rocky", rock), ("Barren", rock) })
+        foreach (var (name, packWall) in new[] { ("Woodland", tree), ("Rocky", rock), ("Barren", rock) })
         {
             if (LoadStrip(Path.Combine(terrain, $"Ground_{name}.png")) is { } ground)
             {
-                themes.Add(new GroundTheme(name, ground, wall, bush));
+                var wall = LoadTexture(Path.Combine(terrain, $"Wall_{name}.png")) ?? packWall;
+                var low = LoadTexture(Path.Combine(terrain, $"Low_{name}.png")) ?? bush;
+                themes.Add(new GroundTheme(name, ground, wall, low));
             }
         }
 
