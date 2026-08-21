@@ -379,9 +379,18 @@ stance**, which drew everything and let refusals teach the rules; the status lin
 reads `Action ✓ Bonus ✗`, so a row that has shrunk still explains itself, and the engine
 still refuses anything that arrives by another road. The duplication of the engine's
 refusals is the real cost and is guarded from the direction that hurts: a test asserts
-that whatever `TurnOptions` hides, the engine refuses. The grid also **fogs every square
-the acting character has Total Cover against**, since that cover refuses an attack, a
-spell and an area alike. And `AttackChoice` no longer fires a bow point blank: a ranged
+that whatever `TurnOptions` hides, the engine refuses. The grid also wears a **fog of
+war** (2026-08-21, asked for from play, replacing the acting character's Total-Cover
+shade): `PartyVision` in `Game` — a display judgement with `TargetChoice`'s standing,
+never a rule — reads a square as seen when any living, non-Unconscious, non-Blinded
+party member has an unblocked `CoverRules.LineBlocked` line to it, so what can be seen
+and what can be shot never disagree about a wall. The client shadows unseen squares
+(drawn smooth: one pixel per square, upscaled bilinearly, so the edge feathers instead
+of stepping), draws no token, ring, hover hint or Tab stop for a monster standing in
+them — the panel keeps the row with its state reading `unseen` — and its conveniences
+treat the hidden as absent, so a click into shadow is a move and the engine's refusal
+is what bumping into something unseen feels like. The engine models no sight and rules
+on nothing here. And `AttackChoice` no longer fires a bow point blank: a ranged
 roll within 5 feet of an enemy has Disadvantage, so a penalised attack sorts below every
 unpenalised one and the Rogue's blade wins the tie its bow used to take alphabetically.
 
