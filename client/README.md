@@ -292,13 +292,15 @@ dropped file and never a code change:
 ```
 client/assets/sprites/Projectiles/<Attack_Name>.png   that attack's own art (spaces as underscores)
 client/assets/sprites/Projectiles/Arrow.png           any other ranged weapon attack
-client/assets/sprites/Projectiles/Bolt.png            any other spell attack
+client/assets/sprites/Projectiles/Spell.png           any other spell attack
 ```
 
-Three of Brandon's ship with the repo: `Arrow.png`, `Dart.png`, and `Handaxe.png` — the
-handaxe a four-frame strip that tumbles in flight, since a multi-frame projectile loops
-as it travels. All of it is optional — without a match a weapon flies the arrow, a
-spell the bolt then the arrow, and with nothing at all the attack simply swings and
+Brandon's set ships with the repo: `Arrow.png`, `Dart.png`, `Handaxe.png` — a
+four-frame strip that tumbles in flight, since a multi-frame projectile loops as it
+travels — and his crossbow bolt under all three crossbow names. (The spell generic was
+named `Bolt.png` for a day, until that bolt needed the word: a file name a weapon could
+plausibly claim is no name for a fallback.) All of it is optional — without a match a
+weapon flies the arrow, a spell its generic then the arrow, and with nothing at all the attack simply swings and
 lands with nothing drawn crossing the gap. Every sheet is drawn **pointing right**: the
 client rotates it along the flight, the same convention the walk cycle's facing rests
 on. Frames are square (height × height across), so a wide single drawing must be padded

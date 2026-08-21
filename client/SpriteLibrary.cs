@@ -258,8 +258,11 @@ public sealed class SpriteLibrary
     /// own name first — <c>Dart.png</c> for a Dart, <c>Handaxe.png</c> tumbling for a
     /// Handaxe, spaces as underscores, the exact-name convention monster art uses — and
     /// falling back to the two generics: <c>Arrow.png</c> for any weapon,
-    /// <c>Bolt.png</c> (then the arrow) for a spell. A multi-frame strip loops in
-    /// flight, which is what makes a thrown axe tumble.
+    /// <c>Spell.png</c> (then the arrow) for a spell. The spell generic was
+    /// <c>Bolt.png</c> for a day, until Brandon's crossbow bolt needed the word: a
+    /// "bolt" is ammunition first, and a file name a weapon could plausibly claim is
+    /// no name for a fallback. A multi-frame strip loops in flight, which is what
+    /// makes a thrown axe tumble.
     /// </summary>
     public Strip? ProjectileFor(RangedAttackKind kind, string? attackName)
     {
@@ -275,7 +278,7 @@ public sealed class SpriteLibrary
         }
 
         return kind == RangedAttackKind.Spell
-            ? _projectiles.GetValueOrDefault("Bolt") ?? _projectiles.GetValueOrDefault("Arrow")
+            ? _projectiles.GetValueOrDefault("Spell") ?? _projectiles.GetValueOrDefault("Arrow")
             : _projectiles.GetValueOrDefault("Arrow");
     }
 
