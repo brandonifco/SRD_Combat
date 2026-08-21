@@ -484,8 +484,9 @@ drops — all queued in log order so each holds the next beat, from the free Cra
 character packs, mapped in the client's
 `SpriteLibrary`: party art by class name (all twelve classes covered), monster art by
 **exact** stat-block name (goblins, skeletons, zombies, the Gladiator, the Knight, the
-Mage, the Priests, the Scout, and only the two dragon colours the packs actually hold —
-a red sprite on a Green Dragon Wyrmling would be the display lying). **The PNGs are
+Mage, the Priests, the Scout — and since the 2026-08-21 batch all five dragon wyrmlings
+wear Brandon's own drawings, each in its printed colour, where the packs held only two
+and a red sprite on a Green Dragon Wyrmling would have been the display lying). **The PNGs are
 deliberately not in the repo**: Craftpix's free license permits use in a game but not
 redistribution, and the repo is public — the same line the SRD PDF sits behind, and the
 same fallback shape: `client/assets/sprites/` is gitignored, a machine without it draws
@@ -525,7 +526,13 @@ including Goblin Warrior and Scout, which took drawings over packs by preference
 The second install-time step is the **flip**: these four were drawn facing left and
 the convention is that art faces right, so a monster squared up to the party would
 otherwise be mirrored away from it. They do not
-animate and do not need to: each pose already falls back to Idle. **Goblins were asked
+animate and do not need to: each pose already falls back to Idle. Both counts of
+fifteen above are the 2026-08-16 moment this passage records; the 2026-08-20 batch
+(#271) added fifteen more, and the 2026-08-21 batch brought the total to **49 monster
+stills** — 14 new slots (all five dragon wyrmlings in their printed colours, a
+dedicated drawing per printed bugbear retiring the shared body, Centaur Trooper,
+Gargoyle, Lemure, Wolf, and the four swarms) plus nine redraws of the earliest stills
+at their true stature. **Goblins were asked
 for and deliberately not taken**, because `Goblin_1/2/3` already cover all three goblin
 stat blocks with full animation, and a still frame would have been a downgrade.
 Second, **facing**. It ran off the token's *side* — monsters faced left, the party right

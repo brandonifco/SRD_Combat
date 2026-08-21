@@ -171,8 +171,9 @@ every pack ends by sinking or fading the corpse away, and holding that frame lef
 killed goblin as a smear on the floor. The art is the free Craftpix character packs, and the maps
 are curated in `SpriteLibrary`: party art by class name, monster art by **exact**
 stat-block name, and anything unmapped keeps the circle-and-letter token — a red
-dragon sprite on a Green Dragon Wyrmling would be the display lying, so only the
-colours the packs actually hold are mapped.
+dragon sprite on a Green Dragon Wyrmling would be the display lying, which is why the
+wyrmlings stayed circles until Brandon drew all five in their printed colours
+(2026-08-21); the pack dragons are unmapped now.
 
 **The PNGs are deliberately not in the repository.** Craftpix's free license permits
 using the art in a game but not redistributing the assets, and this repo is public —
@@ -195,10 +196,13 @@ across, so a sheet *narrower* than it is tall is not a strip at all — it is on
 figure, and it is padded out to a square frame rather than rejected. That is the whole
 setup for hand-drawn art of one creature: drop a single PNG in as `Idle.png` and the
 creature stops being a lettered circle. It will not animate, and it does not need to —
-every pose already falls back to `Idle` when its own strip is missing. Four creatures
-ship this way (Gnoll Warrior, Black Bear, Brown Bear, Giant Wasp), chosen because they
-are among the most-drawn monsters in the pool and every one of them was a bare circle
-beside a party in full animation.
+every pose already falls back to `Idle` when its own strip is missing. Forty-nine
+creatures ship this way as of the 2026-08-21 batch — it began with four (Gnoll
+Warrior, Black Bear, Brown Bear, Giant Wasp), chosen because they were among the
+most-drawn monsters in the pool and every one was a bare circle beside a party in
+full animation, and Brandon has been retiring circles batch by batch since. These
+travel with the repo: the drawings are the project's own, so their folders are
+whitelisted in `.gitignore` where the packs are not.
 
 Three things such a drawing must get right, the first two inherited from the packs rather
 than invented here.
