@@ -1,4 +1,5 @@
 using Godot;
+using SRDCombat.Core.Combat;
 
 namespace SRDCombat.Viewer;
 
@@ -196,16 +197,15 @@ public sealed class SpriteLibrary
     };
 
     private readonly Dictionary<string, CharacterArt> _bySheetFolder;
+    private readonly Dictionary<string, Strip> _projectiles;
 
     private SpriteLibrary(
         Dictionary<string, CharacterArt> bySheetFolder,
-        Strip? arrow,
-        Strip? bolt,
+        Dictionary<string, Strip> projectiles,
         IReadOnlyList<GroundTheme> themes)
     {
         _bySheetFolder = bySheetFolder;
-        Arrow = arrow;
-        Bolt = bolt;
+        _projectiles = projectiles;
         Themes = themes;
     }
 
@@ -254,13 +254,30 @@ public sealed class SpriteLibrary
     public IReadOnlyList<GroundTheme> Themes { get; }
 
     /// <summary>
-    /// The arrow that crosses the board for a ranged weapon attack, drawn pointing right
-    /// and rotated along its flight. Null when the art is absent.
+    /// What a ranged attack flies, or null when nothing applies. Keyed by the attack's
+    /// own name first — <c>Dart.png</c> for a Dart, <c>Handaxe.png</c> tumbling for a
+    /// Handaxe, spaces as underscores, the exact-name convention monster art uses — and
+    /// falling back to the two generics: <c>Arrow.png</c> for any weapon,
+    /// <c>Bolt.png</c> (then the arrow) for a spell. A multi-frame strip loops in
+    /// flight, which is what makes a thrown axe tumble.
     /// </summary>
-    public Strip? Arrow { get; }
+    public Strip? ProjectileFor(RangedAttackKind kind, string? attackName)
+    {
+        if (kind == RangedAttackKind.None)
+        {
+            return null;
+        }
 
-    /// <summary>The bolt a spell attack throws — a looping strip, rotated the same way.</summary>
-    public Strip? Bolt { get; }
+        if (attackName is not null
+            && _projectiles.TryGetValue(attackName.Replace(' ', '_'), out var named))
+        {
+            return named;
+        }
+
+        return kind == RangedAttackKind.Spell
+            ? _projectiles.GetValueOrDefault("Bolt") ?? _projectiles.GetValueOrDefault("Arrow")
+            : _projectiles.GetValueOrDefault("Arrow");
+    }
 
     /// <summary>Whether any art loaded at all — false means every token is a circle.</summary>
     public bool IsEmpty => _bySheetFolder.Count == 0;
@@ -292,16 +309,28 @@ public sealed class SpriteLibrary
 
         if (!Directory.Exists(root))
         {
-            return new SpriteLibrary(loaded, null, null, []);
+            return new SpriteLibrary(loaded, [], []);
         }
 
-        // The two projectiles, in a folder of their own rather than borrowed from the
+        // The projectiles, in a folder of their own rather than borrowed from the
         // creature that happens to ship them: any archer fires the same arrow, and a
         // sheet keyed to a stat block would tie a Rogue's shortbow to the Skeleton
-        // Archer's presence on disk. Both are optional, like every other sheet.
-        var projectiles = Path.Combine(root, "Projectiles");
-        var arrow = LoadStrip(Path.Combine(projectiles, "Arrow.png"));
-        var bolt = LoadStrip(Path.Combine(projectiles, "Bolt.png"));
+        // Archer's presence on disk. Every PNG in the folder is loaded by its file
+        // name, so per-weapon art is a dropped file and never a code change; all of it
+        // is optional, like every other sheet.
+        var projectiles = new Dictionary<string, Strip>(StringComparer.Ordinal);
+        var projectilesFolder = Path.Combine(root, "Projectiles");
+
+        if (Directory.Exists(projectilesFolder))
+        {
+            foreach (var sheet in Directory.EnumerateFiles(projectilesFolder, "*.png"))
+            {
+                if (LoadStrip(sheet) is { } strip)
+                {
+                    projectiles[Path.GetFileNameWithoutExtension(sheet)] = strip;
+                }
+            }
+        }
 
         // The battlefield's own art, themed. A theme needs its ground; the things that
         // stand on it are optional, and a theme missing them simply has bare ground.
@@ -393,7 +422,7 @@ public sealed class SpriteLibrary
                 dead is null ? 0 : RestingFrame(deadPath, figure));
         }
 
-        return new SpriteLibrary(loaded, arrow, bolt, themes);
+        return new SpriteLibrary(loaded, projectiles, themes);
     }
 
     /// <summary>One whole image as a texture, or null when it is not there.</summary>
