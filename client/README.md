@@ -91,8 +91,12 @@ gaining a wrong one. Damage and the miss are the two exceptions and are matched 
 because neither is a name — and they fail the same safe way.
 
 Faint blue squares are where a walk could end; ringed enemies are ones an attack
-reaches; a **shaded** square is one this character has Total Cover against, which refuses
-an attack, a spell and an area alike. Both are advice, not rules — a click anywhere is sent to the engine, and **a
+reaches; the **fog of war** shadows every square no party member can see (`PartyVision`
+in `Game`: a wall blocks the line, sight is the whole party's union, and Unconscious or
+Blinded eyes count for nothing), drawn smooth so its edge feathers rather than steps. A
+monster standing in the fog is invisible — no token, no ring, no hover hint, no Tab
+stop, and the initiative panel shows its row as `unseen` — until someone's line to it
+clears. All of it is advice, not rules — a click anywhere is sent to the engine, and **a
 refusal is shown with its code** rather than swallowed, because a refusal is the engine
 explaining a rule. The second row is filtered by what the character *has*, which is
 display: a shown button can still be refused, and absent is honest where inert would not

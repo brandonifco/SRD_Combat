@@ -2068,7 +2068,10 @@ public abstract partial class FightScreen : Node2D
             : Math.Max(0.25f, MathF.Floor(fits * 4f) / 4f);
     }
 
-    protected void DrawTurnOrder(IReadOnlyList<Token> tokens, string? activeId)
+    protected void DrawTurnOrder(
+        IReadOnlyList<Token> tokens,
+        string? activeId,
+        IReadOnlySet<string>? unseen = null)
     {
         // The panel is an overlay now, not a reserved column: fullscreen gave the board
         // the whole width, so the initiative list and the log float over the field's
@@ -2085,13 +2088,24 @@ public abstract partial class FightScreen : Node2D
 
         foreach (var token in tokens)
         {
-            var colour = token.IsDead ? Dim : token.IsDown ? DownColour : token.IsParty ? PartyColour : MonsterColour;
+            // A combatant the fog hides keeps its row — initiative order is knowledge
+            // the party has from the fight itself — but its state is withheld, because
+            // hit points read through a wall would be the panel scouting for free.
+            var hidden = unseen?.Contains(token.Id) == true && !token.IsDead;
+
+            var colour = hidden ? Dim
+                : token.IsDead ? Dim
+                : token.IsDown ? DownColour
+                : token.IsParty ? PartyColour
+                : MonsterColour;
             var marker = token.Id == activeId ? "▶ " : "  ";
 
             var state = token.IsDead
                 ? "dead"
-                : $"{token.HitPoints}/{token.MaximumHitPoints} hp" +
-                  (token.Conditions.Length > 0 ? $" — {token.Conditions}" : string.Empty);
+                : hidden
+                    ? "unseen"
+                    : $"{token.HitPoints}/{token.MaximumHitPoints} hp" +
+                      (token.Conditions.Length > 0 ? $" — {token.Conditions}" : string.Empty);
 
             DrawString(
                 TextFont,

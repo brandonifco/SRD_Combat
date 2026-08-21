@@ -93,8 +93,14 @@ public partial class PlayMode : FightScreen
     private double _pace = SecondsPerTurn;
     private readonly HashSet<GridPosition> _reachable = [];
 
-    /// <summary>Squares the active character has Total Cover against — fogged, not merely dim.</summary>
-    private readonly HashSet<GridPosition> _blocked = [];
+    /// <summary>Squares nobody in the party can see — the fog of war, <c>PartyVision</c>'s answer.</summary>
+    private readonly HashSet<GridPosition> _unseen = [];
+
+    /// <summary>
+    /// The fog rendered smooth: <see cref="_unseen"/> painted one pixel per square and
+    /// upscaled bilinearly, so its edge feathers across a square instead of stepping.
+    /// </summary>
+    private ImageTexture? _fogTexture;
 
     /// <summary>
     /// The keyboard's place on the board. Arrow keys move it, Enter acts on it, and it
@@ -630,7 +636,7 @@ public partial class PlayMode : FightScreen
             return [];
         }
 
-        return _pending switch
+        var offered = _pending switch
         {
             Pending.AttackTarget =>
                 TargetChoice.For(encounter, actor, TargetKind.Attack, attack: _pendingAttack),
@@ -641,6 +647,13 @@ public partial class PlayMode : FightScreen
             Pending.SparkHarmTarget => TargetChoice.For(encounter, actor, TargetKind.SparkHarm),
             _ => [],
         };
+
+        // The fog filters the ring: Tab landing the cursor on a hidden monster would
+        // hand the player its position for free. Allies are always seen.
+        return offered
+            .Where(target => target.SideId == PregeneratedParty.SideId
+                || !_unseen.Contains(target.Position))
+            .ToList();
     }
 
     /// <summary>Moves the cursor to the next target in the ring, wrapping round.</summary>
@@ -1180,9 +1193,12 @@ public partial class PlayMode : FightScreen
         }
 
         // Whoever is standing there, preferring the living: a corpse and a character can
-        // share a square, and the one being asked about is the one on their feet.
+        // share a square, and the one being asked about is the one on their feet. A
+        // monster the fog hides answers no hover — a tooltip through a wall would be
+        // the hint scouting for the player.
         var occupant = encounter.Combatants
-            .Where(combatant => combatant.Position == square)
+            .Where(combatant => combatant.Position == square
+                && (combatant.SideId == PregeneratedParty.SideId || !_unseen.Contains(square)))
             .OrderBy(combatant => combatant.IsDead ? 1 : 0)
             .FirstOrDefault();
 
@@ -1479,9 +1495,17 @@ public partial class PlayMode : FightScreen
         }
     }
 
-    /// <summary>The living combatant standing on a square, whichever side it is on.</summary>
+    /// <summary>
+    /// The living combatant standing on a square, whichever side it is on — except a
+    /// monster the fog hides, which the client's conveniences treat as absent: a click
+    /// into the shadow reads as a move, and the engine's refusal of that move is what
+    /// bumping into something unseen feels like.
+    /// </summary>
     private Combatant? TokenAt(GridPosition square) =>
-        _encounter?.Combatants.FirstOrDefault(combatant => !combatant.IsDead && combatant.Position == square);
+        _encounter?.Combatants.FirstOrDefault(combatant =>
+            !combatant.IsDead
+            && combatant.Position == square
+            && (combatant.SideId == PregeneratedParty.SideId || !_unseen.Contains(square)));
 
     /// <summary>The living combatant under a pixel, whichever side it is on.</summary>
     /// <remarks>
@@ -1491,7 +1515,9 @@ public partial class PlayMode : FightScreen
     private Combatant? TokenTarget(Vector2 pixel) =>
         SquareAt(pixel) is { } square && _encounter is { } encounter
             ? encounter.Combatants.FirstOrDefault(combatant =>
-                !combatant.IsDead && combatant.Position == square)
+                !combatant.IsDead
+                && combatant.Position == square
+                && (combatant.SideId == PregeneratedParty.SideId || !_unseen.Contains(square)))
             : null;
 
     private void Run(Func<ActionRefusal?> act)
@@ -1505,7 +1531,7 @@ public partial class PlayMode : FightScreen
         _notice = refusal is null ? null : $"{refusal.Message}  [{refusal.Code}]";
         _elapsed = 0;
         _reachable.Clear();
-        _blocked.Clear();
+        _unseen.Clear();
 
         // Whatever just happened, the board plays it out: each Move step's walk — the
         // step carries the route, so the token glides it instead of teleporting — and
@@ -1564,29 +1590,64 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        // Squares this character has Total Cover against — nothing standing there can be
-        // shot, targeted by a spell, or caught by an area, and the engine refuses all
-        // three. Shading them says so before a turn is spent finding out. CoverRules is
-        // the engine's own judgement; this only asks it a question per square.
-        if (commanded is { } shooter && _encounter is { } field)
+        // The fog of war: squares nobody in the party can see (asked for from play,
+        // 2026-08-21, replacing the acting character's Total Cover shade). PartyVision
+        // in Game is the judgement — walls block, sight is the side's union, closed
+        // eyes count for nothing — and this screen only draws its answer, and hides
+        // what stands inside it, because a monster no one can see is not the player's
+        // to know about. Party-wide rather than per-actor, so the fog holds still
+        // through everyone's turns instead of jumping with the initiative.
+        if (_encounter is { } looked)
         {
-            for (var x = 0; x < GridWidth; x++)
-            {
-                for (var y = 0; y < GridHeight; y++)
-                {
-                    var square = new GridPosition(x, y);
+            var visible = PartyVision.VisibleSquares(
+                looked.Battlefield,
+                looked.Combatants,
+                PregeneratedParty.SideId);
 
-                    if (square != shooter.Position
-                        && CoverRules.Between(field.Battlefield, shooter.Position, square, field.Combatants)
-                            == CoverDegree.Total)
-                    {
-                        _blocked.Add(square);
-                    }
+            foreach (var square in looked.Battlefield.AllSquares())
+            {
+                if (!visible.Contains(square))
+                {
+                    _unseen.Add(square);
                 }
             }
+
+            _fogTexture = BuildFogTexture(looked.Battlefield);
         }
 
         QueueRedraw();
+    }
+
+    /// <summary>How dark the fog is where nothing can be seen.</summary>
+    private const float FogOpacity = 0.55f;
+
+    /// <summary>Fog texture pixels per battlefield square — the feathering's resolution.</summary>
+    private const int FogPixelsPerSquare = 8;
+
+    /// <summary>
+    /// Renders the fog one pixel per square and upscales it bilinearly, so the interior
+    /// stays a solid shadow while the boundary ramps smoothly over about a square.
+    /// </summary>
+    private ImageTexture? BuildFogTexture(Battlefield field)
+    {
+        if (_unseen.Count == 0)
+        {
+            return null;
+        }
+
+        var image = Image.CreateEmpty(field.Width, field.Height, false, Image.Format.Rgba8);
+
+        foreach (var square in _unseen)
+        {
+            image.SetPixel(square.X, square.Y, new Color(0f, 0f, 0f, FogOpacity));
+        }
+
+        image.Resize(
+            field.Width * FogPixelsPerSquare,
+            field.Height * FogPixelsPerSquare,
+            Image.Interpolation.Bilinear);
+
+        return ImageTexture.CreateFromImage(image);
     }
 
     public override void _Draw()
@@ -1614,14 +1675,16 @@ public partial class PlayMode : FightScreen
                 new Color(PartyColour, 0.16f));
         }
 
-        // Fog over what this character cannot reach with anything at range: Total Cover
-        // refuses an attack, a spell and an area alike, so a square behind the wall is
-        // not a target and should not look like one.
-        foreach (var square in _blocked)
+        // The fog of war, drawn smooth: the per-square set is painted into a small
+        // image and upscaled bilinearly (BuildFogTexture), so the shadow's edge
+        // feathers across a square instead of stepping — the blockiness was the other
+        // half of the 2026-08-21 request. One texture draw whatever the fog's shape.
+        if (_fogTexture is { } fog)
         {
-            DrawRect(
-                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
-                new Color(0f, 0f, 0f, 0.55f));
+            DrawTextureRect(
+                fog,
+                new Rect2(GridLeft, GridTop, GridWidth * CellPixels, GridHeight * CellPixels),
+                false);
         }
 
         // The keyboard's cursor, drawn over the advice so it is never lost in it.
@@ -1641,20 +1704,32 @@ public partial class PlayMode : FightScreen
         // state alone showed the victim on the floor before the monster took a step.
         var tokens = WithWalk(WithHeldAppearances(TokensFrom(encounter, _labels)));
 
+        // What the fog withholds: a monster standing where nobody in the party can see
+        // draws no token and earns no ring — the fog would otherwise be a tint over a
+        // perfectly visible figure. The panel keeps its row (initiative order is
+        // knowledge the party has from the fight itself) with its state withheld.
+        var unseenIds = tokens
+            .Where(token => !token.IsParty && _unseen.Contains(new GridPosition(token.X, token.Y)))
+            .Select(token => token.Id)
+            .ToHashSet();
+        var shown = tokens.Where(token => !unseenIds.Contains(token.Id)).ToList();
+
         if (commanded is not null && _pending == Pending.Nothing)
         {
             foreach (var enemy in encounter.EnemiesOf(commanded))
             {
-                if (!enemy.IsDead && AttackChoice.BestFor(commanded, enemy, encounter.Combatants) is not null)
+                if (!enemy.IsDead
+                    && !_unseen.Contains(enemy.Position)
+                    && AttackChoice.BestFor(commanded, enemy, encounter.Combatants) is not null)
                 {
                     DrawCircle(CentreOf(enemy.Position), (CellPixels / 2f) - 4, MonsterColour, filled: false, width: 2);
                 }
             }
         }
 
-        DrawTokens(tokens, active?.Id);
+        DrawTokens(shown, active?.Id);
         DrawHeading(_subtitle, StatusLine(commanded));
-        DrawTurnOrder(tokens, active?.Id);
+        DrawTurnOrder(tokens, active?.Id, unseenIds);
         DrawLog(encounter.Log, encounter.Log.Count, tokens.Count);
 
         // The bottom strip's own veil, before anything is written on it.
