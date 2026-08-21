@@ -174,13 +174,23 @@ public sealed class SpriteLibrary
         ["Violet Fungus"] = "Violet_Fungus",
         ["Winter Wolf"] = "Winter_Wolf",
 
-        // One drawing for both printed bugbears. A Bugbear Stalker is a bugbear, and the
-        // alternative is leaving it a lettered circle beside a Warrior that has a body —
-        // the initiative list and the token's own letter still tell them apart. This is
-        // the opposite call to the goblins, where three distinct packs were worth keeping
-        // because the builds are what distinguishes the three printed goblins on sight.
-        ["Bugbear Warrior"] = "Bugbear",
-        ["Bugbear Stalker"] = "Bugbear",
+        // The 2026-08-21 batch: Brandon's stills for the two printed bugbears (each has
+        // its own drawing now — the shared body that stood in for both is retired), the
+        // five dragon wyrmlings (the Red and White drop the two Craftpix dragons, and
+        // the other three colours shed circles a pack could only have lied about), the
+        // four swarms, and the rest of the roster's bare circles.
+        ["Bugbear Warrior"] = "Bugbear_Warrior",
+        ["Bugbear Stalker"] = "Bugbear_Stalker",
+        ["Blue Dragon Wyrmling"] = "Blue_Dragon_Wyrmling",
+        ["Green Dragon Wyrmling"] = "Green_Dragon_Wyrmling",
+        ["Centaur Trooper"] = "Centaur_Trooper",
+        ["Gargoyle"] = "Gargoyle",
+        ["Lemure"] = "Lemure",
+        ["Wolf"] = "Wolf",
+        ["Swarm of Bats"] = "Swarm_of_Bats",
+        ["Swarm of Insects"] = "Swarm_of_Insects",
+        ["Swarm of Rats"] = "Swarm_of_Rats",
+        ["Swarm of Venomous Snakes"] = "Swarm_of_Venomous_Snakes",
         ["Skeleton"] = "Skeleton_Warrior",
         ["Zombie"] = "Zombie Man",
         ["Ogre Zombie"] = "Wild Zombie",
@@ -192,8 +202,8 @@ public sealed class SpriteLibrary
         ["Priest Acolyte"] = "Priests_3",
         ["Cultist"] = "Priests_3",
         ["Scout"] = "Scout_Human",
-        ["Red Dragon Wyrmling"] = "Dragon_1",
-        ["White Dragon Wyrmling"] = "Dragon_2",
+        ["Red Dragon Wyrmling"] = "Red_Dragon_Wyrmling",
+        ["White Dragon Wyrmling"] = "White_Dragon_Wyrmling",
     };
 
     private readonly Dictionary<string, CharacterArt> _bySheetFolder;
