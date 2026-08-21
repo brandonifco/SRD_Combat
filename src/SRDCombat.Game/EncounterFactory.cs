@@ -124,9 +124,20 @@ public static class EncounterFactory
     /// <summary>
     /// Clear squares outside each spawn column. Two flanks of this rather than one
     /// square of shoulder room, so a creature can go round a screen instead of only
-    /// through it.
+    /// through it. Raised 3 → 8 on 2026-08-21 at Brandon's direction — a 28-wide
+    /// field for the standard fight — with the spawn separation deliberately held at
+    /// 60 feet: all the new ground is flanking room, none of it approach, because
+    /// lengthening the approach was measured expensive when the board last grew.
     /// </summary>
-    public const int MarginSquares = 3;
+    public const int MarginSquares = 8;
+
+    /// <summary>
+    /// Clear rows above and below the taller spawn column. Split from
+    /// <see cref="MarginSquares"/> when the flanks grew to 8: reusing one constant for
+    /// both axes would have made the standard fight 28 × 24, most of it empty rows,
+    /// where 28 × 18 keeps the field wide rather than merely big.
+    /// </summary>
+    public const int VerticalMarginSquares = 5;
 
     /// <summary>The side identifier the monsters fight under.</summary>
     public const string MonsterSideId = "monsters";
@@ -233,10 +244,12 @@ public static class EncounterFactory
         // fixed, and not before". #205 fixed it.
         //
         // MarginSquares on each flank rather than one, so going round is a real option
-        // and not a squeeze along the wall.
+        // and not a squeeze along the wall. Grown again on 2026-08-21 (18 wide → 28,
+        // the standard fight 18 tall): all margin, the separation untouched — see the
+        // constants' own comments.
         var width = separation + (MarginSquares * 2);
         var side = Math.Max(party.Count, Math.Max(built.Monsters.Count, 1));
-        var height = (side * 2) + (MarginSquares * 2);
+        var height = (side * 2) + (VerticalMarginSquares * 2);
 
         var layout = DrawLayout(random, lowestLevel);
         var (partySpawns, monsterSpawns) =
