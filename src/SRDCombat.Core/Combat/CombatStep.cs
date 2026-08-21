@@ -74,8 +74,18 @@ public sealed record CombatStep(
     string? ActorId = null,
     string? TargetId = null,
     IReadOnlyList<GridPosition>? Path = null,
-    RangedAttackKind Ranged = RangedAttackKind.None)
+    RangedAttackKind Ranged = RangedAttackKind.None,
+    string? AttackName = null)
 {
+    /// <summary>
+    /// The name of the attack an <see cref="CombatStepKind.Attack"/> step swung, and
+    /// null on every other kind. Recorded for the reason <see cref="Ranged"/> is: the
+    /// name is in the narration, and this project does not parse its own prose — a
+    /// client choosing art for what crossed the board (a Dart is not an arrow) reads
+    /// this instead.
+    /// </summary>
+    public string? AttackName { get; init; } = AttackName;
+
     /// <summary>
     /// Whether an attack step was a <em>ranged</em> attack roll, and of which sort —
     /// something crossed the distance rather than a blade reaching it.

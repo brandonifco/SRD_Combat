@@ -44,7 +44,7 @@ On your turn:
 | **a letter** | the action whose button shows it: `D` Dodge, `R` Dash, `G` Disengage, `U` Stand Up, `E` Escape, `A` Attack, `C` Cast, `Q` Drink, `P` Give Potion, `W` Second Wind, `S` Action Surge, `F` Rage, `K` Reckless, `M` Steady Aim, `X`/`Z` Cunning Dash/Disengage, `T` Trip, `H`/`J` Spark Heal/Harm |
 | **Space** | End Turn |
 | **mouse wheel** | zoom the camera, about the pointer |
-| **middle-drag** | pan the camera |
+| **middle- or right-drag** | pan the camera |
 | Esc | back out of an armed click or open menu; with nothing armed, ask to quit — Esc again quits, anything else stays |
 
 **The chrome anchors to the window's real edges, whatever they are.** The panel keeps
@@ -65,7 +65,7 @@ edges wherever the camera sits — ground beyond the playable field simply conti
 unwashed (a darkening wash was tried and disliked from play), so the window is one
 unbroken battlefield; the boundary reads from the movement highlight and the cursor,
 and rule washes and scenery still never draw out there. The
-wheel and a middle-drag take the camera by hand; the fight takes it back the moment
+wheel and a middle- or right-drag take the camera by hand; the fight takes it back the moment
 the next animation or turn starts. Zooming the wheel all the way out shows the whole
 field in its surroundings.
 
@@ -284,21 +284,30 @@ last pack cut on 2026-08-20.)
 
 **Projectiles have a folder of their own**, because any archer fires the same arrow and
 keying the sheet to a stat block would tie a Rogue's shortbow to the Skeleton Archer's
-presence on disk:
+presence on disk. Since 2026-08-21 **every PNG in the folder loads by its file name**,
+and the engine records each attack step's name (`CombatStep.AttackName` — recorded for
+the reason `Ranged` is, so no client parses the narration), so per-weapon art is a
+dropped file and never a code change:
 
 ```
-client/assets/sprites/Projectiles/Arrow.png   a ranged weapon attack
-client/assets/sprites/Projectiles/Bolt.png    a spell attack (a strip; it loops in flight)
+client/assets/sprites/Projectiles/<Attack_Name>.png   that attack's own art (spaces as underscores)
+client/assets/sprites/Projectiles/Arrow.png           any other ranged weapon attack
+client/assets/sprites/Projectiles/Bolt.png            any other spell attack
 ```
 
-Both are optional like everything else — without them a ranged attack simply swings and
-lands with nothing drawn crossing the gap. Both must be drawn **pointing right**: the
-client rotates them along the flight, the same convention the walk cycle's facing rests
-on. `Arrow.png` in the Skeleton Archer pack and `Magic_arrow.png` in the Wanderer Magican
-pack are the two this was built against.
+Three of Brandon's ship with the repo: `Arrow.png`, `Dart.png`, and `Handaxe.png` — the
+handaxe a four-frame strip that tumbles in flight, since a multi-frame projectile loops
+as it travels. All of it is optional — without a match a weapon flies the arrow, a
+spell the bolt then the arrow, and with nothing at all the attack simply swings and
+lands with nothing drawn crossing the gap. Every sheet is drawn **pointing right**: the
+client rotates it along the flight, the same convention the walk cycle's facing rests
+on. Frames are square (height × height across), so a wide single drawing must be padded
+to a square canvas on disk — a 56×6 arrow left unpadded would load as nine frames of
+nothing much — and centred *both* ways, because a projectile rotates about its frame's
+centre rather than standing on its bottom edge.
 
-The directory is gitignored. A machine without it — CI, a fresh clone — draws the
-circle tokens it always drew; every lookup is a fallback, nothing is load-bearing.
+A machine without the folder — CI before the drawn set landed, a stale clone — draws
+the circle tokens it always drew; every lookup is a fallback, nothing is load-bearing.
 `--probe` and `--capture` freeze the animation clock for the same reason they skip
 the walk hop: a verification image must not depend on when the frame was taken.
 

@@ -1054,8 +1054,9 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        // The camera's inputs — wheel zoom, middle-drag pan — are nobody else's, so
-        // they are settled before the hover clock or a click can misread them.
+        // The camera's inputs — wheel zoom, middle- or right-drag pan — are nobody
+        // else's, so they are settled before the hover clock or a click can misread
+        // them.
         if (_phase == Phase.Fighting && HandleCameraInput(@event))
         {
             return;
