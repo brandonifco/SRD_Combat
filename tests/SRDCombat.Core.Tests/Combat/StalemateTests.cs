@@ -119,6 +119,42 @@ public class StalemateTests
     }
 
     [Fact]
+    public void AFightWhoseEveryEnemyIsPetrifiedStillEnds()
+    {
+        // #278, exactly as the instrument found it: every living enemy Incapacitated,
+        // none of them downed. Completion counts a Petrified creature as standing, and
+        // every ordinary targeting path hides the Incapacitated, so before the fix the
+        // monster's turn chose no target and ended on the spot — one Basilisk idled
+        // fifty rounds beside three statues and the run recorded Stalled. A null
+        // target now falls into the last resort: finish what is left, because that is
+        // the fight's only road to completion.
+        var heroA = CombatTestData.Character("hero-a", x: 2, y: 2);
+        var heroB = CombatTestData.Character("hero-b", x: 3, y: 2);
+
+        var monster = CombatTestData.Combatant(
+            "monster",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 10),
+            x: 6,
+            y: 2);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 5),
+            [heroA, heroB, monster],
+            new SeededRandomSource(7));
+
+        Assert.True(heroA.AddCondition(ConditionType.Petrified));
+        Assert.True(heroB.AddCondition(ConditionType.Petrified));
+
+        SimpleTacticsPolicy.RunToCompletion(encounter);
+
+        // The monster walked over and finished the statues: the fight ends, in the
+        // monsters' favour, instead of running out the round limit.
+        Assert.True(encounter.IsComplete);
+        Assert.Equal(CombatTestData.Monsters, encounter.WinningSide);
+    }
+
+    [Fact]
     public void ABodyInADoorwayNoLongerStalematesTheFight()
     {
         // The original stalemate, exactly as it was found: a wall with one gap at
