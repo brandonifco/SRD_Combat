@@ -944,6 +944,16 @@ public partial class PlayMode : FightScreen
 
         if (@event is InputEventKey { Pressed: true } key && _phase == Phase.Fighting && !_shopView)
         {
+            // While an act is playing out, the keyboard commands nothing — the engine
+            // resolves instantly, so without this gate a key pressed mid-swing started
+            // the next action before the first had visibly happened (asked for from
+            // play, 2026-08-21). Esc stays live above: quitting must not wait on an
+            // animation. The buttons grey themselves over the same window.
+            if (ActInProgress)
+            {
+                return;
+            }
+
             // The board under the keyboard: arrows walk a cursor, Enter acts on it
             // through the same path a click takes. The cursor appears the moment it is
             // asked for, starting on the character whose turn it is.
@@ -1241,6 +1251,15 @@ public partial class PlayMode : FightScreen
         }
 
         if (CommandedCombatant() is not { } active || _encounter is not { } encounter)
+        {
+            return;
+        }
+
+        // The mouse waits with the keyboard: while an act's animation is playing, a
+        // click on a button, a menu or the board commands nothing, so an action's
+        // effects are seen before the next one can be asked for. Nothing is armed
+        // during the window — arming itself takes an input this gate swallows.
+        if (ActInProgress)
         {
             return;
         }
@@ -1672,6 +1691,11 @@ public partial class PlayMode : FightScreen
 
         if (commanded is { } character)
         {
+            // Greyed while an act plays out: the input gates above make the row inert
+            // over that window, and a button that looks pressable while it is not
+            // would be the display lying about it.
+            var inkNow = ActInProgress ? Dim : Ink;
+
             foreach (var (rect, caption, _) in _buttons)
             {
                 DrawRect(rect, GridLine);
@@ -1681,7 +1705,7 @@ public partial class PlayMode : FightScreen
                     new Vector2(rect.Position.X + 11, rect.Position.Y + 19),
                     caption,
                     fontSize: 13,
-                    modulate: Ink);
+                    modulate: inkNow);
             }
 
             DrawString(
