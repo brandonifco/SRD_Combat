@@ -158,6 +158,21 @@ public sealed class SpriteLibrary
         ["Ankheg"] = "Ankheg",
         ["Giant Vulture"] = "Giant_Vulture",
 
+        // The 2026-08-20 batch: twelve more of Brandon's stills, drawn against the
+        // traditional roster's optimal-dimensions spec, retiring their circle tokens.
+        ["Axe Beak"] = "Axe_Beak",
+        ["Ettin"] = "Ettin",
+        ["Giant Bat"] = "Giant_Bat",
+        ["Giant Lizard"] = "Giant_Lizard",
+        ["Hippogriff"] = "Hippogriff",
+        ["Manticore"] = "Manticore",
+        ["Ochre Jelly"] = "Ochre_Jelly",
+        ["Ogre"] = "Ogre",
+        ["Owlbear"] = "Owlbear",
+        ["Swarm of Crawling Claws"] = "Swarm_of_Crawling_Claws",
+        ["Violet Fungus"] = "Violet_Fungus",
+        ["Winter Wolf"] = "Winter_Wolf",
+
         // One drawing for both printed bugbears. A Bugbear Stalker is a bugbear, and the
         // alternative is leaving it a lettered circle beside a Warrior that has a body —
         // the initiative list and the token's own letter still tell them apart. This is

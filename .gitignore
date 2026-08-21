@@ -32,6 +32,7 @@ client/assets/sprites/*
 !client/assets/sprites/Ape/
 !client/assets/sprites/Archelon/
 !client/assets/sprites/Awakened_Tree/
+!client/assets/sprites/Axe_Beak/
 !client/assets/sprites/Azer_Sentinel/
 !client/assets/sprites/Bandit_Captain/
 !client/assets/sprites/Barbarian_Drawn/
@@ -42,22 +43,31 @@ client/assets/sprites/*
 !client/assets/sprites/Bugbear/
 !client/assets/sprites/Cleric_Drawn/
 !client/assets/sprites/Dire_Wolf/
+!client/assets/sprites/Ettin/
 !client/assets/sprites/Fighter_Drawn/
+!client/assets/sprites/Giant_Bat/
 !client/assets/sprites/Giant_Eagle/
 !client/assets/sprites/Giant_Hyena/
+!client/assets/sprites/Giant_Lizard/
 !client/assets/sprites/Giant_Vulture/
 !client/assets/sprites/Giant_Wasp/
 !client/assets/sprites/Giant_Wolf_Spider/
 !client/assets/sprites/Gnoll_Warrior/
 !client/assets/sprites/Goblin_Drawn/
+!client/assets/sprites/Hippogriff/
 !client/assets/sprites/Hobgoblin_Warrior/
+!client/assets/sprites/Manticore/
+!client/assets/sprites/Ochre_Jelly/
+!client/assets/sprites/Ogre/
+!client/assets/sprites/Owlbear/
 !client/assets/sprites/Rogue_Drawn/
 !client/assets/sprites/Sahuagin_Warrior/
 !client/assets/sprites/Scout_Human/
-!client/assets/sprites/Tough/
-# Brandon's own terrain art travels with the repo; the Terrain folder's other
-# occupants (Tree, Rock, Bush) are cut from Craftpix packs and must not.
+!client/assets/sprites/Swarm_of_Crawling_Claws/
 !client/assets/sprites/Terrain/
+!client/assets/sprites/Tough/
+!client/assets/sprites/Violet_Fungus/
+!client/assets/sprites/Winter_Wolf/
 client/assets/sprites/Terrain/*
 !client/assets/sprites/Terrain/Ground_*.png
 !client/assets/sprites/Terrain/Wall_*.png
