@@ -454,8 +454,10 @@ on the field, and the first fight to reach an edge played out underneath the ban
 strip because at the zoom floor that clamp pins the camera still. **The ground art runs
 to the window's edges whatever the camera does** (also asked for from play, the same
 day): `DrawGrid` lays terrain on every square the window can see, and the squares
-beyond the field wear `BeyondFieldWash`, so the playable field reads at a glance while
-the view is always full of battlefield and never of void. Rule washes and obstacles
+beyond the field draw the same unwashed ground as the field — a `BeyondFieldWash`
+darkened them until 2026-08-21, when Brandon asked for it to go: the boundary reads
+from the movement highlight and the cursor instead, and the window is one unbroken
+battlefield rather than a picture in a frame. Rule washes and obstacles
 never appear beyond the field; the bare no-art fallback keeps its old flat-colour
 board. Every other element — heading, initiative, log, banner,
 buttons — floats over the field on the shared translucent `Veil`, board space is told
