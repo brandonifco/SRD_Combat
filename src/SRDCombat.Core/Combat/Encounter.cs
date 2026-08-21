@@ -1432,7 +1432,8 @@ public sealed partial class Encounter
                 $"{result.TargetArmorClass}{coverNote} — miss{reason}.",
                 attacker,
                 target,
-                ranged: ranged);
+                ranged: ranged,
+                attackName: attack.Name);
 
             ApplyGraze(attacker, attack, target);
             return;
@@ -1446,7 +1447,8 @@ public sealed partial class Encounter
             $"{result.TargetArmorClass}{coverNote} — hit{criticalNote}",
             attacker,
             target,
-            ranged: ranged);
+            ranged: ranged,
+            attackName: attack.Name);
 
         // Sap and Topple both read "if you hit a creature with this weapon", so they
         // land on the hit itself rather than on damage being dealt.
@@ -2169,6 +2171,7 @@ public sealed partial class Encounter
         Combatant? actor = null,
         Combatant? target = null,
         IReadOnlyList<GridPosition>? path = null,
-        RangedAttackKind ranged = RangedAttackKind.None) =>
-        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged));
+        RangedAttackKind ranged = RangedAttackKind.None,
+        string? attackName = null) =>
+        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged, attackName));
 }

@@ -27,6 +27,21 @@ public class RangedStepTests
     }
 
     [Fact]
+    public void AnAttackStepNamesItsAttack()
+    {
+        // Recorded for the reason Ranged is: the name is in the narration and nothing
+        // downstream parses prose, so a client choosing what art flies (a Dart is not
+        // an arrow) reads the step's own field.
+        var (encounter, target) = Fight(
+            CombatTestData.RangedAttack("Shortbow", bonus: 5),
+            targetX: 6);
+
+        Assert.Null(encounter.Attack("Shortbow", target));
+
+        Assert.Equal("Shortbow", AttackStep(encounter).AttackName);
+    }
+
+    [Fact]
     public void ABladeInReachIsNotAShot()
     {
         var (encounter, target) = Fight(

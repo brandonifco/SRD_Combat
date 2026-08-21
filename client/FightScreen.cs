@@ -184,7 +184,8 @@ public abstract partial class FightScreen : Node2D
         int RevealThrough,
         GridPosition From,
         GridPosition To,
-        bool Spell) : Act(Step, RevealThrough);
+        bool Spell,
+        string? AttackName) : Act(Step, RevealThrough);
 
     /// <summary>A one-shot pose: a strip played once through, then done.</summary>
     /// <param name="FacesLeft">
@@ -260,6 +261,7 @@ public abstract partial class FightScreen : Node2D
     private GridPosition? _shotFrom;
     private GridPosition _shotTo;
     private bool _shotIsSpell;
+    private string? _shotName;
     private double _shotElapsed;
     private double _shotSeconds;
 
@@ -866,7 +868,8 @@ public abstract partial class FightScreen : Node2D
                             Consequences(log, index, to),
                             new GridPosition(shooter.X, shooter.Y),
                             new GridPosition(struck.X, struck.Y),
-                            attackStep.Ranged is RangedAttackKind.Spell));
+                            attackStep.Ranged is RangedAttackKind.Spell,
+                            attackStep.AttackName));
                     }
 
                     break;
@@ -1247,6 +1250,7 @@ public abstract partial class FightScreen : Node2D
                 _shotFrom = shot.From;
                 _shotTo = shot.To;
                 _shotIsSpell = shot.Spell;
+                _shotName = shot.AttackName;
                 _shotElapsed = 0;
                 _shotSeconds = Math.Max(
                     MinimumShotSeconds,
@@ -1806,13 +1810,12 @@ public abstract partial class FightScreen : Node2D
         DrawShot();
     }
 
-    /// <summary>The art a ranged attack of this kind flies, or null when it is absent.</summary>
-    private SpriteLibrary.Strip? ShotArt(RangedAttackKind kind) => kind switch
-    {
-        RangedAttackKind.Weapon => _sprites.Arrow,
-        RangedAttackKind.Spell => _sprites.Bolt ?? _sprites.Arrow,
-        _ => null,
-    };
+    /// <summary>
+    /// The art a ranged attack flies, or null when nothing applies: the attack's own
+    /// named sheet first (a Dart is not an arrow), then the kind's generic.
+    /// </summary>
+    private SpriteLibrary.Strip? ShotArt(RangedAttackKind kind) =>
+        _sprites.ProjectileFor(kind, _shotName);
 
     /// <summary>
     /// Draws the shot in flight, rotated to point the way it is going.
