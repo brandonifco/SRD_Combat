@@ -44,7 +44,7 @@ On your turn:
 | **a letter** | the action whose button shows it: `D` Dodge, `R` Dash, `G` Disengage, `U` Stand Up, `E` Escape, `A` Attack, `C` Cast, `Q` Drink, `P` Give Potion, `W` Second Wind, `S` Action Surge, `F` Rage, `K` Reckless, `M` Steady Aim, `X`/`Z` Cunning Dash/Disengage, `T` Trip, `H`/`J` Spark Heal/Harm |
 | **Space** | End Turn |
 | **mouse wheel** | zoom the camera, about the pointer |
-| **middle-drag** | pan the camera |
+| **middle- or right-drag** | pan the camera |
 | Esc | back out of an armed click or open menu; with nothing armed, ask to quit — Esc again quits, anything else stays |
 
 **The chrome anchors to the window's real edges, whatever they are.** The panel keeps
@@ -65,7 +65,7 @@ edges wherever the camera sits — ground beyond the playable field simply conti
 unwashed (a darkening wash was tried and disliked from play), so the window is one
 unbroken battlefield; the boundary reads from the movement highlight and the cursor,
 and rule washes and scenery still never draw out there. The
-wheel and a middle-drag take the camera by hand; the fight takes it back the moment
+wheel and a middle- or right-drag take the camera by hand; the fight takes it back the moment
 the next animation or turn starts. Zooming the wheel all the way out shows the whole
 field in its surroundings.
 

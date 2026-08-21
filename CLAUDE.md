@@ -472,7 +472,8 @@ board. Every other element — heading, initiative, log, banner,
 buttons — floats over the field on the shared translucent `Veil`, board space is told
 from UI space by `GridLeft`/`GridTop` (derived from the camera) versus `UiLeft`/`UiTop`
 (fixed), and a click on an overlay never reaches the square underneath it
-(`OverOverlay`). The wheel zooms about the pointer and a middle-drag pans — manual hold
+(`OverOverlay`). The wheel zooms about the pointer and a middle- or right-drag pans
+(the right button joined 2026-08-21, asked from play; it had no other meaning) — manual hold
 ends when the next act or turn starts — and wheeling all the way out shows the whole
 field, the one framing automatic never picks. A probe or capture snaps the camera and
 frames the whole field, for the same reason those runs freeze the animation clock. The tokens draw
