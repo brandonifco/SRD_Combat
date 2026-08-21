@@ -1608,20 +1608,27 @@ this project may relicense Wizards' content, which it may not.
   the *engine* changes, not when content is re-extracted. `RealMonsterCombatTests` in
   `SRDCombat.Content.Tests` covers the other direction, including a smoke test that
   every CR 0–4 monster can take a turn without throwing.
-- **The battlefield is 18 × 12 with the sides 60 feet apart — both axes doubled on
-  2026-08-17, at the player's direction.** The note `EncounterFactory` carried said
-  exactly when to do this: widening measured worth double the clears to a level 3 party
-  and ruinous to a level 1 one, "worth revisiting the moment the level 1 wall is fixed,
-  and not before" — and #205 fixed it. Both spawn columns are centred with
-  `MarginSquares` (3) of flank on each side, so going round is a real option. Measured
-  on both ranges: clears **31 → 22** and **29 → 13**, median **21 → 14** and **18 → 13**,
-  **no stalls on 241 runs** — the board is crossable, just dearer to cross, because the
-  approach costs two rounds instead of one and anything with a bow or a breath weapon
-  collects on both. The early game is *fine* (died-by-fight-4 held at 4–11, opening band
-  hp 85%) and the late bands are the ones paying (67% hp-left, 6.9 rounds), which is a
-  curve pointing the right way. **The automated numbers are floors, and this change more
-  than most is for the human player**: an 18 × 12 field is where positioning, kiting and
-  screening can exist at all.
+- **The battlefield is 28 × 18 for the standard fight, the sides still 60 feet apart —
+  grown again on 2026-08-21 at Brandon's direction, all of it margin.** The flank
+  margin went 3 → 8 and a separate `VerticalMarginSquares` (5) split off it, so every
+  new square is room to go round and none of it is approach — deliberately, because
+  when the board grew from 9 × 6 on 2026-08-17 the *separation* increase is what cost
+  clears (31 → 22 and 29 → 13 on the two ranges), and this change holds it fixed.
+  Measured 2026-08-21 on both canonical ranges against a same-build baseline: median
+  pinned at 18 on both, clears **23 → 25** and **23 → 30**, level-4 runs **43 → 57**
+  and **48 → 50**, died-by-fight-4 **15 → 10** and **16 → 14** — a mild party buff,
+  the expected sign, since the party is the side that maneuvers. **One run stalled
+  (seed 120, fight 27) and it is not the board**: a two-Basilisk fight petrified the
+  whole party, completion counts a Petrified creature as standing (the Hold Person
+  lesson) while the policy attacks Incapacitated enemies only through the stuck-turn
+  last resort, which needs the attacker to be geometrically stuck — so the surviving
+  Basilisk idled fifty rounds beside three statues. Board-independent, latent since
+  #230's gazes landed, filed on its own. The history that predicted all of this:
+  widening was first measured ruinous at level 1 and "worth revisiting the moment the
+  level 1 wall is fixed" — #205 fixed it, and the 2026-08-17 doubling carried the
+  curve. **The automated numbers are floors, and this change more than most is for the
+  human player**: a 28 × 18 field is where flanking, kiting and screening can exist at
+  all.
 - **A fight's opening shape is drawn, not fixed (2026-08-19, asked for from play).**
   `BattleLayout` rides the built `Fight`: half of draws keep the classic facing columns,
   a quarter split the monsters into two corner groups converging at full separation, and
