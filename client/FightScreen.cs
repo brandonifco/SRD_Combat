@@ -693,11 +693,16 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>
-    /// The player's hand on the camera: the wheel zooms about the pointer, a
-    /// middle-button drag pans. True when the event was the camera's, so the caller
+    /// The player's hand on the camera: the wheel zooms about the pointer, a middle-
+    /// or right-button drag pans. True when the event was the camera's, so the caller
     /// stops routing it anywhere else; the hold lasts until the fight moves on, when
     /// <see cref="AdvanceCamera"/> hands the camera back to the automatic framing.
     /// </summary>
+    /// <remarks>
+    /// The right button joined on 2026-08-21, asked for from play: it had no other
+    /// meaning anywhere on this screen, and a drag is a more discoverable pan than a
+    /// button most mice make you press the wheel for.
+    /// </remarks>
     protected bool HandleCameraInput(InputEvent @event)
     {
         switch (@event)
@@ -710,11 +715,11 @@ public abstract partial class FightScreen : Node2D
                 ZoomAt(wheelOut.Position, 1f / WheelZoomFactor);
                 return true;
 
-            case InputEventMouseButton { ButtonIndex: MouseButton.Middle } middle:
-                _cameraDragging = middle.Pressed;
-                _dragLast = middle.Position;
+            case InputEventMouseButton { ButtonIndex: MouseButton.Middle or MouseButton.Right } drag:
+                _cameraDragging = drag.Pressed;
+                _dragLast = drag.Position;
 
-                if (middle.Pressed)
+                if (drag.Pressed)
                 {
                     TakeCamera();
                 }
