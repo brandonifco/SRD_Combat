@@ -625,9 +625,9 @@ public abstract partial class FightScreen : Node2D
     /// overscan is against the <i>stage</i> rather than the window because the stage
     /// already encodes every obstruction: a row on the field's bottom edge stops a
     /// full square clear of the buttons, and the last column stops clear of the log.
-    /// What shows beyond the edge is the terrain continuing under
-    /// <see cref="BeyondFieldWash"/> — <see cref="DrawGrid"/> lays ground to the
-    /// window's edges — so following the fight costs nothing at all.
+    /// What shows beyond the edge is the terrain simply continuing —
+    /// <see cref="DrawGrid"/> lays ground to the window's edges — so following the
+    /// fight costs nothing at all.
     /// </remarks>
     private Vector2 ClampToField(Vector2 centre, float cell) => new(
         ClampAxis(centre.X, GridWidth, (StageLeft + StageRight) / 2f, StageLeft, StageRight, cell),
@@ -1411,9 +1411,13 @@ public abstract partial class FightScreen : Node2D
 
                 DrawGroundUnder(theme.Ground, square, position);
 
+                // Beyond the field the ground simply continues — Brandon asked for the
+                // dark wash to go (2026-08-21): the boundary reads from the movement
+                // highlight and the cursor, and a window full of one unbroken
+                // battlefield beats a picture-in-picture. Rule washes and scenery still
+                // never draw out here.
                 if (!inside)
                 {
-                    DrawRect(square, BeyondFieldWash);
                     continue;
                 }
 
@@ -1608,13 +1612,6 @@ public abstract partial class FightScreen : Node2D
             }
         }
     }
-
-    /// <summary>
-    /// What ground beyond the field wears: dark enough that the playable field reads
-    /// at a glance, sheer enough that it is plainly the same terrain continuing — the
-    /// world does not end at the battlefield's edge, the fight does.
-    /// </summary>
-    private static readonly Color BeyondFieldWash = new(0f, 0f, 0f, 0.42f);
 
     /// <summary>
     /// Lays one of the theme's ground tiles on a square, chosen by where the square is.

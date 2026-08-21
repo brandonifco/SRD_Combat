@@ -61,8 +61,10 @@ translucent panels with the ground running underneath. The camera zooms to hold 
 living combatant with some ground around them, leaning toward whoever is acting: it
 zooms in as the fight clumps and back out as it spreads, scrolling with the action
 rather than showing the whole board at once. The terrain is drawn to the window's
-edges wherever the camera sits — ground beyond the playable field continues under a
-dark wash, so the boundary reads while the window is always full of battlefield. The
+edges wherever the camera sits — ground beyond the playable field simply continues,
+unwashed (a darkening wash was tried and disliked from play), so the window is one
+unbroken battlefield; the boundary reads from the movement highlight and the cursor,
+and rule washes and scenery still never draw out there. The
 wheel and a middle-drag take the camera by hand; the fight takes it back the moment
 the next animation or turn starts. Zooming the wheel all the way out shows the whole
 field in its surroundings.
