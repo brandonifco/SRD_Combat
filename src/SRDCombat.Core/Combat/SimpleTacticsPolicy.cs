@@ -65,6 +65,15 @@ public static class SimpleTacticsPolicy
 
         if (target is null)
         {
+            // No able enemy left anywhere — and yet the fight may not be over, because
+            // standing means alive and above 0 hit points and a Petrified creature
+            // stands (#278: two Basilisks turned the whole party to stone and the
+            // survivor idled fifty rounds beside three statues, since every targeting
+            // path hides the Incapacitated). Finishing what is left is the fight's
+            // only road to completion, so the stuck-turn last resort fires here too —
+            // the same reasoning, extended from "this creature is stuck" to "the
+            // fight is".
+            FinishTheDowned(encounter, actor);
             encounter.EndTurn();
             return;
         }
@@ -825,8 +834,9 @@ public static class SimpleTacticsPolicy
     }
 
     /// <summary>
-    /// The last resort of a stuck turn: attack the nearest downed enemy in reach, the
-    /// one target the ordinary flow cannot see.
+    /// The last resort of a stuck turn — and of a fight with no able enemy left in it:
+    /// attack the nearest living-but-incapacitated enemy in reach, the one target the
+    /// ordinary flow cannot see.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -846,6 +856,16 @@ public static class SimpleTacticsPolicy
     /// monster mid-approach never diverts to stomp the fallen; only a creature with
     /// literally nothing else to do finishes what is at its feet, and a downed
     /// character in a doorway stops being a wall the fight cannot pass.
+    /// </para>
+    /// <para>
+    /// <b>Since #278 it is also the whole turn when no able enemy exists at all.</b>
+    /// Completion counts a Petrified creature as standing — the Hold Person lesson,
+    /// where held is not defeated and finishing the held is the enemy's job — but the
+    /// job was never actually assigned: a target of null ended the turn on the spot,
+    /// so a fight whose every enemy was stone or unconscious could neither be won nor
+    /// lost, and one Basilisk idled to the round limit beside three statues. The
+    /// mid-approach guarantee is untouched, because a null target means there is
+    /// nothing able left to approach.
     /// </para>
     /// </remarks>
     private static void FinishTheDowned(Encounter encounter, Combatant actor)
