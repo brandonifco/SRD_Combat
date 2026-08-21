@@ -8,24 +8,27 @@ and collect weapons, armour, spells and magic items along the way. It is a comba
 no exploration, no dialogue, no overland travel. Everything between fights exists to
 serve the next fight.
 
-**Status: playable end to end** (as of 2026-08-16). The whole gauntlet runs in the
+**Status: playable end to end** (as of 2026-08-21). The whole gauntlet runs in the
 console client and under the mouse in the Godot client, with wounds, spent resources
 and the fallen carried between fights, rests that restore what the printed rules say,
-levels earned by experience, and loot. Character creation is in both clients — build
-your own party of four, every option shown with its printed SRD text — or take the
-pre-made one. A human has played the opening rungs; nobody has yet played a run to its
+levels earned by experience, and loot. The board is a 28 × 18 field under a camera,
+wearing hand-drawn terrain and animated tokens, with a fog of war shadowing what no
+party member can see. Character creation is in both clients — build your own party of
+four, every option shown with its printed SRD text — or take the pre-made one. A human
+has played a run 18 fights deep and died on the 19th; nobody has yet played one to its
 end.
 
-Automated runs on seeds 1–120 clear a median of **18 fights of 30**, with 38 of 120 runs
-clearing all thirty and 56 reaching level 4; seeds 200–320 read 18, 43 and 60.
+Automated runs on seeds 1–120 clear a median of **18 fights of 30**, with 27 of 120 runs
+clearing all thirty and 57 reaching level 4; seeds 200–320 read 18, 31 and 50
+(measured 2026-08-21).
 
 **The ladder is a curve now.** Each five-fight cycle carries a **warband rung** — six to
 ten cheap creatures on the same printed XP budget, from level 3 up, because being
 outnumbered is the one kind of difficulty the budget structurally cannot price. Party hit
 points left at the end of a fight used to measure a flat 75–81% in every band of the run;
-it now falls from 86% in the opening five fights to 71% in the last five. Runs ending
+it now falls from 83% in the opening five fights to 69% in the last five. Runs ending
 somewhere in the middle, rather than dying at once or clearing everything, went from 47 of
-120 to 79.
+120 to 83.
 
 The ladder is still one five-fight cycle repeated six times, so structural variety between
 cycles is the open problem.
