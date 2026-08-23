@@ -13225,12 +13225,15 @@
       "durationText": "24 hours",
       "requiresConcentration": false,
       "text": "This spell grants up to ten willing creatures of your choice within range the ability to breathe underwater until the spell ends. Affected creatures also retain their normal mode of respiration.",
-      "mechanics": "Narrative",
+      "mechanics": "Unmodelled",
       "damage": [],
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unclassifiedClauses": [],
+      "unclassifiedClauses": [
+        "This spell grants up to ten willing creatures of your choice within range the ability to breathe underwater until the spell ends",
+        "Affected creatures also retain their normal mode of respiration."
+      ],
       "sourcePage": 173
     },
     {

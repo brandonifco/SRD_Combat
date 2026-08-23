@@ -29,11 +29,31 @@ internal static partial class EntryMechanicsParser
     /// Entries confirmed to have no effect on a fight.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Deliberately tiny and grown one deliberate decision at a time. Anything not on it
     /// is Unmodelled and counted, which is the safe direction to be wrong in. Several
     /// traits that look inert are not: Pack Tactics grants Advantage on attack rolls,
     /// Sunlight Sensitivity imposes Disadvantage, and Flyby removes Opportunity Attacks —
     /// none of those belong here.
+    /// </para>
+    /// <para>
+    /// <b>This list is curated about stat block entries and species/class trait text —
+    /// never spells.</b> <see cref="ClassifyTrait"/> is shared with <c>SpellParser</c>
+    /// for its condition and saving-throw grammar, and for a while that sharing reached
+    /// this list too: Water Breathing landed on <see cref="EntryMechanics.Narrative"/>
+    /// only because it happens to spell the same name as this bestiary trait, not
+    /// because anyone read the spell and judged it inert (#349). The <c>consultInertList</c>
+    /// parameter below is how <c>SpellParser</c> opts out. Spells that genuinely do
+    /// nothing in a fight — Water Breathing among 184 others, Detect Magic and Identify
+    /// included — are not exceptions here; they classify as
+    /// <see cref="EntryMechanics.Unmodelled"/> like every spell the grammar does not
+    /// structure, which is the honest and already-established outcome for spell prose
+    /// (see <c>SpellDefinition.UnclassifiedClauses</c> — a spell's classification carries
+    /// no completeness claim either way, so Unmodelled costs nothing here). A curated
+    /// Narrative list for spells was considered and rejected: singling out Water
+    /// Breathing while Light, Alarm and Comprehend Languages stay Unmodelled would be
+    /// the accidental result blessed into a decision it never was.
+    /// </para>
     /// </remarks>
     private static readonly HashSet<string> KnownInertEntries = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -46,7 +66,17 @@ internal static partial class EntryMechanicsParser
     /// Classifies a species trait or other named rules text, applying the same rule as
     /// stat block entries: nothing passes as prose.
     /// </summary>
-    public static TraitEntry ClassifyTrait(string name, string text)
+    /// <param name="name">The trait or spell's printed name.</param>
+    /// <param name="text">Its body text.</param>
+    /// <param name="consultInertList">
+    /// Whether a name match against <see cref="KnownInertEntries"/> may grade this entry
+    /// <see cref="EntryMechanics.Narrative"/>. True for species and class trait text,
+    /// where the list's decisions were actually made about entries of that shape.
+    /// <c>SpellParser</c> passes <see langword="false"/>: that list has never been
+    /// curated about spell prose, and a name collision (#349) is not a reading of the
+    /// spell.
+    /// </param>
+    public static TraitEntry ClassifyTrait(string name, string text, bool consultInertList = true)
     {
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
@@ -64,7 +94,7 @@ internal static partial class EntryMechanicsParser
                 LeftoverMechanicalSentences(text, EntryMechanics.SavingThrow, conditions));
         }
 
-        if (KnownInertEntries.Contains(bareName))
+        if (consultInertList && KnownInertEntries.Contains(bareName))
         {
             return new TraitEntry(bareName, text, EntryMechanics.Narrative, Usage: usage);
         }
