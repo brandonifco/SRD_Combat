@@ -259,23 +259,33 @@ public sealed class GauntletRun
         SrdContent content,
         IReadOnlyList<LadderStep> ladder,
         IReadOnlyList<PartyMember> party,
-        IReadOnlyList<CharacterState> states)
+        IReadOnlyList<CharacterState> states,
+        int seed)
     {
         _content = content;
         _states = [.. states];
         Ladder = ladder;
         Party = party;
+        Seed = seed;
     }
 
     /// <summary>Starts a run with the pregenerated party.</summary>
+    /// <param name="seed">
+    /// The run's own seed, fixed for its whole life. Rolled by the caller rather than
+    /// here, because the dice themselves live outside <c>GauntletRun</c> — this only
+    /// remembers the value so <see cref="ToSave"/> can persist it and <c>RunDice.SeedFor</c>
+    /// can derive each fight's actual dice from it and how many fights came before.
+    /// Defaults to 0 for callers — mostly tests — that never resume what they start.
+    /// </param>
     public static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<LadderStep>? ladder = null,
-        int startingLevel = 1)
+        int startingLevel = 1,
+        int seed = 0)
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        return Start(content, PregeneratedParty.Build(content, startingLevel), ladder);
+        return Start(content, PregeneratedParty.Build(content, startingLevel), ladder, seed);
     }
 
     /// <summary>
@@ -284,11 +294,13 @@ public sealed class GauntletRun
     /// whoever wrote them, levelling re-resolves them, and defeat-means-reload needs
     /// nothing new.
     /// </summary>
+    /// <param name="seed">See the pregenerated-party overload's remarks.</param>
     public static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<CharacterDraft> drafts,
         IReadOnlyList<LadderStep>? ladder = null,
-        int startingLevel = 1)
+        int startingLevel = 1,
+        int seed = 0)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(drafts);
@@ -298,7 +310,7 @@ public sealed class GauntletRun
             .Select((draft, index) => ResolveMember(content, draft, startingLevel, x: 0, y: index))
             .ToArray();
 
-        var run = Start(content, [.. resolved.Select(pair => pair.Member)], ladder);
+        var run = Start(content, [.. resolved.Select(pair => pair.Member)], ladder, seed);
         run._levelUps.AddRange(resolved.Select(pair => pair.AsiDefaultNotice).OfType<string>());
 
         return run;
@@ -307,7 +319,8 @@ public sealed class GauntletRun
     private static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<PartyMember> party,
-        IReadOnlyList<LadderStep>? ladder)
+        IReadOnlyList<LadderStep>? ladder,
+        int seed)
     {
         var rungs = ladder ?? GauntletLadder.Default();
 
@@ -316,7 +329,7 @@ public sealed class GauntletRun
             throw new ArgumentException("A run needs at least one rung.", nameof(ladder));
         }
 
-        return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)]);
+        return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)], seed);
     }
 
     /// <summary>
@@ -327,7 +340,12 @@ public sealed class GauntletRun
     /// The party comes back exactly as strong as the rules make it from what was saved —
     /// a save holds no derived numbers, so there is nothing on disk for the rules to
     /// disagree with. Validation of the file itself is <see cref="RunSave.FromJson"/>'s;
-    /// this trusts its argument the way <see cref="Start"/> trusts the content.
+    /// this trusts its argument the way <see cref="Start"/> trusts the content. A
+    /// missing <see cref="SavedRun.Seed"/> falls back to 0 rather than throwing — the
+    /// same shape a missing <see cref="SavedRun.GoldCopper"/> takes — but 0 is a real
+    /// seed, not a sentinel for "none", so a caller resuming a save that predates #286
+    /// must not leave it there: see <see cref="AdoptSeed"/>, which the clients call
+    /// immediately after a resume finds <see cref="SavedRun.Seed"/> was null.
     /// </remarks>
     public static GauntletRun Resume(SrdContent content, SavedRun saved)
     {
@@ -343,7 +361,8 @@ public sealed class GauntletRun
             content,
             saved.Ladder,
             [.. resolved.Select(pair => pair.Member)],
-            [.. saved.Members.Select(member => member.State)])
+            [.. saved.Members.Select(member => member.State)],
+            saved.Seed ?? 0)
         {
             Cleared = saved.Cleared,
             GoldCopper = saved.GoldCopper,
@@ -369,7 +388,33 @@ public sealed class GauntletRun
         Members = [.. Party.Zip(_states, (member, state) => new SavedMember(member.Draft, state))],
         Casualties = [.. _casualties],
         GoldCopper = GoldCopper,
+        Seed = Seed,
     };
+
+    /// <summary>
+    /// The run's own seed, fixed for its whole life once <see cref="Start"/> or
+    /// <see cref="AdoptSeed"/> sets it. See the pregenerated-party
+    /// <see cref="Start(SrdContent, IReadOnlyList{LadderStep}?, int, int)"/> overload's
+    /// remarks for what it is for and <c>RunDice</c>'s for how a fight's dice come from
+    /// it.
+    /// </summary>
+    public int Seed { get; private set; }
+
+    /// <summary>
+    /// Adopts a freshly rolled seed for a run resumed from a save written before #286,
+    /// which carries none.
+    /// </summary>
+    /// <remarks>
+    /// The only legitimate caller is a client's own legacy-save migration, immediately
+    /// after <see cref="Resume"/> finds <see cref="SavedRun.Seed"/> was null — the roll
+    /// itself happens there, not here, because <c>GauntletRun</c> touches no
+    /// <c>IRandomSource</c> and this stays that way. Everywhere else a run's seed is
+    /// fixed at <see cref="Start"/> and never changes again; calling this on a run that
+    /// already had one would silently move every fight from here on, which is exactly
+    /// the bug #286 closed, so this exists once, for one migration path, and nowhere
+    /// else calls it.
+    /// </remarks>
+    public void AdoptSeed(int seed) => Seed = seed;
 
     /// <summary>The rungs, in order.</summary>
     public IReadOnlyList<LadderStep> Ladder { get; }

@@ -56,6 +56,23 @@ public sealed record SavedRun
     /// existed loads as a party that has not been paid yet rather than being refused.
     /// </summary>
     public int GoldCopper { get; init; }
+
+    /// <summary>
+    /// The run's own seed — fixed once at <see cref="GauntletRun.Start"/> and constant
+    /// for the run's whole life. A fight's actual dice are <c>RunDice.SeedFor</c> of
+    /// this value and how many fights had been cleared when that fight began, not this
+    /// value directly — see <c>RunDice</c>'s own remarks for what that buys and why.
+    /// </summary>
+    /// <remarks>
+    /// Nullable because a save written before #286 carries none — but unlike a
+    /// content-version mismatch, that is not refused here. There is an honest thing to
+    /// do with a missing seed that there is not with a missing content version: roll
+    /// one. The client does that exactly once, the first time it meets a save without
+    /// one, says so, and the next autosave carries it forward — see the clients' own
+    /// "predates run seeds" handling. <see cref="RunSave.FromJson"/> does not enforce
+    /// this field at all.
+    /// </remarks>
+    public int? Seed { get; init; }
 }
 
 /// <summary>

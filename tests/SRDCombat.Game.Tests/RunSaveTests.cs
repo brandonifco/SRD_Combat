@@ -111,6 +111,130 @@ public class RunSaveTests
         }
     }
 
+    /// <summary>
+    /// The acceptance test for #286, its basic form: defeat never touches the save (it
+    /// holds the state after the last <em>won</em> fight), so "reload after defeat
+    /// retries the same fight" is exactly "loading this save twice and building its
+    /// next fight builds the same encounter both times" — which is what a real
+    /// <c>--continue</c> does on each fresh process, reseeding from
+    /// <c>RunDice.SeedFor(run.Seed, run.Cleared)</c> at the top of the fight rather
+    /// than rolling a new one.
+    /// </summary>
+    [Fact]
+    public void ContinuingAfterDefeatBuildsTheSameNextFightEachTime()
+    {
+        var json = RunSave.ToJson(RunWithHistory());
+
+        Fight ContinueAndBeginNext()
+        {
+            var run = GauntletRun.Resume(Content, RunSave.FromJson(json));
+            var random = new SeededRandomSource(RunDice.SeedFor(run.Seed, run.Cleared));
+
+            run.PrepareForNext(random);
+            return run.BeginNext(random);
+        }
+
+        var first = ContinueAndBeginNext();
+        var second = ContinueAndBeginNext();
+
+        Assert.Equal(
+            first.Built.Monsters.Select(monster => monster.Name),
+            second.Built.Monsters.Select(monster => monster.Name));
+        Assert.Equal(
+            first.Encounter.Combatants.Select(combatant => (combatant.Name, combatant.Position)),
+            second.Encounter.Combatants.Select(combatant => (combatant.Name, combatant.Position)));
+    }
+
+    /// <summary>
+    /// The stronger acceptance test #286 actually promises, stated in <c>RunDice</c>'s
+    /// own remarks: not merely "the same monsters", but the exact same fight replayed
+    /// dice for dice — every rest roll, every attack, every save, byte-for-byte —
+    /// because <c>RunDice.SeedFor</c> depends only on the run's seed and how many
+    /// fights came before this one, never on how much dice an earlier, differently
+    /// played attempt at it happened to spend, nor on how that attempt ended.
+    /// </summary>
+    [Fact]
+    public void ResumingReplaysTheNextFightDiceForDiceRegardlessOfHowEarlierFightsWerePlayed()
+    {
+        Fight DriveNextFight(GauntletRun run)
+        {
+            var random = new SeededRandomSource(RunDice.SeedFor(run.Seed, run.Cleared));
+
+            run.PrepareForNext(random);
+            var fight = run.BeginNext(random);
+            SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+            run.CompleteFight(fight, random);
+
+            return fight;
+        }
+
+        const int seed = 20260823;
+
+        var straightThrough = GauntletRun.Start(Content, seed: seed);
+        DriveNextFight(straightThrough);
+        DriveNextFight(straightThrough);
+
+        // The premise every assertion below rests on: two fights cleared in a row, so
+        // there is a third fight to compare and a save worth resuming. If this fires,
+        // pick another seed.
+        Assert.Equal(RunOutcome.InProgress, straightThrough.Outcome);
+
+        // The save point: after fight 2, before fight 3 — exactly what an autosave
+        // holds and exactly what --continue would resume from.
+        var savedAfterTwo = RunSave.ToJson(straightThrough);
+        var thirdFightPlayedThrough = DriveNextFight(straightThrough);
+
+        // A separate run, resumed from that save, driving only fight 3 — the same
+        // fight, reached a different way.
+        var resumed = GauntletRun.Resume(Content, RunSave.FromJson(savedAfterTwo));
+        var thirdFightAfterResuming = DriveNextFight(resumed);
+
+        Assert.Equal(
+            thirdFightPlayedThrough.Built.Monsters.Select(monster => monster.Name),
+            thirdFightAfterResuming.Built.Monsters.Select(monster => monster.Name));
+        Assert.Equal(
+            thirdFightPlayedThrough.Encounter.Combatants.Select(c => (c.Name, c.Position)),
+            thirdFightAfterResuming.Encounter.Combatants.Select(c => (c.Name, c.Position)));
+
+        // The transcript, not just the encounter: every roll, save and damage number
+        // the fight produced, byte-for-byte the same — the whole segment, the rest
+        // that opened it through every blow SimpleTacticsPolicy landed resolving it,
+        // came from the same seeded stream both times.
+        Assert.Equal(
+            thirdFightPlayedThrough.Encounter.Log.Select(step => step.Narration),
+            thirdFightAfterResuming.Encounter.Log.Select(step => step.Narration));
+    }
+
+    /// <summary>
+    /// A save written before #286 carries no seed at all — but unlike a content-version
+    /// mismatch, that is not refused. It loads exactly as written; <see cref="GauntletRun.Resume"/>
+    /// falls back to 0 the way it does for a missing <c>GoldCopper</c>, and it is the
+    /// client's job — not <see cref="RunSave"/>'s — to notice the gap, roll a real seed
+    /// once via <see cref="GauntletRun.AdoptSeed"/>, and let the next autosave carry it.
+    /// </summary>
+    [Fact]
+    public void LoadingASeedlessSaveSucceedsAndAdoptingASeedStampsTheNextAutosave()
+    {
+        var saved = RunWithHistory().ToSave() with { Seed = null };
+        var loaded = RunSave.FromJson(ContentSerializer.Serialize(saved));
+
+        Assert.Null(loaded.Seed);
+
+        var run = GauntletRun.Resume(Content, loaded);
+
+        Assert.Equal(0, run.Seed);
+
+        run.AdoptSeed(20260823);
+
+        Assert.Equal(20260823, run.Seed);
+
+        // The next autosave: ToSave now carries the adopted seed, so loading this
+        // save again behaves exactly as if it had always had one.
+        var reSaved = RunSave.FromJson(RunSave.ToJson(run));
+
+        Assert.Equal(20260823, reSaved.Seed);
+    }
+
     [Fact]
     public void LoadRejectsAnUnknownProperty()
     {

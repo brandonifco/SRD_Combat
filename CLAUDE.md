@@ -445,15 +445,17 @@ dotnet run --project src/SRDCombat.Console
 ```
 
 `--seed <n>` replays a run exactly (the seed prints at start, so "seed 12345" is a
-complete bug report); `--level 1..5`, `--one-fight --difficulty low|moderate|high`,
-`--create` for party creation; autosaves to `srdcombat-save.json` after every cleared
-fight, `--continue` resumes. **A save is drafts plus progress, never resolved
-sheets** — loading re-resolves at the level experience has earned, so a save cannot
-smuggle a level and a reload cannot reroll history. Defeat does not touch the save.
-The Godot client (`client/`) plays the same gauntlet with the mouse; `--watch` and
-`--probe` are its read-only and self-driving modes. **The clients hold no rules** —
-they call the engine's public actions, print `CombatStep.Narration`, and show every
-refusal *with its code*.
+complete bug report — and within a run, `(seed, fight number)` reproduces that
+fight's encounter and every dice roll in it, regardless of the play history that got
+there; see `RunDice`'s remarks); `--level 1..5`, `--one-fight --difficulty
+low|moderate|high`, `--create` for party creation; autosaves to
+`srdcombat-save.json` after every cleared fight, `--continue` resumes. **A save is
+drafts plus progress, never resolved sheets** — loading re-resolves at the level
+experience has earned, so a save cannot smuggle a level and a reload cannot reroll
+history. Defeat does not touch the save. The Godot client (`client/`) plays the same
+gauntlet with the mouse; `--watch` and `--probe` are its read-only and self-driving
+modes. **The clients hold no rules** — they call the engine's public actions, print
+`CombatStep.Narration`, and show every refusal *with its code*.
 
 ## Build and test
 

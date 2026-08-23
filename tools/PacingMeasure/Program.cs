@@ -54,13 +54,18 @@ var fights = new List<(int Fight, string Difficulty, double HpLeft, int Downed, 
 
 for (var seed = firstSeed; seed <= lastSeed; seed++)
 {
-    var random = new SeededRandomSource(seed);
-    var run = GauntletRun.Start(content, GauntletLadder.Default(), startLevel);
+    var run = GauntletRun.Start(content, GauntletLadder.Default(), startLevel, seed);
     var end = RunEnd.Cleared;
 
     while (run.Next is not null)
     {
         var step = run.Next!;
+
+        // The one reseed point, matching both clients: everything from here through
+        // this fight's loot draws from RunDice.SeedFor(run.Seed, run.Cleared) — see
+        // RunDice's remarks. This measures the game as actually played, not a
+        // continuous per-seed stream a player's process never runs.
+        var random = new SeededRandomSource(RunDice.SeedFor(run.Seed, run.Cleared));
         var rest = run.PrepareForNext(random);
 
         // The Long Rest merchant is part of the game as played: the canonical run

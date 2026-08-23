@@ -237,7 +237,10 @@ public partial class PlayMode : FightScreen
         var content = LoadContent();
         _content = content;
 
-        _dice = new SeededRandomSource(_seed);
+        // _dice is not seeded here: EnterInterlude reseeds it once per fight, from
+        // the run's own seed and how many fights are cleared — the one reseed point,
+        // per RunDice's remarks — so anything set here would only be overwritten
+        // before it was ever read.
         _savePath = ArgumentValue("save") ?? "srdcombat-save.json";
 
         // Collected rather than appended straight to _interlude: EnterInterlude below
@@ -268,7 +271,21 @@ public partial class PlayMode : FightScreen
 
             _run = GauntletRun.Resume(content, loaded.Saved);
 
-            _subtitle = $"continuing after fight {_run.Cleared} of {_run.Ladder.Count} — seed {_seed}";
+            // A save written before #286 carries no seed at all. There is an honest
+            // thing to do here that there is not for a content-version mismatch: roll
+            // one, once, tell the player, and let the next autosave carry it forward —
+            // GauntletRun.AdoptSeed's own remarks say why nowhere else may call it.
+            if (loaded.Saved.Seed is null)
+            {
+                var rolled = Random.Shared.Next();
+                _run.AdoptSeed(rolled);
+                startupNotices.Add(
+                    $"This save predates run seeds; rolled {rolled} for the rest of the run. " +
+                    "It rides the next autosave.");
+            }
+
+            _seed = _run.Seed;
+            _subtitle = $"continuing after fight {_run.Cleared} of {_run.Ladder.Count} — seed {_run.Seed}";
         }
         else
         {
@@ -277,8 +294,8 @@ public partial class PlayMode : FightScreen
                 : 1;
 
             _run = CreatedDrafts is not null
-                ? GauntletRun.Start(content, CreatedDrafts)
-                : GauntletRun.Start(content, GauntletLadder.Default(), level);
+                ? GauntletRun.Start(content, CreatedDrafts, seed: _seed)
+                : GauntletRun.Start(content, GauntletLadder.Default(), level, _seed);
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
@@ -337,6 +354,12 @@ public partial class PlayMode : FightScreen
         }
         else if (run.Next is { } step)
         {
+            // The one reseed point: everything from here through the fight this
+            // interlude sets up and the loot it pays out draws from this one segment
+            // — see RunDice's remarks for why a fight always plays the same dice
+            // regardless of how an earlier attempt at it went.
+            _dice = new SeededRandomSource(RunDice.SeedFor(run.Seed, run.Cleared));
+
             var returnsBefore = run.Returns.Count;
             var rest = run.PrepareForNext(_dice);
 
