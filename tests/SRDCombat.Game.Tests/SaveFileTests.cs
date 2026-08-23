@@ -160,5 +160,75 @@ public sealed class SaveFileTests : IDisposable
         Assert.Null(loaded.Saved);
         Assert.False(loaded.UsedBackup);
         Assert.NotNull(loaded.PrimaryFailureReason);
+        Assert.NotNull(loaded.BackupFailureReason);
+    }
+
+    /// <summary>
+    /// The bug QC caught: a missing primary used to report "no save" even when a corrupt
+    /// backup was sitting right there. A missing primary must not swallow a genuine
+    /// backup failure.
+    /// </summary>
+    [Fact]
+    public void AMissingPrimaryWithACorruptBackupSurfacesTheBackupsFailure()
+    {
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var truncated = File.ReadAllText(SavePath)[..5];
+        File.WriteAllText(BackupPath, truncated);
+        File.Delete(SavePath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.Null(loaded.Saved);
+        Assert.False(loaded.UsedBackup);
+        Assert.Null(loaded.PrimaryFailureReason);
+        Assert.NotNull(loaded.BackupFailureReason);
+    }
+
+    [Fact]
+    public void DescribeUnloadableIsNullWhenNeitherFileEverExisted()
+    {
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.Null(SaveFile.DescribeUnloadable(SavePath, loaded));
+    }
+
+    /// <summary>
+    /// The composed message for exactly the bug QC caught: it must name the backup's
+    /// own failure, not just report the primary as missing and stop there.
+    /// </summary>
+    [Fact]
+    public void DescribeUnloadableNamesACorruptBackupEvenWhenThePrimaryIsJustMissing()
+    {
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var truncated = File.ReadAllText(SavePath)[..5];
+        File.WriteAllText(BackupPath, truncated);
+        File.Delete(SavePath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+        var message = SaveFile.DescribeUnloadable(SavePath, loaded);
+
+        Assert.NotNull(message);
+        Assert.Contains(BackupPath, message, StringComparison.Ordinal);
+        Assert.Contains("missing", message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DescribeUnloadableNamesBothFailuresWhenBothCopiesAreCorrupt()
+    {
+        SaveFile.Write(SavePath, SomeSaveJson());
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var truncated = File.ReadAllText(SavePath)[..5];
+        File.WriteAllText(SavePath, truncated);
+        File.WriteAllText(BackupPath, truncated);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+        var message = SaveFile.DescribeUnloadable(SavePath, loaded);
+
+        Assert.NotNull(message);
+        Assert.Contains(SavePath, message, StringComparison.Ordinal);
+        Assert.Contains(BackupPath, message, StringComparison.Ordinal);
     }
 }

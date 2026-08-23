@@ -240,6 +240,11 @@ public partial class PlayMode : FightScreen
         _dice = new SeededRandomSource(_seed);
         _savePath = ArgumentValue("save") ?? "srdcombat-save.json";
 
+        // Collected rather than appended straight to _interlude: EnterInterlude below
+        // starts every screen with _interlude.Clear(), so anything added before that
+        // call would be wiped before the first frame ever showed it.
+        var startupNotices = new List<string>();
+
         if (HasArgument("continue"))
         {
             // Falls back to the .bak automatically when the primary is missing or
@@ -250,16 +255,15 @@ public partial class PlayMode : FightScreen
             if (loaded.Saved is null)
             {
                 _phase = Phase.RunOver;
-                _interlude.Add(loaded.PrimaryFailureReason is { } reason
-                    ? $"Cannot load '{_savePath}' or its backup: {reason}"
-                    : $"No save at '{_savePath}'. Pass --save=<path> or start a new run.");
+                _interlude.Add(SaveFile.DescribeUnloadable(_savePath, loaded)
+                    ?? $"No save at '{_savePath}'. Pass --save=<path> or start a new run.");
                 _subtitle = $"seed {_seed}";
                 return;
             }
 
             if (loaded.UsedBackup)
             {
-                _interlude.Add($"'{_savePath}' was missing or unreadable; loaded the backup instead.");
+                startupNotices.Add($"'{_savePath}' was missing or unreadable; loaded the backup instead.");
             }
 
             _run = GauntletRun.Resume(content, loaded.Saved);
@@ -278,7 +282,7 @@ public partial class PlayMode : FightScreen
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
-        EnterInterlude([]);
+        EnterInterlude(startupNotices);
     }
 
     /// <summary>

@@ -59,9 +59,8 @@ if (ContinueRequested(args))
 
     if (loaded.Saved is null)
     {
-        Console.Error.WriteLine(loaded.PrimaryFailureReason is { } reason
-            ? $"Cannot load '{savePath}' or its backup: {reason}"
-            : $"No save at '{savePath}'. Pass --save <path> or start a new run.");
+        Console.Error.WriteLine(SaveFile.DescribeUnloadable(savePath, loaded)
+            ?? $"No save at '{savePath}'. Pass --save <path> or start a new run.");
         return 1;
     }
 
