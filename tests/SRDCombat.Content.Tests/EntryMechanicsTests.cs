@@ -153,6 +153,34 @@ public class EntryMechanicsTests
     }
 
     [Fact]
+    public void AMultiattackReplaceClauseIsCountedNotDropped()
+    {
+        // The fourth occurrence of the goblin's conditional-damage bug: Multiattack used
+        // to answer "fully modelled" for every one of its sentences, so "It can replace
+        // one attack with a use of Roar/Enthralling Panache/..." vanished from the
+        // accounting while the engine never executed it (#290). The composition sentence
+        // itself — the part the model does express — must still read as structured; only
+        // the replace-clause is unmodelled.
+        var lion = Content.MonstersById["monster.lion"];
+        var lionMultiattack = lion.Entries.Single(entry => entry.Name == "Multiattack");
+
+        Assert.Equal(EntryMechanics.Multiattack, lionMultiattack.Mechanics);
+        Assert.False(lionMultiattack.IsFullyModelled);
+        Assert.Equal(
+            "It can replace one attack with a use of Roar.",
+            Assert.Single(lionMultiattack.UnmodelledClauses));
+
+        var pirate = Content.MonstersById["monster.pirate"];
+        var pirateMultiattack = pirate.Entries.Single(entry => entry.Name == "Multiattack");
+
+        Assert.Equal(EntryMechanics.Multiattack, pirateMultiattack.Mechanics);
+        Assert.False(pirateMultiattack.IsFullyModelled);
+        Assert.Equal(
+            "It can replace one attack with a use of Enthralling Panache.",
+            Assert.Single(pirateMultiattack.UnmodelledClauses));
+    }
+
+    [Fact]
     public void ConditionsImposedByAnEntryAreCaptured()
     {
         // "... plus 3 (1d6) Acid damage. If the target is a Large or smaller creature, it

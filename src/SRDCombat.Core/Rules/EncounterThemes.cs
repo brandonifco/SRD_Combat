@@ -128,7 +128,6 @@ public static class EncounterThemes
             ["Giant Vulture"] = [EncounterTheme.SavageHunters],
             ["Goblin Boss"] = [EncounterTheme.GoblinoidWarband],
             ["Hippogriff"] = [],
-            ["Pirate"] = [EncounterTheme.Outlaws],
             ["Sphinx of Wonder"] = [EncounterTheme.ArcaneAndAnimated],
             ["Spy"] = [EncounterTheme.Outlaws, EncounterTheme.Soldiery],
 

@@ -3077,7 +3077,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Acid Arrow (level 3 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -3300,7 +3302,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Acid Arrow (level 4 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -4059,7 +4063,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Shatter."
+          ]
         },
         {
           "name": "Rend",
@@ -4262,7 +4268,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Shatter (level 3 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -4794,7 +4802,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace two attacks with a use of Sleep Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -4993,7 +5003,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Sleep Breath or (B) Spellcasting to cast Scorching Ray."
+          ]
         },
         {
           "name": "Rend",
@@ -5252,7 +5264,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Sleep Breath or (B) Spellcasting to cast Scorching Ray (level 3 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -5690,7 +5704,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Repulsion Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -5886,7 +5902,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Repulsion Breath or (B) Spellcasting to cast Guiding Bolt (level 2 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -6170,7 +6188,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Repulsion Breath or (B) Spellcasting to cast Guiding Bolt (level 2 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -7245,7 +7265,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace the Claw attack with a use of Fire Breath if available."
+          ]
         },
         {
           "name": "Bite",
@@ -7984,7 +8006,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Fog Cloud."
+          ]
         },
         {
           "name": "Thunderous Mace",
@@ -8494,7 +8518,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Slowing Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -8672,7 +8698,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Slowing Breath or (B) Spellcasting to cast Mind Spike (level 4 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -8913,7 +8941,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Slowing Breath or (B) Spellcasting to cast Mind Spike (level 5 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -10429,7 +10459,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Tail attack."
+          ]
         },
         {
           "name": "Bite",
@@ -14018,7 +14050,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Shield Bash."
+          ]
         },
         {
           "name": "Spear",
@@ -14878,7 +14912,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Weakening Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -15065,7 +15101,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Spellcasting to cast Guiding Bolt (level 2 version) or (B) Weakening Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -15325,7 +15363,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Spellcasting to cast Guiding Bolt (level 4 version) or (B) Weakening Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -16205,7 +16245,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Mind Spike (level 3 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -16430,7 +16472,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Mind Spike (level 5 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -17120,7 +17164,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace any attack with a use of Poisonous Spittle."
+          ]
         },
         {
           "name": "Bite",
@@ -18757,7 +18803,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Infernal Tail."
+          ]
         },
         {
           "name": "Searing Fork",
@@ -19073,7 +19121,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Tail attack."
+          ]
         },
         {
           "name": "Ice Spear",
@@ -19565,7 +19615,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Vortex."
+          ]
         },
         {
           "name": "Wind Swipe",
@@ -20446,7 +20498,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Corrupting Touch."
+          ]
         },
         {
           "name": "Claw",
@@ -24423,7 +24477,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting."
+          ]
         },
         {
           "name": "Claw",
@@ -25118,7 +25174,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Enthralling Panache."
+          ]
         },
         {
           "name": "Dagger",
@@ -27238,7 +27296,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Scorching Ray."
+          ]
         },
         {
           "name": "Rend",
@@ -27440,7 +27500,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Spellcasting to cast Scorching Ray (level 3 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -27784,7 +27846,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Talons attack."
+          ]
         },
         {
           "name": "Beak",
@@ -28380,7 +28444,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Constrict."
+          ]
         },
         {
           "name": "Flame Spear",
@@ -29124,7 +29190,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Engulf."
+          ]
         },
         {
           "name": "Charged Tendril",
@@ -29623,7 +29691,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Paralyzing Breath."
+          ]
         },
         {
           "name": "Rend",
@@ -29819,7 +29889,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Paralyzing Breath or (B) Spellcasting to cast Ice Knife."
+          ]
         },
         {
           "name": "Rend",
@@ -30081,7 +30153,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of (A) Paralyzing Breath or (B) Spellcasting to cast Ice Knife (level 2 version)."
+          ]
         },
         {
           "name": "Rend",
@@ -30693,7 +30767,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Slaying Bow."
+          ]
         },
         {
           "name": "Flying Sword",
@@ -35171,7 +35247,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Bite attack."
+          ]
         },
         {
           "name": "Bite (Bear or Hybrid Form Only)",
@@ -35331,7 +35409,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Gore attack."
+          ]
         },
         {
           "name": "Gore (Boar or Hybrid Form Only)",
@@ -35505,7 +35585,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Bite attack."
+          ]
         },
         {
           "name": "Bite (Rat or Hybrid Form Only)",
@@ -35670,7 +35752,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Bite attack."
+          ]
         },
         {
           "name": "Bite (Tiger or Hybrid Form Only)",
@@ -35854,7 +35938,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a Bite attack."
+          ]
         },
         {
           "name": "Bite (Wolf or Hybrid Form Only)",
@@ -36785,7 +36871,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Life Drain."
+          ]
         },
         {
           "name": "Necrotic Sword",
@@ -43936,7 +44024,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "It can replace one attack with a use of Roar."
+          ]
         },
         {
           "name": "Rend",

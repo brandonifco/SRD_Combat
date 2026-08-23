@@ -60,11 +60,14 @@ public class ObjectiveLadderTests
         var leader = fight.Encounter.Combatants
             .Single(combatant => combatant.Id == fight.Encounter.Objective.LeaderId);
 
-        // The reading: the dearest printed XP in the encounter is the boss.
+        // The reading: the dearest printed XP in the encounter is the boss. An
+        // encounter can field several copies of the same monster, so the leader's name
+        // does not pick a unique entry — every copy shares the same printed XP, so the
+        // first is as good as any.
         var dearest = fight.Built.Monsters.Max(monster => monster.ExperiencePoints);
 
         Assert.Equal(dearest, fight.Built.Monsters
-            .Single(monster => monster.Name == leader.Name)
+            .First(monster => monster.Name == leader.Name)
             .ExperiencePoints);
     }
 

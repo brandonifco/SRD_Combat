@@ -44,11 +44,11 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule has three known
-breaks (Multiattack accounting, species traits, spell clause accounting); the
-undocumented rules gap the review found — concentration surviving Incapacitated — is
-fixed (#289); the art pipeline is unrepeatable and one sprite in ~60 matches the
-project's own palette. **The finishing plan below is
+re-rolls the ladder because the seed is not saved); the honesty rule has two known
+breaks left (species traits, spell clause accounting) — Multiattack accounting is
+fixed (#290); the undocumented rules gap the review found — concentration surviving
+Incapacitated — is fixed (#289); the art pipeline is unrepeatable and one sprite in
+~60 matches the project's own palette. **The finishing plan below is
 the ordered answer.**
 
 ## The finishing plan
