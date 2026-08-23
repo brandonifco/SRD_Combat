@@ -59,8 +59,8 @@ public sealed record SavedRun
 }
 
 /// <summary>
-/// Reads and writes <see cref="SavedRun"/> JSON. The client owns the file; this owns the
-/// format.
+/// Reads and writes <see cref="SavedRun"/> JSON. <see cref="SaveFile"/> owns getting it
+/// to and from disk atomically; this owns the format.
 /// </summary>
 /// <remarks>
 /// Serialization goes through <see cref="ContentSerializer"/> deliberately: the same

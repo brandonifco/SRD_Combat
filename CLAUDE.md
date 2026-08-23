@@ -47,8 +47,8 @@ identical; the run has no between-fight decisions and no failure stakes (a reloa
 re-rolls the ladder because the seed is not saved); the honesty rule has three known
 breaks (Multiattack accounting, species traits, spell clause accounting) and one
 undocumented rules gap (concentration survives Incapacitated); the art pipeline is
-unrepeatable and one sprite in ~60 matches the project's own palette; the save write
-is not atomic. **The finishing plan below is the ordered answer.**
+unrepeatable and one sprite in ~60 matches the project's own palette. **The finishing
+plan below is the ordered answer.**
 
 ## The finishing plan
 

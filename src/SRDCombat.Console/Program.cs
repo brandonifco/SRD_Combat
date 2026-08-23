@@ -53,22 +53,23 @@ GauntletRun run;
 
 if (ContinueRequested(args))
 {
-    if (!File.Exists(savePath))
+    // Falls back to the .bak automatically when the primary is missing or unreadable —
+    // that is the point of keeping one.
+    var loaded = SaveFile.LoadRun(savePath);
+
+    if (loaded.Saved is null)
     {
-        Console.Error.WriteLine($"No save at '{savePath}'. Pass --save <path> or start a new run.");
+        Console.Error.WriteLine(SaveFile.DescribeUnloadable(savePath, loaded)
+            ?? $"No save at '{savePath}'. Pass --save <path> or start a new run.");
         return 1;
     }
 
-    try
+    if (loaded.UsedBackup)
     {
-        run = GauntletRun.Resume(content, RunSave.FromJson(File.ReadAllText(savePath)));
+        Console.WriteLine($"'{savePath}' was missing or unreadable; loaded the backup instead.");
     }
-    catch (Exception failure) when (failure is System.Text.Json.JsonException or InvalidDataException)
-    {
-        // A refusal is the format explaining itself; show it rather than swallowing it.
-        Console.Error.WriteLine($"Cannot load '{savePath}': {failure.Message}");
-        return 1;
-    }
+
+    run = GauntletRun.Resume(content, loaded.Saved);
 
     Console.WriteLine($"SRD_Combat — continuing after fight {run.Cleared} of {run.Ladder.Count} (seed {seed})");
 }
@@ -181,7 +182,7 @@ while (run.Next is { } step)
     // the last state worth returning to, which is what makes reloading a retry.
     if (run.Outcome != RunOutcome.Defeated)
     {
-        File.WriteAllText(savePath, RunSave.ToJson(run));
+        SaveFile.Write(savePath, RunSave.ToJson(run));
     }
 }
 
