@@ -128,10 +128,11 @@ before built. Route choice (pick the next rung from 2–3 revealed options); loo
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
 (attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
-fight 24 rather than never (measured at `33ca8b3`: only 49 of 120 and 59 of 121 runs
-reach level 4); reprice or redesign the free `Survive(3)` rung; per-cycle variety so
-the six cycles are not one cycle six times (#192, #243). Exit: measured curve holds
-through the back half on both ranges; a human run report exists for every new system.
+fight 24 rather than never (only 55 of 120 and 59 of 121 runs reach level 4 — the
+Pacing row above, current baseline); reprice or redesign the free `Survive(3)` rung;
+per-cycle variety so the six cycles are not one cycle six times (#192, #243). Exit:
+measured curve holds through the back half on both ranges; a human run report exists
+for every new system.
 
 **F4 — Depth and variety.** Spellcasting enemies enter the pool (all ten CR ≤ 4
 casters are currently filtered out — thirty fights contain no enemy magic); the

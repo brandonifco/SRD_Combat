@@ -1880,15 +1880,20 @@ public sealed partial class Encounter
     /// wherever the save came from, and two copies would drift.
     /// </para>
     /// <para>
-    /// The riders are a parameter rather than read from <paramref name="save"/> so each
-    /// caller can gate what it passes at its own call site: a stat-block entry passes its
-    /// save's <c>AppliedConditions</c> directly, and a spell or class feature filters its
-    /// own through <see cref="ConditionRules.CanBeImposed"/> first. Either way every rider
-    /// that reaches here is one the engine executes — a spell's save imposes riders now,
-    /// Hold Person's Paralyzed among them, not the deferred "own piece of work" an earlier
-    /// version of this comment described. A rider lands on a failure — or either way when
-    /// the printed outcome is "Failure or Success" — and carries no grapple range, because
-    /// a save effect prints no reach to measure a grapple against.
+    /// The riders are a parameter rather than read from <paramref name="save"/> because
+    /// callers do not agree on what they pass: a stat-block entry's own save action
+    /// (<c>Encounter.Entries.cs</c>) hands over its save's <c>AppliedConditions</c>
+    /// unfiltered — the content still carries riders this engine cannot execute (Deafened,
+    /// Invisible), and this caller does not screen them out — while that same entry's
+    /// embedded save, a spell's save and a class feature's save each filter their own
+    /// through <see cref="ConditionRules.CanBeImposed"/> first (Divine Spark passes none
+    /// at all, having no rider of its own). Pre-filtering here is a courtesy, not the
+    /// guarantee: <see cref="ImposeConditions"/> is the one gate every rider actually
+    /// passes through, whichever caller and however much it screened beforehand —
+    /// <see cref="ConditionRules.CanImpose"/> re-tests each rider, superset of
+    /// <c>CanBeImposed</c>, before any of them is applied. A rider lands on a failure — or
+    /// either way when the printed outcome is "Failure or Success" — and carries no
+    /// grapple range, because a save effect prints no reach to measure a grapple against.
     /// </para>
     /// </remarks>
     private void ResolveSaveEffect(

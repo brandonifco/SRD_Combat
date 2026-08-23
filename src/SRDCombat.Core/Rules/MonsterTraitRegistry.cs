@@ -67,9 +67,12 @@ public enum MonsterTrait
 /// </para>
 /// <para>
 /// The extractor still classifies these entries <c>Unmodelled</c>. Implementing any of
-/// them needs its own code plus a regeneration in the same commit — exactly what #28
-/// did for Pack Tactics, Magic Resistance and Flyby, the precedent to follow rather
-/// than a filed-and-waiting ticket, since #28 is closed and covered only those three.
+/// them is two separate pieces of work: the execution code itself (what landed for Pack
+/// Tactics, Magic Resistance and Flyby in #31, closing #9) and teaching the extractor to
+/// reclassify the trait's entries <c>Passive</c> plus regenerating so content agrees
+/// with code (what #28 did for those same three, in its own later commit). #28 is
+/// precedent for that second step — the reclassification — not for doing both in one
+/// commit; it landed well after #31 did.
 /// </para>
 /// </remarks>
 public static class MonsterTraitRegistry
