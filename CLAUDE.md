@@ -44,11 +44,14 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule's known
-Multiattack breaks are closed — the *replace-clause* hole (#290), alternative
-compositions that were summed instead of chosen between (#342), and the fourteen
-sub-sentence composition clauses folded inside a composition sentence that read as
-fully modelled (#341) — the spell lane is answered by retiring a
+re-rolls the ladder because the seed is not saved); the honesty rule's Multiattack
+accounting has three breaks closed and one still open — closed: the *replace-clause*
+hole (#290), alternative compositions that were summed instead of chosen between
+(#342), and the fourteen sub-sentence composition clauses folded inside a composition
+sentence that read as fully modelled (#341); open: #343, where nineteen enumerated
+fixed compositions ("one Bite attack and one Claw attack") record `AnyCombination:
+true` for want of per-name counts on `MultiattackEffect`, so a Brown Bear may
+double-Bite and nothing says so — the spell lane is answered by retiring a
 signal that could not be derived rather than faking one (#292), and species
 traits are no longer a silent one: none of the 33 printed trait instances execute, but
 `SpeciesTraitRegistry` and `CharacterSheet.UnimplementedFeatures` now say so at
