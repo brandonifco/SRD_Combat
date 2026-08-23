@@ -66,8 +66,13 @@ public enum MonsterTrait
 /// name alone.
 /// </para>
 /// <para>
-/// The extractor still classifies these entries <c>Unmodelled</c>; reclassifying them
-/// needs a regeneration and belongs with the accounting work already filed (#28).
+/// The extractor still classifies these entries <c>Unmodelled</c>. Implementing any of
+/// them is two separate pieces of work: the execution code itself (what landed for Pack
+/// Tactics, Magic Resistance and Flyby in #31, closing #9) and teaching the extractor to
+/// reclassify the trait's entries <c>Passive</c> plus regenerating so content agrees
+/// with code (what #28 did for those same three, in its own later commit). #28 is
+/// precedent for that second step — the reclassification — not for doing both in one
+/// commit; it landed well after #31 did.
 /// </para>
 /// </remarks>
 public static class MonsterTraitRegistry

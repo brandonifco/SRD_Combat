@@ -62,9 +62,13 @@ public static class SpellcastingRules
     /// <c>spell.not_implemented</c>, <c>spell.area_not_modelled</c> and
     /// <c>spell.save_effect_not_modelled</c> refusals are this predicate's three false
     /// branches, kept granular there because a refusal explains itself and collapsed
-    /// here because a chooser only needs yes or no. Character creation filters its spell
-    /// menu with this, because offering a spell that can never be cast would be an
-    /// unimplemented rule wearing a checkbox.
+    /// here because a chooser only needs yes or no. <b>Character creation does not filter
+    /// its menu with this</b> — this is shape only, and shape says yes to Bestow Curse,
+    /// whose extracted save-plus-damage is a sliver of what the spell prints. The menu's
+    /// actual authority is <c>SRDCombat.Game.PreparableSpells</c>, hand-verified against
+    /// print rather than derived (#292); it asserts itself a subset of what this
+    /// predicate allows and never an override of it, so this remains the floor every
+    /// curated spell must clear, not the gate deciding what is offered.
     /// </remarks>
     public static bool HasExecutableEffect(SpellDefinition spell)
     {

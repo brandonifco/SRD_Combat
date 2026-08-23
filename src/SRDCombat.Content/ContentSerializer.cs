@@ -25,7 +25,7 @@ namespace SRDCombat.Content;
 /// rather than rejected, so a field added to the runtime type simply never arrives.
 /// </para>
 /// <para>
-/// What replaces it is louder, not weaker: <c>ContentShapeTests</c> pins the serialized
+/// What replaces it is louder, not weaker: <c>ContentSerializerTests</c> pins the serialized
 /// shape of a representative value of every content type against a committed snapshot,
 /// so any change to the on-disk format fails a test naming the field that moved.
 /// Hand-authored game content — encounter ladders, pregenerated characters, loot

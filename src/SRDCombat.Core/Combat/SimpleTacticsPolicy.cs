@@ -5,14 +5,22 @@ using SRDCombat.Core.Rules;
 namespace SRDCombat.Core.Combat;
 
 /// <summary>
-/// Takes a combatant's whole turn: close with the nearest enemy and hit it.
+/// Takes a combatant's whole turn: escape and stand up first, spend features and
+/// spells, then close with or attack its chosen target.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Deliberately unsophisticated. Real monster tactics — focus fire, using the action
-/// economy properly, positioning, retreating — are their own phase of work. What this
-/// exists for is to drive a fight from start to finish without a client, which is what
-/// makes an end-to-end engine test possible at all.
+/// Deliberately without Dodge, Disengage or a retreat — real tactical judgement in
+/// that sense is its own phase of work (see CLAUDE.md's F4). What it does do by now:
+/// escape a Grapple and stand from Prone before acting; spend class features and
+/// spells in the same turn as an attack rather than as a last resort; choose a target
+/// by the side's own doctrine — characters converge on the party's focus target,
+/// monsters hunt by their own doctrine (#123, #127); step to a cheaper firing
+/// position before spending anything; weigh a damaging spell against the swing it
+/// would replace; and fall back to finishing a downed enemy when nothing else is
+/// reachable, which is what stops a fight stalling outright (#278). What it still
+/// does not do is the point: it exists to drive a fight from start to finish without
+/// a client, which is what makes an end-to-end engine test possible at all.
 /// </para>
 /// <para>
 /// It is nonetheless fully deterministic: every tie is broken by an explicit ordering

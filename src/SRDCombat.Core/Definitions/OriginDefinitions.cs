@@ -25,7 +25,16 @@ namespace SRDCombat.Core.Definitions;
 /// <param name="Save">A saving-throw effect, when the trait resolves through one.</param>
 /// <param name="Usage">A usage limit, when the trait is limited.</param>
 /// <param name="AppliedConditions">Conditions the trait imposes.</param>
-/// <param name="UnmodelledClauses">Clauses the model cannot express. Empty when fully modelled.</param>
+/// <param name="UnmodelledClauses">
+/// Clauses the model cannot express, counted rather than passed as prose. Not a
+/// completeness signal today: every printed species trait and class feature currently
+/// classifies <see cref="EntryMechanics.Unmodelled"/>, so this list and
+/// <see cref="IsFullyModelled"/> below mean something only once the classifier
+/// structures trait text the way it already does <see cref="MonsterEntry"/> — the
+/// phrase this doc used to carry ("empty when fully modelled") was the same trap
+/// <c>SpellDefinition.IsFullyModelled</c> turned out to be (#292, #351): true of
+/// nothing yet is not the same claim as true of everything modelled.
+/// </param>
 public sealed record TraitEntry(
     string Name,
     string Text,
@@ -48,7 +57,11 @@ public sealed record TraitEntry(
     /// </remarks>
     public int? GrantedAtLevel { get; init; }
 
-    /// <summary>True when every mechanical clause in this trait is captured by the model.</summary>
+    /// <summary>
+    /// True when every mechanical clause in this trait is captured by the model.
+    /// Answers false for every species trait and class feature today, since the
+    /// classifier does not yet structure this content — see <see cref="UnmodelledClauses"/>.
+    /// </summary>
     public bool IsFullyModelled =>
         Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;
 }

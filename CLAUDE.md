@@ -22,17 +22,17 @@ When a bullet below feels compressed, the archive has the long form with the evi
 
 ## Current state — read this first
 
-**As of 2026-08-21, at PR #282.** All numbers verified, not estimated.
+**As of 2026-08-23, at PR #368.** All numbers verified, not estimated.
 
 | | |
 | --- | --- |
-| Tests | **972 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **1,038 passing**, 1 skipped by design (the transcript fixture writer) |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `03e1891`, 2026-08-23 (post-#347 per-fight reseeding — a **provisional F1-exit baseline**; promote by diffing one fresh run after the last save-layer F1 items land). Seeds 1–120: median 18 of 30, 35 clear all, 55 reach level 4; seeds 200–320: 18/31/59. **Zero `Stalled`** in both. Per-band hp-left 84→76→71→72→75→71% (1–120) and 83→78→70→72→72→71% (200–320) |
+| Pacing | Measured at `83cabef` (#347 branch tip), merged as `03e1891`, 2026-08-23 (post-#347 per-fight reseeding — a **provisional F1-exit baseline**; promote by diffing one fresh run after the last save-layer F1 items land). Seeds 1–120: median 18 of 30, 35 clear all, 55 reach level 4; seeds 200–320: 18/31/59. **Zero `Stalled`** in both. Per-band hp-left 84→76→71→72→75→71% (1–120) and 83→78→70→72→72→71% (200–320) |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Coverage gaps | 41% of production code untested (`client/` 7.2k, `tools/SrdExtract` 5.4k, `Console` 1.8k lines) |
+| Coverage gaps | 41% of production code untested (`client/` 7.4k, `tools/SrdExtract` 5.6k, `Console` 2.0k lines) |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
@@ -69,8 +69,10 @@ A stranger can download a release, build a party, and play a thirty-fight run wi
 mouse or keyboard — and it holds up:
 
 1. **Nothing lies.** Every printed rule executes or refuses with a named code; the
-   honesty accounting holds for monsters, spells, species, classes, and items alike;
-   the player is told, at the point of choice, what does not work yet.
+   honesty accounting holds for monsters, species, classes, and items — and for spells
+   by their own curated menu rather than clause accounting, stated as the exception it
+   is (see "The rule this project runs on"); the player is told, at the point of
+   choice, what does not work yet.
 2. **Every fight ends and every save survives.** No stalls, atomic saves, a reload
    that replays the same fight, content drift refused with a message rather than a
    crash.
@@ -126,10 +128,11 @@ before built. Route choice (pick the next rung from 2–3 revealed options); loo
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
 (attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
-fight 24 rather than never (57 of 120 runs currently die before level 4); reprice or
-redesign the free `Survive(3)` rung; per-cycle variety so the six cycles are not one
-cycle six times (#192, #243). Exit: measured curve holds through the back half on
-both ranges; a human run report exists for every new system.
+fight 24 rather than never (only 55 of 120 and 59 of 121 runs reach level 4 — the
+Pacing row above, current baseline); reprice or redesign the free `Survive(3)` rung;
+per-cycle variety so the six cycles are not one cycle six times (#192, #243). Exit:
+measured curve holds through the back half on both ranges; a human run report exists
+for every new system.
 
 **F4 — Depth and variety.** Spellcasting enemies enter the pool (all ten CR ≤ 4
 casters are currently filtered out — thirty fights contain no enemy magic); the
@@ -486,6 +489,12 @@ dotnet test SRDCombat.sln -c Debug
 - **Gameplay PRs carry measurement**: `tools/PacingMeasure -- --seeds 1-120` and
   `200-320`, same-build baseline, quoted in the PR body. The median saturates — read
   `shape:`, `ended:`, per-band and per-count lines.
+- **A spot check stands in for the full ranges only when the change is structurally
+  CR-pool-inert.** If a diff cannot move which monsters `MonsterPool.Draw`'s CR ≤ 4
+  filter admits — proven structurally (the pool's CR ceiling, not just an eyeballed
+  diff), not merely observed after the fact — `tools/PacingMeasure -- --seeds 1-20`
+  against the same-build baseline satisfies the gate in place of both canonical
+  ranges. Precedent: #356, #357, #358.
 - **There is no versioned DTO mirror and no generated schema, deliberately.** The
   guards are `UnmappedMemberHandling.Disallow` and the serializer shape tests. Adding
   a field to a `Core` definition plus re-running the extractor is the whole change.
