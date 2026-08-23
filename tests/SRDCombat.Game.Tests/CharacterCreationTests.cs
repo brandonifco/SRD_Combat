@@ -168,6 +168,19 @@ public class CharacterCreationTests
     }
 
     [Fact]
+    public void EveryLaunchClassGrantsTheAbilityScoreImprovementAtLevelFour()
+    {
+        // Every launch class's table grants it at 4 (checked against the printed data
+        // in #288's investigation), but the reading stays a rule rather than an
+        // assumption, the same way FightingStyle and DivineOrder are.
+        foreach (var @class in CharacterCreation.Classes(Content))
+        {
+            Assert.False(CharacterCreation.GrantsAbilityScoreImprovement(@class, level: 3));
+            Assert.True(CharacterCreation.GrantsAbilityScoreImprovement(@class, level: 4));
+        }
+    }
+
+    [Fact]
     public void ProtectorWidensTheClericsMenusAndNobodyElses()
     {
         var cleric = Content.ClassesById["class.cleric"];

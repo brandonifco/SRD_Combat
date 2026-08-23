@@ -1,4 +1,5 @@
 using SRDCombat.Content;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
@@ -419,6 +420,118 @@ public class GauntletTests
         Assert.Equal(3, levelled.Sheet.Level);
         Assert.True(levelled.Sheet.MaximumHitPoints > member.Sheet.MaximumHitPoints);
         Assert.Equal(member.Draft.Name, levelled.Draft.Name);
+    }
+
+    [Fact]
+    public void ACreatedCharacterWithAnAsiPlanReceivesExactlyItAtLevelFour()
+    {
+        // A creation flow's plan, not a pregen's: two abilities at +1 each, the shape a
+        // pregen never takes, so this is provably the draft's choice and not a
+        // coincidence of the default (#288).
+        var pregen = PregeneratedParty.Build(Content, level: 3).First();
+        var created = pregen.Draft with
+        {
+            AbilityScoreImprovements = [new AbilityScoreImprovement
+            {
+                First = Ability.Constitution,
+                Second = Ability.Wisdom,
+            }],
+        };
+
+        var beforeFour = PregeneratedParty.Resolve(Content, created, level: 3);
+        var atFour = PregeneratedParty.Resolve(Content, created, level: 4);
+
+        Assert.Equal(
+            beforeFour.Sheet.AbilityScores[Ability.Constitution] + 1,
+            atFour.Sheet.AbilityScores[Ability.Constitution]);
+        Assert.Equal(
+            beforeFour.Sheet.AbilityScores[Ability.Wisdom] + 1,
+            atFour.Sheet.AbilityScores[Ability.Wisdom]);
+
+        // Nothing else moved, and the feat is fully spent.
+        Assert.Equal(beforeFour.Sheet.AbilityScores[Ability.Strength], atFour.Sheet.AbilityScores[Ability.Strength]);
+        Assert.Equal(0, atFour.Sheet.UnspentFeatChoices);
+    }
+
+    [Fact]
+    public void ALegacyPlanlessDraftDefaultsItsAbilityScoreImprovementOnLevellingUpAndSaysSo()
+    {
+        // The honest fallback for a save written before creation flows asked for a
+        // plan (#288): nobody prompts mid-run, so the class's primary ability gets +2
+        // instead, and it is never silent — it lands in LevelUps beside the level-up
+        // line itself.
+        var drafts = PregeneratedParty.Build(Content, level: 3).Select(member => member.Draft).ToArray();
+
+        // The premise this test rests on: a level-3 pregen build carries no ASI plan.
+        // If this fires, #330 was fixed and this test needs a deliberately plan-less
+        // draft constructed by hand instead.
+        Assert.Empty(drafts[0].AbilityScoreImprovements);
+
+        // Every rung Low with a Long Rest before it, deliberately: a milestone High rung
+        // can wipe a policy-driven party, and unrested Low rungs grind one down by
+        // attrition over enough repeats — what this test needs proven is the accounting,
+        // not survival under the hardest budget the ladder offers or with no recovery
+        // between fights. Generously bounded rather than tied to the default ladder's
+        // length, since a level-3 party needs several fights' worth of Low-budget XP to
+        // reach level 4.
+        var ladder = Enumerable.Repeat(new LadderStep(EncounterDifficulty.Low, RestKind.Long), 60).ToArray();
+        var run = GauntletRun.Start(Content, drafts, ladder, startingLevel: 3);
+        var random = new SeededRandomSource(4242);
+
+        while (run.States[0].Level < 4 && run.Outcome == RunOutcome.InProgress && run.Next is not null)
+        {
+            run.PrepareForNext(random);
+            var fight = run.BeginNext(random);
+            SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+            run.CompleteFight(fight, random);
+        }
+
+        Assert.Equal(4, run.States[0].Level);
+
+        var primary = Content.ClassesById[drafts[0].ClassId].PrimaryAbilities[0];
+        var withoutTheDefault = PregeneratedParty.Resolve(Content, drafts[0], level: 4).Sheet.AbilityScores[primary];
+
+        Assert.Equal(withoutTheDefault + 2, run.Party[0].Sheet.AbilityScores[primary]);
+        Assert.Equal(0, run.Party[0].Sheet.UnspentFeatChoices);
+        Assert.Contains(
+            run.LevelUps,
+            line => line.Contains(drafts[0].Name, StringComparison.Ordinal)
+                && line.Contains("defaulted", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void AnAlreadyLevelFourSaveWithoutAPlanDefaultsOnResumeRatherThanOnItsNextLevelUp()
+    {
+        // A save can arrive already past level 4 with an empty plan — the exact shape
+        // an old save from before #288 has. GauntletRun.Resume must default it right
+        // there, because there is no future level-up left to catch it on.
+        var member = PregeneratedParty.Build(Content, level: 1).First();
+        var planless = member.Draft with { AbilityScoreImprovements = [] };
+        var state = CharacterState.Fresh(member) with
+        {
+            ExperiencePoints = AdvancementRules.ExperienceToReach(4),
+        };
+
+        var saved = new SavedRun
+        {
+            FormatVersion = RunSave.CurrentFormatVersion,
+            Ladder = GauntletLadder.Default(),
+            Cleared = 0,
+            Members = [new SavedMember(planless, state)],
+        };
+
+        var run = GauntletRun.Resume(Content, saved);
+
+        Assert.Equal(4, run.States[0].Level);
+
+        var primary = Content.ClassesById[planless.ClassId].PrimaryAbilities[0];
+        var withoutTheDefault = PregeneratedParty.Resolve(Content, planless, level: 4).Sheet.AbilityScores[primary];
+
+        Assert.Equal(withoutTheDefault + 2, run.Party[0].Sheet.AbilityScores[primary]);
+        Assert.Contains(
+            run.LevelUps,
+            line => line.Contains(planless.Name, StringComparison.Ordinal)
+                && line.Contains("defaulted", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

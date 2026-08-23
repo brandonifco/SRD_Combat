@@ -72,6 +72,14 @@ if (ContinueRequested(args))
     run = GauntletRun.Resume(content, loaded.Saved);
 
     Console.WriteLine($"SRD_Combat — continuing after fight {run.Cleared} of {run.Ladder.Count} (seed {seed})");
+
+    // A save written before creation asked for a level-4 Ability Score Improvement plan
+    // can arrive here already past level 4; GauntletRun.Resume defaults it rather than
+    // forfeiting it, and this is where that default first becomes visible.
+    foreach (var notice in run.LevelUps)
+    {
+        Console.WriteLine(notice + ".");
+    }
 }
 else
 {

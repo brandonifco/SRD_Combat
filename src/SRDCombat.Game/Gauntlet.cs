@@ -255,16 +255,37 @@ public sealed class GauntletRun
     private readonly List<string> _returns = [];
     private readonly List<string> _lootFound = [];
 
+    /// <summary>
+    /// Whether a plan-less draft that reaches an Ability Score Improvement should get
+    /// <see cref="ResolveMember"/>'s default rather than the plain resolve.
+    /// </summary>
+    /// <remarks>
+    /// <b>Scoped deliberately to the created and resumed entry points, not the plain
+    /// pregenerated one.</b> The pregenerated party's own drafts carry no plan either
+    /// (#330, found while building this) — the same gap this field's fallback exists
+    /// to close — but every seed range <c>PacingMeasure</c> and the baseline gameplay
+    /// tests measure walks the plain <see cref="Start(SrdContent, IReadOnlyList{LadderStep}?, int)"/>
+    /// path, so defaulting there would move numbers nobody asked this change to move
+    /// (and, found the hard way, can turn a fight one of the ten-seed loot-run tests
+    /// relies on into a stall — the pre-existing, separately tracked #256). A created
+    /// party's own drafts always carry a real plan once creation asks for one, so this
+    /// flag only ever matters for the honest fallback on a draft that has none — which
+    /// is exactly the created/resumed shape #288 is about.
+    /// </remarks>
+    private readonly bool _defaultsPlanlessAsi;
+
     private GauntletRun(
         SrdContent content,
         IReadOnlyList<LadderStep> ladder,
         IReadOnlyList<PartyMember> party,
-        IReadOnlyList<CharacterState> states)
+        IReadOnlyList<CharacterState> states,
+        bool defaultsPlanlessAsi = false)
     {
         _content = content;
         _states = [.. states];
         Ladder = ladder;
         Party = party;
+        _defaultsPlanlessAsi = defaultsPlanlessAsi;
     }
 
     /// <summary>Starts a run with the pregenerated party.</summary>
@@ -294,19 +315,21 @@ public sealed class GauntletRun
         ArgumentNullException.ThrowIfNull(drafts);
         ArgumentOutOfRangeException.ThrowIfZero(drafts.Count);
 
-        return Start(
-            content,
-            drafts
-                .Select((draft, index) => PregeneratedParty.Resolve(
-                    content, draft, startingLevel, x: 0, y: index))
-                .ToArray(),
-            ladder);
+        var resolved = drafts
+            .Select((draft, index) => ResolveMember(content, draft, startingLevel, x: 0, y: index))
+            .ToArray();
+
+        var run = Start(content, [.. resolved.Select(pair => pair.Member)], ladder, defaultsPlanlessAsi: true);
+        run._levelUps.AddRange(resolved.Select(pair => pair.AsiDefaultNotice).OfType<string>());
+
+        return run;
     }
 
     private static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<PartyMember> party,
-        IReadOnlyList<LadderStep>? ladder)
+        IReadOnlyList<LadderStep>? ladder,
+        bool defaultsPlanlessAsi = false)
     {
         var rungs = ladder ?? GauntletLadder.Default();
 
@@ -315,7 +338,12 @@ public sealed class GauntletRun
             throw new ArgumentException("A run needs at least one rung.", nameof(ladder));
         }
 
-        return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)]);
+        return new GauntletRun(
+            content,
+            rungs,
+            party,
+            [.. party.Select(CharacterState.Fresh)],
+            defaultsPlanlessAsi);
     }
 
     /// <summary>
@@ -333,18 +361,24 @@ public sealed class GauntletRun
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(saved);
 
-        var party = saved.Members
+        var resolved = saved.Members
             .Select((member, index) =>
-                PregeneratedParty.Resolve(content, member.Draft, member.State.Level, x: 0, y: index))
+                ResolveMember(content, member.Draft, member.State.Level, x: 0, y: index))
             .ToArray();
 
-        var run = new GauntletRun(content, saved.Ladder, party, [.. saved.Members.Select(member => member.State)])
+        var run = new GauntletRun(
+            content,
+            saved.Ladder,
+            [.. resolved.Select(pair => pair.Member)],
+            [.. saved.Members.Select(member => member.State)],
+            defaultsPlanlessAsi: true)
         {
             Cleared = saved.Cleared,
             GoldCopper = saved.GoldCopper,
         };
 
         run._casualties.AddRange(saved.Casualties);
+        run._levelUps.AddRange(resolved.Select(pair => pair.AsiDefaultNotice).OfType<string>());
 
         if (saved.Cleared >= saved.Ladder.Count)
         {
@@ -721,7 +755,22 @@ public sealed class GauntletRun
             // edited, so a levelled character cannot hold a number that disagrees with
             // the rules that made it.
             var previousMaximum = party[i].Sheet.MaximumHitPoints;
-            party[i] = PregeneratedParty.Resolve(_content, party[i].Draft, after.Level);
+
+            // The default only ever applies to a run that started from created drafts
+            // or a resumed save (see _defaultsPlanlessAsi) — never to the plain
+            // pregenerated party, whose own drafts carry the identical gap (#330) but
+            // are what PacingMeasure and the baseline gameplay tests measure.
+            string? asiDefaultNotice;
+
+            if (_defaultsPlanlessAsi)
+            {
+                (party[i], asiDefaultNotice) = ResolveMember(_content, party[i].Draft, after.Level);
+            }
+            else
+            {
+                party[i] = PregeneratedParty.Resolve(_content, party[i].Draft, after.Level);
+                asiDefaultNotice = null;
+            }
 
             // The new level's extra hit points arrive as extra hit points, not as
             // healing: damage already taken stays taken, which is what the SRD's
@@ -735,9 +784,47 @@ public sealed class GauntletRun
             };
 
             _levelUps.Add($"{party[i].Draft.Name} reaches level {after.Level}");
+
+            if (asiDefaultNotice is not null)
+            {
+                _levelUps.Add(asiDefaultNotice);
+            }
         }
 
         Party = party;
+    }
+
+    /// <summary>
+    /// Resolves a draft at a level, and — the honest fallback for a save written before
+    /// creation flows asked for one — defaults a never-chosen Ability Score Improvement
+    /// to +2 the class's primary ability rather than silently forfeiting it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The smaller honest option, stated:</b> prompting mid-run for a choice creation
+    /// never asked is disproportionate — there is no interactive moment between fights
+    /// for it, on either client — so the default lands instead, and the default is never
+    /// silent: it is a returned notice, which every caller folds into
+    /// <see cref="LevelUps"/> so a client narrates it exactly like the level-up itself.
+    /// Only a draft with <em>no</em> plan at all is defaulted; a draft naming a real
+    /// choice, however it arrived, is always the resolver's to apply.
+    /// </remarks>
+    private static (PartyMember Member, string? AsiDefaultNotice) ResolveMember(
+        SrdContent content, CharacterDraft draft, int level, int x = 0, int y = 0)
+    {
+        var resolved = PregeneratedParty.Resolve(content, draft, level, x, y);
+
+        if (draft.AbilityScoreImprovements.Count > 0 || resolved.Sheet.UnspentFeatChoices == 0)
+        {
+            return (resolved, null);
+        }
+
+        var primary = content.ClassesById[draft.ClassId].PrimaryAbilities[0];
+        var defaulted = draft with { AbilityScoreImprovements = [new AbilityScoreImprovement { First = primary }] };
+        resolved = PregeneratedParty.Resolve(content, defaulted, level, x, y);
+
+        return (
+            resolved,
+            $"{draft.Name}'s Ability Score Improvement was never chosen — defaulted to +2 {primary}");
     }
 
     /// <summary>Level-ups in the order they happened, for a client to narrate.</summary>

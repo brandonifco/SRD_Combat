@@ -115,6 +115,22 @@ public static class CharacterCreation
     }
 
     /// <summary>
+    /// Whether the class has the Ability Score Improvement feature by this level — the
+    /// same heading-based reading <see cref="GrantsFightingStyle"/> makes. Every launch
+    /// class grants it at 4, but the check stays a rule rather than an assumption, the
+    /// same way <see cref="GrantsFightingStyle"/> and <see cref="GrantsDivineOrder"/> do.
+    /// </summary>
+    public static bool GrantsAbilityScoreImprovement(ClassDefinition @class, int level)
+    {
+        ArgumentNullException.ThrowIfNull(@class);
+
+        return @class.Features.Any(feature =>
+            string.Equals(feature.Name, "Ability Score Improvement", StringComparison.Ordinal)
+            && feature.GrantedAtLevel is { } granted
+            && granted <= level);
+    }
+
+    /// <summary>
     /// The printed text of the class's Divine Order feature, for a client offering the
     /// choice — the charter's "every choice carries its description", served verbatim.
     /// </summary>

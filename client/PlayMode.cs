@@ -282,6 +282,13 @@ public partial class PlayMode : FightScreen
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
+        // A save written before creation asked for a level-4 Ability Score Improvement
+        // plan can arrive here already past level 4; GauntletRun.Resume defaults it
+        // rather than forfeiting it, and this is where that default first becomes
+        // visible — LevelUps is empty on a fresh Start, so this only adds anything on
+        // a resumed save.
+        startupNotices.AddRange(_run.LevelUps.Select(notice => notice + "!"));
+
         EnterInterlude(startupNotices);
     }
 

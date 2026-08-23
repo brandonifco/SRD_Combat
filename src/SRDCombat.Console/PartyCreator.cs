@@ -216,6 +216,22 @@ internal static class PartyCreator
 
         draft = draft with { WeaponMasteryIds = masteries };
 
+        // A plan, not a sheet edit: this is the level 4 Ability Score Improvement, taken
+        // now the same way the pregenerated party's is — the character has not got
+        // there yet, but the choice is recorded so levelling up applies it rather than
+        // silently forfeiting it (#288).
+        if (CharacterCreation.GrantsAbilityScoreImprovement(@class, level: 4))
+        {
+            var improvement = ChooseAbilityScoreImprovement();
+
+            if (improvement is null)
+            {
+                return null;
+            }
+
+            draft = draft with { AbilityScoreImprovements = [improvement] };
+        }
+
         var spells = ChooseSpells(content, @class, draft.DivineOrder);
 
         if (spells is null)
@@ -377,6 +393,56 @@ internal static class PartyCreator
                     }
 
                     return (AbilityIncreaseChoice.TwoAndOne, primary.Value, secondary.Value);
+                default:
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The level 4 Ability Score Improvement plan — the same shape the resolver enforces:
+    /// +2 to one ability, or +1 to two different ones, capped at 20 by the resolver.
+    /// </summary>
+    private static AbilityScoreImprovement? ChooseAbilityScoreImprovement()
+    {
+        while (true)
+        {
+            System.Console.WriteLine();
+            System.Console.WriteLine(
+                "Ability Score Improvement (level 4) — increase one ability score by 2, or two by 1:");
+
+            var answer = Ask("  '2' for +2 to one, '1' for +1 to two: ");
+
+            switch (answer?.Trim())
+            {
+                case null:
+                    return null;
+                case "2":
+                    var single = PickAbility("  +2 to which ability? ", Enum.GetValues<Ability>());
+
+                    if (single is null)
+                    {
+                        return null;
+                    }
+
+                    return new AbilityScoreImprovement { First = single.Value };
+                case "1":
+                    var first = PickAbility("  +1 to which ability (first)? ", Enum.GetValues<Ability>());
+
+                    if (first is null)
+                    {
+                        return null;
+                    }
+
+                    var rest = Enum.GetValues<Ability>().Where(ability => ability != first).ToArray();
+                    var second = PickAbility("  +1 to which ability (second)? ", rest);
+
+                    if (second is null)
+                    {
+                        return null;
+                    }
+
+                    return new AbilityScoreImprovement { First = first.Value, Second = second.Value };
                 default:
                     break;
             }
@@ -757,6 +823,11 @@ internal static class PartyCreator
             $"Mastery: {weapon.Mastery}.");
     }
 
+    private static string DescribeImprovement(AbilityScoreImprovement improvement) =>
+        improvement.Second is { } second
+            ? $"+1 {improvement.First}, +1 {second}"
+            : $"+2 {improvement.First}";
+
     private static void DescribeArmor(ArmorDefinition armor) =>
         System.Console.WriteLine($"  {armor.Name} — {armor.Category}.");
 
@@ -773,6 +844,11 @@ internal static class PartyCreator
         {
             System.Console.WriteLine(
                 $"  Prepares: {string.Join(", ", caster.Spells.Select(spell => spell.Name))}.");
+        }
+
+        if (member.Draft.AbilityScoreImprovements is [var improvement, ..])
+        {
+            System.Console.WriteLine($"  Level 4 plan: {DescribeImprovement(improvement)}.");
         }
 
         if (sheet.UnimplementedFeatures.Count > 0)
