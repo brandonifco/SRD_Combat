@@ -14,11 +14,18 @@ namespace SRDCombat.Game;
 /// trusted for this decision. <see cref="SpellcastingRules.HasExecutableEffect"/> asks
 /// whether casting would do <em>something</em>; it says yes to Bestow Curse, whose
 /// extracted save-plus-damage shape is a sliver of a printed effect the engine cannot
-/// express, and the spell-level <c>UnmodelledClauses</c> accounting is not populated
-/// the way the stat-block accounting is — Bestow Curse reads as fully modelled. A menu
-/// filtered on shape would offer spells that execute partially, which is the
-/// Goblin-Warrior bug wearing a spell list. So, like every registry before it: <b>an id
-/// appears here only after its printed text was read against what the engine does.</b>
+/// express. A menu filtered on shape would offer spells that execute partially, which is
+/// the Goblin-Warrior bug wearing a spell list. So, like every registry before it: <b>an
+/// id appears here only after its printed text was read against what the engine does.</b>
+/// </para>
+/// <para>
+/// <b>There is no derived second opinion to fall back on, and that too is a decision.</b>
+/// The stat-block accounting that grades monsters was measured against spell prose and
+/// found anti-correlated with the truth — it calls thirteen of the seventeen spells below
+/// unmodelled on their flavour sentences, while passing Chill Touch, whose blocking
+/// clause shares a sentence with its damage. So <c>SpellDefinition.IsFullyModelled</c>
+/// was retired rather than populated (#292), and <b>this list is the authority</b>: the
+/// numbers and the whole argument are on <c>SpellDefinition.UnclassifiedClauses</c>.
 /// </para>
 /// <para>
 /// The bar, stated: every clause that affects a <em>creature in a fight</em> must

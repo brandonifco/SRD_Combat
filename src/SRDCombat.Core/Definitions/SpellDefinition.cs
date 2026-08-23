@@ -156,8 +156,57 @@ public sealed record SpellDefinition
     /// </remarks>
     public bool GrantsAdvantageAgainstTargetOnHit { get; init; }
 
-    /// <summary>Clauses the model could not express. Empty when fully modelled.</summary>
-    public IReadOnlyList<string> UnmodelledClauses { get; init; } = [];
+    /// <summary>
+    /// The sentences of a spell the classifier could not classify at all — non-empty
+    /// exactly when <see cref="Mechanics"/> is <see cref="EntryMechanics.Unmodelled"/>,
+    /// and empty otherwise.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>An empty list here is not a claim that the spell is fully modelled, and this
+    /// type deliberately offers no such claim.</b> There was an <c>IsFullyModelled</c>
+    /// beside it, mirroring <see cref="MonsterEntry.IsFullyModelled"/>. It answered
+    /// <c>true</c> for all 154 structured spells — Web, Cloudkill, Acid Arrow, Bestow
+    /// Curse and Chill Touch included — and it was removed rather than populated (#292).
+    /// The reasoning, written down because the next reader will be tempted to put it
+    /// back:
+    /// </para>
+    /// <para>
+    /// <b>The stat-block accounting works because a stat block entry is all mechanics in
+    /// a printed grammar</b> — <c>Attack Roll:</c>, <c>Hit:</c>, <c>Failure:</c> — so a
+    /// leftover sentence is a real rule that got dropped, and there are few of them. A
+    /// spell description is prose, and most of it is flavour. Running the same
+    /// sentence-by-sentence accounting over the 154 structured spells, with the most
+    /// generous possible reading of "accounted for" (credit any sentence naming a save, a
+    /// spell attack, damage dice, healing, an area or a condition) leaves 72% of
+    /// sentences unaccounted and exactly 7 spells fully modelled. Thirteen of the
+    /// seventeen spells hand-verified against print for the casting menu come out
+    /// <em>false</em>, on sentences like "A bright streak flashes from you to a point you
+    /// choose within range"; and two of the seven that come out true are false positives
+    /// — Chill Touch, whose "it can't regain Hit Points until the end of your next turn"
+    /// shares a sentence with its damage, and Circle of Death, which nobody has read
+    /// against print. <b>The derived signal would be anti-correlated with the truth, and
+    /// its false positives are produced by the very failure this project's rule exists to
+    /// prevent</b>: a clause hiding inside a sentence that parsed.
+    /// </para>
+    /// <para>
+    /// Separating flavour from mechanics is what would fix that, and that is exactly the
+    /// "does this look mechanical?" keyword filter this project removed rather than
+    /// tuned — see the remarks on <c>EntryMechanicsParser.MechanicalSentences</c>. A
+    /// keyword list always has false negatives, and a false negative loses a rule.
+    /// </para>
+    /// <para>
+    /// <b>So the honest signal for a spell lives where it is genuinely derived: by
+    /// hand.</b> <c>SRDCombat.Game.PreparableSpells</c> is the authority on which spells
+    /// execute faithfully; it states its bar and names every spell it refuses together
+    /// with the clause that refused it. <see cref="Rules.SpellcastingRules"/>'s
+    /// <c>HasExecutableEffect</c> is the weaker, shape-only question — would casting do
+    /// <em>something</em> — and is never a faithfulness claim. Should the spell grammar
+    /// ever grow real partial accounting, this list is where the remainder goes; until
+    /// then it is named for what it actually holds.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyList<string> UnclassifiedClauses { get; init; } = [];
 
     /// <summary>
     /// The "Using a Higher-Level Spell Slot" or "Cantrip Upgrade" clause, as printed.
@@ -191,10 +240,6 @@ public sealed record SpellDefinition
     /// Null for every other spell.
     /// </summary>
     public SpellRevival? Revival { get; init; }
-
-    /// <summary>True when every mechanical clause is captured by the model.</summary>
-    public bool IsFullyModelled =>
-        Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;
 
     /// <summary>True when the spell can be cast during a fight at all.</summary>
     public bool IsUsableInCombat => CastingTime != SpellCastingTime.Extended;
