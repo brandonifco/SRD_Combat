@@ -30,7 +30,7 @@ When a bullet below feels compressed, the archive has the long form with the evi
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `33ca8b3`, 2026-08-23 (a **ledger refresh**, not the F1-exit re-baseline — F1 is still open). Seeds 1–120: median 18 of 30, 37 clear all, 49 reach level 4; seeds 200–320: 18/34/59. **Zero `Stalled`** in both. Per-band hp-left 83→76→70→70→74→74% (1–120) and 83→78→69→71→71→71% (200–320) |
+| Pacing | Measured at `03e1891`, 2026-08-23 (post-#347 per-fight reseeding — a **provisional F1-exit baseline**; promote by diffing one fresh run after the last save-layer F1 items land). Seeds 1–120: median 18 of 30, 35 clear all, 55 reach level 4; seeds 200–320: 18/31/59. **Zero `Stalled`** in both. Per-band hp-left 84→76→71→72→75→71% (1–120) and 83→78→70→72→72→71% (200–320) |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
 | Coverage gaps | 41% of production code untested (`client/` 7.2k, `tools/SrdExtract` 5.4k, `Console` 1.8k lines) |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
