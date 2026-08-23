@@ -459,13 +459,13 @@ public class GauntletTests
         // The honest fallback for a save written before creation flows asked for a
         // plan (#288): nobody prompts mid-run, so the class's primary ability gets +2
         // instead, and it is never silent — it lands in LevelUps beside the level-up
-        // line itself.
-        var drafts = PregeneratedParty.Build(Content, level: 3).Select(member => member.Draft).ToArray();
-
-        // The premise this test rests on: a level-3 pregen build carries no ASI plan.
-        // If this fires, #330 was fixed and this test needs a deliberately plan-less
-        // draft constructed by hand instead.
-        Assert.Empty(drafts[0].AbilityScoreImprovements);
+        // line itself. Built by hand rather than from a fresh pregen build, because
+        // the pregens now always carry their own real plan (#330) — a plan-less draft
+        // is exactly what an old, pre-#288 save looks like, created or pregenerated.
+        var drafts = PregeneratedParty.Build(Content, level: 3)
+            .Select(member => member.Draft)
+            .ToArray();
+        drafts[0] = drafts[0] with { AbilityScoreImprovements = [] };
 
         // Every rung Low with a Long Rest before it, deliberately: a milestone High rung
         // can wipe a policy-driven party, and unrested Low rungs grind one down by
