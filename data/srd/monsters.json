@@ -1963,16 +1963,17 @@
           "text": "The devil makes one Claws attack and one Tail attack, or it makes two Hurl Flame attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 4,
+            "attackCount": 2,
             "attackNames": [
               "Claws",
-              "Tail",
-              "Hurl Flame"
+              "Tail"
             ],
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or it makes two Hurl Flame attacks."
+          ]
         },
         {
           "name": "Claws",
@@ -7674,14 +7675,16 @@
           "text": "The golem makes two Slam attacks, or it makes three Slam attacks if it used Hasten this turn.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 5,
+            "attackCount": 2,
             "attackNames": [
               "Slam"
             ],
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or it makes three Slam attacks if it used Hasten this turn."
+          ]
         },
         {
           "name": "Slam",
@@ -21755,16 +21758,17 @@
           "text": "The medusa makes two Claw attacks and one Snake Hair attack, or it makes three Poison Ray attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 6,
+            "attackCount": 3,
             "attackNames": [
               "Claw",
-              "Snake Hair",
-              "Poison Ray"
+              "Snake Hair"
             ],
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or it makes three Poison Ray attacks."
+          ]
         },
         {
           "name": "Claw",
