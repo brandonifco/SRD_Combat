@@ -86,13 +86,19 @@ public class EntryMechanicsTests
     public void MultiattackReplaceClauseAccountingIsExact()
     {
         // The census the #290 fix earns: the bestiary's count of Multiattack entries
-        // and how many of them carry a replace-clause the model does not express are
-        // both fixed by the source, exactly like the book's monster and spell totals —
-        // the wrapped-class-list lesson says a floor is the wrong shape for a count the
+        // and how many of them carry a clause the model does not express are both fixed
+        // by the source, exactly like the book's monster and spell totals — the
+        // wrapped-class-list lesson says a floor is the wrong shape for a count the
         // source fixes. Pinning the exact pair here is what stops a future parser tweak
-        // from silently re-swallowing the 45 clauses #290 surfaced (`DescribesTheComposition`
+        // from silently re-swallowing what #290 and #342 surfaced (`DescribesTheComposition`
         // waving a replace-clause through again would drop this test's count without
         // touching `TierOneCoverageDoesNotRegress`, whose floor has slack to absorb it).
+        //
+        // Raised from 45 to 48 by #342: the Barbed Devil, the Clay Golem and the Medusa
+        // each print a second whole composition ("or it makes ...") that
+        // `ParseMultiattack` was summing into `AttackCount` instead of setting aside —
+        // the Clay Golem's Multiattack swung five Slams against a printed maximum of
+        // three. All three are CR 5+, so the tier-one pair is unchanged.
         var multiattacks = Content.Monsters
             .SelectMany(monster => monster.Entries
                 .Where(entry => entry.Mechanics == EntryMechanics.Multiattack)
@@ -100,12 +106,60 @@ public class EntryMechanicsTests
             .ToList();
 
         Assert.Equal(170, multiattacks.Count);
-        Assert.Equal(45, multiattacks.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+        Assert.Equal(48, multiattacks.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
 
         var tierOne = multiattacks.Where(multiattack => multiattack.ChallengeRating <= 4m).ToList();
 
         Assert.Equal(64, tierOne.Count);
         Assert.Equal(8, tierOne.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+    }
+
+    [Fact]
+    public void AlternativeCompositionIsNotSummed()
+    {
+        // The fifth occurrence of the goblin's conditional-damage bug, and a real engine
+        // bug rather than only an accounting one: the Clay Golem's "The golem makes two
+        // Slam attacks, or it makes three Slam attacks if it used Hasten this turn" used
+        // to sum both branches into `AttackCount: 5`, so the engine swung five Slams a
+        // turn against a printed maximum of three. The Barbed Devil and the Medusa print
+        // the same "or it/he/she/they makes ..." shape.
+        //
+        // The designer's standing reading: when print offers alternatives conditioned on
+        // state the model lacks (here, whether Hasten was used this turn, or simply which
+        // branch the creature picks), take the unconditional, first-printed branch as the
+        // composition and account the rest — not approximate it by summing.
+        var golem = Content.MonstersById["monster.clay-golem"];
+        var golemMultiattack = golem.Entries.Single(entry => entry.Name == "Multiattack");
+        var golemEffect = Assert.IsType<MultiattackEffect>(golemMultiattack.Multiattack);
+
+        Assert.Equal(2, golemEffect.AttackCount);
+        Assert.False(golemEffect.AnyCombination);
+        Assert.Equal("Slam", Assert.Single(golemEffect.AttackNames));
+        Assert.Equal(
+            "Or it makes three Slam attacks if it used Hasten this turn.",
+            Assert.Single(golemMultiattack.UnmodelledClauses));
+
+        var devil = Content.MonstersById["monster.barbed-devil"];
+        var devilMultiattack = devil.Entries.Single(entry => entry.Name == "Multiattack");
+        var devilEffect = Assert.IsType<MultiattackEffect>(devilMultiattack.Multiattack);
+
+        Assert.Equal(2, devilEffect.AttackCount);
+        Assert.True(devilEffect.AnyCombination);
+        Assert.Equal(["Claws", "Tail"], devilEffect.AttackNames);
+        Assert.Equal(
+            "Or it makes two Hurl Flame attacks.",
+            Assert.Single(devilMultiattack.UnmodelledClauses));
+
+        var medusa = Content.MonstersById["monster.medusa"];
+        var medusaMultiattack = medusa.Entries.Single(entry => entry.Name == "Multiattack");
+        var medusaEffect = Assert.IsType<MultiattackEffect>(medusaMultiattack.Multiattack);
+
+        Assert.Equal(3, medusaEffect.AttackCount);
+        Assert.True(medusaEffect.AnyCombination);
+        Assert.Equal(["Claw", "Snake Hair"], medusaEffect.AttackNames);
+        Assert.Equal(
+            "Or it makes three Poison Ray attacks.",
+            Assert.Single(medusaMultiattack.UnmodelledClauses));
     }
 
     [Fact]
