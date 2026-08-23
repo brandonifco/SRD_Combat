@@ -210,11 +210,14 @@ public class RunSaveTests
     /// A save written before #286 carries no seed at all — but unlike a content-version
     /// mismatch, that is not refused. It loads exactly as written; <see cref="GauntletRun.Resume"/>
     /// falls back to 0 the way it does for a missing <c>GoldCopper</c>, and it is the
-    /// client's job — not <see cref="RunSave"/>'s — to notice the gap, roll a real seed
-    /// once via <see cref="GauntletRun.AdoptSeed"/>, and let the next autosave carry it.
+    /// client's job — not <see cref="RunSave"/>'s — to notice the gap and roll a real
+    /// seed once via <see cref="GauntletRun.AdoptSeed"/>, which now writes it to disk
+    /// immediately rather than waiting on the next autosave (#361) — see
+    /// <c>SaveFileTests</c> for the on-disk round trip, since adoption is no longer a
+    /// pure in-memory operation this test class can exercise.
     /// </summary>
     [Fact]
-    public void LoadingASeedlessSaveSucceedsAndAdoptingASeedStampsTheNextAutosave()
+    public void LoadingASeedlessSaveSucceedsAndResumingFallsBackToZero()
     {
         var saved = RunWithHistory().ToSave() with { Seed = null };
         var loaded = RunSave.FromJson(ContentSerializer.Serialize(saved));
@@ -224,16 +227,6 @@ public class RunSaveTests
         var run = GauntletRun.Resume(Content, loaded);
 
         Assert.Equal(0, run.Seed);
-
-        run.AdoptSeed(20260823);
-
-        Assert.Equal(20260823, run.Seed);
-
-        // The next autosave: ToSave now carries the adopted seed, so loading this
-        // save again behaves exactly as if it had always had one.
-        var reSaved = RunSave.FromJson(RunSave.ToJson(run));
-
-        Assert.Equal(20260823, reSaved.Seed);
     }
 
     /// <summary>
@@ -262,7 +255,9 @@ public class RunSaveTests
     /// <summary>
     /// A save missing both #286's and #287's fields — the exact shape of a save
     /// written before either landed — loads, resumes, and is fully stamped with real
-    /// values for both after one autosave.
+    /// values for both: the content version by the resolve <see cref="GauntletRun.ToSave"/>
+    /// does on any autosave, the seed immediately by <see cref="GauntletRun.AdoptSeed"/>
+    /// itself (#361).
     /// </summary>
     [Fact]
     public void ASaveMissingBothSeedAndContentVersionLoadsAndIsFullyStampedAfterOneAutosave()
@@ -277,12 +272,23 @@ public class RunSaveTests
 
         Assert.Equal(RunOutcome.InProgress, run.Outcome);
 
-        run.AdoptSeed(20260823);
+        var savePath = Path.Combine(Path.GetTempPath(), $"srdcombat-adoptseed-test-{Guid.NewGuid():N}.json");
 
-        var reSaved = run.ToSave();
+        try
+        {
+            run.AdoptSeed(20260823, savePath);
 
-        Assert.Equal(20260823, reSaved.Seed);
-        Assert.Equal(Content.ContentFingerprint, reSaved.ContentVersion);
+            var reSaved = run.ToSave();
+
+            Assert.Equal(20260823, reSaved.Seed);
+            Assert.Equal(Content.ContentFingerprint, reSaved.ContentVersion);
+        }
+        finally
+        {
+            File.Delete(savePath);
+            File.Delete(savePath + ".tmp");
+            File.Delete(savePath + ".bak");
+        }
     }
 
     /// <summary>

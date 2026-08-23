@@ -301,15 +301,15 @@ public partial class PlayMode : FightScreen
 
             // A save written before #286 carries no seed at all. There is an honest
             // thing to do here that there is not for a content-version mismatch: roll
-            // one, once, tell the player, and let the next autosave carry it forward —
-            // GauntletRun.AdoptSeed's own remarks say why nowhere else may call it.
+            // one, once, tell the player — GauntletRun.AdoptSeed's own remarks say why
+            // nowhere else may call it — and let it write the save immediately, so
+            // quitting before the next cleared fight does not lose the roll (#361).
             if (loaded.Saved.Seed is null)
             {
                 var rolled = Random.Shared.Next();
-                _run.AdoptSeed(rolled);
+                _run.AdoptSeed(rolled, _savePath);
                 startupNotices.Add(
-                    $"This save predates run seeds; rolled {rolled} for the rest of the run. " +
-                    "It rides the next autosave.");
+                    $"This save predates run seeds; rolled {rolled} for the rest of the run and saved it.");
             }
 
             _seed = _run.Seed;

@@ -80,9 +80,10 @@ public sealed record SavedRun
     /// content-version mismatch, that is not refused here. There is an honest thing to
     /// do with a missing seed that there is not with a missing content version: roll
     /// one. The client does that exactly once, the first time it meets a save without
-    /// one, says so, and the next autosave carries it forward — see the clients' own
-    /// "predates run seeds" handling. <see cref="RunSave.FromJson"/> does not enforce
-    /// this field at all.
+    /// one, says so, and hands it to <see cref="GauntletRun.AdoptSeed"/>, which writes
+    /// it to disk immediately rather than waiting for the next cleared fight's autosave
+    /// (#361) — see the clients' own "predates run seeds" handling. <see
+    /// cref="RunSave.FromJson"/> does not enforce this field at all.
     /// </remarks>
     public int? Seed { get; init; }
 

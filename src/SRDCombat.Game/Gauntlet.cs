@@ -423,19 +423,30 @@ public sealed class GauntletRun
 
     /// <summary>
     /// Adopts a freshly rolled seed for a run resumed from a save written before #286,
-    /// which carries none.
+    /// which carries none, and writes it to <paramref name="savePath"/> immediately
+    /// through <see cref="SaveFile.Write"/> rather than leaving it to the next cleared
+    /// fight's autosave.
     /// </summary>
     /// <remarks>
     /// The only legitimate caller is a client's own legacy-save migration, immediately
     /// after <see cref="Resume"/> finds <see cref="SavedRun.Seed"/> was null — the roll
     /// itself happens there, not here, because <c>GauntletRun</c> touches no
-    /// <c>IRandomSource</c> and this stays that way. Everywhere else a run's seed is
-    /// fixed at <see cref="Start"/> and never changes again; calling this on a run that
+    /// <c>IRandomSource</c> and this stays that way; only the already-rolled seed and
+    /// where to persist it cross this boundary. Everywhere else a run's seed is fixed
+    /// at <see cref="Start"/> and never changes again; calling this on a run that
     /// already had one would silently move every fight from here on, which is exactly
     /// the bug #286 closed, so this exists once, for one migration path, and nowhere
-    /// else calls it.
+    /// else calls it. The immediate write closes #361: without it, a player who
+    /// adopted a seed and quit before clearing another fight got a second fresh roll
+    /// next time, even though the notice told them the roll was final.
     /// </remarks>
-    public void AdoptSeed(int seed) => Seed = seed;
+    public void AdoptSeed(int seed, string savePath)
+    {
+        ArgumentNullException.ThrowIfNull(savePath);
+
+        Seed = seed;
+        SaveFile.Write(savePath, RunSave.ToJson(this));
+    }
 
     /// <summary>The rungs, in order.</summary>
     public IReadOnlyList<LadderStep> Ladder { get; }
