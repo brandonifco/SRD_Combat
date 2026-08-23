@@ -49,8 +49,8 @@ sub-sentence composition clauses — #341) — the Multiattack *replace-clause* 
 closed (#290); the undocumented rules gap the review found — concentration surviving
 Incapacitated — is fixed (#289); a reload used to re-roll the ladder because the seed
 was not saved, and a save-vs-content mismatch used to crash instead of refusing — both
-closed (#286, #287); the art pipeline is unrepeatable and one sprite in
-~60 matches the project's own palette. **The finishing plan below is
+closed (#286, #287 — remaining Loot sites #350); the art pipeline is unrepeatable and
+one sprite in ~60 matches the project's own palette. **The finishing plan below is
 the ordered answer.**
 
 ## The finishing plan

@@ -84,15 +84,18 @@ if (ContinueRequested(args))
             "against the loaded content piece by piece instead.");
     }
 
-    // GauntletRun.Resume refuses two ways: a present content version that disagrees
-    // with what is loaded, and — per id, regardless of version — a species, class,
-    // background or other content name the loaded content does not have. Either way
-    // this is a printed message, never a crash, and the file itself is never touched.
+    // GauntletRun.Resume refuses drift three ways: a present content version that
+    // disagrees with what is loaded and ContentDrift.Require's per-id checks both
+    // throw InvalidDataException; CharacterResolver's own weapon, armor and magic
+    // item checks throw ArgumentException instead — a Core-level convention this
+    // Game-level catch has to know about too, or exactly this drift crashes instead
+    // of refusing. Either way this is a printed message, never a crash, and the file
+    // itself is never touched.
     try
     {
         run = GauntletRun.Resume(content, loaded.Saved);
     }
-    catch (InvalidDataException failure)
+    catch (Exception failure) when (failure is InvalidDataException or ArgumentException)
     {
         Console.Error.WriteLine($"Cannot resume '{savePath}': {failure.Message}");
         return 1;

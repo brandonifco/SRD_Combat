@@ -250,7 +250,10 @@ public static class CharacterResolver
                     nameof(draft));
             }
 
-            var armor = content.Armor[armorId];
+            if (!content.Armor.TryGetValue(armorId, out var armor))
+            {
+                throw new ArgumentException($"Unknown armor '{armorId}'.", nameof(draft));
+            }
 
             if (powers.AllowedArmorCategories.Count > 0
                 && !powers.AllowedArmorCategories.Contains(armor.Category))

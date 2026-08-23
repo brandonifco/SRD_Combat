@@ -1,4 +1,5 @@
 using SRDCombat.Content;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Dice;
 using SRDCombat.Game;
@@ -250,8 +251,38 @@ public class RunSaveTests
         var failure = Assert.Throws<InvalidDataException>(
             () => GauntletRun.Resume(Content, saved));
 
-        Assert.Contains("not-a-real-fingerprint", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("not-a-real-f", failure.Message, StringComparison.Ordinal);
         Assert.Contains(Content.ContentFingerprint[..12], failure.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "The file is untouched — the build that wrote it can still play it, or start a new run.",
+            failure.Message,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A save missing both #286's and #287's fields — the exact shape of a save
+    /// written before either landed — loads, resumes, and is fully stamped with real
+    /// values for both after one autosave.
+    /// </summary>
+    [Fact]
+    public void ASaveMissingBothSeedAndContentVersionLoadsAndIsFullyStampedAfterOneAutosave()
+    {
+        var saved = RunWithHistory().ToSave() with { Seed = null, ContentVersion = null };
+        var loaded = RunSave.FromJson(ContentSerializer.Serialize(saved));
+
+        Assert.Null(loaded.Seed);
+        Assert.Null(loaded.ContentVersion);
+
+        var run = GauntletRun.Resume(Content, loaded);
+
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+
+        run.AdoptSeed(20260823);
+
+        var reSaved = run.ToSave();
+
+        Assert.Equal(20260823, reSaved.Seed);
+        Assert.Equal(Content.ContentFingerprint, reSaved.ContentVersion);
     }
 
     /// <summary>
@@ -300,7 +331,57 @@ public class RunSaveTests
 
         var failure = Assert.Throws<InvalidDataException>(() => GauntletRun.Resume(Content, tampered));
 
-        Assert.Contains("class.nonexistent", failure.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "the save names class 'class.nonexistent' (for", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("which the loaded content does not have.", failure.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "The file is untouched — the build that wrote it can still play it, or start a new run.",
+            failure.Message,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// qc's finding 5: <see cref="CharacterResolver"/>'s own weapon, armor and magic
+    /// item checks refuse drift with <see cref="ArgumentException"/>, not
+    /// <see cref="InvalidDataException"/> — a Core-level convention distinct from
+    /// <c>ContentDrift.Require</c>'s. A drifted armor id behind an equipped armor
+    /// magic item used to reach a raw <c>content.Armor[armorId]</c> indexer
+    /// (<c>CharacterResolver.cs:253</c>) and throw <see cref="KeyNotFoundException"/>
+    /// straight past it; this pins that it refuses instead.
+    /// </summary>
+    [Fact]
+    public void ResumingRefusesADraftWhoseArmorMagicItemPointsAtAMissingArmorId()
+    {
+        var saved = RunWithHistory().ToSave();
+        var wearer = saved.Members.First(member => member.Draft.ArmorId is not null);
+
+        var tampered = saved with
+        {
+            Members =
+            [
+                .. saved.Members.Select(member => member == wearer
+                    ? member with
+                    {
+                        Draft = member.Draft with
+                        {
+                            ArmorId = "armor.nonexistent",
+                            MagicItems =
+                            [
+                                new EquippedMagicItem
+                                {
+                                    ItemId = "magic-item.armor-plus-1-plus-2-or-plus-3",
+                                    Variant = "+1",
+                                },
+                            ],
+                        },
+                    }
+                    : member),
+            ],
+        };
+
+        var failure = Assert.Throws<ArgumentException>(() => GauntletRun.Resume(Content, tampered));
+
+        Assert.Contains("armor.nonexistent", failure.Message, StringComparison.Ordinal);
     }
 
     [Fact]
