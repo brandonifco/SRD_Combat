@@ -296,6 +296,28 @@ public class SpellContentTests
     }
 
     [Fact]
+    public void WaterBreathingIsNotGradedNarrativeByNameCollisionWithABestiaryTrait()
+    {
+        // Water Breathing used to land on EntryMechanics.Narrative only because it
+        // shares its exact printed name with the bestiary's Amphibious/Water
+        // Breathing/Illumination inert list — a list curated about stat block and
+        // species/class trait text, never read against this spell's own prose (#349).
+        // It now grades Unmodelled like every spell the grammar does not structure —
+        // Light, Alarm and Comprehend Languages among 184 others — with both its
+        // sentences counted rather than silently waved through by an accidental match.
+        var waterBreathing = Content.Spells.Single(spell => spell.Name == "Water Breathing");
+
+        Assert.Equal(EntryMechanics.Unmodelled, waterBreathing.Mechanics);
+        Assert.Equal(2, waterBreathing.UnclassifiedClauses.Count);
+
+        // The fix is general, not a one-spell patch: no spell may reach Narrative by
+        // consulting a list that was never curated about spell prose. If this fails,
+        // either KnownInertEntries grew a name a spell also carries, or SpellParser
+        // stopped passing consultInertList: false.
+        Assert.DoesNotContain(Content.Spells, spell => spell.Mechanics == EntryMechanics.Narrative);
+    }
+
+    [Fact]
     public void SacredFlameDeniesItsTargetCover()
     {
         // "The target gains no benefit from Half Cover or Three-Quarters Cover for this
