@@ -6,8 +6,8 @@ namespace SRDCombat.Core.Tests.Combat;
 
 /// <summary>
 /// Target-aware attack valuation (#224): <c>ValueAt</c> ranks attacks by average
-/// damage against a specific target, zeroed by an Immunity and halved by a
-/// Resistance — the same shape as the long-range discount in
+/// damage against a specific target, zeroed by an Immunity, halved by a
+/// Resistance, doubled by a Vulnerability — the same shape as the long-range discount in
 /// <see cref="LongRangeThrowTests"/>, a preference over the figure the ordering
 /// already sorts on rather than a special case. Before this, an Ochre Jelly
 /// standing between a hero's Longsword and Javelin got hit with the Longsword —
@@ -97,6 +97,49 @@ public class DamageResponseValuationTests
             encounter.Log,
             step => step.Kind == CombatStepKind.Attack && step.ActorId == actor.Id);
         Assert.Contains("Dagger", attack.Narration);
+    }
+
+    [Fact]
+    public void AVulnerableTargetFlipsTheOrderingToTheDoubledAttack()
+    {
+        // Vulnerability doubles rather than halves, so it can flip the ordering
+        // the other way: the Mace's raw 4.5 is well behind the Rapier's 7.5, but
+        // doubled against Bludgeoning Vulnerability it is 9 — ahead of the
+        // Rapier's un-doubled 7.5 — so the visibly weaker weapon on paper wins.
+        // The corpus carries fourteen Vulnerability entries; this pins the
+        // response this policy has never actually exercised.
+        var actor = CombatTestData.Combatant(
+            "hero",
+            stats: CombatTestData.Stats(
+                initiativeBonus: 10,
+                attacks:
+                [
+                    CombatTestData.MeleeAttack("Mace", damage: "1d4 + 2", type: DamageType.Bludgeoning),
+                    CombatTestData.MeleeAttack("Rapier", damage: "1d8 + 3", type: DamageType.Piercing),
+                ]));
+
+        var target = CombatTestData.Combatant(
+            "wraith",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(
+                initiativeBonus: 0,
+                damageResponses: new Dictionary<DamageType, DamageResponse>
+                {
+                    [DamageType.Bludgeoning] = DamageResponse.Vulnerability,
+                }),
+            x: 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(5, 5),
+            [actor, target],
+            new ScriptedRandomSource(15, 1, 10, 3));
+
+        SimpleTacticsPolicy.TakeTurn(encounter);
+
+        var attack = Assert.Single(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Attack && step.ActorId == actor.Id);
+        Assert.Contains("Mace", attack.Narration);
     }
 
     [Fact]

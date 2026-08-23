@@ -968,11 +968,13 @@ public static class SimpleTacticsPolicy
     /// <remarks>
     /// Deliberately compares the same figure <see cref="TryAttack"/> sorts on —
     /// <see cref="ValueAt"/> — so the two agree about which attack is "better". The
-    /// unreaching side is valued raw, because closing is exactly what removes the
-    /// distance the discount prices. A tie keeps the creature where it stands, which is
-    /// what leaves a genuine archer shooting: the Rogue's Shortsword and Shortbow
-    /// average the same, so she never closes for the blade — while an archer beyond
-    /// normal range does close, since her own bow is worth more from nearer in.
+    /// unreaching side skips only the long-range halving (<see cref="ValueAgainst"/>,
+    /// still priced against the target's damage responses), because closing is
+    /// exactly what removes the distance the discount prices. A tie keeps the
+    /// creature where it stands, which is what leaves a genuine archer shooting: the
+    /// Rogue's Shortsword and Shortbow average the same, so she never closes for the
+    /// blade — while an archer beyond normal range does close, since her own bow is
+    /// worth more from nearer in.
     /// </remarks>
     private static bool WouldRatherClose(Combatant actor, Combatant target)
     {
