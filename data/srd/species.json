@@ -14,14 +14,13 @@
       "traits": [
         {
           "name": "Draconic Ancestry",
-          "text": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance. Draconic Ancestors Dragon Damage Type Dragon Damage Type Black Acid Gold Fire Blue Lightning Green Poison Brass Fire Red Fire Bronze Lightning Silver Cold Copper Acid White Cold",
+          "text": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
             "Your lineage stems from a dragon progenitor",
             "Choose the kind of dragon from the Draconic Ancestors table",
-            "Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance",
-            "Draconic Ancestors Dragon Damage Type Dragon Damage Type Black Acid Gold Fire Blue Lightning Green Poison Brass Fire Red Fire Bronze Lightning Silver Cold Copper Acid White Cold"
+            "Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance."
           ]
         },
         {
@@ -154,7 +153,7 @@
         },
         {
           "name": "Elven Lineage",
-          "text": "You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage. When you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level. Elven Lineages Lineage Level 1 Drow The range of your Darkvision increases to 120 You also know the Dancing Lights cantrip. High Elf You know the Prestidigitation cantrip. Whenever a Long Rest, you can replace that cantrip with cantrip from the Wizard spell list. Wood Elf Your Speed increases to 35 feet. You also know Druidcraft cantrip. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).",
+          "text": "You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage. When you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -165,11 +164,6 @@
             "You always have that spell prepared",
             "You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest",
             "You can also cast the spell using any spell slots you have of the appropriate level",
-            "Elven Lineages Lineage Level 1 Drow The range of your Darkvision increases to 120 You also know the Dancing Lights cantrip",
-            "High Elf You know the Prestidigitation cantrip",
-            "Whenever a Long Rest, you can replace that cantrip with cantrip from the Wizard spell list",
-            "Wood Elf Your Speed increases to 35 feet",
-            "You also know Druidcraft cantrip",
             "Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage)."
           ]
         },
@@ -238,7 +232,7 @@
         },
         {
           "name": "Gnomish Lineage",
-          "text": "You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage): Forest Gnome. You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell. Rock Gnome. You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that Level 3 Level 5 feet. Faerie Fire Darkness you finish Detect Magic Misty Step a different the Longstrider Pass without Trace effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell's ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn't do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
+          "text": "You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage): Forest Gnome. You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell. Rock Gnome. You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell's ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn't do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -251,8 +245,7 @@
             "Rock Gnome",
             "You know the Mending and Prestidigitation cantrips",
             "In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box",
-            "When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that Level 3 Level 5 feet",
-            "Faerie Fire Darkness you finish Detect Magic Misty Step a different the Longstrider Pass without Trace effect whenever you or another creature takes a Bonus Action to activate it with a touch",
+            "When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch",
             "If the chosen effect has options within it, you choose one of those options for the device when you create it",
             "For example, if you choose the spell's ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn't do both",
             "You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action."
@@ -410,18 +403,12 @@
         },
         {
           "name": "Versatile",
-          "text": "You gain an Origin feat of your choice (see \"Feats\"). Skilled is recommended. Fiendish Legacies Legacy Level 1 Abyssal You have Resistance to Poison damage. You also know the Poison Spray cantrip. Chthonic You have Resistance to Necrotic damage. You also know the Chill Touch cantrip. Infernal You have Resistance to Fire damage. You also know the Fire Bolt cantrip.",
+          "text": "You gain an Origin feat of your choice (see \"Feats\"). Skilled is recommended.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
             "You gain an Origin feat of your choice (see \"Feats\")",
-            "Skilled is recommended",
-            "Fiendish Legacies Legacy Level 1 Abyssal You have Resistance to Poison damage",
-            "You also know the Poison Spray cantrip",
-            "Chthonic You have Resistance to Necrotic damage",
-            "You also know the Chill Touch cantrip",
-            "Infernal You have Resistance to Fire damage",
-            "You also know the Fire Bolt cantrip."
+            "Skilled is recommended."
           ]
         }
       ],
@@ -506,13 +493,12 @@
         },
         {
           "name": "Otherworldly Presence",
-          "text": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait. Level 3 Level 5 Ray of Sickness Hold Person False Life Ray of Enfeeblement Hellish Rebuke Darkness",
+          "text": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
             "You know the Thaumaturgy cantrip",
-            "When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait",
-            "Level 3 Level 5 Ray of Sickness Hold Person False Life Ray of Enfeeblement Hellish Rebuke Darkness"
+            "When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait."
           ]
         }
       ],

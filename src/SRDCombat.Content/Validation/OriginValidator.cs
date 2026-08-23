@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using SRDCombat.Core.Definitions;
 
 namespace SRDCombat.Content.Validation;
@@ -11,7 +12,7 @@ namespace SRDCombat.Content.Validation;
 /// things the SRD's own rules text says must be true of every species and every
 /// background.
 /// </remarks>
-public static class OriginValidator
+public static partial class OriginValidator
 {
     public static ValidationResult ValidateSpecies(IReadOnlyList<SpeciesDefinition> species)
     {
@@ -53,10 +54,40 @@ public static class OriginValidator
             {
                 Add(ValidationSeverity.Error, "species.trait.name_missing", $"A trait has no name: '{trait.Text}'.");
             }
+
+            // Three species (Dragonborn, Elf, Tiefling) carry a full-width sub-table —
+            // Draconic Ancestors, Elven Lineages, Fiendish Legacies — that the
+            // two-column pass can slice at the column boundary and interleave into
+            // whichever trait was open when the table's region arrived. A wide first
+            // column can cross into the next column's stream entirely, which is how a
+            // table reached a neighbouring species — Elven Lineages into Gnome's
+            // Gnomish Lineage, Fiendish Legacies into Human's Versatile — for five
+            // affected traits in total. The #116 shape, recurring in this chapter:
+            // OriginParser only appends same-typeface prose now, but this is the
+            // regression check for when that discipline slips or a future table is
+            // added. A table row is column entries with no connecting lowercase word
+            // — "Black Acid Gold Fire", "Legacy Level 1 Abyssal" — a run no legitimate
+            // trait sentence produces, verified against every trait this chapter
+            // currently extracts.
+            foreach (var trait in entry.Traits)
+            {
+                if (TitleCaseRun().IsMatch(trait.Text))
+                {
+                    Add(
+                        ValidationSeverity.Error,
+                        "species.trait.table_noise",
+                        $"{trait.Name}: trait text carries a run of table-style capitalized words — a table leaked into it.");
+                }
+            }
         }
 
         return new ValidationResult(issues);
     }
+
+    // Four or more consecutive Title-Case words with nothing but whitespace between
+    // them — no legitimate trait sentence produces this; a table row does.
+    [GeneratedRegex(@"(?:\b[A-Z][a-zA-Z'-]*\.?\s+){3}\b[A-Z][a-zA-Z'-]*\b")]
+    private static partial Regex TitleCaseRun();
 
     public static ValidationResult ValidateBackgrounds(IReadOnlyList<BackgroundDefinition> backgrounds)
     {
