@@ -423,6 +423,25 @@ public class GauntletTests
     }
 
     [Fact]
+    public void APregenBuiltAtLevelOneStillCarriesAndAppliesItsAbilityScoreImprovementPlan()
+    {
+        // The regression this pins (#330): ImprovementsAt used to gate the level-4 plan
+        // on the *build* level, so a fresh level-1 gauntlet — the overwhelmingly common
+        // case — baked an empty plan into the draft forever, and the pregen's own
+        // hardcoded improvement silently never applied on levelling up in play.
+        // Reinstating that gate fails nothing else in this file, because both
+        // plan-less-fallback tests below strip the plan by hand rather than relying on
+        // a fresh pregen build to be plan-less.
+        var built = PregeneratedParty.Build(Content, level: 1)[0];
+        Assert.NotEmpty(built.Draft.AbilityScoreImprovements);
+
+        var ability = built.Draft.AbilityScoreImprovements[0].First;
+        var atFour = PregeneratedParty.Resolve(Content, built.Draft, level: 4);
+
+        Assert.Equal(built.Sheet.AbilityScores[ability] + 2, atFour.Sheet.AbilityScores[ability]);
+    }
+
+    [Fact]
     public void ACreatedCharacterWithAnAsiPlanReceivesExactlyItAtLevelFour()
     {
         // A creation flow's plan, not a pregen's: two abilities at +1 each, the shape a
