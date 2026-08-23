@@ -56,8 +56,10 @@ public sealed record SaveLoadResult(
 /// <c>path</c> (after its rename) — is on disk for <see cref="LoadRun"/> to find. The
 /// very first write for a path has nothing to back up, so it is a plain move instead
 /// — and any <c>.bak</c> already sitting there (left over from a run whose primary
-/// was deleted separately from its backup) is deleted first, so a backup can never
-/// predate the primary beside it and get resurrected as that primary's history.
+/// was deleted separately from its backup) is deleted after the move lands the new
+/// primary — never before, so a crash between the two steps still leaves a loadable
+/// file — and a backup can then never predate the primary beside it and get
+/// resurrected as that primary's history.
 /// </para>
 /// <para>
 /// <b>Loading falls back to the backup</b> when the primary is missing or fails to parse
