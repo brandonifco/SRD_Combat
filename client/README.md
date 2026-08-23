@@ -120,8 +120,12 @@ godot --path client -- --seed=12345
 
 ## Sprite art
 
-The tokens can be animated pixel-art figures instead of circles. Five animations play,
-queued in the log's own order so each lands where it belongs: an idle loop while
+The tokens can be animated pixel-art figures instead of circles, in principle — every
+drawing actually shipped with the repo today is Brandon's own single still per pose, so
+what "plays" is that still held for its pose's whole duration rather than a moving
+cycle; a multi-frame Craftpix pack, downloaded separately, would animate through its own
+frames the same way. Five poses queue in the log's own order so each lands where it
+belongs: an idle loop while
 standing, the walk cycle as the token glides the engine's recorded path, a swing for
 every attack (Opportunity Attacks included, faced at the target), a flinch as damage
 lands, and the body going down when a creature drops — settling into a corpse, dimmed
@@ -178,9 +182,11 @@ wyrmlings stayed circles until Brandon drew all five in their printed colours
 **The PNGs are deliberately not in the repository.** Craftpix's free license permits
 using the art in a game but not redistributing the assets, and this repo is public —
 the same line the SRD PDF sits behind. To light the sprites up, download the packs
-from [craftpix.net](https://craftpix.net/freebies/) (the free 2D character sets:
-Knight, Gladiator, Elf, Priest, Goblin, Orc, Skeleton, Zombie, Dragon, and the three
-mages) and unpack them so each character's folder of animation strips sits at:
+from [craftpix.net](https://craftpix.net/freebies/) (the free 2D character sets still
+in use: Knight, Gladiator, Elf, Priest, Goblin, and the three mages — Orc, Skeleton,
+Zombie and Dragon are no longer needed, replaced by Brandon's own committed stills or,
+for Dragon, unmapped entirely) and unpack them so each character's folder of animation
+strips sits at:
 
 ```
 client/assets/sprites/<Character>/Idle.png (Walk.png, Attack.png, Hurt.png, Dead.png)
@@ -267,15 +273,18 @@ gone around — which is why the woodland difficult slot wears what used to be i
 obstacle.
 
 One theme is chosen per battlefield from the field's own shape, so a fight always redraws
-the ground it had and the next fight — a different field — differs. **Each ground is a strip of four interchangeable tiles**, cut from the packs' own
-tilesets and picked by seam continuity — how well a tile's opposite edges match, so it
-repeats without a seam — and then by grain. The grain matters as much: a tile with a
-distinct motif tiles seamlessly and still reads as wallpaper, because the motif lands in
-the same place every sixteen pixels and the eye finds the lattice. Fine cobble and gravel
-do not — and one tile over a whole field is a lattice however fine, so the board picks from
-the strip per *ground* tile — three to a movement square each way, so the art is magnified
-about 1.4 times rather than four — by hashing the coordinates — and turns and mirrors it, eight
-orientations per tile, which is what stops the grain running the same way everywhere.
+the ground it had and the next fight — a different field — differs. **Each ground is a
+strip of seven interchangeable tiles**, Brandon's own 48-pixel art (the Craftpix ground
+cuts this replaced are gone — see below), picked by seam continuity — how well a tile's
+opposite edges match, so it repeats without a seam — and then by grain. The grain matters
+as much: a tile with a distinct motif tiles seamlessly and still reads as wallpaper,
+because the motif lands in the same place every sixteen pixels and the eye finds the
+lattice. Fine cobble and gravel do not — and one tile over a whole field is a lattice
+however fine, so the board picks from the strip per *movement square* — one tile fills the
+square now, at the same ~1.4x magnification the old Craftpix layout got from three tiles
+to a square each way, so the resolution argument that shape existed for is moot — by
+hashing the coordinates — and turns and mirrors it, eight orientations per tile, which is
+what stops the grain running the same way everywhere.
 Hashed rather than rolled, so a square keeps its tile and its facing for the whole fight
 instead of crawling underfoot. The ground recedes, the scenery carries the scene, and the board stays readable —
 which is why there are no grid lines over it either. Difficult terrain wears the theme's

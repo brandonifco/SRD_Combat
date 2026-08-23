@@ -19,11 +19,13 @@ namespace SRDCombat.Viewer;
 /// <b>The two maps are curated, and absence is honest.</b> A monster gets art only when
 /// the pack genuinely depicts it — a Goblin Warrior is a goblin, a Skeleton a skeleton —
 /// and a name with no plausible match stays a circle rather than wearing the wrong
-/// body. The dragons are the stated example: the packs hold two colours, so the Red and
-/// White Dragon Wyrmlings get them and the other eight wyrmlings stay circles, because
-/// a red sprite labelled "Green Dragon Wyrmling" would be the display lying about the
-/// one thing a player can check against the log. Party art maps from the class name
-/// (<c>CombatantFeatures.ClassName</c>, the road TurnBanner already uses).
+/// body. The dragons are the stated example: the Craftpix packs held only two colours,
+/// so a red sprite labelled "Green Dragon Wyrmling" would have been the display lying
+/// about the one thing a player can check against the log — which is why all five
+/// chromatic wyrmlings (Black, Blue, Green, Red, White) now wear Brandon's own stills
+/// instead, and the five metallic wyrmlings stay circles for want of a drawing. Party
+/// art maps from the class name (<c>CombatantFeatures.ClassName</c>, the road
+/// TurnBanner already uses).
 /// </para>
 /// </remarks>
 public sealed class SpriteLibrary

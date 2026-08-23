@@ -1880,12 +1880,15 @@ public sealed partial class Encounter
     /// wherever the save came from, and two copies would drift.
     /// </para>
     /// <para>
-    /// The riders are a parameter rather than read from <paramref name="save"/> because
-    /// the two callers have decided differently: an entry imposes every rider the engine
-    /// can execute, a spell passes none until executing spell conditions is its own
-    /// decided piece of work. A rider lands on a failure — or either way when the printed
-    /// outcome is "Failure or Success" — and carries no grapple range, because a save
-    /// effect prints no reach to measure a grapple against.
+    /// The riders are a parameter rather than read from <paramref name="save"/> so each
+    /// caller can gate what it passes at its own call site: a stat-block entry passes its
+    /// save's <c>AppliedConditions</c> directly, and a spell or class feature filters its
+    /// own through <see cref="ConditionRules.CanBeImposed"/> first. Either way every rider
+    /// that reaches here is one the engine executes — a spell's save imposes riders now,
+    /// Hold Person's Paralyzed among them, not the deferred "own piece of work" an earlier
+    /// version of this comment described. A rider lands on a failure — or either way when
+    /// the printed outcome is "Failure or Success" — and carries no grapple range, because
+    /// a save effect prints no reach to measure a grapple against.
     /// </para>
     /// </remarks>
     private void ResolveSaveEffect(

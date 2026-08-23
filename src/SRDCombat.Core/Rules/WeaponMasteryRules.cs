@@ -14,7 +14,7 @@ namespace SRDCombat.Core.Rules;
 /// </para>
 /// <para>
 /// <b>Executed:</b> Sap, Vex, Topple, Graze, Cleave and Slow — six of the eight,
-/// covering 33 of the 38 printed weapons. Sap, Vex and Slow share the per-creature flag
+/// covering 30 of the 38 printed weapons. Sap, Vex and Slow share the per-creature flag
 /// with an author's-turn expiry; Topple and Graze ride the attack that already resolves;
 /// Cleave is its own second swing, whose damage subtracts the positive ability modifier
 /// <c>CombatAttack.AbilityModifier</c> carries for exactly this purpose.

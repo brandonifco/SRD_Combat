@@ -102,13 +102,13 @@ public static class GauntletLadder
     public const int FightsPerCycle = 5;
 
     /// <summary>
-    /// The default ladder: cycles of Low, Moderate, Low, Moderate and then a High
+    /// The default ladder: cycles of Low, Moderate, Low, Low and then a High
     /// milestone, until the run is long enough to carry a party from level 1 to level 5.
     /// </summary>
     /// <remarks>
     /// The length is chosen against the arithmetic rather than picked: a cycle awards
-    /// each character two low, two moderate and one high per-character budget — at
-    /// level 1 that is 350 XP against the old three-fight cycle's 225, near enough the
+    /// each character three low, one moderate and one high per-character budget — at
+    /// level 1 that is 325 XP against the old three-fight cycle's 225, near enough the
     /// same per fight — and reaching level 5 costs 6,500 XP, so a run still needs
     /// roughly thirty fights, arriving at level 5 in the final cycle.
     /// </remarks>
@@ -145,20 +145,25 @@ public static class GauntletLadder
                 // built once and never sees a level — and by its own XP arithmetic the
                 // opening cycle is levels 1-2, which is the tier meant.
                 //
-                // Measured on two seed ranges against a same-build baseline:
-                // died-by-fight-4 15 -> 1 (seeds 1-120) and 14 -> 6 (seeds 200-320),
-                // with the opening band's hit points left rising 78% -> 87% and 79% ->
-                // 85%. Two weaker variants were measured and rejected — one extra Long
-                // Rest at fight 3, and a Hit Die returned on Short Rests at levels 1-2
-                // — because this beat both on early deaths *and* on how much it
-                // inflated the back half.
+                // Measured 2026-08-16 (PR #205, commit 5a3fc94 — the change that
+                // introduced this rule) on two seed ranges against a same-build
+                // baseline, on the ladder and build of the day: died-by-fight-4
+                // 15 -> 1 (seeds 1-120) and 14 -> 6 (seeds 200-320), with the opening
+                // band's hit points left rising 78% -> 87% and 79% -> 85%. Two weaker
+                // variants were measured and rejected on that same build — one extra
+                // Long Rest at fight 3, and a Hit Die returned on Short Rests at
+                // levels 1-2 — because this beat both on early deaths *and* on how
+                // much it inflated the back half. This is a historical record of the
+                // decision, not a current baseline — CLAUDE.md's Pacing row carries
+                // the one to read against today's build.
                 //
-                // That inflation is the honest cost and it is not a defect of this
-                // change: full clears rise 66 -> 72 and 71 -> 78, because more runs
-                // survive to reach an ending that is already too easy (#192). Every
-                // variant tried did it, by the same mechanism. The opening and the
-                // ending are one problem wearing two faces, and the ending needs its
-                // own teeth rather than a lethal first cycle standing in for them.
+                // That inflation was the honest cost and not a defect of the change:
+                // full clears rose 66 -> 72 and 71 -> 78 on that same measurement,
+                // because more runs survived to reach an ending that was already too
+                // easy (#192). Every variant tried did it, by the same mechanism. The
+                // opening and the ending are one problem wearing two faces, and the
+                // ending needs its own teeth rather than a lethal first cycle standing
+                // in for them.
                 RestKind? rest = index == 0
                     ? null
                     : index < FightsPerCycle
