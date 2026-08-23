@@ -155,6 +155,80 @@ public class StalemateTests
     }
 
     [Fact]
+    public void AFightWhereEveryPartyMemberIsPetrifiedOrUnconsciousStillEnds()
+    {
+        // #256, found independently of #278 on a different seed and a mixed rather
+        // than uniform shape — the frozen scene read two Petrified, one Unconscious
+        // and one dead party member against three monsters still standing, idling
+        // "cannot act" / "turn begins, turn ends" to the round limit. Mechanically
+        // this is the same bug as #278 above rather than a second one: standing
+        // means alive and above 0 hit points, so the two Petrified heroes (full
+        // health) are what keeps the fight open, and #278's null-target fallback
+        // already covers them regardless of which side is on the receiving end or
+        // what else litters the field. This pins the mixed shape explicitly so the
+        // duplicate is not left to be rediscovered.
+        var heroA = CombatTestData.Character("korrin", x: 2, y: 2);
+        var heroB = CombatTestData.Character("sable", x: 3, y: 2);
+        var heroC = CombatTestData.Character("brenna", x: 2, y: 3);
+
+        // A fourth party member who dies outright rather than falling Unconscious —
+        // "Aldous dead" in the issue's own frozen scene — built with a monster's
+        // dies-at-zero stats rather than Character()'s, since a character never dies
+        // to hit point loss alone.
+        var heroD = CombatTestData.Combatant(
+            "aldous",
+            stats: CombatTestData.Stats(diesAtZeroHitPoints: true),
+            x: 3,
+            y: 3);
+
+        var monsterA = CombatTestData.Combatant(
+            "monster-a",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 10),
+            x: 6,
+            y: 2);
+
+        var monsterB = CombatTestData.Combatant(
+            "monster-b",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 9),
+            x: 7,
+            y: 2);
+
+        var monsterC = CombatTestData.Combatant(
+            "monster-c",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 8),
+            x: 6,
+            y: 3);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 6),
+            [heroA, heroB, heroC, heroD, monsterA, monsterB, monsterC],
+            new SeededRandomSource(11));
+
+        Assert.True(heroA.AddCondition(ConditionType.Petrified));
+        Assert.True(heroB.AddCondition(ConditionType.Petrified));
+
+        // Brenna: dropped to 0 and Unconscious rather than Petrified — already not
+        // "standing" the instant this lands, exactly like a downed enemy always was.
+        DamageRules.Apply(heroC, 20, DamageType.Slashing);
+        Assert.True(heroC.IsDying);
+
+        // Aldous: dead outright, and dead was never part of this bug — a corpse was
+        // never counted as standing, so it is here only to match the issue's scene.
+        DamageRules.Apply(heroD, 20, DamageType.Slashing);
+        Assert.True(heroD.IsDead);
+
+        SimpleTacticsPolicy.RunToCompletion(encounter);
+
+        // The two Petrified heroes are the only "standing" targets, and the
+        // last resort finishes them the same way it finishes a single statue.
+        Assert.True(encounter.IsComplete);
+        Assert.Equal(CombatTestData.Monsters, encounter.WinningSide);
+    }
+
+    [Fact]
     public void ABodyInADoorwayNoLongerStalematesTheFight()
     {
         // The original stalemate, exactly as it was found: a wall with one gap at
