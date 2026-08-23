@@ -101,7 +101,6 @@ public static class EncounterThemes
             ["Goblin Warrior"] = [EncounterTheme.GoblinoidWarband],
             ["Grimlock"] = [EncounterTheme.SavageHunters],
             ["Skeleton"] = [EncounterTheme.Undead],
-            ["Steam Mephit"] = [EncounterTheme.CultAndFiends],
             ["Swarm of Bats"] = [EncounterTheme.DungeonVermin, EncounterTheme.Undead],
             ["Swarm of Rats"] = [EncounterTheme.DungeonVermin],
             ["Violet Fungus"] = [EncounterTheme.DungeonVermin],

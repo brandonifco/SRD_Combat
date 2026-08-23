@@ -239,7 +239,14 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
    (the Mummy's "and uses Dreadful Glare", the Kraken's "and uses Fling..."), which
    `DescribesTheComposition` waved through with an empty `UnmodelledClauses` because
    the composition it recognises still matches — closed by #341. Assume a seventh
-   exists.
+   exists — it did: a "Failure or Success:" side clause (a cooldown note, an
+   underwater-Resistance note, a memory-theft or HP-max rider) was read as the
+   entry's own Success tier, forcing `SaveSuccessOutcome.SameAsFailure` on the whole
+   entry and over-damaging every successful save on 24 entries — the Steam Mephit's
+   printed "Success: Half damage only." dealt full damage regardless — while the
+   `StartsWith("Failure")` check in `MatchesStructuredForm` waved the dropped clause
+   through with an empty `UnmodelledClauses` on top, the same double failure as the
+   Multiattack case above. Closed by #370. Assume an eighth exists.
 2. **A "does this look mechanical?" keyword filter** let Flyby, Nimble Escape and
    Shape-Shift through as inert. The heuristic was **removed rather than tuned**: a
    keyword list always has false negatives, and a false negative loses a rule.

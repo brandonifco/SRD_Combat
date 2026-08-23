@@ -320,7 +320,12 @@ internal static partial class EntryMechanicsParser
 
         EntryMechanics.SavingThrow =>
             sentence.Contains("Saving Throw:", StringComparison.Ordinal)
-            || sentence.StartsWith("Failure", StringComparison.Ordinal)
+            || (sentence.StartsWith("Failure", StringComparison.Ordinal)
+                // "Failure or Success:" is not the plain Failure clause the save model
+                // already expresses — it is a side clause that rides regardless of the
+                // roll (see ParseSave's remarks) and is left unaccounted here so it is
+                // counted rather than silently dropped.
+                && !sentence.StartsWith("Failure or Success:", StringComparison.Ordinal))
             || sentence.StartsWith("Success", StringComparison.Ordinal),
 
         EntryMechanics.Multiattack => multiattack is not null && DescribesTheComposition(sentence, multiattack),
@@ -578,11 +583,19 @@ internal static partial class EntryMechanicsParser
             ? []
             : ParseDamageList(text[failureIndex..]);
 
-        var success = text.Contains("Failure or Success:", StringComparison.Ordinal)
-            ? SaveSuccessOutcome.SameAsFailure
-            : text.Contains("Success: Half damage", StringComparison.OrdinalIgnoreCase)
-                ? SaveSuccessOutcome.HalfDamage
-                : SaveSuccessOutcome.NoEffect;
+        // "Failure or Success:" is its own tier, not the entry's Success outcome: it
+        // introduces a side clause that fires regardless of the roll — a cooldown note
+        // (17 of the 24 corpus printings), an underwater-Resistance note (Dragon
+        // Turtle, Steam Mephit), a memory-theft or HP-max rider (Aboleth, Succubus), a
+        // revival note (Balor). Every one of the 24 entries printing it also prints a
+        // plain "Success:" governing the actual save result, or omits "Success:"
+        // entirely (meaning no effect on success) — so the outcome is read from that
+        // alone. The "Failure or Success:" clause itself is left in the text for
+        // LeftoverMechanicalSentences (via MatchesStructuredForm, below) to catch and
+        // count rather than silently drop.
+        var success = text.Contains("Success: Half damage", StringComparison.OrdinalIgnoreCase)
+            ? SaveSuccessOutcome.HalfDamage
+            : SaveSuccessOutcome.NoEffect;
 
         return new SaveEffect(ability, dc, ParseArea(text), failureDamage, success, conditions);
     }

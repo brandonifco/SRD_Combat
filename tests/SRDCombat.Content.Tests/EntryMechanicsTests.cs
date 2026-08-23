@@ -263,6 +263,38 @@ public class EntryMechanicsTests
     }
 
     [Fact]
+    public void FailureOrSuccessTierAttachesToItsOwnClauseNotTheWholeEntry()
+    {
+        // "Success: Half damage only. Failure or Success: Being underwater doesn't
+        // grant Resistance to this Fire damage." — before #370, the mere presence of
+        // "Failure or Success:" anywhere in the text forced SuccessOutcome.SameAsFailure
+        // on the whole entry (over-damaging every successful save) and the side clause
+        // itself vanished with an empty UnmodelledClauses, because
+        // StartsWith("Failure") waved it through as though it were the plain Failure
+        // clause the save model already expresses. The tier now attaches to the clause
+        // it actually governs — a cooldown/resistance note that rides regardless of the
+        // roll — and that clause is counted rather than dropped.
+        var breath = Content.MonstersById["monster.steam-mephit"].Entries.Single(entry => entry.Name == "Steam Breath");
+        var save = Assert.IsType<SaveEffect>(breath.Save);
+
+        Assert.Equal(SaveSuccessOutcome.HalfDamage, save.SuccessOutcome);
+        Assert.Contains(
+            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage.",
+            breath.UnmodelledClauses);
+
+        // The same tier prints on an entry with no separate "Success:" line at all —
+        // the Adult Black Dragon's Cloud of Insects — where the correct reading is
+        // NoEffect, not SameAsFailure.
+        var insects = Content.MonstersById["monster.adult-black-dragon"].Entries.Single(entry => entry.Name == "Cloud of Insects");
+        var insectsSave = Assert.IsType<SaveEffect>(insects.Save);
+
+        Assert.Equal(SaveSuccessOutcome.NoEffect, insectsSave.SuccessOutcome);
+        Assert.Contains(
+            "Failure or Success: The dragon can't take this action again until the start of its next turn.",
+            insects.UnmodelledClauses);
+    }
+
+    [Fact]
     public void UsageLimitsComeOffTheEntryName()
     {
         var spray = Content

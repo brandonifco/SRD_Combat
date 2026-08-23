@@ -192,13 +192,15 @@
                 "printedAverage": 10
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The aboleth gains the target's memories if the target is a Humanoid and is reduced to 0 Hit Points by this action."
+          ]
         },
         {
           "name": "Dominate Mind",
@@ -1489,14 +1491,15 @@
                 "printedAverage": 31
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The balor explodes when it dies"
+            "The balor explodes when it dies",
+            "Failure or Success: If the balor dies outside the Abyss, it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss."
           ]
         },
         {
@@ -3168,13 +3171,15 @@
                 "printedAverage": 22
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Frightful Presence",
@@ -3393,13 +3398,15 @@
                 "printedAverage": 33
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Frightful Presence",
@@ -5157,13 +5164,15 @@
                 "printedAverage": 27
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         }
       ],
       "sourcePage": 268
@@ -5418,13 +5427,15 @@
                 "printedAverage": 36
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         }
       ],
       "sourcePage": 269
@@ -8818,14 +8829,15 @@
                 "printedAverage": 24
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "Until the end of its next turn, the target rolls 1d6 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test"
+            "Until the end of its next turn, the target rolls 1d6 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test",
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
           ]
         },
         {
@@ -9061,14 +9073,15 @@
                 "printedAverage": 31
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test"
+            "Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test",
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
           ]
         },
         {
@@ -10545,7 +10558,7 @@
                 "printedAverage": 56
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -10555,7 +10568,9 @@
             "rechargeMinimum": 5
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage."
+          ]
         }
       ],
       "sourcePage": 281
@@ -15228,7 +15243,7 @@
                 "printedAverage": 10
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [
               {
                 "condition": "Incapacitated",
@@ -15245,7 +15260,8 @@
             }
           ],
           "unmodelledClauses": [
-            "Failure: 10 (3d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it re appears in an unoccupied space of the dragon's choice within 120 feet of the dragon"
+            "Failure: 10 (3d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it re appears in an unoccupied space of the dragon's choice within 120 feet of the dragon",
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
           ]
         },
         {
@@ -15490,7 +15506,7 @@
                 "printedAverage": 24
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [
               {
                 "condition": "Incapacitated",
@@ -15507,7 +15523,8 @@
             }
           ],
           "unmodelledClauses": [
-            "Failure: 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon"
+            "Failure: 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon",
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
           ]
         },
         {
@@ -16357,13 +16374,15 @@
                 "printedAverage": 7
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Pounce",
@@ -16584,13 +16603,15 @@
                 "printedAverage": 17
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Pounce",
@@ -20424,14 +20445,15 @@
               "sizeFeet": 15
             },
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The kraken then moves up to its Speed"
+            "The kraken then moves up to its Speed",
+            "Failure or Success: The kraken can't take this action again until the start of its next turn."
           ]
         }
       ],
@@ -20916,13 +20938,15 @@
                 "printedAverage": 31
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The lich can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Frightening Gaze",
@@ -22584,7 +22608,7 @@
                 "printedAverage": 5
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -22594,7 +22618,9 @@
             "rechargeMinimum": 6
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage."
+          ]
         }
       ],
       "sourcePage": 308
@@ -30061,13 +30087,15 @@
                 "printedAverage": 14
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Pounce",
@@ -30325,13 +30353,15 @@
                 "printedAverage": 14
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Pounce",
@@ -30880,7 +30910,7 @@
             "ability": "Constitution",
             "difficultyClass": 25,
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [
               {
                 "condition": "Blinded",
@@ -30912,7 +30942,9 @@
               }
             }
           ],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The solar can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Radiant Teleport",
@@ -31414,14 +31446,15 @@
             "ability": "Constitution",
             "difficultyClass": 16,
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "While the target has any Exhaustion levels, it appears 3d10 years older"
+            "While the target has any Exhaustion levels, it appears 3d10 years older",
+            "Failure or Success: The sphinx can't take this action again until the start of its next turn."
           ]
         }
       ],
@@ -31623,14 +31656,15 @@
             "ability": "Constitution",
             "difficultyClass": 16,
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "While the target has any Exhaustion levels, it appears 3d10 years older"
+            "While the target has any Exhaustion levels, it appears 3d10 years older",
+            "Failure or Success: The sphinx can't take this action again until the start of its next turn."
           ]
         }
       ],
@@ -32788,13 +32822,15 @@
                 "printedAverage": 13
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The target's Hit Point maximum decreases by an amount equal to the damage taken."
+          ]
         },
         {
           "name": "Shape-Shift",
@@ -36559,13 +36595,15 @@
                 "printedAverage": 7
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Frightful Presence",
@@ -36777,13 +36815,15 @@
                 "printedAverage": 14
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Failure or Success: The dragon can't take this action again until the start of its next turn."
+          ]
         },
         {
           "name": "Frightful Presence",
