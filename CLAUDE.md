@@ -44,9 +44,10 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule has two known
-breaks left (spell clause accounting, and Multiattack sub-sentence composition
-clauses — #341) — the Multiattack *replace-clause* hole is closed (#290), and species
+re-rolls the ladder because the seed is not saved); the honesty rule has one known
+break left (Multiattack sub-sentence composition clauses — #341) — the Multiattack
+*replace-clause* hole is closed (#290), the spell lane is answered by retiring a
+signal that could not be derived rather than faking one (#292), and species
 traits are no longer a silent one: none of the 33 printed trait instances execute, but
 `SpeciesTraitRegistry` and `CharacterSheet.UnimplementedFeatures` now say so at
 creation and on the sheet (#291); the undocumented rules gap the review found —
@@ -96,8 +97,9 @@ both creation flows (created parties currently forfeit it silently); break
 concentration on Incapacitated; close the Multiattack replace-clause hole
 (`MatchesStructuredForm`) and regenerate; surface Multiattack sub-sentence
 composition clauses folded into the composition sentence itself (#341); surface
-species traits as unimplemented at creation and on the sheet; populate or retire
-`SpellDefinition.IsFullyModelled`; fix
+species traits as unimplemented at creation and on the sheet; retire
+`SpellDefinition.IsFullyModelled` (#292 — measured, not derivable on spell prose;
+`PreparableSpells` is the authority); fix
 the stall class (#256) and immunity-blind targeting (#224); one doc-drift sweep
 (gauntlet cycle arithmetic, mastery weapon count, stale headers and citations, client
 README). Exit: re-baseline both seed ranges; QC audits the three honesty lanes clean.
@@ -198,6 +200,14 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
   the enum; `IsFullyModelled` is the test. There is no "just prose" state.
 - Anything the model cannot express lands in `UnmodelledClauses` and is **counted**,
   including on entries that are otherwise structured.
+- **Spells are the one exception, and it is stated rather than silent.** A stat block
+  entry is all mechanics in a printed grammar, so a leftover sentence is a lost rule;
+  a spell description is prose that is mostly flavour, and the same accounting run over
+  it is *anti-correlated* with the truth — measured at 7 of 154 "fully modelled", of
+  which two are false positives and thirteen of the seventeen hand-verified spells come
+  out false. So spells carry `UnclassifiedClauses` (non-empty exactly when nothing was
+  classified) and **no completeness signal at all**: `PreparableSpells` is the authority
+  (#292). The reasoning lives on `SpellDefinition.UnclassifiedClauses`.
 - `Narrative` — "confirmed to do nothing in a fight" — is only ever set from a
   curated list, never inferred.
 - An action the engine cannot resolve is **refused with a named code**, never skipped.

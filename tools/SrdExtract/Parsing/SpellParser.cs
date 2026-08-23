@@ -318,7 +318,13 @@ public static partial class SpellParser
                 // sentence hangs off "On a hit", and only a hit can land it.
                 GrantsAdvantageAgainstTargetOnHit =
                     isSpellAttack && SpellEffectParser.ParseNextAttackAdvantage(body),
-                UnmodelledClauses = mechanics == EntryMechanics.Unmodelled
+                // A structured spell carries no clause list, and that is a decision
+                // rather than a gap: the stat-block leftover accounting is measurably
+                // worse than useless on spell prose, so nothing here claims a spell is
+                // fully modelled and PreparableSpells remains the authority. The whole
+                // argument, with the numbers, is on SpellDefinition.UnclassifiedClauses
+                // — read it before wiring an accounting pass in here (#292).
+                UnclassifiedClauses = mechanics == EntryMechanics.Unmodelled
                     ? classified.UnmodelledClauses
                     : [],
                 ScalingText = _scaling.Length > 0 ? _scaling.ToString().Trim() : null,

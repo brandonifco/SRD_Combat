@@ -224,7 +224,48 @@ public class SpellContentTests
 
         Assert.All(
             Content.Spells.Where(spell => spell.Mechanics == EntryMechanics.Unmodelled),
-            spell => Assert.NotEmpty(spell.UnmodelledClauses));
+            spell => Assert.NotEmpty(spell.UnclassifiedClauses));
+    }
+
+    [Fact]
+    public void AStructuredSpellCarriesNoClauseListAndMakesNoCompletenessClaim()
+    {
+        // The invariant the field actually holds, both directions: clauses exactly when
+        // the classifier reached no classification at all. Pinned because the tempting
+        // misreading is the other one — that an empty list means the printed spell is
+        // fully expressed. It does not, and there is no longer a property that says so
+        // (#292): the four spells below classify structurally and are wrong in print,
+        // each for a clause the engine never runs, and PreparableSpells refuses all four.
+        Assert.All(
+            Content.Spells.Where(spell => spell.Mechanics != EntryMechanics.Unmodelled),
+            spell => Assert.Empty(spell.UnclassifiedClauses));
+
+        var counterexamples = new[]
+        {
+            // The Restrained rider is extraction-refused and the only damage the shape
+            // kept is the 2d4 Fire of burning webs, so the structured form is a one-shot
+            // 20-foot Cube of fire — not the printed spell in any part.
+            "spell.web",
+
+            // "A creature must also make this save when the Sphere moves into its space
+            // ..." — the fog persists and moves; the casting is one save and done.
+            "spell.cloudkill",
+
+            // Delayed damage at the end of the target's next turn, and damage on a miss.
+            "spell.acid-arrow",
+
+            // "one of the following effects of your choice" — an effect that is a menu,
+            // of which the shape kept only the fourth bullet's 1d8.
+            "spell.bestow-curse",
+        };
+
+        foreach (var id in counterexamples)
+        {
+            var spell = Content.SpellsById[id];
+
+            Assert.NotEqual(EntryMechanics.Unmodelled, spell.Mechanics);
+            Assert.Empty(spell.UnclassifiedClauses);
+        }
     }
 
     [Fact]

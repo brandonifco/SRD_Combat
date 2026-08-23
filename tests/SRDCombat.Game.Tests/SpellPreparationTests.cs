@@ -115,6 +115,38 @@ public class SpellPreparationTests
     }
 
     [Fact]
+    public void TheMenuIsNotDerivableFromShapeAndNothingInContentClaimsOtherwise()
+    {
+        // Why the registry above is hand-curated rather than a filter, pinned so that
+        // "simplify this to a predicate" fails a test instead of shipping (#292).
+        //
+        // Each of these four passes the shape test — casting them would do something —
+        // and each is wrong in print for a clause the engine never runs. The registry
+        // refuses all four. There is deliberately no SpellDefinition.IsFullyModelled to
+        // catch them either: the stat-block leftover accounting measures worse than
+        // useless on spell prose, so it was retired rather than populated, and this
+        // registry is the authority. The reasoning is on SpellDefinition's
+        // UnclassifiedClauses; this is the assertion behind it.
+        string[] executableButUnfaithful =
+        [
+            "spell.web", "spell.cloudkill", "spell.acid-arrow", "spell.bestow-curse",
+        ];
+
+        foreach (var id in executableButUnfaithful)
+        {
+            var spell = Content.SpellsById[id];
+
+            Assert.True(SpellcastingRules.HasExecutableEffect(spell), $"{spell.Name} lost its shape.");
+            Assert.Empty(spell.UnclassifiedClauses);
+
+            foreach (var classId in new[] { "class.cleric", "class.wizard", "class.ranger" })
+            {
+                Assert.False(PreparableSpells.Allows(classId, id), $"{spell.Name} was offered to {classId}.");
+            }
+        }
+    }
+
+    [Fact]
     public void PreparesInChosenOrderUpToThePrintedColumns()
     {
         var draft = Cleric() with
