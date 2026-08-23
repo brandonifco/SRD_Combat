@@ -240,29 +240,33 @@ public partial class PlayMode : FightScreen
         _dice = new SeededRandomSource(_seed);
         _savePath = ArgumentValue("save") ?? "srdcombat-save.json";
 
+        // Collected rather than appended straight to _interlude: EnterInterlude below
+        // starts every screen with _interlude.Clear(), so anything added before that
+        // call would be wiped before the first frame ever showed it.
+        var startupNotices = new List<string>();
+
         if (HasArgument("continue"))
         {
-            // A save that cannot be read is shown and nothing is started: silently
-            // beginning a fresh run here would overwrite the file being asked about.
-            if (!File.Exists(_savePath))
+            // Falls back to the .bak automatically when the primary is missing or
+            // unreadable — silently beginning a fresh run here would overwrite the file
+            // being asked about, so a genuine failure still stops rather than proceeds.
+            var loaded = SaveFile.LoadRun(_savePath);
+
+            if (loaded.Saved is null)
             {
                 _phase = Phase.RunOver;
-                _interlude.Add($"No save at '{_savePath}'. Pass --save=<path> or start a new run.");
+                _interlude.Add(SaveFile.DescribeUnloadable(_savePath, loaded)
+                    ?? $"No save at '{_savePath}'. Pass --save=<path> or start a new run.");
                 _subtitle = $"seed {_seed}";
                 return;
             }
 
-            try
+            if (loaded.UsedBackup)
             {
-                _run = GauntletRun.Resume(content, RunSave.FromJson(File.ReadAllText(_savePath)));
+                startupNotices.Add($"'{_savePath}' was missing or unreadable; loaded the backup instead.");
             }
-            catch (Exception failure) when (failure is System.Text.Json.JsonException or InvalidDataException)
-            {
-                _phase = Phase.RunOver;
-                _interlude.Add($"Cannot load '{_savePath}': {failure.Message}");
-                _subtitle = $"seed {_seed}";
-                return;
-            }
+
+            _run = GauntletRun.Resume(content, loaded.Saved);
 
             _subtitle = $"continuing after fight {_run.Cleared} of {_run.Ladder.Count} — seed {_seed}";
         }
@@ -278,7 +282,7 @@ public partial class PlayMode : FightScreen
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
-        EnterInterlude([]);
+        EnterInterlude(startupNotices);
     }
 
     /// <summary>
@@ -472,7 +476,7 @@ public partial class PlayMode : FightScreen
 
         if (run.Outcome != RunOutcome.Defeated)
         {
-            File.WriteAllText(_savePath, RunSave.ToJson(run));
+            SaveFile.Write(_savePath, RunSave.ToJson(run));
             after.Add($"Saved to {_savePath}.");
         }
 
