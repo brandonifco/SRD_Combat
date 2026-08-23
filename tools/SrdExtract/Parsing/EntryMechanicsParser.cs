@@ -143,6 +143,22 @@ internal static partial class EntryMechanicsParser
 
         if (ParseMultiattack(text, out var alternativeClause) is { } multiattack)
         {
+            // The alternative branch ParseMultiattack set aside (see its remarks) and any
+            // bundled-use clause folded into the same sentence (see
+            // BundledMultiattackUseClauses' remarks) are not sentences
+            // LeftoverMechanicalSentences would ever find on their own, since the whole
+            // entry is one sentence in every case that prints either. Handing them in
+            // here is what keeps them from vanishing behind DescribesTheComposition
+            // matching the rest of the sentence (#341).
+            var remainder = new List<string>();
+
+            if (alternativeClause.Length > 0)
+            {
+                remainder.Add(CapitalizeFirst(alternativeClause));
+            }
+
+            remainder.AddRange(BundledMultiattackUseClauses(text));
+
             return Build(
                 bareName,
                 section,
@@ -151,14 +167,7 @@ internal static partial class EntryMechanicsParser
                 usage,
                 conditions,
                 multiattack: multiattack,
-                // The alternative branch ParseMultiattack set aside — see its remarks —
-                // is not a sentence LeftoverMechanicalSentences would ever find, since
-                // the whole entry is one sentence in every case that prints one. Handing
-                // it in here is what keeps it from vanishing the way a bundled clause
-                // inside the composition sentence does (#341).
-                extraUnmodelledClauses: alternativeClause.Length > 0
-                    ? [CapitalizeFirst(alternativeClause)]
-                    : null);
+                extraUnmodelledClauses: remainder.Count > 0 ? remainder : null);
         }
 
         if (ParseSave(text, conditions) is { } save)
@@ -498,6 +507,50 @@ internal static partial class EntryMechanicsParser
         // Several named attacks means the creature picks between them, whether the text
         // said "in any combination" or listed them as alternatives.
         return new MultiattackEffect(total, names, names.Count > 1);
+    }
+
+    /// <summary>
+    /// Bundled uses folded into the same sentence as the composition: "and uses Dreadful
+    /// Glare", "or uses Holy Burst twice", ", uses Reel,". Returns each verbatim, ready
+    /// to record as an unmodelled clause.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The Mummy prints "The mummy makes two Rotting Fist attacks and uses Dreadful
+    /// Glare." — one sentence, and <see cref="DescribesTheComposition"/> matches it in
+    /// full, because <see cref="NamedMultiattackPattern"/> finds exactly the "two
+    /// Rotting Fist attacks" the recorded composition expects and says nothing about the
+    /// rest. The composition sentence itself is genuinely fully expressed; "uses
+    /// Dreadful Glare" is a second rule riding inside it, the same way a rider condition
+    /// can ride inside an attack's Hit clause. Before this fix it vanished with an empty
+    /// <c>UnmodelledClauses</c> — the fourteenth-and-counting instance of the goblin's
+    /// conditional-damage bug, and the reason #341 exists.
+    /// </para>
+    /// <para>
+    /// The connector before "uses"/"can use" is what marks a bundled use rather than
+    /// part of the composition: a bare comma (the Roper's "makes two Tentacle attacks,
+    /// uses Reel, and makes two Bite attacks" — the bundled use sits between two
+    /// composition clauses), or "and"/"or" (the Kraken's "and uses Fling, Lightning
+    /// Strike, or Swallow", the Planetar's "or uses Holy Burst twice"). The lazy capture
+    /// stops at the next composition clause (", and makes ...", the Roper's case again)
+    /// or at the sentence's end — not at every comma, because a bundled use can itself
+    /// print a list ("Fling, Lightning Strike, or Swallow").
+    /// </para>
+    /// </remarks>
+    private static IEnumerable<string> BundledMultiattackUseClauses(string text)
+    {
+        foreach (Match match in BundledUsePattern().Matches(text))
+        {
+            var connector = match.Groups["connector"].Value;
+            var clause = match.Groups["clause"].Value.Trim();
+
+            yield return connector switch
+            {
+                "and" => $"And {clause}.",
+                "or" => $"Or {clause}.",
+                _ => CapitalizeFirst(clause) + ".",
+            };
+        }
     }
 
     private static IReadOnlyList<string> SplitAttackNames(string text) => text
@@ -953,6 +1006,13 @@ internal static partial class EntryMechanicsParser
     // make, not attacks to be summed. See ParseMultiattack's remarks.
     [GeneratedRegex(@",?\s*or\s+(?:it|he|she|they)\s+makes\s+.*$", RegexOptions.Singleline)]
     private static partial Regex AlternativeCompositionPattern();
+
+    // See BundledMultiattackUseClauses' remarks for why the lazy capture stops where it
+    // does: at the next composition clause or the sentence's end, not at every comma.
+    [GeneratedRegex(
+        @"(?<connector>,|\band\b|\bor\b)\s+(?<clause>(?:uses|can use)\s+.+?)(?=,\s*and\s+makes\b|\.\s*$|$)",
+        RegexOptions.Singleline)]
+    private static partial Regex BundledUsePattern();
 
     [GeneratedRegex(@"(?<ability>Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+Saving\s+Throw:\s*DC\s*(?<dc>\d+)")]
     private static partial Regex SaveHeaderPattern();
