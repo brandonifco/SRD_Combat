@@ -259,23 +259,34 @@ public sealed class GauntletRun
         SrdContent content,
         IReadOnlyList<LadderStep> ladder,
         IReadOnlyList<PartyMember> party,
-        IReadOnlyList<CharacterState> states)
+        IReadOnlyList<CharacterState> states,
+        int seed)
     {
         _content = content;
         _states = [.. states];
         Ladder = ladder;
         Party = party;
+        Seed = seed;
     }
 
     /// <summary>Starts a run with the pregenerated party.</summary>
+    /// <param name="seed">
+    /// The seed a caller's own dice trace back to. Carried rather than rolled here,
+    /// because the dice themselves live outside <c>GauntletRun</c> — this only remembers
+    /// the value so <see cref="ToSave"/> can persist it, and a reload can hand a fresh
+    /// <c>SeededRandomSource</c> built from the same number to <see cref="PrepareForNext"/>
+    /// and <see cref="BeginNext"/> in place of whatever a fresh run would have rolled.
+    /// Defaults to 0 for callers — mostly tests — that never resume what they start.
+    /// </param>
     public static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<LadderStep>? ladder = null,
-        int startingLevel = 1)
+        int startingLevel = 1,
+        int seed = 0)
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        return Start(content, PregeneratedParty.Build(content, startingLevel), ladder);
+        return Start(content, PregeneratedParty.Build(content, startingLevel), ladder, seed);
     }
 
     /// <summary>
@@ -284,11 +295,13 @@ public sealed class GauntletRun
     /// whoever wrote them, levelling re-resolves them, and defeat-means-reload needs
     /// nothing new.
     /// </summary>
+    /// <param name="seed">See the pregenerated-party overload's remarks.</param>
     public static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<CharacterDraft> drafts,
         IReadOnlyList<LadderStep>? ladder = null,
-        int startingLevel = 1)
+        int startingLevel = 1,
+        int seed = 0)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(drafts);
@@ -298,7 +311,7 @@ public sealed class GauntletRun
             .Select((draft, index) => ResolveMember(content, draft, startingLevel, x: 0, y: index))
             .ToArray();
 
-        var run = Start(content, [.. resolved.Select(pair => pair.Member)], ladder);
+        var run = Start(content, [.. resolved.Select(pair => pair.Member)], ladder, seed);
         run._levelUps.AddRange(resolved.Select(pair => pair.AsiDefaultNotice).OfType<string>());
 
         return run;
@@ -307,7 +320,8 @@ public sealed class GauntletRun
     private static GauntletRun Start(
         SrdContent content,
         IReadOnlyList<PartyMember> party,
-        IReadOnlyList<LadderStep>? ladder)
+        IReadOnlyList<LadderStep>? ladder,
+        int seed)
     {
         var rungs = ladder ?? GauntletLadder.Default();
 
@@ -316,7 +330,7 @@ public sealed class GauntletRun
             throw new ArgumentException("A run needs at least one rung.", nameof(ladder));
         }
 
-        return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)]);
+        return new GauntletRun(content, rungs, party, [.. party.Select(CharacterState.Fresh)], seed);
     }
 
     /// <summary>
@@ -327,7 +341,11 @@ public sealed class GauntletRun
     /// The party comes back exactly as strong as the rules make it from what was saved —
     /// a save holds no derived numbers, so there is nothing on disk for the rules to
     /// disagree with. Validation of the file itself is <see cref="RunSave.FromJson"/>'s;
-    /// this trusts its argument the way <see cref="Start"/> trusts the content.
+    /// this trusts its argument the way <see cref="Start"/> trusts the content — a
+    /// missing <see cref="SavedRun.Seed"/> falls back to 0 rather than throwing, exactly
+    /// as a missing <see cref="SavedRun.GoldCopper"/> falls back to an empty purse,
+    /// because a real save file never reaches here without one:
+    /// <see cref="RunSave.FromJson"/> refuses that file outright.
     /// </remarks>
     public static GauntletRun Resume(SrdContent content, SavedRun saved)
     {
@@ -343,7 +361,8 @@ public sealed class GauntletRun
             content,
             saved.Ladder,
             [.. resolved.Select(pair => pair.Member)],
-            [.. saved.Members.Select(member => member.State)])
+            [.. saved.Members.Select(member => member.State)],
+            saved.Seed ?? 0)
         {
             Cleared = saved.Cleared,
             GoldCopper = saved.GoldCopper,
@@ -369,7 +388,15 @@ public sealed class GauntletRun
         Members = [.. Party.Zip(_states, (member, state) => new SavedMember(member.Draft, state))],
         Casualties = [.. _casualties],
         GoldCopper = GoldCopper,
+        Seed = Seed,
     };
+
+    /// <summary>
+    /// The seed a caller's dice for this run trace back to. See the pregenerated-party
+    /// <see cref="Start(SrdContent, IReadOnlyList{LadderStep}?, int, int)"/> overload's
+    /// remarks for what it is for.
+    /// </summary>
+    public int Seed { get; }
 
     /// <summary>The rungs, in order.</summary>
     public IReadOnlyList<LadderStep> Ladder { get; }

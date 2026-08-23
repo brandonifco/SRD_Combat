@@ -56,6 +56,22 @@ public sealed record SavedRun
     /// existed loads as a party that has not been paid yet rather than being refused.
     /// </summary>
     public int GoldCopper { get; init; }
+
+    /// <summary>
+    /// The seed every draw this run has made — rests, encounter draws, combat rolls —
+    /// traces back to. Persisted so a reload can hand <see cref="GauntletRun.PrepareForNext"/>
+    /// and <see cref="GauntletRun.BeginNext"/> a fresh <c>SeededRandomSource</c> built
+    /// from the same number, rather than a freshly rolled one, so the fight that ended
+    /// the run comes back exactly instead of being re-rolled.
+    /// </summary>
+    /// <remarks>
+    /// Nullable, deliberately, rather than <c>required</c>: a save written before this
+    /// field existed carries none, and <see cref="RunSave.FromJson"/> reads that absence
+    /// itself and refuses the file with a named reason — unlike <see cref="GoldCopper"/>,
+    /// there is no honest default seed to invent, because inventing one would make "the
+    /// same fight" a lie the very first time this exact save is continued.
+    /// </remarks>
+    public int? Seed { get; init; }
 }
 
 /// <summary>
@@ -94,6 +110,13 @@ public static class RunSave
         {
             throw new InvalidDataException(
                 $"Save format {saved.FormatVersion} is not this build's {CurrentFormatVersion}; refusing to guess.");
+        }
+
+        if (saved.Seed is null)
+        {
+            throw new InvalidDataException(
+                "This save predates seed tracking, so --continue cannot reconstruct the same next " +
+                "fight from it; start a new run.");
         }
 
         if (saved.Ladder.Count == 0)

@@ -111,6 +111,53 @@ public class RunSaveTests
         }
     }
 
+    /// <summary>
+    /// The acceptance test for #286: defeat never touches the save (it holds the state
+    /// after the last <em>won</em> fight), so "reload after defeat retries the same
+    /// fight" is exactly "loading this save twice and building its next fight builds
+    /// the same encounter both times" — which is what a real <c>--continue</c> does on
+    /// each fresh process, seeding its dice from <see cref="GauntletRun.Seed"/> rather
+    /// than rolling a new one.
+    /// </summary>
+    [Fact]
+    public void ContinuingAfterDefeatBuildsTheSameNextFightEachTime()
+    {
+        var json = RunSave.ToJson(RunWithHistory());
+
+        Fight ContinueAndBeginNext()
+        {
+            var run = GauntletRun.Resume(Content, RunSave.FromJson(json));
+            var random = new SeededRandomSource(run.Seed);
+
+            run.PrepareForNext(random);
+            return run.BeginNext(random);
+        }
+
+        var first = ContinueAndBeginNext();
+        var second = ContinueAndBeginNext();
+
+        Assert.Equal(
+            first.Built.Monsters.Select(monster => monster.Name),
+            second.Built.Monsters.Select(monster => monster.Name));
+        Assert.Equal(
+            first.Encounter.Combatants.Select(combatant => (combatant.Name, combatant.Position)),
+            second.Encounter.Combatants.Select(combatant => (combatant.Name, combatant.Position)));
+    }
+
+    [Fact]
+    public void LoadRefusesASaveWithoutASeed()
+    {
+        // The exact shape of a save written before #286: everything else is fine, but
+        // there is no seed to rebuild the next fight from, and inventing one would make
+        // "the same fight" a lie the moment this file is continued.
+        var saved = RunWithHistory().ToSave() with { Seed = null };
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => RunSave.FromJson(ContentSerializer.Serialize(saved)));
+
+        Assert.Contains("seed", failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void LoadRejectsAnUnknownProperty()
     {

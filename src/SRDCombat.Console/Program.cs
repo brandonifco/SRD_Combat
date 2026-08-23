@@ -71,6 +71,13 @@ if (ContinueRequested(args))
 
     run = GauntletRun.Resume(content, loaded.Saved);
 
+    // The save's own seed replaces whatever --seed or the initial roll gave this
+    // process: continuing is a fresh process, so without this the next fight — and
+    // everything rolled after it — would be re-rolled from a seed that has nothing to
+    // do with the run being resumed, which is the exact bug this fixes (#286).
+    seed = run.Seed;
+    random = new SeededRandomSource(seed);
+
     Console.WriteLine($"SRD_Combat — continuing after fight {run.Cleared} of {run.Ladder.Count} (seed {seed})");
 
     // A save written before creation asked for a level-4 Ability Score Improvement plan
@@ -95,11 +102,11 @@ else
             return 0;
         }
 
-        run = GauntletRun.Start(content, drafts, GauntletLadder.Default());
+        run = GauntletRun.Start(content, drafts, GauntletLadder.Default(), seed: seed);
     }
     else
     {
-        run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1);
+        run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1, seed);
     }
 
     Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");

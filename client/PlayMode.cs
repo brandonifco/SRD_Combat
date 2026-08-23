@@ -268,6 +268,14 @@ public partial class PlayMode : FightScreen
 
             _run = GauntletRun.Resume(content, loaded.Saved);
 
+            // The save's own seed replaces whatever --seed or the initial roll gave this
+            // process: continuing is a fresh process, so without this the next fight —
+            // and everything rolled after it — would be re-rolled from a seed that has
+            // nothing to do with the run being resumed, which is the exact bug this
+            // fixes (#286).
+            _seed = _run.Seed;
+            _dice = new SeededRandomSource(_seed);
+
             _subtitle = $"continuing after fight {_run.Cleared} of {_run.Ladder.Count} — seed {_seed}";
         }
         else
@@ -277,8 +285,8 @@ public partial class PlayMode : FightScreen
                 : 1;
 
             _run = CreatedDrafts is not null
-                ? GauntletRun.Start(content, CreatedDrafts)
-                : GauntletRun.Start(content, GauntletLadder.Default(), level);
+                ? GauntletRun.Start(content, CreatedDrafts, seed: _seed)
+                : GauntletRun.Start(content, GauntletLadder.Default(), level, _seed);
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
