@@ -44,9 +44,11 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule has one known
-break left (Multiattack sub-sentence composition clauses — #341) — the Multiattack
-*replace-clause* hole is closed (#290), the spell lane is answered by retiring a
+re-rolls the ladder because the seed is not saved); the honesty rule's known
+Multiattack breaks are closed — the *replace-clause* hole (#290), alternative
+compositions that were summed instead of chosen between (#342), and the fourteen
+sub-sentence composition clauses folded inside a composition sentence that read as
+fully modelled (#341) — the spell lane is answered by retiring a
 signal that could not be derived rather than faking one (#292), and species
 traits are no longer a silent one: none of the 33 printed trait instances execute, but
 `SpeciesTraitRegistry` and `CharacterSheet.UnimplementedFeatures` now say so at
@@ -221,11 +223,16 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
    *looked* implemented. **A partly-structured entry is more dangerous than an
    unstructured one**, because the missing part is invisible. This shape has recurred
    four times (rider gating, save-spell effects, Failure-tier sentences, and
-   Multiattack replace-clauses — closed by #290). Assume a fifth exists — it did:
-   a Multiattack's own composition sentence can fold an unexecuted rule inside itself
+   Multiattack replace-clauses — closed by #290). Assume a fifth exists — it did,
+   twice: a Multiattack can print two whole alternative compositions joined by "or
+   it/he/she/they makes" and have both summed into one attack count instead of the
+   model taking the printed default and accounting the rest (the Clay Golem swung
+   five Slams a turn against a printed maximum of three — closed by #342); and a
+   Multiattack's own composition sentence can fold an unexecuted rule inside itself
    (the Mummy's "and uses Dreadful Glare", the Kraken's "and uses Fling..."), which
-   `DescribesTheComposition` waves through with an empty `UnmodelledClauses` because
-   the composition it recognises still matches. Filed as #341.
+   `DescribesTheComposition` waved through with an empty `UnmodelledClauses` because
+   the composition it recognises still matches — closed by #341. Assume a seventh
+   exists.
 2. **A "does this look mechanical?" keyword filter** let Flyby, Nimble Escape and
    Shape-Shift through as inert. The heuristic was **removed rather than tuned**: a
    keyword list always has false negatives, and a false negative loses a rule.
