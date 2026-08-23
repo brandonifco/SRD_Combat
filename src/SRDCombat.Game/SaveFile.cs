@@ -56,8 +56,10 @@ public sealed record SaveLoadResult(
 /// <c>path</c> (after its rename) — is on disk for <see cref="LoadRun"/> to find. The
 /// very first write for a path has nothing to back up, so it is a plain move instead
 /// — and any <c>.bak</c> already sitting there (left over from a run whose primary
-/// was deleted separately from its backup) is deleted first, so a backup can never
-/// predate the primary beside it and get resurrected as that primary's history.
+/// was deleted separately from its backup) is deleted after the move lands the new
+/// primary — never before, so a crash between the two steps still leaves a loadable
+/// file — and a backup can then never predate the primary beside it and get
+/// resurrected as that primary's history.
 /// </para>
 /// <para>
 /// <b>Loading falls back to the backup</b> when the primary is missing or fails to parse
@@ -113,15 +115,23 @@ public static class SaveFile
             // separately from its backup. Left untouched, that stale backup would
             // predate the new primary being created right now, and LoadRun's fallback
             // could resurrect it as this run's history if the new primary were ever
-            // lost. Clear it first so a backup can never predate the primary beside it.
+            // lost. Clear it — but only AFTER the move lands the new primary. The
+            // reverse order (delete, then move) opens a window with no loadable file
+            // at all, and that window is live: a resume-from-backup whose primary is
+            // missing takes this branch on its very first write, so deleting first
+            // would destroy the one copy the run was just loaded from. Deleting after
+            // keeps "at least one complete file is on disk for LoadRun to find" true
+            // at every crash point; the stale-resurrection hazard only re-opens if the
+            // just-written primary is itself lost before the delete below runs — a
+            // strictly rarer compound than a no-loadable-file window.
             var backupPath = BackupPathFor(path);
+
+            File.Move(tempPath, path);
 
             if (File.Exists(backupPath))
             {
                 File.Delete(backupPath);
             }
-
-            File.Move(tempPath, path);
         }
     }
 
