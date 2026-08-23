@@ -356,7 +356,8 @@ public static class Shop
         int level,
         int index)
     {
-        var @class = content.ClassesById[member.Draft.ClassId];
+        var @class = ContentDrift.Require(
+            content.ClassesById, member.Draft.ClassId, "class", member.Draft.Name);
         var currentAc = member.Sheet.ArmorClass;
 
         // Armor, unless a magic suit is already on the body.

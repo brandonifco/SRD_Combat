@@ -96,16 +96,21 @@ public static class LootTable
             _ = CharacterResolver.Resolve(
                 draft,
                 new CharacterBuildContent(
-                    content.SpeciesById[draft.SpeciesId],
-                    content.ClassesById[draft.ClassId],
-                    content.BackgroundsById[draft.BackgroundId],
+                    ContentDrift.Require(content.SpeciesById, draft.SpeciesId, "species", draft.Name),
+                    ContentDrift.Require(content.ClassesById, draft.ClassId, "class", draft.Name),
+                    ContentDrift.Require(content.BackgroundsById, draft.BackgroundId, "background", draft.Name),
                     content.WeaponsById,
                     content.ArmorById,
                     content.MagicItemsById));
 
             return true;
         }
-        catch (ArgumentException)
+        // The resolver is the authority on whether a draft is legal; a missing content
+        // id is the same verdict by a different door — ContentDrift.Require refuses
+        // with InvalidDataException rather than a bare KeyNotFoundException, and this
+        // is the one caller that treats that refusal as "not a candidate" rather than
+        // surfacing it further.
+        catch (Exception failure) when (failure is ArgumentException or InvalidDataException)
         {
             return false;
         }

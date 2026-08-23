@@ -235,6 +235,74 @@ public class RunSaveTests
         Assert.Equal(20260823, reSaved.Seed);
     }
 
+    /// <summary>
+    /// The acceptance test for #287's primary gate: a save whose content version does
+    /// not match this build's is refused on <see cref="GauntletRun.Resume"/>, before
+    /// anything tries to resolve a single id out of it, with a message naming both —
+    /// truncated for display, per <see cref="RunSave.FromJson"/>'s sibling in
+    /// <c>ContentDrift</c>.
+    /// </summary>
+    [Fact]
+    public void ResumeRefusesAMismatchedContentVersion()
+    {
+        var saved = RunWithHistory().ToSave() with { ContentVersion = "not-a-real-fingerprint" };
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => GauntletRun.Resume(Content, saved));
+
+        Assert.Contains("not-a-real-fingerprint", failure.Message, StringComparison.Ordinal);
+        Assert.Contains(Content.ContentFingerprint[..12], failure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The reversed policy #287 shipped with after review: a save written before it
+    /// existed carries no content version, and that is not refused — there is no
+    /// coarse comparison to make without one, so <see cref="GauntletRun.Resume"/>
+    /// falls through to checking every id it resolves, exactly as it always does for
+    /// the same-version edge case.
+    /// </summary>
+    [Fact]
+    public void ResumeAcceptsASaveWithNoContentVersionAndFallsThroughToPerIdChecks()
+    {
+        var saved = RunWithHistory().ToSave() with { ContentVersion = null };
+
+        var run = GauntletRun.Resume(Content, saved);
+
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+
+        // The next autosave stamps the currently loaded content's fingerprint
+        // regardless of what the resumed save had, so the gap does not persist.
+        Assert.Equal(Content.ContentFingerprint, run.ToSave().ContentVersion);
+    }
+
+    /// <summary>
+    /// The acceptance test for #287's backstop: even with a save's content version
+    /// matching (so <see cref="GauntletRun.Resume"/>'s own coarse gate has nothing to
+    /// catch), a draft naming a class this content build does not have refuses cleanly
+    /// rather than throwing a bare <see cref="KeyNotFoundException"/> — the crash the
+    /// review found, past both clients' exception filters.
+    /// </summary>
+    [Fact]
+    public void ResumingRefusesADraftNamingAClassThisContentDoesNotHave()
+    {
+        var saved = RunWithHistory().ToSave();
+        var tampered = saved with
+        {
+            Members =
+            [
+                saved.Members[0] with
+                {
+                    Draft = saved.Members[0].Draft with { ClassId = "class.nonexistent" },
+                },
+                .. saved.Members.Skip(1),
+            ],
+        };
+
+        var failure = Assert.Throws<InvalidDataException>(() => GauntletRun.Resume(Content, tampered));
+
+        Assert.Contains("class.nonexistent", failure.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void LoadRejectsAnUnknownProperty()
     {

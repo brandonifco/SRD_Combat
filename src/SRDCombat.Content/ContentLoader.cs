@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using SRDCombat.Content.Validation;
 using SRDCombat.Core.Definitions;
 
@@ -37,6 +39,53 @@ public sealed record SrdContent(
 
     public IReadOnlyDictionary<string, SpellDefinition> SpellsById { get; } =
         Spells.ToDictionary(spell => spell.Id, StringComparer.Ordinal);
+
+    /// <summary>
+    /// A stable fingerprint of every id this content build knows — every monster,
+    /// weapon, armor, species, background, class, spell and magic item, by id alone,
+    /// not by the numbers behind them. Two loads with the exact same roster of ids
+    /// fingerprint identically even if a description changed underneath; a roster that
+    /// gained, lost or renamed anything fingerprints differently.
+    /// </summary>
+    /// <remarks>
+    /// This is the coarse, cheap gate a save's <c>ContentVersion</c> is checked
+    /// against — deliberately coarse, in the same spirit as <c>FormatVersion</c>:
+    /// rather than working out whether a specific save's referenced ids happen to
+    /// survive a content rebuild, refuse the whole rebuild as a mismatch and let the
+    /// player re-roll a run. The four <c>TryGetValue</c> conversions
+    /// (<c>PregeneratedParty</c>, <c>Gauntlet</c>, <c>Loot</c>, <c>Shop</c>) are the
+    /// backstop for the same-version edge case this fingerprint cannot see — a
+    /// hand-edited save, or a content id renamed without the roster otherwise moving.
+    /// </remarks>
+    public string ContentFingerprint { get; } = Fingerprint(
+        Monsters, Weapons, Armor, Species, Backgrounds, Classes, Spells, MagicItems);
+
+    private static string Fingerprint(
+        IReadOnlyList<MonsterDefinition> monsters,
+        IReadOnlyList<WeaponDefinition> weapons,
+        IReadOnlyList<ArmorDefinition> armor,
+        IReadOnlyList<SpeciesDefinition> species,
+        IReadOnlyList<BackgroundDefinition> backgrounds,
+        IReadOnlyList<ClassDefinition> classes,
+        IReadOnlyList<SpellDefinition> spells,
+        IReadOnlyList<MagicItemDefinition> magicItems)
+    {
+        var ids = new List<string>();
+
+        ids.AddRange(monsters.Select(item => "monster:" + item.Id));
+        ids.AddRange(weapons.Select(item => "weapon:" + item.Id));
+        ids.AddRange(armor.Select(item => "armor:" + item.Id));
+        ids.AddRange(species.Select(item => "species:" + item.Id));
+        ids.AddRange(backgrounds.Select(item => "background:" + item.Id));
+        ids.AddRange(classes.Select(item => "class:" + item.Id));
+        ids.AddRange(spells.Select(item => "spell:" + item.Id));
+        ids.AddRange(magicItems.Select(item => "magicItem:" + item.Id));
+        ids.Sort(StringComparer.Ordinal);
+
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', ids)));
+
+        return Convert.ToHexString(hash);
+    }
 }
 
 /// <summary>

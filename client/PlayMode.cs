@@ -269,7 +269,33 @@ public partial class PlayMode : FightScreen
                 startupNotices.Add($"'{_savePath}' was missing or unreadable; loaded the backup instead.");
             }
 
-            _run = GauntletRun.Resume(content, loaded.Saved);
+            // A save written before #287 carries no content version to compare in
+            // bulk; GauntletRun.Resume falls through to checking every id it resolves
+            // one at a time instead, exactly as it always has for a same-version edge
+            // case.
+            if (loaded.Saved.ContentVersion is null)
+            {
+                startupNotices.Add(
+                    "This save carries no content version; everything it names is checked " +
+                    "against the loaded content piece by piece instead.");
+            }
+
+            // GauntletRun.Resume refuses two ways: a present content version that
+            // disagrees with what is loaded, and — per id, regardless of version — a
+            // species, class, background or other content name the loaded content
+            // does not have. Either way this is a printed message, never a crash, and
+            // the file itself is never touched.
+            try
+            {
+                _run = GauntletRun.Resume(content, loaded.Saved);
+            }
+            catch (InvalidDataException failure)
+            {
+                _phase = Phase.RunOver;
+                _interlude.Add($"Cannot resume '{_savePath}': {failure.Message}");
+                _subtitle = $"seed {_seed}";
+                return;
+            }
 
             // A save written before #286 carries no seed at all. There is an honest
             // thing to do here that there is not for a content-version mismatch: roll

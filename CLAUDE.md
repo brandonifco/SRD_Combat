@@ -43,12 +43,13 @@ committed instrument, all print-faithful or refused with a named code.
 
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
-identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule has three known
-breaks (species traits, spell clause accounting, and Multiattack sub-sentence
-composition clauses — #341) — the Multiattack *replace-clause* hole is closed
-(#290); the undocumented rules gap the review found — concentration surviving
-Incapacitated — is fixed (#289); the art pipeline is unrepeatable and one sprite in
+identical; the run has no route choice, loot decisions or ironman stakes; the honesty
+rule has three known breaks (species traits, spell clause accounting, and Multiattack
+sub-sentence composition clauses — #341) — the Multiattack *replace-clause* hole is
+closed (#290); the undocumented rules gap the review found — concentration surviving
+Incapacitated — is fixed (#289); a reload used to re-roll the ladder because the seed
+was not saved, and a save-vs-content mismatch used to crash instead of refusing — both
+closed (#286, #287); the art pipeline is unrepeatable and one sprite in
 ~60 matches the project's own palette. **The finishing plan below is
 the ordered answer.**
 

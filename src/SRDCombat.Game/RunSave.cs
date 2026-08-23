@@ -37,6 +37,18 @@ public sealed record SavedRun
     /// Bumped when the save format changes incompatibly. A file with any other version
     /// is refused rather than guessed at — the same rule the content loader follows.
     /// </summary>
+    /// <remarks>
+    /// <b>The rule for adding a field, stated once here rather than re-litigated per
+    /// field:</b> a new field that a save written before it existed can honestly do
+    /// without — a default with a real meaning (<see cref="GoldCopper"/>'s empty
+    /// purse), a value the client can migrate on load and re-stamp on the next
+    /// autosave (<see cref="Seed"/>'s roll, <see cref="ContentVersion"/>'s
+    /// piece-by-piece fallback) — is nullable or defaulted, and its absence is never
+    /// refused. A field with no honest thing to do about its absence is not a new
+    /// field at all; it is a format break, and belongs behind a bump of
+    /// <see cref="RunSave.CurrentFormatVersion"/> and this property's own check, the
+    /// one gate in <see cref="RunSave.FromJson"/> that refuses on structure alone.
+    /// </remarks>
     public required int FormatVersion { get; init; }
 
     /// <summary>The whole ladder, so authored ladders reload exactly.</summary>
@@ -73,6 +85,33 @@ public sealed record SavedRun
     /// this field at all.
     /// </remarks>
     public int? Seed { get; init; }
+
+    /// <summary>
+    /// The <see cref="SrdContent.ContentFingerprint"/> of the content this run was
+    /// last saved against.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Checked in <see cref="GauntletRun.Resume"/>, not here — <see cref="RunSave.FromJson"/>
+    /// validates the file's own structure and nothing content-dependent, the same
+    /// division <see cref="Seed"/>'s remarks describe. A <em>present</em> value that
+    /// disagrees with the loaded content's fingerprint is refused there: two builds'
+    /// content can differ in ways a single id lookup would never catch (an id
+    /// survives, a number behind it changed), so a whole-roster mismatch is refused
+    /// outright rather than guessed at.
+    /// </para>
+    /// <para>
+    /// A <em>missing</em> value — a save written before #287 — is not refused. There
+    /// is no coarse comparison to make without one, so <c>Resume</c> falls through to
+    /// resolving every character normally; <c>ContentDrift.Require</c>'s per-id
+    /// checks are what actually catch drift for a save in this state, the same
+    /// backstop that also covers the rarer same-version edge case. Every
+    /// <see cref="GauntletRun.ToSave"/> call stamps the <em>currently loaded</em>
+    /// content's fingerprint regardless of what a resumed save had, so a run in this
+    /// state carries a real value again after its very next autosave.
+    /// </para>
+    /// </remarks>
+    public string? ContentVersion { get; init; }
 }
 
 /// <summary>
@@ -98,9 +137,16 @@ public static class RunSave
     }
 
     /// <summary>
-    /// Deserializes and validates a save. Anything malformed is refused with a reason,
-    /// never repaired silently.
+    /// Deserializes and validates a save's own structure. Anything malformed is
+    /// refused with a reason, never repaired silently.
     /// </summary>
+    /// <remarks>
+    /// Content-dependent checks — <see cref="SavedRun.ContentVersion"/> against the
+    /// loaded content's fingerprint, every id a draft names — are not this method's:
+    /// this has no content to check against, by design, the same way it trusts
+    /// <see cref="SavedRun.Seed"/> without rolling one. <see cref="GauntletRun.Resume"/>
+    /// is where a save meets content, and it is where both those checks live.
+    /// </remarks>
     public static SavedRun FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
