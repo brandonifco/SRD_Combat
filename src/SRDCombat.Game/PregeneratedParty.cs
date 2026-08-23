@@ -239,7 +239,7 @@ public static class PregeneratedParty
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Athletics", "Perception"],
         FightingStyle = FightingStyle.Defense,
-        AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
+        AbilityScoreImprovements = ImprovementsAt(Ability.Strength),
         // The Javelin is the printed Fighter's ranged half — starting option A hands one
         // eight of them — and without it three of the four pregens could not act at all
         // on the approach round. That is very likely part of why every ranged and
@@ -267,7 +267,7 @@ public static class PregeneratedParty
         PrimaryIncrease = Ability.Strength,
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Athletics", "Survival"],
-        AbilityScoreImprovements = ImprovementsAt(level, Ability.Strength),
+        AbilityScoreImprovements = ImprovementsAt(Ability.Strength),
         // Greataxe and four Handaxes is the printed starting kit exactly — option A —
         // and the axes were simply missing. They are Thrown at 20/60, so the Barbarian
         // has something to do before contact.
@@ -293,7 +293,7 @@ public static class PregeneratedParty
         SecondaryIncrease = Ability.Constitution,
         ChosenSkills = ["Stealth", "Acrobatics"],
         ExpertiseSkills = ["Stealth", "Acrobatics"],
-        AbilityScoreImprovements = ImprovementsAt(level, Ability.Dexterity),
+        AbilityScoreImprovements = ImprovementsAt(Ability.Dexterity),
         WeaponIds = ["weapon.shortsword", "weapon.shortbow"],
         // Both carry Vex, which compounds with Sneak Attack: a hit buys Advantage on the
         // next swing at the same target, and Advantage is what Sneak Attack wants.
@@ -320,7 +320,7 @@ public static class PregeneratedParty
         // taking, and its Arcana/Religion bonus rides checks no fight rolls.
         DivineOrder = DivineOrder.Protector,
         ChosenSkills = ["Insight", "Religion"],
-        AbilityScoreImprovements = ImprovementsAt(level, Ability.Wisdom),
+        AbilityScoreImprovements = ImprovementsAt(Ability.Wisdom),
         ChosenSpellIds = SpellIdsFor("class.cleric"),
         WeaponIds = ["weapon.mace"],
         ArmorId = "armor.chain-shirt",
@@ -340,13 +340,26 @@ public static class PregeneratedParty
     /// hit and +1 damage from level 4 on.
     /// </para>
     /// <para>
-    /// Gated on the level here rather than in the resolver so the draft always describes
-    /// a character who has actually earned it, which keeps <c>Resolve</c> honest when
-    /// levelling re-resolves this same draft further up the ladder.
+    /// <b>Unconditional, deliberately (#330).</b> This used to gate on
+    /// <c>level &gt;= 4</c>, on the reasoning that the draft should only describe a
+    /// character who has actually earned the feat. That reasoning was backwards: a
+    /// draft is the character's <em>plan</em> at every level, the same way
+    /// <see cref="CharacterDraft.AbilityScoreImprovements"/>'s own doc comment states
+    /// for a created character's — <c>CharacterResolver.ApplyAbilityScoreImprovements</c>
+    /// already takes only as many entries as the class table's allowance at the
+    /// resolved level allows, so a plan present before level 4 has no effect until
+    /// level 4 actually arrives. Gating here instead meant a draft built at level 1
+    /// (every fresh gauntlet) carried an *empty* plan forever — <c>GauntletRun</c>
+    /// stores and re-resolves that same draft object on every level-up rather than
+    /// rebuilding it at <see cref="Fighter"/>/<see cref="Barbarian"/>/etc.'s target
+    /// level — so the pregenerated party's own hardcoded Ability Score Improvement
+    /// silently never landed on the overwhelmingly common path: a run that starts at
+    /// level 1 and levels up in play. Only a run started directly at level 4+ (a
+    /// debug/test convenience, not how anyone plays) ever saw it.
     /// </para>
     /// </remarks>
-    private static IReadOnlyList<AbilityScoreImprovement> ImprovementsAt(int level, Ability ability) =>
-        level >= 4 ? [new AbilityScoreImprovement { First = ability }] : [];
+    private static IReadOnlyList<AbilityScoreImprovement> ImprovementsAt(Ability ability) =>
+        [new AbilityScoreImprovement { First = ability }];
 
     private static Dictionary<Ability, int> Scores(
         int strength,

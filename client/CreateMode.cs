@@ -48,6 +48,9 @@ public partial class CreateMode : FightScreen
         Armor,
         Shield,
         Mastery,
+        AbilityImprovementShape,
+        AbilityImprovementFirst,
+        AbilityImprovementSecond,
         Spells,
         Summary,
     }
@@ -73,6 +76,9 @@ public partial class CreateMode : FightScreen
     private string? _armorId;
     private bool _shield;
     private readonly List<string> _masteries = [];
+    private bool _asiSplit;
+    private Ability? _asiFirst;
+    private Ability? _asiSecond;
     private readonly List<string> _spells = [];
     private string? _refusal;
     private PartyMember? _preview;
@@ -192,6 +198,16 @@ public partial class CreateMode : FightScreen
                     .Where(ability => ability != _primaryIncrease)
                     .ElementAt(index);
                 AdvancePastIncreases();
+                return;
+            case Step.AbilityImprovementFirst:
+                _asiFirst = Enum.GetValues<Ability>()[index];
+                _step = _asiSplit ? Step.AbilityImprovementSecond : AfterAsi();
+                _browsed = -1;
+                return;
+            case Step.AbilityImprovementSecond:
+                _asiSecond = Enum.GetValues<Ability>().Where(ability => ability != _asiFirst).ElementAt(index);
+                _step = AfterAsi();
+                _browsed = -1;
                 return;
             default:
                 _browsed = index;
@@ -371,9 +387,19 @@ public partial class CreateMode : FightScreen
         CharacterCreation.GrantsDivineOrder(_class!, 1) ? Step.Order : Step.Weapon;
 
     private Step AfterShield() =>
-        CharacterCreation.MasteryAllowance(_class!, 1) > 0 ? Step.Mastery
-        : CharacterCreation.SpellOptions(_content, _class!).Count > 0 ? Step.Spells
-        : Step.Summary;
+        CharacterCreation.MasteryAllowance(_class!, 1) > 0 ? Step.Mastery : AfterMastery();
+
+    /// <summary>
+    /// The level 4 Ability Score Improvement plan, asked right after Mastery and before
+    /// Spells — the same "plan for later" grouping the spell menu already uses. Every
+    /// launch class grants it at 4, but the check stays a rule rather than an assumption
+    /// (#288).
+    /// </summary>
+    private Step AfterMastery() =>
+        CharacterCreation.GrantsAbilityScoreImprovement(_class!, level: 4) ? Step.AbilityImprovementShape : AfterAsi();
+
+    private Step AfterAsi() =>
+        CharacterCreation.SpellOptions(_content, _class!).Count > 0 ? Step.Spells : Step.Summary;
 
     private void ChooseShield(bool carry)
     {
@@ -384,9 +410,16 @@ public partial class CreateMode : FightScreen
 
     private void FinishMastery()
     {
-        _step = CharacterCreation.SpellOptions(_content, _class!).Count > 0 ? Step.Spells : Step.Summary;
+        _step = AfterMastery();
         _browsed = -1;
         _rowScroll = 0;
+    }
+
+    private void ChooseAsiShape(bool split)
+    {
+        _asiSplit = split;
+        _step = Step.AbilityImprovementFirst;
+        _browsed = -1;
     }
 
     private void FinishSpells()
@@ -414,6 +447,9 @@ public partial class CreateMode : FightScreen
             ArmorId = _armorId,
             HasShield = _shield,
             WeaponMasteryIds = [.. _masteries],
+            AbilityScoreImprovements = _asiFirst is { } first
+                ? [new AbilityScoreImprovement { First = first, Second = _asiSplit ? _asiSecond : null }]
+                : [],
             ChosenSpellIds = [.. _spells],
         };
 
@@ -460,6 +496,9 @@ public partial class CreateMode : FightScreen
         _armorId = null;
         _shield = false;
         _masteries.Clear();
+        _asiSplit = false;
+        _asiFirst = null;
+        _asiSecond = null;
         _spells.Clear();
         _refusal = null;
         _preview = null;
@@ -514,6 +553,9 @@ public partial class CreateMode : FightScreen
                 break;
             case Step.IncreaseShape:
                 DrawIncreaseShape();
+                break;
+            case Step.AbilityImprovementShape:
+                DrawAbilityImprovementShape();
                 break;
             case Step.Shield:
                 DrawShield();
@@ -638,6 +680,19 @@ public partial class CreateMode : FightScreen
         Action(new Vector2(RowsX, 210), "+1 to each of the three", () => ChooseIncreaseShape(AbilityIncreaseChoice.OneEach));
     }
 
+    private void DrawAbilityImprovementShape()
+    {
+        DrawString(
+            TextFont,
+            new Vector2(RowsX, 140),
+            "Ability Score Improvement (level 4):",
+            fontSize: 14,
+            modulate: Ink);
+
+        Action(new Vector2(RowsX, 170), "+2 to one ability", () => ChooseAsiShape(split: false));
+        Action(new Vector2(RowsX, 210), "+1 to two abilities", () => ChooseAsiShape(split: true));
+    }
+
     private void DrawShield()
     {
         DrawString(TextFont, new Vector2(RowsX, 140), "Carry a Shield? (+2 AC)", fontSize: 14, modulate: Ink);
@@ -690,6 +745,13 @@ public partial class CreateMode : FightScreen
         if (sheet.DivineOrder != DivineOrder.Unspecified)
         {
             Line($"Divine Order: {sheet.DivineOrder}.", Dim);
+        }
+
+        if (_asiFirst is { } asiFirst)
+        {
+            Line(
+                $"Level 4 plan: {(_asiSecond is { } asiSecond ? $"+1 {asiFirst}, +1 {asiSecond}" : $"+2 {asiFirst}")}.",
+                Dim);
         }
 
         if (sheet.UnimplementedFeatures.Count > 0)
@@ -797,6 +859,16 @@ public partial class CreateMode : FightScreen
                     fontSize: 12,
                     modulate: Dim);
                 break;
+            case Step.AbilityImprovementFirst or Step.AbilityImprovementSecond:
+                DrawString(
+                    TextFont,
+                    new Vector2(RowsX, y - 10),
+                    _step == Step.AbilityImprovementFirst
+                        ? (_asiSplit ? "Click the first ability taking +1." : "Click the ability taking +2.")
+                        : "Click the second ability taking +1.",
+                    fontSize: 12,
+                    modulate: Dim);
+                break;
             case Step.Spells:
                 if (_browsed >= 0)
                 {
@@ -847,6 +919,11 @@ public partial class CreateMode : FightScreen
         Step.IncreasePrimary => _background!.AbilityScores.Select(ability => ability.ToString()).ToArray(),
         Step.IncreaseSecondary => _background!.AbilityScores
             .Where(ability => ability != _primaryIncrease)
+            .Select(ability => ability.ToString())
+            .ToArray(),
+        Step.AbilityImprovementFirst => Enum.GetValues<Ability>().Select(ability => ability.ToString()).ToArray(),
+        Step.AbilityImprovementSecond => Enum.GetValues<Ability>()
+            .Where(ability => ability != _asiFirst)
             .Select(ability => ability.ToString())
             .ToArray(),
         Step.Skills => SkillOptions().Select(skill => $"{skill} ({SkillRules.AbilityFor(skill)})").ToArray(),
@@ -965,6 +1042,8 @@ public partial class CreateMode : FightScreen
         Step.Armor => "armor",
         Step.Shield => "shield",
         Step.Mastery => "weapon mastery",
+        Step.AbilityImprovementShape or Step.AbilityImprovementFirst or Step.AbilityImprovementSecond
+            => "ability score improvement",
         Step.Spells => "spells",
         Step.Summary => "summary",
         _ => "?",
@@ -1129,6 +1208,17 @@ public partial class CreateMode : FightScreen
                 ClickRow(0);
                 await Frame();
                 ClickAction("Continue");
+                await Frame();
+            }
+
+            // The level 4 Ability Score Improvement plan: the probe takes the +2 shape,
+            // so a single row click picks the ability and lands straight on whatever
+            // follows (#288).
+            if (_step == Step.AbilityImprovementShape)
+            {
+                ClickAction("+2 to one ability");
+                await Frame();
+                ClickRow(0);
                 await Frame();
             }
 
