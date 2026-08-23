@@ -129,7 +129,7 @@ public static class LootTable
         if (draft.WeaponIds.Count > 0)
         {
             var weaponId = draft.WeaponIds[0];
-            var weaponName = content.WeaponsById[weaponId].Name;
+            var weaponName = ContentDrift.Require(content.WeaponsById, weaponId, "weapon", draft.Name).Name;
 
             var best = rareAllowed ? 2 : 1;
             var current = BonusVariant(draft, "magic-item.weapon-plus-1-plus-2-or-plus-3", weaponId);
@@ -158,7 +158,7 @@ public static class LootTable
         // --- Armour: one enchantment per suit, deliberately. -------------------------
         if (draft.ArmorId is { } armorId && !OwnsAnyArmorItem(content, draft))
         {
-            var armor = content.ArmorById[armorId];
+            var armor = ContentDrift.Require(content.ArmorById, armorId, "armor", draft.Name);
 
             if (rareAllowed)
             {
@@ -235,7 +235,7 @@ public static class LootTable
 
             if (member.Sheet.AbilityScores[Ability.Strength] < 19
                 && draft.WeaponIds.Count > 0
-                && content.WeaponsById[draft.WeaponIds[0]].Kind == WeaponKind.Melee
+                && ContentDrift.Require(content.WeaponsById, draft.WeaponIds[0], "weapon", draft.Name).Kind == WeaponKind.Melee
                 && !Owns(draft, "magic-item.gauntlets-of-ogre-power"))
             {
                 yield return new LootAward(index, "Gauntlets of Ogre Power", Equip(
