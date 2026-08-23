@@ -45,10 +45,11 @@ committed instrument, all print-faithful or refused with a named code.
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
 re-rolls the ladder because the seed is not saved); the honesty rule has three known
-breaks (Multiattack accounting, species traits, spell clause accounting) and one
-undocumented rules gap (concentration survives Incapacitated); the art pipeline is
-unrepeatable and one sprite in ~60 matches the project's own palette. **The finishing
-plan below is the ordered answer.**
+breaks (Multiattack accounting, species traits, spell clause accounting); the
+undocumented rules gap the review found — concentration surviving Incapacitated — is
+fixed (#289); the art pipeline is unrepeatable and one sprite in ~60 matches the
+project's own palette. **The finishing plan below is
+the ordered answer.**
 
 ## The finishing plan
 
@@ -264,9 +265,10 @@ content test failing on an entry you did not edit.
 - **Casting works**: attack spells against AC, save spells against the caster's DC
   halving on success, slots spent, upcasting structured at extraction (a save spell
   carries damage in `Damage` *and* `Save.FailureDamage` — grow both or you silently
-  un-upcast every save spell), Concentration tracked and broken by damage
-  (Incapacitated break is an F1 fix), single-target healing only, refusals with
-  reasons everywhere else.
+  un-upcast every save spell), Concentration tracked and broken by damage or by
+  gaining Incapacitated by any route — a save-imposed rider, a repeat-save
+  escalation, or damage that downs the concentrator (#289) — single-target healing
+  only, refusals with reasons everywhere else.
 - **`SpellcastingRules.AbilityFor` is a curated map, not Primary Ability** — right
   for six classes, quietly wrong for two if derived.
 - **Subclasses are derived, not chosen** — the SRD prints one per class; the

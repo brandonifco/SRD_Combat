@@ -644,6 +644,11 @@ public sealed partial class Encounter
             CombatStepKind.Condition,
             $"{bearer.Name} has the {deeper} condition instead of {condition.Condition}.",
             bearer);
+
+        // The deeper condition can be the first thing to bring Incapacitated with it
+        // (Restrained escalating to Petrified) — glossary p.186 ends Concentration the
+        // instant that lands, not on a save.
+        BreakConcentrationOnIncapacitated(bearer);
     }
 
     /// <summary>
@@ -1257,6 +1262,8 @@ public sealed partial class Encounter
             attacker,
             target);
 
+        CheckConcentration(target, applied.Effective);
+
         if (applied.Died)
         {
             target.RecordDeathRound(Round);
@@ -1741,6 +1748,8 @@ public sealed partial class Encounter
             attacker,
             second);
 
+        CheckConcentration(second, applied.Effective);
+
         if (applied.Died)
         {
             second.RecordDeathRound(Round);
@@ -1851,6 +1860,12 @@ public sealed partial class Encounter
                 $"{DescribeDuration(rider.Duration, source, target)}.",
                 source,
                 target);
+
+            // A rider can bring Incapacitated with no damage attached at all — Hold
+            // Person's Paralyzed, say — so nothing on the damage path would ever see
+            // it. Glossary p.186 ends Concentration the instant Incapacitated lands,
+            // not on a save.
+            BreakConcentrationOnIncapacitated(target);
         }
     }
 

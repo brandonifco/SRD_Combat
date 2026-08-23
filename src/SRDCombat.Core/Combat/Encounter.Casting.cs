@@ -620,11 +620,15 @@ public sealed partial class Encounter
             return;
         }
 
+        // The blow itself may have downed or killed the target — glossary p.186's
+        // "Incapacitated or Dead" clause ends Concentration outright, with no save to
+        // roll. This is the damage-caused half of that clause; the half that lands
+        // with no damage at all (a save-imposed Paralyzed, an escalating gaze reaching
+        // Petrified) goes through <see cref="BreakConcentrationOnIncapacitated"/>
+        // instead, since nothing here ever runs for it.
         if (!combatant.CanAct)
         {
-            combatant.Features.ConcentratingOn = null;
-            Add(CombatStepKind.Spell, $"{combatant.Name} loses Concentration on {spellName}.", combatant);
-            SweepConcentrationConditions(combatant);
+            EndConcentration(combatant, spellName);
             return;
         }
 
@@ -646,6 +650,43 @@ public sealed partial class Encounter
             CombatStepKind.Spell,
             $"{combatant.Name} loses Concentration on {spellName}: {roll} vs DC {difficultyClass}.",
             combatant);
+        SweepConcentrationConditions(combatant);
+    }
+
+    /// <summary>
+    /// Glossary p.186, Concentration: "Incapacitated or Dead. Your Concentration ends
+    /// if you have the Incapacitated condition or you die." Unlike the damage-taken
+    /// check above, this is not a saving throw — Incapacitated ends Concentration
+    /// outright, the instant the condition lands, whichever printed condition brought
+    /// it (Paralyzed, Stunned, Unconscious, Petrified, or Incapacitated imposed in its
+    /// own right).
+    /// </summary>
+    /// <remarks>
+    /// Called from every place a condition can land on a creature outside the damage
+    /// path already covered by <see cref="CheckConcentration"/>: a save effect's or an
+    /// attack's rider (<see cref="ImposeConditions"/>) and a repeat-save escalation
+    /// (<see cref="Escalate"/>). Death and damage-caused Unconsciousness are covered by
+    /// <see cref="CheckConcentration"/> instead — but only where its call is present, so
+    /// every site that can drop a creature's hit points must call it too, not just the
+    /// two the Multiattack and save-effect loops already did. Missed once already:
+    /// Weapon Mastery's Graze and Cleave both deal their own damage and did not, so a
+    /// concentrating creature Grazed or Cleaved to 0 kept concentrating until this was
+    /// caught in review. This method is a no-op when the creature is not concentrating
+    /// or can still act, so it is safe to call unconditionally after any condition
+    /// lands.
+    /// </remarks>
+    internal void BreakConcentrationOnIncapacitated(Combatant combatant)
+    {
+        if (combatant.Features.ConcentratingOn is { } spellName && !combatant.CanAct)
+        {
+            EndConcentration(combatant, spellName);
+        }
+    }
+
+    private void EndConcentration(Combatant combatant, string spellName)
+    {
+        combatant.Features.ConcentratingOn = null;
+        Add(CombatStepKind.Spell, $"{combatant.Name} loses Concentration on {spellName}.", combatant);
         SweepConcentrationConditions(combatant);
     }
 }
