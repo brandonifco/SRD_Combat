@@ -989,13 +989,13 @@ public static class SimpleTacticsPolicy
             .ToArray();
 
         var hardest = usable
-            .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+            .Select(attack => ValueAgainst(attack, target))
             .DefaultIfEmpty(0)
             .Max();
 
         var reaching = usable
             .Where(attack => attack.CanReach(distance))
-            .Select(attack => ValueAt(attack, distance))
+            .Select(attack => ValueAt(attack, distance, target))
             .DefaultIfEmpty(0)
             .Max();
 
@@ -1003,8 +1003,35 @@ public static class SimpleTacticsPolicy
     }
 
     /// <summary>
-    /// What an attack is worth at this distance: its average damage, halved when the
-    /// roll would be at long range.
+    /// What a damage component is worth against a specific target: its average,
+    /// zeroed by an Immunity, halved by a Resistance, doubled by a Vulnerability —
+    /// <see cref="DamageRules.ApplyResponse"/>'s own multipliers, read off
+    /// <see cref="CombatantStats.DamageResponses"/> rather than applied.
+    /// </summary>
+    /// <remarks>
+    /// Petrified's blanket Resistance (page 17, applied in <c>DamageRules.Apply</c>)
+    /// is deliberately not read here: only characters are petrified today, and no
+    /// character has a printed Vulnerability for the stacking order to matter, so
+    /// modelling it would add a case this policy cannot yet exercise. A future
+    /// petrified character with an owned Vulnerability would need it added here too.
+    /// </remarks>
+    private static double ValueAgainst(CombatAttack attack, Combatant target) =>
+        attack.Damage.Sum(damage => damage.Amount.Average * ResponseFactor(target, damage.Type));
+
+    private static double ResponseFactor(Combatant target, DamageType type) =>
+        target.Stats.DamageResponses.TryGetValue(type, out var response)
+            ? response switch
+            {
+                DamageResponse.Immunity => 0,
+                DamageResponse.Resistance => 0.5,
+                DamageResponse.Vulnerability => 2,
+                _ => 1,
+            }
+            : 1;
+
+    /// <summary>
+    /// What an attack is worth against a target at this distance:
+    /// <see cref="ValueAgainst"/>, halved again when the roll would be at long range.
     /// </summary>
     /// <remarks>
     /// The halving is a stated crude constant, like the hold's two held rounds: long
@@ -1013,18 +1040,23 @@ public static class SimpleTacticsPolicy
     /// other. It is what stops a Barbarian lobbing a Handaxe 40 feet at Disadvantage
     /// when walking in behind the Greataxe pays better — and it is a preference, never
     /// a veto: with no movement left or nothing better owned, the long throw is still
-    /// taken.
+    /// taken. The target's own damage responses are the same shape of preference
+    /// (#224): a Slashing weapon against a Slashing-Immune target values at zero and
+    /// simply never wins the ordering, rather than being vetoed outright — an actor
+    /// that owns nothing else still swings it, because zero damage forever beats a
+    /// refused turn.
     /// </remarks>
-    private static double ValueAt(CombatAttack attack, int distanceFeet)
+    private static double ValueAt(CombatAttack attack, int distanceFeet, Combatant target)
     {
-        var average = attack.Damage.Sum(damage => damage.Amount.Average);
+        var average = ValueAgainst(attack, target);
 
         return attack.IsAtLongRange(distanceFeet) ? average / 2 : average;
     }
 
     /// <summary>
     /// Attacks with the most valuable attack that can reach the target — average
-    /// damage, discounted at long range per <see cref="ValueAt"/>.
+    /// damage, discounted at long range and against the target's own damage
+    /// responses, per <see cref="ValueAt"/>.
     /// </summary>
     private static bool TryAttack(Encounter encounter, Combatant actor, Combatant target)
     {
@@ -1041,7 +1073,7 @@ public static class SimpleTacticsPolicy
             // A spent "(Recharge 5-6)" attack would be refused, and the refusal would
             // abort the whole attack loop — filter it out so the next-best attack swings.
             .Where(candidate => actor.Uses.IsAvailable(candidate.Name))
-            .OrderByDescending(candidate => ValueAt(candidate, distance))
+            .OrderByDescending(candidate => ValueAt(candidate, distance, target))
             .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
             .FirstOrDefault();
 
