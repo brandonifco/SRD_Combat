@@ -44,13 +44,15 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule has three known
-breaks (species traits, spell clause accounting, and Multiattack sub-sentence
-composition clauses — #341) — the Multiattack *replace-clause* hole is closed
-(#290); the undocumented rules gap the review found — concentration surviving
-Incapacitated — is fixed (#289); the art pipeline is unrepeatable and one sprite in
-~60 matches the project's own palette. **The finishing plan below is
-the ordered answer.**
+re-rolls the ladder because the seed is not saved); the honesty rule has two known
+breaks left (spell clause accounting, and Multiattack sub-sentence composition
+clauses — #341) — the Multiattack *replace-clause* hole is closed (#290), and species
+traits are no longer a silent one: none of the 33 printed trait instances execute, but
+`SpeciesTraitRegistry` and `CharacterSheet.UnimplementedFeatures` now say so at
+creation and on the sheet (#291); the undocumented rules gap the review found —
+concentration surviving Incapacitated — is fixed (#289); the art pipeline is
+unrepeatable and one sprite in ~60 matches the project's own palette. **The finishing
+plan below is the ordered answer.**
 
 ## The finishing plan
 
@@ -263,6 +265,9 @@ content test failing on an entry you did not edit.
 - **The curated allowlists** — a printed name maps to an executed effect **only
   alongside the code that does the thing**; everything absent stays visibly reported:
   `ClassFeatureRegistry` (→ `CharacterSheet.UnimplementedFeatures`),
+  `SpeciesTraitRegistry` (also → `UnimplementedFeatures`; empty today — none of the 33
+  printed species trait instances execute, and both creation flows tag each one "(not
+  yet implemented)" where its text is shown, via `CharacterCreation.TraitExecutes`),
   `WeaponMasteryRules.Executed` (6 of 8; Push and Nick refused with reasons),
   `MonsterTraitRegistry` (Pack Tactics, Magic Resistance — spells only, Flyby),
   `MagicItemRegistry` (13 names; unregistered items are *refused at equip*),

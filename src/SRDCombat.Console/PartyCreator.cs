@@ -803,7 +803,11 @@ internal static class PartyCreator
 
         foreach (var trait in species.Traits)
         {
-            System.Console.WriteLine($"  {trait.Name}:");
+            // Printed in full either way — the SRD's own text is CC-BY — but every
+            // trait CharacterCreation.TraitExecutes doesn't claim is tagged at the
+            // point of choice, the same rule Fighting Style follows above.
+            var caveat = CharacterCreation.TraitExecutes(trait.Name) ? "" : " (not yet implemented)";
+            System.Console.WriteLine($"  {trait.Name}{caveat}:");
             System.Console.WriteLine(Wrap(trait.Text, indent: "    "));
         }
     }

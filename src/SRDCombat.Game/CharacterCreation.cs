@@ -68,6 +68,26 @@ public static class CharacterCreation
         return content.Species.OrderBy(species => species.Name, StringComparer.Ordinal).ToArray();
     }
 
+    /// <summary>
+    /// Whether a printed species trait name is one the engine executes yet — the
+    /// species-trait analogue of <see cref="ExecutedFightingStyles"/>. Every trait is
+    /// shown in full at creation regardless (the SRD's own text is CC-BY and ships
+    /// verbatim), but a client tags the ones this returns <see langword="false"/> for
+    /// as not yet implemented at the point where the text is shown, matching
+    /// <see cref="CharacterSheet.UnimplementedFeatures"/>.
+    /// </summary>
+    /// <remarks>
+    /// Today this is <see langword="false"/> for every printed name —
+    /// <see cref="SpeciesTraitRegistry"/> executes none of the 33 printed trait
+    /// instances (28 distinct names) across the nine species. #291.
+    /// </remarks>
+    public static bool TraitExecutes(string traitName)
+    {
+        ArgumentNullException.ThrowIfNull(traitName);
+
+        return SpeciesTraitRegistry.Implements(traitName);
+    }
+
     public static IReadOnlyList<BackgroundDefinition> Backgrounds(SrdContent content)
     {
         ArgumentNullException.ThrowIfNull(content);
