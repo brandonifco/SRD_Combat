@@ -44,9 +44,10 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no between-fight decisions and no failure stakes (a reload
-re-rolls the ladder because the seed is not saved); the honesty rule has two known
-breaks left (species traits, spell clause accounting) — Multiattack accounting is
-fixed (#290); the undocumented rules gap the review found — concentration surviving
+re-rolls the ladder because the seed is not saved); the honesty rule has three known
+breaks (species traits, spell clause accounting, and Multiattack sub-sentence
+composition clauses — #341) — the Multiattack *replace-clause* hole is closed
+(#290); the undocumented rules gap the review found — concentration surviving
 Incapacitated — is fixed (#289); the art pipeline is unrepeatable and one sprite in
 ~60 matches the project's own palette. **The finishing plan below is
 the ordered answer.**
@@ -90,9 +91,11 @@ backup; persist the run's seed so `--continue` after defeat retries *the same fi
 stamp content version into the save and refuse drift via `TryGetValue`
 (`PregeneratedParty`, `Gauntlet`, `Loot`, `Shop`); ask for the level-4 ASI plan in
 both creation flows (created parties currently forfeit it silently); break
-concentration on Incapacitated; close the Multiattack accounting hole
-(`MatchesStructuredForm`) and regenerate; surface species traits as unimplemented at
-creation and on the sheet; populate or retire `SpellDefinition.IsFullyModelled`; fix
+concentration on Incapacitated; close the Multiattack replace-clause hole
+(`MatchesStructuredForm`) and regenerate; surface Multiattack sub-sentence
+composition clauses folded into the composition sentence itself (#341); surface
+species traits as unimplemented at creation and on the sheet; populate or retire
+`SpellDefinition.IsFullyModelled`; fix
 the stall class (#256) and immunity-blind targeting (#224); one doc-drift sweep
 (gauntlet cycle arithmetic, mastery weapon count, stale headers and citations, client
 README). Exit: re-baseline both seed ranges; QC audits the three honesty lanes clean.
@@ -205,8 +208,12 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
    was read as unconditional, so every hit dealt it. Nothing failed — the attack
    *looked* implemented. **A partly-structured entry is more dangerous than an
    unstructured one**, because the missing part is invisible. This shape has recurred
-   four times (rider gating, save-spell effects, Failure-tier sentences, and the
-   still-open Multiattack replace-clauses — F1). Assume a fifth exists.
+   four times (rider gating, save-spell effects, Failure-tier sentences, and
+   Multiattack replace-clauses — closed by #290). Assume a fifth exists — it did:
+   a Multiattack's own composition sentence can fold an unexecuted rule inside itself
+   (the Mummy's "and uses Dreadful Glare", the Kraken's "and uses Fling..."), which
+   `DescribesTheComposition` waves through with an empty `UnmodelledClauses` because
+   the composition it recognises still matches. Filed as #341.
 2. **A "does this look mechanical?" keyword filter** let Flyby, Nimble Escape and
    Shape-Shift through as inert. The heuristic was **removed rather than tuned**: a
    keyword list always has false negatives, and a false negative loses a rule.

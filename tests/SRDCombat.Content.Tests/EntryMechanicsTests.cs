@@ -83,6 +83,32 @@ public class EntryMechanicsTests
     }
 
     [Fact]
+    public void MultiattackReplaceClauseAccountingIsExact()
+    {
+        // The census the #290 fix earns: the bestiary's count of Multiattack entries
+        // and how many of them carry a replace-clause the model does not express are
+        // both fixed by the source, exactly like the book's monster and spell totals —
+        // the wrapped-class-list lesson says a floor is the wrong shape for a count the
+        // source fixes. Pinning the exact pair here is what stops a future parser tweak
+        // from silently re-swallowing the 45 clauses #290 surfaced (`DescribesTheComposition`
+        // waving a replace-clause through again would drop this test's count without
+        // touching `TierOneCoverageDoesNotRegress`, whose floor has slack to absorb it).
+        var multiattacks = Content.Monsters
+            .SelectMany(monster => monster.Entries
+                .Where(entry => entry.Mechanics == EntryMechanics.Multiattack)
+                .Select(entry => (monster.ChallengeRating, Entry: entry)))
+            .ToList();
+
+        Assert.Equal(170, multiattacks.Count);
+        Assert.Equal(45, multiattacks.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+
+        var tierOne = multiattacks.Where(multiattack => multiattack.ChallengeRating <= 4m).ToList();
+
+        Assert.Equal(64, tierOne.Count);
+        Assert.Equal(8, tierOne.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+    }
+
+    [Fact]
     public void SavingThrowEffectsAreStructured()
     {
         // "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide
