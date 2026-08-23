@@ -83,6 +83,32 @@ public class EntryMechanicsTests
     }
 
     [Fact]
+    public void MultiattackReplaceClauseAccountingIsExact()
+    {
+        // The census the #290 fix earns: the bestiary's count of Multiattack entries
+        // and how many of them carry a replace-clause the model does not express are
+        // both fixed by the source, exactly like the book's monster and spell totals —
+        // the wrapped-class-list lesson says a floor is the wrong shape for a count the
+        // source fixes. Pinning the exact pair here is what stops a future parser tweak
+        // from silently re-swallowing the 45 clauses #290 surfaced (`DescribesTheComposition`
+        // waving a replace-clause through again would drop this test's count without
+        // touching `TierOneCoverageDoesNotRegress`, whose floor has slack to absorb it).
+        var multiattacks = Content.Monsters
+            .SelectMany(monster => monster.Entries
+                .Where(entry => entry.Mechanics == EntryMechanics.Multiattack)
+                .Select(entry => (monster.ChallengeRating, Entry: entry)))
+            .ToList();
+
+        Assert.Equal(170, multiattacks.Count);
+        Assert.Equal(45, multiattacks.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+
+        var tierOne = multiattacks.Where(multiattack => multiattack.ChallengeRating <= 4m).ToList();
+
+        Assert.Equal(64, tierOne.Count);
+        Assert.Equal(8, tierOne.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+    }
+
+    [Fact]
     public void SavingThrowEffectsAreStructured()
     {
         // "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide
@@ -150,6 +176,34 @@ public class EntryMechanicsTests
         Assert.Equal(2, effect.AttackCount);
         Assert.False(effect.AnyCombination);
         Assert.Equal("Slam", Assert.Single(effect.AttackNames));
+    }
+
+    [Fact]
+    public void AMultiattackReplaceClauseIsCountedNotDropped()
+    {
+        // The fourth occurrence of the goblin's conditional-damage bug: Multiattack used
+        // to answer "fully modelled" for every one of its sentences, so "It can replace
+        // one attack with a use of Roar/Enthralling Panache/..." vanished from the
+        // accounting while the engine never executed it (#290). The composition sentence
+        // itself — the part the model does express — must still read as structured; only
+        // the replace-clause is unmodelled.
+        var lion = Content.MonstersById["monster.lion"];
+        var lionMultiattack = lion.Entries.Single(entry => entry.Name == "Multiattack");
+
+        Assert.Equal(EntryMechanics.Multiattack, lionMultiattack.Mechanics);
+        Assert.False(lionMultiattack.IsFullyModelled);
+        Assert.Equal(
+            "It can replace one attack with a use of Roar.",
+            Assert.Single(lionMultiattack.UnmodelledClauses));
+
+        var pirate = Content.MonstersById["monster.pirate"];
+        var pirateMultiattack = pirate.Entries.Single(entry => entry.Name == "Multiattack");
+
+        Assert.Equal(EntryMechanics.Multiattack, pirateMultiattack.Mechanics);
+        Assert.False(pirateMultiattack.IsFullyModelled);
+        Assert.Equal(
+            "It can replace one attack with a use of Enthralling Panache.",
+            Assert.Single(pirateMultiattack.UnmodelledClauses));
     }
 
     [Fact]

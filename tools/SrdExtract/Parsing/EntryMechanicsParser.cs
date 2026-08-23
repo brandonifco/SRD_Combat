@@ -175,7 +175,7 @@ internal static partial class EntryMechanicsParser
             reaction,
             usage,
             conditions,
-            LeftoverMechanicalSentences(text, mechanics, conditions));
+            LeftoverMechanicalSentences(text, mechanics, conditions, multiattack));
 
     /// <summary>
     /// Finds sentences carrying mechanics that the entry's own structured form does not
@@ -191,9 +191,10 @@ internal static partial class EntryMechanicsParser
     private static IReadOnlyList<string> LeftoverMechanicalSentences(
         string text,
         EntryMechanics mechanics,
-        IReadOnlyList<AppliedCondition> conditions) =>
+        IReadOnlyList<AppliedCondition> conditions,
+        MultiattackEffect? multiattack = null) =>
         SplitSentences(text)
-            .Where(sentence => !IsAccountedFor(sentence, mechanics, conditions))
+            .Where(sentence => !IsAccountedFor(sentence, mechanics, conditions, multiattack))
             .ToArray();
 
     /// <summary>
@@ -223,7 +224,8 @@ internal static partial class EntryMechanicsParser
     private static bool IsAccountedFor(
         string sentence,
         EntryMechanics mechanics,
-        IReadOnlyList<AppliedCondition> conditions)
+        IReadOnlyList<AppliedCondition> conditions,
+        MultiattackEffect? multiattack)
     {
         var carried = ConditionsIn(sentence, conditions).ToArray();
 
@@ -249,11 +251,14 @@ internal static partial class EntryMechanicsParser
         // though the attack or saving-throw grammar itself says nothing about it. Save
         // entries joined attacks here when the engine began imposing their riders on a
         // failed save (#6).
-        return MatchesStructuredForm(sentence, mechanics)
+        return MatchesStructuredForm(sentence, mechanics, multiattack)
             || (mechanics is EntryMechanics.Attack or EntryMechanics.SavingThrow && carried.Length > 0);
     }
 
-    private static bool MatchesStructuredForm(string sentence, EntryMechanics mechanics) => mechanics switch
+    private static bool MatchesStructuredForm(
+        string sentence,
+        EntryMechanics mechanics,
+        MultiattackEffect? multiattack) => mechanics switch
     {
         EntryMechanics.Attack =>
             sentence.Contains("Attack Roll:", StringComparison.Ordinal)
@@ -264,7 +269,7 @@ internal static partial class EntryMechanicsParser
             || sentence.StartsWith("Failure", StringComparison.Ordinal)
             || sentence.StartsWith("Success", StringComparison.Ordinal),
 
-        EntryMechanics.Multiattack => true,
+        EntryMechanics.Multiattack => multiattack is not null && DescribesTheComposition(sentence, multiattack),
 
         EntryMechanics.Reaction =>
             sentence.StartsWith("Trigger:", StringComparison.Ordinal)
@@ -273,6 +278,39 @@ internal static partial class EntryMechanicsParser
         _ => false,
     };
 
+    /// <summary>
+    /// Whether this sentence is the attack-composition sentence the Multiattack grammar
+    /// read — the only part of a Multiattack entry the model expresses.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This used to answer <c>true</c> for every sentence of a Multiattack entry, which
+    /// is the goblin's conditional damage a fourth time: 45 entries print a second
+    /// sentence — "It can replace one attack with a use of Roar/Spellcasting/…" — and
+    /// the engine executes none of it, while the accounting called the whole entry
+    /// modelled. The Lion graded <c>Playable</c> and the Pirate <c>Complete</c> on the
+    /// strength of a replacement option that never happens.
+    /// </para>
+    /// <para>
+    /// What the model expresses is <see cref="MultiattackEffect"/>: how many attacks, out
+    /// of which named ones, mixed freely or not. So the test is that the sentence, read
+    /// alone by the same grammar, yields exactly the composition the entry recorded.
+    /// Comparing against the entry's own effect rather than merely asking "does this
+    /// sentence parse?" is what stops a second composition sentence the entry-level parse
+    /// dropped — the combination form returns on its first match — from being waved
+    /// through by the sentence-level one.
+    /// </para>
+    /// <para>
+    /// Deliberately strict in the safe direction: a composition split across two
+    /// sentences, which the bestiary does not currently print, would match neither and be
+    /// counted rather than approximated. Over-counting is the error this model chooses.
+    /// </para>
+    /// </remarks>
+    private static bool DescribesTheComposition(string sentence, MultiattackEffect multiattack) =>
+        ParseMultiattack(sentence) is { } parsed
+        && parsed.AttackCount == multiattack.AttackCount
+        && parsed.AnyCombination == multiattack.AnyCombination
+        && parsed.AttackNames.SequenceEqual(multiattack.AttackNames, StringComparer.Ordinal);
 
     private static IEnumerable<string> SplitSentences(string text) =>
         SentenceBoundary()

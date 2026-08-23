@@ -64,9 +64,14 @@ public class TraditionalFoeTests
     [Fact]
     public void AnAuthoredFightMayStillFieldALion()
     {
-        // The cut governs only the random draw, like every list beside it.
+        // The cut governs only the random draw, like every list beside it. The Lion's
+        // Multiattack carries a replace-clause the model does not express ("It can
+        // replace one attack with a use of Roar.", #290) and so grades Diminished on
+        // its own honest accounting, unrelated to the genre cut this test is about —
+        // an authored fight accepts that floor explicitly, the same way it opts out of
+        // the cut explicitly.
         var names = MonsterPool
-            .Draw(Content.Monsters, TierOneMaximum, traditionalFoesOnly: false)
+            .Draw(Content.Monsters, TierOneMaximum, MonsterCoverage.Diminished, traditionalFoesOnly: false)
             .Select(monster => monster.Name)
             .ToHashSet(StringComparer.Ordinal);
 

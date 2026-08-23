@@ -150,6 +150,25 @@ public class MonsterPoolTests
     }
 
     [Fact]
+    public void AMultiattackReplaceClauseDropsTheGrade()
+    {
+        // The canary from #290: before the replace-clause accounting fix, the Lion's
+        // Multiattack ("It can replace one attack with a use of Roar.") read as fully
+        // modelled and the Lion graded Playable; the Pirate's did too and it graded
+        // Complete. Neither creature's replacement option ever fires, so both must now
+        // grade below Playable and drop out of the default pool.
+        var lion = Content.MonstersById["monster.lion"];
+
+        Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(lion));
+        Assert.False(MonsterPool.Admits(lion));
+
+        var pirate = Content.MonstersById["monster.pirate"];
+
+        Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(pirate));
+        Assert.False(MonsterPool.Admits(pirate));
+    }
+
+    [Fact]
     public void TheDrawIsOrderedSoAnEncounterBuildIsReproducible()
     {
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
