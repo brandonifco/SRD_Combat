@@ -100,14 +100,18 @@ public class DamageResponseValuationTests
     }
 
     [Fact]
-    public void TheOchreJellyStandoffResolvesInsteadOfStalling()
+    public void TheOchreJellyStandoffResolvesInTheHerosFavour()
     {
         // #224, at unit scale: a Slashing-Immune target and a hero who owns both a
-        // harder Slashing weapon and a weaker Piercing one. Before the fix this
-        // idled to the policy's round limit — the Longsword always won the raw
-        // ranking and never dealt a point of damage. With the target-aware
-        // valuation, the Javelin wins the ranking instead and the fight actually
-        // ends.
+        // harder Slashing weapon and a weaker Piercing one. Before the fix, the
+        // Longsword always won the raw ranking and never dealt a point of damage —
+        // on this seed that is a clean loss (the jelly's own chip damage eventually
+        // downs a hero who can never fight back), and on the issue's own seed,
+        // where Second Wind kept pace with the jelly's chip damage, the same
+        // mechanism produced a real round-limit stall instead. Either way the fight
+        // never goes as an unbeatable jelly should. With the target-aware
+        // valuation, the Javelin wins the ranking instead and the hero actually
+        // wins.
         var actor = CombatTestData.Combatant(
             "hero",
             stats: CombatTestData.Stats(
