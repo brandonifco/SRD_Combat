@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
@@ -198,6 +199,21 @@ public static class MonsterValidator
         }
     }
 
+    /// <summary>
+    /// Marks a Multiattack sentence printing a second whole composition — "or it/he/
+    /// she/they makes ..." — rather than a single one. Deliberately independent of
+    /// <c>EntryMechanicsParser.AlternativeCompositionPattern</c>: that regex is what the
+    /// parser trusts to take the default branch and set the alternative aside, so
+    /// checking against it again would only prove the parser agrees with itself, exactly
+    /// the flaw #342 found in PR #340's own equivalence check. This asks the independent
+    /// question print answers directly — does the sentence carry a second composition at
+    /// all — and requires that whenever it does, <see cref="MonsterEntry.UnmodelledClauses"/>
+    /// says so, catching a future entry (or a regression on today's three: the Barbed
+    /// Devil, the Clay Golem, the Medusa) whose alternative gets silently summed again.
+    /// </summary>
+    private static readonly Regex AlternativeCompositionMarker =
+        new(@"\bor\s+(?:it|he|she|they)\s+makes\b", RegexOptions.Compiled);
+
     private static void ValidateEntries(MonsterDefinition monster, Action<ValidationSeverity, string, string> add)
     {
         foreach (var entry in monster.Entries)
@@ -205,6 +221,18 @@ public static class MonsterValidator
             if (string.IsNullOrWhiteSpace(entry.Name))
             {
                 add(ValidationSeverity.Error, "monster.entry.name_missing", "An entry has no name.");
+            }
+
+            if (entry.Mechanics == EntryMechanics.Multiattack
+                && AlternativeCompositionMarker.IsMatch(entry.Text)
+                && entry.UnmodelledClauses.Count == 0)
+            {
+                add(
+                    ValidationSeverity.Error,
+                    "monster.multiattack.alternative_composition_dropped",
+                    $"'{entry.Name}' prints a second composition (\"or it/he/she/they makes ...\") " +
+                    "that the recorded Multiattack does not account for — it may have been summed " +
+                    "into AttackCount instead of recorded as an alternative.");
             }
 
             if (entry.Attack is not { } attack)

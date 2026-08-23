@@ -77,15 +77,19 @@ public sealed record CharacterSheet
     public required IReadOnlyDictionary<int, int> SpellSlots { get; init; }
 
     /// <summary>
-    /// Printed feature names the character has that this engine does <em>not</em>
-    /// implement.
+    /// Printed feature and species trait names the character has that this engine does
+    /// <em>not</em> implement.
     /// </summary>
     /// <remarks>
     /// The same rule as everywhere else in this project: the gap is carried on the object
     /// and countable, rather than being an absence nobody can see. A level 5 Cleric's
     /// sheet says outright that Spellcasting and Sear Undead do nothing yet — and
     /// Divine Order rejoins this list whenever the draft never chose a role, because a
-    /// mapped name whose choice is Unspecified executes nothing.
+    /// mapped name whose choice is Unspecified executes nothing. Every species trait
+    /// stands here too: <see cref="SpeciesTraitRegistry"/> executes none of them yet, so
+    /// a Dwarf's Darkvision or a Dragonborn's Breath Weapon reads here exactly like an
+    /// unimplemented class feature, rather than a player having to guess from the
+    /// silence.
     /// </remarks>
     public required IReadOnlyList<string> UnimplementedFeatures { get; init; }
 

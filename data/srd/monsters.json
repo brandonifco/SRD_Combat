@@ -145,7 +145,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses either Consume Memories or Dominate Mind if available."
+          ]
         },
         {
           "name": "Tentacle",
@@ -1963,16 +1965,17 @@
           "text": "The devil makes one Claws attack and one Tail attack, or it makes two Hurl Flame attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 4,
+            "attackCount": 2,
             "attackNames": [
               "Claws",
-              "Tail",
-              "Hurl Flame"
+              "Tail"
             ],
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or it makes two Hurl Flame attacks."
+          ]
         },
         {
           "name": "Claws",
@@ -7083,7 +7086,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Conjure Infernal Chain."
+          ]
         },
         {
           "name": "Chain",
@@ -7467,7 +7472,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Paralyzing Tentacles."
+          ]
         },
         {
           "name": "Pincer",
@@ -7674,14 +7681,16 @@
           "text": "The golem makes two Slam attacks, or it makes three Slam attacks if it used Hasten this turn.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 5,
+            "attackCount": 2,
             "attackNames": [
               "Slam"
             ],
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or it makes three Slam attacks if it used Hasten this turn."
+          ]
         },
         {
           "name": "Slam",
@@ -10276,7 +10285,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Unsettling Visage if available."
+          ]
         },
         {
           "name": "Slam",
@@ -11600,7 +11611,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And can use Entangling Rope."
+          ]
         },
         {
           "name": "Withering Sword",
@@ -13908,7 +13921,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Pummel or Spellcasting."
+          ]
         },
         {
           "name": "Pincer",
@@ -20242,7 +20257,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Fling, Lightning Strike, or Swallow."
+          ]
         },
         {
           "name": "Tentacle",
@@ -21572,7 +21589,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Constrict."
+          ]
         },
         {
           "name": "Pact Blade",
@@ -21755,16 +21774,17 @@
           "text": "The medusa makes two Claw attacks and one Snake Hair attack, or it makes three Poison Ray attacks.",
           "mechanics": "Multiattack",
           "multiattack": {
-            "attackCount": 6,
+            "attackCount": 3,
             "attackNames": [
               "Claw",
-              "Snake Hair",
-              "Poison Ray"
+              "Snake Hair"
             ],
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or it makes three Poison Ray attacks."
+          ]
         },
         {
           "name": "Claw",
@@ -23198,7 +23218,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Dreadful Glare."
+          ]
         },
         {
           "name": "Rotting Fist",
@@ -25804,7 +25826,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Or uses Holy Burst twice."
+          ]
         },
         {
           "name": "Radiant Sword",
@@ -28005,7 +28029,9 @@
             "anyCombination": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "Uses Reel."
+          ]
         },
         {
           "name": "Bite",
@@ -31509,7 +31535,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Roar."
+          ]
         },
         {
           "name": "Claw",
@@ -34186,7 +34214,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Bite."
+          ]
         },
         {
           "name": "Claw",
@@ -34398,7 +34428,9 @@
             "anyCombination": false
           },
           "appliedConditions": [],
-          "unmodelledClauses": []
+          "unmodelledClauses": [
+            "And uses Bite."
+          ]
         },
         {
           "name": "Grave Strike (Vampire Form Only)",

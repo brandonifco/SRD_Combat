@@ -29,11 +29,31 @@ internal static partial class EntryMechanicsParser
     /// Entries confirmed to have no effect on a fight.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Deliberately tiny and grown one deliberate decision at a time. Anything not on it
     /// is Unmodelled and counted, which is the safe direction to be wrong in. Several
     /// traits that look inert are not: Pack Tactics grants Advantage on attack rolls,
     /// Sunlight Sensitivity imposes Disadvantage, and Flyby removes Opportunity Attacks —
     /// none of those belong here.
+    /// </para>
+    /// <para>
+    /// <b>This list is curated about stat block entries and species/class trait text —
+    /// never spells.</b> <see cref="ClassifyTrait"/> is shared with <c>SpellParser</c>
+    /// for its condition and saving-throw grammar, and for a while that sharing reached
+    /// this list too: Water Breathing landed on <see cref="EntryMechanics.Narrative"/>
+    /// only because it happens to spell the same name as this bestiary trait, not
+    /// because anyone read the spell and judged it inert (#349). The <c>consultInertList</c>
+    /// parameter below is how <c>SpellParser</c> opts out. Spells that genuinely do
+    /// nothing in a fight — Water Breathing among 184 others, Detect Magic and Identify
+    /// included — are not exceptions here; they classify as
+    /// <see cref="EntryMechanics.Unmodelled"/> like every spell the grammar does not
+    /// structure, which is the honest and already-established outcome for spell prose
+    /// (see <c>SpellDefinition.UnclassifiedClauses</c> — a spell's classification carries
+    /// no completeness claim either way, so Unmodelled costs nothing here). A curated
+    /// Narrative list for spells was considered and rejected: singling out Water
+    /// Breathing while Light, Alarm and Comprehend Languages stay Unmodelled would be
+    /// the accidental result blessed into a decision it never was.
+    /// </para>
     /// </remarks>
     private static readonly HashSet<string> KnownInertEntries = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -46,7 +66,17 @@ internal static partial class EntryMechanicsParser
     /// Classifies a species trait or other named rules text, applying the same rule as
     /// stat block entries: nothing passes as prose.
     /// </summary>
-    public static TraitEntry ClassifyTrait(string name, string text)
+    /// <param name="name">The trait or spell's printed name.</param>
+    /// <param name="text">Its body text.</param>
+    /// <param name="consultInertList">
+    /// Whether a name match against <see cref="KnownInertEntries"/> may grade this entry
+    /// <see cref="EntryMechanics.Narrative"/>. True for species and class trait text,
+    /// where the list's decisions were actually made about entries of that shape.
+    /// <c>SpellParser</c> passes <see langword="false"/>: that list has never been
+    /// curated about spell prose, and a name collision (#349) is not a reading of the
+    /// spell.
+    /// </param>
+    public static TraitEntry ClassifyTrait(string name, string text, bool consultInertList = true)
     {
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
@@ -64,7 +94,7 @@ internal static partial class EntryMechanicsParser
                 LeftoverMechanicalSentences(text, EntryMechanics.SavingThrow, conditions));
         }
 
-        if (KnownInertEntries.Contains(bareName))
+        if (consultInertList && KnownInertEntries.Contains(bareName))
         {
             return new TraitEntry(bareName, text, EntryMechanics.Narrative, Usage: usage);
         }
@@ -111,8 +141,24 @@ internal static partial class EntryMechanicsParser
             return Build(bareName, section, text, EntryMechanics.Reaction, usage, conditions, reaction: reaction);
         }
 
-        if (ParseMultiattack(text) is { } multiattack)
+        if (ParseMultiattack(text, out var alternativeClause) is { } multiattack)
         {
+            // The alternative branch ParseMultiattack set aside (see its remarks) and any
+            // bundled-use clause folded into the same sentence (see
+            // BundledMultiattackUseClauses' remarks) are not sentences
+            // LeftoverMechanicalSentences would ever find on their own, since the whole
+            // entry is one sentence in every case that prints either. Handing them in
+            // here is what keeps them from vanishing behind DescribesTheComposition
+            // matching the rest of the sentence (#341).
+            var remainder = new List<string>();
+
+            if (alternativeClause.Length > 0)
+            {
+                remainder.Add(CapitalizeFirst(alternativeClause));
+            }
+
+            remainder.AddRange(BundledMultiattackUseClauses(text));
+
             return Build(
                 bareName,
                 section,
@@ -120,7 +166,8 @@ internal static partial class EntryMechanicsParser
                 EntryMechanics.Multiattack,
                 usage,
                 conditions,
-                multiattack: multiattack);
+                multiattack: multiattack,
+                extraUnmodelledClauses: remainder.Count > 0 ? remainder : null);
         }
 
         if (ParseSave(text, conditions) is { } save)
@@ -163,7 +210,8 @@ internal static partial class EntryMechanicsParser
         MonsterAttack? attack = null,
         SaveEffect? save = null,
         MultiattackEffect? multiattack = null,
-        ReactionEffect? reaction = null) =>
+        ReactionEffect? reaction = null,
+        IReadOnlyList<string>? extraUnmodelledClauses = null) =>
         new(
             name,
             section,
@@ -175,7 +223,13 @@ internal static partial class EntryMechanicsParser
             reaction,
             usage,
             conditions,
-            LeftoverMechanicalSentences(text, mechanics, conditions, multiattack));
+            extraUnmodelledClauses is null
+                ? LeftoverMechanicalSentences(text, mechanics, conditions, multiattack)
+                : [.. LeftoverMechanicalSentences(text, mechanics, conditions, multiattack), .. extraUnmodelledClauses]);
+
+    /// <summary>Uppercases a clause's first letter, for fragments lifted mid-sentence.</summary>
+    private static string CapitalizeFirst(string text) =>
+        text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>
     /// Finds sentences carrying mechanics that the entry's own structured form does not
@@ -359,8 +413,49 @@ internal static partial class EntryMechanicsParser
     /// Parses "The bandit makes two attacks, using Scimitar and Pistol in any
     /// combination." and "The armor makes two Slam attacks."
     /// </summary>
-    private static MultiattackEffect? ParseMultiattack(string text)
+    private static MultiattackEffect? ParseMultiattack(string text) => ParseMultiattack(text, out _);
+
+    /// <summary>
+    /// The same parse, plus whatever alternative-composition text was set aside.
+    /// </summary>
+    /// <param name="alternativeClause">
+    /// Empty unless <paramref name="text"/> printed a second composition joined by "or
+    /// it/he/she/they makes" (the Clay Golem's "or it makes three Slam attacks if it
+    /// used Hasten this turn"). When set, it holds that clause verbatim so the caller
+    /// can record it rather than lose it — see the remarks below.
+    /// </param>
+    /// <remarks>
+    /// <para>
+    /// A composition can print two whole alternatives rather than one: "the golem makes
+    /// two Slam attacks, or it makes three Slam attacks if it used Hasten this turn."
+    /// Before this fix, the "every &lt;count&gt; &lt;Name&gt; attack(s) clause, summed"
+    /// rule below read both clauses and recorded five Slams — a real engine bug, not
+    /// just an accounting one, since <c>AttackCount</c> drives how many the creature
+    /// actually swings. The Barbed Devil and Medusa print the same shape.
+    /// </para>
+    /// <para>
+    /// This is a choice the model does not make (which branch, or — for the Golem —
+    /// state the model does not track at all, whether Hasten was used this turn), so the
+    /// designer's standing reading applies: take the first-printed, unconditional branch
+    /// as the recorded composition, and account the alternative rather than approximate
+    /// it. The alternative is deliberately not folded into <see cref="MechanicalSentences"/>
+    /// or <see cref="LeftoverMechanicalSentences"/> — the whole entry is one sentence in
+    /// all three cases, so sentence-level splitting would not find it, and it would go
+    /// the way of the Kraken's bundled "and uses Fling..." (#341) if this method did not
+    /// hand it back explicitly.
+    /// </para>
+    /// </remarks>
+    private static MultiattackEffect? ParseMultiattack(string text, out string alternativeClause)
     {
+        alternativeClause = string.Empty;
+
+        var alternative = AlternativeCompositionPattern().Match(text);
+        if (alternative.Success)
+        {
+            alternativeClause = text[alternative.Index..].TrimStart(',', ' ');
+            text = text[..alternative.Index];
+        }
+
         // "... makes two attacks, using Scimitar and Pistol in any combination."
         var combination = CombinationMultiattackPattern().Match(text);
         if (combination.Success && WordToNumber(combination.Groups["count"].Value) is { } count)
@@ -412,6 +507,50 @@ internal static partial class EntryMechanicsParser
         // Several named attacks means the creature picks between them, whether the text
         // said "in any combination" or listed them as alternatives.
         return new MultiattackEffect(total, names, names.Count > 1);
+    }
+
+    /// <summary>
+    /// Bundled uses folded into the same sentence as the composition: "and uses Dreadful
+    /// Glare", "or uses Holy Burst twice", ", uses Reel,". Returns each verbatim, ready
+    /// to record as an unmodelled clause.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The Mummy prints "The mummy makes two Rotting Fist attacks and uses Dreadful
+    /// Glare." — one sentence, and <see cref="DescribesTheComposition"/> matches it in
+    /// full, because <see cref="NamedMultiattackPattern"/> finds exactly the "two
+    /// Rotting Fist attacks" the recorded composition expects and says nothing about the
+    /// rest. The composition sentence itself is genuinely fully expressed; "uses
+    /// Dreadful Glare" is a second rule riding inside it, the same way a rider condition
+    /// can ride inside an attack's Hit clause. Before this fix it vanished with an empty
+    /// <c>UnmodelledClauses</c> — the fourteenth-and-counting instance of the goblin's
+    /// conditional-damage bug, and the reason #341 exists.
+    /// </para>
+    /// <para>
+    /// The connector before "uses"/"can use" is what marks a bundled use rather than
+    /// part of the composition: a bare comma (the Roper's "makes two Tentacle attacks,
+    /// uses Reel, and makes two Bite attacks" — the bundled use sits between two
+    /// composition clauses), or "and"/"or" (the Kraken's "and uses Fling, Lightning
+    /// Strike, or Swallow", the Planetar's "or uses Holy Burst twice"). The lazy capture
+    /// stops at the next composition clause (", and makes ...", the Roper's case again)
+    /// or at the sentence's end — not at every comma, because a bundled use can itself
+    /// print a list ("Fling, Lightning Strike, or Swallow").
+    /// </para>
+    /// </remarks>
+    private static IEnumerable<string> BundledMultiattackUseClauses(string text)
+    {
+        foreach (Match match in BundledUsePattern().Matches(text))
+        {
+            var connector = match.Groups["connector"].Value;
+            var clause = match.Groups["clause"].Value.Trim();
+
+            yield return connector switch
+            {
+                "and" => $"And {clause}.",
+                "or" => $"Or {clause}.",
+                _ => CapitalizeFirst(clause) + ".",
+            };
+        }
     }
 
     private static IReadOnlyList<string> SplitAttackNames(string text) => text
@@ -859,6 +998,21 @@ internal static partial class EntryMechanicsParser
 
     [GeneratedRegex(@"makes\s+(?<count>one|two|three|four|five|six|\d+)\s+attacks?,\s*using\s+(?<attacks>[^.]+?)\s+in any combination")]
     private static partial Regex CombinationMultiattackPattern();
+
+    // "The golem makes two Slam attacks, or it makes three Slam attacks if it used
+    // Hasten this turn." Two whole compositions joined by a repeated subject and verb —
+    // as opposed to "using X or Y in any combination" or "Claw or Nightmare Ray attacks",
+    // where "or" separates names within one composition — are a choice the model does not
+    // make, not attacks to be summed. See ParseMultiattack's remarks.
+    [GeneratedRegex(@",?\s*or\s+(?:it|he|she|they)\s+makes\s+.*$", RegexOptions.Singleline)]
+    private static partial Regex AlternativeCompositionPattern();
+
+    // See BundledMultiattackUseClauses' remarks for why the lazy capture stops where it
+    // does: at the next composition clause or the sentence's end, not at every comma.
+    [GeneratedRegex(
+        @"(?<connector>,|\band\b|\bor\b)\s+(?<clause>(?:uses|can use)\s+.+?)(?=,\s*and\s+makes\b|\.\s*$|$)",
+        RegexOptions.Singleline)]
+    private static partial Regex BundledUsePattern();
 
     [GeneratedRegex(@"(?<ability>Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+Saving\s+Throw:\s*DC\s*(?<dc>\d+)")]
     private static partial Regex SaveHeaderPattern();

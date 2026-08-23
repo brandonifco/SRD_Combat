@@ -44,6 +44,21 @@ public class RealCharacterTests
     }
 
     [Fact]
+    public void ARealDwarfsSpeciesTraitsAreListedAsUnimplemented()
+    {
+        // #291: a created character's sheet must carry its species traits on
+        // UnimplementedFeatures exactly as an unimplemented class feature would,
+        // rather than the player having read the full printed text at creation with
+        // no indication none of it does anything.
+        var sheet = Build("class.fighter", "species.dwarf", "background.soldier", level: 1);
+
+        Assert.Contains("Darkvision", sheet.UnimplementedFeatures);
+        Assert.Contains("Dwarven Resilience", sheet.UnimplementedFeatures);
+        Assert.Contains("Dwarven Toughness", sheet.UnimplementedFeatures);
+        Assert.Contains("Stonecunning", sheet.UnimplementedFeatures);
+    }
+
+    [Fact]
     public void AFighterGainsExtraAttackAtLevelFive()
     {
         Assert.Equal(1, Build("class.fighter", "species.dwarf", "background.soldier", 1).AttacksPerAction);

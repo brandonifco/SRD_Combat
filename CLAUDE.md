@@ -30,7 +30,7 @@ When a bullet below feels compressed, the archive has the long form with the evi
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Seeds 1–120: median 18 of 30, 27 clear all, 57 reach level 4; seeds 200–320: 18/31/50. Per-band hp-left 83→76→68→73→67→69% (2026-08-21) |
+| Pacing | Measured at `33ca8b3`, 2026-08-23 (a **ledger refresh**, not the F1-exit re-baseline — F1 is still open). Seeds 1–120: median 18 of 30, 37 clear all, 49 reach level 4; seeds 200–320: 18/34/59. **Zero `Stalled`** in both. Per-band hp-left 83→76→70→70→74→74% (1–120) and 83→78→69→71→71→71% (200–320) |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
 | Coverage gaps | 41% of production code untested (`client/` 7.2k, `tools/SrdExtract` 5.4k, `Console` 1.8k lines) |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
@@ -44,14 +44,22 @@ committed instrument, all print-faithful or refused with a named code.
 **What the review found wanting** (full detail in the review doc): the fight has
 almost no feedback — one-frame monster art, no audio at all, hit and miss visually
 identical; the run has no route choice, loot decisions or ironman stakes; the honesty
-rule has three known breaks (species traits, spell clause accounting, and Multiattack
-sub-sentence composition clauses — #341) — the Multiattack *replace-clause* hole is
-closed (#290); the undocumented rules gap the review found — concentration surviving
-Incapacitated — is fixed (#289); a reload used to re-roll the ladder because the seed
-was not saved, and a save-vs-content mismatch used to crash instead of refusing — both
-closed (#286, #287 — remaining Loot sites #350); the art pipeline is unrepeatable and
-one sprite in ~60 matches the project's own palette. **The finishing plan below is
-the ordered answer.**
+rule's Multiattack accounting has three breaks closed and one still open — closed: the
+*replace-clause* hole (#290), alternative compositions that were summed instead of
+chosen between (#342), and the fourteen sub-sentence composition clauses folded inside
+a composition sentence that read as fully modelled (#341); open: #343, where nineteen
+enumerated fixed compositions ("one Bite attack and one Claw attack") record
+`AnyCombination: true` for want of per-name counts on `MultiattackEffect`, so a Brown
+Bear may double-Bite and nothing says so — the spell lane is answered by retiring a
+signal that could not be derived rather than faking one (#292), and species
+traits are no longer a silent one: none of the 33 printed trait instances execute, but
+`SpeciesTraitRegistry` and `CharacterSheet.UnimplementedFeatures` now say so at
+creation and on the sheet (#291); the undocumented rules gap the review found —
+concentration surviving Incapacitated — is fixed (#289); a reload used to re-roll the
+ladder because the seed was not saved, and a save-vs-content mismatch used to crash
+instead of refusing — both closed (#286, #287 — remaining Loot sites #350); the art
+pipeline is unrepeatable and one sprite in ~60 matches the project's own palette.
+**The finishing plan below is the ordered answer.**
 
 ## The finishing plan
 
@@ -95,8 +103,9 @@ both creation flows (created parties currently forfeit it silently); break
 concentration on Incapacitated; close the Multiattack replace-clause hole
 (`MatchesStructuredForm`) and regenerate; surface Multiattack sub-sentence
 composition clauses folded into the composition sentence itself (#341); surface
-species traits as unimplemented at creation and on the sheet; populate or retire
-`SpellDefinition.IsFullyModelled`; fix
+species traits as unimplemented at creation and on the sheet; retire
+`SpellDefinition.IsFullyModelled` (#292 — measured, not derivable on spell prose;
+`PreparableSpells` is the authority); fix
 the stall class (#256) and immunity-blind targeting (#224); one doc-drift sweep
 (gauntlet cycle arithmetic, mastery weapon count, stale headers and citations, client
 README). Exit: re-baseline both seed ranges; QC audits the three honesty lanes clean.
@@ -197,6 +206,14 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
   the enum; `IsFullyModelled` is the test. There is no "just prose" state.
 - Anything the model cannot express lands in `UnmodelledClauses` and is **counted**,
   including on entries that are otherwise structured.
+- **Spells are the one exception, and it is stated rather than silent.** A stat block
+  entry is all mechanics in a printed grammar, so a leftover sentence is a lost rule;
+  a spell description is prose that is mostly flavour, and the same accounting run over
+  it is *anti-correlated* with the truth — measured at 7 of 154 "fully modelled", of
+  which two are false positives and thirteen of the seventeen hand-verified spells come
+  out false. So spells carry `UnclassifiedClauses` (non-empty exactly when nothing was
+  classified) and **no completeness signal at all**: `PreparableSpells` is the authority
+  (#292). The reasoning lives on `SpellDefinition.UnclassifiedClauses`.
 - `Narrative` — "confirmed to do nothing in a fight" — is only ever set from a
   curated list, never inferred.
 - An action the engine cannot resolve is **refused with a named code**, never skipped.
@@ -210,11 +227,16 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
    *looked* implemented. **A partly-structured entry is more dangerous than an
    unstructured one**, because the missing part is invisible. This shape has recurred
    four times (rider gating, save-spell effects, Failure-tier sentences, and
-   Multiattack replace-clauses — closed by #290). Assume a fifth exists — it did:
-   a Multiattack's own composition sentence can fold an unexecuted rule inside itself
+   Multiattack replace-clauses — closed by #290). Assume a fifth exists — it did,
+   twice: a Multiattack can print two whole alternative compositions joined by "or
+   it/he/she/they makes" and have both summed into one attack count instead of the
+   model taking the printed default and accounting the rest (the Clay Golem swung
+   five Slams a turn against a printed maximum of three — closed by #342); and a
+   Multiattack's own composition sentence can fold an unexecuted rule inside itself
    (the Mummy's "and uses Dreadful Glare", the Kraken's "and uses Fling..."), which
-   `DescribesTheComposition` waves through with an empty `UnmodelledClauses` because
-   the composition it recognises still matches. Filed as #341.
+   `DescribesTheComposition` waved through with an empty `UnmodelledClauses` because
+   the composition it recognises still matches — closed by #341. Assume a seventh
+   exists.
 2. **A "does this look mechanical?" keyword filter** let Flyby, Nimble Escape and
    Shape-Shift through as inert. The heuristic was **removed rather than tuned**: a
    keyword list always has false negatives, and a false negative loses a rule.
@@ -264,6 +286,9 @@ content test failing on an entry you did not edit.
 - **The curated allowlists** — a printed name maps to an executed effect **only
   alongside the code that does the thing**; everything absent stays visibly reported:
   `ClassFeatureRegistry` (→ `CharacterSheet.UnimplementedFeatures`),
+  `SpeciesTraitRegistry` (also → `UnimplementedFeatures`; empty today — none of the 33
+  printed species trait instances execute, and both creation flows tag each one "(not
+  yet implemented)" where its text is shown, via `CharacterCreation.TraitExecutes`),
   `WeaponMasteryRules.Executed` (6 of 8; Push and Nick refused with reasons),
   `MonsterTraitRegistry` (Pack Tactics, Magic Resistance — spells only, Flyby),
   `MagicItemRegistry` (13 names; unregistered items are *refused at equip*),

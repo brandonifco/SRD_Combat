@@ -113,7 +113,7 @@ public static class CharacterResolver
             DivineOrder = divineOrder,
             ExpertiseSkills = expertise,
             SpellSlots = levelRow.SpellSlots,
-            UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, draft.Level, divineOrder),
+            UnimplementedFeatures = ResolveUnimplementedFeatures(content.Class, content.Species, draft.Level, divineOrder),
             UnspentFeatChoices = GrantsOf(content.Class, draft.Level, ClassFeature.AbilityScoreImprovement)
                 - improvementsTaken,
             MagicItemNames = magicItems.Select(item => ItemDisplayName(item)).ToArray(),
@@ -1006,11 +1006,20 @@ public static class CharacterResolver
     }
 
     /// <summary>
-    /// Printed features the class grants that this engine does not implement. The gap,
-    /// stated on the sheet rather than left invisible.
+    /// Printed features the class grants, and printed species traits, that this engine
+    /// does not implement. The gap, stated on the sheet rather than left invisible.
     /// </summary>
+    /// <remarks>
+    /// Species traits join the class-feature gap here on purpose: both are printed
+    /// rules text a character has, and both are checked against the same kind of
+    /// curated allowlist (<see cref="ClassFeatureRegistry"/> and
+    /// <see cref="SpeciesTraitRegistry"/>) rather than either being inferred. Every
+    /// species trait is unimplemented today, so every trait name lands here — see
+    /// <see cref="SpeciesTraitRegistry"/>'s remarks for why.
+    /// </remarks>
     private static IReadOnlyList<string> ResolveUnimplementedFeatures(
         ClassDefinition definition,
+        SpeciesDefinition species,
         int level,
         DivineOrder divineOrder) =>
         definition.Levels
@@ -1027,6 +1036,9 @@ public static class CharacterResolver
                     && divineOrder == DivineOrder.Unspecified))
             // Subclass placeholders are not features in their own right.
             .Where(name => !name.Contains("Subclass", StringComparison.OrdinalIgnoreCase))
+            .Concat(species.Traits
+                .Where(trait => SpeciesTraitRegistry.Resolve(trait.Name) is null)
+                .Select(trait => trait.Name))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToArray();

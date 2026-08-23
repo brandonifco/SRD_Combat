@@ -37,7 +37,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage (both initial and later) increases by 1d4 for each spell slot level above 2.",
       "sourcePage": 107
     },
@@ -88,7 +88,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).",
       "cantripUpgradeDice": "1d6",
       "sourcePage": 107
@@ -120,7 +120,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose up to three creatures within range",
         "Each target's Hit Point maximum and current Hit Points increase by 5 for the duration."
       ],
@@ -151,7 +151,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You set an alarm against intrusion",
         "Choose a door, a window, or an area within range that is no larger than a 20-foot Cube",
         "Until the spell ends, an alarm alerts you whenever a creature touches or enters the warded area",
@@ -186,7 +186,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You alter your physical form",
         "Choose one of the following options",
         "Its effects last for the duration, during which you can take a Magic action to replace the option you chose with a different one",
@@ -248,7 +248,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional Beast for each spell slot level above 1.",
       "sourcePage": 107
     },
@@ -285,7 +285,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The spell's duration increases by 48 hours for each spell slot level above 2.",
       "sourcePage": 108
     },
@@ -311,7 +311,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose any number of willing creatures that you can see within range",
         "Each target shape-shifts into a Large or smaller Beast of your choice that has a Challenge Rating of 4 or lower",
         "You can choose a different form for each target",
@@ -348,7 +348,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "and a pinch of bone dust) Choose a pile of bones or a corpse of a Medium or Small Humanoid within range",
         "The target becomes an Undead creature: a Skeleton if you chose bones or a Zombie if you chose a corpse (see \"Monsters\" for the stat blocks)",
         "On each of your turns, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 60 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one)",
@@ -386,7 +386,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Objects animate at your command",
         "Choose a number of nonmagical objects within range that aren't being worn or carried, aren't fixed to a surface, and aren't Gargantuan",
         "The maximum number of objects is equal to your spellcasting ability modifier; for this number, a Medium or smaller target counts as one object, a Large target counts as two, and a Huge target counts as three",
@@ -421,7 +421,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "An aura extends from you in a 10-foot Emanation for the duration",
         "The aura prevents creatures other than Constructs and Undead from passing or reaching through it",
         "An affected creature can cast spells or make attacks with Ranged or Reach weapons through the barrier",
@@ -452,7 +452,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "An aura of antimagic surrounds you in 10-foot Emanation",
         "No one can cast spells, take Magic actions, or create other magical effects inside the aura, and those things can't target or otherwise affect anything inside it",
         "Magical properties of magic items don't work inside the aura or on anything inside it",
@@ -515,7 +515,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 109
     },
     {
@@ -541,7 +541,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create an Invisible, invulnerable eye within range that hovers for the duration",
         "You mentally receive visual information from the eye, which can see in every direction",
         "It also has Darkvision with a range of 30 feet",
@@ -604,7 +604,7 @@
       ],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage of the Clenched Fist increases by 2d8 and the damage of the Grasping Hand increases by 2d6 for each spell slot level above 5.",
       "sourcePage": 110
     },
@@ -629,7 +629,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) You touch a closed door, window, gate, container, or hatch and magically lock it for the duration",
         "This lock can't be unlocked by any nonmagical means",
         "You and any creatures you designate when you cast the spell can open and close the object despite the lock",
@@ -660,7 +660,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 110
     },
     {
@@ -685,7 +685,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "With a touch, you place an illusion on a willing creature or an object that isn't being worn or carried",
         "A creature gains the Mask effect below, and an object gains the False Aura effect below",
         "The effect lasts for the duration",
@@ -728,7 +728,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "one jacinth worth 1,000+ GP and one silver bar worth 100+ GP, all of which the spell consumes) You and up to eight willing creatures within range project your astral bodies into the Astral Plane (the spell ends instantly if you are already on that plane)",
         "Each target's body is left behind in a state of suspended animation; it has the Unconscious condition, doesn't need food or air, and doesn't age",
         "A target's astral form resembles its body in almost every way, replicating its game statistics and possessions",
@@ -767,7 +767,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "cards, or other divinatory tokens worth 25+ GP) You receive an omen from an otherworldly entity about the results of a course of action that you plan to take within the next 30 minutes",
         "The GM chooses the omen from the Omens table",
         "Omens Omen For Results That Will Be … Weal Good Woe Bad Weal and woe Good and bad Indifference Neither good nor bad The spell doesn't account for circumstances, such as other spells, that might change the results",
@@ -797,7 +797,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "An aura radiates from you in a 30-foot Emanation for the duration",
         "While in the aura, you and your allies have Resistance to Necrotic damage, and your Hit Point maximums can't be reduced",
         "If an ally with 0 Hit Points starts its turn in the aura, that ally regains 1 Hit Point."
@@ -831,7 +831,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) You spend the casting time tracing magical pathways within a precious gemstone, and then touch the target",
         "The target must be either a Beast or Plant creature with an Intelligence of 3 or less or a natural plant that isn't a creature",
         "The target gains an Intelligence of 10 and the ability to speak one language you know",
@@ -874,7 +874,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       "sourcePage": 112
     },
@@ -923,7 +923,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 4.",
       "sourcePage": 112
     },
@@ -949,7 +949,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature",
         "Until the spell ends, the target's skin assumes a bark-like appearance, and the target has an Armor Class of 17 if its AC is lower than that."
       ],
@@ -977,7 +977,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose any number of creatures within range",
         "For the duration, each target has Advantage on Wisdom saving throws and Death Saving Throws and regains the maximum number of Hit Points possible from any healing."
       ],
@@ -1029,7 +1029,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 112
     },
     {
@@ -1075,7 +1075,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. If you cast this spell using a level 4 spell slot, you can maintain Concentration on it for up to 10 minutes. If you use a level 5+ spell slot, the spell doesn't require Concentration, and the duration becomes 8 hours (level 5-6 slot) or 24 hours (level 7-8 slot). If you use a level 9 spell slot, the spell lasts until dispelled.",
       "sourcePage": 112
     },
@@ -1132,7 +1132,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 113
     },
     {
@@ -1177,7 +1177,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 113
     },
     {
@@ -1204,7 +1204,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You bless up to three creatures within range",
         "Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save."
       ],
@@ -1256,7 +1256,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 113
@@ -1294,7 +1294,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 2.",
       "sourcePage": 113
     },
@@ -1320,7 +1320,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Roll 1d6 at the end of each of your turns for the duration",
         "On a roll of 4-6, you vanish from your current plane of existence and appear in the Ethereal Plane (the spell ends instantly if you are already on that plane)",
         "While on the Ethereal Plane, you can perceive the plane you left, which is cast in shades of gray, but you can't see anything there more than 60 feet away",
@@ -1353,7 +1353,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Your body becomes blurred",
         "For the duration, any creature has Disadvantage on attack rolls against you",
         "An attacker is immune to this effect if it perceives you with Blindsight or Truesight."
@@ -1406,7 +1406,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 114
@@ -1453,7 +1453,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 114
@@ -1493,7 +1493,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 114
     },
     {
@@ -1540,7 +1540,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. One additional bolt leaps from the first target to another target for each spell slot level above 6.",
       "sourcePage": 114
     },
@@ -1588,7 +1588,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 4.",
       "sourcePage": 114
     },
@@ -1636,7 +1636,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       "sourcePage": 115
     },
@@ -1669,7 +1669,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).",
       "cantripUpgradeDice": "1d10",
       "sourcePage": 115
@@ -1698,7 +1698,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1. The orb can leap a maximum number of times equal to the level of the slot expended, and a creature can be targeted only once by each casting of this spell.",
       "sourcePage": 115
     },
@@ -1750,7 +1750,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 2d8 for each spell slot level above 6.",
       "upcastDicePerSlotLevel": "2d8",
       "sourcePage": 115
@@ -1780,7 +1780,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "jeweled horn for hearing or a glass eye for seeing) You create an Invisible sensor within range in a location familiar to you (a place you have visited or seen before) or in an obvious location that is unfamiliar to you (such as behind a door, around a corner, or in a grove of trees)",
         "The intangible, invulnerable sensor remains in place for the duration",
         "When you cast the spell, choose seeing or hearing",
@@ -1811,7 +1811,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes, and a sealable vessel worth 2,000+ GP that is large enough to hold the creature being cloned) You touch a creature or at least 1 cubic inch of its flesh",
         "An inert duplicate of that creature forms inside the vessel used in the spell's casting and finishes growing after 120 days; you choose whether the finished clone is the same age as the creature or younger",
         "The clone remains inert and endures indefinitely while its vessel remains undisturbed",
@@ -1868,7 +1868,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 116
@@ -1919,7 +1919,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 116
     },
     {
@@ -1964,7 +1964,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can affect one additional creature for each spell slot level above 1.",
       "sourcePage": 116
     },
@@ -1990,7 +1990,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You contact a deity or a divine proxy and ask up to three questions that can be answered with yes or no",
         "You must ask your questions before the spell ends",
         "You receive a correct answer for each question",
@@ -2022,7 +2022,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You commune with nature spirits and gain knowledge of the surrounding area",
         "In the outdoors, the spell gives you knowledge of the area within 3 miles of you",
         "In caves and other natural underground settings, the radius is limited to 300 feet",
@@ -2056,7 +2056,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, you understand the literal meaning of any language that you hear or see signed",
         "You also understand any written language that you see, but you must be touching the surface on which the words are written",
         "It takes about 1 minute to read one page of text",
@@ -2104,7 +2104,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 117
     },
     {
@@ -2155,7 +2155,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 117
@@ -2198,7 +2198,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The Sphere's radius increases by 5 feet for each spell slot level above 4.",
       "sourcePage": 117
     },
@@ -2245,7 +2245,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 117
@@ -2292,7 +2292,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing and damage increase by 1d12 for each spell slot level above 7.",
       "sourcePage": 118
     },
@@ -2337,7 +2337,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 5.",
       "sourcePage": 118
     },
@@ -2368,7 +2368,7 @@
       ],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d12 for each spell slot level above 6.",
       "sourcePage": 118
     },
@@ -2394,7 +2394,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You conjure spirits from the Elemental Planes that flit around you in a 15-foot Emanation for the duration",
         "Until the spell ends, any attack you make deals an extra 2d8 damage when you hit a creature in the Emanation",
         "This damage is Acid, Cold, Fire, or Lightning (your choice when you make the attack)",
@@ -2449,7 +2449,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 118
@@ -2506,7 +2506,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 119
     },
     {
@@ -2561,7 +2561,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 119
     },
     {
@@ -2585,7 +2585,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "yourself worth 1,500+ GP) Choose a spell of level 5 or lower that you can cast, that has a casting time of an action, and that can target you",
         "You cast that spell-called the contingent spell-as part of casting Contingency, expending spell slots for both, but the contingent spell doesn't come into effect",
         "Instead, it takes effect when a certain trigger occurs",
@@ -2622,7 +2622,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) A flame springs from an object that you touch",
         "The effect casts Bright Light in a 20-foot radius and Dim Light for an additional 20 feet",
         "It looks like a regular flame, but it creates no heat and consumes no fuel",
@@ -2675,7 +2675,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 119
     },
     {
@@ -2702,7 +2702,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You take control of the weather within 5 miles of you for the duration",
         "You must be outdoors to cast this spell, and it ends early if you go indoors",
         "When you cast the spell, you change the current weather conditions, which are determined by the GM",
@@ -2748,7 +2748,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 120
     },
     {
@@ -2774,7 +2774,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create 45 pounds of food and 30 gallons of fresh water on the ground or in containers within range-both useful in fending off the hazards of malnutrition and dehydration",
         "The food is bland but nourishing and looks like a food of your choice, and the water is clean",
         "The food spoils after 24 hours if uneaten."
@@ -2805,7 +2805,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You do one of the following: Create Water",
         "You create up to 10 gallons of clean water within range in an open container",
         "Alternatively, the water falls as rain in a 30-foot Cube within range, extinguishing exposed flames there",
@@ -2840,7 +2840,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "for each corpse) You can cast this spell only at night",
         "Choose up to three corpses of Medium or Small Humanoids within range",
         "Each one becomes a Ghoul under your control (see \"Monsters\" for its stat block)",
@@ -2879,7 +2879,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You pull wisps of shadow material from the Shadowfell to create an object within range",
         "It is either an object of vegetable matter (soft goods, rope, wood, and the like) or mineral matter (stone, crystal, metal, and the like)",
         "The object must be no larger than a 5-foot Cube, and the object must be of a form and material that you have seen",
@@ -2916,7 +2916,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 2d8 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "2d8",
       "sourcePage": 121,
@@ -2950,7 +2950,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create up to four torch-size lights within range, making them appear as torches, lanterns, or glowing orbs that hover for the duration",
         "Alternatively, you combine the four lights into one glowing Medium form that is vaguely humanlike",
         "Whichever form you choose, each light sheds Dim Light in a 10foot radius",
@@ -2984,7 +2984,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, magical Darkness spreads from a point within range and fills a 15-foot-radius Sphere",
         "Darkvision can't see through it, and nonmagical light can't illuminate it",
         "Alternatively, you cast the spell on an object that isn't being worn or carried, causing the Darkness to fill a 15-foot Emanation originating from that object",
@@ -3018,7 +3018,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, a willing creature you touch has Darkvision with a range of 150 feet."
       ],
       "sourcePage": 122
@@ -3049,7 +3049,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, sunlight spreads from a point within range and fills a 60-foot-radius Sphere",
         "The sunlight's area is Bright Light and sheds Dim Light for an additional 60 feet",
         "Alternatively, you cast the spell on an object that isn't being worn or carried, causing the sunlight to fill a 60-foot Emanation originating from that object",
@@ -3080,7 +3080,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a creature and grant it a measure of protection from death",
         "The first time the target would drop to 0 Hit Points before the spell ends, the target instead drops to 1 Hit Point, and the spell ends",
         "If the spell is still in effect when the target is subjected to an effect that would kill it instantly without dealing damage, that effect is negated against the target, and the spell ends."
@@ -3123,7 +3123,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The base damage increases by 1d6 for each spell slot level above 7.",
       "sourcePage": 122
     },
@@ -3156,7 +3156,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create a shadowy Medium door on a flat solid surface that you can see within range",
         "This door can be opened and closed, and it leads to a demiplane that is an empty room 30 feet in each dimension, made of wood or stone (your choice)",
         "When the spell ends, the door vanishes, and any objects inside the demiplane remain there",
@@ -3188,7 +3188,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, you sense the location of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of yourself",
         "You also sense whether the Hallow spell is active there and, if so, where",
         "The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead."
@@ -3223,7 +3223,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, you sense the presence of magical effects within 30 feet of yourself",
         "If you sense such effects, you can take the Magic action to see a faint aura around any visible creature or object in the area that bears the magic, and if an effect was created by a spell, you learn the spell's school of magic",
         "The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead."
@@ -3255,7 +3255,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, you sense the location of poisons, poisonous or venomous creatures, and magical contagions within 30 feet of yourself",
         "You sense the kind of poison, creature, or contagion in each case",
         "The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead."
@@ -3294,7 +3294,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 123
     },
     {
@@ -3328,7 +3328,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You teleport to a location within range",
         "You arrive at exactly the spot desired",
         "It can be a place you can see, one you can visualize, or one you can describe by stating distance and direction, such as \"200 feet straight downward\" or \"300 feet upward to the northwest at a 45-degree angle.\" You can also teleport one willing creature",
@@ -3360,7 +3360,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You make yourself-including your clothing, armor, weapons, and other belongings on your personlook different until the spell ends",
         "You can seem 1 foot shorter or taller and can appear heavier or lighter",
         "You must adopt a form that has the same basic arrangement of limbs as you have",
@@ -3403,7 +3403,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 3d6 for each spell slot level above 6.",
       "sourcePage": 124
     },
@@ -3438,7 +3438,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 124
     },
     {
@@ -3470,7 +3470,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose one creature, object, or magical effect within range",
         "Any ongoing spell of level 3 or lower on the target ends",
         "For each ongoing spell of level 4 or higher on the target, make an ability check using your spellcasting ability (DC 10 plus that spell's level)",
@@ -3521,7 +3521,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 124
@@ -3549,7 +3549,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "spell consumes) This spell puts you in contact with a god or a god's servants",
         "You ask one question about a specific goal, event, or activity to occur within 7 days",
         "The GM offers a truthful reply, which might be a short phrase or cryptic rhyme",
@@ -3585,7 +3585,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Until the spell ends, your attacks with weapons deal an extra 1d4 Radiant damage on a hit."
       ],
       "sourcePage": 125
@@ -3617,7 +3617,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "ately after hitting a target with a Melee weapon or an Unarmed Strike The target takes an extra 2d8 Radiant damage from the attack",
         "The damage increases by 1d8 if the target is a Fiend or an Undead."
       ],
@@ -3665,7 +3665,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 125
     },
     {
@@ -3710,7 +3710,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. Your Concentration can last longer with a spell slot of level 5 (up to 10 minutes), 6 (up to 1 hour), or 7+ (up to 8 hours).",
       "sourcePage": 125
     },
@@ -3757,7 +3757,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. Your Concentration can last longer with a level 9 spell slot (up to 8 hours).",
       "sourcePage": 125
     },
@@ -3803,7 +3803,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. Your Concentration can last longer with a spell slot of level 6 (up to 10 minutes), 7 (up to 1 hour), or 8+ (up to 8 hours).",
       "sourcePage": 126
     },
@@ -3842,7 +3842,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       "sourcePage": 126
     },
@@ -3890,7 +3890,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 126
     },
     {
@@ -3915,7 +3915,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Whispering to the spirits of nature, you create one of the following effects within range",
         "Weather Sensor",
         "You create a Tiny, harmless sensory effect that predicts what the weather will be at your location for the next 24 hours",
@@ -3986,7 +3986,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 127
     },
     {
@@ -4017,7 +4017,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The spell creates two beams at level 5, three beams at level 11, and four beams at level 17. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam.",
       "sourcePage": 127
     },
@@ -4045,7 +4045,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You exert control over the elements, creating one of the following effects within range",
         "Beckon Air",
         "You create a breeze strong enough to ripple cloth, stir dust, rustle leaves, and close open doors and shutters, all in a 5-foot Cube",
@@ -4091,7 +4091,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a creature and choose Strength, Dexterity, Intelligence, Wisdom, or Charisma",
         "For the duration, the target has Advantage on ability checks using the chosen ability."
       ],
@@ -4132,7 +4132,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 127
     },
     {
@@ -4186,7 +4186,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 128
@@ -4232,7 +4232,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 128
     },
     {
@@ -4266,7 +4266,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 128
     },
     {
@@ -4294,7 +4294,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You step into the border regions of the Ethereal Plane, where it overlaps with your current plane",
         "You remain in the Border Ethereal for the duration",
         "During this time, you can move in any direction",
@@ -4332,7 +4332,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You take the Dash action, and until the spell ends, you can take that action again as a Bonus Action."
       ],
       "sourcePage": 129
@@ -4392,7 +4392,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 129
     },
     {
@@ -4417,7 +4417,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You convert raw materials into products of the same material",
         "For example, you can fabricate a wooden bridge from a clump of trees, a rope from a patch of hemp, or clothes from flax or wool",
         "Choose raw materials that you can see within range",
@@ -4474,7 +4474,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 129
     },
     {
@@ -4520,7 +4520,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 129
     },
     {
@@ -4546,7 +4546,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You gain 2d4 + 4 Temporary Hit Points."
       ],
       "scalingText": "Using a Higher-Level Spell Slot. You gain 5 additional Temporary Hit Points for each spell slot level above 1.",
@@ -4599,7 +4599,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 130
     },
     {
@@ -4627,7 +4627,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "creature you can see within 60 feet of you falls Choose up to five falling creatures within range",
         "A falling creature's rate of descent slows to 60 feet per round until the spell ends",
         "If a creature lands before the spell ends, the creature takes no damage from the fall, and the spell ends for that creature."
@@ -4656,7 +4656,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) You gain the service of a familiar, a spirit that takes an animal form you choose: Bat, Cat, Frog, Hawk, Lizard, Octopus, Owl, Rat, Raven, Spider, Weasel, or another Beast that has a Challenge Rating of 0",
         "Appearing in an unoccupied space within range, the familiar has the statistics of the chosen form (see \"Monsters\"), though it is a Celestial, Fey, or Fiend (your choice) instead of a Beast",
         "Your familiar acts independently of you, but it obeys your commands",
@@ -4709,7 +4709,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You summon an otherworldly being that appears as a loyal steed in an unoccupied space of your choice within range",
         "This creature uses the Otherworldly Steed stat block",
         "If you already have a steed from this spell, the steed is replaced by the new one",
@@ -4750,7 +4750,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "cards or runes-worth 100+ GP) You magically sense the most direct physical route to a location you name",
         "You must be familiar with the location, and the spell fails if you name a destination on another plane of existence, a moving destination (such as a mobile fortress), or an unspecific destination (such as \"a green dragon's lair\")",
         "For the duration, as long as you are on the same plane of existence as the destination, you know how far it is and in what direction it lies",
@@ -4782,7 +4782,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You sense any trap within range that is within line of sight",
         "A trap, for the purpose of this spell, includes any object or mechanism that was created to cause damage or other danger",
         "Thus, the spell would sense the Alarm or Glyph of Warding spell or a mechanical pit trap, but it wouldn't reveal a natural weakness in the floor, an unstable ceiling, or a hidden sinkhole",
@@ -4823,7 +4823,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 131
     },
     {
@@ -4874,7 +4874,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 131
@@ -4908,7 +4908,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).",
       "cantripUpgradeDice": "1d10",
       "sourcePage": 132
@@ -4948,7 +4948,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Wispy flames wreathe your body for the duration, shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet",
         "The flames provide you with a warm shield or a chill shield, as you choose",
         "The warm shield grants you Resistance to Cold damage, and the chill shield grants you Resistance to Fire damage",
@@ -5005,7 +5005,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 132
     },
     {
@@ -5031,7 +5031,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       "sourcePage": 132
     },
@@ -5088,7 +5088,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The Fire damage and the Radiant damage increase by 1d6 for each spell slot level above 5.",
       "sourcePage": 132
     },
@@ -5137,7 +5137,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 132
@@ -5193,7 +5193,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 133
     },
     {
@@ -5219,7 +5219,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell creates a circular, horizontal plane of force, 3 feet in diameter and 1 inch thick, that floats 3 feet above the ground in an unoccupied space of your choice that you can see within range",
         "The disk remains for the duration and can hold up to 500 pounds",
         "If more weight is placed on it, the spell ends, and everything on the disk falls to the ground",
@@ -5255,7 +5255,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature",
         "For the duration, the target gains a Fly Speed of 60 feet and can hover",
         "When the spell ends, the target falls if it is still aloft unless it can stop the fall."
@@ -5288,7 +5288,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create a 20-foot-radius Sphere of fog centered on a point within range",
         "The Sphere is Heavily Obscured",
         "It lasts for the duration or until a strong wind (such as one created by Gust of Wind ) disperses it."
@@ -5318,7 +5318,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create a ward against magical travel that protects up to 40,000 square feet of floor space to a height of 30 feet above the floor",
         "For the duration, creatures can't teleport into the area or use portals, such as those created by the Gate spell, to enter the area",
         "The spell proofs the area against planar travel, and therefore prevents creatures from accessing the area by way of the Astral Plane, the Ethereal Plane, the Feywild, the Shadowfell, or the Plane Shift spell",
@@ -5364,7 +5364,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 134
     },
     {
@@ -5392,7 +5392,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature and bestow a limited ability to see into the immediate future",
         "For the duration, the target has Advantage on D20 Tests, and other creatures have Disadvantage on attack rolls against it",
         "The spell ends early if you cast it again."
@@ -5429,7 +5429,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature",
         "For the duration, the target's movement is unaffected by Difficult Terrain, and spells and other magical effects can neither reduce the target's Speed nor cause the target to have the Paralyzed or Restrained conditions",
         "The target also has a Swim Speed equal to its Speed",
@@ -5496,7 +5496,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 6.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 134
@@ -5530,7 +5530,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A willing creature you touch shape-shifts, along with everything it's wearing and carrying, into a misty cloud for the duration",
         "The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself",
         "While in this form, the target's only method of movement is a Fly Speed of 10 feet, and it can hover",
@@ -5569,7 +5569,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence",
         "The portal is a circular opening, which you can make 5 to 20 feet in diameter",
         "You can orient the portal in any direction you choose",
@@ -5641,7 +5641,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. If you use a level 7 or 8 spell slot, the duration is 365 days. If you use a level 9 spell slot, the spell lasts until it is ended by one of the spells mentioned above.",
       "sourcePage": 135
     },
@@ -5668,7 +5668,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "consumes) You touch a corpse or other remains",
         "For the duration, the target is protected from decay and can't become Undead",
         "The spell also effectively extends the time limit on raising the target from the dead, since days spent under the influence of this spell don't count against the time limit of spells such as Raise Dead."
@@ -5697,7 +5697,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You summon a giant centipede, spider, or wasp (chosen when you cast the spell)",
         "It manifests in an unoccupied space you can see within range and uses the Giant Insect stat block",
         "The form you choose determines certain details in its stat block",
@@ -5732,7 +5732,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Until the spell ends, when you make a Charisma check, you can replace the number you roll with a 15",
         "Additionally, no matter what you say, magic that would determine if you are telling the truth indicates that you are being truthful."
       ],
@@ -5761,7 +5761,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "An immobile, shimmering barrier appears in a 10foot Emanation around you and remains for the duration",
         "Any spell of level 5 or lower cast from outside the barrier can't affect anything within it",
         "Such a spell can target creatures and objects within the barrier, but the spell has no effect on them",
@@ -5805,7 +5805,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage of an explosive rune increases by 1d8 for each spell slot level above 3. If you create a spell glyph, you can store any spell of up to the same level as the spell slot you use for the Glyph of Warding.",
       "sourcePage": 136
     },
@@ -5832,7 +5832,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Ten berries appear in your hand and are infused with magic for the duration",
         "A creature can take a Bonus Action to eat one berry",
         "Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day",
@@ -5882,7 +5882,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 137
     },
     {
@@ -5913,7 +5913,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A creature you touch has the Invisible condition until the spell ends."
       ],
       "sourcePage": 137
@@ -5943,7 +5943,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) You touch a creature and magically remove one of the following effects from it: • 1 Exhaustion level • The Charmed or Petrified condition • A curse, including the target's Attunement to a cursed magic item • Any reduction to one of the target's ability scores • Any reduction to the target's Hit Point maximum"
       ],
       "sourcePage": 137
@@ -5978,7 +5978,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 137
     },
     {
@@ -6004,7 +6004,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create a ward that protects up to 2,500 square feet of floor space",
         "The warded area can be up to 20 feet tall, and you shape it as one 50-foot square, one hundred 5-foot squares that are contiguous, or twenty-five 10-foot squares that are contiguous",
         "When you cast this spell, you can specify individuals that are unaffected by the spell's effects",
@@ -6049,7 +6049,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature and choose a skill",
         "Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill."
       ],
@@ -6083,7 +6083,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": true,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 138
@@ -6121,7 +6121,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 138
     },
     {
@@ -6150,7 +6150,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) You touch a point and infuse an area around it with holy or unholy power",
         "The area can have a radius up to 60 feet, and the spell fails if the radius includes an area already under the effect of Hallow",
         "The affected area has the following effects",
@@ -6209,7 +6209,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You make natural terrain in a 150-foot Cube in range look, sound, and smell like another sort of natural terrain",
         "Thus, open fields or a road can be made to resemble a swamp, hill, crevasse, or some other difficult or impassable terrain",
         "A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road",
@@ -6262,7 +6262,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 139
     },
     {
@@ -6289,7 +6289,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose a willing creature that you can see within range",
         "Until the spell ends, the target's Speed is doubled, it gains a +2 bonus to Armor Class, it has Advantage on Dexterity saving throws, and it gains an additional action on each of its turns",
         "That action can be used to take only the Attack (one attack only), Dash, Disengage, Hide, or Utilize action",
@@ -6320,7 +6320,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose a creature that you can see within range",
         "Positive energy washes through the target, restoring 70 Hit Points",
         "This spell also ends the Blinded, Deafened, and Poisoned conditions on the target."
@@ -6352,7 +6352,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 2d4 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "2d4",
       "sourcePage": 139,
@@ -6405,7 +6405,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 139
@@ -6452,7 +6452,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 140
@@ -6480,7 +6480,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "1,000+ GP, which the spell consumes) You conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you",
         "The feast takes 1 hour to consume and disappears at the end of that time, and the beneficial effects don't set in until this hour is over",
         "Up to twelve creatures can partake of the feast",
@@ -6517,7 +6517,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A willing creature you touch is imbued with bravery",
         "Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns."
       ],
@@ -6553,7 +6553,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You place a curse on a creature that you can see within range",
         "Until the spell ends, you deal an extra 1d6 Necrotic damage to the target whenever you hit it with an attack roll",
         "Also, choose one ability when you cast the spell",
@@ -6606,7 +6606,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
       "sourcePage": 140
     },
@@ -6662,7 +6662,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 5.",
       "sourcePage": 140
     },
@@ -6721,7 +6721,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can target one additional Humanoid for each spell slot level above 2.",
       "sourcePage": 141
     },
@@ -6769,7 +6769,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 141
     },
     {
@@ -6800,7 +6800,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You magically mark one creature you can see within range as your quarry",
         "Until the spell ends, you deal an extra 1d6 Force damage to the target whenever you hit it with an attack roll",
         "You also have Advantage on any Wisdom (Perception or Survival) check you make to find it",
@@ -6865,7 +6865,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 141
     },
     {
@@ -6923,7 +6923,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The Cold damage increases by 1d6 for each spell slot level above 1.",
       "sourcePage": 141
     },
@@ -6982,7 +6982,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The Bludgeoning damage increases by 1d10 for each spell slot level above 4.",
       "sourcePage": 141
     },
@@ -7009,7 +7009,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch an object throughout the spell's casting",
         "If the object is a magic item or some other magical object, you learn its properties and how to use them, whether it requires Attunement, and how many charges it has, if any",
         "You learn whether any ongoing spells are affecting the item and what they are",
@@ -7041,7 +7041,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "consumes) You write on parchment, paper, or another suitable material and imbue it with an illusion that lasts for the duration",
         "To you and any creatures you designate when you cast the spell, the writing appears normal, seems to be written in your hand, and conveys whatever meaning you intended when you wrote the text",
         "To all others, the writing appears as if it were written in an unknown or magical script that is unintelligible",
@@ -7100,7 +7100,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 142
     },
     {
@@ -7151,7 +7151,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 142
     },
     {
@@ -7195,7 +7195,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 143
@@ -7249,7 +7249,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 5.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 143
@@ -7276,7 +7276,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch the sapphire used in the casting and an object weighing 10 pounds or less whose longest dimension is 6 feet or less",
         "The spell leaves an Invisible mark on that object and invisibly inscribes the object's name on the sapphire",
         "Each time you cast this spell, you must use a different sapphire",
@@ -7327,7 +7327,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 143
     },
     {
@@ -7360,7 +7360,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A creature you touch has the Invisible condition until the spell ends",
         "The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
       ],
@@ -7391,7 +7391,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature",
         "Once on each of its turns until the spell ends, that creature can jump up to 30 feet by spending 10 feet of movement."
       ],
@@ -7422,7 +7422,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose an object that you can see within range",
         "The object can be a door, a box, a chest, a set of manacles, a padlock, or another object that contains a mundane or magical means that prevents access",
         "A target that is held shut by a mundane lock or that is stuck or barred becomes unlocked, unstuck, or unbarred",
@@ -7455,7 +7455,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes, and four ivory strips worth 50+ GP each) Name or describe a famous person, place, or object",
         "The spell brings to your mind a brief summary of the significant lore about that famous thing, as described by the GM",
         "The lore might consist of important details, amusing revelations, or even secret lore that has never been widely known",
@@ -7490,7 +7490,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a creature and end one condition on it: Blinded, Deafened, Paralyzed, or Poisoned."
       ],
       "sourcePage": 144
@@ -7527,7 +7527,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 144
     },
     {
@@ -7555,7 +7555,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch one Large or smaller object that isn't being worn or carried by someone else",
         "Until the spell ends, the object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet",
         "The light can be colored as you like",
@@ -7612,7 +7612,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 144
@@ -7641,7 +7641,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Describe or name a specific kind of Beast, Plant creature, or nonmagical plant",
         "You learn the direction and distance to the closest creature or plant of that kind within 5 miles, if any are present."
       ],
@@ -7674,7 +7674,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Describe or name a creature that is familiar to you",
         "You sense the direction to the creature's location if that creature is within 1,000 feet of you",
         "If the creature is moving, you know the direction of its movement",
@@ -7711,7 +7711,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Describe or name an object that is familiar to you",
         "You sense the direction to the object's location if that object is within 1,000 feet of you",
         "If the object is in motion, you know the direction of its movement",
@@ -7746,7 +7746,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a creature",
         "The target's Speed increases by 10 feet until the spell ends."
       ],
@@ -7776,7 +7776,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature who isn't wearing armor",
         "Until the spell ends, the target's base AC becomes 13 plus its Dexterity modifier",
         "The spell ends early if the target dons armor."
@@ -7808,7 +7808,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A spectral, floating hand appears at a point you choose within range",
         "The hand lasts for the duration",
         "The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again",
@@ -7852,7 +7852,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The duration increases by 1 hour for each spell slot level above 3.",
       "sourcePage": 145
     },
@@ -7885,7 +7885,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 146
     },
     {
@@ -7911,7 +7911,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create three glowing darts of magical force",
         "Each dart strikes a creature of your choice that you can see within range",
         "A dart deals 1d4 + 1 Force damage to its target",
@@ -7943,7 +7943,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) You implant a message within an object in range-a message that is uttered when a trigger condition is met",
         "Choose an object that you can see and that isn't being worn or carried by another creature",
         "Then speak the message, which must be 25 words or fewer, though it can be delivered over as long as 10 minutes",
@@ -7980,7 +7980,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a nonmagical weapon",
         "Until the spell ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and damage rolls",
         "The spell ends early if you cast it again."
@@ -8012,7 +8012,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You conjure a shimmering door in range that lasts for the duration",
         "The door leads to an extradimensional dwelling and is 5 feet wide and 10 feet tall",
         "You and any creature you designate when you cast the spell can enter the extradimensional dwelling as long as the door remains open",
@@ -8060,7 +8060,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 20-foot Cube",
         "The image appears at a spot that you can see within range and lasts for the duration",
         "It seems real, including sounds, smells, and temperature appropriate to the thing depicted, but it can't deal damage or cause conditions",
@@ -8099,7 +8099,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A wave of healing energy washes out from a point you can see within range",
         "Choose up to six creatures in a 30-foot-radius Sphere centered on that point",
         "Each target regains Hit Points equal to 5d8 plus your spellcasting ability modifier."
@@ -8129,7 +8129,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A flood of healing energy flows from you into creatures around you",
         "You restore up to 700 Hit Points, divided as you choose among any number of creatures that you can see within range",
         "Creatures healed by this spell also have the Blinded, Deafened, and Poisoned conditions removed from them."
@@ -8159,7 +8159,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Up to six creatures of your choice that you can see within range regain Hit Points equal to 2d4 plus your spellcasting ability modifier."
       ],
       "scalingText": "Using a Higher-Level Spell Slot. The healing increases by 1d4 for each spell slot level above 3.",
@@ -8208,7 +8208,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).",
       "sourcePage": 148
     },
@@ -8234,7 +8234,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You banish a creature that you can see within range into a labyrinthine demiplane",
         "The target remains there for the duration or until it escapes the maze",
         "The target can take a Study action to try to escape",
@@ -8278,7 +8278,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You step into a stone object or surface large enough to fully contain your body, merging yourself and your equipment with the stone for the duration",
         "You must touch the stone to do so",
         "Nothing of your presence remains visible or otherwise detectable by nonmagical senses",
@@ -8318,7 +8318,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin",
         "As long as the break or tear is no larger than 1 foot in any dimension, you mend it, leaving no trace of the former damage",
         "This spell can physically repair a magic item, but it can't restore magic to such an object."
@@ -8351,7 +8351,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You point toward a creature within range and whisper a message",
         "The target (and only the target) hears the message and can reply in a whisper that only you can hear",
         "You can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier",
@@ -8416,7 +8416,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 149
     },
     {
@@ -8446,7 +8446,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Until the spell ends, one willing creature you touch has Immunity to Psychic damage and the Charmed condition",
         "The target is also unaffected by anything that would sense its emotions or alignment, read its thoughts, or magically detect its location, and no spell-not even Wish-can gather information about the target, observe it remotely, or control its mind."
       ],
@@ -8506,7 +8506,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 149
@@ -8537,7 +8537,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create a sound or an image of an object within range that lasts for the duration",
         "See the descriptions below for the effects of each",
         "The illusion ends if you cast this spell again",
@@ -8577,7 +8577,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You make terrain in an area up to 1 mile square look, sound, smell, and even feel like some other sort of terrain",
         "Open fields or a road could be made to resemble a swamp, hill, crevasse, or some other rough or impassable terrain",
         "A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road",
@@ -8618,7 +8618,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Three illusory duplicates of yourself appear in your space",
         "Until the spell ends, the duplicates move with you and mimic your actions, shifting position so it's impossible to track which image is real",
         "Each time a creature hits you with an attack roll during the spell's duration, roll a d6 for each of your remaining duplicates",
@@ -8657,7 +8657,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You gain the Invisible condition at the same time that an illusory double of you appears where you are standing",
         "The double lasts for the duration, but the invisibility ends immediately after you make an attack roll, deal damage, or cast a spell",
         "As a Magic action, you can move the illusory double up to twice your Speed and make it gesture, speak, and behave in whatever way you choose",
@@ -8689,7 +8689,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space you can see."
       ],
       "sourcePage": 150
@@ -8743,7 +8743,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You can alter the target's memories of an event that took place up to 7 days ago (level 6 spell slot), 30 days ago (level 7 spell slot), 365 days ago (level 8 spell slot), or any time in the creature's past (level 9 spell slot).",
       "sourcePage": 150
     },
@@ -8790,7 +8790,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 2.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 150
@@ -8820,7 +8820,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose an area of terrain no larger than 40 feet on a side within range",
         "You can reshape dirt, sand, or clay in the area in any manner you choose for the duration",
         "You can raise or lower the area's elevation, create or fill in a trench, erect or flatten a wall, or form a pillar",
@@ -8860,7 +8860,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "25+ GP, which the spell consumes) For the duration, you hide a target that you touch from Divination spells",
         "The target can be a willing creature, or it can be a place or an object no larger than 10 feet in any dimension",
         "The target can't be targeted by any Divination spell or perceived through magical scrying sensors."
@@ -8890,7 +8890,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A passage appears at a point that you can see on a wooden, plaster, or stone surface (such as a wall, ceiling, or floor) within range and lasts for the duration",
         "You choose the opening's dimensions: up to 5 feet wide, 8 feet tall, and 20 feet deep",
         "The passage creates no instability in a structure surrounding it",
@@ -8921,7 +8921,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You radiate a concealing aura in a 30-foot Emanation for the duration",
         "While in the aura, you and each creature you choose have a +10 bonus to Dexterity (Stealth) checks and leave no tracks."
       ],
@@ -8976,7 +8976,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 151
     },
     {
@@ -9022,7 +9022,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 4.",
       "upcastDicePerSlotLevel": "1d10",
       "sourcePage": 152
@@ -9049,7 +9049,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A Large, quasi-real, horselike creature appears on the ground in an unoccupied space of your choice within range",
         "You decide the creature's appearance, and it is equipped with a saddle, bit, and bridle",
         "Any of the equipment created by the spell vanishes in a puff of smoke if it is carried more than 10 feet away from the steed",
@@ -9082,7 +9082,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You beseech an otherworldly entity for aid",
         "The being must be known to you: a god, a demon prince, or some other being of cosmic power",
         "That entity sends a Celestial, an Elemental, or a Fiend loyal to it to aid you, making the creature appear in an unoccupied space within range",
@@ -9140,7 +9140,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The duration increases with a spell slot of level 6 (10 days), 7 (30 days), 8 (180 days), and 9 (366 days).",
       "sourcePage": 152
     },
@@ -9169,7 +9169,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "GP and attuned to a plane of existence) You and up to eight willing creatures who link hands in a circle are transported to a different plane of existence",
         "You can specify a target destination in general terms, such as a specific city on the Elemental Plane of Fire or palace on the second level of the Nine Hells, and you appear in or near that destination, as determined by the GM",
         "Alternatively, if you know the sigil sequence of a teleportation circle on another plane of existence, this spell can take you to that circle",
@@ -9201,7 +9201,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "8 hours (Enrichment) This spell channels vitality into plants",
         "The casting time you use determines whether the spell has the Overgrowth or the Enrichment effect below",
         "Overgrowth",
@@ -9247,7 +9247,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d12 when you reach levels 5 (2d12), 11 (3d12), and 17 (4d12).",
       "cantripUpgradeDice": "1d12",
       "sourcePage": 153
@@ -9286,7 +9286,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 153
     },
     {
@@ -9317,7 +9317,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A wave of healing energy washes over one creature you can see within range",
         "The target regains all its Hit Points",
         "If the creature has the Charmed, Frightened, Paralyzed, Poisoned, or Stunned condition, the condition ends",
@@ -9356,7 +9356,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You compel one creature you can see within range to die",
         "If the target has 100 Hit Points or fewer, it dies",
         "Otherwise, it takes 12d12 Psychic damage."
@@ -9406,7 +9406,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 154
     },
     {
@@ -9432,7 +9432,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Up to five creatures of your choice who remain within range for the spell's entire casting gain the benefits of a Short Rest and also regain 2d8 Hit Points",
         "A creature can't be affected by this spell again until that creature finishes a Long Rest."
       ],
@@ -9464,7 +9464,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create a magical effect within range",
         "Choose the effect from the options below",
         "If you cast this spell multiple times, you can have up to three of its non-instantaneous effects active at a time",
@@ -9598,7 +9598,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 154
     },
     {
@@ -9710,7 +9710,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 155
     },
     {
@@ -9736,7 +9736,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You make an area within range magically secure",
         "The area is a Cube that can be as small as 5 feet to as large as 100 feet on each side",
         "The spell lasts for the duration",
@@ -9773,7 +9773,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
       "cantripUpgradeDice": "1d8",
       "sourcePage": 156
@@ -9802,7 +9802,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create an illusion of an object, a creature, or some other visible phenomenon within range that activates when a specific trigger occurs",
         "The illusion is imperceptible until then",
         "It must be no larger than a 30-foot Cube, and you decide when you cast the spell how the illusion behaves and what sounds it makes",
@@ -9840,7 +9840,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "5+ GP) You create an illusory copy of yourself that lasts for the duration",
         "The copy can appear at any location within range that you have seen before, regardless of intervening obstacles",
         "The illusion looks and sounds like you, but it is intangible",
@@ -9879,7 +9879,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder."
       ],
       "sourcePage": 157
@@ -9909,7 +9909,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "GP, which the spell consumes) Until the spell ends, one willing creature you touch is protected against creatures that are Aberrations, Celestials, Elementals, Fey, Fiends, or Undead",
         "The protection grants several benefits",
         "Creatures of those types have Disadvantage on attack rolls against the target",
@@ -9947,7 +9947,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a creature and end the Poisoned condition on it",
         "For the duration, the target has Advantage on saving throws to avoid or end the Poisoned condition, and it has Resistance to Poison damage."
       ],
@@ -9977,7 +9977,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You remove poison and rot from nonmagical food and drink in a 5-foot-radius Sphere centered on a point within range."
       ],
       "sourcePage": 157
@@ -10005,7 +10005,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) With a touch, you revive a dead creature if it has been dead no longer than 10 days and it wasn't Undead when it died",
         "The creature returns to life with 1 Hit Point",
         "This spell also neutralizes any poisons that affected the creature at the time of death",
@@ -10048,7 +10048,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 157
     },
     {
@@ -10080,7 +10080,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
       "cantripUpgradeDice": "1d8",
       "sourcePage": 157
@@ -10109,7 +10109,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A creature you touch regains 4d8 + 15 Hit Points",
         "For the duration, the target regains 1 Hit Point at the start of each of its turns, and any severed body parts regrow after 2 minutes."
       ],
@@ -10157,7 +10157,7 @@
       ],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 158
@@ -10183,7 +10183,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "the spell consumes) You touch a dead Humanoid or a piece of one",
         "If the creature has been dead no longer than 10 days, the spell forms a new body for it and calls the soul to enter that body",
         "Roll 1d10 and consult the table below to determine the body's species, or the GM chooses another playable species",
@@ -10217,7 +10217,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "At your touch, all curses affecting one creature or object end",
         "If the object is a cursed magic item, its curse remains, but the spell breaks its owner's Attunement to the object so it can be removed or discarded."
       ],
@@ -10254,7 +10254,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 158
     },
     {
@@ -10279,7 +10279,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a willing creature and choose a damage type: Acid, Bludgeoning, Cold, Fire, Lightning, Necrotic, Piercing, Poison, Radiant, Slashing, or Thunder",
         "When the creature takes damage of the chosen type before the spell ends, the creature reduces the total damage taken by 1d4",
         "A creature can benefit from this spell only once per turn."
@@ -10308,7 +10308,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) With a touch, you revive a dead creature that has been dead for no more than a century, didn't die of old age, and wasn't Undead when it died",
         "The creature returns to life with all its Hit Points",
         "This spell also neutralizes any poisons that affected the creature at the time of death",
@@ -10354,7 +10354,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 159
     },
     {
@@ -10381,7 +10381,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 159,
       "revival": {
         "hitPoints": 1
@@ -10409,7 +10409,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a rope",
         "One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling",
         "At the rope's upper end, an Invisible 3-foot-by-5-foot portal opens to an extradimensional space that lasts until the spell ends",
@@ -10462,7 +10462,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
       "cantripUpgradeDice": "1d8",
       "sourcePage": 159
@@ -10498,7 +10498,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 159
     },
     {
@@ -10530,7 +10530,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. You create one additional ray for each spell slot level above 2.",
       "sourcePage": 159
     },
@@ -10567,7 +10567,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 160
     },
     {
@@ -10611,7 +10611,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. All the damage increases by 1d6 for each spell slot level above 1.",
       "sourcePage": 160
     },
@@ -10636,7 +10636,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "constructed from rare materials worth 5,000+ GP, and a Tiny replica of the chest made from the same materials worth 50+ GP) You hide a chest and all its contents on the Ethereal Plane",
         "You must touch the chest and the miniature replica that serve as Material components for the spell",
         "The chest can contain up to 12 cubic feet of nonliving material (3 feet by 2 feet by 2 feet)",
@@ -10678,7 +10678,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, you see creatures and objects that have the Invisible condition as if they were visible, and you can see into the Ethereal Plane",
         "Creatures and objects there appear ghostly."
       ],
@@ -10716,7 +10716,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 160
     },
     {
@@ -10743,7 +10743,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You send a short message of 25 words or fewer to a creature you have met or a creature described to you by someone who has met it",
         "The target hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately",
         "The spell enables targets to understand the meaning of your message",
@@ -10784,7 +10784,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) With a touch, you magically sequester an object or a willing creature",
         "For the duration, the target has the Invisible condition and can't be targeted by Divination spells, detected by magic, or viewed remotely with magic",
         "If the target is a creature, it enters a state of suspended animation; it has the Unconscious condition, doesn't age, and doesn't need food, water, or air",
@@ -10817,7 +10817,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You shape-shift into another creature for the duration or until you take a Magic action to shape-shift into a different eligible form",
         "The new form must be of a creature that has a Challenge Rating no higher than your level or Challenge Rating",
         "You must have seen the sort of creature before, and it can't be a Construct or an Undead",
@@ -10878,7 +10878,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 2.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 161
@@ -10905,7 +10905,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "hit by an attack roll or targeted by the Magic Missile spell An imperceptible barrier of magical force protects you",
         "Until the start of your next turn, you have a +5 bonus to AC, including against the triggering attack, and you take no damage from Magic Missile."
       ],
@@ -10935,7 +10935,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A shimmering field surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration."
       ],
       "sourcePage": 162
@@ -10962,7 +10962,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A Club or Quarterstaff you are holding is imbued with nature's power",
         "For the duration, you can use your spellcasting ability instead of Strength for the attack and damage rolls of melee attacks using that weapon, and the weapon's damage die becomes a d8",
         "If the attack deals damage, it can be Force damage or the weapon's normal damage type (your choice)",
@@ -11003,7 +11003,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "ately after hitting a creature with a Melee weapon or an Unarmed Strike The target hit by the strike takes an extra 2d6 Radiant damage from the attack",
         "Until the spell ends, the target sheds Bright Light in a 5-foot radius, attack rolls against it have Advantage, and it can't benefit from the Invisible condition."
       ],
@@ -11039,7 +11039,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
       "cantripUpgradeDice": "1d8",
       "sourcePage": 162
@@ -11073,7 +11073,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range",
         "Any creature or object entirely inside the Sphere has Immunity to Thunder damage, and creatures have the Deafened condition while entirely inside it",
         "Casting a spell that includes a Verbal component is impossible there."
@@ -11105,7 +11105,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 15-foot Cube",
         "The image appears at a spot within range and lasts for the duration",
         "The image is purely visual; it isn't accompanied by sound, smell, or other sensory effects",
@@ -11139,7 +11139,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) You create a simulacrum of one Beast or Humanoid that is within 10 feet of you for the entire casting of the spell",
         "You finish the casting by touching both the creature and a pile of ice or snow that is the same size as that creature, and the pile turns into the simulacrum, which is a creature",
         "It uses the game statistics of the original creature at the time of casting, except it is a Construct, its Hit Point maximum is half as much, and it can't cast this spell",
@@ -11208,7 +11208,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 163
     },
     {
@@ -11258,7 +11258,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 163
     },
     {
@@ -11298,7 +11298,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 163
     },
     {
@@ -11323,7 +11323,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
       "sourcePage": 163
     },
@@ -11350,7 +11350,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Choose a creature within range that has 0 Hit Points and isn't dead",
         "The creature becomes Stable."
       ],
@@ -11381,7 +11381,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them",
         "Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day."
       ],
@@ -11412,7 +11412,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You grant the semblance of life to a corpse of your choice within range, allowing it to answer questions you pose",
         "The corpse must have a mouth, and this spell fails if the deceased creature was Undead when it died",
         "The spell also fails if the corpse was the target of this spell within the past 10 days",
@@ -11447,7 +11447,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You imbue plants in an immobile 30-foot Emanation with limited sentience and animation, giving them the ability to communicate with you and follow your simple commands",
         "You can question plants about events in the spell's area within the past day, gaining information about creatures that have passed, weather, and other circumstances",
         "You can also turn Difficult Terrain caused by plant growth (such as thickets and undergrowth) into ordinary terrain that lasts for the duration",
@@ -11481,7 +11481,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Until the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and along ceilings, while leaving its hands free",
         "The target also gains a Climb Speed equal to its Speed."
       ],
@@ -11518,7 +11518,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "The ground in a 20-foot-radius Sphere centered on a point within range sprouts hard spikes and thorns",
         "The area becomes Difficult Terrain for the duration",
         "When a creature moves into or within the area, it takes 2d4 Piercing damage for every 5 feet it travels",
@@ -11583,7 +11583,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 164
@@ -11610,7 +11610,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for every slot level above 2.",
       "sourcePage": 165
     },
@@ -11648,7 +11648,7 @@
       ],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).",
       "cantripUpgradeDice": "1d8",
       "sourcePage": 165
@@ -11700,7 +11700,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 165
     },
     {
@@ -11727,7 +11727,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any dimension and form it into any shape you like",
         "For example, you could shape a large rock into a weapon, statue, or coffer, or you could make a small passage through a wall that is 5 feet thick",
         "You could also shape a stone door or its frame to seal the door shut",
@@ -11759,7 +11759,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) Until the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slashing damage."
       ],
       "sourcePage": 165
@@ -11856,7 +11856,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 165
     },
     {
@@ -11903,7 +11903,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 166
     },
     {
@@ -11928,7 +11928,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "dragon engraved on it worth 500+ GP) You call forth a Dragon spirit",
         "It manifests in an unoccupied space that you can see within range and uses the Draconic Spirit stat block",
         "The creature disappears when it drops to 0 Hit Points or when the spell ends",
@@ -11995,7 +11995,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 166
     },
     {
@@ -12058,7 +12058,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 167
     },
     {
@@ -12143,7 +12143,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 167
     },
     {
@@ -12187,7 +12187,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 167
     },
     {
@@ -12214,7 +12214,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You forge a telepathic link among up to eight willing creatures of your choice within range, psychically linking each creature to all the others for the duration",
         "Creatures that can't communicate in any languages aren't affected by this spell",
         "Until the spell ends, the targets can communicate telepathically through the bond whether or not they share a language",
@@ -12252,7 +12252,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell instantly transports you and up to eight willing creatures that you can see within range, or a single object that you can see within range, to a destination you select",
         "If you target an object, it must be Large or smaller, and it can't be held or carried by an unwilling creature",
         "The destination you choose must be known to you, and it must be on the same plane of existence as you",
@@ -12301,7 +12301,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "spell consumes) As you cast the spell, you draw a 5-foot-radius circle on the ground inscribed with sigils that link your location to a permanent teleportation circle of your choice whose sigil sequence you know and that is on the same plane of existence as you",
         "A shimmering portal opens within the circle you drew and remains open until the end of your next turn",
         "Any creature that enters the portal instantly appears within 5 feet of the destination circle or in the nearest unoccupied space if that space is occupied",
@@ -12336,7 +12336,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You manifest a minor wonder within range",
         "You create one of the effects below within range",
         "If you cast this spell multiple times, you can have up to three of its 1-minute effects active at a time",
@@ -12404,7 +12404,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 169
@@ -12431,7 +12431,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You briefly stop the flow of time for everyone but yourself",
         "No time passes for other creatures, while you take 1d4 + 1 turns in a row, during which you can use actions and move as normal",
         "This spell ends if one of the actions you use during this period, or any effects that you create during it, affects a creature other than you or an object being worn or carried by someone other than you",
@@ -12462,7 +12462,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "A 10-foot Emanation springs into existence around you and remains stationary for the duration",
         "The spell fails when you cast it if the Emanation isn't big enough to fully encapsulate all creatures in its area",
         "Creatures and objects within the Emanation when you cast the spell can move through it freely",
@@ -12501,7 +12501,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell grants the creature you touch the ability to understand any spoken or signed language that it hears or sees",
         "Moreover, when the target communicates by speaking or signing, any creature that knows at least one language can understand it if that creature can hear the speech or see the signing."
       ],
@@ -12529,7 +12529,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence",
         "You must have seen or touched the destination plant at least once before",
         "For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement."
@@ -12558,7 +12558,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet",
         "Both trees must be living and at least the same size as you",
         "You must use 5 feet of movement to enter a tree",
@@ -12602,7 +12602,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 170
     },
     {
@@ -12627,7 +12627,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "which the spell consumes) You touch a creature that has been dead for no longer than 200 years and that died for any reason except old age",
         "The creature is revived with all its Hit Points",
         "This spell closes all wounds, neutralizes any poison, cures all magical contagions, and lifts any curses affecting the creature when it died",
@@ -12663,7 +12663,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "GP, which the spell consumes) For the duration, the willing creature you touch has Truesight with a range of 120 feet."
       ],
       "sourcePage": 171
@@ -12692,7 +12692,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "ciency and that is worth 1+ CP) Guided by a flash of magical insight, you make one attack with the weapon used in the spell's casting",
         "The attack uses your spellcasting ability for the attack and damage rolls instead of using Strength or Dexterity",
         "If the attack deals damage, it can be Radiant damage or the weapon's normal damage type (your choice)."
@@ -12752,7 +12752,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 171
     },
     {
@@ -12780,7 +12780,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell creates an Invisible, mindless, shapeless, Medium force that performs simple tasks at your command until the spell ends",
         "The servant springs into existence in an unoccupied space on the ground within range",
         "It has AC 10, 1 Hit Point, and a Strength of 2, and it can't attack",
@@ -12821,7 +12821,7 @@
       "appliedConditions": [],
       "isSpellAttack": true,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d6",
       "sourcePage": 171
@@ -12868,7 +12868,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Cantrip Upgrade. The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).",
       "cantripUpgradeDice": "1d6",
       "sourcePage": 171
@@ -12931,7 +12931,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The initial damage increases by 2d4 for each spell slot level above 4.",
       "sourcePage": 172
     },
@@ -12980,7 +12980,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4.",
       "upcastDicePerSlotLevel": "1d8",
       "sourcePage": 172
@@ -13008,7 +13008,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "An Invisible wall of force springs into existence at a point you choose within range",
         "The wall appears in any orientation you choose, as a horizontal or vertical barrier or at an angle",
         "It can be free floating or resting on a solid surface",
@@ -13076,7 +13076,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage the wall deals when it appears increases by 2d6 and the damage from passing through the sheet of frigid air increases by 1d6 for each spell slot level above 6.",
       "sourcePage": 172
     },
@@ -13113,7 +13113,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 173
     },
     {
@@ -13169,7 +13169,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. Both types of damage increase by 1d8 for each spell slot level above 6.",
       "sourcePage": 173
     },
@@ -13195,7 +13195,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "50+ GP each, which you and the target must wear for the duration) You touch another creature that is willing and create a mystic connection between you and the target until the spell ends",
         "While the target is within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it has Resistance to all damage",
         "Also, each time it takes damage, you take the same amount of damage",
@@ -13225,12 +13225,15 @@
       "durationText": "24 hours",
       "requiresConcentration": false,
       "text": "This spell grants up to ten willing creatures of your choice within range the ability to breathe underwater until the spell ends. Affected creatures also retain their normal mode of respiration.",
-      "mechanics": "Narrative",
+      "mechanics": "Unmodelled",
       "damage": [],
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [
+        "This spell grants up to ten willing creatures of your choice within range the ability to breathe underwater until the spell ends",
+        "Affected creatures also retain their normal mode of respiration."
+      ],
       "sourcePage": 173
     },
     {
@@ -13259,7 +13262,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "This spell grants the ability to move across any liquid surface-such as water, acid, mud, snow, quicksand, or lava-as if it were harmless solid ground (creatures crossing molten lava can still take damage from the heat)",
         "Up to ten willing creatures of your choice within range gain this ability for the duration",
         "An affected target must take a Bonus Action to pass from the liquid's surface into the liquid itself and vice versa, but if the target falls into the liquid, the target passes through the surface into the liquid below."
@@ -13324,7 +13327,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 174
     },
     {
@@ -13394,7 +13397,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 174
     },
     {
@@ -13429,7 +13432,7 @@
       ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You and up to ten willing creatures of your choice within range assume gaseous forms for the duration, appearing as wisps of cloud",
         "While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage",
         "The only actions a target can take in this form are the Dash action or a Magic action to begin reverting to its normal form",
@@ -13484,7 +13487,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 174
     },
     {
@@ -13515,7 +13518,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "Wish is the mightiest spell a mortal can cast",
         "By simply speaking aloud, you can alter reality itself",
         "The basic use of this spell is to duplicate any other spell of level 8 or lower",
@@ -13581,7 +13584,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [
+      "unclassifiedClauses": [
         "You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary",
         "You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanctuary (see below)",
         "If you cast this spell without first preparing a sanctuary, the spell has no effect",
@@ -13625,7 +13628,7 @@
       "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
-      "unmodelledClauses": [],
+      "unclassifiedClauses": [],
       "sourcePage": 175
     }
   ]

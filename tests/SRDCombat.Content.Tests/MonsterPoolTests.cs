@@ -169,6 +169,30 @@ public class MonsterPoolTests
     }
 
     [Fact]
+    public void ABundledUseInsideTheCompositionSentenceDropsTheGrade()
+    {
+        // The canary from #341: a Multiattack can fold an unexecuted use inside its own
+        // composition sentence — "The marilith makes six Pact Blade attacks and uses
+        // Constrict." — where DescribesTheComposition matches the composition it
+        // recognises and says nothing about what rides beside it. Before this fix the
+        // Marilith graded Playable on the strength of a Constrict that never fires.
+        var marilith = Content.MonstersById["monster.marilith"];
+
+        Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(marilith));
+        Assert.False(MonsterPool.Admits(marilith));
+
+        // The Clay Golem's own composition sentence carried the same shape ("or it
+        // makes three Slam attacks if it used Hasten this turn") and graded Playable
+        // the same way; #342's alternative-composition accounting fixed it first, so
+        // by the time this fix landed it was already Diminished. Pinned here too since
+        // the issue that reported both (#341) named it as one of the two.
+        var clayGolem = Content.MonstersById["monster.clay-golem"];
+
+        Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(clayGolem));
+        Assert.False(MonsterPool.Admits(clayGolem));
+    }
+
+    [Fact]
     public void TheDrawIsOrderedSoAnEncounterBuildIsReproducible()
     {
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);

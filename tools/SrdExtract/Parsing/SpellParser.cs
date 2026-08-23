@@ -265,7 +265,18 @@ public static partial class SpellParser
             // Conditions use the shared grammar; saves, damage and areas need the spell
             // grammar, which differs from the stat block one in substance rather than
             // wording. See SpellEffectParser.
-            var classified = EntryMechanicsParser.ClassifyTrait(Name, body);
+            //
+            // consultInertList: false — the bestiary's KnownInertEntries is curated
+            // about stat block and trait text, not spell prose. Water Breathing shared
+            // its exact name with that list's own "Water Breathing" (a monster trait)
+            // and rode it to EntryMechanics.Narrative by accident rather than by anyone
+            // reading the spell (#349). A spell that does nothing in a fight already has
+            // a home: Unmodelled, the same place Light, Alarm and Comprehend Languages
+            // land, with no completeness claim attached either way (see
+            // SpellDefinition.UnclassifiedClauses). See the doc comment on
+            // EntryMechanicsParser.KnownInertEntries for why a spell-specific curated
+            // list was rejected instead.
+            var classified = EntryMechanicsParser.ClassifyTrait(Name, body, consultInertList: false);
             var isSpellAttack = SpellAttackPattern().IsMatch(body);
             var save = SpellEffectParser.ParseSave(body, classified.AppliedConditions);
 
@@ -318,7 +329,13 @@ public static partial class SpellParser
                 // sentence hangs off "On a hit", and only a hit can land it.
                 GrantsAdvantageAgainstTargetOnHit =
                     isSpellAttack && SpellEffectParser.ParseNextAttackAdvantage(body),
-                UnmodelledClauses = mechanics == EntryMechanics.Unmodelled
+                // A structured spell carries no clause list, and that is a decision
+                // rather than a gap: the stat-block leftover accounting is measurably
+                // worse than useless on spell prose, so nothing here claims a spell is
+                // fully modelled and PreparableSpells remains the authority. The whole
+                // argument, with the numbers, is on SpellDefinition.UnclassifiedClauses
+                // — read it before wiring an accounting pass in here (#292).
+                UnclassifiedClauses = mechanics == EntryMechanics.Unmodelled
                     ? classified.UnmodelledClauses
                     : [],
                 ScalingText = _scaling.Length > 0 ? _scaling.ToString().Trim() : null,

@@ -224,7 +224,48 @@ public class SpellContentTests
 
         Assert.All(
             Content.Spells.Where(spell => spell.Mechanics == EntryMechanics.Unmodelled),
-            spell => Assert.NotEmpty(spell.UnmodelledClauses));
+            spell => Assert.NotEmpty(spell.UnclassifiedClauses));
+    }
+
+    [Fact]
+    public void AStructuredSpellCarriesNoClauseListAndMakesNoCompletenessClaim()
+    {
+        // The invariant the field actually holds, both directions: clauses exactly when
+        // the classifier reached no classification at all. Pinned because the tempting
+        // misreading is the other one — that an empty list means the printed spell is
+        // fully expressed. It does not, and there is no longer a property that says so
+        // (#292): the four spells below classify structurally and are wrong in print,
+        // each for a clause the engine never runs, and PreparableSpells refuses all four.
+        Assert.All(
+            Content.Spells.Where(spell => spell.Mechanics != EntryMechanics.Unmodelled),
+            spell => Assert.Empty(spell.UnclassifiedClauses));
+
+        var counterexamples = new[]
+        {
+            // The Restrained rider is extraction-refused and the only damage the shape
+            // kept is the 2d4 Fire of burning webs, so the structured form is a one-shot
+            // 20-foot Cube of fire — not the printed spell in any part.
+            "spell.web",
+
+            // "A creature must also make this save when the Sphere moves into its space
+            // ..." — the fog persists and moves; the casting is one save and done.
+            "spell.cloudkill",
+
+            // Delayed damage at the end of the target's next turn, and damage on a miss.
+            "spell.acid-arrow",
+
+            // "one of the following effects of your choice" — an effect that is a menu,
+            // of which the shape kept only the fourth bullet's 1d8.
+            "spell.bestow-curse",
+        };
+
+        foreach (var id in counterexamples)
+        {
+            var spell = Content.SpellsById[id];
+
+            Assert.NotEqual(EntryMechanics.Unmodelled, spell.Mechanics);
+            Assert.Empty(spell.UnclassifiedClauses);
+        }
     }
 
     [Fact]
@@ -252,6 +293,28 @@ public class SpellContentTests
 
         Assert.Empty(result.Errors);
         Assert.Contains(result.Warnings, issue => issue.Code == "spell.components.none");
+    }
+
+    [Fact]
+    public void WaterBreathingIsNotGradedNarrativeByNameCollisionWithABestiaryTrait()
+    {
+        // Water Breathing used to land on EntryMechanics.Narrative only because it
+        // shares its exact printed name with the bestiary's Amphibious/Water
+        // Breathing/Illumination inert list — a list curated about stat block and
+        // species/class trait text, never read against this spell's own prose (#349).
+        // It now grades Unmodelled like every spell the grammar does not structure —
+        // Light, Alarm and Comprehend Languages among 184 others — with both its
+        // sentences counted rather than silently waved through by an accidental match.
+        var waterBreathing = Content.Spells.Single(spell => spell.Name == "Water Breathing");
+
+        Assert.Equal(EntryMechanics.Unmodelled, waterBreathing.Mechanics);
+        Assert.Equal(2, waterBreathing.UnclassifiedClauses.Count);
+
+        // The fix is general, not a one-spell patch: no spell may reach Narrative by
+        // consulting a list that was never curated about spell prose. If this fails,
+        // either KnownInertEntries grew a name a spell also carries, or SpellParser
+        // stopped passing consultInertList: false.
+        Assert.DoesNotContain(Content.Spells, spell => spell.Mechanics == EntryMechanics.Narrative);
     }
 
     [Fact]
