@@ -152,6 +152,85 @@ public class LootTests
         Assert.Equal(original.Sheet.Attacks[0].AttackBonus, finder.Sheet.Attacks[0].AttackBonus);
     }
 
+    /// <summary>
+    /// #350: <c>CandidatesFor</c>'s weapon-enchantment candidate used to read
+    /// <c>content.WeaponsById[weaponId]</c> directly — a raw indexer reachable during
+    /// live play (an equip resolved from a save whose weapon id has since drifted out
+    /// of the loaded content), unlike the provably-unreachable <c>Gauntlet</c> siblings
+    /// #348 converted for consistency. It now refuses through
+    /// <see cref="ContentDrift.Require{TValue}"/> instead of throwing a bare
+    /// <see cref="KeyNotFoundException"/>.
+    /// </summary>
+    [Fact]
+    public void ARollRefusesWhenACarriedWeaponIdHasDrifted()
+    {
+        var run = GauntletRun.Start(Content);
+        var fighter = run.Party.Single(member => member.Draft.Name == "Brenna");
+        var drifted = fighter with
+        {
+            Draft = fighter.Draft with { WeaponIds = ["weapon.nonexistent", .. fighter.Draft.WeaponIds.Skip(1)] },
+        };
+        var party = run.Party.Select(member => member == fighter ? drifted : member).ToArray();
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => LootTable.Roll(Content, party, run.States, new SeededRandomSource(1)));
+
+        Assert.Contains(
+            "the save names weapon 'weapon.nonexistent' (for Brenna)", failure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// #350: <c>CandidatesFor</c>'s armour-enchantment candidate used to read
+    /// <c>content.ArmorById[armorId]</c> directly, the same bug class as the weapon
+    /// site above. Armour drifts independently of a carried weapon, so this exercises
+    /// the converted lookup on its own rather than piggybacking on the weapon test.
+    /// </summary>
+    [Fact]
+    public void ARollRefusesWhenWornArmorIdHasDrifted()
+    {
+        var run = GauntletRun.Start(Content);
+        var fighter = run.Party.Single(member => member.Draft.Name == "Brenna");
+        var drifted = fighter with { Draft = fighter.Draft with { ArmorId = "armor.nonexistent" } };
+        var party = run.Party.Select(member => member == fighter ? drifted : member).ToArray();
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => LootTable.Roll(Content, party, run.States, new SeededRandomSource(1)));
+
+        Assert.Contains(
+            "the save names armor 'armor.nonexistent' (for Brenna)", failure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// #350's third site: the Gauntlets-of-Ogre-Power candidate's own melee check
+    /// re-reads <c>content.WeaponsById[draft.WeaponIds[0]]</c> — the identical id the
+    /// weapon-enchantment candidate above already reads first in <c>CandidatesFor</c>'s
+    /// fixed order, so no input can reach this site's converted lookup without the
+    /// earlier one refusing first. This pins that the same drifted id still refuses
+    /// cleanly with a party built to qualify for the Gauntlets branch specifically
+    /// (Strength under 19, a carried melee weapon, no existing Gauntlets) — documented
+    /// rather than left implicit, so a future reordering of <c>CandidatesFor</c> that
+    /// made this site reachable independently would still be covered.
+    /// </summary>
+    [Fact]
+    public void ARollRefusesForAGauntletsOfOgrePowerCandidateWhoseWeaponIdHasDrifted()
+    {
+        var run = GauntletRun.Start(Content);
+        var fighter = run.Party.Single(member => member.Draft.Name == "Brenna");
+
+        Assert.True(fighter.Sheet.AbilityScores[Core.Definitions.Ability.Strength] < 19);
+
+        var drifted = fighter with
+        {
+            Draft = fighter.Draft with { WeaponIds = ["weapon.nonexistent", .. fighter.Draft.WeaponIds.Skip(1)] },
+        };
+        var party = run.Party.Select(member => member == fighter ? drifted : member).ToArray();
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => LootTable.Roll(Content, party, run.States, new SeededRandomSource(1)));
+
+        Assert.Contains("weapon 'weapon.nonexistent'", failure.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ASeededRunWithLootPlaysToItsEndWithoutRefusals()
     {
