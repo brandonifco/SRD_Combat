@@ -867,6 +867,16 @@ public static class SimpleTacticsPolicy
     /// mid-approach guarantee is untouched, because a null target means there is
     /// nothing able left to approach.
     /// </para>
+    /// <para>
+    /// <b>#256 filed the identical mechanism independently</b> — a mixed scene (two
+    /// Petrified, one Unconscious, one dead party member against three able
+    /// monsters) rather than #278's uniform one, found on a different seed before
+    /// the two were recognised as the same bug. No further change was needed: the
+    /// filter above is already "cannot act", not "downed", so it was never blind to
+    /// which side the Incapacitated sit on or what else is on the field.
+    /// <c>StalemateTests.AFightWhereEveryPartyMemberIsPetrifiedOrUnconsciousStillEnds</c>
+    /// pins the mixed shape so the duplicate stays closed.
+    /// </para>
     /// </remarks>
     private static void FinishTheDowned(Encounter encounter, Combatant actor)
     {
