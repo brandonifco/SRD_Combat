@@ -995,7 +995,12 @@ public partial class CreateMode : FightScreen
 
     private static string DescribeSpecies(SpeciesDefinition definition) =>
         $"{definition.Name} — {definition.Sizes[0]}, Speed {definition.SpeedFeet} ft.\n\n" +
-        string.Join("\n\n", definition.Traits.Select(trait => $"{trait.Name}. {trait.Text}"));
+        string.Join("\n\n", definition.Traits.Select(trait =>
+            // Printed in full either way; a trait CharacterCreation.TraitExecutes
+            // doesn't claim is tagged right where its text is shown, matching Fighting
+            // Style's caveat.
+            $"{trait.Name}{(CharacterCreation.TraitExecutes(trait.Name) ? "" : " (not yet implemented)")}. " +
+            trait.Text));
 
     private static string DescribeBackground(BackgroundDefinition definition) =>
         $"{definition.Name} — raises {string.Join(", ", definition.AbilityScores)}.\n\n" +

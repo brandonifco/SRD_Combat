@@ -234,6 +234,20 @@ public class CharacterCreationTests
     }
 
     [Fact]
+    public void NoSpeciesTraitExecutesYet()
+    {
+        // #291: the point-of-choice seam both clients call to decide whether to tag a
+        // trait "(not yet implemented)". Every printed trait across the real content
+        // is unimplemented today, so every one of them must say so.
+        var names = CharacterCreation.Species(Content)
+            .SelectMany(species => species.Traits)
+            .Select(trait => trait.Name)
+            .Distinct(StringComparer.Ordinal);
+
+        Assert.All(names, name => Assert.False(CharacterCreation.TraitExecutes(name)));
+    }
+
+    [Fact]
     public void EveryOfferedChoiceCarriesItsPrintedText()
     {
         // The Phase 5 charter: no bare names. Species carry their traits' prose,

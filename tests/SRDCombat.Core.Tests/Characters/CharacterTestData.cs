@@ -14,16 +14,22 @@ namespace SRDCombat.Core.Tests.Characters;
 /// </remarks>
 internal static class CharacterTestData
 {
-    public static SpeciesDefinition Species(int speedFeet = 30, CreatureSize size = CreatureSize.Medium) => new()
+    public static SpeciesDefinition Species(
+        int speedFeet = 30,
+        CreatureSize size = CreatureSize.Medium,
+        IReadOnlyList<TraitEntry>? traits = null) => new()
     {
         Id = "species.test",
         Name = "Testfolk",
         CreatureType = CreatureType.Humanoid,
         Sizes = [size],
         SpeedFeet = speedFeet,
-        Traits = [],
+        Traits = traits ?? [],
         SourcePage = 1,
     };
+
+    /// <summary>A species trait with no mechanics — SpeciesTraitRegistry has nothing to resolve it to.</summary>
+    public static TraitEntry Trait(string name) => new(name, $"{name} does something on paper only.");
 
     public static BackgroundDefinition Background(params Ability[] abilities) => new()
     {

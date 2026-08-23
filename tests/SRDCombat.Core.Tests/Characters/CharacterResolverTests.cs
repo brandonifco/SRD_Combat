@@ -306,6 +306,26 @@ public class CharacterResolverTests
     }
 
     [Fact]
+    public void SpeciesTraitsAreListedAsUnimplementedAlongsideClassFeatures()
+    {
+        // #291: species contribute nothing to a fight today — SpeciesTraitRegistry has
+        // zero entries — so a species trait must join the class-feature gap on the
+        // sheet rather than vanishing once its full text is shown at creation.
+        var content = CharacterTestData.Content(
+            species: CharacterTestData.Species(
+                traits: [CharacterTestData.Trait("Darkvision"), CharacterTestData.Trait("Stonecunning")]),
+            classDefinition: CharacterTestData.Class(
+                "Cleric",
+                featuresByLevel: new Dictionary<int, string[]> { [1] = ["Spellcasting"] }));
+
+        var sheet = CharacterResolver.Resolve(CharacterTestData.Draft(level: 1), content);
+
+        Assert.Equal(
+            ["Darkvision", "Spellcasting", "Stonecunning"],
+            sheet.UnimplementedFeatures);
+    }
+
+    [Fact]
     public void SpellSlotsComeFromTheClassTable()
     {
         var content = CharacterTestData.Content(

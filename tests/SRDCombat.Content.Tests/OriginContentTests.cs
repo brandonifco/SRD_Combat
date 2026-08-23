@@ -1,5 +1,6 @@
 using SRDCombat.Content.Validation;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Content.Tests;
 
@@ -119,6 +120,26 @@ public class OriginContentTests
         Assert.All(
             traits.Where(trait => trait.Mechanics == EntryMechanics.Unmodelled),
             trait => Assert.NotEmpty(trait.UnmodelledClauses));
+    }
+
+    [Fact]
+    public void EverySpeciesTraitMapsToExactlyOneClassification()
+    {
+        // #291's curated-list invariant: SpeciesTraitRegistry.Resolve and .Implements
+        // must always agree, for every one of the 33 printed trait instances (28
+        // distinct names) across the nine real species — never "implemented" without
+        // resolving, or vice versa, which would mean the two questions had drifted
+        // apart.
+        var names = Content.Species.SelectMany(species => species.Traits).Select(trait => trait.Name).ToList();
+
+        Assert.Equal(33, names.Count);
+
+        Assert.All(names, name =>
+            Assert.Equal(SpeciesTraitRegistry.Implements(name), SpeciesTraitRegistry.Resolve(name) is not null));
+
+        // None execute today — the point of the issue. When one does, this line is the
+        // one to narrow.
+        Assert.All(names, name => Assert.False(SpeciesTraitRegistry.Implements(name)));
     }
 
     [Fact]
