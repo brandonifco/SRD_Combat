@@ -251,7 +251,21 @@ public static partial class OriginParser
                 return;
             }
 
-            if (_traits.Count > 0 && text.Length > 0)
+            // Three species (Dragonborn, Elf, Tiefling) carry a full-width sub-table —
+            // Draconic Ancestors, Elven Lineages, Fiendish Legacies — that spans both
+            // text columns. The two-column pass slices it at the column boundary and
+            // interleaves the fragments with whichever trait was open when the
+            // table's region arrived — the same #116 shape ClassParser's Features
+            // table produces, and just as capable of reaching the *next* species: the
+            // Elven Lineages table's wide first column crosses into the right column
+            // and lands mid-sentence in Gnome's Gnomish Lineage, and Fiendish
+            // Legacies' left column lands in Human's Versatile — five affected traits
+            // in total (#374). Trait prose in this chapter is Cambria (the wrapping
+            // and italic variants included, which is why the family is matched);
+            // everything GillSans here is a table's, so only Cambria lines may
+            // continue a trait — the table's own content is absent from the trait
+            // text and honest, exactly as a class feature's printed sub-table is.
+            if (_traits.Count > 0 && text.Length > 0 && line.Font.StartsWith("Cambria", StringComparison.Ordinal))
             {
                 AppendWrapped(_traits[^1].Text, text);
             }

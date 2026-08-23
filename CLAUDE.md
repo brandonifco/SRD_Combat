@@ -338,6 +338,14 @@ against the book:
 - **The two-column pass can slice the full-width table into feature prose** (#116) —
   prose is Cambria, tables are GillSans, so features append only Cambria lines.
   Validator: `class.feature.table_noise`.
+- **The origins chapter has the same trap, and a wide column makes it worse** (#374):
+  Draconic Ancestors, Elven Lineages and Fiendish Legacies are full-width tables
+  inside the two-column species pages, sliced and interleaved into whichever trait
+  was open — `OriginParser` now appends only Cambria lines to a trait, same as
+  `ClassParser`. The Elven Lineages table's first column is wide enough to cross the
+  column boundary outright, landing its fragments in the *next* species entirely:
+  Gnome's Gnomish Lineage carried Elf's table, and Human's Versatile carried
+  Tiefling's Fiendish Legacies. Validator: `species.trait.table_noise`.
 - **A wrapped class list dropped 39 of 339 spells for months** while a `>= 300`
   floor test stayed green. Two lessons: *a number the pipeline prints about itself
   is not a check*, and *a floor is the wrong shape for a count fixed by the source*
