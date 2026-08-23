@@ -1262,6 +1262,8 @@ public sealed partial class Encounter
             attacker,
             target);
 
+        CheckConcentration(target, applied.Effective);
+
         if (applied.Died)
         {
             target.RecordDeathRound(Round);
@@ -1745,6 +1747,8 @@ public sealed partial class Encounter
             $"{second.Name} takes {applied.Effective} {first.Type} damage [{rolled}] — {DescribeHealth(second)}.",
             attacker,
             second);
+
+        CheckConcentration(second, applied.Effective);
 
         if (applied.Died)
         {

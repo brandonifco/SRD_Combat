@@ -665,10 +665,15 @@ public sealed partial class Encounter
     /// Called from every place a condition can land on a creature outside the damage
     /// path already covered by <see cref="CheckConcentration"/>: a save effect's or an
     /// attack's rider (<see cref="ImposeConditions"/>) and a repeat-save escalation
-    /// (<see cref="Escalate"/>). Death and damage-caused Unconsciousness are already
-    /// covered there, because both are only ever reached by way of damage. A no-op
-    /// when the creature is not concentrating or can still act, so it is safe to call
-    /// unconditionally after any condition lands.
+    /// (<see cref="Escalate"/>). Death and damage-caused Unconsciousness are covered by
+    /// <see cref="CheckConcentration"/> instead — but only where its call is present, so
+    /// every site that can drop a creature's hit points must call it too, not just the
+    /// two the Multiattack and save-effect loops already did. Missed once already:
+    /// Weapon Mastery's Graze and Cleave both deal their own damage and did not, so a
+    /// concentrating creature Grazed or Cleaved to 0 kept concentrating until this was
+    /// caught in review. This method is a no-op when the creature is not concentrating
+    /// or can still act, so it is safe to call unconditionally after any condition
+    /// lands.
     /// </remarks>
     internal void BreakConcentrationOnIncapacitated(Combatant combatant)
     {

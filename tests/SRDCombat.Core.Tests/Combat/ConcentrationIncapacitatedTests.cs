@@ -54,6 +54,44 @@ public class ConcentrationIncapacitatedTests
     }
 
     [Fact]
+    public void AnEscalatingConditionEndsConcentrationOnceItReachesPetrified()
+    {
+        // Initiative ×2 (the caster first), Ward's attack roll (a miss), the gaze's
+        // failed save (Restrained lands — no Incapacitated yet, so Concentration is
+        // untouched), then the repeated save at the end of the caster's own next
+        // turn, which also fails: Restrained escalates to Petrified, and this is the
+        // Escalate path's own call to BreakConcentrationOnIncapacitated, not
+        // ImposeConditions's. Exactly five rolls: a Constitution save from
+        // CheckConcentration on top would throw.
+        var (encounter, caster, gazer) = GazeStage(new ScriptedRandomSource(15, 1, 10, 1, 1));
+
+        Assert.Null(encounter.CastSpell("spell.ward", gazer));
+        Assert.Equal("Ward", caster.Features.ConcentratingOn);
+
+        encounter.EndTurn(); // The caster's turn ends; the gazer's begins.
+
+        Assert.Null(encounter.UseEntry("Petrifying Gaze", caster.Position));
+        Assert.True(caster.HasCondition(ConditionType.Restrained));
+        Assert.False(caster.HasCondition(ConditionType.Incapacitated));
+
+        // Restrained alone brings no Incapacitated, so Concentration survives it —
+        // the point of failing this save first rather than going straight to a
+        // Petrified rider.
+        Assert.Equal("Ward", caster.Features.ConcentratingOn);
+
+        encounter.EndTurn(); // The gazer's turn ends; the caster's begins.
+        encounter.EndTurn(); // The caster's own turn ends: the repeat save rolls and fails.
+
+        Assert.False(caster.HasCondition(ConditionType.Restrained));
+        Assert.True(caster.HasCondition(ConditionType.Petrified));
+        Assert.True(caster.HasCondition(ConditionType.Incapacitated));
+        Assert.Null(caster.Features.ConcentratingOn);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("caster loses Concentration on Ward", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void DamageThatDownsTheConcentratorStillEndsItWithNoSaveEither()
     {
         // The pre-existing half of the rule, re-pinned here: damage that drops the
@@ -98,31 +136,6 @@ public class ConcentrationIncapacitatedTests
         int casterHitPoints = 20,
         string gripperDamage = "1d4")
     {
-        var ward = new SpellDefinition
-        {
-            Id = "spell.ward",
-            Name = "Ward",
-            Level = 1,
-            School = MagicSchool.Evocation,
-            Classes = ["Wizard"],
-            CastingTime = SpellCastingTime.Action,
-            CastingTimeText = "Action",
-            Components = SpellComponents.Verbal,
-            DurationText = "Concentration, up to 1 minute",
-            RequiresConcentration = true,
-            Mechanics = EntryMechanics.Attack,
-            IsSpellAttack = true,
-            SourcePage = 1,
-            // A melee spell attack (null range) on purpose: a Ranged one this close to
-            // the gripper — the fight's only other combatant — would earn Disadvantage
-            // of its own ("ranged within 5 feet of any able enemy") and cost an extra
-            // scripted roll unrelated to what this test pins.
-            RangeText = "Touch",
-            RangeFeet = null,
-            Text = "A test ward.",
-            Damage = [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Force, 3)],
-        };
-
         var casterStats = CombatTestData.Stats(
             armorClass: 5,
             maximumHitPoints: casterHitPoints,
@@ -138,7 +151,7 @@ public class ConcentrationIncapacitatedTests
                 SecondWindUses: 0,
                 ActionSurgeUses: 0,
                 Level: 3,
-                Spells: [ward],
+                Spells: [Ward()],
                 SpellSlots: new Dictionary<int, int> { [1] = 1 },
                 SpellcastingAbility: Ability.Intelligence,
                 SpellSaveDifficultyClass: 13,
@@ -177,4 +190,104 @@ public class ConcentrationIncapacitatedTests
 
         return (encounter, caster, gripper);
     }
+
+    /// <summary>
+    /// A caster with the same "Ward" spell and one enemy ("gazer") armed with the
+    /// Basilisk's own printed shape: a Bonus Action Constitution save, Restrained on
+    /// the first failure, escalating to Petrified — and Incapacitated with it — on a
+    /// second. The gazer's AC is high enough that Ward always misses it. The caster
+    /// goes first.
+    /// </summary>
+    private static (Encounter Encounter, Combatant Caster, Combatant Gazer) GazeStage(ScriptedRandomSource random)
+    {
+        var casterStats = CombatTestData.Stats(
+            armorClass: 5,
+            maximumHitPoints: 20,
+            initiativeBonus: 10,
+            diesAtZeroHitPoints: false) with
+        {
+            Character = new CombatantFeatures(
+                [],
+                AttacksPerAction: 1,
+                SneakAttackDamage: null,
+                RageDamageBonus: 0,
+                RageUses: 0,
+                SecondWindUses: 0,
+                ActionSurgeUses: 0,
+                Level: 3,
+                Spells: [Ward()],
+                SpellSlots: new Dictionary<int, int> { [1] = 1 },
+                SpellcastingAbility: Ability.Intelligence,
+                SpellSaveDifficultyClass: 13,
+                SpellAttackBonus: 5),
+        };
+
+        var caster = new Combatant("caster", "caster", CombatTestData.Heroes, casterStats, new GridPosition(1, 5));
+
+        var gazerStats = CombatTestData.Stats(
+            armorClass: 30, // Ward's spell attack can never reach this.
+            initiativeBonus: -10,
+            attacks: []) with
+        {
+            Entries =
+            [
+                new MonsterEntry("Petrifying Gaze", MonsterEntrySection.BonusAction, "Petrifying Gaze.",
+                    Mechanics: EntryMechanics.SavingThrow,
+                    Save: GazeSave()),
+            ],
+        };
+
+        var gazer = CombatTestData.Combatant("gazer", sideId: CombatTestData.Monsters, stats: gazerStats, y: 5);
+
+        var encounter = Encounter.Start(new Battlefield(10, 10), [caster, gazer], random);
+
+        return (encounter, caster, gazer);
+    }
+
+    /// <summary>
+    /// A melee spell attack, Concentration required, that always misses a high-AC
+    /// target. Null range on purpose: a Ranged attack this close to the fight's only
+    /// other combatant would earn Disadvantage of its own ("ranged within 5 feet of
+    /// any able enemy") and cost an extra scripted roll unrelated to what these tests
+    /// pin.
+    /// </summary>
+    private static SpellDefinition Ward() => new()
+    {
+        Id = "spell.ward",
+        Name = "Ward",
+        Level = 1,
+        School = MagicSchool.Evocation,
+        Classes = ["Wizard"],
+        CastingTime = SpellCastingTime.Action,
+        CastingTimeText = "Action",
+        Components = SpellComponents.Verbal,
+        DurationText = "Concentration, up to 1 minute",
+        RequiresConcentration = true,
+        Mechanics = EntryMechanics.Attack,
+        IsSpellAttack = true,
+        SourcePage = 1,
+        RangeText = "Touch",
+        RangeFeet = null,
+        Text = "A test ward.",
+        Damage = [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Force, 3)],
+    };
+
+    /// <summary>
+    /// The two-tier gaze's own save, DC set past anything a roll plus this project's
+    /// hand-built abilities can meet: Restrained on the first failure, escalating to
+    /// Petrified — the same shape as <c>PetrifiedTests.GazeSave</c>, reused here rather
+    /// than shared because that DC (12) is tuned to a different victim's stat block.
+    /// </summary>
+    private static SaveEffect GazeSave() => new(
+        Ability.Constitution,
+        30,
+        new EffectArea(AreaShape.Cone, 30),
+        [],
+        SaveSuccessOutcome.NoEffect,
+        [
+            new AppliedCondition(
+                ConditionType.Restrained,
+                Duration: ConditionDuration.UntilSavedOrEscalated,
+                EscalatesTo: ConditionType.Petrified),
+        ]);
 }
