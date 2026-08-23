@@ -54,7 +54,10 @@ public sealed record SaveLoadResult(
 /// sufficient</b>: at every point in that sequence, at least one complete file — the
 /// untouched old <c>path</c> (before its rename), the fresh <c>.bak</c>, or the new
 /// <c>path</c> (after its rename) — is on disk for <see cref="LoadRun"/> to find. The
-/// very first write for a path has nothing to back up, so it is a plain move instead.
+/// very first write for a path has nothing to back up, so it is a plain move instead
+/// — and any <c>.bak</c> already sitting there (left over from a run whose primary
+/// was deleted separately from its backup) is deleted first, so a backup can never
+/// predate the primary beside it and get resurrected as that primary's history.
 /// </para>
 /// <para>
 /// <b>Loading falls back to the backup</b> when the primary is missing or fails to parse
@@ -71,7 +74,9 @@ public static class SaveFile
     /// <summary>
     /// Writes <paramref name="json"/> to <paramref name="path"/> atomically, keeping the
     /// file <paramref name="path"/> previously held as exactly one <c>.bak</c> alongside
-    /// it.
+    /// it. On a first write for <paramref name="path"/> — no primary yet on disk — any
+    /// pre-existing <c>.bak</c> is deleted rather than left behind, so it can never
+    /// predate the primary this write creates.
     /// </summary>
     public static void Write(string path, string json)
     {
@@ -103,6 +108,19 @@ public static class SaveFile
         }
         else
         {
+            // Nothing to back up on a first write for this path — but a stale .bak can
+            // already be sitting here, left over from a run whose primary was deleted
+            // separately from its backup. Left untouched, that stale backup would
+            // predate the new primary being created right now, and LoadRun's fallback
+            // could resurrect it as this run's history if the new primary were ever
+            // lost. Clear it first so a backup can never predate the primary beside it.
+            var backupPath = BackupPathFor(path);
+
+            if (File.Exists(backupPath))
+            {
+                File.Delete(backupPath);
+            }
+
             File.Move(tempPath, path);
         }
     }

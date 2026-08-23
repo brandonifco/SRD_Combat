@@ -56,6 +56,31 @@ public sealed class SaveFileTests : IDisposable
         Assert.False(File.Exists(TempPath), "The temp file must not survive a successful write.");
     }
 
+    /// <summary>
+    /// The bug QC caught reviewing #331 (#332): a stale <c>.bak</c> left over from a run
+    /// whose primary was deleted separately must not survive a first write for that same
+    /// path — otherwise it would predate the fresh primary and could be resurrected as
+    /// this new run's history if the fresh primary were ever lost.
+    /// </summary>
+    [Fact]
+    public void AFirstWriteDeletesAStaleBackupSoItCannotPredateTheNewPrimary()
+    {
+        File.WriteAllText(BackupPath, "stale run's backup");
+
+        SaveFile.Write(SavePath, "new run's first save");
+
+        Assert.False(File.Exists(BackupPath), "A first write must clear a stale backup, not leave it beside the new primary.");
+
+        // Lose the fresh primary the way a crash or a deleted file would, and confirm
+        // the stale run does not come back from a backup that should no longer exist.
+        File.Delete(SavePath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.Null(loaded.Saved);
+        Assert.False(loaded.UsedBackup);
+    }
+
     [Fact]
     public void ASecondWriteKeepsTheFirstAsExactlyOneBackup()
     {
@@ -221,6 +246,33 @@ public sealed class SaveFileTests : IDisposable
         Assert.False(loaded.UsedBackup);
         Assert.Null(loaded.PrimaryFailureReason);
         Assert.NotNull(loaded.BackupFailureReason);
+    }
+
+    /// <summary>
+    /// #361: adopting a legacy seed must survive a quit before the next cleared
+    /// fight's autosave. <see cref="GauntletRun.AdoptSeed"/> writes through
+    /// <see cref="SaveFile"/> immediately, so a reload with no fight cleared in
+    /// between still sees the adopted seed rather than rolling a second one.
+    /// </summary>
+    [Fact]
+    public void AdoptingASeedSurvivesAReloadWithNoFightClearedInBetween()
+    {
+        var seedless = GauntletRun.Start(Content).ToSave() with { Seed = null };
+        SaveFile.Write(SavePath, ContentSerializer.Serialize(seedless));
+
+        var loaded = SaveFile.LoadRun(SavePath);
+        var run = GauntletRun.Resume(Content, loaded.Saved!);
+
+        Assert.Equal(0, run.Seed);
+
+        run.AdoptSeed(20260823, SavePath);
+
+        // No fight cleared and no explicit save call here — AdoptSeed's own write must
+        // already be on disk for this to see it.
+        var reloaded = SaveFile.LoadRun(SavePath);
+
+        Assert.NotNull(reloaded.Saved);
+        Assert.Equal(20260823, reloaded.Saved!.Seed);
     }
 
     [Fact]
