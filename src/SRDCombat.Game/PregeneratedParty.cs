@@ -105,9 +105,9 @@ public static class PregeneratedParty
         var sheet = CharacterResolver.Resolve(
             draft,
             new CharacterBuildContent(
-                content.SpeciesById[draft.SpeciesId],
-                content.ClassesById[draft.ClassId],
-                content.BackgroundsById[draft.BackgroundId],
+                ContentDrift.Require(content.SpeciesById, draft.SpeciesId, "species", draft.Name),
+                ContentDrift.Require(content.ClassesById, draft.ClassId, "class", draft.Name),
+                ContentDrift.Require(content.BackgroundsById, draft.BackgroundId, "background", draft.Name),
                 content.WeaponsById,
                 content.ArmorById,
                 content.MagicItemsById));

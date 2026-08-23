@@ -337,20 +337,40 @@ public sealed class GauntletRun
     /// earned, never at the level the file claims.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The party comes back exactly as strong as the rules make it from what was saved —
     /// a save holds no derived numbers, so there is nothing on disk for the rules to
-    /// disagree with. Validation of the file itself is <see cref="RunSave.FromJson"/>'s;
-    /// this trusts its argument the way <see cref="Start"/> trusts the content. A
-    /// missing <see cref="SavedRun.Seed"/> falls back to 0 rather than throwing — the
-    /// same shape a missing <see cref="SavedRun.GoldCopper"/> takes — but 0 is a real
-    /// seed, not a sentinel for "none", so a caller resuming a save that predates #286
-    /// must not leave it there: see <see cref="AdoptSeed"/>, which the clients call
+    /// disagree with. Validation of the file's own <em>structure</em> is
+    /// <see cref="RunSave.FromJson"/>'s; this is where a save meets the content that
+    /// gives its ids meaning, and where both content-dependent checks live. A missing
+    /// <see cref="SavedRun.Seed"/> falls back to 0 rather than throwing — the same
+    /// shape a missing <see cref="SavedRun.GoldCopper"/> takes — but 0 is a real seed,
+    /// not a sentinel for "none", so a caller resuming a save that predates #286 must
+    /// not leave it there: see <see cref="AdoptSeed"/>, which the clients call
     /// immediately after a resume finds <see cref="SavedRun.Seed"/> was null.
+    /// </para>
+    /// <para>
+    /// A <em>present</em> <see cref="SavedRun.ContentVersion"/> that disagrees with
+    /// <paramref name="content"/>'s own fingerprint refuses outright, before anything
+    /// is resolved — two content builds can differ in ways no single id lookup would
+    /// catch. A <em>missing</em> one is not refused (see its own remarks); every
+    /// character resolved below still runs through <c>ContentDrift.Require</c>, which
+    /// is what actually catches drift for a save in that state.
+    /// </para>
     /// </remarks>
     public static GauntletRun Resume(SrdContent content, SavedRun saved)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(saved);
+
+        if (saved.ContentVersion is { } version
+            && !string.Equals(version, content.ContentFingerprint, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                $"the save was written against different content (save {ContentDrift.Truncate(version)}, " +
+                $"loaded {ContentDrift.Truncate(content.ContentFingerprint)}). The file is untouched — " +
+                "the build that wrote it can still play it, or start a new run.");
+        }
 
         var resolved = saved.Members
             .Select((member, index) =>
@@ -389,6 +409,7 @@ public sealed class GauntletRun
         Casualties = [.. _casualties],
         GoldCopper = GoldCopper,
         Seed = Seed,
+        ContentVersion = _content.ContentFingerprint,
     };
 
     /// <summary>
@@ -472,7 +493,9 @@ public sealed class GauntletRun
                 Party[i],
                 rest,
                 random,
-                _content.ClassesById[Party[i].Draft.ClassId].HitDieSides);
+                ContentDrift.Require(
+                        _content.ClassesById, Party[i].Draft.ClassId, "class", Party[i].Draft.Name)
+                    .HitDieSides);
 
             if (before.IsDead && !_states[i].IsDead)
             {
@@ -829,7 +852,8 @@ public sealed class GauntletRun
             return (resolved, null);
         }
 
-        var primary = content.ClassesById[draft.ClassId].PrimaryAbilities[0];
+        var primary = ContentDrift.Require(content.ClassesById, draft.ClassId, "class", draft.Name)
+            .PrimaryAbilities[0];
         var defaulted = draft with { AbilityScoreImprovements = [new AbilityScoreImprovement { First = primary }] };
         resolved = PregeneratedParty.Resolve(content, defaulted, level, x, y);
 

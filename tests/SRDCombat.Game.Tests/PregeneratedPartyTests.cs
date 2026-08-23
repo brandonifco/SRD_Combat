@@ -253,6 +253,22 @@ public class PregeneratedPartyTests
         Assert.NotEmpty(encounter.Log);
     }
 
+    /// <summary>
+    /// The acceptance test for #287's <c>PregeneratedParty.cs</c> site: a save-vs-content
+    /// drift refuses with a named reason rather than a bare <see cref="KeyNotFoundException"/>
+    /// escaping past both clients' exception filters, which is the crash the review found.
+    /// </summary>
+    [Fact]
+    public void ResolvingRefusesADraftNamingAClassThisContentDoesNotHave()
+    {
+        var draft = PregeneratedParty.Build(Content).First().Draft with { ClassId = "class.nonexistent" };
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => PregeneratedParty.Resolve(Content, draft, level: 1));
+
+        Assert.Contains("class.nonexistent", failure.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void LevellingIsReResolvingTheDraft()
     {

@@ -74,7 +74,32 @@ if (ContinueRequested(args))
         Console.WriteLine($"'{savePath}' was missing or unreadable; loaded the backup instead.");
     }
 
-    run = GauntletRun.Resume(content, loaded.Saved);
+    // A save written before #287 carries no content version to compare in bulk;
+    // GauntletRun.Resume falls through to checking every id it resolves one at a
+    // time instead, exactly as it always has for a same-version edge case.
+    if (loaded.Saved.ContentVersion is null)
+    {
+        Console.WriteLine(
+            "This save carries no content version; everything it names is checked " +
+            "against the loaded content piece by piece instead.");
+    }
+
+    // GauntletRun.Resume refuses drift three ways: a present content version that
+    // disagrees with what is loaded and ContentDrift.Require's per-id checks both
+    // throw InvalidDataException; CharacterResolver's own weapon, armor and magic
+    // item checks throw ArgumentException instead — a Core-level convention this
+    // Game-level catch has to know about too, or exactly this drift crashes instead
+    // of refusing. Either way this is a printed message, never a crash, and the file
+    // itself is never touched.
+    try
+    {
+        run = GauntletRun.Resume(content, loaded.Saved);
+    }
+    catch (Exception failure) when (failure is InvalidDataException or ArgumentException)
+    {
+        Console.Error.WriteLine($"Cannot resume '{savePath}': {failure.Message}");
+        return 1;
+    }
 
     // A save written before #286 carries no seed at all. There is an honest thing to
     // do here that there is not for a content-version mismatch: roll one, once, tell

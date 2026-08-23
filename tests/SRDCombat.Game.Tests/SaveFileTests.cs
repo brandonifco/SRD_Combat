@@ -92,6 +92,44 @@ public sealed class SaveFileTests : IDisposable
         Assert.Null(loaded.PrimaryFailureReason);
     }
 
+    /// <summary>
+    /// The acceptance test for #287's full flow, the way both clients actually run
+    /// it: <see cref="SaveFile.LoadRun"/> only validates the file's own structure, so
+    /// a save written against one content build loads there without complaint —
+    /// content-dependent checks are <see cref="GauntletRun.Resume"/>'s, where the save
+    /// actually meets the (different) loaded content, and it refuses there rather
+    /// than crashing or silently proceeding.
+    /// </summary>
+    [Fact]
+    public void ResumingASaveLoadedAgainstDifferentContentRefusesRatherThanCrashing()
+    {
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.NotNull(loaded.Saved);
+        Assert.False(loaded.UsedBackup);
+        Assert.Null(loaded.PrimaryFailureReason);
+
+        // A real second content build, not the same one with a field poked — fewer
+        // monsters is enough to change ContentFingerprint, since it hashes the whole
+        // id roster.
+        var differentContent = new SrdContent(
+            [.. Content.Monsters.Skip(1)],
+            Content.Weapons,
+            Content.Armor,
+            Content.Species,
+            Content.Backgrounds,
+            Content.Classes,
+            Content.Spells,
+            Content.MagicItems);
+
+        var failure = Assert.Throws<InvalidDataException>(
+            () => GauntletRun.Resume(differentContent, loaded.Saved!));
+
+        Assert.Contains("different content", failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void LoadRunReportsNothingWhenNeitherCopyExists()
     {
