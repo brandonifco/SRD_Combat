@@ -271,11 +271,10 @@ public sealed class GauntletRun
 
     /// <summary>Starts a run with the pregenerated party.</summary>
     /// <param name="seed">
-    /// The seed a caller's own dice trace back to. Carried rather than rolled here,
-    /// because the dice themselves live outside <c>GauntletRun</c> — this only remembers
-    /// the value so <see cref="ToSave"/> can persist it, and a reload can hand a fresh
-    /// <c>SeededRandomSource</c> built from the same number to <see cref="PrepareForNext"/>
-    /// and <see cref="BeginNext"/> in place of whatever a fresh run would have rolled.
+    /// The run's own seed, fixed for its whole life. Rolled by the caller rather than
+    /// here, because the dice themselves live outside <c>GauntletRun</c> — this only
+    /// remembers the value so <see cref="ToSave"/> can persist it and <c>RunDice.SeedFor</c>
+    /// can derive each fight's actual dice from it and how many fights came before.
     /// Defaults to 0 for callers — mostly tests — that never resume what they start.
     /// </param>
     public static GauntletRun Start(
@@ -341,11 +340,12 @@ public sealed class GauntletRun
     /// The party comes back exactly as strong as the rules make it from what was saved —
     /// a save holds no derived numbers, so there is nothing on disk for the rules to
     /// disagree with. Validation of the file itself is <see cref="RunSave.FromJson"/>'s;
-    /// this trusts its argument the way <see cref="Start"/> trusts the content — a
-    /// missing <see cref="SavedRun.Seed"/> falls back to 0 rather than throwing, exactly
-    /// as a missing <see cref="SavedRun.GoldCopper"/> falls back to an empty purse,
-    /// because a real save file never reaches here without one:
-    /// <see cref="RunSave.FromJson"/> refuses that file outright.
+    /// this trusts its argument the way <see cref="Start"/> trusts the content. A
+    /// missing <see cref="SavedRun.Seed"/> falls back to 0 rather than throwing — the
+    /// same shape a missing <see cref="SavedRun.GoldCopper"/> takes — but 0 is a real
+    /// seed, not a sentinel for "none", so a caller resuming a save that predates #286
+    /// must not leave it there: see <see cref="AdoptSeed"/>, which the clients call
+    /// immediately after a resume finds <see cref="SavedRun.Seed"/> was null.
     /// </remarks>
     public static GauntletRun Resume(SrdContent content, SavedRun saved)
     {
@@ -392,11 +392,29 @@ public sealed class GauntletRun
     };
 
     /// <summary>
-    /// The seed a caller's dice for this run trace back to. See the pregenerated-party
+    /// The run's own seed, fixed for its whole life once <see cref="Start"/> or
+    /// <see cref="AdoptSeed"/> sets it. See the pregenerated-party
     /// <see cref="Start(SrdContent, IReadOnlyList{LadderStep}?, int, int)"/> overload's
-    /// remarks for what it is for.
+    /// remarks for what it is for and <c>RunDice</c>'s for how a fight's dice come from
+    /// it.
     /// </summary>
-    public int Seed { get; }
+    public int Seed { get; private set; }
+
+    /// <summary>
+    /// Adopts a freshly rolled seed for a run resumed from a save written before #286,
+    /// which carries none.
+    /// </summary>
+    /// <remarks>
+    /// The only legitimate caller is a client's own legacy-save migration, immediately
+    /// after <see cref="Resume"/> finds <see cref="SavedRun.Seed"/> was null — the roll
+    /// itself happens there, not here, because <c>GauntletRun</c> touches no
+    /// <c>IRandomSource</c> and this stays that way. Everywhere else a run's seed is
+    /// fixed at <see cref="Start"/> and never changes again; calling this on a run that
+    /// already had one would silently move every fight from here on, which is exactly
+    /// the bug #286 closed, so this exists once, for one migration path, and nowhere
+    /// else calls it.
+    /// </remarks>
+    public void AdoptSeed(int seed) => Seed = seed;
 
     /// <summary>The rungs, in order.</summary>
     public IReadOnlyList<LadderStep> Ladder { get; }

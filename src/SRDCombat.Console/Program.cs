@@ -12,7 +12,10 @@ using SRDCombat.Game;
 // player while SimpleTacticsPolicy takes the monsters'.
 
 // A seed makes a fight reproducible, which matters as much for reporting a bug as for
-// testing: "it happened on seed 12345" is a complete repro.
+// testing: "it happened on seed 12345" is a complete repro. Within a gauntlet run,
+// (seed, fight number) reproduces that fight's encounter regardless of the play
+// history that got there — see RunDice's remarks — so a bug report only ever needs
+// the run's seed and which fight it happened on.
 var seed = SeedFrom(args) ?? Random.Shared.Next();
 
 var contentDirectory = PositionalArguments(args).FirstOrDefault()
@@ -27,21 +30,23 @@ if (!Directory.Exists(contentDirectory))
 
 var content = ContentLoader.Load(contentDirectory);
 
-var random = new SeededRandomSource(seed);
-
 Console.WriteLine();
 
 Display.PartySideId = PregeneratedParty.SideId;
 
 // A single fight is still available, because it is the quickest way to look at one
-// thing; the gauntlet is the game.
+// thing; the gauntlet is the game. It has no GauntletRun and so no per-fight
+// boundary to derive dice from — --seed governs it directly, exactly as it always
+// has.
 if (SingleFightRequested(args))
 {
     var level = LevelFrom(args) ?? 1;
-    var only = EncounterFactory.Build(content, PregeneratedParty.Build(content, level), DifficultyFrom(args), random);
+    var oneFightDice = new SeededRandomSource(seed);
+    var only = EncounterFactory.Build(
+        content, PregeneratedParty.Build(content, level), DifficultyFrom(args), oneFightDice);
 
     Console.WriteLine($"SRD_Combat — one fight (seed {seed})");
-    return PlayFight(only, random) is FightResult.Won or FightResult.Lost ? 0 : 0;
+    return PlayFight(only, oneFightDice) is FightResult.Won or FightResult.Lost ? 0 : 0;
 }
 
 // The gauntlet is persistent: the run autosaves after every cleared fight, and defeat
@@ -71,14 +76,21 @@ if (ContinueRequested(args))
 
     run = GauntletRun.Resume(content, loaded.Saved);
 
-    // The save's own seed replaces whatever --seed or the initial roll gave this
-    // process: continuing is a fresh process, so without this the next fight — and
-    // everything rolled after it — would be re-rolled from a seed that has nothing to
-    // do with the run being resumed, which is the exact bug this fixes (#286).
-    seed = run.Seed;
-    random = new SeededRandomSource(seed);
+    // A save written before #286 carries no seed at all. There is an honest thing to
+    // do here that there is not for a content-version mismatch: roll one, once, tell
+    // the player, and let the next autosave carry it forward — GauntletRun.AdoptSeed's
+    // own remarks say why nowhere else may call it.
+    if (loaded.Saved.Seed is null)
+    {
+        var rolled = Random.Shared.Next();
+        run.AdoptSeed(rolled);
+        Console.WriteLine(
+            $"This save predates run seeds; rolled {rolled} for the rest of the run. " +
+            "It rides the next autosave.");
+    }
 
-    Console.WriteLine($"SRD_Combat — continuing after fight {run.Cleared} of {run.Ladder.Count} (seed {seed})");
+    Console.WriteLine(
+        $"SRD_Combat — continuing after fight {run.Cleared} of {run.Ladder.Count} (seed {run.Seed})");
 
     // A save written before creation asked for a level-4 Ability Score Improvement plan
     // can arrive here already past level 4; GauntletRun.Resume defaults it rather than
@@ -117,8 +129,16 @@ Console.WriteLine("Type 'help' during a fight for commands.");
 
 while (run.Next is { } step)
 {
+    // The one reseed point: everything from here to CompleteFight — the rest, the
+    // shop, the encounter draw, the fight, the loot — draws from this one segment.
+    // RunDice.SeedFor is a pure function of the run's own seed and how many fights
+    // are already cleared, so this exact fight always plays on the exact same dice,
+    // no matter how much a differently-played earlier attempt at it spent, or how it
+    // ended. See RunDice's remarks for the reading this is deliberately built on.
+    var dice = new SeededRandomSource(RunDice.SeedFor(run.Seed, run.Cleared));
+
     var returnsBefore = run.Returns.Count;
-    var rest = run.PrepareForNext(random);
+    var rest = run.PrepareForNext(dice);
 
     Console.WriteLine();
     Console.WriteLine(new string('=', 60));
@@ -155,7 +175,7 @@ while (run.Next is { } step)
                   $"{state.ExperiencePoints} xp"));
     }
 
-    var fight = run.BeginNext(random);
+    var fight = run.BeginNext(dice);
 
     if (fight.Built.Monsters.Count == 0)
     {
@@ -172,7 +192,7 @@ while (run.Next is { } step)
 
     var levelUpsBefore = run.LevelUps.Count;
     var lootBefore = run.LootFound.Count;
-    var result = PlayFight(fight, random);
+    var result = PlayFight(fight, dice);
 
     if (result == FightResult.Quit)
     {
@@ -181,7 +201,7 @@ while (run.Next is { } step)
         return 0;
     }
 
-    run.CompleteFight(fight, random);
+    run.CompleteFight(fight, dice);
 
     foreach (var levelUp in run.LevelUps.Skip(levelUpsBefore))
     {

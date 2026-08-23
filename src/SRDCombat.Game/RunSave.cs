@@ -58,18 +58,19 @@ public sealed record SavedRun
     public int GoldCopper { get; init; }
 
     /// <summary>
-    /// The seed every draw this run has made — rests, encounter draws, combat rolls —
-    /// traces back to. Persisted so a reload can hand <see cref="GauntletRun.PrepareForNext"/>
-    /// and <see cref="GauntletRun.BeginNext"/> a fresh <c>SeededRandomSource</c> built
-    /// from the same number, rather than a freshly rolled one, so the fight that ended
-    /// the run comes back exactly instead of being re-rolled.
+    /// The run's own seed — fixed once at <see cref="GauntletRun.Start"/> and constant
+    /// for the run's whole life. A fight's actual dice are <c>RunDice.SeedFor</c> of
+    /// this value and how many fights had been cleared when that fight began, not this
+    /// value directly — see <c>RunDice</c>'s own remarks for what that buys and why.
     /// </summary>
     /// <remarks>
-    /// Nullable, deliberately, rather than <c>required</c>: a save written before this
-    /// field existed carries none, and <see cref="RunSave.FromJson"/> reads that absence
-    /// itself and refuses the file with a named reason — unlike <see cref="GoldCopper"/>,
-    /// there is no honest default seed to invent, because inventing one would make "the
-    /// same fight" a lie the very first time this exact save is continued.
+    /// Nullable because a save written before #286 carries none — but unlike a
+    /// content-version mismatch, that is not refused here. There is an honest thing to
+    /// do with a missing seed that there is not with a missing content version: roll
+    /// one. The client does that exactly once, the first time it meets a save without
+    /// one, says so, and the next autosave carries it forward — see the clients' own
+    /// "predates run seeds" handling. <see cref="RunSave.FromJson"/> does not enforce
+    /// this field at all.
     /// </remarks>
     public int? Seed { get; init; }
 }
@@ -110,13 +111,6 @@ public static class RunSave
         {
             throw new InvalidDataException(
                 $"Save format {saved.FormatVersion} is not this build's {CurrentFormatVersion}; refusing to guess.");
-        }
-
-        if (saved.Seed is null)
-        {
-            throw new InvalidDataException(
-                "This save predates seed tracking, so --continue cannot reconstruct the same next " +
-                "fight from it; start a new run.");
         }
 
         if (saved.Ladder.Count == 0)
