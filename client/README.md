@@ -196,11 +196,13 @@ across, so a sheet *narrower* than it is tall is not a strip at all — it is on
 figure, and it is padded out to a square frame rather than rejected. That is the whole
 setup for hand-drawn art of one creature: drop a single PNG in as `Idle.png` and the
 creature stops being a lettered circle. It will not animate, and it does not need to —
-every pose already falls back to `Idle` when its own strip is missing. Forty-nine
-creatures ship this way as of the 2026-08-21 batch — it began with four (Gnoll
+every pose already falls back to `Idle` when its own strip is missing. Seventy
+creatures ship this way as of 2026-08-21's second batch — it began with four (Gnoll
 Warrior, Black Bear, Brown Bear, Giant Wasp), chosen because they were among the
 most-drawn monsters in the pool and every one was a bare circle beside a party in
-full animation, and Brandon has been retiring circles batch by batch since. These
+full animation, and Brandon has been retiring circles batch by batch since; the
+Skeleton, Zombie and Cultist now wear his drawings rather than the packs that once
+stood in for them. These
 travel with the repo: the drawings are the project's own, so their folders are
 whitelisted in `.gitignore` where the packs are not.
 

@@ -123,13 +123,10 @@ public sealed class SpriteLibrary
     /// </summary>
     private static readonly Dictionary<string, string> ByMonsterName = new(StringComparer.Ordinal)
     {
-        // The three goblin packs are a small crouching one, a plain one and an armoured
-        // one carrying a shield, so they sort onto the three printed goblins by build.
-        // The Warrior takes a hand-drawn still instead: asked for directly, on the
-        // stated preference that the drawing is liked better than the animation. The
-        // Minion and Boss keep their packs because they are what tells the three goblins
-        // apart on the board, not because a pack outranks a drawing.
-        ["Goblin Minion"] = "Goblin_3",
+        // The three printed goblins told apart by build: the Minion and Warrior wear
+        // Brandon's drawings (the Minion's arrived with the second 2026-08-21 batch),
+        // and the Boss keeps its armoured pack until a drawing takes the slot.
+        ["Goblin Minion"] = "Goblin_Minion",
         ["Goblin Warrior"] = "Goblin_Drawn",
         ["Goblin Boss"] = "Goblin_2",
 
@@ -191,16 +188,36 @@ public sealed class SpriteLibrary
         ["Swarm of Insects"] = "Swarm_of_Insects",
         ["Swarm of Rats"] = "Swarm_of_Rats",
         ["Swarm of Venomous Snakes"] = "Swarm_of_Venomous_Snakes",
-        ["Skeleton"] = "Skeleton_Warrior",
-        ["Zombie"] = "Zombie Man",
-        ["Ogre Zombie"] = "Wild Zombie",
+
+        // The second 2026-08-21 batch: twenty-one more slots drawn, the classic-roster
+        // core among them — and the Skeleton, Zombie, Ogre Zombie and Cultist move off
+        // the packs that stood in for them onto Brandon's own stills.
+        ["Animated Flying Sword"] = "Animated_Flying_Sword",
+        ["Awakened Shrub"] = "Awakened_Shrub",
+        ["Bandit"] = "Bandit",
+        ["Ghast"] = "Ghast",
+        ["Giant Centipede"] = "Giant_Centipede",
+        ["Giant Fire Beetle"] = "Giant_Fire_Beetle",
+        ["Giant Rat"] = "Giant_Rat",
+        ["Guard"] = "Guard",
+        ["Hobgoblin Captain"] = "Hobgoblin_Captain",
+        ["Kobold Warrior"] = "Kobold_Warrior",
+        ["Magma Mephit"] = "Magma_Mephit",
+        ["Pirate"] = "Pirate",
+        ["Steam Mephit"] = "Steam_Mephit",
+        ["Troll Limb"] = "Troll_Limb",
+        ["Warrior Veteran"] = "Warrior_Veteran",
+        ["Worg"] = "Worg",
+        ["Skeleton"] = "Skeleton",
+        ["Zombie"] = "Zombie",
+        ["Ogre Zombie"] = "Ogre_Zombie",
         ["Gladiator"] = "Gladiator_3",
         ["Knight"] = "Knight_3",
         ["Mage"] = "Lightning Mage",
         ["Archmage"] = "Lightning Mage",
         ["Priest"] = "Priests_2",
         ["Priest Acolyte"] = "Priests_3",
-        ["Cultist"] = "Priests_3",
+        ["Cultist"] = "Cultist",
         ["Scout"] = "Scout_Human",
         ["Red Dragon Wyrmling"] = "Red_Dragon_Wyrmling",
         ["White Dragon Wyrmling"] = "White_Dragon_Wyrmling",
