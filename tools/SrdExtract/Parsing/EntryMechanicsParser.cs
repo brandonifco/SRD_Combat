@@ -80,7 +80,8 @@ internal static partial class EntryMechanicsParser
     {
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
-        var conditions = ParseAppliedConditions(text);
+        var coverage = new EntryCoverage(text);
+        var conditions = ParseAppliedConditions(text, coverage);
 
         if (ParseSave(text, conditions) is { } save)
         {
@@ -115,25 +116,32 @@ internal static partial class EntryMechanicsParser
         var bareName = StripUsage(name);
         var attack = StatBlockLineGrammar.ParseAttack(text);
 
-        // The embedded saving throw — the Ghast's Claw — is structured before the
-        // rider pass, and its span is lifted out of the text the riders and the
-        // unmodelled-clause scan see: its three sentences are the save's now, and the
-        // rider inside them must not also be parsed (and refused) as the attack's own.
-        var riderText = text;
+        var coverage = new EntryCoverage(text);
 
+        // The embedded saving throw — the Ghast's Claw — is structured before the
+        // rider pass, and its span is claimed so the riders and the unmodelled-clause
+        // scan see it masked out: its three sentences are the save's now, and the
+        // rider inside them must not also be parsed (and refused) as the attack's own.
         if (attack is not null && ParseEmbeddedSave(text) is { } embedded)
         {
             attack = attack with { EmbeddedSave = embedded.Save };
-            riderText = text.Replace(embedded.MatchedSpan, string.Empty, StringComparison.Ordinal);
+            coverage.Claim(embedded.MatchedSpan, "attack.embedded_save");
         }
 
-        var conditions = ParseAppliedConditions(riderText, attackEntry: attack is not null);
+        var riderText = coverage.Masked;
+        var conditions = ParseAppliedConditions(riderText, coverage, attackEntry: attack is not null);
 
         if (attack is not null)
         {
-            return Build(bareName, section, riderText, EntryMechanics.Attack, usage, conditions, attack: attack)
-                with
-                { Text = text };
+            return Build(
+                bareName,
+                section,
+                text,
+                EntryMechanics.Attack,
+                usage,
+                conditions,
+                attack: attack,
+                mechanicsText: riderText);
         }
 
         if (ParseReaction(text) is { } reaction)
@@ -200,6 +208,14 @@ internal static partial class EntryMechanicsParser
             UnmodelledClauses: MechanicalSentences(text));
     }
 
+    /// <param name="mechanicsText">
+    /// The text <see cref="LeftoverMechanicalSentences"/> scans, when it must differ
+    /// from <paramref name="text"/> — the Attack branch's embedded-save-masked
+    /// <c>riderText</c>, so a rider already claimed by the embedded save is not
+    /// re-scanned as the attack's own leftover prose. Defaults to <paramref name="text"/>
+    /// itself, which is always right for every other branch: there is only ever one
+    /// text stored on the entry, <paramref name="text"/>, unmasked.
+    /// </param>
     private static MonsterEntry Build(
         string name,
         MonsterEntrySection section,
@@ -211,8 +227,12 @@ internal static partial class EntryMechanicsParser
         SaveEffect? save = null,
         MultiattackEffect? multiattack = null,
         ReactionEffect? reaction = null,
-        IReadOnlyList<string>? extraUnmodelledClauses = null) =>
-        new(
+        IReadOnlyList<string>? extraUnmodelledClauses = null,
+        string? mechanicsText = null)
+    {
+        var scanText = mechanicsText ?? text;
+
+        return new(
             name,
             section,
             text,
@@ -224,8 +244,9 @@ internal static partial class EntryMechanicsParser
             usage,
             conditions,
             extraUnmodelledClauses is null
-                ? LeftoverMechanicalSentences(text, mechanics, conditions, multiattack)
-                : [.. LeftoverMechanicalSentences(text, mechanics, conditions, multiattack), .. extraUnmodelledClauses]);
+                ? LeftoverMechanicalSentences(scanText, mechanics, conditions, multiattack)
+                : [.. LeftoverMechanicalSentences(scanText, mechanics, conditions, multiattack), .. extraUnmodelledClauses]);
+    }
 
     /// <summary>Uppercases a clause's first letter, for fragments lifted mid-sentence.</summary>
     private static string CapitalizeFirst(string text) =>
@@ -643,7 +664,10 @@ internal static partial class EntryMechanicsParser
     /// Finds every condition the entry imposes, with its escape DC, its size gate, and
     /// whatever else was printed with it that the model cannot express.
     /// </summary>
-    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(string text, bool attackEntry = false)
+    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(
+        string text,
+        EntryCoverage coverage,
+        bool attackEntry = false)
     {
         // The Quasit's two-sentence form — "Failure: The target has the Frightened
         // condition. At the end of each of its turns, the target repeats the save,
@@ -651,7 +675,9 @@ internal static partial class EntryMechanicsParser
         // single-sentence form printed with a full stop, and sentence-scoped parsing
         // cannot attach the second sentence to the rider it frees. Rejoining the exact
         // pair before splitting is the wrapped-spell-line lesson applied here: one
-        // anchored rewrite, so a single template serves both printings.
+        // anchored rewrite, so a single template serves both printings. This is a
+        // genuine textual rewrite rather than a claim — see design §5.2 — and stays a
+        // plain string replace until stage 2 restructures it into a span-aware annex.
         text = RepeatSaveJoinPattern().Replace(
             text,
             " and repeats the save at the end of each of its turns, ending the effect on itself on a success.");
@@ -660,13 +686,14 @@ internal static partial class EntryMechanicsParser
 
         // The two-tier gaze — the one "First Failure: ... Second Failure: ..." pair the
         // model expresses, carved as an exact template the way Hold Person's clock was:
-        // the corpus prints this wording twice, on the Basilisk's and the Medusa's
-        // Petrifying Gaze, and it structures as a single escalating rider — Restrained,
-        // repeated at the end of the bearer's next turn, ending on a success and
-        // deepening to Petrified on the failure. The matched sentences are lifted from
-        // the text before the general pass, whose tiered-failure rule would otherwise
-        // rightly refuse them; any tiered sentence that does not match this template to
-        // the letter still falls to that rule.
+        // the corpus prints this wording three times, on the Basilisk's, the Medusa's
+        // and the Gorgon's Petrifying Breath's Petrifying Gaze, and it structures as a
+        // single escalating rider — Restrained, repeated at the end of the bearer's
+        // next turn, ending on a success and deepening to Petrified on the failure. The
+        // matched sentences are claimed and masked out of the text the general pass
+        // below reads, whose tiered-failure rule would otherwise rightly refuse them;
+        // any tiered sentence that does not match this template to the letter still
+        // falls to that rule.
         if (text.Contains(PetrifyingTierSentences, StringComparison.Ordinal))
         {
             conditions.Add(new AppliedCondition(
@@ -674,7 +701,11 @@ internal static partial class EntryMechanicsParser
                 Duration: ConditionDuration.UntilSavedOrEscalated,
                 EscalatesTo: ConditionType.Petrified));
 
-            text = text.Replace(PetrifyingTierSentences, string.Empty, StringComparison.Ordinal);
+            var petrifyingIndex = text.IndexOf(PetrifyingTierSentences, StringComparison.Ordinal);
+            coverage.Claim(
+                new TextSpan(petrifyingIndex, PetrifyingTierSentences.Length),
+                "condition.petrifying_tier");
+            text = coverage.Masked;
         }
 
         // Sentence by sentence, because the rider's gate and its duration are the words
@@ -1086,7 +1117,7 @@ internal static partial class EntryMechanicsParser
     /// the Cockatrice's failure tiers, a lycanthrope's curse — matches nothing and
     /// stays refused with its sentences counted.
     /// </summary>
-    private static (EmbeddedAttackSave Save, string MatchedSpan)? ParseEmbeddedSave(string text)
+    private static (EmbeddedAttackSave Save, TextSpan MatchedSpan)? ParseEmbeddedSave(string text)
     {
         var match = EmbeddedSavePattern().Match(text);
 
@@ -1115,7 +1146,7 @@ internal static partial class EntryMechanicsParser
             SuccessOutcome: SaveSuccessOutcome.NoEffect,
             AppliedConditions: [rider]);
 
-        return (new EmbeddedAttackSave(save, exempt), match.Value);
+        return (new EmbeddedAttackSave(save, exempt), new TextSpan(match.Index, match.Length));
     }
 
     // The Ghast's Claw, whole: gate, save line and Failure rider, at the end of the
