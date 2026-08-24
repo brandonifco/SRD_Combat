@@ -397,6 +397,32 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.True(rider.IsFullyModelled);
     }
 
+    [Fact]
+    public void ARiderWithTrailingTextBeforeTheStandaloneRepeatSentenceDoesNotAnnex()
+    {
+        // Not a real corpus entry — the annex rule (design §5.2) requires the rider's
+        // own trailing text to be empty, not merely "carries no duration this engine
+        // recognises". Here the rider trails off with "until it takes damage" before
+        // the standalone repeat-save sentence that would otherwise annex cleanly, and
+        // that early out is a rule of its own the model cannot express — so the rider
+        // must stay refused rather than reading the adjacent sentence as its clock.
+        // This is the loose-but-not-strict shape the corpus itself never prints (on
+        // the closed corpus the annex window contains the Quasit alone), pinning the
+        // precondition against a future loosening nothing in data/srd would catch.
+        var entry = EntryMechanicsParser.Classify(
+            "Scare",
+            MonsterEntrySection.Action,
+            "Wisdom Saving Throw: DC 10, one creature within 20 feet. Failure: The target has the " +
+            "Frightened condition until it takes damage. At the end of each of its turns, the " +
+            "target repeats the save, ending the effect on itself on a success. After 1 minute, " +
+            "it succeeds automatically.");
+
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Null(rider.Duration);
+        Assert.False(rider.IsFullyModelled);
+        Assert.NotNull(rider.UnmodelledRequirement);
+    }
+
     #endregion
 
     #region Tiers
