@@ -136,7 +136,16 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(CreatureSize.Medium, rider.MaximumTargetSize);
         Assert.Null(rider.Duration);
         Assert.True(rider.IsFullyModelled);
-        Assert.Empty(entry.UnmodelledClauses);
+
+        // The rider itself is fully modelled (nothing changes there), but this is a
+        // single-target save entry, and #382's target-clause matcher (design §7.6)
+        // claims only the head noun "one creature" — the printed distance and sight
+        // qualifier are rules UseSaveEntry does not enforce (#386), so claiming them
+        // would be a false claim. The qualifier is honest residue now instead of
+        // vanishing under the old whole-sentence "Saving Throw:" credit.
+        Assert.Equal(
+            ["one creature within 5 feet that the gladiator can see"],
+            entry.UnmodelledClauses);
     }
 
     [Fact]
@@ -689,8 +698,19 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(4, entry.Multiattack!.AttackCount);
         Assert.Equal(["Tentacle", "Bite"], entry.Multiattack.AttackNames);
 
-        // BundledMultiattackUseClauses capitalizes the connector-less bare-comma form.
-        Assert.Contains("Uses Reel.", entry.UnmodelledClauses);
+        // #382 deleted BundledMultiattackUseClauses (design §7.4): nothing claims a
+        // "uses"/"can use" clause, so it lands in residue by subtraction instead of a
+        // synthesised, capitalized hand-back. AdjacentMakesPattern's claim is only the
+        // word "makes" itself (design §7.4's own description — "adjacency is judged
+        // modulo glue" — is about the adjacency test, not a claim over the glue), so
+        // the bridging "and" stays in the same uncovered run as "uses Reel," rather
+        // than being absorbed: the run carries real words ("uses", "Reel"), which
+        // fails the glue-only test before the trailing-connective question is ever
+        // asked (design §4.2, rule 1), and TrimGlue deliberately never trims a
+        // trailing connective word (§4.2, rule 3) — a dangling "and" is the model
+        // saying a fragment was lost here, not a formatting slip. The string is
+        // verbatim from the entry's own text (§6.2), lowercase "uses" included.
+        Assert.Equal(["uses Reel, and"], entry.UnmodelledClauses);
     }
 
     [Fact]
