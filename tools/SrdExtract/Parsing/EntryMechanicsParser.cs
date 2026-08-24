@@ -80,7 +80,8 @@ internal static partial class EntryMechanicsParser
     {
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
-        var conditions = ParseAppliedConditions(text);
+        var coverage = new EntryCoverage(text);
+        var conditions = ParseAppliedConditions(text, coverage);
 
         if (ParseSave(text, conditions) is { } save)
         {
@@ -115,25 +116,32 @@ internal static partial class EntryMechanicsParser
         var bareName = StripUsage(name);
         var attack = StatBlockLineGrammar.ParseAttack(text);
 
-        // The embedded saving throw — the Ghast's Claw — is structured before the
-        // rider pass, and its span is lifted out of the text the riders and the
-        // unmodelled-clause scan see: its three sentences are the save's now, and the
-        // rider inside them must not also be parsed (and refused) as the attack's own.
-        var riderText = text;
+        var coverage = new EntryCoverage(text);
 
+        // The embedded saving throw — the Ghast's Claw — is structured before the
+        // rider pass, and its span is claimed so the riders and the unmodelled-clause
+        // scan see it masked out: its three sentences are the save's now, and the
+        // rider inside them must not also be parsed (and refused) as the attack's own.
         if (attack is not null && ParseEmbeddedSave(text) is { } embedded)
         {
             attack = attack with { EmbeddedSave = embedded.Save };
-            riderText = text.Replace(embedded.MatchedSpan, string.Empty, StringComparison.Ordinal);
+            coverage.Claim(embedded.MatchedSpan, "attack.embedded_save");
         }
 
-        var conditions = ParseAppliedConditions(riderText, attackEntry: attack is not null);
+        var riderText = coverage.Masked;
+        var conditions = ParseAppliedConditions(riderText, coverage, attackEntry: attack is not null);
 
         if (attack is not null)
         {
-            return Build(bareName, section, riderText, EntryMechanics.Attack, usage, conditions, attack: attack)
-                with
-                { Text = text };
+            return Build(
+                bareName,
+                section,
+                text,
+                EntryMechanics.Attack,
+                usage,
+                conditions,
+                attack: attack,
+                mechanicsText: riderText);
         }
 
         if (ParseReaction(text) is { } reaction)
@@ -200,6 +208,14 @@ internal static partial class EntryMechanicsParser
             UnmodelledClauses: MechanicalSentences(text));
     }
 
+    /// <param name="mechanicsText">
+    /// The text <see cref="LeftoverMechanicalSentences"/> scans, when it must differ
+    /// from <paramref name="text"/> — the Attack branch's embedded-save-masked
+    /// <c>riderText</c>, so a rider already claimed by the embedded save is not
+    /// re-scanned as the attack's own leftover prose. Defaults to <paramref name="text"/>
+    /// itself, which is always right for every other branch: there is only ever one
+    /// text stored on the entry, <paramref name="text"/>, unmasked.
+    /// </param>
     private static MonsterEntry Build(
         string name,
         MonsterEntrySection section,
@@ -211,8 +227,12 @@ internal static partial class EntryMechanicsParser
         SaveEffect? save = null,
         MultiattackEffect? multiattack = null,
         ReactionEffect? reaction = null,
-        IReadOnlyList<string>? extraUnmodelledClauses = null) =>
-        new(
+        IReadOnlyList<string>? extraUnmodelledClauses = null,
+        string? mechanicsText = null)
+    {
+        var scanText = mechanicsText ?? text;
+
+        return new(
             name,
             section,
             text,
@@ -224,8 +244,9 @@ internal static partial class EntryMechanicsParser
             usage,
             conditions,
             extraUnmodelledClauses is null
-                ? LeftoverMechanicalSentences(text, mechanics, conditions, multiattack)
-                : [.. LeftoverMechanicalSentences(text, mechanics, conditions, multiattack), .. extraUnmodelledClauses]);
+                ? LeftoverMechanicalSentences(scanText, mechanics, conditions, multiattack)
+                : [.. LeftoverMechanicalSentences(scanText, mechanics, conditions, multiattack), .. extraUnmodelledClauses]);
+    }
 
     /// <summary>Uppercases a clause's first letter, for fragments lifted mid-sentence.</summary>
     private static string CapitalizeFirst(string text) =>
@@ -371,6 +392,61 @@ internal static partial class EntryMechanicsParser
             .Split(text)
             .Select(sentence => sentence.Trim())
             .Where(sentence => sentence.Length > 0);
+
+    /// <summary>
+    /// The same split as <see cref="SplitSentences"/>, with each piece's span into
+    /// <paramref name="text"/> alongside it. The rider-parsing loop in
+    /// <see cref="ParseAppliedConditions"/> needs this to look one sentence ahead
+    /// without losing the offset it would claim there (design §5.2's annex rule).
+    /// </summary>
+    private static IEnumerable<(string Text, TextSpan Span)> SplitSentencesWithSpans(string text)
+    {
+        var cursor = 0;
+
+        foreach (Match boundary in SentenceBoundary().Matches(text))
+        {
+            if (boundary.Index > cursor)
+            {
+                foreach (var piece in TrimToSpan(text, cursor, boundary.Index))
+                {
+                    yield return piece;
+                }
+            }
+
+            cursor = boundary.Index + boundary.Length;
+        }
+
+        if (cursor < text.Length)
+        {
+            foreach (var piece in TrimToSpan(text, cursor, text.Length))
+            {
+                yield return piece;
+            }
+        }
+    }
+
+    /// <summary>Trims a <c>[start, end)</c> slice and reports its span, or nothing if it trims to empty.</summary>
+    private static IEnumerable<(string Text, TextSpan Span)> TrimToSpan(string text, int start, int end)
+    {
+        var raw = text[start..end];
+        var trimmed = raw.Trim();
+
+        if (trimmed.Length == 0)
+        {
+            yield break;
+        }
+
+        var leadingWhitespace = raw.Length - raw.TrimStart().Length;
+
+        yield return (trimmed, new TextSpan(start + leadingWhitespace, trimmed.Length));
+    }
+
+    /// <summary>
+    /// The sentence-boundary matches themselves, rather than the split pieces —
+    /// <see cref="EntryCoverage"/> needs the boundary's own span to chunk a surviving
+    /// uncovered run without losing its offset into the entry's original text.
+    /// </summary>
+    internal static IReadOnlyList<Match> SentenceBoundaryMatches(string text) => SentenceBoundary().Matches(text);
 
     /// <summary>Parses "(Recharge 5-6)", "(Recharge 6)", "(3/Day)" and "(Recharge after a ... Rest)".</summary>
     private static UsageLimit? ParseUsageLimit(string name)
@@ -636,30 +712,23 @@ internal static partial class EntryMechanicsParser
     /// Finds every condition the entry imposes, with its escape DC, its size gate, and
     /// whatever else was printed with it that the model cannot express.
     /// </summary>
-    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(string text, bool attackEntry = false)
+    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(
+        string text,
+        EntryCoverage coverage,
+        bool attackEntry = false)
     {
-        // The Quasit's two-sentence form — "Failure: The target has the Frightened
-        // condition. At the end of each of its turns, the target repeats the save,
-        // ending the effect on itself on a success." — is the Doppelganger's
-        // single-sentence form printed with a full stop, and sentence-scoped parsing
-        // cannot attach the second sentence to the rider it frees. Rejoining the exact
-        // pair before splitting is the wrapped-spell-line lesson applied here: one
-        // anchored rewrite, so a single template serves both printings.
-        text = RepeatSaveJoinPattern().Replace(
-            text,
-            " and repeats the save at the end of each of its turns, ending the effect on itself on a success.");
-
         var conditions = new List<AppliedCondition>();
 
         // The two-tier gaze — the one "First Failure: ... Second Failure: ..." pair the
         // model expresses, carved as an exact template the way Hold Person's clock was:
-        // the corpus prints this wording twice, on the Basilisk's and the Medusa's
-        // Petrifying Gaze, and it structures as a single escalating rider — Restrained,
-        // repeated at the end of the bearer's next turn, ending on a success and
-        // deepening to Petrified on the failure. The matched sentences are lifted from
-        // the text before the general pass, whose tiered-failure rule would otherwise
-        // rightly refuse them; any tiered sentence that does not match this template to
-        // the letter still falls to that rule.
+        // the corpus prints this wording three times, on the Basilisk's, the Medusa's
+        // and the Gorgon's Petrifying Breath's Petrifying Gaze, and it structures as a
+        // single escalating rider — Restrained, repeated at the end of the bearer's
+        // next turn, ending on a success and deepening to Petrified on the failure. The
+        // matched sentences are claimed and masked out of the text the general pass
+        // below reads, whose tiered-failure rule would otherwise rightly refuse them;
+        // any tiered sentence that does not match this template to the letter still
+        // falls to that rule.
         if (text.Contains(PetrifyingTierSentences, StringComparison.Ordinal))
         {
             conditions.Add(new AppliedCondition(
@@ -667,7 +736,11 @@ internal static partial class EntryMechanicsParser
                 Duration: ConditionDuration.UntilSavedOrEscalated,
                 EscalatesTo: ConditionType.Petrified));
 
-            text = text.Replace(PetrifyingTierSentences, string.Empty, StringComparison.Ordinal);
+            var petrifyingIndex = text.IndexOf(PetrifyingTierSentences, StringComparison.Ordinal);
+            coverage.Claim(
+                new TextSpan(petrifyingIndex, PetrifyingTierSentences.Length),
+                "condition.petrifying_tier");
+            text = coverage.Masked;
         }
 
         // Sentence by sentence, because the rider's gate and its duration are the words
@@ -676,8 +749,20 @@ internal static partial class EntryMechanicsParser
         // DC 19), and it has the Restrained condition until the grapple ends" — is split
         // into one clause per rider first, so each condition is judged on its own words
         // rather than the first tripping over the second's clause as trailing text.
-        foreach (var sentence in SplitSentences(text))
+        //
+        // The split carries spans and is walked by index rather than foreach, because
+        // ReadRider needs to see one sentence ahead: the Quasit's printed form is two
+        // separate sentences ("Failure: The target has the Frightened condition." then
+        // "At the end of each of its turns, the target repeats the save, ending the
+        // effect on itself on a success."), and the annex rule (design §5.2) reads the
+        // second without rewriting the text to join them first.
+        var sentences = SplitSentencesWithSpans(text).ToArray();
+
+        for (var sentenceIndex = 0; sentenceIndex < sentences.Length; sentenceIndex++)
         {
+            var (sentence, _) = sentences[sentenceIndex];
+            var nextSentence = sentenceIndex + 1 < sentences.Length ? sentences[sentenceIndex + 1] : ((string Text, TextSpan Span)?)null;
+
             var added = new List<AppliedCondition>();
             var clauses = RiderClausePattern().Split(sentence);
 
@@ -713,7 +798,7 @@ internal static partial class EntryMechanicsParser
 
                     var (size, duration, unmodelled) = unmodelledCompanion
                         ? (null, null, sentence)
-                        : ReadRider(sentence, clause, match, attackEntry, text);
+                        : ReadRider(sentence, clause, match, attackEntry, text, nextSentence, coverage);
 
                     added.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
                 }
@@ -764,21 +849,63 @@ internal static partial class EntryMechanicsParser
         string clause,
         Match condition,
         bool attackEntry,
-        string entryText)
+        string entryText,
+        (string Text, TextSpan Span)? nextSentence,
+        EntryCoverage coverage)
     {
         var trailing = clause[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
         var duration = ParseDuration(trailing);
 
         // "and repeats the save at the end of each of its turns, ending the effect on
         // itself on a success" — the way out inside the rider's own sentence, modelled
-        // since the repeat-save slice. Only alongside the printed cap: without "After
-        // 1 minute, it succeeds automatically." somewhere in the entry, the repeat has
-        // no clock and the conservative answer is still refusal.
+        // since the repeat-save slice. This is the Doppelganger's printing: one
+        // sentence, the escape already joined onto the rider by the SRD itself. Only
+        // alongside the printed cap: without "After 1 minute, it succeeds
+        // automatically." somewhere in the entry, the repeat has no clock and the
+        // conservative answer is still refusal.
         if (duration is null
             && RepeatSaveTrailingPattern().IsMatch(trailing)
             && entryText.Contains(AutomaticSuccessSentence, StringComparison.Ordinal))
         {
             duration = ConditionDuration.RepeatSaveUpToOneMinute;
+        }
+
+        // The Quasit's printing instead: two separate sentences — "Failure: The target
+        // has the Frightened condition." then, on its own, "At the end of each of its
+        // turns, the target repeats the save, ending the effect on itself on a
+        // success." Sentence-scoped parsing cannot attach the second to the rider it
+        // frees, so this rider's own trailing text has to be empty (design §5.2's
+        // annex rule — "empty" rather than "carries no duration", so a rider that
+        // trails off with an early out the model cannot express, e.g. "for 1 minute,
+        // until it takes damage", still refuses rather than annexing a sentence that
+        // does not belong to it). When every condition holds, the claim annexes the
+        // next sentence's own span rather than rewriting the text to join them —
+        // there is only ever one coordinate space (design §5).
+        if (duration is null
+            && trailing.Length == 0
+            && sentence.Contains("Failure:", StringComparison.Ordinal)
+            && nextSentence is { } next
+            && next.Text.TrimEnd('.') == RepeatSaveStandaloneSentence
+            && entryText.Contains(AutomaticSuccessSentence, StringComparison.Ordinal))
+        {
+            duration = ConditionDuration.RepeatSaveUpToOneMinute;
+            coverage.Claim(next.Span, "condition.repeat_save_annex");
+        }
+
+        // RepeatSaveUpToOneMinute's engine meaning is the ten-turn cap the printed
+        // "After 1 minute, it succeeds automatically." sentence states, whichever of
+        // the two shapes above produced it — so that sentence is the duration's own
+        // clause, not a second rule left over, and its span is claimed too.
+        if (duration is { RepeatSaveAtTurnEnd: true })
+        {
+            var automaticSuccessIndex = entryText.IndexOf(AutomaticSuccessSentence, StringComparison.Ordinal);
+
+            if (automaticSuccessIndex >= 0)
+            {
+                coverage.Claim(
+                    new TextSpan(automaticSuccessIndex, AutomaticSuccessSentence.Length),
+                    "condition.repeat_save_cap");
+            }
         }
 
         // Anything after the condition that is not a duration this engine can run — "from
@@ -1079,7 +1206,7 @@ internal static partial class EntryMechanicsParser
     /// the Cockatrice's failure tiers, a lycanthrope's curse — matches nothing and
     /// stays refused with its sentences counted.
     /// </summary>
-    private static (EmbeddedAttackSave Save, string MatchedSpan)? ParseEmbeddedSave(string text)
+    private static (EmbeddedAttackSave Save, TextSpan MatchedSpan)? ParseEmbeddedSave(string text)
     {
         var match = EmbeddedSavePattern().Match(text);
 
@@ -1108,7 +1235,7 @@ internal static partial class EntryMechanicsParser
             SuccessOutcome: SaveSuccessOutcome.NoEffect,
             AppliedConditions: [rider]);
 
-        return (new EmbeddedAttackSave(save, exempt), match.Value);
+        return (new EmbeddedAttackSave(save, exempt), new TextSpan(match.Index, match.Length));
     }
 
     // The Ghast's Claw, whole: gate, save line and Failure rider, at the end of the
@@ -1126,16 +1253,17 @@ internal static partial class EntryMechanicsParser
     internal const string AutomaticSuccessSentence = "After 1 minute, it succeeds automatically.";
 
     /// <summary>
-    /// The repeat-save escape printed as a sentence of its own, joined back onto the
-    /// rider sentence before it — the Quasit's printing of the Doppelganger's clause.
+    /// The repeat-save escape printed as a sentence of its own — the Quasit's printing,
+    /// two sentences where the Doppelganger's is one. Compared against a sentence's own
+    /// text with its trailing period trimmed (design §5.2's annex rule), since the
+    /// sentence splitter only leaves that period attached when nothing follows it in
+    /// the entry.
     /// </summary>
-    [GeneratedRegex(
-        @"(?<=Failure: The target has the [A-Z][a-z]+ condition)\.\s+" +
-        @"At the end of each of its turns, the target repeats the save, " +
-        @"ending the effect on itself on a success\.")]
-    private static partial Regex RepeatSaveJoinPattern();
+    private const string RepeatSaveStandaloneSentence =
+        "At the end of each of its turns, the target repeats the save, ending the effect on itself on a success";
 
-    // The in-sentence escape, the whole of the rider's trailing text.
+    // The in-sentence escape, the whole of the rider's trailing text — the
+    // Doppelganger's printing, already one sentence.
     [GeneratedRegex(
         @"^and repeats the save at the end of each of its turns, " +
         @"ending the effect on itself on a success$")]
