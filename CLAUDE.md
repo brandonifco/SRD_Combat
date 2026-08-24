@@ -22,15 +22,15 @@ When a bullet below feels compressed, the archive has the long form with the evi
 
 ## Current state — read this first
 
-**As of 2026-08-23, at PR #368.** All numbers verified, not estimated.
+**As of 2026-08-24, span-accounting stages 4–6 (#382).** All numbers verified, not estimated.
 
 | | |
 | --- | --- |
-| Tests | **1,038 passing**, 1 skipped by design (the transcript fixture writer) |
+| Tests | **4,360 passing**, 1 skipped by design (the transcript fixture writer) — the jump from 1,038 is `SrdExtract.Tests` growing to 3,315 under #189/#382 (1,367 characterization fixtures plus the whole-corpus round-trip, verbatim-invariant and glue-census checks), not a regression |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
-| Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) |
+| Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — unchanged; #382 only regenerated `monsters.json`, and `spells.json`/`species.json`/`classes.json` are byte-identical |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `83cabef` (#347 branch tip), merged as `03e1891`, 2026-08-23 (post-#347 per-fight reseeding — a **provisional F1-exit baseline**; promote by diffing one fresh run after the last save-layer F1 items land). Seeds 1–120: median 18 of 30, 35 clear all, 55 reach level 4; seeds 200–320: 18/31/59. **Zero `Stalled`** in both. Per-band hp-left 84→76→71→72→75→71% (1–120) and 83→78→70→72→72→71% (200–320) |
+| Pacing | Measured at `6703690` (#382 stages 4–6 branch tip, span-coverage accounting live), against a same-build `main` baseline, 2026-08-24. Seeds 1–120: main median 18 of 30, 35 clear all, 55 reach level 4, died-by-fight-4 12 → branch median 18, 32 clear all, 48 reach level 4, died-by-fight-4 7. Seeds 200–320: main median 18, 31 clear all, 59 reach level 4, died-by-fight-4 8 (of 121) → branch median 18, 35 clear all, 46 reach level 4, died-by-fight-4 9 (of 121). Median holds on both ranges; level-4 attainment fell on both (55→48, 59→46); full clears moved in opposite directions between ranges (32 vs 35), the documented seed-set × build interaction; died-by-fight-4 improved on one range and was flat on the other. Net read: **harder or unchanged**, the design's own stated hypothesis (`docs/2026-08-24-span-accounting-design.md` §10) — a creature fielded at full printed XP while quietly missing a rider (an Advantage clause, a Disadvantage-on-next-attack rider, an or-tier) was cheaper than its price, and the census ending that discount removed exactly the demoted creatures rather than making any surviving one easier. Per-band hp-left 84→76→71→72→75→71% → 85→76→68→71→74→75% (1–120) and 83→78→70→72→72→71% → 83→75→71→70→73→73% (200–320), inside noise. **Zero `Stalled`** in both |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
 | Coverage gaps | 41% of production code untested (`client/` 7.4k, `tools/SrdExtract` 5.6k, `Console` 2.0k lines) |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
@@ -115,7 +115,16 @@ characterization fixtures (#189, pulled forward from F5) land first, then the
 span-coverage accounting refactor (#382) — coverage-by-consumption replaces
 credit-by-label, subsuming the accounting halves of #371–#373 into one regeneration,
 one census, one re-baseline; the semantic halves of #370–#375 land as small fixes on
-top. Exit: re-baseline both seed ranges; QC audits the three honesty lanes clean.
+top. **Stages 0–3 merged (#387, #388); stages 4–6 (the switchover, regeneration and
+re-baseline) are PR-open as of 2026-08-24** — the Pacing row above is that branch's
+own measurement, quoted against a same-build `main` baseline. The regeneration
+demoted 12 monsters out of the tier-1 pool (22 lost pool admission across all CRs;
+12 of those were in tier-1 — each carrying a real, always-printed
+rider the engine never executed, hidden until now behind the old sentence-credit
+bug), which broke `MonsterPoolTests`' CR-4 and tier-one floors — lowered as
+transitional per the coordinator's 2026-08-24 decision on #382's own stop-and-ask
+trigger, expected to rise again as #370–#373's semantic fixes and #267's fill-ins
+land. Exit: QC audits the three honesty lanes clean, then merge.
 
 **F2 — Feel.** The largest gap per hour of work. One committed master→sprite pipeline
 script per #238's own diagnosis, applied to every sprite and terrain tile —

@@ -4,26 +4,36 @@ using SrdExtract.Parsing;
 namespace SrdExtract.Tests;
 
 /// <summary>
-/// Pins of CURRENT known-buggy behavior in <see cref="EntryMechanicsParser"/>. Each
-/// test names the issue it documents and states plainly that it pins a bug, not a
-/// spec — the span-coverage refactor (#382) is expected to make every one of these
-/// assertions false, and that is the point: when it does, this file is the proof the
-/// fix landed, and each test should be updated (not deleted silently) to assert the
-/// corrected behavior.
+/// Pins of known-buggy behavior in <see cref="EntryMechanicsParser"/>, one issue per
+/// fact. The span-coverage refactor (#382, docs/2026-08-24-span-accounting-design.md
+/// §9.2) flipped the accounting halves of #371, #372 and #373: what used to be
+/// silently credited to a label now lands in residue, computed by subtraction rather
+/// than by a sentence-level credit test. #370 is different in kind — a
+/// misattribution, not an omission — and coverage does not and cannot fix it (design
+/// §12.1): the outcome misread stays pinned, with an added assertion that the side
+/// clause it hides behind is now honestly counted.
 /// </summary>
 public sealed class KnownGapPinsTests
 {
     [Fact]
-    public void Issue370_FailureOrSuccessGoverningASideClauseCurrentlyOverridesTheWholeEntrysOutcome()
+    public void Issue370_FailureOrSuccessGoverningASideClauseStillOverridesTheWholeEntrysOutcome()
     {
         // Steam Mephit's Steam Breath, verbatim. "Failure or Success: Being underwater
         // doesn't grant Resistance to this Fire damage." is a side clause about
-        // Resistance, not a restatement of the Failure damage — but MatchesStructuredForm
-        // / ParseSave's success check only look for the label substring anywhere in the
-        // text, so its presence currently overrides the printed "Success: Half damage
-        // only." into SameAsFailure for the whole entry. Fix (#382/accounting halves of
-        // #370): the side clause should be recognised as its own residue and the printed
-        // Success: Half damage outcome preserved.
+        // Resistance, not a restatement of the Failure damage — but ParseSave's success
+        // check looks for the label substring anywhere in the text, so its presence
+        // still overrides the printed "Success: Half damage only." into SameAsFailure
+        // for the whole entry. This is a misattribution, not an omission, so #382's
+        // span-coverage switchover does not and should not change it (design §9.2,
+        // §12.1) — the fix is #370's own, scoping ParseSave's outcome check to the
+        // label that actually governs the printed Failure clause.
+        //
+        // What #382 does change: the misread outcome now costs the entry two more
+        // residue lines instead of none. Because `success` reads SameAsFailure rather
+        // than HalfDamage, ParseSave never reaches its `save.success_half` claim, so
+        // "Success: Half damage only" is never claimed — and "Failure or Success: ..."
+        // was never claimed by anything (design §4.1: no glue entry for labels). Both
+        // land in residue where they used to vanish under the whole-sentence credit.
         var entry = EntryMechanicsParser.Classify(
             "Steam Breath",
             MonsterEntrySection.Action,
@@ -33,16 +43,21 @@ public sealed class KnownGapPinsTests
             "underwater doesn't grant Resistance to this Fire damage.");
 
         Assert.Equal(SaveSuccessOutcome.SameAsFailure, entry.Save!.SuccessOutcome);
+        Assert.Contains("Success: Half damage only", entry.UnmodelledClauses);
+        Assert.Contains(
+            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
+            entry.UnmodelledClauses);
     }
 
     [Fact]
-    public void Issue371_AConditionalDamageAlternativeCurrentlyKeepsOnlyTheFirstComponent()
+    public void Issue371_AConditionalDamageAlternativeNowLandsInResidue()
     {
         // Swarm of Rats' Bites, verbatim. "or 2 (1d4) Piercing damage if the swarm is
         // Bloodied" is a real, printed conditional alternative that the model has no
-        // vocabulary for — but the attack's Hit: clause is credited whole by
-        // MatchesStructuredForm, so the second damage figure is silently dropped rather
-        // than counted. Fix: the uncovered "or 2 (1d4)..." span should land in residue.
+        // vocabulary for. Fixed accounting half of #382: DamagePattern's loop breaks on
+        // the "or"-alternative rather than claiming it, so the uncovered span now falls
+        // out as residue by subtraction. #371's execution half — structuring the
+        // Bloodied-conditional tier itself — stays open.
         var entry = EntryMechanicsParser.Classify(
             "Bites",
             MonsterEntrySection.Action,
@@ -51,18 +66,19 @@ public sealed class KnownGapPinsTests
 
         var damage = Assert.Single(entry.Attack!.Damage);
         Assert.Equal(5, damage.PrintedAverage);
-        Assert.Empty(entry.UnmodelledClauses);
+        Assert.Equal(["or 2 (1d4) Piercing damage if the swarm is Bloodied"], entry.UnmodelledClauses);
     }
 
     [Fact]
-    public void Issue372_APluralConditionsSentenceCurrentlyImposesNothingAndCountsNothing()
+    public void Issue372_APluralConditionsSentenceNowCountsAsResidueWhileStillImposingNothing()
     {
-        // Storm Giant's Thunderbolt, verbatim. ConditionPattern only recognises the
-        // singular "the X condition" shape, so "the target has the Blinded and Deafened
-        // conditions" — plural, two names — matches nothing at all: no rider is imposed
-        // for either condition, and because the sentence still contains "Hit:" the whole
-        // entry is credited as fully modelled anyway. Fix: at minimum this must not read
-        // as zero-residue; ideally both riders should be imposed.
+        // Storm Giant's Thunderbolt, verbatim. ConditionPattern still only recognises
+        // the singular "the X condition" shape, so "the target has the Blinded and
+        // Deafened conditions" — plural, two names — still matches nothing and no rider
+        // is imposed for either condition (#372's execution half, still open). What
+        // flips is the accounting half only (design §9.2): nothing claims this
+        // sentence any more, so it is no longer swallowed by the attack's "Hit:"
+        // credit and shows up as residue instead of vanishing.
         var entry = EntryMechanicsParser.Classify(
             "Thunderbolt",
             MonsterEntrySection.Action,
@@ -71,17 +87,26 @@ public sealed class KnownGapPinsTests
             "turn.");
 
         Assert.Empty(entry.AppliedConditions);
-        Assert.Empty(entry.UnmodelledClauses);
+        Assert.Equal(
+            ["and the target has the Blinded and Deafened conditions until the start of the giant's next turn"],
+            entry.UnmodelledClauses);
     }
 
     [Fact]
-    public void Issue373_AnUnexecutedDeathRiderBehindAFailureLabelCurrentlyCountsAsNothing()
+    public void Issue373_AnUnexecutedDeathRiderBehindAFailureLabelNowLandsInResidue()
     {
         // Will-o'-Wisp's Consume Life, verbatim. "The target dies, and the wisp regains
         // 10 (3d6) Hit Points" is real, unexecuted mechanics — a kill-and-heal rider —
-        // but the sentence starts with "Failure" so MatchesStructuredForm credits it
-        // whole, and it vanishes from UnmodelledClauses exactly like the goblin's
-        // conditional damage.
+        // that used to vanish because the sentence starts with "Failure" and the old
+        // accounting credited the whole sentence to that label. Fixed accounting half
+        // of #382: nothing claims the death-and-heal clause, so it is residue.
+        //
+        // A second clause is new here too, and it is a different gap: this is a
+        // single-target save entry, so under design §7.6 only the head noun "one
+        // creature" is claimed — the distance ("within 5 feet") and the sight
+        // qualifier ("the wisp can see") are printed rules `UseSaveEntry` does not
+        // enforce (#386), so the whole qualifier clause is honest residue rather than
+        // a false claim of range or sight the engine does not check.
         var entry = EntryMechanicsParser.Classify(
             "Consume Life",
             MonsterEntrySection.BonusAction,
@@ -89,6 +114,11 @@ public sealed class KnownGapPinsTests
             "feet that has 0 Hit Points. Failure: The target dies, and the wisp regains 10 (3d6) " +
             "Hit Points.");
 
-        Assert.Empty(entry.UnmodelledClauses);
+        Assert.Equal(
+            [
+                "one living creature the wisp can see within 5 feet that has 0 Hit Points",
+                "The target dies, and the wisp regains 10 (3d6) Hit Points",
+            ],
+            entry.UnmodelledClauses);
     }
 }

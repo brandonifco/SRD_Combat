@@ -31,14 +31,23 @@ public class MonsterPoolTests
     [Fact]
     public void TheTierOnePoolIsBigEnoughToBuildAGauntletFrom()
     {
+        // The floor dropped 75 -> 68 on 2026-08-24 (span-accounting regeneration,
+        // #382). The census the switchover ran is what moved this, not a change of
+        // heart about the bar: entries that always carried a rider the engine never
+        // executed — hidden behind the old sentence-credit accounting — now show that
+        // rider as honest residue and demote out of the pool. This floor is
+        // TRANSITIONAL, not a tuning target: it is expected to RISE as #370-#373's
+        // semantic fixes restore the demoted creatures and #267's fill-ins land. Do
+        // not read a future increase as "the bar moved" — it is the pool recovering
+        // what the old accounting was silently claiming for it.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 75,
-            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 81 when the genre cut " +
-            "landed (2026-08-20, TraditionalFoes), 116 before that cut, and 131 before #52 " +
-            "dropped the creatures the SRD prices as equipment and #75 dropped the ones with " +
-            "nowhere to fight.");
+            pool.Count >= 68,
+            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 75 before the 2026-08-24 " +
+            "span-accounting regeneration (#382), 81 when the genre cut landed (2026-08-20, " +
+            "TraditionalFoes), 116 before that cut, and 131 before #52 dropped the creatures the " +
+            "SRD prices as equipment and #75 dropped the ones with nowhere to fight.");
     }
 
     [Fact]
@@ -47,16 +56,24 @@ public class MonsterPoolTests
         // A pool of 81 would still be useless if it were all CR 0. The gauntlet needs a
         // choice at every step of the ladder, so the floor is per band, not overall.
         //
-        // CR 0's and CR 4's floors are 3, deliberately below the others': the genre cut
-        // removed the mundane animals that padded both bands — CR 0 keeps Awakened
-        // Shrub, Giant Fire Beetle and Lemure, CR 4 keeps Ettin, Guard Captain and the
-        // Red Dragon Wyrmling — and Brandon accepted the thin bands with expansion
-        // fill-ins planned to repopulate them. If a fill-in lands, raise the floor
-        // with it.
+        // CR 0's and CR 4's floors were 3, deliberately below the others': the genre
+        // cut removed the mundane animals that padded both bands — CR 0 keeps
+        // Awakened Shrub, Giant Fire Beetle and Lemure, CR 4 kept Ettin, Guard Captain
+        // and the Red Dragon Wyrmling — and Brandon accepted the thin bands with
+        // expansion fill-ins planned to repopulate them.
+        //
+        // CR 4's floor dropped 3 -> 2 on 2026-08-24 (span-accounting regeneration,
+        // #382): the Ettin's Morningstar has always printed "and the target has
+        // Disadvantage on the next attack roll it makes before the end of its next
+        // turn", a rider nothing executes, hidden until now behind the old
+        // "Hit:"-credits-the-whole-sentence bug. The census is telling the truth
+        // about a gap that was always there. TRANSITIONAL, not a tuning target — see
+        // TheTierOnePoolIsBigEnoughToBuildAGauntletFrom's comment; raise it back to 3
+        // when the Ettin (or another CR 4 creature) is restored.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         foreach (var (rating, floor) in new[]
-                 { (0m, 3), (0.125m, 4), (0.25m, 4), (0.5m, 4), (1m, 4), (2m, 4), (3m, 4), (4m, 3) })
+                 { (0m, 3), (0.125m, 4), (0.25m, 4), (0.5m, 4), (1m, 4), (2m, 4), (3m, 4), (4m, 2) })
         {
             var atRating = pool.Where(monster => monster.ChallengeRating == rating).ToArray();
 
@@ -131,14 +148,24 @@ public class MonsterPoolTests
     [Fact]
     public void APlayableMonsterIsAdmittedThoughSomethingOutsideItsActionsIsNot()
     {
-        // The Ankheg's Bite and Acid Spray are the whole of its turn and both are fully
-        // modelled; its Tunneler trait is not. That is the line Playable draws — the
-        // turn is right, something outside it is not.
-        var ankheg = Content.MonstersById["monster.ankheg"];
+        // The Ghast's Bite and Claw are the whole of its turn and both are fully
+        // modelled; its Stench trait is not (a Trait-section SavingThrow entry
+        // UseEntry never reaches at all — design §2.5's own named example — so its
+        // rider claims nothing and the Emanation's own qualifiers are residue too).
+        // That is the line Playable draws — the turn is right, something outside it
+        // is not.
+        //
+        // This used to be the Ankheg's Bite and Acid Spray, but the 2026-08-24
+        // span-accounting regeneration (#382) gave the Ankheg's Bite honest residue of
+        // its own — the Advantage parenthetical in its attack header, design §2.3's
+        // own worked example ("(with Advantage if the target is Grappled by the
+        // ankheg)") — which drops the Ankheg to Diminished and makes it the wrong
+        // example for this test now.
+        var ghast = Content.MonstersById["monster.ghast"];
 
-        Assert.Equal(MonsterCoverage.Playable, MonsterPool.CoverageOf(ankheg));
-        Assert.True(MonsterPool.Admits(ankheg));
-        Assert.Contains(ankheg.Entries, entry => !entry.IsFullyModelled);
+        Assert.Equal(MonsterCoverage.Playable, MonsterPool.CoverageOf(ghast));
+        Assert.True(MonsterPool.Admits(ghast));
+        Assert.Contains(ghast.Entries, entry => !entry.IsFullyModelled);
 
         // And the near miss that shows the grade is about position, not count: the
         // Specter's Life Drain is its only action and loses "its Hit Point maximum

@@ -208,6 +208,21 @@ internal sealed class EntryCoverage
     }
 
     /// <summary>
+    /// The verbatim text of every uncovered run judged glue and absorbed rather than
+    /// reported as residue — the design §4.4 census's own input: run this over the
+    /// whole corpus, normalise whitespace and de-duplicate, and the result is the
+    /// glue set's entire observed vocabulary. Not chunked or trimmed, unlike
+    /// <see cref="Residue"/>: an absorbed run is glue precisely because none of it
+    /// survives, so there is nothing to chunk.
+    /// </summary>
+    public IReadOnlyList<string> AbsorbedGlueRuns() =>
+        MaximalUncoveredRuns()
+            .Select(span => (span, runText: Text[span.Start..span.End]))
+            .Where(run => IsAbsorbedGlue(run.span, run.runText))
+            .Select(run => run.runText)
+            .ToArray();
+
+    /// <summary>
     /// Every regex pattern text ever passed to <see cref="Claim(Regex, Match, string, string[])"/>,
     /// process-wide. Populated as claiming matchers actually run against real entries, so
     /// the wildcard-convention test (design §2.3) can scan exactly the patterns that
