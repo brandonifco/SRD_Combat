@@ -88,16 +88,17 @@ internal static partial class EntryMechanicsParser
         var usage = ParseUsageLimit(name);
         var bareName = StripUsage(name);
         coverage = new EntryCoverage(text);
-        var (conditions, claimableRiders) = ParseAppliedConditionsWithClaims(text, coverage);
+        var (conditions, claimableRiders) = ParseAppliedConditionsWithClaims(text);
 
         if (ParseSave(text, conditions, coverage) is { } save)
         {
             // The entry's mechanics is SavingThrow — one of the two the engine
             // imposes riders from (design §2.5) — so every fully-modelled rider's
-            // clause is claimed now, not before.
-            foreach (var (_, span) in claimableRiders)
+            // claim (its own clause, and any repeat-save annex/cap or petrifying-tier
+            // span) is committed now, not before.
+            foreach (var (_, span, note) in claimableRiders)
             {
-                coverage.Claim(span, "condition.rider");
+                coverage.Claim(span, note);
             }
 
             return new TraitEntry(
@@ -168,17 +169,17 @@ internal static partial class EntryMechanicsParser
         var riderText = riderMask.Masked;
         var (conditions, claimableRiders) = ParseAppliedConditionsWithClaims(
             riderText,
-            coverage,
             attackEntry: attack is not null);
 
         if (attack is not null)
         {
             // The entry's mechanics is Attack — one of the two the engine imposes
-            // riders from (design §2.5) — so every fully-modelled rider's clause is
-            // claimed now, not before.
-            foreach (var (_, span) in claimableRiders)
+            // riders from (design §2.5) — so every fully-modelled rider's claim (its
+            // own clause, and any repeat-save annex/cap span) is committed now, not
+            // before.
+            foreach (var (_, span, note) in claimableRiders)
             {
-                coverage.Claim(span, "condition.rider");
+                coverage.Claim(span, note);
             }
 
             return Build(
@@ -230,10 +231,10 @@ internal static partial class EntryMechanicsParser
         {
             // The entry's mechanics is SavingThrow — the other of the two the engine
             // imposes riders from (design §2.5) — so every fully-modelled rider's
-            // clause is claimed now.
-            foreach (var (_, span) in claimableRiders)
+            // claim is committed now.
+            foreach (var (_, span, note) in claimableRiders)
             {
-                coverage.Claim(span, "condition.rider");
+                coverage.Claim(span, note);
             }
 
             return Build(bareName, section, text, EntryMechanics.SavingThrow, usage, conditions, save: save);
@@ -456,7 +457,7 @@ internal static partial class EntryMechanicsParser
     /// <summary>
     /// The same split as <see cref="SplitSentences"/>, with each piece's span into
     /// <paramref name="text"/> alongside it. The rider-parsing loop in
-    /// <see cref="ParseAppliedConditions"/> needs this to look one sentence ahead
+    /// <see cref="ParseAppliedConditionsWithClaims"/> needs this to look one sentence ahead
     /// without losing the offset it would claim there (design §5.2's annex rule).
     /// </summary>
     private static IEnumerable<(string Text, TextSpan Span)> SplitSentencesWithSpans(string text)
@@ -636,8 +637,13 @@ internal static partial class EntryMechanicsParser
         if (combination.Success && WordToNumber(combination.Groups["count"].Value) is { } count)
         {
             // The "attacks" group's content is consumed whole into AttackNames, so
-            // nothing here is excluded from the claim.
-            pending.Claim(new TextSpan(combination.Index, combination.Length), "multiattack.combination");
+            // nothing here is excluded from the claim. Routed through the
+            // Claim(Regex, Match, ...) overload — with no unread groups, so the whole
+            // match is still claimed exactly as before — so this pattern's own
+            // permissive [^.]+? registers with the wildcard-convention scan (design
+            // §2.3) the same as every other claiming pattern, rather than escaping it
+            // by claiming through the raw-span overload alone.
+            pending.Claim(CombinationMultiattackPattern(), combination, "multiattack.combination");
             coverage.Absorb(pending);
 
             return new MultiattackEffect(count, SplitAttackNames(combination.Groups["attacks"].Value), true);
@@ -678,7 +684,11 @@ internal static partial class EntryMechanicsParser
                 }
             }
 
-            pending.Claim(new TextSpan(match.Index, match.Length), "multiattack.count_clause");
+            // Routed through Claim(Regex, Match, ...) for the same reason as
+            // CombinationMultiattackPattern above — this pattern's own [\w' ]*? is one
+            // of §2.3's own motivating examples, and claiming it only through the raw
+            // TextSpan overload would leave it permanently unscanned.
+            pending.Claim(NamedMultiattackPattern(), match, "multiattack.count_clause");
 
             // A second (or later) composition clause carries its own "makes" — the
             // Roper's ", and makes two Bite attacks" after its first "makes two
@@ -883,17 +893,7 @@ internal static partial class EntryMechanicsParser
     }
 
     /// <summary>
-    /// Finds every condition the entry imposes, with its escape DC, its size gate, and
-    /// whatever else was printed with it that the model cannot express.
-    /// </summary>
-    private static IReadOnlyList<AppliedCondition> ParseAppliedConditions(
-        string text,
-        EntryCoverage coverage,
-        bool attackEntry = false) =>
-        ParseAppliedConditionsWithClaims(text, coverage, attackEntry).Conditions;
-
-    /// <summary>
-    /// Finds every condition, and separately the span each fully-modelled one would
+    /// Finds every condition, and separately the spans each fully-modelled one would
     /// claim if the entry's own mechanics turns out to be one the engine imposes
     /// riders from (design §2.5) — <see cref="EntryMechanics.Attack"/> and
     /// <see cref="EntryMechanics.SavingThrow"/> only.
@@ -903,41 +903,53 @@ internal static partial class EntryMechanicsParser
     /// entry will resolve to — <c>Multiattack</c>, <c>Reaction</c> and
     /// <c>Unmodelled</c> all still carry <c>conditions</c> on the returned entry, but
     /// none of them ever has a rider imposed by <c>Encounter.UseEntry</c>, so claiming
-    /// a rider's text there would be a false claim under §2.2. The caller commits
-    /// <c>ClaimableRiders</c> into its own <see cref="EntryCoverage"/> only once it
-    /// knows which branch it is building.
+    /// a rider's text there would be a false claim under §2.2. This method therefore
+    /// takes no <see cref="EntryCoverage"/> of its own and commits nothing: every span
+    /// a rider would claim — its own clause, a repeat-save annex, the automatic-success
+    /// cap, the petrifying-tier template — travels out through
+    /// <c>ClaimableRiders</c> and is committed by the caller into its own coverage only
+    /// once it knows which branch it is building. A claim made here, ahead of that
+    /// gate, would be safe only by wording coincidence rather than by construction.
     /// </remarks>
-    private static (IReadOnlyList<AppliedCondition> Conditions, IReadOnlyList<(AppliedCondition Condition, TextSpan Span)> ClaimableRiders)
+    private static (IReadOnlyList<AppliedCondition> Conditions, IReadOnlyList<(AppliedCondition Condition, TextSpan Span, string Note)> ClaimableRiders)
         ParseAppliedConditionsWithClaims(
         string text,
-        EntryCoverage coverage,
         bool attackEntry = false)
     {
         var conditions = new List<AppliedCondition>();
-        var claimableRiders = new List<(AppliedCondition Condition, TextSpan Span)>();
+        var claimableRiders = new List<(AppliedCondition Condition, TextSpan Span, string Note)>();
 
         // The two-tier gaze — the one "First Failure: ... Second Failure: ..." pair the
         // model expresses, carved as an exact template the way Hold Person's clock was:
-        // the corpus prints this wording three times, on the Basilisk's, the Medusa's
-        // and the Gorgon's Petrifying Breath's Petrifying Gaze, and it structures as a
-        // single escalating rider — Restrained, repeated at the end of the bearer's
-        // next turn, ending on a success and deepening to Petrified on the failure. The
-        // matched sentences are claimed and masked out of the text the general pass
-        // below reads, whose tiered-failure rule would otherwise rightly refuse them;
-        // any tiered sentence that does not match this template to the letter still
-        // falls to that rule.
+        // the corpus prints this wording three times, on the Basilisk's and the
+        // Medusa's Petrifying Gaze and the Gorgon's Petrifying Breath, and it
+        // structures as a single escalating rider — Restrained, repeated at the end of
+        // the bearer's next turn, ending on a success and deepening to Petrified on
+        // the failure. The matched sentences are masked out of the text the general
+        // pass below reads (locally, not into the caller's coverage — this rider's own
+        // claim is deferred like every other one, below), whose tiered-failure rule
+        // would otherwise rightly refuse them; any tiered sentence that does not match
+        // this template to the letter still falls to that rule.
         if (text.Contains(PetrifyingTierSentences, StringComparison.Ordinal))
         {
-            conditions.Add(new AppliedCondition(
+            var petrifyingCondition = new AppliedCondition(
                 ConditionType.Restrained,
                 Duration: ConditionDuration.UntilSavedOrEscalated,
-                EscalatesTo: ConditionType.Petrified));
+                EscalatesTo: ConditionType.Petrified);
+
+            conditions.Add(petrifyingCondition);
 
             var petrifyingIndex = text.IndexOf(PetrifyingTierSentences, StringComparison.Ordinal);
-            coverage.Claim(
-                new TextSpan(petrifyingIndex, PetrifyingTierSentences.Length),
-                "condition.petrifying_tier");
-            text = coverage.Masked;
+            var petrifyingSpan = new TextSpan(petrifyingIndex, PetrifyingTierSentences.Length);
+            claimableRiders.Add((petrifyingCondition, petrifyingSpan, "condition.petrifying_tier"));
+
+            // A throwaway coverage masks the template out of this method's own local
+            // `text` only, so the sentence-splitting pass below cannot re-read
+            // "Restrained"/"Petrified" as separate, wrong riders — this never reaches
+            // the caller and carries no claim of its own.
+            var maskOnly = new EntryCoverage(text);
+            maskOnly.Claim(petrifyingSpan, "condition.petrifying_tier");
+            text = maskOnly.Masked;
         }
 
         // Sentence by sentence, because the rider's gate and its duration are the words
@@ -961,7 +973,7 @@ internal static partial class EntryMechanicsParser
             var nextSentence = sentenceIndex + 1 < sentences.Length ? sentences[sentenceIndex + 1] : ((string Text, TextSpan Span)?)null;
 
             var added = new List<AppliedCondition>();
-            var addedSpans = new List<TextSpan?>();
+            var addedClaims = new List<IReadOnlyList<(TextSpan Span, string Note)>>();
             var clauses = RiderClausePattern().Split(sentence);
 
             // A head clause carrying no rider may stand before the riders only when the
@@ -1008,12 +1020,12 @@ internal static partial class EntryMechanicsParser
                         ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
                         : null;
 
-                    var (size, duration, unmodelled, claimableSpan) = unmodelledCompanion
-                        ? (null, null, sentence, (TextSpan?)null)
-                        : ReadRider(sentence, clause, match, attackEntry, text, nextSentence, coverage, clauseAbsoluteStart);
+                    var (size, duration, unmodelled, claims) = unmodelledCompanion
+                        ? (null, null, sentence, (IReadOnlyList<(TextSpan Span, string Note)>)[])
+                        : ReadRider(sentence, clause, match, attackEntry, text, nextSentence, clauseAbsoluteStart);
 
                     added.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
-                    addedSpans.Add(claimableSpan);
+                    addedClaims.Add(claims);
                 }
             }
 
@@ -1021,7 +1033,10 @@ internal static partial class EntryMechanicsParser
             // modelled as the grapple it hangs off. When the Grappled rider in the same
             // sentence is refused — "from one of ten tentacles" is limb bookkeeping the
             // model does not express — the dependent rider must not ride a grapple that
-            // can never land, and is refused whole-sentence with it.
+            // can never land, and is refused whole-sentence with it. (Its claims, if
+            // any, are dropped by the CanBeImposed gate below regardless — this
+            // annotation is belt-and-braces, since a WhileGrappleHolds duration can
+            // never also carry a repeat-save annex or cap.)
             var grappled = added.FirstOrDefault(rider => rider.Condition == ConditionType.Grappled);
 
             for (var i = 0; i < added.Count; i++)
@@ -1029,19 +1044,28 @@ internal static partial class EntryMechanicsParser
                 if (added[i].Duration is { WhileGrappleHolds: true } && grappled is not { IsFullyModelled: true })
                 {
                     added[i] = added[i] with { Duration = null, UnmodelledRequirement = sentence };
-                    addedSpans[i] = null;
+                    addedClaims[i] = [];
                 }
             }
 
             // Only a rider the engine will actually impose is claimable (design §2.5):
             // fully modelled, and on ConditionRules' own executable allowlist —
             // exactly ConditionRules.CanBeImposed's own test, checked here on the
-            // rider as the grapple-tie sweep above left it.
+            // rider as the grapple-tie sweep above left it. Every claim ReadRider
+            // returned for this rider — its own clause, and any repeat-save annex or
+            // automatic-success cap — travels through the same gate together: a
+            // refused rider (empty Claims, per every early return in ReadRider) offers
+            // nothing to add.
             for (var i = 0; i < added.Count; i++)
             {
-                if (addedSpans[i] is { } span && ConditionRules.CanBeImposed(added[i]))
+                if (!ConditionRules.CanBeImposed(added[i]))
                 {
-                    claimableRiders.Add((added[i], span));
+                    continue;
+                }
+
+                foreach (var (span, note) in addedClaims[i])
+                {
+                    claimableRiders.Add((added[i], span, note));
                 }
             }
 
@@ -1070,18 +1094,29 @@ internal static partial class EntryMechanicsParser
     /// instead of on a charge.
     /// </para>
     /// </remarks>
-    private static (CreatureSize? Size, ConditionDuration? Duration, string? Unmodelled, TextSpan? ClaimableSpan) ReadRider(
+    private static (CreatureSize? Size, ConditionDuration? Duration, string? Unmodelled, IReadOnlyList<(TextSpan Span, string Note)> Claims) ReadRider(
         string sentence,
         string clause,
         Match condition,
         bool attackEntry,
         string entryText,
         (string Text, TextSpan Span)? nextSentence,
-        EntryCoverage coverage,
         int clauseAbsoluteStart)
     {
         var trailing = clause[(condition.Index + condition.Length)..].Trim().TrimEnd('.').Trim();
         var duration = ParseDuration(trailing);
+
+        // Every span this rider would claim — its own clause, and (for a repeat-save
+        // duration) the annexed sentence and the automatic-success cap — accumulates
+        // here rather than committing to any coverage directly. None of it is real
+        // until the rider reaches a successful return below, and even then it is only
+        // claimable once the caller's own §2.5 gate (mechanics is Attack or
+        // SavingThrow, ConditionRules.CanBeImposed) passes — see
+        // ParseAppliedConditionsWithClaims. A claim made here, ahead of either gate,
+        // would be safe only by wording coincidence rather than by construction (the
+        // exact gap a rider later refused by the tiered-failure check, the
+        // attack-entry check, or the lead-in gate below would otherwise leave behind).
+        var extraClaims = new List<(TextSpan Span, string Note)>();
 
         // "and repeats the save at the end of each of its turns, ending the effect on
         // itself on a success" — the way out inside the rider's own sentence, modelled
@@ -1105,18 +1140,25 @@ internal static partial class EntryMechanicsParser
         // annex rule — "empty" rather than "carries no duration", so a rider that
         // trails off with an early out the model cannot express, e.g. "for 1 minute,
         // until it takes damage", still refuses rather than annexing a sentence that
-        // does not belong to it). When every condition holds, the claim annexes the
-        // next sentence's own span rather than rewriting the text to join them —
-        // there is only ever one coordinate space (design §5).
+        // does not belong to it). The clause must also be the whole sentence — no
+        // sibling rider sharing it — because that is what the deleted join pattern's
+        // own lookbehind required (anchored to the entire text up to the period, not
+        // just this rider's own trailing text): a sentence printing two conditions
+        // where an earlier one's clause happens to end exactly at "condition" must not
+        // annex a repeat-save sentence that, on the SRD's own page, describes the
+        // clause after it too. When every condition holds, the claim annexes the next
+        // sentence's own span rather than rewriting the text to join them — there is
+        // only ever one coordinate space (design §5).
         if (duration is null
             && trailing.Length == 0
+            && clause == sentence
             && sentence.Contains("Failure:", StringComparison.Ordinal)
             && nextSentence is { } next
             && next.Text.TrimEnd('.') == RepeatSaveStandaloneSentence
             && entryText.Contains(AutomaticSuccessSentence, StringComparison.Ordinal))
         {
             duration = ConditionDuration.RepeatSaveUpToOneMinute;
-            coverage.Claim(next.Span, "condition.repeat_save_annex");
+            extraClaims.Add((next.Span, "condition.repeat_save_annex"));
         }
 
         // RepeatSaveUpToOneMinute's engine meaning is the ten-turn cap the printed
@@ -1129,9 +1171,9 @@ internal static partial class EntryMechanicsParser
 
             if (automaticSuccessIndex >= 0)
             {
-                coverage.Claim(
+                extraClaims.Add((
                     new TextSpan(automaticSuccessIndex, AutomaticSuccessSentence.Length),
-                    "condition.repeat_save_cap");
+                    "condition.repeat_save_cap"));
             }
         }
 
@@ -1140,7 +1182,7 @@ internal static partial class EntryMechanicsParser
         // save" — is a rule of its own, and the rider is unusable until it is modelled.
         if (trailing.Length > 0 && duration is null)
         {
-            return (null, null, sentence, null);
+            return (null, null, sentence, []);
         }
 
         // "Second Failure: The target has the Unconscious condition for 1 minute." — a
@@ -1149,7 +1191,7 @@ internal static partial class EntryMechanicsParser
         // whole tier early — the Brass Dragon Wyrmling's sleep on a first failed save.
         if (TieredFailurePattern().IsMatch(sentence))
         {
-            return (null, null, sentence, null);
+            return (null, null, sentence, []);
         }
 
         // The label rules look at the whole sentence, not the clause: a label always
@@ -1163,7 +1205,7 @@ internal static partial class EntryMechanicsParser
             // attack with it would paralyze on every hit with no save rolled.
             if (attackEntry)
             {
-                return (null, null, sentence, null);
+                return (null, null, sentence, []);
             }
 
             // And a "Failure:" rider must state its end within its own sentence. When
@@ -1177,7 +1219,7 @@ internal static partial class EntryMechanicsParser
             // their own printed way out.
             if (duration is null)
             {
-                return (null, null, sentence, null);
+                return (null, null, sentence, []);
             }
         }
 
@@ -1191,7 +1233,7 @@ internal static partial class EntryMechanicsParser
 
         if (!gate.Success)
         {
-            return (null, null, sentence, null);
+            return (null, null, sentence, []);
         }
 
         // The claim runs from the start of this gate match — which RiderLeadInPattern
@@ -1200,15 +1242,21 @@ internal static partial class EntryMechanicsParser
         // covering the size gate, the condition and its duration whole (design §7.3).
         // `leading`'s own length is what locates its start: it always ends exactly
         // where the condition match begins, whichever of StripDamage or
-        // StripAttackPreamble produced it.
+        // StripAttackPreamble produced it. Added last, alongside whatever annex/cap
+        // claims already accumulated above — all of it travels out together, gated as
+        // one unit by the caller.
         var claimStart = clauseAbsoluteStart + condition.Index - leading.Length;
         var claimEnd = clauseAbsoluteStart + clause.Length;
-        var claimableSpan = claimEnd > claimStart ? new TextSpan(claimStart, claimEnd - claimStart) : (TextSpan?)null;
+
+        if (claimEnd > claimStart)
+        {
+            extraClaims.Add((new TextSpan(claimStart, claimEnd - claimStart), "condition.rider"));
+        }
 
         return gate.Groups["size"].Success
             && Enum.TryParse<CreatureSize>(gate.Groups["size"].Value, ignoreCase: true, out var size)
-                ? (size, duration, null, claimableSpan)
-                : (null, duration, null, claimableSpan);
+                ? (size, duration, null, extraClaims)
+                : (null, duration, null, extraClaims);
     }
 
     /// <summary>
@@ -1421,6 +1469,21 @@ internal static partial class EntryMechanicsParser
     // corpus's own printings — a genuine multi-word name (none currently printed, but
     // the shape a "young red dragon" would take) still matches; a name followed by
     // "that"/"who"/"which"/"within"/"can" stops exactly there.
+    //
+    // "one creature" is claimed as a single target's head noun only when nothing but
+    // a sight/distance qualifier follows it — a printed distance narrows an otherwise
+    // arbitrary target and the engine's own any-creature targeting is still an honest
+    // (if unenforced-range) description of that. A state or participle gate is a
+    // different claim: "one creature within 5 feet that has the Prone condition"
+    // (Gorgon/Elephant/Mammoth Trample) and "one creature Grappled by the chuul"
+    // (Chuul's Paralyzing Tentacles) both name which creatures are eligible at all in
+    // a way this engine does not filter on, so calling even the head noun "one
+    // creature" would assert the model expresses a selection rule it does not run —
+    // the same false claim §7.6's own rule forbids for the qualifiers themselves. The
+    // negative lookahead excludes exactly the two gate shapes the corpus prints (an
+    // optional "within N feet" ahead of "that" or "Grappled"); a bare sight/distance
+    // qualifier with nothing else after it still leaves the lookahead unmatched, so
+    // "one creature" still claims there.
     [GeneratedRegex(
         @",\s*(?:" +
         @"each\s+creature\s+in\s+a\s+\d+-foot\s+Cone" +
@@ -1428,7 +1491,7 @@ internal static partial class EntryMechanicsParser
         @"|each\s+creature\s+in\s+a\s+\d+-foot\s+Emanation\s+originating\s+from\s+the\s+" +
             @"(?<origin>[\w']+(?:\s+(?!(?:that|who|which|within|can)\b)[\w']+)*)" +
         @"|each\s+creature\s+in\s+a\s+\d+-foot-radius\s+Sphere\s+centered\s+on\s+a\s+point\b" +
-        @"|one\s+creature\b" +
+        @"|one\s+creature\b(?!\s+(?:within\s+\d+\s+feet\s+)?(?:that\b|Grappled\b))" +
         @")")]
     private static partial Regex SaveTargetClausePattern();
 

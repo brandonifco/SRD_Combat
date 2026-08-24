@@ -423,6 +423,39 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.NotNull(rider.UnmodelledRequirement);
     }
 
+    [Fact]
+    public void ASentenceWithASiblingClauseDoesNotAnnexEvenWithEmptyTrailingText()
+    {
+        // Not a real corpus entry — a second axis the annex rule (design §5.2) must
+        // stay tight on, distinct from the previous fixture's non-empty trailing text.
+        // Here the FIRST rider's own clause genuinely has empty trailing text (nothing
+        // follows "Frightened condition" before RiderClausePattern's split), but it is
+        // not the whole sentence — a second clause, "and it has the Charmed
+        // condition", shares it. The deleted RepeatSaveJoinPattern's lookbehind
+        // required its match to fall immediately after "Failure: The target has the
+        // <Condition> condition" with nothing else in the sentence before the period,
+        // so a sentence naming two conditions would never have matched it — only the
+        // clause boundary made this rider's own trailing look empty, not the sentence
+        // ending there. Both riders must stay refused.
+        var entry = EntryMechanicsParser.Classify(
+            "Test Gaze",
+            MonsterEntrySection.Action,
+            "Wisdom Saving Throw: DC 10, one creature within 20 feet. Failure: The target has the " +
+            "Frightened condition, and it has the Charmed condition. At the end of each of its " +
+            "turns, the target repeats the save, ending the effect on itself on a success. After " +
+            "1 minute, it succeeds automatically.");
+
+        Assert.Equal(2, entry.AppliedConditions.Count);
+
+        var frightened = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Frightened);
+        Assert.Null(frightened.Duration);
+        Assert.False(frightened.IsFullyModelled);
+
+        var charmed = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Charmed);
+        Assert.Null(charmed.Duration);
+        Assert.False(charmed.IsFullyModelled);
+    }
+
     #endregion
 
     #region Tiers

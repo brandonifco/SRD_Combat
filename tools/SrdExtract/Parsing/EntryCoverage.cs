@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace SrdExtract.Parsing;
@@ -97,7 +98,7 @@ internal sealed class EntryCoverage
             throw new ArgumentException("Cannot claim an unsuccessful match.", nameof(match));
         }
 
-        ClaimingPatterns.Add(pattern.ToString());
+        ClaimingPatternKeys.TryAdd(pattern.ToString(), 0);
 
         var matchEnd = match.Index + match.Length;
 
@@ -213,7 +214,17 @@ internal sealed class EntryCoverage
     /// participate in coverage rather than a hand-maintained list. Deliberately not
     /// entry-scoped — the set accumulates across a whole corpus run.
     /// </summary>
-    internal static HashSet<string> ClaimingPatterns { get; } = new(StringComparer.Ordinal);
+    /// <remarks>
+    /// Backed by a <see cref="ConcurrentDictionary{TKey,TValue}"/> rather than a plain
+    /// <see cref="HashSet{T}"/>: xUnit runs test classes in parallel by default, and more
+    /// than one characterization/round-trip class populates this process-wide registry
+    /// by classifying the whole corpus, so a bare <c>HashSet&lt;string&gt;</c> here would
+    /// be a real concurrent-write race — <c>Add</c> from two threads at once, or an
+    /// enumerator invalidated mid-scan by a concurrent write — not a theoretical one.
+    /// </remarks>
+    internal static ICollection<string> ClaimingPatterns => ClaimingPatternKeys.Keys;
+
+    private static readonly ConcurrentDictionary<string, byte> ClaimingPatternKeys = new(StringComparer.Ordinal);
 
     private IEnumerable<TextSpan> MaximalUncoveredRuns()
     {
