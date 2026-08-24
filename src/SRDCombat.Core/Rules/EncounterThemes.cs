@@ -49,11 +49,12 @@ public enum EncounterTheme
 /// under, and <c>EncounterBuilder</c> fills a fight with companions of its first pick.
 /// </para>
 /// <para>
-/// <b>A bridge creature carries several themes and that is the design.</b> A Worg is a
-/// goblin mount and a pack hunter, so a Worg drawn first can bring goblins or wolves —
-/// and a goblin and a dire wolf who share nothing directly still stand together in the
-/// Worg's fight, because companionship is judged against the fight's <em>anchor</em>,
-/// not pairwise. One anchor keeps the rule cheap and the results readable.
+/// <b>A bridge creature carries several themes and that is the design.</b> A Kobold
+/// Warrior is both a goblinoid regular and draconic kin, so a Kobold Warrior drawn
+/// first can bring goblins or dragon wyrmlings — and a goblin and a dragon wyrmling who
+/// share nothing directly still stand together in the Kobold's fight, because
+/// companionship is judged against the fight's <em>anchor</em>, not pairwise. One
+/// anchor keeps the rule cheap and the results readable.
 /// </para>
 /// <para>
 /// <b>An empty theme set is a loner, and explicit on purpose.</b> An Owlbear fights
@@ -64,6 +65,18 @@ public enum EncounterTheme
 /// <para>
 /// <b>This governs only the random draw</b>, like every list beside it: an authored
 /// encounter hands <c>EncounterBuilder</c> whatever sequence it likes.
+/// </para>
+/// <para>
+/// <b>The map tracks the pool, and shrinks with it.</b> Twelve names were removed on
+/// 2026-08-24 — Ankheg, Blood Hawk, Bugbear Stalker, Bugbear Warrior, Ettin, Steam
+/// Mephit, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects, Swarm of Rats,
+/// Swarm of Venomous Snakes and Worg — because the span-accounting regeneration (#382)
+/// demoted every one of them out of the tier-1 pool: each had always carried a printed
+/// rider the engine does not execute, hidden until then behind the old sentence-credit
+/// accounting bug. <c>EncounterThemeTests.TheMapCoversTheTraditionalPoolExactly</c>
+/// holds the map and the pool equal in both directions, so a demoted name has to leave
+/// here too — re-add a name (with its themes restored from this history, in source
+/// control) if #370-#373's semantic fixes or #267's fill-ins bring it back.
 /// </para>
 /// </remarks>
 public static class EncounterThemes
@@ -78,7 +91,6 @@ public static class EncounterThemes
 
             // CR 1/8
             ["Bandit"] = [EncounterTheme.Outlaws],
-            ["Blood Hawk"] = [EncounterTheme.WildPack, EncounterTheme.Outlaws],
             ["Cultist"] = [EncounterTheme.CultAndFiends],
             ["Flying Snake"] = [EncounterTheme.DungeonVermin, EncounterTheme.CultAndFiends],
             ["Giant Rat"] = [EncounterTheme.DungeonVermin],
@@ -101,9 +113,6 @@ public static class EncounterThemes
             ["Goblin Warrior"] = [EncounterTheme.GoblinoidWarband],
             ["Grimlock"] = [EncounterTheme.SavageHunters],
             ["Skeleton"] = [EncounterTheme.Undead],
-            ["Steam Mephit"] = [EncounterTheme.CultAndFiends],
-            ["Swarm of Bats"] = [EncounterTheme.DungeonVermin, EncounterTheme.Undead],
-            ["Swarm of Rats"] = [EncounterTheme.DungeonVermin],
             ["Violet Fungus"] = [EncounterTheme.DungeonVermin],
             ["Wolf"] = [EncounterTheme.WildPack, EncounterTheme.GoblinoidWarband],
             ["Zombie"] = [EncounterTheme.Undead],
@@ -115,14 +124,11 @@ public static class EncounterThemes
             ["Magma Mephit"] = [EncounterTheme.CultAndFiends],
             ["Sahuagin Warrior"] = [EncounterTheme.SavageHunters],
             ["Scout"] = [EncounterTheme.Outlaws, EncounterTheme.Soldiery],
-            ["Swarm of Insects"] = [EncounterTheme.DungeonVermin],
             ["Tough"] = [EncounterTheme.Outlaws],
             ["Troll Limb"] = [EncounterTheme.DungeonVermin],
-            ["Worg"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.WildPack],
 
             // CR 1
             ["Animated Armor"] = [EncounterTheme.ArcaneAndAnimated],
-            ["Bugbear Warrior"] = [EncounterTheme.GoblinoidWarband],
             ["Dire Wolf"] = [EncounterTheme.WildPack],
             ["Giant Hyena"] = [EncounterTheme.SavageHunters, EncounterTheme.WildPack],
             ["Giant Vulture"] = [EncounterTheme.SavageHunters],
@@ -132,7 +138,6 @@ public static class EncounterThemes
             ["Spy"] = [EncounterTheme.Outlaws, EncounterTheme.Soldiery],
 
             // CR 2
-            ["Ankheg"] = [],
             ["Awakened Tree"] = [EncounterTheme.ArcaneAndAnimated],
             ["Azer Sentinel"] = [EncounterTheme.CultAndFiends],
             ["Bandit Captain"] = [EncounterTheme.Outlaws],
@@ -145,25 +150,21 @@ public static class EncounterThemes
             ["Ochre Jelly"] = [EncounterTheme.DungeonVermin],
             ["Ogre"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.SavageHunters],
             ["Ogre Zombie"] = [EncounterTheme.Undead],
-            ["Swarm of Venomous Snakes"] = [EncounterTheme.DungeonVermin, EncounterTheme.CultAndFiends],
             ["White Dragon Wyrmling"] = [EncounterTheme.Draconic],
             ["Will-o'-Wisp"] = [EncounterTheme.Undead],
 
             // CR 3
             ["Basilisk"] = [],
             ["Blue Dragon Wyrmling"] = [EncounterTheme.Draconic],
-            ["Bugbear Stalker"] = [EncounterTheme.GoblinoidWarband],
             ["Hell Hound"] = [EncounterTheme.CultAndFiends],
             ["Hobgoblin Captain"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.Soldiery],
             ["Knight"] = [EncounterTheme.Soldiery],
             ["Manticore"] = [],
             ["Owlbear"] = [],
-            ["Swarm of Crawling Claws"] = [EncounterTheme.Undead],
             ["Warrior Veteran"] = [EncounterTheme.Soldiery],
             ["Winter Wolf"] = [EncounterTheme.WildPack],
 
             // CR 4
-            ["Ettin"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.SavageHunters],
             ["Guard Captain"] = [EncounterTheme.Soldiery],
             ["Red Dragon Wyrmling"] = [EncounterTheme.Draconic],
         };

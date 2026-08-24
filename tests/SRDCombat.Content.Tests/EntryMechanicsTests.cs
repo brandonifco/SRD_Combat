@@ -110,6 +110,17 @@ public class EntryMechanicsTests
         // each already had an unrelated unmodelled Action entry keeping it Diminished
         // (see `ABundledUseInsideTheCompositionSentenceDropsTheGrade` in
         // `MonsterPoolTests` for the one CR 5+ creature whose grade this does move).
+        //
+        // Raised again from 62 to 63 by #382's regeneration (2026-08-24): the
+        // Half-Dragon's "The half-dragon makes two Claw attacks." now carries "The
+        // half-dragon" as residue, because `MultiattackSubjectPattern`'s
+        // `[\w' ]+?` group does not include a hyphen, so the anchor fails to match a
+        // hyphenated name and the subject falls out unclaimed — the safe-direction
+        // false positive design §7.4 names explicitly ("the subject becomes residue
+        // and somebody reads about it in the census... a false positive costing a
+        // line, not a lost rule"). CR 5, so tier-one is untouched — filed as a small
+        // follow-up rather than widened here, to keep this stage's diff to coverage
+        // alone.
         var multiattacks = Content.Monsters
             .SelectMany(monster => monster.Entries
                 .Where(entry => entry.Mechanics == EntryMechanics.Multiattack)
@@ -117,7 +128,7 @@ public class EntryMechanicsTests
             .ToList();
 
         Assert.Equal(170, multiattacks.Count);
-        Assert.Equal(62, multiattacks.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
+        Assert.Equal(63, multiattacks.Count(multiattack => multiattack.Entry.UnmodelledClauses.Count > 0));
 
         var tierOne = multiattacks.Where(multiattack => multiattack.ChallengeRating <= 4m).ToList();
 
@@ -139,6 +150,12 @@ public class EntryMechanicsTests
         // state the model lacks (here, whether Hasten was used this turn, or simply which
         // branch the creature picks), take the unconditional, first-printed branch as the
         // composition and account the rest — not approximate it by summing.
+        //
+        // #382 dropped ParseMultiattack's alternativeClause out-parameter (design
+        // §7.4): the alternative text is no longer claimed and no longer synthesised
+        // with a capitalised leading word or a hand-added trailing period — it is
+        // residue by subtraction, verbatim from the entry's own text (§6.2), lowercase
+        // "or" included.
         var golem = Content.MonstersById["monster.clay-golem"];
         var golemMultiattack = golem.Entries.Single(entry => entry.Name == "Multiattack");
         var golemEffect = Assert.IsType<MultiattackEffect>(golemMultiattack.Multiattack);
@@ -147,7 +164,7 @@ public class EntryMechanicsTests
         Assert.False(golemEffect.AnyCombination);
         Assert.Equal("Slam", Assert.Single(golemEffect.AttackNames));
         Assert.Equal(
-            "Or it makes three Slam attacks if it used Hasten this turn.",
+            "or it makes three Slam attacks if it used Hasten this turn",
             Assert.Single(golemMultiattack.UnmodelledClauses));
 
         var devil = Content.MonstersById["monster.barbed-devil"];
@@ -158,7 +175,7 @@ public class EntryMechanicsTests
         Assert.True(devilEffect.AnyCombination);
         Assert.Equal(["Claws", "Tail"], devilEffect.AttackNames);
         Assert.Equal(
-            "Or it makes two Hurl Flame attacks.",
+            "or it makes two Hurl Flame attacks",
             Assert.Single(devilMultiattack.UnmodelledClauses));
 
         var medusa = Content.MonstersById["monster.medusa"];
@@ -169,7 +186,7 @@ public class EntryMechanicsTests
         Assert.True(medusaEffect.AnyCombination);
         Assert.Equal(["Claw", "Snake Hair"], medusaEffect.AttackNames);
         Assert.Equal(
-            "Or it makes three Poison Ray attacks.",
+            "or it makes three Poison Ray attacks",
             Assert.Single(medusaMultiattack.UnmodelledClauses));
     }
 
@@ -189,21 +206,26 @@ public class EntryMechanicsTests
         // was never in the count (the "uses X" clause was already invisible to the
         // count regex), only in the accounting that let the whole sentence read as
         // fully modelled regardless.
+        //
+        // #382 deleted BundledMultiattackUseClauses (design §7.4): nothing claims a
+        // "uses"/"can use" clause any more, so each lands in residue by subtraction —
+        // verbatim from the entry's own text (§6.2), lowercase leading connector and
+        // no synthesised trailing period.
         var expected = new (string MonsterId, int AttackCount, string UnmodelledClause)[]
         {
-            ("monster.aboleth", 2, "And uses either Consume Memories or Dominate Mind if available."),
-            ("monster.chain-devil", 2, "And uses Conjure Infernal Chain."),
-            ("monster.chuul", 2, "And uses Paralyzing Tentacles."),
-            ("monster.doppelganger", 2, "And uses Unsettling Visage if available."),
-            ("monster.erinyes", 3, "And can use Entangling Rope."),
-            ("monster.glabrezu", 2, "And uses Pummel or Spellcasting."),
-            ("monster.kraken", 2, "And uses Fling, Lightning Strike, or Swallow."),
-            ("monster.marilith", 6, "And uses Constrict."),
-            ("monster.mummy", 2, "And uses Dreadful Glare."),
-            ("monster.planetar", 3, "Or uses Holy Burst twice."),
-            ("monster.sphinx-of-valor", 2, "And uses Roar."),
-            ("monster.vampire", 2, "And uses Bite."),
-            ("monster.vampire-spawn", 2, "And uses Bite."),
+            ("monster.aboleth", 2, "and uses either Consume Memories or Dominate Mind if available"),
+            ("monster.chain-devil", 2, "and uses Conjure Infernal Chain"),
+            ("monster.chuul", 2, "and uses Paralyzing Tentacles"),
+            ("monster.doppelganger", 2, "and uses Unsettling Visage if available"),
+            ("monster.erinyes", 3, "and can use Entangling Rope"),
+            ("monster.glabrezu", 2, "and uses Pummel or Spellcasting"),
+            ("monster.kraken", 2, "and uses Fling, Lightning Strike, or Swallow"),
+            ("monster.marilith", 6, "and uses Constrict"),
+            ("monster.mummy", 2, "and uses Dreadful Glare"),
+            ("monster.planetar", 3, "or uses Holy Burst twice"),
+            ("monster.sphinx-of-valor", 2, "and uses Roar"),
+            ("monster.vampire", 2, "and uses Bite"),
+            ("monster.vampire-spawn", 2, "and uses Bite"),
         };
 
         foreach (var (monsterId, attackCount, unmodelledClause) in expected)
@@ -223,8 +245,17 @@ public class EntryMechanicsTests
 
         // The Roper's bundled use sits between two composition clauses rather than
         // after them — "makes two Tentacle attacks, uses Reel, and makes two Bite
-        // attacks" — so its `AttackCount` sums both (four), and the bare-comma
-        // connector (no "and"/"or" of its own) reads as its own short clause.
+        // attacks" — so its `AttackCount` sums both (four).
+        //
+        // The residue reads "uses Reel, and" rather than a clean "Uses Reel.": the
+        // only claim on the bridging "makes" is the word itself
+        // (`AdjacentMakesPattern`, design §7.4 — "adjacency is judged modulo glue"
+        // describes the adjacency test, not a claim over the glue), so the run
+        // between the first composition clause and that claim — ", uses Reel, and " —
+        // carries real words ("uses", "Reel") and fails the glue-only test before the
+        // trailing connective is ever considered (design §4.2 rule 1). TrimGlue never
+        // trims a trailing connective word on purpose (§4.2 rule 3): a dangling "and"
+        // says a fragment was lost here, which is honest, not untidy.
         var roper = Content.MonstersById["monster.roper"];
         var roperMultiattack = roper.Entries.Single(entry => entry.Name == "Multiattack");
         var roperEffect = Assert.IsType<MultiattackEffect>(roperMultiattack.Multiattack);
@@ -232,7 +263,7 @@ public class EntryMechanicsTests
         Assert.Equal(4, roperEffect.AttackCount);
         Assert.True(roperEffect.AnyCombination);
         Assert.Equal(["Tentacle", "Bite"], roperEffect.AttackNames);
-        Assert.Equal("Uses Reel.", Assert.Single(roperMultiattack.UnmodelledClauses));
+        Assert.Equal("uses Reel, and", Assert.Single(roperMultiattack.UnmodelledClauses));
     }
 
     [Fact]
@@ -317,10 +348,13 @@ public class EntryMechanicsTests
         var lion = Content.MonstersById["monster.lion"];
         var lionMultiattack = lion.Entries.Single(entry => entry.Name == "Multiattack");
 
+        // #382's verbatim invariant (design §6.2) drops the trailing period this
+        // string used to carry: nothing synthesises a full stop any more, and the
+        // period is the sentence boundary's own claim, not the residue's.
         Assert.Equal(EntryMechanics.Multiattack, lionMultiattack.Mechanics);
         Assert.False(lionMultiattack.IsFullyModelled);
         Assert.Equal(
-            "It can replace one attack with a use of Roar.",
+            "It can replace one attack with a use of Roar",
             Assert.Single(lionMultiattack.UnmodelledClauses));
 
         var pirate = Content.MonstersById["monster.pirate"];
@@ -329,7 +363,7 @@ public class EntryMechanicsTests
         Assert.Equal(EntryMechanics.Multiattack, pirateMultiattack.Mechanics);
         Assert.False(pirateMultiattack.IsFullyModelled);
         Assert.Equal(
-            "It can replace one attack with a use of Enthralling Panache.",
+            "It can replace one attack with a use of Enthralling Panache",
             Assert.Single(pirateMultiattack.UnmodelledClauses));
     }
 
@@ -588,7 +622,19 @@ public class EntryMechanicsTests
         Assert.Equal(13, grappled.EscapeDifficultyClass);
         Assert.Equal(CreatureSize.Large, grappled.MaximumTargetSize);
         Assert.True(ConditionRules.CanBeImposed(grappled));
-        Assert.True(bite.IsFullyModelled);
+
+        // The rider itself is fully modelled — the point this test exists to make —
+        // but the entry as a whole is not, since the 2026-08-24 span-accounting
+        // regeneration (#382). The Ankheg's Bite also prints "(with Advantage if the
+        // target is Grappled by the ankheg)" inside its attack header, which
+        // `AttackHeaderPattern`'s permissive `[^.]*?` filler used to swallow whole;
+        // it is design §2.3's own worked example of the goblin-bug shape the new
+        // `unread`-group convention exists to end, and it now shows up as its own
+        // residue line rather than vanishing.
+        Assert.False(bite.IsFullyModelled);
+        Assert.Equal(
+            ["(with Advantage if the target is Grappled by the ankheg)"],
+            bite.UnmodelledClauses);
     }
 
     [Fact]

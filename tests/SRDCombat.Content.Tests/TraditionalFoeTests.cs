@@ -49,15 +49,26 @@ public class TraditionalFoeTests
     {
         // Exact names, never substrings — the PlausibleFoes lesson: the fantastic
         // variants of excluded animals survive the cut on purpose.
+        //
+        // Swarm of Rats and Worg dropped out of this list on 2026-08-24 (span-accounting
+        // regeneration, #382) — not because the genre cut changed its mind about
+        // either, but because both demoted out of the tier-1 pool entirely: the Swarm
+        // of Rats' Bites is #371's own worked example (the "or 2 (1d4) Piercing damage
+        // if the swarm is Bloodied" tier, always printed and now honestly residue),
+        // and the Worg's Bite has always printed "and the next attack roll made
+        // against the target before the start of the worg's next turn has Advantage"
+        // — a rider nothing executes, hidden until now behind the old "Hit:"-credits-
+        // the-whole-sentence bug. Giant Weasel and Giant Wolf Spider make the same
+        // point about the exact-name cut and are still admissible.
         var names = MonsterPool.Draw(Content.Monsters, TierOneMaximum)
             .Select(monster => monster.Name)
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Contains("Giant Rat", names);
         Assert.Contains("Giant Bat", names);
-        Assert.Contains("Swarm of Rats", names);
+        Assert.Contains("Giant Weasel", names);
         Assert.Contains("Giant Venomous Snake", names);
-        Assert.Contains("Worg", names);
+        Assert.Contains("Giant Wolf Spider", names);
         Assert.Contains("Dire Wolf", names);
     }
 
