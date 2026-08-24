@@ -136,13 +136,20 @@ internal static partial class StatBlockLineGrammar
     /// Returns null for entries that resolve some other way — a saving throw, or no
     /// mechanics at all — which keep their prose and gain no structured attack.
     /// </summary>
-    public static MonsterAttack? ParseAttack(string text)
+    public static MonsterAttack? ParseAttack(string text, EntryCoverage coverage)
     {
         var header = AttackHeaderPattern().Match(text);
         if (!header.Success)
         {
             return null;
         }
+
+        // The filler between the attack bonus and the reach/range clause is a
+        // permissive [^.]* — it is what let nine printed conditional-Advantage
+        // parentheticals (and the Ancient Gold Dragon's Rend, whose "to hit" sits in
+        // the same slot) go unread while the whole header still looked claimed. Named
+        // and excluded from the claim, per design §2.3 and §7.1.
+        coverage.Claim(AttackHeaderPattern(), header, "attack.header", "unread");
 
         // "Melee or Ranged" is recorded as Melee, because what actually distinguishes a
         // dual-mode attack is that it carries both a reach and a range — Kind alone
@@ -169,22 +176,33 @@ internal static partial class StatBlockLineGrammar
         // other dice ("takes 13 (3d8) Fire damage" in a rider) that are not this
         // attack's own damage.
         var hitIndex = text.IndexOf("Hit:", StringComparison.Ordinal);
-        var damage = hitIndex < 0
-            ? []
-            : ParseDamage(text[(hitIndex + "Hit:".Length)..]);
+        IReadOnlyList<AttackDamage> damage;
+
+        if (hitIndex < 0)
+        {
+            damage = [];
+        }
+        else
+        {
+            coverage.Claim(new TextSpan(hitIndex, "Hit:".Length), "attack.hit_label");
+            damage = ParseDamage(text, hitIndex + "Hit:".Length, coverage);
+        }
 
         return new MonsterAttack(kind, bonus, reach, normalRange, longRange, damage);
     }
 
     /// <summary>
-    /// Reads the damage components at the start of a hit clause, stopping at the first
-    /// thing that is not one. Riders after the damage ("If the target is a Large or
-    /// smaller creature, ...") are left to the entry's prose.
+    /// Reads the damage components starting at <paramref name="start"/>, stopping at
+    /// the first thing that is not one. Riders after the damage ("If the target is a
+    /// Large or smaller creature, ...") are left to the entry's prose. Operates on the
+    /// whole entry's text with a start offset, rather than a pre-sliced substring, so
+    /// every match's own <c>Index</c> is already an offset into that text — the
+    /// coordinate space <see cref="EntryCoverage"/> claims into.
     /// </summary>
-    private static IReadOnlyList<AttackDamage> ParseDamage(string text)
+    private static IReadOnlyList<AttackDamage> ParseDamage(string text, int start, EntryCoverage coverage)
     {
         var damage = new List<AttackDamage>();
-        var searchFrom = 0;
+        var searchFrom = start;
 
         while (searchFrom < text.Length)
         {
@@ -195,7 +213,9 @@ internal static partial class StatBlockLineGrammar
             }
 
             // Only keep a run of components joined by "plus"; anything further into the
-            // prose is a rider, not part of this attack's damage.
+            // prose is a rider, not part of this attack's damage. A component the loop
+            // breaks on here is never claimed — that break is exactly the or-alternative
+            // shape #371 names.
             if (damage.Count > 0 && !LooksLikeContinuation(text, searchFrom, match.Index))
             {
                 break;
@@ -234,7 +254,12 @@ internal static partial class StatBlockLineGrammar
             var next = DamagePattern().Match(text, componentEnd);
             var limit = next.Success ? next.Index : text.Length;
 
-            damage.Add(new AttackDamage(dice, type, average, ReadCondition(text, componentEnd, limit)));
+            // DamagePattern is fully literal — digits, an optional literal-parenthesised
+            // dice expression, one of the named damage types, the word "damage" — so
+            // there is nothing permissive to exclude, and the whole match is claimed.
+            coverage.Claim(new TextSpan(match.Index, match.Length), "attack.damage_component");
+
+            damage.Add(new AttackDamage(dice, type, average, ReadCondition(text, componentEnd, limit, coverage)));
 
             searchFrom = componentEnd;
         }
@@ -256,7 +281,7 @@ internal static partial class StatBlockLineGrammar
     /// rider, and treating it as a condition on the damage would wrongly make the
     /// necrotic damage conditional.
     /// </remarks>
-    private static AttackDamageCondition? ReadCondition(string text, int from, int limit)
+    private static AttackDamageCondition? ReadCondition(string text, int from, int limit, EntryCoverage coverage)
     {
         if (from >= limit)
         {
@@ -267,9 +292,20 @@ internal static partial class StatBlockLineGrammar
         var clauseEnd = sentenceEnd < 0 ? limit : Math.Min(sentenceEnd, limit);
         var clause = text[from..clauseEnd];
 
-        return clause.Contains("if the attack roll had Advantage", StringComparison.OrdinalIgnoreCase)
-            ? AttackDamageCondition.AttackRollHadAdvantage
-            : null;
+        var qualifierOffset = clause.IndexOf("if the attack roll had Advantage", StringComparison.OrdinalIgnoreCase);
+
+        if (qualifierOffset < 0)
+        {
+            return null;
+        }
+
+        // Only this literal qualifier phrase is claimed — the read structure is just
+        // the enum value it decides, not the surrounding punctuation or whitespace.
+        coverage.Claim(
+            new TextSpan(from + qualifierOffset, "if the attack roll had Advantage".Length),
+            "attack.damage_condition");
+
+        return AttackDamageCondition.AttackRollHadAdvantage;
     }
 
     private static int ParseSigned(string value) =>
@@ -306,7 +342,11 @@ internal static partial class StatBlockLineGrammar
     // ordered, so listing "Melee" first would match it and then fail on the "or" that
     // follows, losing all 19 of the SRD's dual-mode attacks.
     // Distances are written both "5 ft." and "5 feet" in the source; both are accepted.
-    [GeneratedRegex(@"(?<kind>Melee or Ranged|Melee|Ranged)\s+Attack\s+Roll:\s*(?<bonus>[+-]\s?\d+)[^.]*?,\s*(?:reach\s+(?<reach>\d+)\s*(?:ft\.?|feet))?(?:\s*,?\s*(?:or|and)\s*)?(?:range\s+(?<range>\d+)(?:\s*/\s*(?<longRange>\d+))?\s*(?:ft\.?|feet))?")]
+    // The (?<unread>[^.]*?) filler between the bonus and the reach/range clause is
+    // matched but never inspected — nine printed conditional-Advantage parentheticals
+    // and the Ancient Gold Dragon's Rend's bare "to hit" sit in this slot and are read
+    // by nobody, so the group is named and excluded from the claim (design §2.3, §7.1).
+    [GeneratedRegex(@"(?<kind>Melee or Ranged|Melee|Ranged)\s+Attack\s+Roll:\s*(?<bonus>[+-]\s?\d+)(?<unread>[^.]*?),\s*(?:reach\s+(?<reach>\d+)\s*(?:ft\.?|feet))?(?:\s*,?\s*(?:or|and)\s*)?(?:range\s+(?<range>\d+)(?:\s*/\s*(?<longRange>\d+))?\s*(?:ft\.?|feet))?")]
     private static partial Regex AttackHeaderPattern();
 
     // The parenthesised dice are optional: a few weak attacks deal a flat amount, which

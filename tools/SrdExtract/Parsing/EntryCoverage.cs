@@ -42,7 +42,7 @@ internal sealed class EntryCoverage
     private static readonly HashSet<string> GlueConnectives =
         new(StringComparer.OrdinalIgnoreCase) { "and", "or", "plus" };
 
-    private readonly List<TextSpan> _claims = [];
+    private readonly List<(TextSpan Span, string Note)> _claims = [];
 
     public EntryCoverage(string text)
     {
@@ -62,14 +62,25 @@ internal sealed class EntryCoverage
                 $"Span [{span.Start}, {span.End}) falls outside the entry's text (length {Text.Length}).");
         }
 
-        // The note is not retained per-claim yet — the census tool (stage 3) is the
-        // first consumer, and until then every call site still names its matcher so
-        // that wiring costs nothing when it lands. See design §14.
-        _ = note;
-
         if (span.Length > 0)
         {
-            _claims.Add(span);
+            _claims.Add((span, note));
+        }
+    }
+
+    /// <summary>
+    /// Copies every claim from <paramref name="other"/> into this coverage. For a
+    /// matcher with more than one exit path where only some paths succeed — a
+    /// Multiattack composition that turns out not to parse (design §7.4) — claiming
+    /// into a throwaway <see cref="EntryCoverage"/> and absorbing it only on the
+    /// successful path is what keeps an abandoned attempt from leaking a claim into an
+    /// entry that ends up graded <c>Unmodelled</c>, which must claim nothing (§2.7).
+    /// </summary>
+    public void Absorb(EntryCoverage other)
+    {
+        foreach (var (span, note) in other._claims)
+        {
+            Claim(span, note);
         }
     }
 
@@ -131,7 +142,7 @@ internal sealed class EntryCoverage
         {
             var chars = Text.ToCharArray();
 
-            foreach (var span in _claims)
+            foreach (var (span, _) in _claims)
             {
                 for (var i = span.Start; i < span.End; i++)
                 {
@@ -150,14 +161,22 @@ internal sealed class EntryCoverage
     /// what remains.
     /// </summary>
     /// <remarks>
-    /// Neighbouring claim notes are not reported yet — notes are not retained per-claim
-    /// (see <see cref="Claim(TextSpan, string)"/>'s remark) — so both sides of the tuple
-    /// read <see langword="null"/> until the census tool needs them.
+    /// <c>Before</c>/<c>After</c> name the note of the nearest claim ending before, or
+    /// starting after, the run — the census's way of showing which matcher stopped
+    /// short on either side. Null at an entry's own edge, where there is no neighbour.
     /// </remarks>
-    public IReadOnlyList<(TextSpan Span, string Text, string? Before, string? After)> Uncovered() =>
-        MaximalUncoveredRuns()
-            .Select(span => (span, Text[span.Start..span.End], (string?)null, (string?)null))
+    public IReadOnlyList<(TextSpan Span, string Text, string? Before, string? After)> Uncovered()
+    {
+        var sorted = _claims.OrderBy(claim => claim.Span.Start).ToArray();
+
+        return MaximalUncoveredRuns()
+            .Select(span => (
+                span,
+                Text[span.Start..span.End],
+                (string?)sorted.LastOrDefault(claim => claim.Span.End <= span.Start).Note,
+                (string?)sorted.FirstOrDefault(claim => claim.Span.Start >= span.End).Note))
             .ToArray();
+    }
 
     /// <summary>Uncovered runs, glue-absorbed and chunked. See design §6.</summary>
     public IReadOnlyList<string> Residue()
@@ -200,7 +219,7 @@ internal sealed class EntryCoverage
     {
         var covered = new bool[Text.Length];
 
-        foreach (var span in _claims)
+        foreach (var (span, _) in _claims)
         {
             for (var j = span.Start; j < span.End; j++)
             {
