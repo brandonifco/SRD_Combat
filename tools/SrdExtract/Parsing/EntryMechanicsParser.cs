@@ -372,6 +372,13 @@ internal static partial class EntryMechanicsParser
             .Select(sentence => sentence.Trim())
             .Where(sentence => sentence.Length > 0);
 
+    /// <summary>
+    /// The sentence-boundary matches themselves, rather than the split pieces —
+    /// <see cref="EntryCoverage"/> needs the boundary's own span to chunk a surviving
+    /// uncovered run without losing its offset into the entry's original text.
+    /// </summary>
+    internal static IReadOnlyList<Match> SentenceBoundaryMatches(string text) => SentenceBoundary().Matches(text);
+
     /// <summary>Parses "(Recharge 5-6)", "(Recharge 6)", "(3/Day)" and "(Recharge after a ... Rest)".</summary>
     private static UsageLimit? ParseUsageLimit(string name)
     {
