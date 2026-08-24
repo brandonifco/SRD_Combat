@@ -110,7 +110,12 @@ species traits as unimplemented at creation and on the sheet; retire
 `PreparableSpells` is the authority); fix
 the stall class (#256) and immunity-blind targeting (#224); one doc-drift sweep
 (gauntlet cycle arithmetic, mastery weapon count, stale headers and citations, client
-README). Exit: re-baseline both seed ranges; QC audits the three honesty lanes clean.
+README). Added 2026-08-24 (see `docs/2026-08-24-span-accounting-brief.md`): parser
+characterization fixtures (#189, pulled forward from F5) land first, then the
+span-coverage accounting refactor (#382) — coverage-by-consumption replaces
+credit-by-label, subsuming the accounting halves of #371–#373 into one regeneration,
+one census, one re-baseline; the semantic halves of #370–#375 land as small fixes on
+top. Exit: re-baseline both seed ranges; QC audits the three honesty lanes clean.
 
 **F2 — Feel.** The largest gap per hour of work. One committed master→sprite pipeline
 script per #238's own diagnosis, applied to every sprite and terrain tile —
@@ -124,7 +129,13 @@ path preview, tooltip latency to ~0.5 s, terrain hints, log-space fix. Exit: pro
 screenshots show it; a watcher can narrate a fight with the log covered.
 
 **F3 — The run becomes a game.** The largest design gap; Fable-led design, spec'd
-before built. Route choice (pick the next rung from 2–3 revealed options); loot as a
+before built. **Entry gate (2026-08-24): the PlayMode modal/state refactor (#327,
+pulled from F5)** lands before any new modal surface, running parallel to the phase's
+design specs so it costs no calendar — every F3 system below is a new modal, and
+landing five of them on the 39-field class first would pay for the refactor twice.
+Stated escape hatch: if F2's foresight work (#301–#303) needs new modal *states*
+rather than new drawing, the refactor pulls forward into F2 instead. Route choice
+(pick the next rung from 2–3 revealed options); loot as a
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
 (attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
@@ -144,12 +155,15 @@ policy growth where measurement pays: Dodge/Disengage/retreat, behind an
 unoffered classes: ship or cut, not linger. Exit: distinct-creature measurement
 re-run; a property test that every generated encounter resolves.
 
-**F5 — Confidence.** The extractor gets a test project with page fixtures that run
-without the PDF (#189 — the riskiest code has the least coverage); client behaviour
+**F5 — Confidence.** (Two items pulled forward on 2026-08-24: the extractor test
+project's first slice, #189, to F1 as the span refactor's safety net, and the
+PlayMode refactor, #327, to F3's entry gate — the broader page-fixture harness still
+grows here.) Client behaviour
 tests grown from the probe harness (#190); console client tests (1.8k lines,
 currently untested *and* unfiled); shared test-support project; xUnit content
 fixtures (the corpus is currently loaded 27 times; `Game.Tests` takes 7m22s); the
-`Encounter` guard-preamble helper, and the action seam if the class list grows.
+`Encounter` guard-preamble helper, and the action seam if the class list grows —
+trigger-based, with #369 (Turn Undead) the likeliest trigger.
 Runs continuously alongside F2–F4; has its own closing push. Exit: suite under ~3
 minutes; a parser edit fails a test on a machine without the PDF.
 
@@ -199,6 +213,27 @@ bounded (architecture, statistics), **Sonnet** where it is well-specified execut
 - **Docs are part of the diff.** A change that invalidates a doc-comment, a plan row,
   or a claim in this file fixes it in the same commit. History is archived to
   `docs/history/`, never deleted.
+- **Three strikes escalates the mechanism** (2026-08-24). QC already counts
+  recurrences of a bug shape; the **third** occurrence of the same shape auto-files a
+  mechanism issue — "is the abstraction under this still right?" — which the steward
+  must triage, even if the answer is "keep patching". The patch still ships; the
+  question can no longer be silently deferred. The goblin shape reached fourteen
+  occurrences before its mechanism (sentence-credit accounting) was put on trial, and
+  the trial came from outside (#382).
+- **Each phase exit includes a mechanism review** (2026-08-24). Alongside the
+  correctness sweep and re-baseline, a bounded pass answered from the phase's own
+  issue and PR history: which mechanism absorbed the most patches, which bug shapes
+  recurred, which abstraction would we not rebuild the same way. The reviewer reads
+  **code first, doctrine second**, and writes down where this file's framing misled.
+  Output is filed issues, never inline action — this is a trigger for questions, not
+  a license to refactor.
+- **Outside review twice, plus Brandon's own** (2026-08-24, Brandon's commitment).
+  Brandon sources a genuinely independent review **before F3's build starts** and
+  **before F6 ships**, each paired with his own long played run against its findings.
+  Internal adversarial review approximates epistemic independence; an outside
+  artifact is the real thing — the 2026-08-24 critique produced the span-accounting
+  decision (#382) and #327's re-sequencing, neither of which was arriving from inside
+  on its own schedule.
 
 ## The rule this project runs on
 
