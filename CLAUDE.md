@@ -207,9 +207,12 @@ bounded (architecture, statistics), **Sonnet** where it is well-specified execut
 - **One concern, one branch, one PR** (the standing law). Every gameplay-affecting PR
   quotes PacingMeasure on **both** canonical seed ranges against a same-build
   baseline. `qc` reviews before Brandon sees anything.
-- **What stays human.** Brandon merges every PR, draws all art (agents never redraw
-  it), plays runs, and owns taste. A played-run complaint outranks any measured
-  number. Art batches land only with his before/after approval.
+- **What stays human.** Brandon draws all art (agents never redraw it), plays runs,
+  and owns taste. A played-run complaint outranks any measured number. Art batches
+  land only with his before/after approval. Merging is **not** on this list —
+  Claude merges every PR itself once CI is green (`gh pr merge <n> --merge`, merge
+  commits); an earlier version of this bullet claimed Brandon merges, which he never
+  did, and he corrected it explicitly on 2026-08-24.
 - **Docs are part of the diff.** A change that invalidates a doc-comment, a plan row,
   or a claim in this file fixes it in the same commit. History is archived to
   `docs/history/`, never deleted.
