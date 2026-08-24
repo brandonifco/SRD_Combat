@@ -15,6 +15,11 @@ if (options is null)
     return 2;
 }
 
+if (options.CensusPath is { } censusPath)
+{
+    return RunCensus(options.OutputDirectory, censusPath);
+}
+
 if (!File.Exists(options.PdfPath))
 {
     Console.Error.WriteLine($"SRD PDF not found at '{options.PdfPath}'.");
@@ -272,6 +277,112 @@ static void Report(string heading, IEnumerable<string> messages)
     }
 }
 
+/// <summary>
+/// Re-classifies every stored monster entry and dumps every span nothing claimed — the
+/// census #382's stage 3 asks for (docs/2026-08-24-span-accounting-design.md §10).
+/// Reads only the committed content directory; no PDF is needed, since the corpus's own
+/// stored (name, section, text) is enough to reproduce what the parser does — the same
+/// reasoning <c>CorpusRoundTripTests</c> rests on. Coverage is not wired to any output
+/// yet (<c>UnmodelledClauses</c> still comes from the old accounting); this is read-only
+/// plumbing for review before the stage 4/5 switch.
+/// </summary>
+static int RunCensus(string contentDirectory, string outputPath)
+{
+    var monsters = ContentLoader.Load(contentDirectory).Monsters;
+
+    var lines = new List<string>();
+    var frequency = new Dictionary<string, int>(StringComparer.Ordinal);
+    var entriesTotal = 0;
+    var entriesWithResidue = 0;
+    var zeroResidueGainingResidue = 0;
+
+    // The population where residue can newly appear: entries the old accounting
+    // already credited whole (design §10 stage 3's own bar, 558 on the corpus at
+    // debb5d7 — 342 Attack, 108 Multiattack, 96 SavingThrow, 12 Reaction). Passive and
+    // Narrative are excluded on purpose: both claim their whole entry by fiat (§2.6)
+    // and can never gain residue under coverage either.
+    var structuredZeroResidueMechanics = new HashSet<EntryMechanics>
+    {
+        EntryMechanics.Attack,
+        EntryMechanics.Multiattack,
+        EntryMechanics.SavingThrow,
+        EntryMechanics.Reaction,
+    };
+
+    foreach (var monster in monsters)
+    {
+        foreach (var entry in monster.Entries)
+        {
+            entriesTotal++;
+
+            EntryMechanicsParser.Classify(entry.Name, entry.Section, entry.Text, out var coverage);
+
+            // Residue() is the honest count — glue-absorbed, chunked — matching what
+            // stage 4 would actually put in UnmodelledClauses. Uncovered() is the raw,
+            // unfiltered detail underneath it (glue runs included), useful for seeing
+            // exactly what a matcher did or did not claim, but not for counting: a
+            // one-space gap between two adjacent claims is not a lost rule.
+            var residue = coverage.Residue();
+
+            if (residue.Count == 0)
+            {
+                continue;
+            }
+
+            entriesWithResidue++;
+
+            var hadNoResidueBefore = entry.UnmodelledClauses.Count == 0
+                && structuredZeroResidueMechanics.Contains(entry.Mechanics);
+
+            if (hadNoResidueBefore)
+            {
+                zeroResidueGainingResidue++;
+            }
+
+            lines.Add($"{monster.Name} :: {entry.Name} ({entry.Section}, {entry.Mechanics})");
+
+            foreach (var clause in residue)
+            {
+                var normalised = string.Join(
+                    ' ',
+                    clause.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries));
+                frequency[normalised] = frequency.GetValueOrDefault(normalised) + 1;
+
+                lines.Add($"  residue: {clause}");
+            }
+
+            foreach (var (span, text, before, after) in coverage.Uncovered())
+            {
+                lines.Add($"    raw [{span.Start},{span.End}) before={before ?? "(edge)"} after={after ?? "(edge)"}: {text}");
+            }
+        }
+    }
+
+    lines.Add(string.Empty);
+    lines.Add($"Entries: {entriesTotal} total, {entriesWithResidue} carry at least one uncovered run.");
+    lines.Add(
+        $"Currently-zero-residue structured entries (Attack/Multiattack/SavingThrow/Reaction) " +
+        $"gaining residue under coverage: {zeroResidueGainingResidue}");
+    lines.Add(string.Empty);
+    lines.Add("Frequency table (normalised, sorted by count then text):");
+
+    foreach (var group in frequency
+                 .OrderByDescending(pair => pair.Value)
+                 .ThenBy(pair => pair.Key, StringComparer.Ordinal))
+    {
+        lines.Add($"  {group.Value,5}  {group.Key}");
+    }
+
+    File.WriteAllLines(outputPath, lines);
+
+    Console.WriteLine(
+        $"Census: {entriesTotal} entries, {entriesWithResidue} carry uncovered text, " +
+        $"{zeroResidueGainingResidue} previously zero-residue structured entries would gain residue.");
+    Console.WriteLine($"Wrote {outputPath}");
+
+    return 0;
+}
+
 namespace SrdExtract
 {
     /// <summary>
@@ -320,14 +431,20 @@ namespace SrdExtract
         public const int MagicItemsLastPage = 253;
     }
 
-    internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force)
+    internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force, string? CensusPath)
     {
         public const string Usage = """
             Usage: SrdExtract [--pdf <path>] [--out <directory>] [--force]
+                   SrdExtract --census <path> [--out <directory>]
 
-              --pdf    Path to SRD_CC_v5.2.1.pdf. Defaults to ~/Downloads/SRD_CC_v5.2.1.pdf.
-              --out    Directory to write content into. Defaults to ./data/srd.
-              --force  Write the content even when validation reports errors.
+              --pdf     Path to SRD_CC_v5.2.1.pdf. Defaults to ~/Downloads/SRD_CC_v5.2.1.pdf.
+              --out     Directory to write content into, or read it from for --census.
+                        Defaults to ./data/srd.
+              --force   Write the content even when validation reports errors.
+              --census  Skip extraction. Re-classify every stored monster entry from
+                        --out (no PDF needed) and write every span nothing claimed to
+                        <path> (#382's span-coverage census, stage 3 — read-only,
+                        changes nothing under --out).
             """;
 
         public static ExtractOptions? Parse(string[] args)
@@ -339,6 +456,7 @@ namespace SrdExtract
 
             var output = Path.Combine("data", "srd");
             var force = false;
+            string? census = null;
 
             for (var index = 0; index < args.Length; index++)
             {
@@ -353,6 +471,9 @@ namespace SrdExtract
                     case "--force":
                         force = true;
                         break;
+                    case "--census" when index + 1 < args.Length:
+                        census = args[++index];
+                        break;
                     case "-h" or "--help":
                         return null;
                     default:
@@ -361,7 +482,7 @@ namespace SrdExtract
                 }
             }
 
-            return new ExtractOptions(pdf, output, force);
+            return new ExtractOptions(pdf, output, force, census);
         }
     }
 }
