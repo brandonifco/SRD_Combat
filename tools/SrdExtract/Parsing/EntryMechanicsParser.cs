@@ -81,7 +81,8 @@ internal static partial class EntryMechanicsParser
 
     /// <summary>
     /// The same classification, with the <see cref="EntryCoverage"/> it built along the
-    /// way — the census tool's own entry point (stage 3, not yet consumed for output).
+    /// way — the census tool's own entry point, and since the stage 4 switchover also
+    /// the coverage whose residue becomes the entry's UnmodelledClauses.
     /// </summary>
     internal static TraitEntry ClassifyTrait(string name, string text, bool consultInertList, out EntryCoverage coverage)
     {
@@ -134,7 +135,8 @@ internal static partial class EntryMechanicsParser
 
     /// <summary>
     /// The same classification, with the <see cref="EntryCoverage"/> it built along the
-    /// way — the census tool's own entry point (stage 3, not yet consumed for output).
+    /// way — the census tool's own entry point, and since the stage 4 switchover also
+    /// the coverage whose residue becomes the entry's UnmodelledClauses.
     /// </summary>
     internal static MonsterEntry Classify(string name, MonsterEntrySection section, string text, out EntryCoverage coverage)
     {

@@ -118,7 +118,8 @@ one census, one re-baseline; the semantic halves of #370–#375 land as small fi
 top. **Stages 0–3 merged (#387, #388); stages 4–6 (the switchover, regeneration and
 re-baseline) are PR-open as of 2026-08-24** — the Pacing row above is that branch's
 own measurement, quoted against a same-build `main` baseline. The regeneration
-demoted 22 monsters out of the tier-1 pool (each carrying a real, always-printed
+demoted 12 monsters out of the tier-1 pool (22 lost pool admission across all CRs;
+12 of those were in tier-1 — each carrying a real, always-printed
 rider the engine never executed, hidden until now behind the old sentence-credit
 bug), which broke `MonsterPoolTests`' CR-4 and tier-one floors — lowered as
 transitional per the coordinator's 2026-08-24 decision on #382's own stop-and-ask
