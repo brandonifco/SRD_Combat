@@ -4,6 +4,12 @@
 (read it first; it is the argument, this is the plan). **Safety net:** #189's initial
 scope, merged as PR #384 — `tests/SrdExtract.Tests`, 1,367 characterization tests.
 **Author:** architect. **Executor:** engineer.
+**Revised 2026-08-24** after qc's request-changes review on PR #385: §7.6 no longer
+claims range or sight (F1), §8 names the second spell coupling and gains a round-trip
+sibling (F2), stage 6's expected pacing direction is flipped and demoted to a hypothesis
+(F3), §2.5 names the section quirk (F4), §5.2's precondition is pinned (F5), §2.3's
+wildcard test is retargeted and honestly described (F6), and five corpus counts are
+corrected.
 
 This document decides the shape of the refactor concretely enough to execute without
 reopening judgement. Where it narrows the brief it says so and says why; where the code
@@ -53,7 +59,9 @@ internal sealed class EntryCoverage
     public void Claim(TextSpan span, string note);
 
     /// A match's span minus the spans of the named groups the parse did not read.
-    public void Claim(Match match, string note, params string[] unreadGroups);
+    /// Takes the Regex as well as the Match so the wildcard convention of §2.3 can be
+    /// validated here rather than against a hand-maintained list of patterns.
+    public void Claim(Regex pattern, Match match, string note, params string[] unreadGroups);
 
     /// The whole entry, by a curated human decision. See §2.6.
     public void ClaimWholeEntry(string note);
@@ -97,11 +105,14 @@ Three consequences, each of which decides a real case in the corpus:
   coverage says how much of its text the shape captures. A Trait-section entry graded
   `SavingThrow` that the engine never fires (#373's second half) is a **dispatch** gap
   and stays out of this refactor: the extraction did express the save, and `UseEntry`
-  not reaching Trait-section entries is a different bug in a different file.
+  not reaching Trait-section entries is a different bug in a different file. That
+  carve-out is real but it is not a licence: §2.5 names the five entries where it bites,
+  rather than letting the distinction quietly excuse them.
 
 ### 2.3 How a regex matcher composes its claim
 
-Two rules, and both are mechanically checkable:
+Two rules. The first is a convention, the second is the tripwire that enforces it — and
+the difference is worth stating plainly, because only one of them is machine-checkable:
 
 1. **Literal pattern text is claimed; wildcard text is not.** A literal the pattern
    required (`Attack Roll:`, `reach`, `ft.`, `Saving Throw: DC`) was read and verified by
@@ -114,10 +125,21 @@ Two rules, and both are mechanically checkable:
    parentheticals then fall out as residue with no per-shape patch — which is the
    refactor working.
 
-   A test enforces the convention: scan the `GeneratedRegex` pattern strings of every
-   claiming matcher and fail on an *anonymous* `.*`, `.+`, `[^...]*` or `[^...]+`. This is
-   the "write the validator that asserts the shape" rule pointed at the mechanism itself,
-   and it is the tripwire that stops a future pattern from quietly widening a claim.
+   A test enforces the *naming* half of that convention: it fails on **any unbounded
+   quantifier — `*`, `+`, or `{n,}` — applied to a dot or to any character class, when it
+   sits outside a named group**, in the pattern string of a claiming matcher. Note the
+   width of that target. Screening only `.*`, `.+`, `[^…]*` and `[^…]+` would miss the
+   permissive *positive* classes that claiming patterns already contain —
+   `TurnBoundaryDurationPattern`'s `[\w' ]+?`, which matches the imposer's printed name
+   and is claimed as duration text, and `NamedMultiattackPattern`'s `[\w' ]*?` — so the
+   rule is about the quantifier, not about the negation.
+
+   The test scans the patterns reachable through the `Claim(Regex, Match, …)` overload
+   rather than a hand-maintained list, so a new claiming pattern cannot evade it by being
+   left off a registry. What the test **cannot** check is rule 1 itself: nothing verifies
+   that a named group's content was genuinely read into structure rather than named to
+   quiet the scan. That is a tripwire and a review prompt, not a proof, and it should be
+   described that way wherever it is cited.
 
 **A corollary the inventory in §7 turns on:** a claim may cover a printed clause's subject
 and verb only when the pattern *anchored on them*. `NamedMultiattackPattern` matches
@@ -156,6 +178,27 @@ Only entries the engine actually resolves *with* riders: `EntryMechanics.Attack`
 An unimposable condition (`ConditionRules.CanBeImposed` false, or carrying an
 `UnmodelledRequirement`) claims nothing at all — which is the other surviving half of
 `IsAccountedFor`, and the reason its veto disappears rather than moving.
+
+**The rule is knowingly incomplete, and here is where.** `UseEntry` refuses by *section*
+as well as by mechanics (`entry.not_an_action`), and the corpus prints five entries whose
+riders are imposable, whose grade is `SavingThrow`, and whose section no engine path can
+ever fire: the Ghast's and the Hezrou's Stench, the Pit Fiend's Fear Aura and the Sea
+Hag's Vile Appearance (Trait), and the Solar's Blinding Gaze (LegendaryAction). Under the
+rule as stated their riders claim clauses that nothing imposes — the same false claim the
+rule's own justification forbids for Multiattack.
+
+It is kept anyway, for one regeneration, deliberately: `IsAccountedFor` has the identical
+quirk today, so keeping it means stage 4's diff is the *coverage* change and nothing else,
+which is what makes the census reviewable. Widening the gate to sections would fold an
+unrelated correction into the same diff and demote five more entries for a reason nobody
+could separate from the refactor's own effect.
+
+This is #373's grade question wearing a different hat — that issue already names twelve
+Trait-section `SavingThrow` entries the engine never fires — and it is where the fix
+belongs. **The rule to write into the doc comment is therefore conditional:** when #373
+resolves how a never-fired entry should grade, this gate moves with it, from mechanics to
+mechanics-and-section. Until then it is a stated, dated exception rather than an
+oversight.
 
 ### 2.6 Coverage by fiat — `Passive` and `Narrative`
 
@@ -211,7 +254,9 @@ A **glue token** is one of, and nothing else:
 | Punctuation | `.` `,` `;` `:` |
 | Connective words | `and` `or` `plus` — whole words, case-insensitive |
 
-That is the entire set. Six characters and three words.
+That is the entire set: **four punctuation characters, three connective words, and
+whitespace.** Nothing else, and the count is stated here so a future reader can tell at a
+glance whether it grew.
 
 **Labels are deliberately not on it**, and this narrows the brief on purpose. The brief
 allowed "labels the structure already implies"; the code says something stronger is
@@ -324,12 +369,27 @@ Its purpose is to let one template serve both printings of the same rule — the
 Doppelganger's single sentence and the Quasit's two. Under the span contract the two
 printings are two spans rather than one rewritten string:
 
-> **The annex rule.** When a rider's own trailing text carries no duration, and the
-> **next** sentence is exactly the printed repeat-save sentence ("At the end of each of
-> its turns, the target repeats the save, ending the effect on itself on a success."),
-> and the entry contains `AutomaticSuccessSentence`, the rider takes
-> `ConditionDuration.RepeatSaveUpToOneMinute` and its claim **annexes that next
-> sentence's span**.
+> **The annex rule.** When a rider's own trailing text is **empty**, and the rider sits in
+> a `Failure:`-labelled sentence, and the **next** sentence is exactly the printed
+> repeat-save sentence ("At the end of each of its turns, the target repeats the save,
+> ending the effect on itself on a success."), and the entry contains
+> `AutomaticSuccessSentence`, the rider takes `ConditionDuration.RepeatSaveUpToOneMinute`
+> and its claim **annexes that next sentence's span**.
+
+"Empty" rather than "carries no duration" is deliberate and is the wording to implement.
+The deleted `RepeatSaveJoinPattern`'s lookbehind requires the rider sentence to be
+`Failure: The target has the <Condition> condition` and the join to fall immediately on
+its full stop — trailing text of exactly nothing — so a looser precondition would be a
+behaviour change smuggled into a stage whose whole claim is that nothing moves. On the
+closed corpus every reading coincides (the annex window contains the Quasit alone, and the
+nearest miss, the Djinni's Create Whirlwind, is excluded twice over: no automatic-success
+cap, and its repeat sentence is not adjacent), so the tight wording costs nothing and
+proves more.
+
+The three existing `Repeat saves` fixtures do not cover the loose-but-not-strict shape.
+**Add one**: a rider with non-empty trailing text followed by the standalone repeat
+sentence, asserting no duration is taken. It pins the precondition against a future
+loosening that the corpus would not catch.
 
 Two supporting decisions:
 
@@ -420,8 +480,11 @@ regex text is the engineer's, the claim's extent is not.
 - `SaveHeaderPattern` match.
 - **A new anchored target-clause matcher** — see §7.6, the largest single piece of new
   work in this refactor.
-- The literal `Failure:` that `failureIndex` keys on, and each `SaveDamagePattern` match
-  `ParseDamageList` returned.
+- The literal the code keys on, which is **`Failure` without a colon**
+  (`EntryMechanicsParser.cs:576` — `text.IndexOf("Failure", …)`), plus each
+  `SaveDamagePattern` match `ParseDamageList` returned. Claim what the code read: the
+  bare word. The outcome for #370 is unchanged either way, because the rest of
+  `Failure or Success:` still fails the glue test on the word `Success`.
 - `AreaPattern`'s match, when an `EffectArea` was produced.
 - `Success: Half damage` when it decided `SaveSuccessOutcome.HalfDamage`; the whole
   outcome sentence otherwise unclaimed. **`Failure or Success:` is claimed by nobody**
@@ -484,31 +547,62 @@ matcher, **every one of the 183 saving-throw entries emits its target clause as 
 which would demote most of them and gut the pool for a reason that is not a real gap.
 
 So: an **anchored target-clause matcher**, claim-only (it feeds no new structure), over
-the shapes the engine's `ResolveSaveEffect` really honours. Measured over the committed
-corpus, 88 distinct clauses reduce to a small number of shapes, of which the top five
-cover roughly two-thirds:
+the shapes the engine's `ResolveSaveEffect` really honours — and *only* those, which is
+narrower than it first looks.
+
+**The distance and the sight are not modelled, so they are not claimed.** `SaveEffect`
+carries no range field, and `UseSaveEntry` (`Encounter.Entries.cs:184–250`) refuses on a
+missing DC, an unmodelled area shape, a dead target, Total Cover and the Charmed rule —
+and **never on distance**, for the target or for the aimed point. The Mummy's Dreadful
+Glare, printed at 30 feet, reaches the far corner of a 28 × 18 board today with no
+refusal. The engine's own standard is the other three paths: attacks refuse with
+`attack.out_of_range` on both the ordinary and the entry path, spells with
+`spell.out_of_range`, Divine Spark with its own. Entry saves are the one path that
+silently does not.
+
+So claiming `within 60 feet` would assert the model expresses a distance the model does
+not enforce — a false claim under §2.2, and the precise shape §7.6's own gate paragraph
+refuses, committed one line earlier. Sight is the same answer for a different reason:
+this project models no sight at all (the standing reading recorded on `ConditionRules`
+for Frightened), so `the dragon can see` is permanently unexpressed rather than a gap
+awaiting a fix.
 
 | Printed shape | Count | Claim? |
 | --- | --- | --- |
-| `each creature in a <N>-foot Cone` | 47 | yes — the area targeting the engine runs |
-| `each creature in a <N>-foot-long, <N>-foot-wide Line` | 24 | yes |
-| `one creature the <creature> can see within <N> feet` | ~22 | yes — a single target within range |
-| `each creature in a <N>-foot-radius Sphere centered on a point …` | 6 | yes |
-| `each creature in a <N>-foot Emanation originating from the <creature>` | ~7 | yes |
+| `each creature in a <N>-foot Cone` | 47 | **yes** — self-originating area the engine builds |
+| `each creature in a <N>-foot-long, <N>-foot-wide Line` | 24 | **yes** |
+| `each creature in a <N>-foot Emanation originating from the <creature>` | ~7 | **yes** |
+| `each creature in a <N>-foot-radius Sphere centered on a point` | 6 | **yes**, to `point` — the caller supplies the aim |
+| …that same Sphere's ` the <creature> can see within <N> feet` | 6 | **no** — sight and distance |
+| `one creature` (head of every single-target selector) | ~39 | **yes** |
+| …its ` the <creature> can see` / ` within <N> feet` qualifiers | ~39 | **no** — sight and distance |
 | `each creature that isn't currently affected by this breath in a <N>-foot Cone` | 4 | **no** — a gate the model does not express |
 | `one creature within <N> feet that has the Prone condition` | 3 | **no** |
-| `one Large or smaller creature Grappled by the behir (…)` | 1 | **no** |
+| `one Large or smaller creature Grappled by the behir (…)` | 1 | **no** — and the size gate is not read either |
 
-The rule, stated: **the target clause is claimed only when the selector is the whole of
-what the engine targets** — an area the engine builds, or one creature within a distance.
-Every added gate, exclusion or state requirement is a rule of its own and stays residue.
-Will-o'-Wisp's `one living creature the wisp can see within 5 feet that has 0 Hit Points`
-must therefore be residue: that gate is half of why #373 filed it.
+The rule, stated for the doc comment:
 
-Anchor the pattern at both ends — from the comma after the DC to the sentence's end — so
-a selector carrying anything more fails to match rather than matching the part that looks
+> **A target clause is claimed exactly as far as the engine's own targeting reaches.** An
+> area the engine builds is claimed whole, including the word that anchors it to its
+> origin. A single target is claimed as its head noun — `one creature` — and nothing
+> more: every qualifier printed after it (a distance, a sight requirement, a size, a
+> state, an exclusion) is a rule of its own, and the model expresses none of them. Doubt
+> lands in residue, exactly as everywhere else.
+
+Anchor the pattern at both ends — from the comma after the DC to the end of the selector —
+so a clause carrying anything more fails to match rather than matching the part that looks
 familiar. That is `RiderLeadInPattern`'s discipline applied to a new clause, and it is the
 project's standing answer to this exact temptation.
+
+**The consequence is accepted, not engineered around.** Roughly 39 single-target save
+entries plus 6 Sphere entries will carry a short residue line reading `the dragon can see
+within 120 feet` or similar, and some of them are Action-section entries whose monsters
+will demote out of the pool for it. That is the census telling the truth: a printed
+distance nothing enforces is an unimplemented rule held silently, which is the one thing
+this project's founding rule forbids. If the engine later enforces range on entry saves
+(§12.1 files it as its own work, deliberately outside this refactor), the matcher widens
+to claim the distance phrase and that residue disappears — the honest way round, with the
+claim following the code rather than leading it.
 
 ### 7.7 `ParseEmbeddedSave`
 
@@ -537,6 +631,50 @@ promise in a doc: it is checked by `git diff --exit-code data/srd/spells.json`. 
 spells currently classify `Unmodelled` while carrying a parsed condition — those are the
 cases that would move if §2.7 were decided the other way, and they are the reason it is
 decided this way.
+
+### 8.1 Residue is not the only coupling
+
+The residue argument above covers `UnclassifiedClauses`. It is not the whole surface, and
+saying so is the difference between a proof and a slogan. `SpellParser` also reads:
+
+- **`classified.AppliedConditions`**, which becomes `SpellDefinition.AppliedConditions` on
+  **75 spells** and is passed into `SpellEffectParser.ParseSave` (`SpellParser.cs:281,326`).
+- **`classified.Mechanics`**, as the fallthrough when a spell has no save, no attack, no
+  heal and no revival.
+
+So every stage that touches `ParseAppliedConditions` — stages 1 and 2, the mask and the
+annex — runs over spell prose, and a slip there would change 75 spells' conditions
+without touching a single residue string.
+
+**Why the annex cannot fire on a spell, stated because it is load-bearing.** Two
+independent gates exclude the entire spell corpus, and the first is the stronger:
+
+1. **Wording.** The join pattern and the annex both require the sentence to end *"ending
+   the effect on itself on a success."* Every spell in the book prints *"ending the
+   **spell** on itself on a success"* — Hold Person, Hold Monster, Blindness/Deafness,
+   Confusion, Slow and the rest. **Zero of 339 spell texts contain the required sentence.**
+2. **The cap.** The annex additionally requires `AutomaticSuccessSentence` ("After 1
+   minute, it succeeds automatically.") somewhere in the entry. **Zero spell texts contain
+   it either.**
+
+Either gate alone is sufficient; both hold. The petrifying-tier lift is excluded the same
+way — it is an exact-constant match on bestiary wording that no spell prints.
+
+### 8.2 The proof needs a second round-trip, and stage 0 owes it
+
+`CorpusRoundTripTests` re-parses **monsters only**. The content tests load committed JSON
+without re-running the parser. So nothing in the suite would notice a stage-1 or stage-2
+behaviour change in the shared `ParseAppliedConditions` as it applies to traits or spells
+— and the place that would eventually notice is stage 5, where `species.json` and
+`classes.json` are *expected* to change, so trait-lane drift would blend into intended
+churn and be unreviewable.
+
+**Add a sibling round-trip in stage 0**, green from stage 0 through stage 3 and asserted
+in each of their acceptance criteria: re-run `ClassifyTrait` over the stored text of every
+species trait, class feature and spell, and compare `AppliedConditions` and `Mechanics`
+against what is on disk. Residue is deliberately excluded from the comparison — it is what
+stage 4 is allowed to move — while conditions and grade are what stages 1 and 2 promise
+not to move. That turns §8's argument from an argument into a test.
 
 Species traits and class features do move: the `SavingThrow` branch of `ClassifyTrait`
 gets honest residue like any other save entry, so `data/srd/species.json` and
@@ -605,6 +743,12 @@ and it must be green at the end. In between:
   no point in its middle, which is the honest description and should be said in the PR
   body.
 
+It also covers monsters only, which is why §8.2's trait/spell sibling exists and why
+**both** round-trips are named in the acceptance criteria of stages 0 through 3. The
+monster round-trip proves the stat-block lane did not move; the sibling proves the shared
+condition grammar did not move under the other two callers, where no other test is
+looking.
+
 Two additions to this file at stage 4:
 
 1. The verbatim invariant of §6.2 — every residue string is a substring of its entry's
@@ -643,8 +787,12 @@ builds at 0 warnings, the project's standing gate.
 itself (bounded-both-sides absorption, edge runs, overlap union, chunking at sentence
 boundaries, trimming). Nothing calls it yet.
 
-*Acceptance:* new tests pass; the rest of the suite is untouched and green; corpus
-round-trip green.
+The **trait/spell round-trip sibling** of §8.2 also lands here, before anything can move
+under it: re-run `ClassifyTrait` over every stored species trait, class feature and spell
+text and compare `AppliedConditions` and `Mechanics` against disk.
+
+*Acceptance:* new tests pass; the rest of the suite is untouched and green; **both**
+round-trips green.
 
 ### Stage 1 — deletions become masks
 
@@ -653,14 +801,18 @@ round-trip green.
 The `with { Text = text }` dance goes.
 
 *Acceptance:* **corpus round-trip green** — 1,318 entries reproduce byte-for-byte. That is
-the proof, and it is a strong one. All 1,367 characterization tests unchanged and green.
+the proof, and it is a strong one. **Trait/spell round-trip green** — this stage touches
+`ParseAppliedConditions`, which the other two callers share (§8.1). All 1,367
+characterization tests unchanged and green.
 
 ### Stage 2 — the join becomes an annex
 
 Span-aware `SplitSentences`; the annex rule of §5.2; `RepeatSaveJoinPattern` deleted.
 
-*Acceptance:* corpus round-trip green; the `Repeat saves` fixtures unchanged and green.
-No output moves.
+*Acceptance:* **both** round-trips green — this is the other stage inside
+`ParseAppliedConditions`, and the spell lane's two exclusion gates (§8.1) are what the
+sibling is there to check rather than assert. The `Repeat saves` fixtures unchanged and
+green, plus the new loose-but-not-strict fixture of §5.2. No output moves.
 
 ### Stage 3 — matchers report claims (plumbing only)
 
@@ -673,7 +825,7 @@ Also here: `tools/SrdExtract --census <path>`, dumping every uncovered run with 
 entry, section, span, text and neighbouring claim notes, plus a normalised frequency
 table. The census exists before the switch so the switch can be reviewed against it.
 
-*Acceptance:* corpus round-trip green (nothing moved); the anonymous-wildcard test from
+*Acceptance:* both round-trips green (nothing moved); the wildcard-convention test from
 §2.3 passes; `--census` produces a file the engineer has read end to end and summarised in
 the PR body — **including a count of how many currently-zero-residue entries would gain
 residue**, which is the number the review of stage 4 turns on. As a bar to check against:
@@ -714,10 +866,22 @@ a same-build baseline taken immediately before the merge of stage 4+5. Both rang
 on, figures written into `CLAUDE.md`'s pacing row with the date and the command.
 
 *Acceptance:* both ranges reported with median, clears, level-4 runs, died-by-fight-4,
-and the per-band hit-point line. **The expected direction is easier or unchanged** — a
-thinner pool means fewer distinct creatures, and the creatures that leave are the ones
-carrying the most unmodelled text, which the engine was not executing anyway. A large
-move in either direction is a finding to write down, not to tune against.
+and the per-band hit-point line.
+
+**The stated hypothesis is harder or unchanged**, and the acceptance is the measurement,
+never the prediction. An earlier draft of this document guessed *easier*, on the reasoning
+that the engine was not executing the departing creatures' text anyway. That reasoning is
+sound and the conclusion drawn from it was backwards. A creature fielded at full printed
+XP while missing riders the engine never ran was **softer than its price** — the party got
+a discount on it. Removing it shifts every draw toward creatures whose printed mechanics
+the engine actually delivers, which is precisely #204's measured mechanism: weighting the
+draw toward classic monsters, which carry more mechanics per XP, took full clears from 76
+to 66. Same lever, arrived at from the other end.
+
+So a harder re-baseline is the **precedented** outcome and should be recorded as
+confirmation rather than surprise; an easier one is the interesting result and wants a
+paragraph explaining it. Either way the figures go into `CLAUDE.md` with their seeds and
+their command, and neither direction is tuned against.
 
 ### After — the small fixes on top
 
@@ -740,10 +904,26 @@ check the run against, not predictions):
   residue can appear.
 - **Grades today**: 87 Complete, 42 Playable, 199 Diminished, 2 Unusable — 129 admitted at
   `Playable` or better, before the plausibility and genre cuts take the pool to 81.
-- **Known shapes that must appear**: the ten #371 alternatives, the thirteen entries
-  printing plural `conditions` (#372), #373's death-and-heal riders and push/Speed
-  clauses, #341's fifteen bundled uses, the nine attack-header Advantage parentheticals,
-  the twenty reaction bodies, and the un-claimable target selectors of §7.6.
+- **Known shapes that must appear**, with the counts to check the census against:
+  - **12 `or`-alternative damage tiers**, not the ten #371 names. The corpus prints the
+    shape twelve times — the extra two are the Mimic's Bite and the Swarm of Venomous
+    Snakes' Bites, which join with a dash (`damage—or`) rather than a comma, plus the
+    Swarm of Crawling Claws. #371's issue text names ten; the census bar is 12.
+  - **13 entries printing plural `conditions`** (#372).
+  - #373's death-and-heal riders, push and Speed clauses.
+  - **15 bundled Multiattack uses** (#341).
+  - **10 attack-header filler occupants**, not nine: the nine conditional-Advantage
+    parentheticals plus the Ancient Gold Dragon's Rend, which prints a bare `to hit` in
+    the same slot.
+  - **20 reaction bodies** (§7.5).
+  - **3 petrifying-tier entries** — Basilisk, Medusa **and the Gorgon's Petrifying
+    Breath**. `ParseAppliedConditions`' own comment says the corpus "prints this wording
+    twice"; it prints it three times. That doc-comment is wrong today and should be
+    corrected in the same commit that touches the method, per the docs-are-part-of-the-diff
+    rule.
+  - The un-claimable target selectors of §7.6 — roughly 39 single-target range/sight
+    qualifiers and 6 Sphere ones, the largest single new residue population in the
+    regeneration and the one most likely to move a monster out of the pool.
 
 Grade demotions are the mechanism: an Action-section entry gaining residue takes its
 monster from `Playable` to `Diminished`, which removes it from the pool. Expect the pool
@@ -776,7 +956,20 @@ answer.
 - **Spells.** Untouched, and provably so (§8). `PreparableSpells` remains the authority
   and #292's argument stands.
 - **Engine dispatch gaps.** #373's twelve Trait-section `SavingThrow` entries the engine
-  never fires are a `UseEntry` question, not an extraction one (§2.2).
+  never fires are a `UseEntry` question, not an extraction one (§2.2) — as is §2.5's
+  five-entry section quirk, which rides with them.
+- **The entry-save range gap, which this refactor surfaces and deliberately does not
+  fix.** `UseSaveEntry` enforces no distance on a single-target save or on an aimed
+  point, so the Mummy's 30-foot Dreadful Glare reaches across the board while attacks
+  (`attack.out_of_range`), spells (`spell.out_of_range`) and Divine Spark all refuse
+  correctly. Under §7.6 the printed distance becomes residue, which is the right
+  accounting answer and not a fix. **It is filed as its own issue**, outside this design,
+  for two reasons: widening #382 to absorb an engine change would put a rules fix inside
+  a refactor whose entire review value rests on the diff being coverage and nothing else;
+  and when the gap is closed, §7.6's matcher widens to claim the distance and the residue
+  disappears on its own — the claim following the code, which is the order this contract
+  requires. **Sight is not the same case**: this project models no sight at all, so
+  `the dragon can see` is a permanent honest residue rather than an outstanding fix.
 - **Grammar/AST parsing.** Declined at adjudication and not revisited here. The one thing
   that would reopen it is span-consuming regexes fighting the structure — the honest place
   to watch for it is §7.4's subject anchoring and §7.6's target clause, and if either
@@ -789,7 +982,9 @@ answer.
 
 | Risk | Guard |
 | --- | --- |
-| Over-claiming through a permissive pattern (the goblin bug rebuilt) | §2.3's named-`unread` convention plus the anonymous-wildcard test |
+| Over-claiming through a permissive pattern (the goblin bug rebuilt) | §2.3's named-`unread` convention plus the unbounded-quantifier test, validated at the `Claim(Regex, Match, …)` call so no pattern escapes the set |
+| Over-claiming a printed *rule* the engine does not run (range, sight, a gate) | §2.2's claim test applied clause by clause in §7.6; the tie-break is that a claim follows the code and never leads it |
+| Drift in the shared condition grammar, invisible because only monsters round-trip | §8.2's trait/spell sibling, green from stage 0 |
 | Glue set rot | §4.4's pinned glue census plus the three-strikes rule |
 | Residue flood demoting the pool below usable | §11.2's stop-and-ask; census reviewed before the switch is merged |
 | A stage landing with parser and data disagreeing | The corpus round-trip test, deliberately un-skipped (§9.3) |
@@ -812,12 +1007,18 @@ it is being asked to cover for a matcher that should have claimed.
 Four places the code said something the brief did not anticipate. All four are decided
 above; they are collected here so the next reader does not have to reconstruct them.
 
-1. **The target clause.** The brief's model is "extractions claim what they consumed."
-   Applied literally, 183 saving-throw entries would emit `each creature in a 15-foot
-   Cone` as residue, because nothing reads the selector today. This is the largest single
-   piece of new work the refactor needs and the brief does not mention it (§7.6). It is
-   genuinely new coverage, not bookkeeping — and it has a real dividend, since the gated
-   selectors it refuses are honest gaps the model never saw.
+1. **The target clause, which then cut both ways.** The brief's model is "extractions
+   claim what they consumed." Applied literally, 183 saving-throw entries would emit
+   `each creature in a 15-foot Cone` as residue, because nothing reads the selector today
+   — the largest single piece of new work the refactor needs, and unmentioned in the
+   brief. But the first draft of that matcher then over-corrected and claimed the whole
+   selector, distance and sight included, which qc caught: `UseSaveEntry` enforces no
+   range at all, so `within 60 feet` is text the model does not express and claiming it
+   would have hidden an unenforced printed rule *inside the mechanism built to stop
+   exactly that*. The settled answer claims the area, claims `one creature`, and lets
+   every qualifier fall to residue (§7.6). The episode is the design's own best evidence
+   for §4.3: the pull toward absorbing text to keep the census short is real, and it
+   arrives disguised as tidiness even when you are the one who wrote the rule against it.
 2. **Subjects and verbs.** `The mummy makes`, `The roper makes` — printed clause heads
    that no matcher reads. The tempting fix is a glue category for subjects, which is the
    keyword-filter bug in a new costume. The design's answer is to anchor the matcher over
@@ -826,11 +1027,17 @@ above; they are collected here so the next reader does not have to reconstruct t
    printed conditional-Advantage clauses right now. A whole-match claim rule would have
    preserved that bug inside the mechanism built to end it — so the claim rule is
    group-aware and the convention is enforced by a test (§2.3).
-4. **The spell boundary is provable, not merely respected.** `SpellParser` calls the
-   shared `ClassifyTrait`, so "spells stay out of scope" needed an argument rather than an
-   assertion. §2.7's rule — an `Unmodelled` entry claims nothing — makes
-   `spells.json` byte-identical by construction, which turns the scope boundary into a
-   checkable acceptance criterion.
+4. **The spell boundary is provable, but the first proof was half of one.** `SpellParser`
+   calls the shared `ClassifyTrait`, so "spells stay out of scope" needed an argument
+   rather than an assertion. §2.7's rule — an `Unmodelled` entry claims nothing — makes
+   `spells.json` byte-identical by construction. What that argument missed, and qc did
+   not, is that residue is only one of three things `SpellParser` reads: conditions reach
+   75 spells and the spell save parser, and the grade is a fallthrough (§8.1). The
+   exclusion still holds, on a gate stronger than the one first identified — every spell
+   prints *"ending the **spell** on itself"* where the annex requires *"ending the
+   **effect** on itself"*, so zero of 339 spell texts can match — but "it holds" and "it
+   is checked" are different claims, and §8.2's round-trip sibling is what makes it the
+   second.
 
 Two more, smaller: `text.Replace` in the two lift-outs replaced *every* occurrence and
 would have deleted a span printed twice (masking cannot); and `Encounter.UseEntry`
