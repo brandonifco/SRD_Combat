@@ -24,7 +24,10 @@ measurement gate. Nothing here is implemented yet.
 
 All numbers from a 200-seed survey per level (levels 1 and 3, Moderate, the
 pregenerated party — the same fights `--watch` shows), generation code at `e424783`.
-The probe screenshots that accompany the visual critique artifact show the same boards
+The survey instrument was ad hoc (a scratch harness over `EncounterFactory.Build`) —
+QC reproduced every figure independently, and the *committed* check becomes S1's
+coverage property test, which is the honest resting place for these numbers. The
+probe screenshots that accompany the visual critique artifact show the same boards
 the numbers describe.
 
 **1. Sixty-one percent of the board is bare by rule.** `TerrainGenerator` places
@@ -61,10 +64,11 @@ irrelevant.
 No density variation between fights (that was #243's first item), no link to cycle or
 level, and no link to the client's three ground themes — the client picks its theme by
 hashing the battlefield's square counts, so a woodland board and a clay board are
-structurally identical and the theme means nothing. Deployment compounds it: both sides
-spawn as perfectly straight single-file columns (a nine-monster warband is one column
-of nine), so the opening frame of every fight is two queues facing each other across an
-empty field.
+structurally identical and the theme means nothing. Deployment compounds it: every
+group is a straight single-file line — under the Columns draw a nine-monster warband
+is one column of nine; CornerGroups is two single-file stacks and Surrounded a fanned
+ring, lines all the same — so the opening frame of every fight is queues facing each
+other across an empty field.
 
 The one thing the current generator does right, and every slice below preserves:
 **every fight stays winnable on foot** — `StaysConnected` admits obstacles
@@ -196,9 +200,14 @@ rather than assuming it.
 ## 5. The whole board is in play
 
 The spawn-column band rule is **retired**. New eligibility: terrain may land anywhere
-on the board except (a) any spawn square, (b) any square adjacent to a spawn square
-(the clearance that today's rule provided implicitly), and (c) protected squares
-(carved gaps, fords). The doc-comment bullet "terrain sits strictly between the
+on the board except (a) any spawn square, (b) any square adjacent to a spawn square,
+and (c) protected squares (carved gaps, fords). Rule (b) is a **new, stronger
+guarantee, not a restatement**: today's `InRegion` excludes only spawn *squares*, and
+QC measured ~26% of current boards (511 of 2,000 on the replica) with impassable
+terrain standing flush against a spawn. S1 genuinely tightens near-spawn placement —
+a behaviour change, gated by S1's full-range measurement like everything else — and
+§8.1's overlap-suffices argument load-bears on exactly this free 3×3 block, which is
+why the clearance is a stated rule here rather than an accident of the band. The doc-comment bullet "terrain sits strictly between the
 outermost spawns" is rewritten to say this, in the same commit — docs are part of the
 diff.
 
@@ -221,8 +230,11 @@ boards, stated as a validator not a hope):
 | Cluttered | 25% | 12–16% | — |
 
 A property test generates boards across a seed sweep and asserts each tier's realized
-coverage lands in its band (a floor *and* a ceiling — the extraction chapter's lesson
-about floors applies here too).
+**mean** coverage lands in its band (a floor *and* a ceiling — the extraction
+chapter's lesson about floors applies here too). Stated plainly: the bands are a
+distribution claim over the sweep, not a per-fight guarantee — a single cluttered
+warband board can tail below its band under rejection, and a per-board assertion
+would fight that rejection forever. #433's acceptance criterion says the same.
 
 ## 7. The structure vocabulary, and the shape the model grows
 
@@ -234,7 +246,12 @@ change:
   clusters (2×2s that may abut into organic clumps), difficult bands and patches.
 - **The never-touch rule is retired** — it existed so the client could recover each
   piece as a connected component of blocked squares, and it is exactly what forbids
-  corners and rooms. Recoverability is replaced by honesty: **the model grows a
+  corners and rooms. Sequencing, pinned so S2 cannot be implemented two ways: the
+  rule is retired as a *model* constraint in S2 (site structures and `TerrainPiece`
+  stop assuming it), but the **dressing pass keeps its separation behaviour
+  unchanged until S4's clusters actually use abutment** — S2's visible board diff is
+  nil by construction, which is what its "client renders unchanged boards
+  identically" criterion means. Recoverability is replaced by honesty: **the model grows a
   shape.** `Battlefield` gains `IReadOnlyList<TerrainPiece>` — kind (wall run / low
   cluster / difficult region / gap), its squares, and the site type that placed it.
   The square sets (`Blocked`, `LowObstacles`, `DifficultTerrain`) remain the *rules*
@@ -261,7 +278,7 @@ generators. (Coordinated with the #429 designer and architect, 2026-08-25: their
 generated encounter places all footprints legally" acceptance criterion and this check
 are the same check; whichever lands first, the other reuses it. #429 fields 3×3 via
 the Awakened Tree, so K's derivation must come from the pool — the amended #429
-criterion 6's `MonsterPool.LargestSpan(...)`, called with the same `Draw` flags the
+criterion 7's `MonsterPool.LargestSpan(...)`, called with the same `Draw` flags the
 encounter's actual draw uses — never a constant.)
 
 The agreed shared shape (confirmed with architect-429, 2026-08-25):
@@ -325,6 +342,16 @@ carried on the battlefield so structure and art agree (a crossing on woodland is
 river; on clay it is a scree bank). The client's hash-pick is replaced by reading the
 theme; sites may weight themes (grove → woodland) without hard-binding them.
 
+**The theme draw's stream discipline (QC finding, 2026-08-25):** within one fight,
+everything draws from *one* seeded stream in order — terrain is followed on that same
+stream by `Encounter.Start` → `RollInitiative` and every combat roll after it, so a
+theme draw placed "after all terrain" still re-times initiative and the whole fight
+on every seed. The theme must therefore consume **zero dice from the fight stream**:
+derive it arithmetically from the fight's identity (`RunDice`-style, e.g. from the
+seed and fight number), or from a separately derived stream. Anything that rolls the
+fight's own dice for it is a full-population balance change and pays the full
+two-range measurement gate. #439's acceptance criteria say the same.
+
 **Client (`client/`, rendering only, no rules):** render `TerrainPiece` instead of
 recovering components; tile wall runs from segment art; draw difficult bands as
 regions rather than per-square smears where the theme has the art. Falls back to
@@ -346,10 +373,11 @@ a batch lands with his before/after approval.
 
 Terrain is a balance change (#243's standing warning: the two "cosmetic" plausibility
 fixes cost as much pacing as potions bought). Every slice quotes
-`tools/PacingMeasure -- --seeds 1-120` and `200-320` against a same-build baseline. No
-slice here is CR-pool-inert in the spot-check sense — terrain changes consume dice
-before monster draws… actually they do not (terrain draws after the builder), but
-they change every fight's outcome, so the full ranges run regardless.
+`tools/PacingMeasure -- --seeds 1-120` and `200-320` against a same-build baseline.
+The spot-check waiver never applies to this work: terrain draws after the builder, so
+the monster pool itself is untouched — but every terrain draw sits on the fight's one
+seeded stream ahead of initiative and every combat roll, so any change here re-times
+every fight's outcome on every seed, and the full ranges run on every slice.
 
 - **Must not move:** `Stalled` stays zero on both ranges. `ended:` must stay
   defeat/victory-shaped — a rise in round-limit endings is a red flag on any site,
@@ -369,7 +397,7 @@ they change every fight's outcome, so the full ranges run regardless.
 
 Filed as issues, one concern each, in dependency order: S1 #433, S2 #435, S3 #436,
 S4 #437, S5 #438, S6 #439, S7 #440. Phase: **F2-feel** for slices
-1–6 — Brandon's verdict is a feel complaint about what is on screen, this work is what
+1–7 — Brandon's verdict is a feel complaint about what is on screen, this work is what
 F2 exists for, and it pairs with F2's foresight work (threat marking and path preview
 mean more on boards worth previewing). The per-cycle site weighting and any
 run-structure coupling stay F3.
