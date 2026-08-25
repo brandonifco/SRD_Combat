@@ -247,6 +247,89 @@ public sealed class EntryMechanicsCharacterizationTests
 
     #endregion
 
+    #region Alternative damage (#371)
+
+    [Fact]
+    public void AnOrIfAlternativeReplacesTheBaseDamageWhenTheAttackRollHadAdvantage()
+    {
+        // Chimera's Bite, verbatim. "or 18 (4d6 + 4) Piercing damage if the chimera
+        // had Advantage on the attack roll" is the same rule as the goblins' "plus…if
+        // the attack roll had Advantage" rider, worded differently and printed as a
+        // replacement rather than an addition — AttackRulesTests pins the runtime
+        // distinction between the two shapes.
+        var entry = EntryMechanicsParser.Classify(
+            "Bite",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (2d6 + 4) Piercing damage, or 18 (4d6 + 4) " +
+            "Piercing damage if the chimera had Advantage on the attack roll.");
+
+        Assert.NotNull(entry.Attack!.Alternative);
+        Assert.Equal(18, entry.Attack.Alternative!.PrintedAverage);
+        Assert.Equal(DamageType.Piercing, entry.Attack.Alternative.Type);
+        Assert.Equal(AttackDamageCondition.AttackRollHadAdvantage, entry.Attack.Alternative.Condition);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void AnOrIfAlternativeReplacesTheBaseDamageWhenTheAttackerIsBloodied()
+    {
+        // Swarm of Rats' Bites, verbatim. The condition reads the swarm's own Hit
+        // Points — AttackDamageCondition.AttackerIsBloodied, not TargetIsBloodied.
+        var entry = EntryMechanicsParser.Classify(
+            "Bites",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +2, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing " +
+            "damage if the swarm is Bloodied.");
+
+        Assert.NotNull(entry.Attack!.Alternative);
+        Assert.Equal(2, entry.Attack.Alternative!.PrintedAverage);
+        Assert.Equal(AttackDamageCondition.AttackerIsBloodied, entry.Attack.Alternative.Condition);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void AnOrIfAlternativeReplacesTheBaseDamageWhenTheTargetIsBloodied()
+    {
+        // Blood Hawk's Beak, verbatim — the opposite reading from the swarms above.
+        var entry = EntryMechanicsParser.Classify(
+            "Beak",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, or 6 (1d8 + 2) " +
+            "Piercing damage if the target is Bloodied.");
+
+        Assert.NotNull(entry.Attack!.Alternative);
+        Assert.Equal(6, entry.Attack.Alternative!.PrintedAverage);
+        Assert.Equal(AttackDamageCondition.TargetIsBloodied, entry.Attack.Alternative.Condition);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void AnOrIfAlternativeConditionedOnAChargeIsNotAMatchedShapeAndFallsToResidue()
+    {
+        // Goat's Ram, verbatim (#371's own issue text). The engine tracks no movement
+        // history to check a charge against, so AlternativeDamagePattern does not
+        // reach for this shape at all — Attack.Alternative stays null and the whole
+        // clause is honest residue, exactly as an unclaimed span always is (design
+        // §4.3), rather than a structured condition the engine could never satisfy.
+        var entry = EntryMechanicsParser.Classify(
+            "Ram",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage, or 2 (1d4) Bludgeoning " +
+            "damage if the goat moved 20+ feet straight toward the target immediately before the hit.");
+
+        Assert.Null(entry.Attack!.Alternative);
+        var damage = Assert.Single(entry.Attack.Damage);
+        Assert.Equal(1, damage.PrintedAverage);
+        Assert.Equal(
+            [
+                "or 2 (1d4) Bludgeoning damage if the goat moved 20+ feet straight toward the target " +
+                "immediately before the hit",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    #endregion
+
     #region Plural conditions (#372)
 
     [Fact]

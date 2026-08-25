@@ -67,16 +67,21 @@ public enum EncounterTheme
 /// encounter hands <c>EncounterBuilder</c> whatever sequence it likes.
 /// </para>
 /// <para>
-/// <b>The map tracks the pool, and shrinks with it.</b> Twelve names were removed on
-/// 2026-08-24 — Ankheg, Blood Hawk, Bugbear Stalker, Bugbear Warrior, Ettin, Steam
-/// Mephit, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects, Swarm of Rats,
-/// Swarm of Venomous Snakes and Worg — because the span-accounting regeneration (#382)
-/// demoted every one of them out of the tier-1 pool: each had always carried a printed
-/// rider the engine does not execute, hidden until then behind the old sentence-credit
-/// accounting bug. <c>EncounterThemeTests.TheMapCoversTheTraditionalPoolExactly</c>
-/// holds the map and the pool equal in both directions, so a demoted name has to leave
-/// here too — re-add a name (with its themes restored from this history, in source
-/// control) if #370-#373's semantic fixes or #267's fill-ins bring it back.
+/// <b>The map tracks the pool, and shrinks and grows with it.</b> Twelve names were
+/// removed on 2026-08-24 — Ankheg, Blood Hawk, Bugbear Stalker, Bugbear Warrior,
+/// Ettin, Steam Mephit, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects,
+/// Swarm of Rats, Swarm of Venomous Snakes and Worg — because the span-accounting
+/// regeneration (#382) demoted every one of them out of the tier-1 pool: each had
+/// always carried a printed rider the engine does not execute, hidden until then
+/// behind the old sentence-credit accounting bug.
+/// <c>EncounterThemeTests.TheMapCoversTheTraditionalPoolExactly</c> holds the map and
+/// the pool equal in both directions, so a demoted name has to leave here too — and a
+/// re-admitted one has to return, themes restored from this history. Five did, on
+/// 2026-08-25: Blood Hawk, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects
+/// and Swarm of Rats all structure and execute their printed "or…if" alternative
+/// damage tier now (#371 — a Bloodied swarm's bite, the Blood Hawk's bigger hit
+/// against a Bloodied target), which was each one's whole remaining gap. The other
+/// seven of the twelve stay out until their own gaps close.
 /// </para>
 /// </remarks>
 public static class EncounterThemes
@@ -91,6 +96,7 @@ public static class EncounterThemes
 
             // CR 1/8
             ["Bandit"] = [EncounterTheme.Outlaws],
+            ["Blood Hawk"] = [EncounterTheme.WildPack, EncounterTheme.Outlaws],
             ["Cultist"] = [EncounterTheme.CultAndFiends],
             ["Flying Snake"] = [EncounterTheme.DungeonVermin, EncounterTheme.CultAndFiends],
             ["Giant Rat"] = [EncounterTheme.DungeonVermin],
@@ -113,6 +119,8 @@ public static class EncounterThemes
             ["Goblin Warrior"] = [EncounterTheme.GoblinoidWarband],
             ["Grimlock"] = [EncounterTheme.SavageHunters],
             ["Skeleton"] = [EncounterTheme.Undead],
+            ["Swarm of Bats"] = [EncounterTheme.DungeonVermin, EncounterTheme.Undead],
+            ["Swarm of Rats"] = [EncounterTheme.DungeonVermin],
             ["Violet Fungus"] = [EncounterTheme.DungeonVermin],
             ["Wolf"] = [EncounterTheme.WildPack, EncounterTheme.GoblinoidWarband],
             ["Zombie"] = [EncounterTheme.Undead],
@@ -124,6 +132,7 @@ public static class EncounterThemes
             ["Magma Mephit"] = [EncounterTheme.CultAndFiends],
             ["Sahuagin Warrior"] = [EncounterTheme.SavageHunters],
             ["Scout"] = [EncounterTheme.Outlaws, EncounterTheme.Soldiery],
+            ["Swarm of Insects"] = [EncounterTheme.DungeonVermin],
             ["Tough"] = [EncounterTheme.Outlaws],
             ["Troll Limb"] = [EncounterTheme.DungeonVermin],
 
@@ -161,6 +170,7 @@ public static class EncounterThemes
             ["Knight"] = [EncounterTheme.Soldiery],
             ["Manticore"] = [],
             ["Owlbear"] = [],
+            ["Swarm of Crawling Claws"] = [EncounterTheme.Undead],
             ["Warrior Veteran"] = [EncounterTheme.Soldiery],
             ["Winter Wolf"] = [EncounterTheme.WildPack],
 

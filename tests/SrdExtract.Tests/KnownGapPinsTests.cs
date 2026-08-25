@@ -16,30 +16,14 @@ namespace SrdExtract.Tests;
 /// recognises "the X and Y conditions" and each name flows through the existing
 /// imposability gates independently — and its former pin now lives as a
 /// characterization fixture in <c>EntryMechanicsCharacterizationTests</c>'s "Plural
-/// conditions (#372)" region instead of here.
+/// conditions (#372)" region instead of here. #371 is fixed on its own terms too —
+/// <c>AlternativeDamagePattern</c> structures the "or…if" tier for the three
+/// conditions the engine can check at attack resolution, and its former pin now
+/// lives as a characterization fixture in <c>EntryMechanicsCharacterizationTests</c>'s
+/// "Alternative damage (#371)" region instead of here.
 /// </summary>
 public sealed class KnownGapPinsTests
 {
-    [Fact]
-    public void Issue371_AConditionalDamageAlternativeNowLandsInResidue()
-    {
-        // Swarm of Rats' Bites, verbatim. "or 2 (1d4) Piercing damage if the swarm is
-        // Bloodied" is a real, printed conditional alternative that the model has no
-        // vocabulary for. Fixed accounting half of #382: DamagePattern's loop breaks on
-        // the "or"-alternative rather than claiming it, so the uncovered span now falls
-        // out as residue by subtraction. #371's execution half — structuring the
-        // Bloodied-conditional tier itself — stays open.
-        var entry = EntryMechanicsParser.Classify(
-            "Bites",
-            MonsterEntrySection.Action,
-            "Melee Attack Roll: +2, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing " +
-            "damage if the swarm is Bloodied.");
-
-        var damage = Assert.Single(entry.Attack!.Damage);
-        Assert.Equal(5, damage.PrintedAverage);
-        Assert.Equal(["or 2 (1d4) Piercing damage if the swarm is Bloodied"], entry.UnmodelledClauses);
-    }
-
     [Fact]
     public void Issue373_AnUnexecutedDeathRiderBehindAFailureLabelNowLandsInResidue()
     {

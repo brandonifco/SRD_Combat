@@ -177,6 +177,7 @@ internal static partial class StatBlockLineGrammar
         // attack's own damage.
         var hitIndex = text.IndexOf("Hit:", StringComparison.Ordinal);
         IReadOnlyList<AttackDamage> damage;
+        AlternativeAttackDamage? alternative = null;
 
         if (hitIndex < 0)
         {
@@ -185,21 +186,26 @@ internal static partial class StatBlockLineGrammar
         else
         {
             coverage.Claim(new TextSpan(hitIndex, "Hit:".Length), "attack.hit_label");
-            damage = ParseDamage(text, hitIndex + "Hit:".Length, coverage);
+            (damage, alternative) = ParseDamage(text, hitIndex + "Hit:".Length, coverage);
         }
 
-        return new MonsterAttack(kind, bonus, reach, normalRange, longRange, damage);
+        return new MonsterAttack(kind, bonus, reach, normalRange, longRange, damage)
+        {
+            Alternative = alternative,
+        };
     }
 
     /// <summary>
     /// Reads the damage components starting at <paramref name="start"/>, stopping at
-    /// the first thing that is not one. Riders after the damage ("If the target is a
+    /// the first thing that is not one, then checks whether an "or…if" alternative
+    /// tier (#371) follows the last one. Riders after the damage ("If the target is a
     /// Large or smaller creature, ...") are left to the entry's prose. Operates on the
     /// whole entry's text with a start offset, rather than a pre-sliced substring, so
     /// every match's own <c>Index</c> is already an offset into that text — the
     /// coordinate space <see cref="EntryCoverage"/> claims into.
     /// </summary>
-    private static IReadOnlyList<AttackDamage> ParseDamage(string text, int start, EntryCoverage coverage)
+    private static (IReadOnlyList<AttackDamage> Damage, AlternativeAttackDamage? Alternative) ParseDamage(
+        string text, int start, EntryCoverage coverage)
     {
         var damage = new List<AttackDamage>();
         var searchFrom = start;
@@ -214,8 +220,8 @@ internal static partial class StatBlockLineGrammar
 
             // Only keep a run of components joined by "plus"; anything further into the
             // prose is a rider, not part of this attack's damage. A component the loop
-            // breaks on here is never claimed — that break is exactly the or-alternative
-            // shape #371 names.
+            // breaks on here is never claimed by this loop — an or-alternative
+            // (#371) is picked up below instead, once the loop settles.
             if (damage.Count > 0 && !LooksLikeContinuation(text, searchFrom, match.Index))
             {
                 break;
@@ -264,7 +270,74 @@ internal static partial class StatBlockLineGrammar
             searchFrom = componentEnd;
         }
 
-        return damage;
+        // searchFrom now sits exactly where the additive loop stopped consuming —
+        // right after the last base component, whether the loop broke on a
+        // non-"plus" continuation or ran out of DamagePattern matches entirely. An
+        // alternative only makes sense relative to an established base, so this is
+        // skipped when nothing was found above.
+        var alternative = damage.Count > 0 ? ReadAlternative(text, searchFrom, coverage) : null;
+
+        return (damage, alternative);
+    }
+
+    /// <summary>
+    /// Reads an "or…if" alternative damage tier (#371) — "or 18 (4d6 + 4) Piercing
+    /// damage if the chimera had Advantage on the attack roll" — when one of the
+    /// three conditions this engine can check at the moment an attack hits follows
+    /// the base damage. Every other printed alternative condition (a charge — "if the
+    /// goat moved 20+ feet straight toward the target immediately before the hit" —
+    /// the Goat's and the Giant Seahorse's Ram) is not a matched shape at all: the
+    /// engine tracks no movement history to check it against, so the pattern does not
+    /// reach for it, and the whole clause falls to residue exactly as an unclaimed
+    /// span always does (design §4.3 — doubt lands in residue, never a false claim).
+    /// </summary>
+    private static AlternativeAttackDamage? ReadAlternative(string text, int start, EntryCoverage coverage)
+    {
+        var match = AlternativeDamagePattern().Match(text, start);
+
+        if (!match.Success || match.Index != start)
+        {
+            return null;
+        }
+
+        if (!Enum.TryParse<DamageType>(match.Groups["type"].Value, ignoreCase: true, out var type))
+        {
+            return null;
+        }
+
+        var average = int.Parse(match.Groups["average"].Value, CultureInfo.InvariantCulture);
+
+        DiceExpression dice;
+        if (match.Groups["dice"].Success)
+        {
+            if (!DiceExpression.TryParse(match.Groups["dice"].Value, out var rolled))
+            {
+                return null;
+            }
+
+            dice = rolled;
+        }
+        else
+        {
+            dice = DiceExpression.Flat(average);
+        }
+
+        var condition = match.Groups["bloodiedSelf"].Success ? AttackDamageCondition.AttackerIsBloodied
+            : match.Groups["bloodiedTarget"].Success ? AttackDamageCondition.TargetIsBloodied
+            : AttackDamageCondition.AttackRollHadAdvantage;
+
+        // The creature's own name in the Advantage branch ("the chimera had
+        // Advantage...") is claimed whole rather than excluded, the same reasoning
+        // MultiattackSubjectPattern's own creature name claim states (design §7.4):
+        // the anchoring — bounded on both sides by literal text, one bare word, unable
+        // to reach past its own slot — is what justifies the claim, not that the
+        // specific name is read into structure. Unlike a genuinely permissive
+        // subexpression, \w+ here cannot swallow an adjacent unmodelled clause, so
+        // there is no unread group to exclude — the same shape as
+        // MultiattackSubjectPattern's own claim call.
+        coverage.Claim(AlternativeDamagePattern(), match, "attack.alternative_damage");
+
+        return new AlternativeAttackDamage(dice, type, average, condition);
     }
 
     private static bool LooksLikeContinuation(string text, int from, int matchIndex) =>
@@ -353,4 +426,29 @@ internal static partial class StatBlockLineGrammar
     // the SRD prints as "Hit: 1 Piercing damage" with no dice and no average.
     [GeneratedRegex(@"(?<average>\d+)\s*(?:\((?<dice>\d+d\d+(?:\s*[+-]\s*\d+)?)\))?\s*(?<type>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)\s+damage")]
     private static partial Regex DamagePattern();
+
+    // "or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the attack
+    // roll", "or 2 (1d4) Piercing damage if the swarm is Bloodied", "or 6 (1d8 + 2)
+    // Piercing damage if the target is Bloodied" (#371). The damage half repeats
+    // DamagePattern's own literal shape rather than reusing it, because this claim
+    // covers the leading ", or " and the trailing "if…" condition too — a single
+    // combined match, claimed whole by ReadAlternative, keyed on which of the three
+    // condition branches matched. Anchored at the ready-made choice of exactly three
+    // literal condition phrases: nothing wider is attempted, so a charge condition
+    // ("if the goat moved 20+ feet straight toward the target immediately before the
+    // hit") simply fails to match and its clause falls to residue, per this method's
+    // own remarks. The Advantage branch's creature name is a bare \w+ — out of the
+    // wildcard convention's scope regardless (design §2.3), and claimed anyway: see
+    // ReadAlternative's own remarks for why, the same reasoning
+    // MultiattackSubjectPattern's creature-name claim already states.
+    [GeneratedRegex(
+        @",\s*or\s+(?<average>\d+)\s*(?:\((?<dice>\d+d\d+(?:\s*[+-]\s*\d+)?)\))?\s*" +
+        @"(?<type>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)" +
+        @"\s+damage\s+if\s+(?:" +
+        @"(?<bloodiedSelf>the\s+swarm\s+is\s+Bloodied)" +
+        @"|(?<bloodiedTarget>the\s+target\s+is\s+Bloodied)" +
+        @"|the\s+(?<subject>\w+)\s+had\s+Advantage\s+on\s+the\s+attack\s+roll" +
+        @")",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex AlternativeDamagePattern();
 }
