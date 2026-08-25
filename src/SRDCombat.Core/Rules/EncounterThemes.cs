@@ -77,7 +77,7 @@ public enum EncounterTheme
 /// <c>EncounterThemeTests.TheMapCoversTheTraditionalPoolExactly</c> holds the map and
 /// the pool equal in both directions, so a demoted name has to leave here too — and a
 /// re-admitted one has to return, themes restored from this history. Five did, on
-/// 2026-08-25: Blood Hawk, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects
+/// 2026-08-24: Blood Hawk, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects
 /// and Swarm of Rats all structure and execute their printed "or…if" alternative
 /// damage tier now (#371 — a Bloodied swarm's bite, the Blood Hawk's bigger hit
 /// against a Bloodied target), which was each one's whole remaining gap. The other

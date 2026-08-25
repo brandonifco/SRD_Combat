@@ -217,10 +217,27 @@ public sealed record AttackDamage(
 /// replacing it — the goblins' Advantage-conditional bonus damage is dealt alongside
 /// the base hit, never instead of it. An "or…if" alternative and a "plus…if" rider
 /// read as opposite grammar and this type keeps them opposite in the model: printed
-/// "or" replaces, printed "plus" adds. Every printing in the corpus carries exactly
-/// one base damage component ahead of its alternative, so "replaces the whole list"
-/// and "replaces the one component it follows" coincide today; there is no printed
-/// case combining a "plus" rider with an "or" alternative to decide between them.
+/// "or" replaces, printed "plus" adds.
+/// <para>
+/// <b>The corpus does print two entries combining both</b> — an em-dash-joined
+/// "or…if…plus" chain the design doc counts among its twelve or-tiers (not ten;
+/// docs/2026-08-24-span-accounting-design.md §11.1), and #371 leaves both as honest
+/// residue rather than structuring them: the Mimic's Bite ("7 (1d8 + 3) Piercing
+/// damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic—plus
+/// 4 (1d8) Acid damage") and Swarm of Venomous Snakes' Bites ("8 (1d8 + 4) Piercing
+/// damage—or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6)
+/// Poison damage"). Both read as: the Piercing component alone alternates on its own
+/// condition, and a second damage type is added unconditionally regardless of which
+/// Piercing tier applies — a Bloodied Swarm of Venomous Snakes deals 6 Piercing
+/// <em>plus</em> 10 Poison, not 6 Piercing alone. That is exactly where "replaces the
+/// whole list" and "replaces the one component it follows" diverge, and this type
+/// only supports the former: <see cref="AttackRules.RollDamage"/> replaces every
+/// component in <see cref="MonsterAttack.Damage"/>, which would silently drop the
+/// unconditional Acid/Poison component were this type pointed at either entry.
+/// Structuring them needs per-component replacement — which single base component
+/// the alternative stands in for, not the attack's damage as a whole — filed as #409
+/// rather than built speculatively here.
+/// </para>
 /// </remarks>
 /// <param name="Amount">The alternative's damage dice.</param>
 /// <param name="Type">The alternative's damage type — always the same type as the base component in the corpus, but read independently rather than assumed.</param>

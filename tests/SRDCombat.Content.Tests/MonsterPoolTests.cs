@@ -40,14 +40,25 @@ public class MonsterPoolTests
         // semantic fixes restore the demoted creatures and #267's fill-ins land. Do
         // not read a future increase as "the bar moved" — it is the pool recovering
         // what the old accounting was silently claiming for it.
+        //
+        // The floor rose 68 -> 73 on 2026-08-25 (#371's PR #408): Blood Hawk, Swarm
+        // of Bats, Swarm of Crawling Claws, Swarm of Insects and Swarm of Rats all
+        // re-entered on the Bloodied alternative-damage tier now structuring and
+        // executing — the ratchet #390's own acceptance criteria requires, so a
+        // floor that never rises again as more of #390's ledger lands has stopped
+        // doing its job. Two of #390's seven shape-1 names stay out: Swarm of
+        // Piranhas (blocked separately by an attack-header Advantage parenthetical)
+        // and Swarm of Venomous Snakes (an em-dash "or…plus" combination #371 leaves
+        // as residue rather than mis-structuring — #409).
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 68,
+            pool.Count >= 73,
             $"The tier-1 pool has fallen to {pool.Count} monsters; it was 75 before the 2026-08-24 " +
-            "span-accounting regeneration (#382), 81 when the genre cut landed (2026-08-20, " +
-            "TraditionalFoes), 116 before that cut, and 131 before #52 dropped the creatures the " +
-            "SRD prices as equipment and #75 dropped the ones with nowhere to fight.");
+            "span-accounting regeneration (#382), 68 before #371's alternative-damage restorations " +
+            "(2026-08-25, PR #408), 81 when the genre cut landed (2026-08-20, TraditionalFoes), 116 " +
+            "before that cut, and 131 before #52 dropped the creatures the SRD prices as equipment " +
+            "and #75 dropped the ones with nowhere to fight.");
     }
 
     [Fact]
