@@ -367,7 +367,8 @@ they change every fight's outcome, so the full ranges run regardless.
 
 ## 12. Slices and sequencing
 
-Filed as issues, one concern each, in dependency order. Phase: **F2-feel** for slices
+Filed as issues, one concern each, in dependency order: S1 #433, S2 #435, S3 #436,
+S4 #437, S5 #438, S6 #439, S7 #440. Phase: **F2-feel** for slices
 1–6 — Brandon's verdict is a feel complaint about what is on screen, this work is what
 F2 exists for, and it pairs with F2's foresight work (threat marking and path preview
 mean more on boards worth previewing). The per-cycle site weighting and any
