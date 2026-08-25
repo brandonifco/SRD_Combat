@@ -64,22 +64,53 @@ public enum CoverDegree
 /// <para>
 /// The attacker's and target's own squares never provide cover: the segment starts and
 /// ends in their interiors, and "behind" needs something in between. Once a creature can
-/// stand in several squares that means its whole <em>space</em> — a Large creature does
-/// not take cover behind its own shoulder.
+/// stand in several squares that means its whole <em>space</em>, for the printed reason in
+/// the next paragraph's third bullet.
 /// </para>
 /// <para>
-/// <b>A multi-square target is judged square by square, and the attacker gets the best of
-/// it</b> — a stated reading (#429), because the printed table grades cover by how much of
-/// the target is obscured and a body that sticks out past the wall is a body you can hit.
-/// So <see cref="AgainstSpace"/> evaluates the ordinary computation for each square of the
-/// target's space and keeps the degree most favourable to the attacker; Total Cover
-/// refuses the targeting only when <em>every</em> square of the space is totally covered.
-/// The same rule is applied to the attacker's own space rather than to its anchor square
-/// alone, which is this engine's extension of the reading rather than #429's text: an
-/// attacker shoots from the body it has, and measuring from one corner of it would be the
-/// occupies-but-anchored reading that printed page 13 forbids for distance. A multi-square
-/// creature as a cover <em>source</em> needs no new rule — all of its squares feed the
-/// computation, so it obstructs whatever its body obstructs.
+/// <b>Between two spaces, an attack resolves along the best clear line — a stated
+/// interpretation</b> (#429; designer ruling, 2026-08-25). <see cref="AgainstSpace"/> runs
+/// the computation above for every pair of attacker square and target square, keeps the
+/// degree most favourable to the attacker, and lets neither party's own squares intervene.
+/// Total Cover refuses the targeting only when <em>every</em> pair is totally covered. One
+/// rule, no anchors on either side — the same space-to-space geometry the Ranges sentence
+/// fixes for distance.
+/// </para>
+/// <para>
+/// It is an interpretation rather than a divergence because <b>SRD 5.2.1 prints no
+/// cover-geometry procedure at all</b> — the 2014 corner-picking method was not carried
+/// into this document — so there is no printed sentence to contradict and the grid has to
+/// be given a method, exactly as <see cref="AreaTargeting"/> is. Three printed things fix
+/// which method:
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <b>Ranges is symmetric.</b> "Count squares from a square adjacent to one of them and
+/// stop counting in the space of the other one." Either party may be the counting start
+/// and neither has a privileged anchor — the same sentence that forbids anchored distance,
+/// so an anchored cover origin re-imports the identical contradiction. An Ogre whose reach
+/// is measured from its whole space but whose cover line is judged from one corner of it
+/// would come out "in reach but covered" while the near shoulder of its own body plainly
+/// holds the clean line: a half-anchored rule, which is the shape of the Goblin bug.
+/// </item>
+/// <item>
+/// <b>"A target can benefit from cover only when an attack or other effect originates on
+/// the opposite side of the cover."</b> The attack originates from the attacker, and the
+/// attacker <em>is</em> its whole space — "a creature's space is the area that it
+/// effectively controls in combat and the area it needs to fight effectively". If any
+/// square of that space is not on the opposite side of the cover, the attack can originate
+/// there, which is exactly the most-favourable evaluation.
+/// </item>
+/// <item>
+/// <b>The Half Cover row reads "another creature or an object".</b> A creature is never an
+/// obstacle to its own attack, and a target's own squares are what is being hit rather
+/// than what intervenes — so neither space contributes cover against the attack between
+/// them, and a Large creature does not take cover behind its own shoulder.
+/// </item>
+/// </list>
+/// <para>
+/// A multi-square creature as a cover <em>source</em> needs no new rule: all of its squares
+/// feed the computation, so it obstructs whatever its body obstructs.
 /// </para>
 /// </remarks>
 public static class CoverRules
