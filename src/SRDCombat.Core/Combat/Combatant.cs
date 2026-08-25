@@ -166,7 +166,50 @@ public sealed record CombatantFeatures(
 /// <param name="InitiativeBonus">The bonus added to the initiative roll.</param>
 /// <param name="Abilities">Ability scores and saving throw bonuses.</param>
 /// <param name="ProficiencyBonus">The creature's proficiency bonus.</param>
-/// <param name="Size">Creature size.</param>
+/// <param name="Size">
+/// <para>
+/// Creature size — the printed category, which this engine currently reads as a
+/// category and never as an area.
+/// </para>
+/// <para>
+/// <b>The interim reading, stated so it is not silent: every creature occupies exactly
+/// one square, whatever this says.</b> The SRD's Creature Size and Space table (printed
+/// page 14) gives a Large creature four squares (2 by 2), a Huge one nine (3 by 3) and a
+/// Gargantuan one sixteen (4 by 4). None of that is modelled: an Ogre stands in one
+/// square, is threatened as one square, blocks one square and is spawned into one square.
+/// Nothing downstream reads this field as a footprint. Seven paths read a creature as a
+/// point, and they are separate paths rather than one: <c>GridPosition.DistanceFeetTo</c>
+/// measures anchor to anchor; <c>MovementRules.FindPath</c> tests a single square for
+/// passability and keys occupancy by a single position; <c>Encounter.ClearSharedSquares</c>
+/// compares single positions; <c>EncounterFactory</c> reserves one spawn square per
+/// creature; <see cref="Rules.CoverRules.Between"/> draws its line anchor to anchor, so a
+/// one-square pillar can give a Large creature Total Cover; area membership
+/// (<c>Encounter.CreaturesIn</c>, and the ally check in <c>SimpleTacticsPolicy</c>) asks
+/// only whether the anchor square is in the area, so a Fireball covering three of an
+/// Ogre's four squares misses it; and <c>spell.no_room_to_stand</c> compares positions for
+/// equality rather than testing overlap.
+/// </para>
+/// <para>
+/// <b>That list is illustrative, not a checklist.</b> The authoritative inventory of what
+/// must change is #429's impact map, which is maintained against the code; anyone working
+/// a slice reads that rather than this paragraph, because a list embedded in a comment is
+/// exactly the thing that rots into a false all-clear.
+/// </para>
+/// <para>
+/// This is a divergence from print rather than a reading of it, and it is worth naming
+/// because a fifth of the tier-1 pool — fourteen Large creatures and one Huge, measured
+/// 2026-08-25 — fights smaller than the book says it does. Board control is what size
+/// buys, and none of it is bought today. #429 is the work that closes it, footprint by
+/// footprint; this paragraph is deleted by the slice that makes it untrue.
+/// </para>
+/// <para>
+/// The field is not inert in the meantime, and this note does not claim it is: the
+/// printed size <em>gates</em> are modelled, because print writes them as gates rather
+/// than as area — <see cref="AppliedCondition.MaximumTargetSize"/> refuses a Prone or
+/// grapple rider aimed at a creature too big for it, and <see cref="Rules.ConditionRules"/>
+/// reads the same field. What is missing is the space, not the category.
+/// </para>
+/// </param>
 /// <param name="DamageResponses">Resistances, immunities and vulnerabilities by damage type.</param>
 /// <param name="ConditionImmunities">Conditions the creature cannot be given.</param>
 /// <param name="Attacks">Every attack the creature can make.</param>
