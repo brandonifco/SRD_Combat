@@ -73,6 +73,7 @@ client/assets/sprites/*
 !client/assets/sprites/Goblin_Minion/
 !client/assets/sprites/Green_Dragon_Wyrmling/
 !client/assets/sprites/Guard/
+!client/assets/sprites/Guard_Captain/
 !client/assets/sprites/Hippogriff/
 !client/assets/sprites/Hobgoblin_Captain/
 !client/assets/sprites/Hobgoblin_Warrior/
@@ -100,6 +101,7 @@ client/assets/sprites/*
 !client/assets/sprites/Tough/
 !client/assets/sprites/Troll_Limb/
 !client/assets/sprites/Violet_Fungus/
+!client/assets/sprites/Warrior_Infantry/
 !client/assets/sprites/Warrior_Veteran/
 !client/assets/sprites/White_Dragon_Wyrmling/
 !client/assets/sprites/Winter_Wolf/

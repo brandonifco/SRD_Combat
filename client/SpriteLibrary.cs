@@ -4,28 +4,38 @@ using SRDCombat.Core.Combat;
 namespace SRDCombat.Viewer;
 
 /// <summary>
-/// The token art: animated pixel-art sprites for the combatants the free Craftpix packs
-/// cover, loaded at runtime from <c>assets/sprites/</c> under the project directory.
+/// The token art: sprites for the combatants, loaded at runtime from
+/// <c>assets/sprites/</c> under the project directory.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The directory is deliberately not in the repository.</b> Craftpix's free license
-/// permits using the art in a game but not redistributing the source assets, and this
-/// is a public repo — the same line the SRD PDF sits behind. A machine without the
-/// directory gets an empty library, every lookup returns null, and the screens draw the
+/// <b>Almost everything shipped today is Brandon's own committed still</b> — one
+/// hand-drawn frame per pose, run through the committed pipeline
+/// (<c>tools/asset_pipeline/master_to_sprite.py</c>, #294) and palette-mapped, rather
+/// than an animated pack. The loader itself is still pack-agnostic: it reads whatever
+/// strips a mapped folder holds, multi-frame or single. That generality used to matter
+/// because most of the roster wore the free Craftpix character packs; as of #295 no
+/// entry in either map below points at one any more (the last, gitignored-only
+/// mappings — the eight remaining party classes, and Goblin Boss/Gladiator/Knight/
+/// Mage/Archmage/Priest/Priest Acolyte — were removed rather than left pointing at a
+/// folder that can never ship, per #295's acceptance criteria). Craftpix's free
+/// license permits using the art in a game but not redistributing the source assets,
+/// so a folder like that exists only on a machine that downloaded the pack by hand and
+/// would never appear in a distributed build regardless of what the maps below say.
+/// The loader's fallback still holds for any future gap: a directory that isn't there
+/// (Craftpix-sourced or otherwise) gets skipped silently, and the screens draw the
 /// circle-and-letter tokens they always drew. Nothing here is load-bearing.
 /// </para>
 /// <para>
 /// <b>The two maps are curated, and absence is honest.</b> A monster gets art only when
-/// the pack genuinely depicts it — a Goblin Warrior is a goblin, a Skeleton a skeleton —
-/// and a name with no plausible match stays a circle rather than wearing the wrong
-/// body. The dragons are the stated example: the Craftpix packs held only two colours,
-/// so a red sprite labelled "Green Dragon Wyrmling" would have been the display lying
-/// about the one thing a player can check against the log — which is why all five
-/// chromatic wyrmlings (Black, Blue, Green, Red, White) now wear Brandon's own stills
-/// instead, and the five metallic wyrmlings stay circles for want of a drawing. Party
-/// art maps from the class name (<c>CombatantFeatures.ClassName</c>, the road
-/// TurnBanner already uses).
+/// a real drawing depicts it, and a name with no drawing stays a circle rather than
+/// wearing the wrong body. The dragons are the stated example: the old Craftpix packs
+/// held only two colours, so a red sprite labelled "Green Dragon Wyrmling" would have
+/// been the display lying about the one thing a player can check against the log —
+/// which is why all five chromatic wyrmlings (Black, Blue, Green, Red, White) wear
+/// Brandon's own stills instead, and the five metallic wyrmlings stay circles for want
+/// of a drawing. Party art maps from the class name
+/// (<c>CombatantFeatures.ClassName</c>, the road TurnBanner already uses).
 /// </para>
 /// </remarks>
 public sealed class SpriteLibrary
@@ -96,7 +106,11 @@ public sealed class SpriteLibrary
         Figure Figure,
         int Repose);
 
-    /// <summary>Party art by class name — the SRD prints twelve, the packs cover them all.</summary>
+    /// <summary>
+    /// Party art by class name. The SRD prints twelve; four ship drawn art today and
+    /// the other eight are unmapped (see the removal note below), so those eight draw
+    /// the circle-and-letter token until Brandon draws them.
+    /// </summary>
     private static readonly Dictionary<string, string> ByClassName = new(StringComparer.Ordinal)
     {
         // Hand-drawn sets — single frames per pose (four, five with a Cast — the
@@ -111,17 +125,25 @@ public sealed class SpriteLibrary
         // it clusters per image rather than across a character's poses the way
         // PR #238's reverted pass did.
         ["Fighter"] = "Fighter_Drawn",
-        ["Paladin"] = "Knight_2",
         ["Barbarian"] = "Barbarian_Drawn",
-        ["Monk"] = "Gladiator_2",
         ["Rogue"] = "Rogue_Drawn",
-        ["Bard"] = "Elf_2",
-        ["Ranger"] = "Elf_3",
         ["Cleric"] = "Cleric_Drawn",
-        ["Druid"] = "Priests_3",
-        ["Wizard"] = "Wanderer Magican",
-        ["Sorcerer"] = "Fire Wizard",
-        ["Warlock"] = "Lightning Mage",
+
+        // Paladin, Monk, Bard, Ranger, Druid, Wizard, Sorcerer and Warlock stood here
+        // mapped to Craftpix folders (Knight_2, Gladiator_2, Elf_2, Elf_3, Priests_3,
+        // "Wanderer Magican", "Fire Wizard", "Lightning Mage") until #295. Every one of
+        // those folders is gitignored — Craftpix's free license permits using the art
+        // in a game but forbids redistributing it, so the folder exists only on a
+        // machine that downloaded the pack by hand (client/README.md's "Sprite art"
+        // section). A mapping whose only target can never be committed is not a real
+        // fallback: `Directory.Exists` already turns a missing folder into a circle at
+        // runtime, but leaving the entry in source claims these eight classes have art
+        // when no shipped build — the one a stranger downloads per the Definition of
+        // Finished — ever will. Removed rather than left pointing at a folder that
+        // will never ship, per #295's "re-point at shipped art or explicitly fall
+        // back" acceptance criterion: no drawn replacement exists yet for any of the
+        // eight, so explicit fallback (no entry, an honest circle) is what's left.
+        // Add the entry back, pointing at a committed folder, the day one is drawn.
     };
 
     /// <summary>
@@ -131,11 +153,12 @@ public sealed class SpriteLibrary
     private static readonly Dictionary<string, string> ByMonsterName = new(StringComparer.Ordinal)
     {
         // The three printed goblins told apart by build: the Minion and Warrior wear
-        // Brandon's drawings (the Minion's arrived with the second 2026-08-21 batch),
-        // and the Boss keeps its armoured pack until a drawing takes the slot.
+        // Brandon's drawings. The Boss mapped to the Craftpix "Goblin_2" pack until
+        // #295 removed it — that folder is gitignored (see the ByClassName removal
+        // note above for why a Craftpix-only mapping doesn't survive #295) and no
+        // drawing exists yet, so the Boss is an honest circle until one does.
         ["Goblin Minion"] = "Goblin_Minion",
         ["Goblin Warrior"] = "Goblin_Drawn",
-        ["Goblin Boss"] = "Goblin_2",
 
         // Hand-drawn single frames rather than animated packs, added 2026-08-16 because
         // these four are among the creatures most often drawn and every one of them was
@@ -218,16 +241,24 @@ public sealed class SpriteLibrary
         ["Skeleton"] = "Skeleton",
         ["Zombie"] = "Zombie",
         ["Ogre Zombie"] = "Ogre_Zombie",
-        ["Gladiator"] = "Gladiator_3",
-        ["Knight"] = "Knight_3",
-        ["Mage"] = "Lightning Mage",
-        ["Archmage"] = "Lightning Mage",
-        ["Priest"] = "Priests_2",
-        ["Priest Acolyte"] = "Priests_3",
+        // Gladiator, Knight, Mage, Archmage, Priest and Priest Acolyte mapped to
+        // Craftpix folders (Gladiator_3, Knight_3, "Lightning Mage" twice over,
+        // Priests_2, Priests_3) until #295 removed them for the same reason as the
+        // ByClassName removals above: those folders are gitignored and will never
+        // ship, and no drawing exists yet for any of the six, so they render as
+        // circles now rather than silently depending on packs a stranger's build
+        // will never have.
         ["Cultist"] = "Cultist",
         ["Scout"] = "Scout_Human",
         ["Red Dragon Wyrmling"] = "Red_Dragon_Wyrmling",
         ["White Dragon Wyrmling"] = "White_Dragon_Wyrmling",
+
+        // #295: two more of Brandon's stills, run through the committed pipeline
+        // (tools/asset_pipeline/master_to_sprite.py) at its default parameters —
+        // both were 100% palette-conformant on the first pass, so neither needed a
+        // SPRITE_TARGETS override.
+        ["Guard Captain"] = "Guard_Captain",
+        ["Warrior Infantry"] = "Warrior_Infantry",
     };
 
     private readonly Dictionary<string, CharacterArt> _bySheetFolder;

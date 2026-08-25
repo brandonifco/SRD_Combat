@@ -172,21 +172,28 @@ fit. That keeps every pack at the same pixel size — they are drawn at the same
 resolution — so a goblin reads shorter than an orc because the artist drew it shorter.
 A death animation settles on the last frame that is still a body, not the final one:
 every pack ends by sinking or fading the corpse away, and holding that frame left a
-killed goblin as a smear on the floor. The art is the free Craftpix character packs, and the maps
-are curated in `SpriteLibrary`: party art by class name, monster art by **exact**
-stat-block name, and anything unmapped keeps the circle-and-letter token — a red
-dragon sprite on a Green Dragon Wyrmling would be the display lying, which is why the
-wyrmlings stayed circles until Brandon drew all five in their printed colours
-(2026-08-21); the pack dragons are unmapped now.
+killed goblin as a smear on the floor. Almost everything shipped today is Brandon's own
+still, run through the committed pipeline; the maps are curated in `SpriteLibrary`:
+party art by class name, monster art by **exact** stat-block name, and anything
+unmapped keeps the circle-and-letter token — a red dragon sprite on a Green Dragon
+Wyrmling would be the display lying, which is why the wyrmlings stayed circles until
+Brandon drew all five in their printed colours (2026-08-21).
 
-**The PNGs are deliberately not in the repository.** Craftpix's free license permits
-using the art in a game but not redistributing the assets, and this repo is public —
-the same line the SRD PDF sits behind. To light the sprites up, download the packs
-from [craftpix.net](https://craftpix.net/freebies/) (the free 2D character sets still
-in use: Knight, Gladiator, Elf, Priest, Goblin, and the three mages — Orc, Skeleton,
-Zombie and Dragon are no longer needed, replaced by Brandon's own committed stills or,
-for Dragon, unmapped entirely) and unpack them so each character's folder of animation
-strips sits at:
+**The free Craftpix character packs are retired from the shipped roster as of #295.**
+Every pool name that once mapped to one — the eight party classes without a drawing
+yet (Paladin, Monk, Bard, Ranger, Druid, Wizard, Sorcerer, Warlock) and seven monster
+names (Goblin Boss, Gladiator, Knight, Mage, Archmage, Priest, Priest Acolyte) — had
+its mapping removed rather than left pointing at a folder that can never ship: Craftpix's
+free license permits using the art in a game but not redistributing the assets, and
+this repo is public — the same line the SRD PDF sits behind — so a release build never
+carried that art regardless of what the source said. Those fifteen render as circles
+until Brandon draws them. The loader itself still reads whichever strips a mapped
+folder holds, multi-frame or single, so nothing stops a future pack-based mapping from
+working the way the old ones did — download a free set from
+[craftpix.net](https://craftpix.net/freebies/), unpack it, and point a `SpriteLibrary`
+entry at its folder — but the maps committed today hold none, and each folder is still
+gitignored so it never becomes load-bearing for anyone who hasn't downloaded it
+themselves. A character's folder of animation strips, drawn or packaged, sits at:
 
 ```
 client/assets/sprites/<Character>/Idle.png (Walk.png, Attack.png, Hurt.png, Dead.png)
@@ -195,20 +202,21 @@ client/assets/sprites/<Character>/Idle.png (Walk.png, Attack.png, Hurt.png, Dead
 `Idle.png` is the only one a character cannot do without — it is what a standing token
 shows, and what the figure is measured from. Everything else degrades on its own: no
 `Attack.png` and that creature never swings, no `Hurt.png` and it never flinches, no
-`Dead.png` (the Priest packs ship neither) and it lies its idle frame on its back.
+`Dead.png` (true of every single-frame drawn folder, and of the old Priest packs
+before they were retired) and it lies its idle frame on its back.
 
 **A single drawing is a complete token.** A strip is read as frames of `height × height`
 across, so a sheet *narrower* than it is tall is not a strip at all — it is one standing
 figure, and it is padded out to a square frame rather than rejected. That is the whole
 setup for hand-drawn art of one creature: drop a single PNG in as `Idle.png` and the
 creature stops being a lettered circle. It will not animate, and it does not need to —
-every pose already falls back to `Idle` when its own strip is missing. Seventy
-creatures ship this way as of 2026-08-21's second batch — it began with four (Gnoll
-Warrior, Black Bear, Brown Bear, Giant Wasp), chosen because they were among the
-most-drawn monsters in the pool and every one was a bare circle beside a party in
-full animation, and Brandon has been retiring circles batch by batch since; the
-Skeleton, Zombie and Cultist now wear his drawings rather than the packs that once
-stood in for them. These
+every pose already falls back to `Idle` when its own strip is missing.
+Seventy-two creatures ship this way as of 2026-08-25's batch (#295: Guard Captain and
+Warrior Infantry) — it began with four (Gnoll Warrior, Black Bear, Brown Bear, Giant
+Wasp), chosen because they were among the most-drawn monsters in the pool and every
+one was a bare circle beside a party in full animation, and Brandon has been retiring
+circles batch by batch since; the Skeleton, Zombie and Cultist now wear his drawings
+rather than the packs that once stood in for them. These
 travel with the repo: the drawings are the project's own, so their folders are
 whitelisted in `.gitignore` where the packs are not.
 
