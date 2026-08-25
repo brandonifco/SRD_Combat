@@ -122,6 +122,16 @@ public sealed record MonsterAttack(
     /// print no embedded save.
     /// </summary>
     public EmbeddedAttackSave? EmbeddedSave { get; init; }
+
+    /// <summary>
+    /// A conditional damage tier that replaces <see cref="Damage"/> whole when its own
+    /// condition holds (#371) — the Chimera's Bite, the Blood Hawk's Beak, every
+    /// Bloodied-conditioned swarm's bite or sting. Null for the overwhelming majority
+    /// of attacks, which print no alternative tier. See
+    /// <see cref="AlternativeAttackDamage"/>'s own remarks for why this is not simply
+    /// another <see cref="AttackDamage"/> in <see cref="Damage"/>.
+    /// </summary>
+    public AlternativeAttackDamage? Alternative { get; init; }
 }
 
 /// <summary>
@@ -147,12 +157,32 @@ public sealed record EmbeddedAttackSave(SaveEffect Save, CreatureType? ExcludedT
 /// <remarks>
 /// Most extra damage is unconditional — a Flame Whip simply deals Force damage plus
 /// Fire damage. A few attacks qualify theirs, and treating those as unconditional makes
-/// the creature hit measurably harder than the SRD says it does.
+/// the creature hit measurably harder than the SRD says it does. The same enum also
+/// gates <see cref="AlternativeAttackDamage"/> (#371) — a different shape of
+/// conditional entirely (see that type's own remarks for the distinction), but the
+/// same closed set of conditions this engine can check at the moment an attack hits.
 /// </remarks>
 public enum AttackDamageCondition
 {
-    /// <summary>The goblins' "plus 2 (1d4) damage if the attack roll had Advantage".</summary>
+    /// <summary>
+    /// The goblins' "plus 2 (1d4) damage if the attack roll had Advantage"; also the
+    /// Chimera's "or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the
+    /// attack roll" (#371) — worded differently but the same printed rule, checked the
+    /// same way at resolution: <c>AttackRoll.Roll.Mode == RollMode.Advantage</c>.
+    /// </summary>
     AttackRollHadAdvantage,
+
+    /// <summary>
+    /// The attacking creature's own Bloodied state — the swarms' "or N (dice) damage
+    /// if the swarm is Bloodied" (#371). Checked against the attacker, not the target.
+    /// </summary>
+    AttackerIsBloodied,
+
+    /// <summary>
+    /// The target's Bloodied state — the Blood Hawk's Beak: "or 6 (1d8 + 2) Piercing
+    /// damage if the target is Bloodied" (#371).
+    /// </summary>
+    TargetIsBloodied,
 }
 
 /// <summary>
@@ -175,6 +205,49 @@ public sealed record AttackDamage(
     DamageType Type,
     int PrintedAverage,
     AttackDamageCondition? Condition = null);
+
+/// <summary>
+/// A damage tier that <em>replaces</em> an attack's whole <see cref="MonsterAttack.Damage"/>
+/// when <see cref="Condition"/> holds — "Hit: 11 (2d6 + 4) Piercing damage, or 18
+/// (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll" (#371).
+/// </summary>
+/// <remarks>
+/// Deliberately a separate shape from <see cref="AttackDamage.Condition"/>, which
+/// <em>adds</em> a rider component on top of unconditional damage rather than
+/// replacing it — the goblins' Advantage-conditional bonus damage is dealt alongside
+/// the base hit, never instead of it. An "or…if" alternative and a "plus…if" rider
+/// read as opposite grammar and this type keeps them opposite in the model: printed
+/// "or" replaces, printed "plus" adds.
+/// <para>
+/// <b>The corpus does print two entries combining both</b> — an em-dash-joined
+/// "or…if…plus" chain the design doc counts among its twelve or-tiers (not ten;
+/// docs/2026-08-24-span-accounting-design.md §11.1), and #371 leaves both as honest
+/// residue rather than structuring them: the Mimic's Bite ("7 (1d8 + 3) Piercing
+/// damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic—plus
+/// 4 (1d8) Acid damage") and Swarm of Venomous Snakes' Bites ("8 (1d8 + 4) Piercing
+/// damage—or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6)
+/// Poison damage"). Both read as: the Piercing component alone alternates on its own
+/// condition, and a second damage type is added unconditionally regardless of which
+/// Piercing tier applies — a Bloodied Swarm of Venomous Snakes deals 6 Piercing
+/// <em>plus</em> 10 Poison, not 6 Piercing alone. That is exactly where "replaces the
+/// whole list" and "replaces the one component it follows" diverge, and this type
+/// only supports the former: <see cref="AttackRules.RollDamage"/> replaces every
+/// component in <see cref="MonsterAttack.Damage"/>, which would silently drop the
+/// unconditional Acid/Poison component were this type pointed at either entry.
+/// Structuring them needs per-component replacement — which single base component
+/// the alternative stands in for, not the attack's damage as a whole — filed as #409
+/// rather than built speculatively here.
+/// </para>
+/// </remarks>
+/// <param name="Amount">The alternative's damage dice.</param>
+/// <param name="Type">The alternative's damage type — always the same type as the base component in the corpus, but read independently rather than assumed.</param>
+/// <param name="PrintedAverage">The average the SRD prints in front of the alternative's dice.</param>
+/// <param name="Condition">What must be true for the alternative to replace the base damage.</param>
+public sealed record AlternativeAttackDamage(
+    DiceExpression Amount,
+    DamageType Type,
+    int PrintedAverage,
+    AttackDamageCondition Condition);
 
 /// <summary>A special sense and how far it reaches.</summary>
 public sealed record MonsterSense(SenseType Type, int RangeFeet);

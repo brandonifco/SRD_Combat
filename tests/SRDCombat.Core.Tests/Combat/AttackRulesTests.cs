@@ -263,13 +263,159 @@ public class AttackRulesTests
         var plain = AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target);
         Assert.True(plain.Hit);
         Assert.Equal(RollMode.Normal, plain.Roll.Mode);
-        Assert.Single(AttackRules.RollDamage(new ScriptedRandomSource(3), attack, plain));
+        Assert.Single(AttackRules.RollDamage(new ScriptedRandomSource(3), attack, plain, attacker, target));
 
         // The same hit with Advantage: both components are rolled.
         target.AddCondition(ConditionType.Prone);
         var advantaged = AttackRules.Resolve(new ScriptedRandomSource(15, 9), attacker, attack, target);
         Assert.Equal(RollMode.Advantage, advantaged.Roll.Mode);
-        Assert.Equal(2, AttackRules.RollDamage(new ScriptedRandomSource(3, 2), attack, advantaged).Count);
+        Assert.Equal(2, AttackRules.RollDamage(new ScriptedRandomSource(3, 2), attack, advantaged, attacker, target).Count);
+    }
+
+    [Fact]
+    public void AlternativeDamage_ReplacesTheBaseComponentInsteadOfJoiningIt()
+    {
+        // The Chimera's Bite (#371), simplified to one round trip: "Hit: 11 (2d6 + 4)
+        // Piercing damage, or 18 (4d6 + 4) Piercing damage if the chimera had
+        // Advantage on the attack roll." Unlike the goblins' "plus…if" rider above,
+        // this is a replacement — the alternative's own damage stands in for the base
+        // component whole, never alongside it.
+        var attack = new CombatAttack(
+            "Bite",
+            AttackKind.Melee,
+            7,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("2d6 + 4"), DamageType.Piercing, 11)])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("4d6 + 4"),
+                DamageType.Piercing,
+                18,
+                AttackDamageCondition.AttackRollHadAdvantage),
+        };
+
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        // An ordinary hit: exactly the base component, never the alternative alongside it.
+        var plain = AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target);
+        Assert.Equal(RollMode.Normal, plain.Roll.Mode);
+        var plainDamage = AttackRules.RollDamage(new ScriptedRandomSource(3, 4), attack, plain, attacker, target);
+        var plainComponent = Assert.Single(plainDamage);
+        Assert.Equal(11, plainComponent.Component.PrintedAverage);
+
+        // With Advantage: the alternative replaces the base component — one
+        // component rolled, not two, and it is the alternative's own dice.
+        target.AddCondition(ConditionType.Prone);
+        var advantaged = AttackRules.Resolve(new ScriptedRandomSource(15, 9), attacker, attack, target);
+        Assert.Equal(RollMode.Advantage, advantaged.Roll.Mode);
+        var advantagedDamage = AttackRules.RollDamage(new ScriptedRandomSource(3, 4, 2, 1), attack, advantaged, attacker, target);
+        var advantagedComponent = Assert.Single(advantagedDamage);
+        Assert.Equal(18, advantagedComponent.Component.PrintedAverage);
+    }
+
+    [Fact]
+    public void AlternativeDamage_AttackerIsBloodiedChecksTheAttackerNotTheTarget()
+    {
+        // A Swarm of Rats' Bites (#371): "Hit: 5 (2d4) Piercing damage, or 2 (1d4)
+        // Piercing damage if the swarm is Bloodied." The condition reads the
+        // attacker's own Hit Points, not the target's — halved, wounded prey does not
+        // make the swarm bite softer.
+        var attack = new CombatAttack(
+            "Bites",
+            AttackKind.Melee,
+            2,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("2d4"), DamageType.Piercing, 5)])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("1d4"),
+                DamageType.Piercing,
+                2,
+                AttackDamageCondition.AttackerIsBloodied),
+        };
+
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        Assert.False(attacker.IsBloodied);
+        var full = AttackRules.RollDamage(
+            new ScriptedRandomSource(3, 3),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target),
+            attacker,
+            target);
+        Assert.Equal(5, Assert.Single(full).Component.PrintedAverage);
+
+        // Wound the attacker below half its own maximum — the target is untouched.
+        DamageRules.Apply(
+            attacker,
+            attacker.Stats.MaximumHitPoints - attacker.Stats.MaximumHitPoints / 2,
+            DamageType.Bludgeoning);
+        Assert.True(attacker.IsBloodied);
+        Assert.False(target.IsBloodied);
+
+        var halved = AttackRules.RollDamage(
+            new ScriptedRandomSource(2),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target),
+            attacker,
+            target);
+        Assert.Equal(2, Assert.Single(halved).Component.PrintedAverage);
+    }
+
+    [Fact]
+    public void AlternativeDamage_TargetIsBloodiedChecksTheTargetNotTheAttacker()
+    {
+        // The Blood Hawk's Beak (#371): "Hit: 4 (1d4 + 2) Piercing damage, or 6
+        // (1d8 + 2) Piercing damage if the target is Bloodied." The opposite reading
+        // from the swarms above — a wounded target draws the hawk's bigger hit.
+        var attack = new CombatAttack(
+            "Beak",
+            AttackKind.Melee,
+            4,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("1d4 + 2"), DamageType.Piercing, 4)])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("1d8 + 2"),
+                DamageType.Piercing,
+                6,
+                AttackDamageCondition.TargetIsBloodied),
+        };
+
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        Assert.False(target.IsBloodied);
+        var full = AttackRules.RollDamage(
+            new ScriptedRandomSource(3),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target),
+            attacker,
+            target);
+        Assert.Equal(4, Assert.Single(full).Component.PrintedAverage);
+
+        DamageRules.Apply(
+            target,
+            target.Stats.MaximumHitPoints - target.Stats.MaximumHitPoints / 2,
+            DamageType.Bludgeoning);
+        Assert.True(target.IsBloodied);
+        Assert.False(attacker.IsBloodied);
+
+        var bigger = AttackRules.RollDamage(
+            new ScriptedRandomSource(4),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target),
+            attacker,
+            target);
+        Assert.Equal(6, Assert.Single(bigger).Component.PrintedAverage);
     }
 
     [Fact]

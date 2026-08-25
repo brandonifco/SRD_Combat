@@ -7363,13 +7363,17 @@
                 "type": "Piercing",
                 "printedAverage": 11
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "4d6 + 4",
+              "type": "Piercing",
+              "printedAverage": 18,
+              "condition": "AttackRollHadAdvantage"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -9489,7 +9493,13 @@
                 "type": "Necrotic",
                 "printedAverage": 20
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "2d8 + 2",
+              "type": "Necrotic",
+              "printedAverage": 11,
+              "condition": "AttackerIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [
@@ -9498,9 +9508,7 @@
               "maximumTargetSize": "Medium"
             }
           ],
-          "unmodelledClauses": [
-            "or 11 (2d8 + 2) Necrotic damage if the swarm is Bloodied"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 278
@@ -39437,13 +39445,17 @@
                 "type": "Piercing",
                 "printedAverage": 4
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d8 + 2",
+              "type": "Piercing",
+              "printedAverage": 6,
+              "condition": "TargetIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "or 6 (1d8 + 2) Piercing damage if the target is Bloodied"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 345
@@ -46831,13 +46843,17 @@
                 "type": "Piercing",
                 "printedAverage": 5
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d4",
+              "type": "Piercing",
+              "printedAverage": 2,
+              "condition": "AttackerIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "or 2 (1d4) Piercing damage if the swarm is Bloodied"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 361
@@ -46949,13 +46965,17 @@
                 "type": "Poison",
                 "printedAverage": 6
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d4 + 1",
+              "type": "Poison",
+              "printedAverage": 3,
+              "condition": "AttackerIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "or 3 (1d4 + 1) Poison damage if the swarm is Bloodied"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 361
@@ -47065,13 +47085,18 @@
                 "type": "Piercing",
                 "printedAverage": 8
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d4 + 3",
+              "type": "Piercing",
+              "printedAverage": 5,
+              "condition": "AttackerIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "(with Advantage if the target doesn't have all its Hit Points)",
-            "or 5 (1d4 + 3) Piercing damage if the swarm is Bloodied"
+            "(with Advantage if the target doesn't have all its Hit Points)"
           ]
         }
       ],
@@ -47174,13 +47199,17 @@
                 "type": "Piercing",
                 "printedAverage": 5
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d4",
+              "type": "Piercing",
+              "printedAverage": 2,
+              "condition": "AttackerIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "or 2 (1d4) Piercing damage if the swarm is Bloodied"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 362
@@ -47279,13 +47308,17 @@
                 "type": "Piercing",
                 "printedAverage": 5
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d4",
+              "type": "Piercing",
+              "printedAverage": 2,
+              "condition": "AttackerIsBloodied"
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "or 2 (1d4) Piercing damage if the swarm is Bloodied"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Cacophony",

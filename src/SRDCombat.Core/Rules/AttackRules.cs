@@ -296,35 +296,57 @@ public static class AttackRules
     /// component whose condition is not met.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The conditional case is rare but real, and getting it wrong is invisible: a
     /// Goblin Warrior deals "plus 2 (1d4) Slashing damage if the attack roll had
     /// Advantage", and applying that unconditionally makes it hit for half again as much
     /// as the SRD says on every ordinary swing.
+    /// </para>
+    /// <para>
+    /// <see cref="CombatAttack.Alternative"/> (#371) is checked first and, when its own
+    /// condition holds, <em>replaces</em> <paramref name="attack"/>'s whole
+    /// <see cref="CombatAttack.Damage"/> rather than joining it — the printed "or"
+    /// this models is the opposite grammar from "plus". A Bloodied swarm's bite deals
+    /// its lower alternative, never its base damage plus the alternative.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<(AttackDamage Component, DiceRollResult Result)> RollDamage(
         IRandomSource random,
         CombatAttack attack,
-        AttackRoll roll)
+        AttackRoll roll,
+        Combatant attacker,
+        Combatant target)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(roll);
+        ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(target);
 
-        return attack.Damage
-            .Where(component => Applies(component.Condition, roll))
+        var damage = attack.Alternative is { } alternative
+            && Applies(alternative.Condition, roll, attacker, target)
+                ? [new AttackDamage(alternative.Amount, alternative.Type, alternative.PrintedAverage)]
+                : attack.Damage;
+
+        return damage
+            .Where(component => Applies(component.Condition, roll, attacker, target))
             .Select(component => (component, DiceRoller.Roll(random, component.Amount, roll.Critical)))
             .ToArray();
     }
 
     /// <summary>Whether a damage component's condition is satisfied by the roll that hit.</summary>
-    public static bool Applies(AttackDamageCondition? condition, AttackRoll roll)
+    public static bool Applies(AttackDamageCondition? condition, AttackRoll roll, Combatant attacker, Combatant target)
     {
         ArgumentNullException.ThrowIfNull(roll);
+        ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(target);
 
         return condition switch
         {
             null => true,
             AttackDamageCondition.AttackRollHadAdvantage => roll.Roll.Mode == RollMode.Advantage,
+            AttackDamageCondition.AttackerIsBloodied => attacker.IsBloodied,
+            AttackDamageCondition.TargetIsBloodied => target.IsBloodied,
             _ => throw new NotSupportedException($"Unhandled damage condition '{condition}'."),
         };
     }

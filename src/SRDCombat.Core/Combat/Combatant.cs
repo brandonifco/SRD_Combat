@@ -50,6 +50,13 @@ public sealed record CombatAttack(
     public EmbeddedAttackSave? EmbeddedSave { get; init; }
 
     /// <summary>
+    /// A conditional damage tier that replaces <see cref="Damage"/> whole when its own
+    /// condition holds, carried from the stat block — see
+    /// <see cref="AlternativeAttackDamage"/> (#371). Null for nearly every attack.
+    /// </summary>
+    public AlternativeAttackDamage? Alternative { get; init; }
+
+    /// <summary>
     /// True when a hit marks the target so that the next attack roll against it has
     /// Advantage — Guiding Bolt's rider, carried from the spell onto the attack the
     /// cast builds. False for every weapon and every stat-block attack.
@@ -375,6 +382,7 @@ public sealed record CombatantStats(
                 entry.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray())
             {
                 EmbeddedSave = entry.Attack.EmbeddedSave,
+                Alternative = entry.Attack.Alternative,
             })
             .ToArray();
 
@@ -1101,6 +1109,13 @@ public sealed class Combatant
 
     /// <summary>True when the creature is at 0 hit points, not dead, and not yet stable.</summary>
     public bool IsDying => !IsDead && CurrentHitPoints == 0 && !IsStable;
+
+    /// <summary>
+    /// "A creature is Bloodied while it has half its Hit Points or fewer remaining"
+    /// (glossary). Integer division floors, which is exactly "half or fewer" for an
+    /// odd maximum — 21 max Hit Points Bloodies at 10, not 10.5.
+    /// </summary>
+    public bool IsBloodied => CurrentHitPoints <= Stats.MaximumHitPoints / 2;
 
     /// <summary>
     /// True when the creature can still act. Dead, dying and Incapacitated creatures

@@ -1478,7 +1478,7 @@ public sealed partial class Encounter
         // Uncanny Dodge is decided once for the attack, not once per damage component.
         var halvings = TryUncannyDodge(target) ? 1 : 0;
 
-        var components = AttackRules.RollDamage(_random, attack, result).ToList();
+        var components = AttackRules.RollDamage(_random, attack, result, attacker, target).ToList();
 
         // Rage adds its bonus to Strength melee attacks. Applied to the first component
         // only: it is one bonus on the attack, not one per damage type.
