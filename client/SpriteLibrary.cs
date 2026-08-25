@@ -104,7 +104,12 @@ public sealed class SpriteLibrary
         // through the measured pipeline the Barbarian repaint recorded (crop, box
         // downscale with an unsharp pass at twice target size, quantize to the master
         // palette at client/assets/palette/SRD_Combat.gpl with hard alpha). Each pose
-        // is one frame, which the loader pads and plays across its duration.
+        // is one frame, which the loader pads and plays across its duration. That
+        // recipe is now a committed, deterministic script rather than a hand
+        // process — tools/asset_pipeline/master_to_sprite.py (#294) — with a
+        // per-image de-grain pass added on top; see its module docstring for why
+        // it clusters per image rather than across a character's poses the way
+        // PR #238's reverted pass did.
         ["Fighter"] = "Fighter_Drawn",
         ["Paladin"] = "Knight_2",
         ["Barbarian"] = "Barbarian_Drawn",
