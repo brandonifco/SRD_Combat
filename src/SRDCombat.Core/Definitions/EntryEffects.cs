@@ -84,7 +84,18 @@ public enum SaveSuccessOutcome
     /// <summary>"Success: Half damage."</summary>
     HalfDamage,
 
-    /// <summary>"Failure or Success:" — something happens either way.</summary>
+    /// <summary>
+    /// The full Failure effect also applies on a success. Not produced by
+    /// <c>ParseSave</c> as of #370: every printed "Failure or Success:" clause in the
+    /// current corpus governs a side effect layered on top of the entry's own outcome
+    /// (a Resistance carve-out, a legendary action's own-turn recharge — see
+    /// <c>ParseSave</c>'s remarks), never a restatement of the Failure damage, so the
+    /// label that would produce this value is never read as governing the whole entry.
+    /// Kept as a representable outcome for <see cref="SaveEffect"/> and exercised by
+    /// hand-authored engine tests (<c>EntrySaveTests</c>); a future printing that
+    /// genuinely uses "Failure or Success:" as its sole tier would need its own
+    /// anchored matcher, not a `Contains` check.
+    /// </summary>
     SameAsFailure,
 }
 

@@ -836,6 +836,56 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(SaveSuccessOutcome.NoEffect, entry.Save!.SuccessOutcome);
     }
 
+    [Fact]
+    public void ATrailingFailureOrSuccessSideClauseDoesNotOverrideAPrintedSuccessHalfDamage()
+    {
+        // Steam Mephit's Steam Breath, verbatim (#370). "Failure or Success: Being
+        // underwater doesn't grant Resistance to this Fire damage." is a side clause
+        // about Resistance, not a restatement of the Failure damage, so it must not
+        // override the printed "Success: Half damage only." into SameAsFailure — a
+        // successful save halves the 2d4 Fire damage, exactly as printed, rather than
+        // taking it in full. The rider ("Speed decreases by 10 feet") and the side
+        // clause itself are unexecuted mechanics and land in residue.
+        var entry = EntryMechanicsParser.Classify(
+            "Steam Breath",
+            MonsterEntrySection.Action,
+            "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 (2d4) " +
+            "Fire damage, and the target's Speed decreases by 10 feet until the end of the " +
+            "mephit's next turn. Success: Half damage only. Failure or Success: Being " +
+            "underwater doesn't grant Resistance to this Fire damage.");
+
+        Assert.Equal(SaveSuccessOutcome.HalfDamage, entry.Save!.SuccessOutcome);
+        Assert.Contains(
+            "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
+            entry.UnmodelledClauses);
+        Assert.Contains(
+            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
+            entry.UnmodelledClauses);
+        Assert.DoesNotContain("Success: Half damage only", entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ATrailingFailureOrSuccessSideClauseWithNoSuccessLineParsesToNoEffect()
+    {
+        // Adult Black Dragon's Cloud of Insects, verbatim (#370). No "Success:" clause
+        // is printed at all — the SRD default reading is that the effect is avoided
+        // entirely — so the trailing "Failure or Success: The dragon can't take this
+        // action again until the start of its next turn." recharge clause must not
+        // read as SameAsFailure and force full damage through on a success.
+        var entry = EntryMechanicsParser.Classify(
+            "Cloud of Insects",
+            MonsterEntrySection.LegendaryAction,
+            "Dexterity Saving Throw: DC 17, one creature the dragon can see within 120 feet. " +
+            "Failure: 22 (4d10) Poison damage, and the target has Disadvantage on saving throws " +
+            "to maintain Concentration until the end of its next turn. Failure or Success: The " +
+            "dragon can't take this action again until the start of its next turn.");
+
+        Assert.Equal(SaveSuccessOutcome.NoEffect, entry.Save!.SuccessOutcome);
+        Assert.Contains(
+            "Failure or Success: The dragon can't take this action again until the start of its next turn",
+            entry.UnmodelledClauses);
+    }
+
     #endregion
 
     #region Accounting

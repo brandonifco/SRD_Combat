@@ -8,47 +8,14 @@ namespace SrdExtract.Tests;
 /// fact. The span-coverage refactor (#382, docs/2026-08-24-span-accounting-design.md
 /// §9.2) flipped the accounting halves of #371, #372 and #373: what used to be
 /// silently credited to a label now lands in residue, computed by subtraction rather
-/// than by a sentence-level credit test. #370 is different in kind — a
-/// misattribution, not an omission — and coverage does not and cannot fix it (design
-/// §12.1): the outcome misread stays pinned, with an added assertion that the side
-/// clause it hides behind is now honestly counted.
+/// than by a sentence-level credit test. #370 was different in kind — a
+/// misattribution, not an omission, so coverage alone did not and could not fix it
+/// (design §12.1) — and is now fixed on its own terms: <c>ParseSave</c> no longer
+/// reads "Failure or Success:" anywhere in the text as governing the whole entry's
+/// outcome.
 /// </summary>
 public sealed class KnownGapPinsTests
 {
-    [Fact]
-    public void Issue370_FailureOrSuccessGoverningASideClauseStillOverridesTheWholeEntrysOutcome()
-    {
-        // Steam Mephit's Steam Breath, verbatim. "Failure or Success: Being underwater
-        // doesn't grant Resistance to this Fire damage." is a side clause about
-        // Resistance, not a restatement of the Failure damage — but ParseSave's success
-        // check looks for the label substring anywhere in the text, so its presence
-        // still overrides the printed "Success: Half damage only." into SameAsFailure
-        // for the whole entry. This is a misattribution, not an omission, so #382's
-        // span-coverage switchover does not and should not change it (design §9.2,
-        // §12.1) — the fix is #370's own, scoping ParseSave's outcome check to the
-        // label that actually governs the printed Failure clause.
-        //
-        // What #382 does change: the misread outcome now costs the entry two more
-        // residue lines instead of none. Because `success` reads SameAsFailure rather
-        // than HalfDamage, ParseSave never reaches its `save.success_half` claim, so
-        // "Success: Half damage only" is never claimed — and "Failure or Success: ..."
-        // was never claimed by anything (design §4.1: no glue entry for labels). Both
-        // land in residue where they used to vanish under the whole-sentence credit.
-        var entry = EntryMechanicsParser.Classify(
-            "Steam Breath",
-            MonsterEntrySection.Action,
-            "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 (2d4) " +
-            "Fire damage, and the target's Speed decreases by 10 feet until the end of the " +
-            "mephit's next turn. Success: Half damage only. Failure or Success: Being " +
-            "underwater doesn't grant Resistance to this Fire damage.");
-
-        Assert.Equal(SaveSuccessOutcome.SameAsFailure, entry.Save!.SuccessOutcome);
-        Assert.Contains("Success: Half damage only", entry.UnmodelledClauses);
-        Assert.Contains(
-            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
-            entry.UnmodelledClauses);
-    }
-
     [Fact]
     public void Issue371_AConditionalDamageAlternativeNowLandsInResidue()
     {

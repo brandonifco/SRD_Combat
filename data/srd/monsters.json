@@ -193,7 +193,7 @@
                 "printedAverage": 10
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -201,7 +201,6 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "one creature within 30 feet that is Charmed or Grappled by the aboleth",
-            "Success: Half damage",
             "Failure or Success: The aboleth gains the target's memories if the target is a Humanoid and is reduced to 0 Hit Points by this action"
           ]
         },
@@ -1499,7 +1498,7 @@
                 "printedAverage": 31
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -1507,7 +1506,6 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "The balor explodes when it dies",
-            "Success: Half damage",
             "Failure or Success: If the balor dies outside the Abyss, it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss"
           ]
         },
@@ -3189,7 +3187,7 @@
                 "printedAverage": 22
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -3418,7 +3416,7 @@
                 "printedAverage": 33
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -5188,7 +5186,7 @@
                 "printedAverage": 27
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -5453,7 +5451,7 @@
                 "printedAverage": 36
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -8883,7 +8881,7 @@
                 "printedAverage": 24
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -9131,7 +9129,7 @@
                 "printedAverage": 31
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -10627,7 +10625,7 @@
                 "printedAverage": 56
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -10638,7 +10636,6 @@
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "Success: Half damage",
             "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage"
           ]
         }
@@ -15358,7 +15355,7 @@
                 "printedAverage": 10
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [
               {
                 "condition": "Incapacitated",
@@ -15626,7 +15623,7 @@
                 "printedAverage": 24
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [
               {
                 "condition": "Incapacitated",
@@ -16495,7 +16492,7 @@
                 "printedAverage": 7
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -16726,7 +16723,7 @@
                 "printedAverage": 17
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -20599,7 +20596,7 @@
               "sizeFeet": 15
             },
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -21095,7 +21092,7 @@
                 "printedAverage": 31
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -21104,7 +21101,6 @@
           "unmodelledClauses": [
             "each creature that isn't an Undead in a",
             "originating from the lich",
-            "Success: Half damage",
             "Failure or Success: The lich can't take this action again until the start of its next turn"
           ]
         },
@@ -22773,7 +22769,7 @@
                 "printedAverage": 5
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -22785,7 +22781,7 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
-            "Success: Half damage only",
+            "only",
             "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage"
           ]
         }
@@ -30321,7 +30317,7 @@
                 "printedAverage": 14
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -30329,7 +30325,7 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "and the target is pushed up to 30 feet straight away from the dragon",
-            "Success: Half damage only",
+            "only",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
         },
@@ -30590,7 +30586,7 @@
                 "printedAverage": 14
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -30598,7 +30594,7 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "and the target is pushed up to 30 feet straight away from the dragon",
-            "Success: Half damage only",
+            "only",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
         },
@@ -31151,7 +31147,7 @@
             "ability": "Constitution",
             "difficultyClass": 25,
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [
               {
                 "condition": "Blinded",
@@ -31694,7 +31690,7 @@
             "ability": "Constitution",
             "difficultyClass": 16,
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -31906,7 +31902,7 @@
             "ability": "Constitution",
             "difficultyClass": 16,
             "failureDamage": [],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -33084,7 +33080,7 @@
                 "printedAverage": 13
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -33092,7 +33088,6 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "Charmed by the succubus within 5 feet",
-            "Success: Half damage",
             "Failure or Success: The target's Hit Point maximum decreases by an amount equal to the damage taken"
           ]
         },
@@ -36873,7 +36868,7 @@
                 "printedAverage": 7
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
@@ -37095,7 +37090,7 @@
                 "printedAverage": 14
               }
             ],
-            "successOutcome": "SameAsFailure",
+            "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
