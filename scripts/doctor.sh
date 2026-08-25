@@ -219,6 +219,20 @@ else
     warn 'gh not installed — `gh issue list` is this project'"'"'s work queue.'
 fi
 
+# The asset pipeline (tools/asset_pipeline/master_to_sprite.py, #294) is the
+# only thing in the repo that needs Pillow, and needs nothing else — no
+# numpy, no scikit-learn, deliberately, so this is the whole dependency.
+if command -v python3 >/dev/null 2>&1; then
+    if python3 -c 'import PIL' >/dev/null 2>&1; then
+        pass "python3 with Pillow present (needed for tools/asset_pipeline)"
+    else
+        warn 'python3 found but Pillow is not installed.'
+        note 'Needed only for tools/asset_pipeline/master_to_sprite.py: `pip install Pillow`.'
+    fi
+else
+    warn 'python3 not installed. Needed only for tools/asset_pipeline (the sprite pipeline).'
+fi
+
 # ---------------------------------------------------------------------------
 printf '\n'
 
