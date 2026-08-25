@@ -140,4 +140,126 @@ public class ContentSerializerTests
         var attack = Assert.IsType<MonsterAttack>(Assert.Single(restored.Entries).Attack);
         Assert.Equal("1d6 + 2", Assert.Single(attack.Damage).Amount.ToString());
     }
+
+    [Fact]
+    public void RoundTrip_PreservesASpellsEvilCasterDamageType()
+    {
+        // Spirit Guardians' alignment-alternative damage type (#375). This is the one
+        // field UnmappedMemberHandling.Disallow exists to catch a miss on: a property
+        // added to SpellDefinition with no serializer round trip pinned would still
+        // load fine locally against a freshly regenerated spells.json and only fail on
+        // a committed file that predates the field.
+        var original = new SpellDefinition
+        {
+            Id = "spell.spirit-guardians",
+            Name = "Spirit Guardians",
+            Level = 3,
+            School = MagicSchool.Conjuration,
+            Classes = ["Cleric"],
+            CastingTime = SpellCastingTime.Action,
+            CastingTimeText = "Action",
+            RangeText = "Self",
+            Components = SpellComponents.Verbal | SpellComponents.Somatic | SpellComponents.Material,
+            DurationText = "Concentration, up to 10 minutes",
+            RequiresConcentration = true,
+            Text = "takes 3d8 Radiant damage (if you are good or neutral) or 3d8 Necrotic damage (if you are evil)",
+            Mechanics = EntryMechanics.SavingThrow,
+            Save = new SaveEffect(
+                Ability.Wisdom,
+                DifficultyClass: null,
+                new EffectArea(AreaShape.Emanation, 15),
+                [new AttackDamage(DiceExpression.Parse("3d8"), DamageType.Radiant, 13)],
+                SaveSuccessOutcome.HalfDamage,
+                []),
+            Damage = [new AttackDamage(DiceExpression.Parse("3d8"), DamageType.Radiant, 13)],
+            EvilCasterDamageType = DamageType.Necrotic,
+            SourcePage = 164,
+        };
+
+        var json = ContentSerializer.Serialize(original);
+
+        Assert.Contains("\"evilCasterDamageType\": \"Necrotic\"", json, StringComparison.Ordinal);
+
+        var restored = ContentSerializer.Deserialize<SpellDefinition>(json);
+
+        Assert.Equal(DamageType.Necrotic, restored.EvilCasterDamageType);
+        Assert.Equal(original.Damage, restored.Damage);
+        Assert.Equal(original.Save!.FailureDamage, restored.Save!.FailureDamage);
+    }
+
+    /// <summary>
+    /// #386's engine half: <see cref="SaveEffect.RangeFeet"/> is the field an entry
+    /// save's printed range will reach through once the extraction half structures it.
+    /// Pins that a populated value round-trips — the same contract
+    /// <see cref="RoundTrip_PreservesASpellsEvilCasterDamageType"/> pins for
+    /// <c>EvilCasterDamageType</c>, and for the identical reason:
+    /// <c>UnmappedMemberHandling.Disallow</c> exists to catch exactly the miss where a
+    /// field is added to the runtime type but no test ever asks the serializer to
+    /// write or read it.
+    /// </summary>
+    [Fact]
+    public void RoundTrip_PreservesASaveEffectsPrintedRange()
+    {
+        var original = new SaveEffect(
+            Ability.Wisdom,
+            DifficultyClass: 11,
+            Area: null,
+            FailureDamage: [],
+            SaveSuccessOutcome.NoEffect,
+            AppliedConditions: [new AppliedCondition(ConditionType.Frightened)],
+            RangeFeet: 30);
+
+        var json = ContentSerializer.Serialize(original);
+
+        Assert.Contains("\"rangeFeet\": 30", json, StringComparison.Ordinal);
+
+        var restored = ContentSerializer.Deserialize<SaveEffect>(json);
+
+        Assert.Equal(30, restored.RangeFeet);
+    }
+
+    /// <summary>
+    /// The default, and every entry in the corpus today (#386's extraction half has not
+    /// landed): no printed range reached the structure, so nothing about a range
+    /// appears in the file at all — not a zero, not an explicit null.
+    /// </summary>
+    [Fact]
+    public void Serialize_OmitsAnAbsentSaveEffectRange()
+    {
+        var json = ContentSerializer.Serialize(new SaveEffect(
+            Ability.Wisdom,
+            DifficultyClass: 11,
+            Area: null,
+            FailureDamage: [],
+            SaveSuccessOutcome.NoEffect,
+            AppliedConditions: []));
+
+        Assert.DoesNotContain("rangeFeet", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Serialize_OmitsEvilCasterDamageTypeForEverySpellButSpiritGuardians()
+    {
+        var json = ContentSerializer.Serialize(new SpellDefinition
+        {
+            Id = "spell.fire-bolt",
+            Name = "Fire Bolt",
+            Level = 0,
+            School = MagicSchool.Evocation,
+            Classes = ["Sorcerer"],
+            CastingTime = SpellCastingTime.Action,
+            CastingTimeText = "Action",
+            RangeText = "120 feet",
+            RangeFeet = 120,
+            Components = SpellComponents.Verbal | SpellComponents.Somatic,
+            DurationText = "Instantaneous",
+            Text = "You hurl a mote of fire.",
+            Mechanics = EntryMechanics.Attack,
+            IsSpellAttack = true,
+            Damage = [new AttackDamage(DiceExpression.Parse("1d10"), DamageType.Fire, 6)],
+            SourcePage = 130,
+        });
+
+        Assert.DoesNotContain("evilCasterDamageType", json, StringComparison.OrdinalIgnoreCase);
+    }
 }

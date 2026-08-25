@@ -11599,11 +11599,6 @@
             "amount": "3d8",
             "type": "Radiant",
             "printedAverage": 13
-          },
-          {
-            "amount": "3d8",
-            "type": "Necrotic",
-            "printedAverage": 13
           }
         ],
         "successOutcome": "HalfDamage",
@@ -11616,11 +11611,6 @@
           "amount": "3d8",
           "type": "Radiant",
           "printedAverage": 13
-        },
-        {
-          "amount": "3d8",
-          "type": "Necrotic",
-          "printedAverage": 13
         }
       ],
       "appliedConditions": [],
@@ -11629,6 +11619,7 @@
       "unclassifiedClauses": [],
       "scalingText": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 3.",
       "upcastDicePerSlotLevel": "1d8",
+      "evilCasterDamageType": "Necrotic",
       "sourcePage": 164
     },
     {

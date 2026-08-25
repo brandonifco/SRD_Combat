@@ -323,6 +323,11 @@ public static partial class SpellParser
                 Heal = heal,
                 Revival = revival,
                 Damage = SpellEffectParser.ParseDamage(body),
+                // Spirit Guardians' printed either/or (#375): the primary branch is
+                // already the sole component ParseDamage emits; this is the Necrotic
+                // alternative it masked out, kept rather than dropped. Null for every
+                // other spell.
+                EvilCasterDamageType = SpellEffectParser.ParseEvilCasterDamageType(body),
                 AppliedConditions = attackRider is not null ? [attackRider] : classified.AppliedConditions,
                 IsSpellAttack = isSpellAttack,
                 // Guiding Bolt's rider, structured only on an attack spell: the

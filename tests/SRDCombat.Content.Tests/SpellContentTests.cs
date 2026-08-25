@@ -204,16 +204,18 @@ public class SpellContentTests
     }
 
     [Fact]
-    public void UpcastingIsKeptAsTextRatherThanStructured()
+    public void ScalingTextIsRetainedAsPrintedTextAlongsideTheStructuredUpcast()
     {
-        // Upcasting is not implemented, and structuring it would imply it is.
+        // Upcasting is implemented (UpcastDicePerSlotLevel, executed at cast time —
+        // see UpcastingTests) — this pins that ScalingText still carries the printed
+        // sentence verbatim rather than being replaced by the structured field, and
+        // that it stays held apart from the spell's own description so its dice do
+        // not leak into the spell's damage.
         var fireball = Content.SpellsById["spell.fireball"];
 
         Assert.NotNull(fireball.ScalingText);
         Assert.Contains("Higher-Level Spell Slot", fireball.ScalingText, StringComparison.Ordinal);
 
-        // The scaling clause is held apart from the spell's own description, so its dice
-        // do not leak into the spell's damage.
         Assert.DoesNotContain("Higher-Level", fireball.Text, StringComparison.Ordinal);
     }
 
@@ -331,5 +333,170 @@ public class SpellContentTests
 
         // And exactly one spell prints that sentence, so nothing else was swept in.
         Assert.Single(Content.Spells, spell => spell.Save?.CoverIgnored == true);
+    }
+
+    [Fact]
+    public void SpiritGuardiansDealsOnePrintedDamageSetWithTheAlternativeCounted()
+    {
+        // #375: "takes 3d8 Radiant damage (if you are good or neutral) or 3d8 Necrotic
+        // damage (if you are evil)" is one roll with an alignment-gated type, not two
+        // rolls of two types. The old extraction summed both branches into a 6d8
+        // double print; this pins the printed 3d8 in both serialized sites, with the
+        // alternative carried on EvilCasterDamageType rather than dropped.
+        var spiritGuardians = Content.Spells.Single(spell => spell.Id == "spell.spirit-guardians");
+
+        Assert.Equal(DamageType.Necrotic, spiritGuardians.EvilCasterDamageType);
+
+        var expected = new[] { ("3d8", DamageType.Radiant) };
+        AssertComponents(expected, spiritGuardians.Damage);
+        AssertComponents(expected, spiritGuardians.Save?.FailureDamage ?? []);
+
+        // Exactly one spell in the whole corpus carries this field — the validator's
+        // own check, re-asserted here against the real committed content rather than a
+        // hand-built list.
+        Assert.Single(Content.Spells, spell => spell.EvilCasterDamageType is not null);
+    }
+
+    public static IEnumerable<object[]> MultiComponentSpellIds() => new[]
+    {
+        "spell.spirit-guardians",
+        "spell.flame-strike",
+        "spell.ice-storm",
+        "spell.meteor-swarm",
+        "spell.acid-arrow",
+        "spell.ice-knife",
+        "spell.tsunami",
+        "spell.vitriolic-sphere",
+        "spell.wall-of-ice",
+        "spell.wall-of-thorns",
+        "spell.weird",
+        "spell.storm-of-vengeance",
+        "spell.fire-shield",
+        "spell.prismatic-spray",
+        "spell.prismatic-wall",
+    }.Select(id => new object[] { id });
+
+    /// <summary>
+    /// Census regression for every multi-component spell in the corpus (#375): the
+    /// fourteen spells that genuinely print more than one damage component — three
+    /// simultaneous "and"s the fix must be structurally unable to touch (Flame Strike,
+    /// Ice Storm, Meteor Swarm), eight flattened multi-event "and"s that are a
+    /// separate, already-stated limitation (Acid Arrow, Ice Knife, Tsunami, Vitriolic
+    /// Sphere, Wall of Ice, Wall of Thorns, Weird, Storm of Vengeance), and three
+    /// unrelated or-shapes out of scope for this fix (Fire Shield, Prismatic Spray,
+    /// Prismatic Wall) — plus Spirit Guardians itself, now down to one component. Exact
+    /// dice, type and count, not floors: any of the fourteen moving is the fix leaking
+    /// past its scope.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(MultiComponentSpellIds))]
+    public void MultiComponentSpellDamageIsUnchangedExceptSpiritGuardians(string id)
+    {
+        var spell = Content.Spells.Single(candidate => candidate.Id == id);
+
+        var expected = ExpectedMultiComponentDamage[id];
+        AssertComponents(expected.Damage, spell.Damage);
+        AssertComponents(expected.FailureDamage, spell.Save?.FailureDamage ?? []);
+    }
+
+    private static readonly IReadOnlyDictionary<string, (
+        (string Dice, DamageType Type)[] Damage,
+        (string Dice, DamageType Type)[] FailureDamage)> ExpectedMultiComponentDamage =
+        new Dictionary<string, ((string, DamageType)[], (string, DamageType)[])>(StringComparer.Ordinal)
+        {
+            ["spell.spirit-guardians"] = (
+                [("3d8", DamageType.Radiant)],
+                [("3d8", DamageType.Radiant)]),
+            ["spell.flame-strike"] = (
+                [("5d6", DamageType.Fire), ("5d6", DamageType.Radiant)],
+                [("5d6", DamageType.Fire), ("5d6", DamageType.Radiant)]),
+            ["spell.ice-storm"] = (
+                [("2d10", DamageType.Bludgeoning), ("4d6", DamageType.Cold)],
+                [("2d10", DamageType.Bludgeoning), ("4d6", DamageType.Cold)]),
+            ["spell.meteor-swarm"] = (
+                [("20d6", DamageType.Fire), ("20d6", DamageType.Bludgeoning)],
+                [("20d6", DamageType.Fire), ("20d6", DamageType.Bludgeoning)]),
+            ["spell.acid-arrow"] = (
+                [("4d4", DamageType.Acid), ("2d4", DamageType.Acid)],
+                []),
+            ["spell.ice-knife"] = (
+                [("1d10", DamageType.Piercing), ("2d6", DamageType.Cold)],
+                [("1d10", DamageType.Piercing), ("2d6", DamageType.Cold)]),
+            ["spell.tsunami"] = (
+                [("6d10", DamageType.Bludgeoning), ("5d10", DamageType.Bludgeoning)],
+                [("6d10", DamageType.Bludgeoning), ("5d10", DamageType.Bludgeoning)]),
+            ["spell.vitriolic-sphere"] = (
+                [("10d4", DamageType.Acid), ("5d4", DamageType.Acid)],
+                [("10d4", DamageType.Acid), ("5d4", DamageType.Acid)]),
+            ["spell.wall-of-ice"] = (
+                [("10d6", DamageType.Cold), ("5d6", DamageType.Cold)],
+                [("10d6", DamageType.Cold), ("5d6", DamageType.Cold)]),
+            ["spell.wall-of-thorns"] = (
+                [("7d8", DamageType.Piercing), ("7d8", DamageType.Slashing)],
+                [("7d8", DamageType.Piercing), ("7d8", DamageType.Slashing)]),
+            ["spell.weird"] = (
+                [("10d10", DamageType.Psychic), ("5d10", DamageType.Psychic)],
+                [("10d10", DamageType.Psychic), ("5d10", DamageType.Psychic)]),
+            ["spell.storm-of-vengeance"] = (
+                [
+                    ("2d6", DamageType.Thunder),
+                    ("4d6", DamageType.Acid),
+                    ("10d6", DamageType.Lightning),
+                    ("2d6", DamageType.Bludgeoning),
+                    ("1d6", DamageType.Cold),
+                ],
+                [
+                    ("2d6", DamageType.Thunder),
+                    ("4d6", DamageType.Acid),
+                    ("10d6", DamageType.Lightning),
+                    ("2d6", DamageType.Bludgeoning),
+                    ("1d6", DamageType.Cold),
+                ]),
+            ["spell.fire-shield"] = (
+                [("2d8", DamageType.Fire), ("2d8", DamageType.Cold)],
+                []),
+            ["spell.prismatic-spray"] = (
+                [
+                    ("12d6", DamageType.Fire),
+                    ("12d6", DamageType.Acid),
+                    ("12d6", DamageType.Lightning),
+                    ("12d6", DamageType.Poison),
+                    ("12d6", DamageType.Cold),
+                ],
+                [
+                    ("12d6", DamageType.Fire),
+                    ("12d6", DamageType.Acid),
+                    ("12d6", DamageType.Lightning),
+                    ("12d6", DamageType.Poison),
+                    ("12d6", DamageType.Cold),
+                ]),
+            ["spell.prismatic-wall"] = (
+                [
+                    ("12d6", DamageType.Fire),
+                    ("12d6", DamageType.Acid),
+                    ("12d6", DamageType.Lightning),
+                    ("12d6", DamageType.Poison),
+                    ("12d6", DamageType.Cold),
+                ],
+                [
+                    ("12d6", DamageType.Fire),
+                    ("12d6", DamageType.Acid),
+                    ("12d6", DamageType.Lightning),
+                    ("12d6", DamageType.Poison),
+                    ("12d6", DamageType.Cold),
+                ]),
+        };
+
+    private static void AssertComponents(
+        IReadOnlyList<(string Dice, DamageType Type)> expected,
+        IReadOnlyList<AttackDamage> actual)
+    {
+        Assert.Equal(expected.Count, actual.Count);
+
+        for (var index = 0; index < expected.Count; index++)
+        {
+            Assert.Equal(expected[index].Dice, actual[index].Amount.ToString());
+            Assert.Equal(expected[index].Type, actual[index].Type);
+        }
     }
 }

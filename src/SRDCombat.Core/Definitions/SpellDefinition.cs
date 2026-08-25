@@ -210,7 +210,12 @@ public sealed record SpellDefinition
 
     /// <summary>
     /// The "Using a Higher-Level Spell Slot" or "Cantrip Upgrade" clause, as printed.
-    /// Kept as text: upcasting is not implemented, and structuring it would imply it is.
+    /// Upcasting itself is implemented — <see cref="UpcastDicePerSlotLevel"/> and
+    /// <see cref="CantripUpgradeDice"/> structure the growth that
+    /// <c>Encounter.Casting.ApplyScaling</c> executes — but this field is kept
+    /// alongside them rather than dropped: it is the printed source those two are
+    /// structured from, retained for the spells whose scaling sentence does not match
+    /// either shape and structures as neither.
     /// </summary>
     public string? ScalingText { get; init; }
 
@@ -221,6 +226,17 @@ public sealed record SpellDefinition
     /// base effect's. Everything else stays on <see cref="ScalingText"/> as text.
     /// </summary>
     public DiceExpression? UpcastDicePerSlotLevel { get; init; }
+
+    /// <summary>
+    /// The damage type this spell deals instead when the caster is evil — Spirit
+    /// Guardians' "or 3d8 Necrotic damage (if you are evil)", the only spell in the
+    /// book that gates its damage type on the caster's alignment. Null for every
+    /// other spell. The engine never reads it today: no character carries an
+    /// alignment, so every caster is read as non-evil and deals the primary type in
+    /// <see cref="Damage"/> and <see cref="Save"/>'s <c>FailureDamage</c>. See the
+    /// reading on <c>SpellEffectParser</c>'s alignment-alternative grammar (#375).
+    /// </summary>
+    public DamageType? EvilCasterDamageType { get; init; }
 
     /// <summary>
     /// A cantrip's per-step growth — "increases by 1d8 when you reach levels 5, 11, and
