@@ -168,6 +168,21 @@ public sealed partial class Encounter
                 $"{mover.Name} is Frightened of {fearSource.Name} and cannot willingly move closer.");
         }
 
+        // The square is fine and the body is not: a creature asked into a gap its space
+        // does not fit. Refused with its own code rather than folded into "unreachable",
+        // because the two are different answers — one says walk further, the other says
+        // you will never fit — and because SRD 5.2.1 prints no squeezing rule to fall
+        // back on (see MovementRules.SpaceFits). Deliberately narrow: an anchor square
+        // that is itself a wall or off the board stays "unreachable", exactly as it was
+        // before spaces existed.
+        if (Battlefield.IsPassable(destination)
+            && !MovementRules.SpaceFits(Battlefield, mover.SpaceAt(destination)))
+        {
+            return new ActionRefusal(
+                "movement.no_room",
+                $"{mover.Name} is too big to fit at {destination}.");
+        }
+
         var path = MovementRules.FindPath(Battlefield, mover, destination, mover.Turn.MovementFeet, _combatants);
 
         if (path is null)
@@ -244,7 +259,7 @@ public sealed partial class Encounter
 
         // "Can't be targeted directly." Refused before anything is spent, like every
         // other targeting rule.
-        if (CoverRules.Between(Battlefield, attacker.Position, target.Position, _combatants) == CoverDegree.Total)
+        if (CoverRules.AgainstSpace(Battlefield, attacker.Space, target.Space, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "attack.total_cover",
@@ -712,14 +727,21 @@ public sealed partial class Encounter
     /// creature outside its own turn. Displacement is free — it spends no movement and
     /// provokes no Opportunity Attack, because the creature did not choose to go.
     /// </para>
+    /// <para>
+    /// <b>Crowding is overlap, not a shared coordinate.</b> Two spaces that share any
+    /// square are crowded, so a Large creature standing on a corner of another's body
+    /// counts exactly as two Medium creatures on one square do. The clusters are grown
+    /// by scanning the combatants in their own order, which at one square per creature
+    /// reproduces the position grouping this used to do — same clusters, same order,
+    /// same creature staying — and generalizes to bodies that can overlap partially.
+    /// </para>
     /// </remarks>
     private void ClearSharedSquares()
     {
-        var crowded = _combatants
+        var crowded = OverlapClusters(_combatants
             .Where(combatant => !combatant.IsDead
-                && !combatant.HasCondition(ConditionType.Incapacitated))
-            .GroupBy(combatant => combatant.Position)
-            .Where(group => group.Count() > 1)
+                && !combatant.HasCondition(ConditionType.Incapacitated)))
+            .Where(cluster => cluster.Count > 1)
             .ToArray();
 
         foreach (var group in crowded)
@@ -731,7 +753,7 @@ public sealed partial class Encounter
 
             foreach (var displaced in group.Where(c => !ReferenceEquals(c, stays)))
             {
-                if (NearestFreeSquare(displaced.Position) is not { } square)
+                if (NearestFreeAnchor(displaced) is not { } square)
                 {
                     // Nowhere to put them. Leaving the square shared is survivable —
                     // FindPath keys its blockers as a lookup precisely so that this is
@@ -750,16 +772,64 @@ public sealed partial class Encounter
     }
 
     /// <summary>
-    /// The closest square to <paramref name="from"/> that is passable and unoccupied,
-    /// searched outward so the displaced creature moves as little as possible.
+    /// Groups creatures whose spaces overlap, in the order they appear.
     /// </summary>
-    private GridPosition? NearestFreeSquare(GridPosition from)
+    /// <remarks>
+    /// Grown by scanning rather than by keying, because overlap is not an equivalence
+    /// relation once a space can be several squares: A can overlap B and B overlap C
+    /// with A and C apart, and all three still have to be sorted out together. At one
+    /// square per creature it reduces to grouping by position, clusters and their
+    /// contents both in source order — which is what keeps the displacement sweep
+    /// byte-identical while every creature is Medium.
+    /// </remarks>
+    private static IReadOnlyList<List<Combatant>> OverlapClusters(IEnumerable<Combatant> combatants)
+    {
+        var clusters = new List<List<Combatant>>();
+
+        foreach (var combatant in combatants)
+        {
+            var joined = clusters
+                .Where(cluster => cluster.Any(member => member.Space.Overlaps(combatant.Space)))
+                .ToArray();
+
+            if (joined.Length == 0)
+            {
+                clusters.Add([combatant]);
+                continue;
+            }
+
+            joined[0].Add(combatant);
+
+            // A creature can bridge two clusters that did not touch each other.
+            foreach (var merged in joined.Skip(1))
+            {
+                joined[0].AddRange(merged);
+                clusters.Remove(merged);
+            }
+        }
+
+        return clusters;
+    }
+
+    /// <summary>
+    /// The closest square this creature's whole space fits in without overlapping
+    /// anybody, searched outward so the displaced creature moves as little as possible.
+    /// </summary>
+    /// <remarks>
+    /// The search itself walks square by square — a candidate anchor is reached through
+    /// passable ground — while acceptance asks the whole footprint: in bounds, passable,
+    /// and clear of every living creature's space. The creature's own squares are not
+    /// counted against it, so a Large creature displaced by one square is not blocked by
+    /// the half of its body it is already standing in.
+    /// </remarks>
+    private GridPosition? NearestFreeAnchor(Combatant displaced)
     {
         var taken = _combatants
-            .Where(combatant => !combatant.IsDead)
-            .Select(combatant => combatant.Position)
+            .Where(combatant => !combatant.IsDead && !ReferenceEquals(combatant, displaced))
+            .SelectMany(combatant => combatant.Space.Squares())
             .ToHashSet();
 
+        var from = displaced.Position;
         var seen = new HashSet<GridPosition> { from };
         var queue = new Queue<GridPosition>();
         queue.Enqueue(from);
@@ -777,7 +847,10 @@ public sealed partial class Encounter
                     continue;
                 }
 
-                if (!taken.Contains(next))
+                var space = displaced.SpaceAt(next);
+
+                if (MovementRules.SpaceFits(Battlefield, space)
+                    && !space.Squares().Any(taken.Contains))
                 {
                     return next;
                 }
@@ -1180,7 +1253,7 @@ public sealed partial class Encounter
         // weapons make it reachable: a Halberd's reach spans a square, and that square
         // can be a wall. Caught by the regenerated transcript, which printed a hit
         // through Total Cover — the mover slips away unswung-at, like the charmer above.
-        if (CoverRules.Between(Battlefield, attacker.Position, mover.Position, _combatants) == CoverDegree.Total)
+        if (CoverRules.AgainstSpace(Battlefield, attacker.Space, mover.Space, _combatants) == CoverDegree.Total)
         {
             return;
         }
@@ -1344,7 +1417,7 @@ public sealed partial class Encounter
         // weapon's Opportunity Attack can genuinely cross a wall square, which the
         // regenerated transcript caught. What remains is Half or Three-Quarters,
         // raising the AC to beat.
-        var cover = CoverRules.Between(Battlefield, attacker.Position, target.Position, _combatants);
+        var cover = CoverRules.AgainstSpace(Battlefield, attacker.Space, target.Space, _combatants);
 
         // Wand of the War Mage: "you ignore Half Cover when making a spell attack" —
         // Half exactly, so Three-Quarters still counts.
@@ -1987,11 +2060,16 @@ public sealed partial class Encounter
                 // here: an area excludes those squares and single-target paths refuse
                 // them. Sacred Flame prints "gains no benefit from Half Cover or
                 // Three-Quarters Cover for this save", carried as Save.CoverIgnored.
+                // The point of origin is a point even when a creature produces it, so it
+                // is one square; the victim is judged as its whole body, which is the
+                // same reading the attack path takes — the least covered square of the
+                // target decides, because a body that sticks out is a body the blast
+                // reaches.
                 var cover = save.Ability == Ability.Dexterity && !save.CoverIgnored
-                    ? CoverRules.Between(
+                    ? CoverRules.AgainstSpace(
                         Battlefield,
-                        AreaTargeting.PointOfOrigin(save.Area, source.Position, point),
-                        victim.Position,
+                        CreatureSpace.Of(AreaTargeting.PointOfOrigin(save.Area, source.Position, point)),
+                        victim.Space,
                         _combatants)
                     : CoverDegree.None;
                 var coverNote = CoverRules.Bonus(cover) > 0

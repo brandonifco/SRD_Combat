@@ -63,7 +63,23 @@ public enum CoverDegree
 /// </list>
 /// <para>
 /// The attacker's and target's own squares never provide cover: the segment starts and
-/// ends in their interiors, and "behind" needs something in between.
+/// ends in their interiors, and "behind" needs something in between. Once a creature can
+/// stand in several squares that means its whole <em>space</em> — a Large creature does
+/// not take cover behind its own shoulder.
+/// </para>
+/// <para>
+/// <b>A multi-square target is judged square by square, and the attacker gets the best of
+/// it</b> — a stated reading (#429), because the printed table grades cover by how much of
+/// the target is obscured and a body that sticks out past the wall is a body you can hit.
+/// So <see cref="AgainstSpace"/> evaluates the ordinary computation for each square of the
+/// target's space and keeps the degree most favourable to the attacker; Total Cover
+/// refuses the targeting only when <em>every</em> square of the space is totally covered.
+/// The same rule is applied to the attacker's own space rather than to its anchor square
+/// alone, which is this engine's extension of the reading rather than #429's text: an
+/// attacker shoots from the body it has, and measuring from one corner of it would be the
+/// occupies-but-anchored reading that printed page 13 forbids for distance. A multi-square
+/// creature as a cover <em>source</em> needs no new rule — all of its squares feed the
+/// computation, so it obstructs whatever its body obstructs.
 /// </para>
 /// </remarks>
 public static class CoverRules
@@ -102,18 +118,71 @@ public static class CoverRules
         Battlefield field,
         GridPosition origin,
         GridPosition target,
+        IReadOnlyCollection<Combatant>? creatures = null) =>
+        AgainstSpace(field, CreatureSpace.Of(origin), CreatureSpace.Of(target), creatures);
+
+    /// <summary>
+    /// The degree of cover a creature's whole space has against an effect originating in
+    /// another creature's whole space — the most favourable degree the attacker can find
+    /// between the two bodies. See the reading on the class.
+    /// </summary>
+    /// <param name="creatures">
+    /// Everyone on the field, when the caller has a field to offer — a living creature
+    /// the line crosses grants Half Cover. Null (a bare-geometry unit test) reads only
+    /// the terrain. Neither space's own squares count, whoever stands in them.
+    /// </param>
+    public static CoverDegree AgainstSpace(
+        Battlefield field,
+        CreatureSpace origin,
+        CreatureSpace target,
         IReadOnlyCollection<Combatant>? creatures = null)
     {
         ArgumentNullException.ThrowIfNull(field);
 
+        var occupied = creatures is null
+            ? null
+            : creatures
+                .Where(creature => !creature.IsDead)
+                .SelectMany(creature => creature.Space.Squares())
+                .ToHashSet();
+
+        var best = CoverDegree.Total;
+
+        foreach (var from in origin.Squares())
+        {
+            foreach (var to in target.Squares())
+            {
+                var degree = Along(field, from, to, occupied, origin, target);
+
+                if (degree < best)
+                {
+                    best = degree;
+                }
+
+                // Nothing beats a clean line, so there is no point looking for one twice.
+                if (best == CoverDegree.None)
+                {
+                    return best;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>The degree of cover along one centre-to-centre line.</summary>
+    private static CoverDegree Along(
+        Battlefield field,
+        GridPosition origin,
+        GridPosition target,
+        HashSet<GridPosition>? occupied,
+        CreatureSpace originSpace,
+        CreatureSpace targetSpace)
+    {
         if (origin == target)
         {
             return CoverDegree.None;
         }
-
-        var occupied = creatures is null
-            ? null
-            : creatures.Where(creature => !creature.IsDead).Select(creature => creature.Position).ToHashSet();
 
         var lowObstaclesCrossed = 0;
         var creatureCrossed = false;
@@ -129,7 +198,11 @@ public static class CoverRules
             {
                 var square = new GridPosition(x, y);
 
-                if (square == origin || square == target || !SegmentCrossesInterior(origin, target, square))
+                // Neither body covers itself, so every square of either space is skipped
+                // rather than only the two the line runs between.
+                if (originSpace.Contains(square)
+                    || targetSpace.Contains(square)
+                    || !SegmentCrossesInterior(origin, target, square))
                 {
                     continue;
                 }
