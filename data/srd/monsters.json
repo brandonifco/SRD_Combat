@@ -13314,6 +13314,7 @@
           "unmodelledClauses": [
             "any creature that starts its turn in a",
             "originating from the ghast",
+            "The target has the Poisoned condition until the start of its next turn",
             "Success: The target is immune to this ghast's Stench for 24 hours"
           ]
         },
@@ -18226,7 +18227,8 @@
           ],
           "unmodelledClauses": [
             "any creature that starts its turn in a",
-            "originating from the hezrou"
+            "originating from the hezrou",
+            "The target has the Poisoned condition until the start of its next turn"
           ]
         },
         {
@@ -20685,6 +20687,7 @@
             }
           ],
           "unmodelledClauses": [
+            "The target has the Blinded and Poisoned conditions until the end of the kraken's next turn",
             "The kraken then moves up to its Speed",
             "Failure or Success: The kraken can't take this action again until the start of its next turn"
           ]
@@ -25901,6 +25904,7 @@
           "unmodelledClauses": [
             "The pit fiend emanates an aura in a 20foot Emanation while it doesn't have the Incapacitated condition",
             "any enemy that starts its turn in the aura",
+            "The target has the Frightened condition until the start of its next turn",
             "Success: The target is immune to this pit fiend's aura for 24 hours"
           ]
         },
@@ -29342,6 +29346,7 @@
           ],
           "unmodelledClauses": [
             "any Beast or Humanoid that starts its turn within 30 feet of the hag and can see the hag's true form",
+            "The target has the Frightened condition until the start of its next turn",
             "Success: The target is immune to this hag's Vile Appearance for 24 hours"
           ]
         },
@@ -31361,6 +31366,7 @@
           ],
           "unmodelledClauses": [
             "the solar can see within 120 feet",
+            "The target has the Blinded condition for 1 minute",
             "Failure or Success: The solar can't take this action again until the start of its next turn"
           ]
         },
