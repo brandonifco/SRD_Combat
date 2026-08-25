@@ -204,16 +204,18 @@ public class SpellContentTests
     }
 
     [Fact]
-    public void UpcastingIsKeptAsTextRatherThanStructured()
+    public void ScalingTextIsRetainedAsPrintedTextAlongsideTheStructuredUpcast()
     {
-        // Upcasting is not implemented, and structuring it would imply it is.
+        // Upcasting is implemented (UpcastDicePerSlotLevel, executed at cast time —
+        // see UpcastingTests) — this pins that ScalingText still carries the printed
+        // sentence verbatim rather than being replaced by the structured field, and
+        // that it stays held apart from the spell's own description so its dice do
+        // not leak into the spell's damage.
         var fireball = Content.SpellsById["spell.fireball"];
 
         Assert.NotNull(fireball.ScalingText);
         Assert.Contains("Higher-Level Spell Slot", fireball.ScalingText, StringComparison.Ordinal);
 
-        // The scaling clause is held apart from the spell's own description, so its dice
-        // do not leak into the spell's damage.
         Assert.DoesNotContain("Higher-Level", fireball.Text, StringComparison.Ordinal);
     }
 
