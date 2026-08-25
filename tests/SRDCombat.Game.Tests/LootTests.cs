@@ -1,4 +1,5 @@
 using SRDCombat.Content;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
@@ -198,6 +199,58 @@ public class LootTests
 
         Assert.Contains(
             "the save names armor 'armor.nonexistent' (for Brenna)", failure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// #366: unlike the sibling above, this member already owns an armour-applying
+    /// magic item, so <c>CandidatesFor</c>'s own armour block is skipped entirely —
+    /// its guard is <c>!OwnsAnyArmorItem(content, draft)</c> — and Loot's own
+    /// <see cref="ContentDrift.Require{TValue}"/> call for armour never runs. The
+    /// drifted id is only reached indirectly: this member's *other* candidates (a
+    /// weapon enchant, here) still carry the untouched, already-equipped armour magic
+    /// item in their <see cref="LootAward.NewDraft"/>, so <see cref="Resolves"/>
+    /// re-resolving them walks into <see cref="CharacterResolver"/>'s own armour
+    /// lookup inside its <c>ValidatePlacement</c> helper. That lookup used to be a raw
+    /// <c>content.Armor[armorId]</c> indexer (<c>CharacterResolver.cs:253</c>) that
+    /// threw a bare <see cref="KeyNotFoundException"/> past this method's catch
+    /// clause; fixed to <see cref="ArgumentException"/> alongside the Resume-path pin
+    /// <c>RunSaveTests.ResumingRefusesADraftWhoseArmorMagicItemPointsAtAMissingArmorId</c>.
+    /// Unlike every sibling test in this fixture, the expectation here is the
+    /// opposite of a refusal: <see cref="LootTable.Roll"/> must not throw at all —
+    /// <see cref="Resolves"/>'s catch clause already absorbs <see cref="ArgumentException"/>,
+    /// silently dropping the poisoned candidate rather than crashing the whole roll.
+    /// </summary>
+    [Fact]
+    public void ARollDoesNotCrashWhenAnArmorMagicItemsOwnerHasADriftedArmorId()
+    {
+        var run = GauntletRun.Start(Content);
+        var fighter = run.Party.Single(member => member.Draft.Name == "Brenna");
+        Assert.NotNull(fighter.Draft.ArmorId);
+
+        var poisoned = fighter with
+        {
+            Draft = fighter.Draft with
+            {
+                ArmorId = "armor.nonexistent",
+                MagicItems =
+                [
+                    new EquippedMagicItem
+                    {
+                        ItemId = "magic-item.armor-plus-1-plus-2-or-plus-3",
+                        Variant = "+1",
+                    },
+                ],
+            },
+        };
+        var party = run.Party.Select(member => member == fighter ? poisoned : member).ToArray();
+
+        for (var seed = 1; seed <= 20; seed++)
+        {
+            var exception = Record.Exception(
+                () => LootTable.Roll(Content, party, run.States, new SeededRandomSource(seed)));
+
+            Assert.Null(exception);
+        }
     }
 
     /// <summary>
