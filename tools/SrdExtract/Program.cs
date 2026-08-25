@@ -279,12 +279,13 @@ static void Report(string heading, IEnumerable<string> messages)
 
 /// <summary>
 /// Re-classifies every stored monster entry and dumps every span nothing claimed — the
-/// census #382's stage 3 asks for (docs/2026-08-24-span-accounting-design.md §10).
+/// census #382's stage 3 introduced (docs/2026-08-24-span-accounting-design.md §10).
 /// Reads only the committed content directory; no PDF is needed, since the corpus's own
 /// stored (name, section, text) is enough to reproduce what the parser does — the same
-/// reasoning <c>CorpusRoundTripTests</c> rests on. Coverage is not wired to any output
-/// yet (<c>UnmodelledClauses</c> still comes from the old accounting); this is read-only
-/// plumbing for review before the stage 4/5 switch.
+/// reasoning <c>CorpusRoundTripTests</c> rests on. Since the stage 4 switchover
+/// (PR #389) this is a diagnostic dump of the same residue <c>UnmodelledClauses</c>
+/// now serializes: use it to review a parser change's effect on the whole corpus
+/// before committing a regeneration (#398 retired the pre-switch wording here).
 /// </summary>
 static int RunCensus(string contentDirectory, string outputPath)
 {
@@ -317,8 +318,9 @@ static int RunCensus(string contentDirectory, string outputPath)
 
             EntryMechanicsParser.Classify(entry.Name, entry.Section, entry.Text, out var coverage);
 
-            // Residue() is the honest count — glue-absorbed, chunked — matching what
-            // stage 4 would actually put in UnmodelledClauses. Uncovered() is the raw,
+            // Residue() is the honest count — glue-absorbed, chunked — the same value
+            // serialization puts in UnmodelledClauses since the stage 4 switchover.
+            // Uncovered() is the raw,
             // unfiltered detail underneath it (glue runs included), useful for seeing
             // exactly what a matcher did or did not claim, but not for counting: a
             // one-space gap between two adjacent claims is not a lost rule.
