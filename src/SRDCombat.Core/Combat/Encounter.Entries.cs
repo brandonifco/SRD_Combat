@@ -186,8 +186,12 @@ public sealed partial class Encounter
     /// <b>Range is enforced; sight is not (#386).</b> A printed distance —
     /// <see cref="SaveEffect.RangeFeet"/> — refuses a save aimed beyond it, the same
     /// way <c>attack.out_of_range</c> and <c>spell.out_of_range</c> already gate their
-    /// own targeting paths; before this, a Mummy's 30-foot Dreadful Glare landed from
-    /// anywhere on the board, because nothing in this method ever measured distance.
+    /// own targeting paths. The check exists, but the field it reads stays null for
+    /// every entry in the corpus until extraction structures a printed range onto it
+    /// — a separate, deliberately later half of #386 — so a Mummy's 30-foot Dreadful
+    /// Glare still lands from anywhere on the board <i>today</i>, exactly as before
+    /// this method ever measured distance; only once that half ships does this check
+    /// actually start refusing real content.
     /// A printed sight qualifier — "a creature the mummy can see" — is a different
     /// question and stays permanently unmodelled: the standing reading on
     /// <see cref="ConditionRules"/> is that this engine has no line-of-sight model, and
