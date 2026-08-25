@@ -144,6 +144,68 @@ public static class SpellValidator
             }
         }
 
+        // Spirit Guardians' printed either/or (#375) is structured on exactly one
+        // spell, and the shape of that one spell is fixed by print — an exact-count
+        // check, not a floor, per the extraction-traps lesson: a floor is the wrong
+        // shape for a count the source itself fixes. If a future extraction pass ever
+        // finds this grammar on a second spell, or Spirit Guardians' own shape drifts,
+        // that is a deliberate discovery for a human to read, not a silent pass.
+        var evilCasterSpells = spells.Where(spell => spell.EvilCasterDamageType is not null).ToList();
+
+        if (evilCasterSpells.Count != 1)
+        {
+            issues.Add(new ValidationIssue(
+                ValidationSeverity.Error,
+                "spell.evil_caster_damage_type.unexpected_count",
+                "spells",
+                $"{evilCasterSpells.Count} spell(s) carry EvilCasterDamageType; expected exactly 1 " +
+                "(Spirit Guardians, SRD 5.2.1 p. 164)."));
+        }
+        else
+        {
+            var spiritGuardians = evilCasterSpells[0];
+
+            if (spiritGuardians.Id != "spell.spirit-guardians")
+            {
+                issues.Add(new ValidationIssue(
+                    ValidationSeverity.Error,
+                    "spell.evil_caster_damage_type.wrong_spell",
+                    spiritGuardians.Id,
+                    "Only Spirit Guardians prints the alignment-alternative damage grammar."));
+            }
+
+            if (spiritGuardians.EvilCasterDamageType != DamageType.Necrotic)
+            {
+                issues.Add(new ValidationIssue(
+                    ValidationSeverity.Error,
+                    "spell.evil_caster_damage_type.wrong_type",
+                    spiritGuardians.Id,
+                    $"EvilCasterDamageType is {spiritGuardians.EvilCasterDamageType}; the print is Necrotic."));
+            }
+
+            void CheckSingleRadiantComponent(string label, IReadOnlyList<AttackDamage> components)
+            {
+                var isSingleRadiant3d8 = components.Count == 1
+                    && components[0].Type == DamageType.Radiant
+                    && components[0].Amount.ToString() == "3d8";
+
+                if (!isSingleRadiant3d8)
+                {
+                    issues.Add(new ValidationIssue(
+                        ValidationSeverity.Error,
+                        "spell.evil_caster_damage_type.malformed_components",
+                        spiritGuardians.Id,
+                        $"{label} has [{string.Join(", ", components.Select(c => $"{c.Amount} {c.Type}"))}]; " +
+                        "expected exactly one 3d8 Radiant component."));
+                }
+            }
+
+            CheckSingleRadiantComponent("damage", spiritGuardians.Damage);
+            CheckSingleRadiantComponent(
+                "save.failureDamage",
+                spiritGuardians.Save?.FailureDamage ?? []);
+        }
+
         return new ValidationResult(issues);
     }
 }

@@ -110,12 +110,29 @@ internal static partial class SpellEffectParser
     /// the expression's own average stands in — which keeps the validator's
     /// average-matches-dice check meaningful for monsters without weakening it here.
     /// </summary>
+    /// <remarks>
+    /// Runs the alignment-alternative pre-pass first (see
+    /// <see cref="EvilCasterAlternativePattern"/> and
+    /// <see cref="ParseEvilCasterDamageType"/> for the reading): Spirit Guardians'
+    /// "takes 3d8 Radiant damage (if you are good or neutral) or 3d8 Necrotic damage
+    /// (if you are evil)" is an either/or on one damage roll, not two rolls, and the
+    /// matched span is masked out of <paramref name="text"/> before the generic
+    /// <see cref="DamagePattern"/> harvest runs, so it is structurally unable to
+    /// re-add the Necrotic branch as a second component.
+    /// </remarks>
     public static IReadOnlyList<AttackDamage> ParseDamage(string text)
     {
         var damage = new List<AttackDamage>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (Match match in DamagePattern().Matches(text))
+        var (maskedText, primary) = MaskEvilCasterAlternative(text);
+
+        if (primary is not null && seen.Add($"{primary.Amount}|{primary.Type}"))
+        {
+            damage.Add(primary);
+        }
+
+        foreach (Match match in DamagePattern().Matches(maskedText))
         {
             if (!Enum.TryParse<DamageType>(match.Groups["type"].Value, ignoreCase: true, out var type)
                 || !DiceExpression.TryParse(match.Groups["dice"].Value, out var dice))
@@ -132,6 +149,93 @@ internal static partial class SpellEffectParser
         }
 
         return damage;
+    }
+
+    /// <summary>
+    /// Reads the damage type Spirit Guardians deals when the caster is evil — the
+    /// non-null branch of the same alignment-alternative grammar <see cref="ParseDamage"/>
+    /// masks out. Null for every spell that does not print this exact shape.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Spirit Guardians (SRD 5.2.1 p. 164) prints one damage roll with an
+    /// alignment-gated type</b>: "On a failed save, the creature takes 3d8 Radiant
+    /// damage (if you are good or neutral) or 3d8 Necrotic damage (if you are evil)."
+    /// That "or" selects between two types; it never adds them. The generic damage
+    /// harvest used to read the sentence as two components and the engine dealt both —
+    /// 6d8 of two types against a printed 3d8 of one, a double print (#375, the same
+    /// or-as-and shape as #371 wearing a spell). The gate is the caster's alignment, a
+    /// dial this game does not model: character creation never asks for one, no
+    /// <c>CharacterSheet</c> carries an alignment field, and no monster casts spells
+    /// yet (F4).
+    /// </para>
+    /// <para>
+    /// <b>The stated reading (designer sign-off, #375): a caster with no alignment is
+    /// non-evil, so every casting the game can currently produce deals 3d8 Radiant</b>
+    /// — the printed "good or neutral" branch, executed exactly. This is an
+    /// interpretation where print branches on state the model lacks, not a divergence
+    /// from a printed sentence: the Necrotic branch is <em>unreachable</em>, not
+    /// unimplemented, and no reachable casting deviates from print by a die or a type.
+    /// The branch is still not dropped: it is structured here as
+    /// <see cref="SpellDefinition.EvilCasterDamageType"/> so the data states what print
+    /// offers, rather than silently forgetting the alternative existed. Monsters carry
+    /// their printed alignment (<c>MonsterDefinition.Alignment</c>), so when F4 puts
+    /// spellcasting enemies in the pool, selecting Necrotic for an evil caster off that
+    /// field is the implementation — and re-opening this reading is part of that work.
+    /// </para>
+    /// <para>
+    /// The grammar requires the two parentheticals matched verbatim, both types parsing
+    /// as <see cref="DamageType"/>, and the two dice expressions equal (print says 3d8
+    /// both sides — the equal-dice requirement is part of the grammar, not an
+    /// assumption). A half-match — unequal dice, or a type that fails to parse — is not
+    /// this shape at all: nothing here falls back to summing the two clauses, which
+    /// would re-create the exact or-as-and bug this reading closes. In this fixed
+    /// source a half-match cannot occur; <c>SpellValidator</c>'s exact-count check is
+    /// the tripwire if that ever stops being true.
+    /// </para>
+    /// </remarks>
+    public static DamageType? ParseEvilCasterDamageType(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var match = EvilCasterAlternativePattern().Match(text);
+
+        if (!match.Success
+            || !string.Equals(match.Groups["diceA"].Value, match.Groups["diceB"].Value, StringComparison.Ordinal)
+            || !Enum.TryParse<DamageType>(match.Groups["typeB"].Value, ignoreCase: true, out var typeB))
+        {
+            return null;
+        }
+
+        return typeB;
+    }
+
+    /// <summary>
+    /// Matches Spirit Guardians' alignment-alternative sentence and, when it fully
+    /// matches the grammar (equal dice on both branches, both types parseable), returns
+    /// the text with that span masked out — spaces, so no other pattern's offsets shift
+    /// — alongside the single primary-branch component it stands for. Returns the
+    /// original text unchanged and no component when the sentence is absent or a
+    /// half-match, so the generic harvest runs exactly as it always has.
+    /// </summary>
+    private static (string MaskedText, AttackDamage? Primary) MaskEvilCasterAlternative(string text)
+    {
+        var match = EvilCasterAlternativePattern().Match(text);
+
+        if (!match.Success
+            || !string.Equals(match.Groups["diceA"].Value, match.Groups["diceB"].Value, StringComparison.Ordinal)
+            || !Enum.TryParse<DamageType>(match.Groups["typeA"].Value, ignoreCase: true, out var typeA)
+            || !DiceExpression.TryParse(match.Groups["diceA"].Value, out var dice))
+        {
+            return (text, null);
+        }
+
+        var masked = string.Concat(
+            text.AsSpan(0, match.Index),
+            new string(' ', match.Length),
+            text.AsSpan(match.Index + match.Length));
+
+        return (masked, new AttackDamage(dice, typeA, dice.Average));
     }
 
     /// <summary>
@@ -230,6 +334,17 @@ internal static partial class SpellEffectParser
 
     [GeneratedRegex(@"(?<dice>\d+d\d+)\s+(?<type>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)\s+damage")]
     private static partial Regex DamagePattern();
+
+    // Spirit Guardians' printed either/or, exactly once in the book: "takes 3d8
+    // Radiant damage (if you are good or neutral) or 3d8 Necrotic damage (if you are
+    // evil)". Both parentheticals matched verbatim so a looser pattern cannot pick up
+    // a differently-gated alternative this project has not read against print.
+    [GeneratedRegex(
+        @"takes\s+(?<diceA>\d+d\d+)\s+(?<typeA>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)" +
+        @"\s+damage\s+\(if\s+you\s+are\s+good\s+or\s+neutral\)\s+or\s+" +
+        @"(?<diceB>\d+d\d+)\s+(?<typeB>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)" +
+        @"\s+damage\s+\(if\s+you\s+are\s+evil\)")]
+    private static partial Regex EvilCasterAlternativePattern();
 
     [GeneratedRegex(@"(?<size>\d+)-foot(?:-radius)?(?:-long,?\s*(?<width>\d+)-foot-?\s?wide)?\s+(?<shape>Cone|Line|Emanation|Cube|Sphere|Cylinder)")]
     private static partial Regex AreaPattern();
