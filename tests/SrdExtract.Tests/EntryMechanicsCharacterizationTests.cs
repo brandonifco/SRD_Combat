@@ -1251,19 +1251,22 @@ public sealed class EntryMechanicsCharacterizationTests
     }
 
     [Fact]
-    public void APointAimedSpheresPrintedRangeStructuresOntoRangeFeetTheSpheresOwnRadiusDoesNot()
+    public void APointAimedSpheresRangeStaysResidueUntilItsAreaDoes()
     {
-        // Adult Green Dragon's Noxious Miasma, verbatim. Proves RangeFeet reads the
-        // "within N feet" placement clause — how far the dragon may center the
-        // Sphere's point of origin — independent of the Sphere's own printed radius.
-        // ParseArea does not actually structure that radius for this shape today —
-        // AreaPattern's own literal expects "N-foot Cone"/"N-foot-long...wide Line"
-        // immediately followed by the shape name, and every Sphere in the corpus
-        // instead prints "N-foot-radius Sphere", so Area comes back null for every
-        // Sphere entry regardless of this fix (confirmed against all 9 in the corpus,
-        // pre-existing and unrelated — filed separately rather than folded in here).
-        // ReadRange's own claim does not depend on ParseArea succeeding: the two read
-        // disjoint spans of the same text.
+        // Adult Green Dragon's Noxious Miasma, verbatim. A point-aimed Sphere's range
+        // is only honest to claim once ParseArea actually structures the Sphere
+        // itself — AreaPattern's own literal expects "N-foot Cone"/"N-foot-long...
+        // wide Line" immediately followed by the shape name, and every Sphere in the
+        // corpus instead prints "N-foot-radius Sphere", so Area comes back null for
+        // every Sphere entry today (confirmed against all 9 in the corpus,
+        // pre-existing and unrelated to #386 — filed as #420 rather than folded in
+        // here). qc's review of #421 caught the live consequence of claiming the
+        // range anyway: UseSaveEntry's save.Area is null && target is null branch
+        // would then run a Sphere entry as a single target, silently discarding
+        // "each creature in" — so ReadRange now gates its point-aimed-Sphere branch
+        // on the same ParseArea result this entry's own Area field uses, and until
+        // #420 lands, the whole "within N feet" stays folded into the sight
+        // qualifier's residue, exactly as it did before this PR.
         var entry = EntryMechanicsParser.Classify(
             "Noxious Miasma",
             MonsterEntrySection.LegendaryAction,
@@ -1274,10 +1277,10 @@ public sealed class EntryMechanicsCharacterizationTests
             "next turn.");
 
         Assert.Null(entry.Save!.Area);
-        Assert.Equal(90, entry.Save.RangeFeet);
+        Assert.Null(entry.Save.RangeFeet);
         Assert.Equal(
             [
-                "the dragon can see",
+                "the dragon can see within 90 feet",
                 "and the target takes a -2 penalty to AC until the end of its next turn",
                 "Failure or Success: The dragon can't take this action again until the start of its next turn",
             ],
@@ -1287,16 +1290,17 @@ public sealed class EntryMechanicsCharacterizationTests
     [Fact]
     public void ASelfOriginatingConesPrintedSizeNeverStructuresOntoRangeFeet()
     {
-        // Adult Brass Dragon's Fire Breath, verbatim. A Cone has no separate "range" —
-        // its only printed distance is its own size, already on EffectArea.SizeFeet —
-        // and the corpus never prints "within" inside a Cone/Line/Emanation target
-        // clause (verified directly against the whole corpus), so ReadRange does not
-        // even look: RangeFeet stays null for every self-originating area, always.
+        // Adult Gold Dragon's Fire Breath, verbatim (p.291). A Cone has no separate
+        // "range" — its only printed distance is its own size, already on
+        // EffectArea.SizeFeet — and the corpus never prints "within" inside a
+        // Cone/Line/Emanation target clause (verified directly against the whole
+        // corpus), so ReadRange does not even look: RangeFeet stays null for every
+        // self-originating area, always.
         var entry = EntryMechanicsParser.Classify(
             "Fire Breath",
             MonsterEntrySection.Action,
-            "Dexterity Saving Throw: DC 17, each creature in a 40-foot Cone. Failure: 49 " +
-            "(14d6) Fire damage. Success: Half damage.");
+            "Dexterity Saving Throw: DC 21, each creature in a 60-foot Cone. Failure: 66 " +
+            "(12d10) Fire damage. Success: Half damage.");
 
         Assert.Null(entry.Save!.RangeFeet);
         Assert.Equal(SaveSuccessOutcome.HalfDamage, entry.Save.SuccessOutcome);
@@ -1306,18 +1310,18 @@ public sealed class EntryMechanicsCharacterizationTests
     [Fact]
     public void APointAimedCylinderIsNotAModelledShapeSoItsPrintedRangeStaysResidueToo()
     {
-        // Storm Giant's Lightning Storm, verbatim. AreaTargeting.CanResolve refuses
-        // Cylinder outright — no height model — so UseSaveEntry never reaches a range
-        // check for this entry regardless of what ReadRange might find; claiming
-        // "within 500 feet" here would assert the model enforces a distance nothing
-        // will ever measure. ReadRange's own shape gate (single-target or Sphere
-        // only) excludes it by construction, not by an incidental non-match.
+        // Storm Giant's Lightning Storm, verbatim (p.331). AreaTargeting.CanResolve
+        // refuses Cylinder outright — no height model — so UseSaveEntry never reaches
+        // a range check for this entry regardless of what ReadRange might find;
+        // claiming "within 500 feet" here would assert the model enforces a distance
+        // nothing will ever measure. ReadRange's own shape gate (single-target or
+        // Sphere only) excludes it by construction, not by an incidental non-match.
         var entry = EntryMechanicsParser.Classify(
             "Lightning Storm",
             MonsterEntrySection.Action,
-            "Dexterity Saving Throw: DC 20, each creature in a 10-foot-radius, 40-foot-high " +
-            "Cylinder originating from a point the giant can see within 500 feet. Failure: 22 " +
-            "(4d10) Lightning damage. Success: Half damage.");
+            "Dexterity Saving Throw: DC 18, each creature in a 10-foot-radius, 40-foot-high " +
+            "Cylinder originating from a point the giant can see within 500 feet. Failure: 55 " +
+            "(10d10) Lightning damage. Success: Half damage.");
 
         Assert.Null(entry.Save!.RangeFeet);
         Assert.Equal(

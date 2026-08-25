@@ -606,6 +606,15 @@ internal static partial class EntryMechanicsParser
             coverage.Claim(SaveTargetClausePattern(), target, "save.target_clause");
         }
 
+        // Parsed once, ahead of both consumers below: ReadRange needs to know whether
+        // a point-aimed area actually structured (see its own remarks — qc's #421
+        // review, Blinding Spittle) before it can honestly claim that area's range,
+        // and the SaveEffect built at the end of this method needs the same value.
+        // Calling ParseArea a second time down there would either double-claim its
+        // span or (worse) silently rely on EntryCoverage tolerating that — computed
+        // once instead.
+        var area = ParseArea(text, coverage);
+
         // #386's extraction half: the printed "within N feet" a single target or a
         // point-aimed area (a Sphere's own point of origin) may be used at — read
         // independently of the target-clause match above, and deliberately so: a
@@ -615,7 +624,7 @@ internal static partial class EntryMechanicsParser
         // range that UseSaveEntry's #403 check should see regardless of whether the
         // gate itself is ever modelled. See ReadRange's own remarks for the shapes
         // this does and does not populate.
-        var rangeFeet = ReadRange(text, header.Index + header.Length, coverage);
+        var rangeFeet = ReadRange(text, header.Index + header.Length, coverage, area);
 
         var failureIndex = text.IndexOf("Failure", StringComparison.Ordinal);
         IReadOnlyList<AttackDamage> failureDamage;
@@ -667,7 +676,7 @@ internal static partial class EntryMechanicsParser
         return new SaveEffect(
             ability,
             dc,
-            ParseArea(text, coverage),
+            area,
             failureDamage,
             success,
             conditions,
@@ -698,6 +707,23 @@ internal static partial class EntryMechanicsParser
     /// design §2.2 forbids.
     /// </para>
     /// <para>
+    /// <b>A point-aimed area's range is only claimed once the area itself
+    /// structured.</b> qc's review of this PR (#421) caught a live instance of the
+    /// same shape: <c>AreaPattern</c> has no "-radius" branch (#420), so every
+    /// printed "N-foot-radius Sphere" — the Gibbering Mouther's Blinding Spittle
+    /// included — parses to a <c>null</c> <see cref="EffectArea"/>, and
+    /// <c>UseSaveEntry</c>'s <c>save.Area is null &amp;&amp; target is null</c>
+    /// branch then runs the entry as a single target instead of hitting everyone in
+    /// the sphere. Pre-#386 that silent narrowing stayed honest by accident, because
+    /// "within 30 feet" was the entry's last unclaimed span; this method would have
+    /// claimed it too and erased the only surviving signal. So the
+    /// <paramref name="area"/> this method receives — the very value <c>ParseArea</c>
+    /// produced for this same entry, computed once by the caller — gates the
+    /// point-aimed-Sphere branch: no structured area, no range claim, and the whole
+    /// "within N feet" stays residue until #420 lands separately. The single-target
+    /// branch is unaffected — a lone target never had an area to lose.
+    /// </para>
+    /// <para>
     /// <b>The claim is exactly "within N feet", never the words around it.</b> Sight
     /// ("the mummy can see") stays permanently unexpressed under the standing
     /// no-sight-model reading (design §7.6), and a state or relationship gate ("that
@@ -707,10 +733,14 @@ internal static partial class EntryMechanicsParser
     /// printed word orders — "the X can see within N feet" and "within N feet that
     /// …" — are both handled by searching for the literal substring rather than
     /// anchoring a fixed position, since anchoring one order would silently miss
-    /// the other.
+    /// the other. A third word order exists and is not handled here — the range
+    /// printed in the entry's own preamble, ahead of the save header entirely (the
+    /// Giant Ape's "The ape hurls a boulder at a point it can see within 90 feet.
+    /// Dexterity Saving Throw: DC 17, ..." — filed as #422, alongside #420, as the
+    /// documented exception to the two word orders this method does handle).
     /// </para>
     /// </remarks>
-    private static int? ReadRange(string text, int start, EntryCoverage coverage)
+    private static int? ReadRange(string text, int start, EntryCoverage coverage, EffectArea? area)
     {
         var clauseEnd = text.IndexOf('.', start);
         var clause = clauseEnd < 0 ? text[start..] : text[start..clauseEnd];
@@ -725,6 +755,17 @@ internal static partial class EntryMechanicsParser
         var isPointAimedSphere = clause.Contains("Sphere centered on a point", StringComparison.Ordinal);
 
         if (!isSingleTarget && !isPointAimedSphere)
+        {
+            return null;
+        }
+
+        // See this method's own remarks: a point-aimed area's range is only honest to
+        // claim once ParseArea actually structured that area. Every corpus Sphere is
+        // printed "N-foot-radius", which AreaPattern cannot read yet (#420), so this
+        // stays false for all of them today — the whole "within N feet" clause is
+        // left as residue rather than half-claimed into a range the engine would
+        // then enforce against a single target that was never the printed shape.
+        if (isPointAimedSphere && area is null)
         {
             return null;
         }

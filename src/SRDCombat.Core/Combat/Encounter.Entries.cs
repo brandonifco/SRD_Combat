@@ -186,12 +186,16 @@ public sealed partial class Encounter
     /// <b>Range is enforced; sight is not (#386).</b> A printed distance —
     /// <see cref="SaveEffect.RangeFeet"/> — refuses a save aimed beyond it, the same
     /// way <c>attack.out_of_range</c> and <c>spell.out_of_range</c> already gate their
-    /// own targeting paths. The check exists, but the field it reads stays null for
-    /// every entry in the corpus until extraction structures a printed range onto it
-    /// — a separate, deliberately later half of #386 — so a Mummy's 30-foot Dreadful
-    /// Glare still lands from anywhere on the board <i>today</i>, exactly as before
-    /// this method ever measured distance; only once that half ships does this check
-    /// actually start refusing real content.
+    /// own targeting paths. Extraction now structures that field for a single-target
+    /// save and for a point-aimed area whose shape itself parsed (#386's second half),
+    /// so this check is live: a Mummy's 60-foot Dreadful Glare (p.309) can no longer
+    /// land from anywhere on the board. It stays null — deliberately, not by gap — for
+    /// a point-aimed <b>Sphere</b> until #420 lands: every corpus Sphere prints its
+    /// radius as "N-foot-radius Sphere", which <c>AreaPattern</c> cannot read yet, so
+    /// <see cref="SaveEffect.Area"/> comes back null for one, and claiming its range
+    /// without its area would let this check narrow an area effect down to a single
+    /// target rather than refuse it honestly (see
+    /// <c>EntryMechanicsParser.ReadRange</c>'s own remarks for the full reasoning).
     /// A printed sight qualifier — "a creature the mummy can see" — is a different
     /// question and stays permanently unmodelled: the standing reading on
     /// <see cref="ConditionRules"/> is that this engine has no line-of-sight model, and
@@ -237,10 +241,11 @@ public sealed partial class Encounter
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
         }
 
-        // The printed range, when the extraction half has structured one onto this
-        // save (#386 — null everywhere until it does, which is every entry today, so
-        // this is unenforced exactly as it always was). Slotted here, immediately
-        // before Total Cover with nothing between, the same relative position
+        // The printed range, structured onto the save by extraction (#386) for a
+        // single-target save and for a point-aimed area whose own shape parsed — null,
+        // and so unenforced, for a point-aimed Sphere until #420 lands (this method's
+        // own remarks above have the reasoning). Slotted here, immediately before
+        // Total Cover with nothing between, the same relative position
         // attack.out_of_range and feature.divine_spark.out_of_range hold against their
         // own Total Cover checks. Two checks, mirroring CastSpell's pair: whenever a
         // target creature is given — a single-target save, or an area save merely

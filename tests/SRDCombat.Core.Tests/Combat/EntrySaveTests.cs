@@ -244,12 +244,14 @@ public class EntrySaveTests
     }
 
     /// <summary>
-    /// #386: the Mummy's 30-foot Dreadful Glare used to land from anywhere on the
+    /// #386: the Mummy's 60-foot Dreadful Glare used to land from anywhere on the
     /// board because nothing in <c>UseSaveEntry</c> ever measured distance. These pin
-    /// the three cases the acceptance criteria names: in range executes exactly as
-    /// before, out of range refuses named and spends nothing, and a null range — every
-    /// entry in the corpus today, since the extraction half has not landed — reaches
-    /// any distance exactly as it always has.
+    /// the three cases the acceptance criteria names against hand-authored data (a
+    /// synthetic 30-foot gaze, not the Mummy's own print): in range executes exactly
+    /// as before, out of range refuses named and spends nothing, and a null range —
+    /// every entry in the corpus before #421's extraction half landed, and still every
+    /// entry with no printed range or an unstructured one today (a point-aimed Sphere,
+    /// #420) — reaches any distance exactly as it always has.
     /// </summary>
     [Fact]
     public void ASingleTargetSaveWithinItsPrintedRangeExecutesAsToday()
