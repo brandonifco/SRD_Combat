@@ -48,6 +48,22 @@ public sealed class SaveFileTests : IDisposable
     /// <summary>A real, loadable save — a fresh run, nothing cleared yet.</summary>
     private static string SomeSaveJson() => RunSave.ToJson(GauntletRun.Start(Content));
 
+    /// <summary>Whether <paramref name="json"/> parses as a save — used to confirm a
+    /// setup step actually produced the corrupt content a test needs, rather than
+    /// asserting on <see cref="SaveFile"/> behaviour indirectly.</summary>
+    private static bool IsLoadableSaveJson(string json)
+    {
+        try
+        {
+            RunSave.FromJson(json);
+            return true;
+        }
+        catch (Exception failure) when (failure is System.Text.Json.JsonException or InvalidDataException)
+        {
+            return false;
+        }
+    }
+
     [Fact]
     public void TheFirstWriteHasNoBackupAndLeavesNoTempFileBehind()
     {
@@ -198,6 +214,18 @@ public sealed class SaveFileTests : IDisposable
     /// path must still rotate cleanly — new content live, the old (corrupt) primary
     /// retired into the backup slot, no scratch files left behind.
     /// </summary>
+    /// <remarks>
+    /// The rotation retires the old primary into <c>.bak</c> unconditionally, corrupt
+    /// content included — <see cref="SaveFile.Write"/> does not parse what it moves, by
+    /// design (see the class remarks: most of these tests use plain strings for exactly
+    /// that reason). That leaves <c>.bak</c> genuinely unreadable until the next healthy
+    /// write rotates something good in, which is qc's post-review finding: a plain
+    /// primary-then-.bak fallback has nothing to offer if the *next* write is
+    /// interrupted before it lands. <see cref="LoadRun"/>'s <c>.old</c> fallback is what
+    /// actually protects that window — proven by
+    /// <see cref="ACrashAtTheStartOfTheWriteAfterACorruptPrimaryRecoveryStillLoadsTheLatestState"/>,
+    /// which continues this exact scenario one write further.
+    /// </remarks>
     [Fact]
     public void AWriteOverACorruptPrimaryRotatesItIntoTheBackupSlotAndLeavesNoScratchFiles()
     {
@@ -214,6 +242,99 @@ public sealed class SaveFileTests : IDisposable
         Assert.Equal(corruptPrimary, File.ReadAllText(BackupPath));
         Assert.False(File.Exists(TempPath));
         Assert.False(File.Exists(OldPrimaryPath));
+    }
+
+    /// <summary>
+    /// #367's must-fix, found by qc reviewing the first attempt at this fix: a plain
+    /// two-copy fallback (primary, then <c>.bak</c>) is not enough on its own. This
+    /// walks the exact sequence qc traced:
+    /// <list type="bullet">
+    /// <item>T0: primary corrupt, <c>.bak</c> good (a torn write, or plain disk
+    /// corruption).</item>
+    /// <item>T1: a fallback load resumes off <c>.bak</c>.</item>
+    /// <item>T2: the next write completes in full — new content lands at <c>path</c>,
+    /// and the corrupt primary it displaced is rotated into <c>.bak</c>, overwriting
+    /// the good copy T1 just used. End state: good primary, corrupt <c>.bak</c>.</item>
+    /// <item>T3: the *following* write's first rename moves that good primary aside to
+    /// <c>.old</c> — and crashes there. <c>path</c> is now missing, <c>.bak</c> is
+    /// still T2's corrupt content, and the only good copy left is at <c>.old</c>.</item>
+    /// </list>
+    /// A primary-then-<c>.bak</c> fallback finds nothing loadable at T3 — total loss.
+    /// <see cref="LoadRun"/>'s <c>.old</c> fallback is exactly the copy <c>.old</c>
+    /// exists to recover.
+    /// </summary>
+    [Fact]
+    public void ACrashAtTheStartOfTheWriteAfterACorruptPrimaryRecoveryStillLoadsTheLatestState()
+    {
+        // T0: a real corrupt-primary-with-good-backup state.
+        SaveFile.Write(SavePath, SomeSaveJson());
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var intact = File.ReadAllText(SavePath);
+        File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
+
+        // T1: confirm the setup actually exercises a fallback load.
+        var fallback = SaveFile.LoadRun(SavePath);
+        Assert.NotNull(fallback.Saved);
+        Assert.True(fallback.UsedBackup, "Setup must actually exercise the fallback-load path (T1).");
+
+        // T2: the next write completes in full — the real SaveFile.Write, not a
+        // simulated partial state, so it exercises the actual rotation that leaves
+        // corrupt content in .bak.
+        var t2Content = SomeSaveJson();
+        SaveFile.Write(SavePath, t2Content);
+
+        Assert.Equal(t2Content, File.ReadAllText(SavePath));
+        Assert.False(IsLoadableSaveJson(File.ReadAllText(BackupPath)), "T2 must end with a corrupt .bak for T3 to be meaningful.");
+
+        // T3: reproduce the disk state one rename into the *next* write — the good
+        // primary from T2 moved aside to `.old`, nothing yet landed at `path`.
+        File.Move(SavePath, OldPrimaryPath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.NotNull(loaded.Saved);
+        Assert.True(loaded.UsedBackup);
+        Assert.Null(loaded.PrimaryFailureReason);
+        Assert.Equal(t2Content, ContentSerializer.Serialize(loaded.Saved!));
+
+        var run = GauntletRun.Resume(Content, loaded.Saved!);
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+    }
+
+    /// <summary>
+    /// Closes qc's finding 2 from the same review as a natural consequence of the
+    /// <c>.old</c> fallback, rather than needing a separate fix: on an ordinary write
+    /// over a *healthy* primary (no corruption anywhere in the sequence), a crash
+    /// between the first two renames used to be recoverable only via <c>.bak</c> — one
+    /// write older than the state that was actually live right up until the crash.
+    /// <see cref="LoadRun"/>'s <c>.old</c> fallback finds that freshest state instead of
+    /// silently rolling the run back a cycle.
+    /// </summary>
+    [Fact]
+    public void ACrashBetweenTheFirstTwoRenamesOnAHealthyPrimaryLoadsTheFreshestStateNotTheOlderBackup()
+    {
+        var olderContent = SomeSaveJson();
+        var currentContent = SomeSaveJson();
+        SaveFile.Write(SavePath, olderContent);
+        SaveFile.Write(SavePath, currentContent);
+
+        Assert.Equal(currentContent, File.ReadAllText(SavePath));
+        Assert.Equal(olderContent, File.ReadAllText(BackupPath));
+
+        // Reproduce the disk state one rename into a third write: the healthy,
+        // current primary has been moved aside to `.old`, nothing yet landed at
+        // `path`.
+        File.Move(SavePath, OldPrimaryPath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.NotNull(loaded.Saved);
+        Assert.True(loaded.UsedBackup);
+        Assert.Equal(currentContent, ContentSerializer.Serialize(loaded.Saved!));
+
+        var run = GauntletRun.Resume(Content, loaded.Saved!);
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
     }
 
     /// <summary>

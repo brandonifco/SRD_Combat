@@ -11,8 +11,10 @@ namespace SRDCombat.Game;
 /// read.
 /// </param>
 /// <param name="UsedBackup">
-/// True when the primary was missing or failed to parse and the <c>.bak</c> was read
-/// instead — the caller should tell the player this happened.
+/// True when the primary was missing or failed to parse and a fallback copy was read
+/// instead — either the rolling <c>.bak</c>, or the <c>.old</c> a write leaves behind
+/// when it crashes mid-rotation (see <see cref="SaveFile"/>'s remarks) — the caller
+/// should tell the player this happened.
 /// </param>
 /// <param name="PrimaryFailureReason">
 /// Why the primary was rejected, when it existed but did not parse. <c>null</c> when the
@@ -49,28 +51,41 @@ public sealed record SaveLoadResult(
 /// backup was there — but not via <see cref="File.Replace(string,string,string,bool)"/>,
 /// whose Unix implementation is <c>unlink(bak)</c>, then <c>link(path, bak)</c>, then
 /// <c>rename(tmp, path)</c>: a crash between the first two steps discards the existing
-/// <c>.bak</c> before the new primary has landed, and if the old <c>path</c> it is
-/// unlinking-and-relinking happened to be corrupt (a fallback load's next write — #367),
-/// that crash leaves a corrupt primary with no backup at all. Instead the rotation is
-/// three separate renames, each one a single atomic filesystem operation: the current
-/// primary moves to <c>path</c> + <c>.old</c>, the new content moves from <c>.tmp</c>
-/// into <c>path</c>, and only then does <c>.old</c> move into <c>path</c> + <c>.bak</c>.
-/// <b>The invariant that holds at every one of those renames</b>: before the first move,
-/// the untouched old <c>path</c> is still there; between the first and second, <c>path</c>
-/// is briefly missing but the backup from the *previous* successful write — the exact
-/// copy a fallback load would already have used — is untouched at <c>path</c> + <c>.bak</c>;
-/// from the second move on, the new primary is live at <c>path</c> and nothing after that
-/// point can lose it. The very first write for a path has nothing to back up, so it is a
-/// plain move instead — and any <c>.bak</c> already sitting there (left over from a run
-/// whose primary was deleted separately from its backup) is deleted after the move lands
-/// the new primary — never before, so a crash between the two steps still leaves a
-/// loadable file — and a backup can then never predate the primary beside it and get
-/// resurrected as that primary's history.
+/// <c>.bak</c> before the new primary has landed. Instead the rotation is three separate
+/// renames, each one a single atomic filesystem operation: the current primary moves to
+/// <c>path</c> + <c>.old</c>, the new content moves from <c>.tmp</c> into <c>path</c>,
+/// and only then does <c>.old</c> move into <c>path</c> + <c>.bak</c>.
 /// </para>
 /// <para>
-/// <b>Loading falls back to the backup</b> when the primary is missing or fails to parse
-/// — a corrupt or truncated primary is not treated as "no save", because the whole point
-/// of keeping a backup is to survive exactly that.
+/// <b>The invariant this keeps</b> is not "<c>.bak</c> is never touched before the new
+/// primary lands" — <c>path</c> + <c>.old</c> is a real gap, and the content it holds is
+/// whatever <c>path</c> held going in, which the caller may already know is corrupt (a
+/// fallback load's next write — #367). The invariant is: <b>a loadable copy exists among
+/// <c>path</c>, <c>path</c> + <c>.old</c> and <c>path</c> + <c>.bak</c> at every one of
+/// the three renames</b>, and <see cref="LoadRun"/> checks all three, in that order, to
+/// honour it — not just the two a caller sees in <see cref="SaveLoadResult"/>. Before the
+/// first move, the untouched old <c>path</c> is still there. Between the first and
+/// second, <c>path</c> is briefly missing, but <c>.old</c> now holds exactly what
+/// <c>path</c> held a moment ago — if that was good, <c>LoadRun</c> finds it there first,
+/// fresher than whatever stale <c>.bak</c> a moment ago's write may have left behind
+/// (this is what closes the case a plain two-copy fallback cannot: a first write over a
+/// corrupt primary leaves the *new* primary healthy but rotates the corrupt content into
+/// <c>.bak</c>, and a second write's first rename can then be interrupted with nothing
+/// good at <c>path</c> or <c>.bak</c> — only at <c>.old</c>). From the second move on, the
+/// new primary is live at <c>path</c> and nothing after that point — including what the
+/// third rename does to <c>.bak</c> — can lose it. The very first write for a path has
+/// nothing to back up, so it is a plain move instead — and any <c>.bak</c> already sitting
+/// there (left over from a run whose primary was deleted separately from its backup) is
+/// deleted after the move lands the new primary — never before, so a crash between the
+/// two steps still leaves a loadable file — and a backup can then never predate the
+/// primary beside it and get resurrected as that primary's history.
+/// </para>
+/// <para>
+/// <b>Loading falls back past the primary</b> to <c>.old</c> and then <c>.bak</c> when the
+/// primary is missing or fails to parse — a corrupt or truncated primary is not treated as
+/// "no save", because the whole point of keeping a backup is to survive exactly that, and
+/// <c>.old</c> exists on disk only when a write crashed mid-rotation, so checking it costs
+/// nothing on the (overwhelmingly common) path where nothing ever crashed.
 /// </para>
 /// </remarks>
 public static class SaveFile
@@ -109,12 +124,11 @@ public static class SaveFile
         if (File.Exists(path))
         {
             // Three separate atomic renames rather than File.Replace — see the class
-            // remarks for why: File.Replace's Unix implementation unlinks the existing
-            // .bak before the new primary is proven, so a crash mid-Replace after a
-            // fallback load (the primary already corrupt) can leave corrupt-primary
-            // with no backup at all (#367). Moving the current primary out of the way
-            // first, landing the new primary second, and retiring the old primary into
-            // the backup slot last keeps a loadable copy on disk at every rename.
+            // remarks for the full invariant (#367). This unconditionally retires
+            // whatever was at `path` into `.bak`, corrupt or not — it does not need to
+            // know which, because LoadRun's .old fallback is what actually protects
+            // the crash window this rotation opens, not a promise that .bak is always
+            // good content.
             var oldPrimaryPath = OldPrimaryPathFor(path);
 
             File.Move(path, oldPrimaryPath, overwrite: true);
@@ -149,12 +163,21 @@ public static class SaveFile
     }
 
     /// <summary>
-    /// Reads the save at <paramref name="path"/>, falling back to its <c>.bak</c> if the
-    /// primary is missing or unreadable. Never throws; a failure to read either copy
-    /// comes back as a <c>null</c> <see cref="SaveLoadResult.Saved"/>, with both
-    /// failure reasons reported — a corrupt backup does not hide behind a missing
-    /// primary.
+    /// Reads the save at <paramref name="path"/>, falling back first to <c>.old</c> and
+    /// then to <c>.bak</c> if the primary is missing or unreadable. Never throws; a
+    /// failure to read every copy comes back as a <c>null</c> <see cref="SaveLoadResult.Saved"/>,
+    /// with both public failure reasons reported — a corrupt backup does not hide behind
+    /// a missing primary.
     /// </summary>
+    /// <remarks>
+    /// <c>.old</c> is checked silently, ahead of <c>.bak</c>: it only exists on disk when
+    /// a write crashed partway through its rotation (see the class remarks), in which case
+    /// it holds whatever <c>path</c> held immediately before that write started — always
+    /// at least as fresh as <c>.bak</c>, and sometimes the only loadable copy left. Its
+    /// own failure (if it exists but does not parse) is not surfaced through
+    /// <see cref="SaveLoadResult"/> the way the primary's and backup's are: it is a
+    /// crash-recovery implementation detail, not a copy either client shows the player.
+    /// </remarks>
     public static SaveLoadResult LoadRun(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -162,6 +185,11 @@ public static class SaveFile
         if (TryReadRun(path, out var primary, out var primaryFailure))
         {
             return new SaveLoadResult(primary, UsedBackup: false, PrimaryFailureReason: null, BackupFailureReason: null);
+        }
+
+        if (TryReadRun(OldPrimaryPathFor(path), out var old, out _))
+        {
+            return new SaveLoadResult(old, UsedBackup: true, PrimaryFailureReason: primaryFailure, BackupFailureReason: null);
         }
 
         if (TryReadRun(BackupPathFor(path), out var backup, out var backupFailure))
