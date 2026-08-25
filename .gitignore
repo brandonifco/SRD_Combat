@@ -111,4 +111,6 @@ client/assets/sprites/Terrain/*
 # Scratch
 *.log
 *.tmp
+*.bak
+*.old
 srdcombat-save.json
