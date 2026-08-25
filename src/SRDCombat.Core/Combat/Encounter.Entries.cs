@@ -175,11 +175,30 @@ public sealed partial class Encounter
     /// DC, exactly as a save spell does.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The riders passed through are the save's own — every one the engine can execute
     /// lands on a failed save, and the rest stay counted in the entry's
     /// <c>UnmodelledClauses</c>. A Grappled rider carries no range: an engulf-style
     /// grapple has no printed reach to measure, so it ends only by escape or the
     /// grappler's incapacity.
+    /// </para>
+    /// <para>
+    /// <b>Range is enforced; sight is not (#386).</b> A printed distance —
+    /// <see cref="SaveEffect.RangeFeet"/> — refuses a save aimed beyond it, the same
+    /// way <c>attack.out_of_range</c> and <c>spell.out_of_range</c> already gate their
+    /// own targeting paths. The check exists, but the field it reads stays null for
+    /// every entry in the corpus until extraction structures a printed range onto it
+    /// — a separate, deliberately later half of #386 — so a Mummy's 30-foot Dreadful
+    /// Glare still lands from anywhere on the board <i>today</i>, exactly as before
+    /// this method ever measured distance; only once that half ships does this check
+    /// actually start refusing real content.
+    /// A printed sight qualifier — "a creature the mummy can see" — is a different
+    /// question and stays permanently unmodelled: the standing reading on
+    /// <see cref="ConditionRules"/> is that this engine has no line-of-sight model, and
+    /// that gap is not this issue's to close. The area-shape gate above (<see
+    /// cref="AreaTargeting"/>) still decides who an area save reaches; the range check
+    /// only governs how far the save itself may be aimed.
+    /// </para>
     /// </remarks>
     private ActionRefusal? UseSaveEntry(Combatant actor, MonsterEntry entry, GridPosition? point, Combatant? target)
     {
@@ -216,6 +235,40 @@ public sealed partial class Encounter
         if (save.Area is null && target is { IsDead: true })
         {
             return new ActionRefusal("target.dead", $"{target.Name} is already dead.");
+        }
+
+        // The printed range, when the extraction half has structured one onto this
+        // save (#386 — null everywhere until it does, which is every entry today, so
+        // this is unenforced exactly as it always was). Slotted here, immediately
+        // before Total Cover with nothing between, the same relative position
+        // attack.out_of_range and feature.divine_spark.out_of_range hold against their
+        // own Total Cover checks. Two checks, mirroring CastSpell's pair: whenever a
+        // target creature is given — a single-target save, or an area save merely
+        // aimed via a target reference — the distance to that creature is what
+        // counts, the same rule regardless of area; only a bare point aim with no
+        // creature reference (necessarily an area effect — a single-target save
+        // already refused above without one) falls to the second check. Sight ("a
+        // creature the mummy can see") stays unenforced — the standing no-sight-model
+        // reading on ConditionRules — this checks distance alone.
+        if (target is not null && save.RangeFeet is { } range)
+        {
+            var rangeDistance = actor.Position.DistanceFeetTo(target.Position);
+
+            if (rangeDistance > range)
+            {
+                return new ActionRefusal(
+                    "entry.out_of_range",
+                    $"{target.Name} is {rangeDistance} ft. away, beyond {entry.Name}'s {range} ft. range.");
+            }
+        }
+
+        if (target is null && save.Area is not null && point is { } aimedPoint
+            && save.RangeFeet is { } pointRange
+            && actor.Position.DistanceFeetTo(aimedPoint) > pointRange)
+        {
+            return new ActionRefusal(
+                "entry.out_of_range",
+                $"That square is beyond {entry.Name}'s {pointRange} ft. range.");
         }
 
         // A single-target save effect targets directly, so Total Cover refuses it; an

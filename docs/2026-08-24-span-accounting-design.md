@@ -567,6 +567,21 @@ this project models no sight at all (the standing reading recorded on `Condition
 for Frightened), so `the dragon can see` is permanently unexpressed rather than a gap
 awaiting a fix.
 
+> **Update (2026-08-24):** #403 landed the engine half of the gap this section
+> describes and §12.1 files as a non-goal: `SaveEffect` now carries a nullable
+> `RangeFeet`, and `UseSaveEntry` refuses a single-target or point-aimed save beyond it
+> with `entry.out_of_range`, the same shape `attack.out_of_range` and
+> `spell.out_of_range` already hold on their own paths. The refusal is real but
+> **inert** — no extractor change shipped with #403, so every `RangeFeet` in the corpus
+> is still null and the new checks never fire against real content (proven by the
+> frozen transcript staying byte-identical across the change). The sentence above —
+> "`SaveEffect` carries no range field... and never on distance" — is now stale as a
+> description of the *engine*, but remains exactly true as a description of what *this
+> content* prints today, which is the only thing §7.6's claim gate actually depends on.
+> The matcher-widening trigger stated below is unchanged: the matcher widens only once
+> the extraction half itself populates `RangeFeet` from the printed clause, not because
+> the engine can now enforce a range in principle. Do not widen it from this note alone.
+
 | Printed shape | Count | Claim? |
 | --- | --- | --- |
 | `each creature in a <N>-foot Cone` | 47 | **yes** — self-originating area the engine builds |
@@ -970,6 +985,14 @@ answer.
   disappears on its own — the claim following the code, which is the order this contract
   requires. **Sight is not the same case**: this project models no sight at all, so
   `the dragon can see` is a permanent honest residue rather than an outstanding fix.
+
+  > **Update (2026-08-24):** The engine half closed in #403 — see the matching note in
+  > §7.6. `UseSaveEntry` now refuses beyond a printed range, but the extraction half
+  > this bullet describes (structuring the distance onto `SaveEffect.RangeFeet`) has
+  > not landed, so the printed distance is still residue under §7.6 and this remains an
+  > open non-goal for this refactor exactly as filed. Nothing here changes, and the
+  > matcher does not widen, until that half ships.
+
 - **Grammar/AST parsing.** Declined at adjudication and not revisited here. The one thing
   that would reopen it is span-consuming regexes fighting the structure — the honest place
   to watch for it is §7.4's subject anchoring and §7.6's target clause, and if either
