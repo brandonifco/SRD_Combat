@@ -682,6 +682,22 @@ public sealed class SpriteLibrary
     }
 
     /// <summary>Each frame's opaque box, in that frame's own coordinates.</summary>
+    /// <remarks>
+    /// <b>#296 follow-up:</b> this used to treat a sheet narrower than its own height as
+    /// "not a strip at all" and return nothing, the same test <see cref="LoadStrip"/>
+    /// uses to decide a sheet needs horizontal padding — but here it meant every
+    /// single-drawing pack (a hand-painted portrait, not an animated strip: Fighter,
+    /// Rogue, Bandit, Goblin and a dozen more) measured zero frames. <see cref="Median"/>
+    /// defaults an empty set to 1, so <see cref="Measure"/> put every one of their
+    /// <see cref="Figure.Stature"/>/<see cref="Figure.Breadth"/> on that floor — a figure
+    /// a pixel wide and a pixel tall divides <c>ScaleFor</c>'s footprint clamp by
+    /// (effectively) infinity, silently switching the clamp off rather than applying it.
+    /// It never showed, because every affected pack's real proportions happen to fall
+    /// well inside the clamp's generous allowance anyway (verified: identical scale
+    /// before and after this fix, for all of them) — until a pack that does not.
+    /// The fix centres the one frame exactly where <see cref="LoadStrip"/> draws it,
+    /// rather than rejecting it.
+    /// </remarks>
     private static List<Rect2I> FrameBoxes(string path)
     {
         var boxes = new List<Rect2I>();
@@ -695,27 +711,33 @@ public sealed class SpriteLibrary
         var width = image.GetWidth();
         var frameSize = image.GetHeight();
 
-        if (frameSize == 0 || width < frameSize)
+        if (frameSize == 0)
         {
             return boxes;
         }
 
-        for (var frame = 0; frame < width / frameSize; frame++)
+        var narrow = width < frameSize;
+        var offsetX = narrow ? (frameSize - width) / 2 : 0;
+        var frameWidth = narrow ? width : frameSize;
+        var frameCount = narrow ? 1 : width / frameSize;
+
+        for (var frame = 0; frame < frameCount; frame++)
         {
             int minX = frameSize, minY = frameSize, maxX = -1, maxY = -1;
+            var frameLeft = frame * frameWidth;
 
             for (var y = 0; y < frameSize; y++)
             {
-                for (var x = 0; x < frameSize; x++)
+                for (var x = 0; x < frameWidth; x++)
                 {
-                    if (data[(((y * width) + (frame * frameSize) + x) * 4) + 3] < 32)
+                    if (data[(((y * width) + frameLeft + x) * 4) + 3] < 32)
                     {
                         continue;
                     }
 
-                    minX = Math.Min(minX, x);
+                    minX = Math.Min(minX, x + offsetX);
                     minY = Math.Min(minY, y);
-                    maxX = Math.Max(maxX, x);
+                    maxX = Math.Max(maxX, x + offsetX);
                     maxY = Math.Max(maxY, y);
                 }
             }
