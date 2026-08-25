@@ -606,6 +606,17 @@ internal static partial class EntryMechanicsParser
             coverage.Claim(SaveTargetClausePattern(), target, "save.target_clause");
         }
 
+        // #386's extraction half: the printed "within N feet" a single target or a
+        // point-aimed area (a Sphere's own point of origin) may be used at — read
+        // independently of the target-clause match above, and deliberately so: a
+        // gated single target ("one creature within 30 feet that is Charmed or
+        // Grappled by the aboleth") fails SaveTargetClausePattern's own negative
+        // lookahead and claims nothing there, but it still prints a real, enforceable
+        // range that UseSaveEntry's #403 check should see regardless of whether the
+        // gate itself is ever modelled. See ReadRange's own remarks for the shapes
+        // this does and does not populate.
+        var rangeFeet = ReadRange(text, header.Index + header.Length, coverage);
+
         var failureIndex = text.IndexOf("Failure", StringComparison.Ordinal);
         IReadOnlyList<AttackDamage> failureDamage;
 
@@ -653,7 +664,81 @@ internal static partial class EntryMechanicsParser
             }
         }
 
-        return new SaveEffect(ability, dc, ParseArea(text, coverage), failureDamage, success, conditions);
+        return new SaveEffect(
+            ability,
+            dc,
+            ParseArea(text, coverage),
+            failureDamage,
+            success,
+            conditions,
+            RangeFeet: rangeFeet);
+    }
+
+    /// <summary>
+    /// Reads the printed "within N feet" a single-target or point-aimed save may be
+    /// used at (#386) — the Mummy's "one creature the mummy can see within 60 feet",
+    /// a Sphere's "centered on a point the dragon can see within 90 feet".
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Self-originating areas keep this null, always.</b> A Cone, a Line or an
+    /// Emanation originating from the creature itself has no separate "range" to
+    /// enforce — its only printed distance is the shape's own size, already captured
+    /// by <see cref="ParseArea"/> — and none of the 93 Cone/Line/Emanation entries in
+    /// the corpus prints "within" anywhere in its target clause (verified directly).
+    /// This method does not even look for the shape: it only fires when the clause
+    /// opens with a single-target's "one" (any adjectives, any gate after it) or
+    /// names a Sphere's own point of origin, so a self-originating area is excluded
+    /// by construction rather than by an incidental absence of the word "within".
+    /// Storm Giant's Lightning Storm — a point-aimed <b>Cylinder</b> printing its own
+    /// "within 500 feet" — is deliberately excluded the same way: <see
+    /// cref="AreaTargeting.CanResolve"/> refuses Cylinder outright (no height model),
+    /// so <c>UseSaveEntry</c> never reaches a range check for it regardless, and
+    /// claiming a distance nothing will ever measure would be the exact false claim
+    /// design §2.2 forbids.
+    /// </para>
+    /// <para>
+    /// <b>The claim is exactly "within N feet", never the words around it.</b> Sight
+    /// ("the mummy can see") stays permanently unexpressed under the standing
+    /// no-sight-model reading (design §7.6), and a state or relationship gate ("that
+    /// is Charmed or Grappled by the aboleth", "that has 0 Hit Points") is a
+    /// selection rule this engine does not run — claiming either would be the same
+    /// false claim the target-clause matcher above already refuses them. The two
+    /// printed word orders — "the X can see within N feet" and "within N feet that
+    /// …" — are both handled by searching for the literal substring rather than
+    /// anchoring a fixed position, since anchoring one order would silently miss
+    /// the other.
+    /// </para>
+    /// </remarks>
+    private static int? ReadRange(string text, int start, EntryCoverage coverage)
+    {
+        var clauseEnd = text.IndexOf('.', start);
+        var clause = clauseEnd < 0 ? text[start..] : text[start..clauseEnd];
+        var clauseStart = start;
+
+        // The header's own match stops at the DC digits, so `clause` still carries the
+        // leading ", " that separates the header from the target clause — trimmed here
+        // (comma and whitespace both) rather than folded into the boundary computed
+        // above, since that boundary is also what the caller uses for the absolute
+        // offsets in the claim below.
+        var isSingleTarget = clause.TrimStart(' ', ',').StartsWith("one ", StringComparison.Ordinal);
+        var isPointAimedSphere = clause.Contains("Sphere centered on a point", StringComparison.Ordinal);
+
+        if (!isSingleTarget && !isPointAimedSphere)
+        {
+            return null;
+        }
+
+        var match = SaveRangePattern().Match(clause);
+
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        coverage.Claim(new TextSpan(clauseStart + match.Index, match.Length), "save.range");
+
+        return int.Parse(match.Groups["range"].Value, CultureInfo.InvariantCulture);
     }
 
     /// <summary>Parses "30-foot Cone", "30-foot-long, 5-foot-wide Line", "5-foot Emanation".</summary>
@@ -1436,6 +1521,12 @@ internal static partial class EntryMechanicsParser
         @"|one\s+creature\b(?!\s+(?:within\s+\d+\s+feet\s+)?(?:that\b|Grappled\b))" +
         @")")]
     private static partial Regex SaveTargetClausePattern();
+
+    // "within 60 feet" — the literal substring ReadRange claims (#386), wherever it
+    // sits in a single-target or point-aimed-Sphere clause. Fully literal but for the
+    // digits, which are read into structure; nothing permissive to exclude.
+    [GeneratedRegex(@"\bwithin\s+(?<range>\d+)\s+feet\b")]
+    private static partial Regex SaveRangePattern();
 
     [GeneratedRegex(@"(?<size>\d+)-foot(?:-long,?\s*(?<width>\d+)-foot-?\s?wide)?\s+(?<shape>Cone|Line|Emanation|Cube|Sphere|Cylinder)")]
     private static partial Regex AreaPattern();

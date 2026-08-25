@@ -443,6 +443,81 @@ public class EntrySaveTests
         Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Move);
     }
 
+    /// <summary>
+    /// #405: <c>SaveReaches</c>'s range guard has no test that fails without it
+    /// specifically — the engine's own <c>entry.out_of_range</c> refusal
+    /// (<see cref="ASingleTargetSaveWithinItsPrintedRangeExecutesAsToday"/>'s family)
+    /// masks the gap, since a refused pick and a never-considered pick both end in
+    /// <c>MoveTowards</c>. What the guard alone buys is the <em>pick</em>:
+    /// <c>TryUseLimitedEntry</c> orders candidates by average damage and takes the
+    /// first, so an out-of-range gaze with the higher average would win that
+    /// ordering, get refused by <c>UseEntry</c>, and the whole call reports no entry
+    /// used — never falling through to the second-best, genuinely in-range entry.
+    /// With the guard, <c>SaveReaches</c> excludes the out-of-range candidate before
+    /// the ordering ever runs, so the in-range entry is what gets picked and actually
+    /// used — which is exactly what this pins.
+    /// </summary>
+    [Fact]
+    public void ThePolicyPicksTheInRangeEntryOverAHigherDamageOutOfRangeOne()
+    {
+        var strongButOutOfRange = new SaveEffect(
+            Ability.Wisdom,
+            11,
+            null,
+            [new AttackDamage(DiceExpression.Parse("4d6"), DamageType.Psychic, 14)],
+            SaveSuccessOutcome.NoEffect,
+            [],
+            RangeFeet: 30);
+
+        var weakButInRange = new SaveEffect(
+            Ability.Wisdom,
+            11,
+            null,
+            [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Psychic, 2)],
+            SaveSuccessOutcome.NoEffect,
+            [],
+            RangeFeet: 60);
+
+        var stats = CombatTestData.Stats(initiativeBonus: 10, attacks: []) with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Strong Gaze",
+                    MonsterEntrySection.Action,
+                    "Strong Gaze.",
+                    Mechanics: EntryMechanics.SavingThrow,
+                    Save: strongButOutOfRange,
+                    Usage: new UsageLimit(UsageLimitKind.PerDay, UsesPerDay: 1)),
+                new MonsterEntry(
+                    "Weak Gaze",
+                    MonsterEntrySection.Action,
+                    "Weak Gaze.",
+                    Mechanics: EntryMechanics.SavingThrow,
+                    Save: weakButInRange,
+                    Usage: new UsageLimit(UsageLimitKind.PerDay, UsesPerDay: 1)),
+            ],
+        };
+
+        var breather = CombatTestData.Combatant("breather", sideId: CombatTestData.Monsters, stats: stats, y: 5);
+
+        // 10 squares * 5 ft. = 50 ft.: beyond Strong Gaze's 30 ft. range, within Weak
+        // Gaze's 60 ft. one. Two initiative rolls (Encounter.Start), then a natural 1
+        // fails the save, then the 1d4 damage roll.
+        var encounter = Fight(new ScriptedRandomSource(1, 1, 1, 2), breather, Hero("a", x: 10));
+
+        SimpleTacticsPolicy.TakeTurn(encounter);
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Entry
+                && step.Narration.Contains("uses Weak Gaze", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            encounter.Log,
+            step => step.Narration.Contains("Strong Gaze", StringComparison.Ordinal));
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Move);
+    }
+
     private static SaveEffect ConeSave() => new(
         Ability.Dexterity,
         13,
