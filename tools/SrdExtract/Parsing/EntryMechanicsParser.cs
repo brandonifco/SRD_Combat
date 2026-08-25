@@ -1477,12 +1477,23 @@ internal static partial class EntryMechanicsParser
 
     // "the Blinded and Deafened conditions" (#372) — the plural conjunction
     // ConditionPattern cannot see: its own literal "condition" never matches "conditions"
-    // ($-less, so it CAN slice a prefix of the plural word, but nothing in the corpus
-    // ever prints "the" directly before the second name — "and" always sits there
-    // instead — so the singular pattern finds nothing in either name; confirmed empty
-    // on all 13 printings). Two names only: the corpus prints no three-name conjunction
-    // ("X, Y, and Z conditions") and no "or"-joined pair, so this pattern is anchored to
-    // exactly that shape rather than generalised past what the book prints.
+    // ($-less, so it CAN slice a prefix of the plural word, but nothing in the monster
+    // stat blocks ever prints "the" directly before the second name — "and" always sits
+    // there instead — so the singular pattern finds nothing in either name; confirmed
+    // empty on all 13 monster printings). Two names only, and joined by "and": the
+    // monster stat blocks print no three-name conjunction ("X, Y, and Z conditions") and
+    // no "or"-joined pair, so this pattern is anchored to exactly that shape rather than
+    // generalised past what the book's bestiary prints.
+    //
+    // This method also runs over species traits, class features and spells (shared via
+    // ClassifyTrait, design §8), where the corpus is wider and the claim above does not
+    // hold: Divine Word prints a three-name row ("the Blinded, Deafened, and Stunned
+    // conditions") and Protection from Evil and Good prints an "or"-joined pair ("the
+    // Charmed or Frightened conditions"). Both are deliberate, known fall-throughs —
+    // this pattern requires a literal "and" between exactly two names, so a three-name
+    // list's middle comma and an "or" both fail to match anywhere, and the whole clause
+    // falls to residue exactly as it did before this pattern existed. Verified: neither
+    // shape produces a partial match on any of the names it contains.
     [GeneratedRegex(@"the\s+(?<first>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+and\s+(?<second>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+conditions(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex PluralConditionPattern();
 

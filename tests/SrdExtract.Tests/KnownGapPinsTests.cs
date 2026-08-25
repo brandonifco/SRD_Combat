@@ -15,8 +15,8 @@ namespace SrdExtract.Tests;
 /// outcome. #372 is fixed on its own terms too — <c>PluralConditionPattern</c>
 /// recognises "the X and Y conditions" and each name flows through the existing
 /// imposability gates independently — and its former pin now lives as a
-/// characterization fixture in <c>EntryMechanicsCharacterizationTests</c>'s Conditions
-/// region instead of here.
+/// characterization fixture in <c>EntryMechanicsCharacterizationTests</c>'s "Plural
+/// conditions (#372)" region instead of here.
 /// </summary>
 public sealed class KnownGapPinsTests
 {
