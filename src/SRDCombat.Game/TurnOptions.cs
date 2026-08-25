@@ -341,5 +341,5 @@ public static class TurnOptions
             && !ReferenceEquals(other, actor)
             && !other.IsDead
             && other.Inventory.TotalPotions > 0
-            && actor.Position.DistanceFeetTo(other.Position) <= PotionRules.ReachFeet);
+            && actor.DistanceFeetTo(other) <= PotionRules.ReachFeet);
 }

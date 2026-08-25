@@ -442,7 +442,7 @@ public sealed partial class Encounter
                 $"{target.Name} is dead; Divine Spark restores the living or harms them.");
         }
 
-        if (combatant.Position.DistanceFeetTo(target.Position) > DivineSparkRangeFeet)
+        if (combatant.DistanceFeetTo(target) > DivineSparkRangeFeet)
         {
             return new ActionRefusal(
                 "feature.divine_spark.out_of_range",
@@ -607,7 +607,7 @@ public sealed partial class Encounter
             ally.Id != attacker.Id
             && ally.SideId == attacker.SideId
             && ally.IsActive
-            && ally.Position.DistanceFeetTo(target.Position) <= Battlefield.FeetPerSquare);
+            && ally.DistanceFeetTo(target) <= Battlefield.FeetPerSquare);
     }
 
     /// <summary>

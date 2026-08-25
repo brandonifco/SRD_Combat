@@ -146,7 +146,7 @@ public sealed partial class Encounter
                 $"{actor.Name} is Charmed by {target.Name} and cannot attack them.");
         }
 
-        var distance = actor.Position.DistanceFeetTo(target.Position);
+        var distance = actor.DistanceFeetTo(target);
 
         if (!attack.CanReach(distance))
         {
@@ -257,7 +257,7 @@ public sealed partial class Encounter
         // reading on ConditionRules — this checks distance alone.
         if (target is not null && save.RangeFeet is { } range)
         {
-            var rangeDistance = actor.Position.DistanceFeetTo(target.Position);
+            var rangeDistance = actor.DistanceFeetTo(target);
 
             if (rangeDistance > range)
             {
@@ -269,7 +269,7 @@ public sealed partial class Encounter
 
         if (target is null && save.Area is not null && point is { } aimedPoint
             && save.RangeFeet is { } pointRange
-            && actor.Position.DistanceFeetTo(aimedPoint) > pointRange)
+            && actor.DistanceFeetTo(aimedPoint) > pointRange)
         {
             return new ActionRefusal(
                 "entry.out_of_range",
