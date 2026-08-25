@@ -1249,9 +1249,12 @@ public static class SimpleTacticsPolicy
         // TryUseLimitedEntry/TryUseBonusEntry order candidates by damage and take the
         // first, so an out-of-range gaze with the highest average damage would win
         // that ordering, get refused, and the call reports no entry used at all —
-        // never falling through to try the second-best, in-range entry instead. Null
-        // — every entry today, until the extraction half structures a range onto one
-        // — means unenforced, exactly as before.
+        // never falling through to try the second-best, in-range entry instead.
+        // Extraction structures RangeFeet for a single-target save and for a
+        // point-aimed area whose shape parsed; it stays null — unenforced, same as
+        // before this method ever measured distance — for a point-aimed Sphere until
+        // #420 lands (AreaPattern has no "-radius" branch yet), and for any save the
+        // extractor found no printed distance on at all.
         if (save.RangeFeet is { } range && distance > range)
         {
             return false;

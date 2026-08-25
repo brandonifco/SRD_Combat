@@ -137,14 +137,17 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Null(rider.Duration);
         Assert.True(rider.IsFullyModelled);
 
-        // The rider itself is fully modelled (nothing changes there), but this is a
-        // single-target save entry, and #382's target-clause matcher (design §7.6)
-        // claims only the head noun "one creature" — the printed distance and sight
-        // qualifier are rules UseSaveEntry does not enforce (#386), so claiming them
-        // would be a false claim. The qualifier is honest residue now instead of
-        // vanishing under the old whole-sentence "Saving Throw:" credit.
+        // The rider itself is fully modelled (nothing changes there). This is a
+        // single-target save entry, so the printed distance is now claimed —
+        // ReadRange structures "within 5 feet" onto SaveEffect.RangeFeet (#386) — but
+        // the sight qualifier stays permanently unenforced (the standing no-sight-
+        // model reading), and "one creature" itself is gated by the "that…" clause
+        // following it (design §7.6's own negative lookahead), so it is not claimed
+        // by SaveTargetClausePattern either. Both survive as residue, split into two
+        // chunks by the now-claimed "within 5 feet" that used to sit between them.
+        Assert.Equal(5, entry.Save!.RangeFeet);
         Assert.Equal(
-            ["one creature within 5 feet that the gladiator can see"],
+            ["one creature", "that the gladiator can see"],
             entry.UnmodelledClauses);
     }
 
@@ -800,12 +803,13 @@ public sealed class EntryMechanicsCharacterizationTests
         // regains 10 (3d6) Hit Points" is real, unexecuted mechanics — a kill-and-heal
         // rider with no ConditionType to attach to at all, so it never reaches
         // AppliedConditions the way the Balor's Prone rider above does; it is counted
-        // straight into UnmodelledClauses instead. This entry's second residue line is
-        // a different gap: a single-target save entry claims only the head noun "one
-        // creature" (design §7.6) — the distance and the sight qualifier are printed
-        // rules UseSaveEntry does not enforce (#386), so the whole qualifier clause is
-        // honest residue rather than a false claim of range or sight the engine does
-        // not check.
+        // straight into UnmodelledClauses instead. This entry's other two residue
+        // lines are a different gap: a single-target save entry claims only the head
+        // noun "one creature" (design §7.6) plus, since #386, the printed range —
+        // "within 5 feet" is carved out of the qualifier below and structured onto
+        // RangeFeet — but the sight qualifier and the "that has 0 Hit Points" gate
+        // are printed rules UseSaveEntry does not enforce, so what's left of the
+        // qualifier splits into two honest residue chunks around the claimed range.
         var entry = EntryMechanicsParser.Classify(
             "Consume Life",
             MonsterEntrySection.BonusAction,
@@ -813,9 +817,11 @@ public sealed class EntryMechanicsCharacterizationTests
             "feet that has 0 Hit Points. Failure: The target dies, and the wisp regains 10 (3d6) " +
             "Hit Points.");
 
+        Assert.Equal(5, entry.Save!.RangeFeet);
         Assert.Equal(
             [
-                "one living creature the wisp can see within 5 feet that has 0 Hit Points",
+                "one living creature the wisp can see",
+                "that has 0 Hit Points",
                 "The target dies, and the wisp regains 10 (3d6) Hit Points",
             ],
             entry.UnmodelledClauses);
@@ -1202,13 +1208,126 @@ public sealed class EntryMechanicsCharacterizationTests
 
         // The other two lines are pre-existing and unrelated to the section gate: the
         // single-target save's sight qualifier (design §7.6 claims only "one
-        // creature") and the recharge clause's own "Failure or Success:" side clause
-        // (#370 — claimed by nobody, design §4.1).
+        // creature"; the printed range is now claimed too — #386 — so only "the solar
+        // can see" is left of the qualifier, distance carved out) and the recharge
+        // clause's own "Failure or Success:" side clause (#370 — claimed by nobody,
+        // design §4.1).
+        Assert.Equal(120, entry.Save!.RangeFeet);
         Assert.Equal(
             [
-                "the solar can see within 120 feet",
+                "the solar can see",
                 "The target has the Blinded condition for 1 minute",
                 "Failure or Success: The solar can't take this action again until the start of its next turn",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    #endregion
+
+    #region Save range (#386)
+
+    [Fact]
+    public void ASingleTargetSavesPrintedRangeStructuresOntoRangeFeet()
+    {
+        // Mummy's Dreadful Glare, verbatim. "one creature the mummy can see within 60
+        // feet" — the sight-before-distance word order. ReadRange finds "within 60
+        // feet" wherever it sits and claims exactly that substring, leaving the sight
+        // qualifier ("the mummy can see") as its own residue rather than folding the
+        // now-claimed distance into it.
+        var entry = EntryMechanicsParser.Classify(
+            "Dreadful Glare",
+            MonsterEntrySection.Action,
+            "Wisdom Saving Throw: DC 11, one creature the mummy can see within 60 feet. Failure: " +
+            "The target has the Frightened condition until the end of the mummy's next turn. " +
+            "Success: The target is immune to this mummy's Dreadful Glare for 24 hours.");
+
+        Assert.Equal(60, entry.Save!.RangeFeet);
+        Assert.Equal(
+            [
+                "the mummy can see",
+                "Success: The target is immune to this mummy's Dreadful Glare for 24 hours",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void APointAimedSpheresRangeStaysResidueUntilItsAreaDoes()
+    {
+        // Adult Green Dragon's Noxious Miasma, verbatim. A point-aimed Sphere's range
+        // is only honest to claim once ParseArea actually structures the Sphere
+        // itself — AreaPattern's own literal expects "N-foot Cone"/"N-foot-long...
+        // wide Line" immediately followed by the shape name, and every Sphere in the
+        // corpus instead prints "N-foot-radius Sphere", so Area comes back null for
+        // every Sphere entry today (confirmed against all 9 in the corpus,
+        // pre-existing and unrelated to #386 — filed as #420 rather than folded in
+        // here). qc's review of #421 caught the live consequence of claiming the
+        // range anyway: UseSaveEntry's save.Area is null && target is null branch
+        // would then run a Sphere entry as a single target, silently discarding
+        // "each creature in" — so ReadRange now gates its point-aimed-Sphere branch
+        // on the same ParseArea result this entry's own Area field uses, and until
+        // #420 lands, the whole "within N feet" stays folded into the sight
+        // qualifier's residue, exactly as it did before this PR.
+        var entry = EntryMechanicsParser.Classify(
+            "Noxious Miasma",
+            MonsterEntrySection.LegendaryAction,
+            "Constitution Saving Throw: DC 17, each creature in a 20-foot-radius Sphere " +
+            "centered on a point the dragon can see within 90 feet. Failure: 7 (2d6) Poison " +
+            "damage, and the target takes a -2 penalty to AC until the end of its next turn. " +
+            "Failure or Success: The dragon can't take this action again until the start of its " +
+            "next turn.");
+
+        Assert.Null(entry.Save!.Area);
+        Assert.Null(entry.Save.RangeFeet);
+        Assert.Equal(
+            [
+                "the dragon can see within 90 feet",
+                "and the target takes a -2 penalty to AC until the end of its next turn",
+                "Failure or Success: The dragon can't take this action again until the start of its next turn",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ASelfOriginatingConesPrintedSizeNeverStructuresOntoRangeFeet()
+    {
+        // Adult Gold Dragon's Fire Breath, verbatim (p.291). A Cone has no separate
+        // "range" — its only printed distance is its own size, already on
+        // EffectArea.SizeFeet — and the corpus never prints "within" inside a
+        // Cone/Line/Emanation target clause (verified directly against the whole
+        // corpus), so ReadRange does not even look: RangeFeet stays null for every
+        // self-originating area, always.
+        var entry = EntryMechanicsParser.Classify(
+            "Fire Breath",
+            MonsterEntrySection.Action,
+            "Dexterity Saving Throw: DC 21, each creature in a 60-foot Cone. Failure: 66 " +
+            "(12d10) Fire damage. Success: Half damage.");
+
+        Assert.Null(entry.Save!.RangeFeet);
+        Assert.Equal(SaveSuccessOutcome.HalfDamage, entry.Save.SuccessOutcome);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void APointAimedCylinderIsNotAModelledShapeSoItsPrintedRangeStaysResidueToo()
+    {
+        // Storm Giant's Lightning Storm, verbatim (p.331). AreaTargeting.CanResolve
+        // refuses Cylinder outright — no height model — so UseSaveEntry never reaches
+        // a range check for this entry regardless of what ReadRange might find;
+        // claiming "within 500 feet" here would assert the model enforces a distance
+        // nothing will ever measure. ReadRange's own shape gate (single-target or
+        // Sphere only) excludes it by construction, not by an incidental non-match.
+        var entry = EntryMechanicsParser.Classify(
+            "Lightning Storm",
+            MonsterEntrySection.Action,
+            "Dexterity Saving Throw: DC 18, each creature in a 10-foot-radius, 40-foot-high " +
+            "Cylinder originating from a point the giant can see within 500 feet. Failure: 55 " +
+            "(10d10) Lightning damage. Success: Half damage.");
+
+        Assert.Null(entry.Save!.RangeFeet);
+        Assert.Equal(
+            [
+                "each creature in a 10-foot-radius, 40-foot-high Cylinder originating from a point " +
+                "the giant can see within 500 feet",
             ],
             entry.UnmodelledClauses);
     }

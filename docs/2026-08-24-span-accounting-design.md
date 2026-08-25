@@ -563,7 +563,7 @@ narrower than it first looks.
 carries no range field, and `UseSaveEntry` (`Encounter.Entries.cs:184–250`) refuses on a
 missing DC, an unmodelled area shape, a dead target, Total Cover and the Charmed rule —
 and **never on distance**, for the target or for the aimed point. The Mummy's Dreadful
-Glare, printed at 30 feet, reaches the far corner of a 28 × 18 board today with no
+Glare, printed at 60 feet, reaches the far corner of a 28 × 18 board today with no
 refusal. The engine's own standard is the other three paths: attacks refuse with
 `attack.out_of_range` on both the ordinary and the entry path, spells with
 `spell.out_of_range`, Divine Spark with its own. Entry saves are the one path that
@@ -591,15 +591,31 @@ awaiting a fix.
 > the extraction half itself populates `RangeFeet` from the printed clause, not because
 > the engine can now enforce a range in principle. Do not widen it from this note alone.
 
+> **Update (2026-08-25):** The extraction half landed in #421 (closing #386 and #405),
+> and the trigger above fired: `EntryMechanicsParser.ReadRange` now claims a printed
+> "within N feet" — as its own `save.range` span, separate from `save.target_clause` —
+> for a single-target save and for a point-aimed Sphere whose area itself parsed. The
+> table below is updated to match: row 6's qualifiers split, since distance is no
+> longer grouped with sight for a single target. Row 5 (the Sphere) is **unchanged** —
+> qc's review of #421 caught that claiming a Sphere's distance without its area let
+> `UseSaveEntry` silently narrow an area effect to a single target (`AreaPattern` has
+> no "-radius" branch yet, #420, so every corpus Sphere's `Area` is still null), so
+> `ReadRange` gates that branch on `ParseArea` succeeding for the same entry and the
+> whole clause — sight and distance both — stays residue there until #420 lands. A
+> third printed word order exists that neither branch reads — the Giant Ape's Boulder
+> Toss prints its range in the entry's own preamble, ahead of the save header entirely
+> — filed as #422 alongside #420.
+
 | Printed shape | Count | Claim? |
 | --- | --- | --- |
 | `each creature in a <N>-foot Cone` | 47 | **yes** — self-originating area the engine builds |
 | `each creature in a <N>-foot-long, <N>-foot-wide Line` | 24 | **yes** |
 | `each creature in a <N>-foot Emanation originating from the <creature>` | ~7 | **yes** |
 | `each creature in a <N>-foot-radius Sphere centered on a point` | 6 | **yes**, to `point` — the caller supplies the aim |
-| …that same Sphere's ` the <creature> can see within <N> feet` | 6 | **no** — sight and distance |
+| …that same Sphere's ` the <creature> can see within <N> feet` | 6 | **no** — sight and distance, gated on the Sphere's own radius parsing (it doesn't, #420) |
 | `one creature` (head of every single-target selector) | ~39 | **yes** |
-| …its ` the <creature> can see` / ` within <N> feet` qualifiers | ~39 | **no** — sight and distance |
+| …its ` the <creature> can see` qualifier | ~39 | **no** — sight (permanent, no sight model) |
+| …its ` within <N> feet` qualifier, where printed | most of ~39 | **yes**, as its own `save.range` span (#386) |
 | `each creature that isn't currently affected by this breath in a <N>-foot Cone` | 4 | **no** — a gate the model does not express |
 | `one creature within <N> feet that has the Prone condition` | 3 | **no** |
 | `one Large or smaller creature Grappled by the behir (…)` | 1 | **no** — and the size gate is not read either |
@@ -961,6 +977,17 @@ check the run against, not predictions):
     qualifiers and 6 Sphere ones, the largest single new residue population in the
     regeneration and the one most likely to move a monster out of the pool.
 
+    > **Update (2026-08-25):** #421 (closing #386, #405) claimed most of the
+    > single-target distance qualifiers this bullet counts, narrowing many of them
+    > from "range and sight" residue down to sight alone — measured directly against
+    > the corpus, 57 monster entries changed, of which exactly 2 (Quasit's Scare,
+    > Lion's Roar) reach zero residue outright, both single-target entries that print
+    > no sight qualifier at all. No monster's `MonsterPool.CoverageOf` grade moved
+    > (verified across all 330). The 6 Sphere qualifiers are untouched — #421
+    > deliberately gates that branch on `ParseArea` succeeding for the Sphere, which
+    > it does not yet (#420), so they remain exactly the residue population this
+    > bullet originally counted.
+
 Grade demotions are the mechanism: an Action-section entry gaining residue takes its
 monster from `Playable` to `Diminished`, which removes it from the pool. Expect the pool
 to thin materially. That is the accepted consequence, recorded by Brandon on 2026-08-24,
@@ -996,7 +1023,7 @@ answer.
   five-entry section quirk, which rides with them.
 - **The entry-save range gap, which this refactor surfaces and deliberately does not
   fix.** `UseSaveEntry` enforces no distance on a single-target save or on an aimed
-  point, so the Mummy's 30-foot Dreadful Glare reaches across the board while attacks
+  point, so the Mummy's 60-foot Dreadful Glare reaches across the board while attacks
   (`attack.out_of_range`), spells (`spell.out_of_range`) and Divine Spark all refuse
   correctly. Under §7.6 the printed distance becomes residue, which is the right
   accounting answer and not a fix. **It is filed as its own issue**, outside this design,
@@ -1013,6 +1040,15 @@ answer.
   > not landed, so the printed distance is still residue under §7.6 and this remains an
   > open non-goal for this refactor exactly as filed. Nothing here changes, and the
   > matcher does not widen, until that half ships.
+
+  > **Update (2026-08-25):** The extraction half landed in #421, closing #386 and
+  > #405 both. This non-goal is now fully closed for a single target: the Mummy's
+  > printed 60 feet refuses a Dreadful Glare aimed beyond it, and §7.6's matcher
+  > widened exactly as this note predicted — the claim followed the code, not the
+  > other way round. It stays open for a point-aimed **Sphere** specifically, gated
+  > deliberately on #420 (`AreaPattern`'s missing "-radius" branch) rather than left
+  > open by omission — see §7.6's own 2026-08-25 update for the reasoning qc's review
+  > of #421 surfaced.
 
 - **Grammar/AST parsing.** Declined at adjudication and not revisited here. The one thing
   that would reopen it is span-consuming regexes fighting the structure — the honest place
