@@ -171,6 +171,19 @@ if _pillow_version_parts < MIN_PILLOW_VERSION:
         f"the minimum this pipeline has been verified against (see "
         f"VERIFIED_PILLOW_VERSION). `pip install --upgrade Pillow` first."
     )
+elif PIL.__version__ != VERIFIED_PILLOW_VERSION:
+    # Below the floor is a hard error (above); anything else that isn't the
+    # exact verified version is a warning, not a raise — median-cut internals
+    # and PNG encoding are Pillow's own to change between releases, but a
+    # newer Pillow is not known-broken, only unverified. This lives at module
+    # scope (not inside `main`) so it fires for library callers too, not just
+    # the CLI.
+    print(
+        f"note: running Pillow {PIL.__version__}, verified against "
+        f"{VERIFIED_PILLOW_VERSION} — quote this line in a batch's PR if "
+        f"output ever looks different on a different machine",
+        file=sys.stderr,
+    )
 
 # Whether a sprite may legally wear board-background-ref, (22,22,29) — the
 # colour the board itself paints under everything — is an OPEN QUESTION for
@@ -663,6 +676,19 @@ def degrain(
     speck folds, so a sprite's silhouette edge and a terrain tile's border
     would keep more grain than its interior for no reason but geometry.
 
+    `available` is the pixel's *geometric* neighbour count — how many cells
+    of its 3x3 block the canvas actually has — never the same-alpha-state
+    count above. Scaling by the same-alpha count instead was tried and is
+    wrong: every silhouette-adjacent pixel (not just canvas borders) then
+    has a reduced `available`, since the opposite-alpha side of the block is
+    excluded from it too, so the fold threshold drops exactly where a
+    deliberate single-pixel highlight — a weapon tip, a thin outline — most
+    needs the interior's full unanimity bar to stay protected. Scaling by
+    geometry alone leaves those pixels at the interior's 5-of-8 (or whatever
+    `agreement` is out of 8) while still relaxing the bar at an actual
+    canvas edge or corner, which is the only place fewer cells genuinely
+    exist to agree.
+
     This is the same idea PR #238's consolidation pass had — flatten the
     grain a per-pixel quantize leaves behind — run the way that avoids its
     bug: strictly within one frame's own 3x3 neighbourhoods. It never reads
@@ -732,13 +758,22 @@ def degrain(
                     ((c, tally[c]) for c in order), key=lambda item: item[1]
                 )
 
-                # Scaled to how many neighbours this pixel actually has —
-                # see the docstring's border-geometry note. An interior
-                # pixel (8 neighbours) sees no change from the old flat
-                # comparison; a corner (3) or edge (5) pixel gets a
+                # Scaled to the pixel's *geometric* neighbour count — how
+                # many cells of its 3x3 block the canvas has — not
+                # `len(neighbours)` (the same-alpha-state count filtered
+                # above). Scaling by the filtered count was tried and wrong:
+                # it shrinks `available` on every silhouette-adjacent pixel,
+                # not just canvas borders, folding exactly the deliberate
+                # single-pixel highlights (a weapon tip, a thin outline) the
+                # docstring promises to leave alone. See the docstring's
+                # border-geometry note. A true interior pixel (8 geometric
+                # neighbours) sees no change from the old flat comparison; a
+                # true corner (3) or edge (5) of the *canvas* gets a
                 # correspondingly lower bar instead of an unreachable or
                 # needlessly strict one.
-                required = max(1, round(agreement * len(neighbours) / 8))
+                required = max(
+                    1, round(agreement * len(_neighbourhoods(width, height, x, y)) / 8)
+                )
 
                 if best_count >= required:
                     changes.append((x, y, (*best_color, center[3])))
@@ -1255,13 +1290,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if PIL.__version__ != VERIFIED_PILLOW_VERSION:
-        print(
-            f"note: running Pillow {PIL.__version__}, verified against "
-            f"{VERIFIED_PILLOW_VERSION} — quote this line in a batch's PR if "
-            f"output ever looks different on a different machine",
-            file=sys.stderr,
-        )
+    # Pillow version check (raise below the floor, warn off the verified
+    # version) runs at module import time now — see VERIFIED_PILLOW_VERSION
+    # above — so it covers library callers as well as this CLI entry point.
 
     return args.func(args)
 
