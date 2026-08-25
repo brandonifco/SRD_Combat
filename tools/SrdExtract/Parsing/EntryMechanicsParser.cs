@@ -205,11 +205,23 @@ internal static partial class EntryMechanicsParser
         if (ParseSave(text, conditions, coverage) is { } save)
         {
             // The entry's mechanics is SavingThrow — the other of the two the engine
-            // imposes riders from (design §2.5) — so every fully-modelled rider's
-            // claim is committed now.
-            foreach (var (_, span, note) in claimableRiders)
+            // imposes riders from (design §2.5) — but only when Encounter.UseEntry can
+            // actually reach it. UseEntry refuses by section before it ever reads
+            // Mechanics (entry.not_an_action): a Trait, LegendaryAction or Reaction
+            // entry never fires through it, so a rider parsed on one of those sections
+            // is imposed by nothing and claiming its span would be the exact false
+            // claim design §2.5's own rule forbids for Multiattack — promoted here
+            // from a stated, dated exception (five entries, one regeneration) to the
+            // rule itself (#373). The section gate applies to the rider claim alone:
+            // the save's own header, target clause and damage are still claimed the
+            // same as any other SavingThrow entry — the model does express that shape,
+            // whichever section prints it — only the condition it would impose is not.
+            if (section is MonsterEntrySection.Action or MonsterEntrySection.BonusAction)
             {
-                coverage.Claim(span, note);
+                foreach (var (_, span, note) in claimableRiders)
+                {
+                    coverage.Claim(span, note);
+                }
             }
 
             return Build(bareName, section, text, EntryMechanics.SavingThrow, usage, conditions, coverage, save: save);

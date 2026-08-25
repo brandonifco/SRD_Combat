@@ -179,26 +179,35 @@ An unimposable condition (`ConditionRules.CanBeImposed` false, or carrying an
 `UnmodelledRequirement`) claims nothing at all — which is the other surviving half of
 `IsAccountedFor`, and the reason its veto disappears rather than moving.
 
-**The rule is knowingly incomplete, and here is where.** `UseEntry` refuses by *section*
-as well as by mechanics (`entry.not_an_action`), and the corpus prints five entries whose
-riders are imposable, whose grade is `SavingThrow`, and whose section no engine path can
-ever fire: the Ghast's and the Hezrou's Stench, the Pit Fiend's Fear Aura and the Sea
-Hag's Vile Appearance (Trait), and the Solar's Blinding Gaze (LegendaryAction). Under the
-rule as stated their riders claim clauses that nothing imposes — the same false claim the
-rule's own justification forbids for Multiattack.
+**The rule was knowingly incomplete for one regeneration, and here is where.** `UseEntry`
+refuses by *section* as well as by mechanics (`entry.not_an_action`), and the corpus
+prints entries whose riders are imposable, whose grade is `SavingThrow`, and whose
+section no engine path can ever fire: five named at stage 4/5's own regeneration — the
+Ghast's and the Hezrou's Stench, the Pit Fiend's Fear Aura and the Sea Hag's Vile
+Appearance (Trait), and the Solar's Blinding Gaze (LegendaryAction) — of a full count that
+turned out to be 35 once counted precisely (12 Trait, 22 LegendaryAction, 1 Reaction —
+the Chain Devil's Unnerving Gaze). Under the rule as first stated their riders claimed
+clauses that nothing imposes — the same false claim the rule's own justification forbids
+for Multiattack.
 
-It is kept anyway, for one regeneration, deliberately: `IsAccountedFor` has the identical
-quirk today, so keeping it means stage 4's diff is the *coverage* change and nothing else,
-which is what makes the census reviewable. Widening the gate to sections would fold an
-unrelated correction into the same diff and demote five more entries for a reason nobody
-could separate from the refactor's own effect.
+It was kept for that one regeneration deliberately: `IsAccountedFor` had the identical
+quirk before stage 4, so keeping it meant stage 4's diff was the *coverage* change and
+nothing else, which is what made the census reviewable. Widening the gate to sections
+then would have folded an unrelated correction into the same diff and demoted more
+entries for a reason nobody could separate from the refactor's own effect.
 
-This is #373's grade question wearing a different hat — that issue already names twelve
-Trait-section `SavingThrow` entries the engine never fires — and it is where the fix
-belongs. **The rule to write into the doc comment is therefore conditional:** when #373
-resolves how a never-fired entry should grade, this gate moves with it, from mechanics to
-mechanics-and-section. Until then it is a stated, dated exception rather than an
-oversight.
+**Closed by #373.** The gate now checks mechanics *and* section: a rider's claim
+commits only when the entry's own section is `Action` or `BonusAction` — the two
+`UseEntry` ever dispatches — regardless of mechanics. The save's own structural claim
+(header, target clause, damage) is unaffected; only the rider's claim is withheld, exactly
+as an unimposable condition's already was. None of the 35 affected entries crossed the
+`Complete`/not-`Complete` boundary as a result — each already carried other residue (most
+commonly the target-clause qualifier of §7.6) that kept it out of `Complete` before this
+fix, so the change corrects the accounting's honesty without moving any monster's grade.
+`ClassifyTrait`'s own SavingThrow branch is unaffected by this fix: species traits, class
+features and spells carry no `MonsterEntrySection` at all, so the section question does
+not arise for them, and #373's twelve-Trait-section count is specifically about monster
+stat blocks (`Classify`), not the shared `ClassifyTrait` path.
 
 ### 2.6 Coverage by fiat — `Passive` and `Narrative`
 
@@ -741,6 +750,16 @@ The #370 row is the brief's warning made concrete: coverage ends the omission cl
 does nothing for misattribution. Do not let the appearance of #370's side clause in
 residue read as #370 being fixed.
 
+**`KnownGapPinsTests.cs` itself is retired, in #411.** Each of the four rows above closed
+on its own terms as its issue landed — #372 (plural conditions), #371 (the alternative
+tier), #370 (the misattribution) and #373 (both the accounting flip this table describes
+and the Trait-section grading question #373 also owned) — and every pin was rewritten
+into a passing characterization fixture in `EntryMechanicsCharacterizationTests` rather
+than left in this file once it stopped pinning a bug. With the fourth gone the file held
+no open pins, so #411 deleted it; the fixtures it names above now live under
+`EntryMechanicsCharacterizationTests`'s "Plural conditions (#372)", "Alternative damage
+(#371)", "Saves" and "Head clauses" regions respectively.
+
 ### 9.3 `CorpusRoundTripTests` — the ordering that matters
 
 It re-parses all 1,318 entries and compares against the committed JSON. It is green today
@@ -867,7 +886,9 @@ plan's F1 row, the new glue-set doc comment).
   warning count — the shape of a clean run is unchanged.
 - `git diff --exit-code data/srd/spells.json` is clean (§8).
 - Corpus round-trip green against the **new** committed JSON.
-- The four `KnownGapPinsTests` updated per §9.2, each keeping its issue reference.
+- The four `KnownGapPinsTests` updated per §9.2, each keeping its issue reference. (The
+  file this bullet names no longer exists — retired in #411 once the fourth pin closed;
+  see §9.2's own closing note for where each fixture moved.)
 - Every residue-expectation change carries a comment naming the absent claim.
 - The verbatim invariant and the glue census test are in place and green.
 - The census is committed or attached, and the PR body summarises: entries gaining

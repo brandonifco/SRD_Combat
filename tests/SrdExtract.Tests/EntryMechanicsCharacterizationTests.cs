@@ -793,6 +793,34 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Contains("pulls the target", prone.UnmodelledRequirement, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AKillAndHealRiderBehindAFailureLabelIsResidueNotSilentlyDropped()
+    {
+        // Will-o'-Wisp's Consume Life, verbatim (#373). "The target dies, and the wisp
+        // regains 10 (3d6) Hit Points" is real, unexecuted mechanics — a kill-and-heal
+        // rider with no ConditionType to attach to at all, so it never reaches
+        // AppliedConditions the way the Balor's Prone rider above does; it is counted
+        // straight into UnmodelledClauses instead. This entry's second residue line is
+        // a different gap: a single-target save entry claims only the head noun "one
+        // creature" (design §7.6) — the distance and the sight qualifier are printed
+        // rules UseSaveEntry does not enforce (#386), so the whole qualifier clause is
+        // honest residue rather than a false claim of range or sight the engine does
+        // not check.
+        var entry = EntryMechanicsParser.Classify(
+            "Consume Life",
+            MonsterEntrySection.BonusAction,
+            "Constitution Saving Throw: DC 10, one living creature the wisp can see within 5 " +
+            "feet that has 0 Hit Points. Failure: The target dies, and the wisp regains 10 (3d6) " +
+            "Hit Points.");
+
+        Assert.Equal(
+            [
+                "one living creature the wisp can see within 5 feet that has 0 Hit Points",
+                "The target dies, and the wisp regains 10 (3d6) Hit Points",
+            ],
+            entry.UnmodelledClauses);
+    }
+
     #endregion
 
     #region Multiattack
@@ -1084,6 +1112,104 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(SaveSuccessOutcome.NoEffect, entry.Save!.SuccessOutcome);
         Assert.Contains(
             "Failure or Success: The dragon can't take this action again until the start of its next turn",
+            entry.UnmodelledClauses);
+    }
+
+    #endregion
+
+    #region Section-gated riders (#373)
+
+    [Fact]
+    public void ATraitSectionSavingThrowsRiderIsResidueBecauseUseEntryNeverFiresATrait()
+    {
+        // Hezrou's Stench, verbatim. Encounter.UseEntry refuses any entry whose section
+        // isn't Action or BonusAction before it ever reads Mechanics
+        // (entry.not_an_action), so nothing ever imposes this Poisoned rider even
+        // though Poisoned is on ConditionRules.Executable and the rider itself reads
+        // clean (a bare "Failure: The target has the Poisoned condition until the
+        // start of its next turn." with no gate, no trailing text). Claiming its span
+        // anyway would be the exact false claim design §2.5 forbids for Multiattack,
+        // now closed for every section rather than kept as a five-entry exception.
+        var entry = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Trait,
+            "Constitution Saving Throw: DC 16, any creature that starts its turn in a 10-foot " +
+            "Emanation originating from the hezrou. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn.");
+
+        Assert.Equal(EntryMechanics.SavingThrow, entry.Mechanics);
+
+        // The condition is still structurally recorded — the model does express what
+        // the rider and its duration would be, the same treatment an unimposable
+        // condition already gets (design §2.5's surviving half) — only its claim is
+        // withheld, not its presence in AppliedConditions.
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Equal(ConditionType.Poisoned, rider.Condition);
+
+        // The other two lines are pre-existing and unrelated to the section gate: the
+        // target clause's Emanation qualifier (design §7.6 claims only the area shape
+        // and its origin word, "originating from"; the free-standing lead-in "any
+        // creature that starts its turn in a" is not one of the claimed shapes).
+        Assert.Equal(
+            [
+                "any creature that starts its turn in a",
+                "originating from the hezrou",
+                "The target has the Poisoned condition until the start of its next turn",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ANActionSectionSavingThrowWithTheIdenticalRiderShapeStillClaimsIt()
+    {
+        // The same rider grammar as the Trait fixture above, verbatim except for its
+        // section — proving the gate reads section, not the rider's own shape. An
+        // Action-section entry is exactly what Encounter.UseEntry does dispatch, so
+        // the rider claims and the entry is fully modelled.
+        var entry = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Action,
+            "Constitution Saving Throw: DC 16, any creature that starts its turn in a 10-foot " +
+            "Emanation originating from the hezrou. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn.");
+
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Equal(ConditionType.Poisoned, rider.Condition);
+        Assert.True(rider.IsFullyModelled);
+
+        Assert.DoesNotContain(
+            "The target has the Poisoned condition until the start of its next turn",
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ALegendaryActionSavingThrowsRiderIsAlsoResidueNotOnlyTraits()
+    {
+        // Solar's Blinding Gaze, verbatim. #373's issue text names Trait-section
+        // entries by name, but Encounter.UseEntry refuses LegendaryAction and
+        // Reaction identically to Trait — none of the three is Action or
+        // BonusAction — so the gate is section-general, not Trait-specific, and this
+        // pins that the fix actually reads that way rather than only the named case.
+        var entry = EntryMechanicsParser.Classify(
+            "Blinding Gaze",
+            MonsterEntrySection.LegendaryAction,
+            "Constitution Saving Throw: DC 25, one creature the solar can see within 120 feet. " +
+            "Failure: The target has the Blinded condition for 1 minute. Failure or Success: " +
+            "The solar can't take this action again until the start of its next turn.");
+
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Equal(ConditionType.Blinded, rider.Condition);
+
+        // The other two lines are pre-existing and unrelated to the section gate: the
+        // single-target save's sight qualifier (design §7.6 claims only "one
+        // creature") and the recharge clause's own "Failure or Success:" side clause
+        // (#370 — claimed by nobody, design §4.1).
+        Assert.Equal(
+            [
+                "the solar can see within 120 feet",
+                "The target has the Blinded condition for 1 minute",
+                "Failure or Success: The solar can't take this action again until the start of its next turn",
+            ],
             entry.UnmodelledClauses);
     }
 
