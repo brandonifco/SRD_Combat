@@ -20,8 +20,10 @@ namespace SRDCombat.Core.Rules;
 /// creatures in the tier-1 pool — the Flying Snake, the Sphinx of Wonder and the
 /// Will-o'-Wisp — and no builder path ever stacks Tiny creatures, so the case the rule
 /// exists for cannot arise. The printed <em>pass-through-Tiny</em> clause is a separate
-/// rule and is unaffected by this divergence: see <see cref="MovementRules"/>, where a
-/// Tiny creature's square is walked through and is not Difficult Terrain.
+/// rule and is unaffected by this divergence — but it is not modelled yet either. It
+/// lands with #429's final slice, where a Tiny creature's square will be walked through
+/// and will not be Difficult Terrain; until then it still blocks, and
+/// <see cref="MovementRules"/>' own doc comment is where that gap is recorded.
 /// </para>
 /// <para>
 /// The table is generalized to N by N rather than special-cased at Large because Huge is
