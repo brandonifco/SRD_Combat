@@ -338,7 +338,7 @@ public static class SimpleTacticsPolicy
                 && !ReferenceEquals(other, actor)
                 && !other.IsDead
                 && other.CurrentHitPoints == 0)
-            .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
+            .OrderBy(other => actor.DistanceFeetTo(other))
             .ThenBy(other => other.Id, StringComparer.Ordinal);
 
         // The casualty's own flask counts, and is reached for first — a potion found by
@@ -379,7 +379,7 @@ public static class SimpleTacticsPolicy
                 && other.Id != actor.Id
                 && !other.IsDead
                 && other.CurrentHitPoints == 0)
-            .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
+            .OrderBy(other => actor.DistanceFeetTo(other))
             .ThenBy(other => other.Id, StringComparer.Ordinal);
 
         return fallen.Any(ally => encounter.DivineSpark(ally, DivineSparkUse.Heal) is null);
@@ -422,7 +422,7 @@ public static class SimpleTacticsPolicy
 
         foreach (var corpse in corpses)
         {
-            if (actor.Position.DistanceFeetTo(corpse.Position) > Battlefield.FeetPerSquare)
+            if (actor.DistanceFeetTo(corpse) > Battlefield.FeetPerSquare)
             {
                 var beside = encounter.Battlefield.AllSquares()
                     // Beside, never on: the corpse does not block the square, and
@@ -459,7 +459,7 @@ public static class SimpleTacticsPolicy
                 }
             }
 
-            if (actor.Position.DistanceFeetTo(corpse.Position) <= Battlefield.FeetPerSquare
+            if (actor.DistanceFeetTo(corpse) <= Battlefield.FeetPerSquare
                 && encounter.CastSpell(revival.Id, corpse) is null)
             {
                 return true;
@@ -571,7 +571,7 @@ public static class SimpleTacticsPolicy
         }
 
         return encounter.EnemiesOf(actor).Any(enemy =>
-            actor.Position.DistanceFeetTo(enemy.Position) <= actor.Stats.SpeedFeet);
+            actor.DistanceFeetTo(enemy) <= actor.Stats.SpeedFeet);
     }
 
     /// <summary>
@@ -606,7 +606,7 @@ public static class SimpleTacticsPolicy
             return false;
         }
 
-        var distance = actor.Position.DistanceFeetTo(target.Position);
+        var distance = actor.DistanceFeetTo(target);
         var swing = WeaponValue(actor, distance);
 
         // A healer's slots have another job. Burning them on damage while somebody is
@@ -897,7 +897,7 @@ public static class SimpleTacticsPolicy
             .Where(other => other.SideId != actor.SideId
                 && !other.IsDead
                 && !other.IsActive)
-            .OrderBy(other => actor.Position.DistanceFeetTo(other.Position))
+            .OrderBy(other => actor.DistanceFeetTo(other))
             .ThenBy(other => other.Id, StringComparer.Ordinal)
             .ToArray();
 
@@ -955,14 +955,14 @@ public static class SimpleTacticsPolicy
 
         var inReach = enemies
             .Where(enemy => actor.Stats.Attacks.Any(attack =>
-                attack.CanReach(actor.Position.DistanceFeetTo(enemy.Position))))
+                attack.CanReach(actor.DistanceFeetTo(enemy))))
             .ToArray();
 
         // Ties broken by identifier rather than enumeration order, so the same seed
         // always produces the same fight.
         return (inReach.Length > 0 ? inReach : enemies)
             .OrderBy(enemy => inReach.Length > 0 ? enemy.CurrentHitPoints : 0)
-            .ThenBy(enemy => actor.Position.DistanceFeetTo(enemy.Position))
+            .ThenBy(enemy => actor.DistanceFeetTo(enemy))
             .ThenBy(enemy => enemy.CurrentHitPoints)
             .ThenBy(enemy => enemy.Id, StringComparer.Ordinal)
             .FirstOrDefault();
@@ -991,7 +991,7 @@ public static class SimpleTacticsPolicy
             return false;
         }
 
-        var distance = actor.Position.DistanceFeetTo(target.Position);
+        var distance = actor.DistanceFeetTo(target);
 
         var usable = actor.Stats.Attacks
             .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
@@ -1075,7 +1075,7 @@ public static class SimpleTacticsPolicy
             return false;
         }
 
-        var distance = actor.Position.DistanceFeetTo(target.Position);
+        var distance = actor.DistanceFeetTo(target);
 
         var attack = actor.Stats.Attacks
             .Where(candidate => candidate.CanReach(distance))
@@ -1121,7 +1121,7 @@ public static class SimpleTacticsPolicy
             return false;
         }
 
-        var distance = actor.Position.DistanceFeetTo(target.Position);
+        var distance = actor.DistanceFeetTo(target);
 
         var entry = actor.Stats.Entries
             .Where(candidate => candidate.Section == MonsterEntrySection.Action
@@ -1178,7 +1178,7 @@ public static class SimpleTacticsPolicy
             return false;
         }
 
-        var distance = actor.Position.DistanceFeetTo(target.Position);
+        var distance = actor.DistanceFeetTo(target);
 
         var entry = actor.Stats.Entries
             .Where(candidate => candidate.Section == MonsterEntrySection.BonusAction
@@ -1313,7 +1313,7 @@ public static class SimpleTacticsPolicy
         var reach = ReachOf(actor);
         var others = OthersThan(encounter, actor);
 
-        var currentDistance = actor.Position.DistanceFeetTo(target.Position);
+        var currentDistance = actor.DistanceFeetTo(target);
         var canAttackFromHere = currentDistance <= reach
             && CoverRules.Between(encounter.Battlefield, actor.Position, target.Position, others)
                 != CoverDegree.Total;
@@ -1363,7 +1363,7 @@ public static class SimpleTacticsPolicy
 
         // Out of reach or fully blocked is MoveTowards' problem; a clean shot needs no
         // improving.
-        if (actor.Position.DistanceFeetTo(target.Position) > reach
+        if (actor.DistanceFeetTo(target) > reach
             || currentCover == CoverDegree.Total
             || currentPenalty == 0)
         {

@@ -81,7 +81,15 @@ internal static class CombatTestData
             damageResponses ?? new Dictionary<DamageType, DamageResponse>(),
             conditionImmunities ?? [],
             attacks ?? [MeleeAttack()],
-            diesAtZeroHitPoints);
+            diesAtZeroHitPoints)
+        {
+            // The grid reads SpaceSize rather than Size until #429's final slice flips
+            // it, so a test that asks for a Large creature gets a Large creature's
+            // footprint. Production still builds every combatant at one square; this
+            // line is what lets the footprint machinery be tested before it is switched
+            // on, and it goes when the scaffold does.
+            SpaceSize = size,
+        };
 
     public static Combatant Combatant(
         string id = "c1",

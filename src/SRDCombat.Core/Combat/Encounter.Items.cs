@@ -81,7 +81,7 @@ public sealed partial class Encounter
 
         // The SRD sets no range on administering; this engine reads it as needing reach,
         // stated on PotionRules.ReachFeet.
-        var distance = actor.Position.DistanceFeetTo(drinker.Position);
+        var distance = actor.DistanceFeetTo(drinker);
 
         if (!ReferenceEquals(drinker, actor) && distance > PotionRules.ReachFeet)
         {

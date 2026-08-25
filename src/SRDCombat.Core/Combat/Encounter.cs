@@ -161,7 +161,7 @@ public sealed partial class Encounter
         if (mover.ConditionState(ConditionType.Frightened) is { SourceId: { } fearSourceId }
             && _combatants.FirstOrDefault(combatant =>
                 string.Equals(combatant.Id, fearSourceId, StringComparison.Ordinal)) is { } fearSource
-            && destination.DistanceFeetTo(fearSource.Position) < mover.Position.DistanceFeetTo(fearSource.Position))
+            && mover.SpaceAt(destination).DistanceFeetTo(fearSource.Space) < mover.DistanceFeetTo(fearSource))
         {
             return new ActionRefusal(
                 "movement.frightened",
@@ -234,7 +234,7 @@ public sealed partial class Encounter
                 $"{attacker.Name} is Charmed by {target.Name} and cannot attack them.");
         }
 
-        var distance = attacker.Position.DistanceFeetTo(target.Position);
+        var distance = attacker.DistanceFeetTo(target);
         if (!attack.CanReach(distance))
         {
             return new ActionRefusal(
@@ -810,7 +810,7 @@ public sealed partial class Encounter
                 grappler.IsDead || grappler.HasCondition(ConditionType.Incapacitated)
                     ? $"{grappler.Name} can no longer hold on"
                     : grapple.GrappleRangeFeet is { } range
-                      && victim.Position.DistanceFeetTo(grappler.Position) > range
+                      && victim.DistanceFeetTo(grappler) > range
                         ? $"{grappler.Name} is too far away"
                         : null;
 
@@ -1365,7 +1365,7 @@ public sealed partial class Encounter
             && _combatants.Any(ally => ally.SideId == attacker.SideId
                 && ally != attacker
                 && ally.IsActive
-                && ally.Position.DistanceFeetTo(target.Position) <= Battlefield.FeetPerSquare);
+                && ally.DistanceFeetTo(target) <= Battlefield.FeetPerSquare);
 
         // Steady Aim is Advantage on the next attack roll only, so it is consumed here
         // whether the attack hits or not.
@@ -1425,7 +1425,7 @@ public sealed partial class Encounter
         // a Guiding Bolt crosses the room exactly as an arrow does.
         var ranged = isSpellAttack
             ? RangedAttackKind.Spell
-            : attack.IsRangedAttackRoll(attacker.Position.DistanceFeetTo(target.Position))
+            : attack.IsRangedAttackRoll(attacker.DistanceFeetTo(target))
                 ? RangedAttackKind.Weapon
                 : RangedAttackKind.None;
 
@@ -1699,8 +1699,8 @@ public sealed partial class Encounter
             .Where(candidate => candidate.IsActive
                 && candidate.SideId != attacker.SideId
                 && candidate.Id != target.Id
-                && candidate.Position.DistanceFeetTo(target.Position) <= Battlefield.FeetPerSquare
-                && candidate.Position.DistanceFeetTo(attacker.Position) <= reach)
+                && candidate.DistanceFeetTo(target) <= Battlefield.FeetPerSquare
+                && candidate.DistanceFeetTo(attacker) <= reach)
             .OrderBy(candidate => candidate.CurrentHitPoints)
             .ThenBy(candidate => candidate.Id, StringComparer.Ordinal)
             .FirstOrDefault();
