@@ -22,17 +22,17 @@ When a bullet below feels compressed, the archive has the long form with the evi
 
 ## Current state — read this first
 
-**As of 2026-08-24, span-accounting stages 4–6 (#382).** All numbers verified, not estimated.
+**As of 2026-08-25, F1 closed at `8ca55aa` (PR #421).** All numbers verified, not estimated.
 
 | | |
 | --- | --- |
-| Tests | **4,360 passing**, 1 skipped by design (the transcript fixture writer) — the jump from 1,038 is `SrdExtract.Tests` growing to 3,315 under #189/#382 (1,367 characterization fixtures plus the whole-corpus round-trip, verbatim-invariant and glue-census checks), not a regression |
+| Tests | **4,410 passing**, 1 skipped by design (the transcript fixture writer) — measured 2026-08-25 at `8ca55aa`: `SrdExtract.Tests` 3,328 (the #189/#382 harness — characterization fixtures, whole-corpus round-trip, verbatim-invariant and glue-census checks), `Core.Tests` 618, `Content.Tests` 226, `Game.Tests` 238 |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
-| Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — unchanged; #382 only regenerated `monsters.json`, and `spells.json`/`species.json`/`classes.json` are byte-identical |
+| Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — counts re-verified from `data/srd` at `8ca55aa`; F1's regenerations (#382, #370–#373, #421) changed entry structure and residue in `monsters.json`, never the roster |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `6703690` (#382 stages 4–6 branch tip, span-coverage accounting live), against a same-build `main` baseline, 2026-08-24. Seeds 1–120: main median 18 of 30, 35 clear all, 55 reach level 4, died-by-fight-4 12 → branch median 18, 32 clear all, 48 reach level 4, died-by-fight-4 7. Seeds 200–320: main median 18, 31 clear all, 59 reach level 4, died-by-fight-4 8 (of 121) → branch median 18, 35 clear all, 46 reach level 4, died-by-fight-4 9 (of 121). Median holds on both ranges; level-4 attainment fell on both (55→48, 59→46); full clears moved in opposite directions between ranges (32 vs 35), the documented seed-set × build interaction; died-by-fight-4 improved on one range and was flat on the other. Net read: **harder or unchanged**, the design's own stated hypothesis (`docs/2026-08-24-span-accounting-design.md` §10) — a creature fielded at full printed XP while quietly missing a rider (an Advantage clause, a Disadvantage-on-next-attack rider, an or-tier) was cheaper than its price, and the census ending that discount removed exactly the demoted creatures rather than making any surviving one easier. Per-band hp-left 84→76→71→72→75→71% → 85→76→68→71→74→75% (1–120) and 83→78→70→72→72→71% → 83→75→71→70→73→73% (200–320), inside noise. **Zero `Stalled`** in both |
+| Pacing | Measured at `8ca55aa` (`main`, the F1 closing merge), 2026-08-25 — the **promoted F1-exit baseline**, superseding the provisional post-#347 entry and the #382-branch measurement. Seeds 1–120: median 18 of 30, 43 clear all, 53 reach level 4, died-by-fight-4 10; ended Cleared 43 / Defeated 77. Seeds 200–320: median 18, 43 clear all, 59 reach level 4, died-by-fight-4 8 (of 121); ended Cleared 43 / Defeated 78. **Zero `Stalled`** in both. Per-band hp-left 84→77→70→72→75→74% (1–120) and 83→77→71→72→75→72% (200–320). Against the #382 stage-4–6 measurement (clears 32/35, level-4 48/46): clears and level-4 attainment recovered past the census dip on both ranges — the direction the semantic fixes predict, since the two largest (#370, #371) each removed systematic *over*-damage against the party (full damage on successful saves; full swarm damage while Bloodied). The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Coverage gaps | 41% of production code untested (`client/` 7.4k, `tools/SrdExtract` 5.6k, `Console` 2.0k lines) |
+| Coverage gaps | 24% of production code untested (`client/` 7.4k, `Console` 1.9k lines, of 38.7k total) — down from 41%: `tools/SrdExtract` (7.0k) gained its harness in F1 (#189's first slice); the clients are F5's remaining gap (#190, and the unfiled console-tests item) |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
@@ -57,7 +57,8 @@ traits are no longer a silent one: none of the 33 printed trait instances execut
 creation and on the sheet (#291); the undocumented rules gap the review found —
 concentration surviving Incapacitated — is fixed (#289); a reload used to re-roll the
 ladder because the seed was not saved, and a save-vs-content mismatch used to crash
-instead of refusing — both closed (#286, #287 — remaining Loot sites #350); the art
+instead of refusing — both closed (#286, #287, and the last Loot and resume
+indexers, #350/#366); the art
 pipeline is unrepeatable and one sprite in ~60 matches the project's own palette.
 **The finishing plan below is the ordered answer.**
 
@@ -97,34 +98,43 @@ issue numbers are cited; unnumbered items come from the review doc.
 finding into an issue with acceptance criteria and a phase label. Exit: the plan and
 the queue agree; this table cites only issue numbers thereafter.
 
-**F1 — Integrity.** Cheap, compounding correctness debts. Atomic save write plus one
-backup; persist the run's seed so `--continue` after defeat retries *the same fight*;
-stamp content version into the save and refuse drift via `TryGetValue`
-(`PregeneratedParty`, `Gauntlet`, `Loot`, `Shop`); ask for the level-4 ASI plan in
-both creation flows (created parties currently forfeit it silently); break
-concentration on Incapacitated; close the Multiattack replace-clause hole
-(`MatchesStructuredForm`) and regenerate; surface Multiattack sub-sentence
-composition clauses folded into the composition sentence itself (#341); surface
-species traits as unimplemented at creation and on the sheet; retire
-`SpellDefinition.IsFullyModelled` (#292 — measured, not derivable on spell prose;
-`PreparableSpells` is the authority); fix
-the stall class (#256) and immunity-blind targeting (#224); one doc-drift sweep
-(gauntlet cycle arithmetic, mastery weapon count, stale headers and citations, client
-README). Added 2026-08-24 (see `docs/2026-08-24-span-accounting-brief.md`): parser
-characterization fixtures (#189, pulled forward from F5) land first, then the
-span-coverage accounting refactor (#382) — coverage-by-consumption replaces
-credit-by-label, subsuming the accounting halves of #371–#373 into one regeneration,
-one census, one re-baseline; the semantic halves of #370–#375 land as small fixes on
-top. **Stages 0–3 merged (#387, #388); stages 4–6 (the switchover, regeneration and
-re-baseline) are PR-open as of 2026-08-24** — the Pacing row above is that branch's
-own measurement, quoted against a same-build `main` baseline. The regeneration
-demoted 12 monsters out of the tier-1 pool (22 lost pool admission across all CRs;
-12 of those were in tier-1 — each carrying a real, always-printed
-rider the engine never executed, hidden until now behind the old sentence-credit
-bug), which broke `MonsterPoolTests`' CR-4 and tier-one floors — lowered as
-transitional per the coordinator's 2026-08-24 decision on #382's own stop-and-ask
-trigger, expected to rise again as #370–#373's semantic fixes and #267's fill-ins
-land. Exit: QC audits the three honesty lanes clean, then merge.
+**F1 — Integrity (closed 2026-08-25 at `8ca55aa`, PR #421 the closing merge).**
+Cheap, compounding correctness debts, every one worked as an issue. The planned
+items all landed: atomic save write plus backup, hardened through three adversarial
+rounds into a crash-recoverable rotation (#285, #332, #361, #367); the run's seed
+persisted so `--continue` after defeat retries *the same fight* (#286); content
+version stamped into the save with drift refused via `TryGetValue` on every resume
+path (#287, #350, #366); the level-4 ASI plan carried as a fixed plan (#330);
+concentration broken by Incapacitated (#289); the Multiattack replace-clause,
+summed-alternative and sub-sentence holes (#290, #342, #341); species traits
+surfaced as unimplemented at creation and on the sheet (#291) and the
+species-table interleave fixed (#374); `SpellDefinition.IsFullyModelled` retired
+(#292 — `PreparableSpells` is the authority); the stall class (#256) and
+immunity-blind targeting (#224); the doc-drift sweep (#379, plus the stale
+upcasting pair it missed, #400). Mid-phase, the 2026-08-24 outside critique's
+adjudication (`docs/2026-08-24-span-accounting-brief.md`) grew the phase by the
+span-accounting arc: characterization fixtures first (#189's first slice, PR #384,
+the safety net), then coverage-by-consumption replacing credit-by-label (#382,
+stages 0–6, PRs #385–#389) — `UnmodelledClauses` became computed residue,
+`MatchesStructuredForm`/`IsAccountedFor` were deleted, and the census over the
+closed corpus ended the goblin shape's omission class by construction. The
+semantic fixes landed on top: success-tier scoping (#370), or-tier alternative
+damage (#371), plural condition conjunctions (#372), section-gated rider claims
+(#373), Spirit Guardians' or-as-and (#375), and printed ranges enforced on entry
+saves (#386, whose PR also closed #405 with a knockout-verified policy test). The
+#382 regeneration demoted 12 tier-1 monsters (22 lost pool admission across all
+CRs), each carrying an always-printed rider the engine never executed; the
+transitional `MonsterPoolTests` floor has since ratcheted 68→73 as #371 restored
+the swarm/Blood Hawk/Chimera tiers, with the last demotions held by #390's
+remaining shapes and #409. Exit evidence: the Pacing row above is the promoted
+F1-exit baseline; qc's exit audits of the honesty lanes filed only non-blocking
+findings (#400–#402). **Named carries, with reasons:** #393/#394 (narrow
+save-rotation crash windows, rated below must-fix) go to #414's
+crash-point-enumeration harness in F5 rather than holding the phase; the census
+exhaust (#390, #409, #413) goes to F4, where restored creatures land next to the
+fill-ins; the exit mechanism review's process issues (#415–#417) go to F5; the
+doctrine rewrite of "The rule this project runs on" (#419) is the steward's,
+directly after this close; #189's broader extractor harness returns to F5.
 
 **F2 — Feel.** The largest gap per hour of work. One committed master→sprite pipeline
 script per #238's own diagnosis, applied to every sprite and terrain tile —
@@ -168,9 +178,11 @@ re-run; a property test that every generated encounter resolves.
 project's first slice, #189, to F1 as the span refactor's safety net, and the
 PlayMode refactor, #327, to F3's entry gate — the broader page-fixture harness still
 grows here.) Client behaviour
-tests grown from the probe harness (#190); console client tests (1.8k lines,
+tests grown from the probe harness (#190); console client tests (1.9k lines,
 currently untested *and* unfiled); shared test-support project; xUnit content
-fixtures (the corpus is currently loaded 27 times; `Game.Tests` takes 7m22s); the
+fixtures (the corpus is currently loaded 27 times; `Game.Tests` took 2m14s in the
+2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case
+stands on the 27 loads, not the wall clock); the
 `Encounter` guard-preamble helper, and the action seam if the class list grows —
 trigger-based, with #369 (Turn Undead) the likeliest trigger.
 Runs continuously alongside F2–F4; has its own closing push. Exit: suite under ~3
