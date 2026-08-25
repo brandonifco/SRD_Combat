@@ -206,6 +206,16 @@ public sealed class SpriteLibrary
         // five dragon wyrmlings (the Red and White drop the two Craftpix dragons, and
         // the other three colours shed circles a pack could only have lied about), the
         // four swarms, and the rest of the roster's bare circles.
+        //
+        // #441 (2026-08-25): Bugbear_Warrior/Idle.png was re-shipped from a different
+        // master. Two finished paintings both plausibly depicted "Bugbear Warrior"
+        // (client/assets/masters/bugbear_warrior.png, axe and shield, vs. the
+        // flail-and-spikes one this slot shipped from originally) — a name collision
+        // the pipeline's stem-diff survey couldn't see, only caught by qc's review of
+        // #295. Brandon decided: the axe-and-shield painting is the Bugbear Warrior.
+        // The displaced flail painting stays in the masters tree, renamed
+        // bugbear_flail.png so the collision can't recur, with no pool name currently
+        // pointed at it.
         ["Bugbear Warrior"] = "Bugbear_Warrior",
         ["Bugbear Stalker"] = "Bugbear_Stalker",
         ["Blue Dragon Wyrmling"] = "Blue_Dragon_Wyrmling",
