@@ -702,10 +702,14 @@ public static class SimpleTacticsPolicy
         var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
             .ToHashSet();
 
+        // Caught if any square of the body is caught — the same membership reading
+        // Encounter.CreaturesIn resolves the cast with. Counting anchors instead would
+        // hold the spell back waiting for a second victim while two shoulder-clipped
+        // Ogres were already standing in the blast.
         var caught = encounter.Combatants.Count(combatant =>
             combatant.IsActive
             && combatant.SideId != actor.SideId
-            && covered.Contains(combatant.Position));
+            && combatant.Space.Squares().Any(covered.Contains));
 
         return caught < 2;
     }
@@ -1285,10 +1289,13 @@ public static class SimpleTacticsPolicy
         var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
             .ToHashSet();
 
+        // An ally is in the way if any square of its body is — the same membership
+        // reading the cast itself resolves with. Asking only about the anchor would let
+        // this gate call a Large packmate safe and then fry it.
         return !encounter.Combatants.Any(combatant =>
             combatant.IsActive
             && combatant.SideId == actor.SideId
-            && covered.Contains(combatant.Position));
+            && combatant.Space.Squares().Any(covered.Contains));
     }
 
     /// <summary>
