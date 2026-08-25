@@ -144,7 +144,11 @@ masters (they cover most creatures now rendering as circles); fix the stature cl
 feedback: floating damage numbers, hit/miss/death visually distinct, health readout
 carrying state, an audio pass (a dozen sounds: hit, miss, death, cast, UI — silence is
 currently total). Foresight: opportunity-attack threat marking, range/AoE previews,
-path preview, tooltip latency to ~0.5 s, terrain hints, log-space fix. Exit: probe
+path preview, tooltip latency to ~0.5 s, terrain hints, log-space fix. Added
+2026-08-25, from Brandon's played-run verdict on the battlefields: the
+battlefield-generation overhaul (`docs/2026-08-25-battlefield-overhaul-design.md`,
+slices #433, #435–#440 — sites, density tiers, whole-board terrain, deployment
+formations; supersedes #243, whose two items it absorbs). Exit: probe
 screenshots show it; a watcher can narrate a fight with the log covered.
 
 **F3 — The run becomes a game.** The largest design gap; Fable-led design, spec'd
@@ -160,7 +164,9 @@ than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
 (attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
 fight 24 rather than never (only 53 of 120 and 59 of 121 runs reach level 4 — the
 Pacing row above, current baseline); reprice or redesign the free `Survive(3)` rung;
-per-cycle variety so the six cycles are not one cycle six times (#192, #243). Exit:
+per-cycle variety so the six cycles are not one cycle six times (#192 — and, since
+2026-08-25, the per-cycle site weighting the battlefield overhaul deliberately left
+here; #243 itself was superseded into F2, see the F2 note above). Exit:
 measured curve holds through the back half on both ranges; a human run report exists
 for every new system.
 
