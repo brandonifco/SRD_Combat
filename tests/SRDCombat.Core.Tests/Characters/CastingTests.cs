@@ -135,6 +135,72 @@ public class CastingTests
     }
 
     [Fact]
+    public void SpiritGuardiansDealsThreeD8RadiantOnAFailedSaveNotSix()
+    {
+        // #375: the printed "3d8 Radiant damage (if you are good or neutral) or 3d8
+        // Necrotic damage (if you are evil)" is an either/or on one roll, not two —
+        // the engine used to sum both branches and deal 6d8 of two damage types
+        // against a printed 3d8 of one. ScriptedRandomSource throws on a surplus or a
+        // shortfall, so the exact roll count pins the fix: two initiative rolls, one
+        // Wisdom save, then exactly three d8s of damage — a fourth requested roll
+        // would throw before this test could even assert.
+        var caster = Caster(
+            "caster",
+            [SpiritGuardians()],
+            initiative: 10,
+            spellSlots: new Dictionary<int, int> { [3] = 1 });
+        var target = CombatTestData.Combatant(
+            "target",
+            sideId: CombatTestData.Monsters,
+            x: 2,
+            stats: CombatTestData.Stats(armorClass: 5, maximumHitPoints: 80));
+
+        var random = new ScriptedRandomSource(
+            10, // caster initiative
+            1, // target initiative
+            1, // failed Wisdom save (bonus +0 vs DC 13)
+            6, 6, 6); // exactly three d8s of damage
+
+        var encounter = Encounter.Start(new Battlefield(12, 12), [caster, target], random);
+
+        Assert.Null(encounter.CastSpell("spell.spirit-guardians", target));
+
+        var damageStep = Assert.Single(encounter.Log, step => step.Kind == CombatStepKind.Damage);
+        Assert.Contains("Radiant damage", damageStep.Narration, StringComparison.Ordinal);
+        Assert.DoesNotContain("Necrotic", damageStep.Narration, StringComparison.Ordinal);
+        Assert.Equal(80 - 18, target.CurrentHitPoints);
+    }
+
+    [Fact]
+    public void SpiritGuardiansHalvesTheSingleComponentOnASuccessfulSave()
+    {
+        var caster = Caster(
+            "caster",
+            [SpiritGuardians()],
+            initiative: 10,
+            spellSlots: new Dictionary<int, int> { [3] = 1 });
+        var target = CombatTestData.Combatant(
+            "target",
+            sideId: CombatTestData.Monsters,
+            x: 2,
+            stats: CombatTestData.Stats(armorClass: 5, maximumHitPoints: 80));
+
+        var random = new ScriptedRandomSource(
+            10, // caster initiative
+            1, // target initiative
+            20, // successful Wisdom save (bonus +0 vs DC 13)
+            6, 6, 6); // still exactly three d8s rolled, then halved
+
+        var encounter = Encounter.Start(new Battlefield(12, 12), [caster, target], random);
+
+        Assert.Null(encounter.CastSpell("spell.spirit-guardians", target));
+
+        var damageStep = Assert.Single(encounter.Log, step => step.Kind == CombatStepKind.Damage);
+        Assert.Contains("halved by a successful save", damageStep.Narration, StringComparison.Ordinal);
+        Assert.Equal(80 - 9, target.CurrentHitPoints);
+    }
+
+    [Fact]
     public void ConcentrationStartsAndIsBrokenByDamage()
     {
         var caster = Caster("caster", [Hold()], initiative: 10, hitPoints: 40);
@@ -273,6 +339,39 @@ public class CastingTests
         damage: "8d6",
         area: new EffectArea(AreaShape.Sphere, 20));
 
+    // A single-target stand-in for the real Spirit Guardians (its Emanation targeting
+    // is not the point of this pin — the post-#375 damage shape is): a Wisdom save,
+    // half damage on success, one 3d8 Radiant component, and the printed Necrotic
+    // alternative carried rather than dropped.
+    private static SpellDefinition SpiritGuardians()
+    {
+        var dice = DiceExpression.Parse("3d8");
+        var components = new[] { new AttackDamage(dice, DamageType.Radiant, dice.Average) };
+
+        return new SpellDefinition
+        {
+            Id = "spell.spirit-guardians",
+            Name = "Spirit Guardians",
+            Level = 3,
+            School = MagicSchool.Conjuration,
+            Classes = ["Cleric"],
+            CastingTime = SpellCastingTime.Action,
+            CastingTimeText = "Action",
+            RangeText = "60 feet",
+            RangeFeet = 60,
+            Components = SpellComponents.Verbal,
+            DurationText = "Concentration, up to 10 minutes",
+            RequiresConcentration = true,
+            Text = "Spirit Guardians",
+            Mechanics = EntryMechanics.SavingThrow,
+            IsSpellAttack = false,
+            Damage = components,
+            EvilCasterDamageType = DamageType.Necrotic,
+            Save = new SaveEffect(Ability.Wisdom, null, null, components, SaveSuccessOutcome.HalfDamage, []),
+            SourcePage = 164,
+        };
+    }
+
     private static SpellDefinition Hold(string id = "spell.hold", string name = "Hold") => Spell(
         id,
         name,
@@ -324,7 +423,8 @@ public class CastingTests
         string id,
         IReadOnlyList<SpellDefinition> spells,
         int initiative,
-        int hitPoints = 30)
+        int hitPoints = 30,
+        IReadOnlyDictionary<int, int>? spellSlots = null)
     {
         var stats = CombatTestData.Stats(
             maximumHitPoints: hitPoints,
@@ -341,7 +441,7 @@ public class CastingTests
                 ActionSurgeUses: 0,
                 Level: 5,
                 Spells: spells,
-                SpellSlots: new Dictionary<int, int> { [1] = 2, [2] = 1 },
+                SpellSlots: spellSlots ?? new Dictionary<int, int> { [1] = 2, [2] = 1 },
                 SpellcastingAbility: Ability.Intelligence,
                 SpellSaveDifficultyClass: 13,
                 SpellAttackBonus: 5),

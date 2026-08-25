@@ -55,7 +55,12 @@ namespace SRDCombat.Game;
 /// <b>One entry predates the bar and carries a stated gap rather than a silent one.</b>
 /// Spirit Guardians' printed form is a persistent aura (halved Speed, saves each turn)
 /// that the engine casts as a one-time Emanation; it is kept because removing it would
-/// change the pregens, and the damage it does deal is real and correctly priced.
+/// change the pregens. The damage it deals is now correctly priced too: it used to sum
+/// the spell's printed alignment-alternative — 3d8 Radiant *and* 3d8 Necrotic, double
+/// the printed 3d8 — until #375 read the "or" as the alternative it is. The reading and
+/// the grammar that structures it live on <c>SpellEffectParser.ParseEvilCasterDamageType</c>;
+/// the alternative branch survives on <see cref="SpellDefinition.EvilCasterDamageType"/>
+/// rather than being silently dropped.
 /// (Guiding Bolt carried this paragraph's other gap until #155: its "next attack roll
 /// made against it ... has Advantage" rider now executes whole, structured at
 /// extraction and spent by the next roll against the lit target on the caster's

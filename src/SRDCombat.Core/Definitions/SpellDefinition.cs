@@ -223,6 +223,17 @@ public sealed record SpellDefinition
     public DiceExpression? UpcastDicePerSlotLevel { get; init; }
 
     /// <summary>
+    /// The damage type this spell deals instead when the caster is evil — Spirit
+    /// Guardians' "or 3d8 Necrotic damage (if you are evil)", the only spell in the
+    /// book that gates its damage type on the caster's alignment. Null for every
+    /// other spell. The engine never reads it today: no character carries an
+    /// alignment, so every caster is read as non-evil and deals the primary type in
+    /// <see cref="Damage"/> and <see cref="Save"/>'s <c>FailureDamage</c>. See the
+    /// reading on <c>SpellEffectParser</c>'s alignment-alternative grammar (#375).
+    /// </summary>
+    public DamageType? EvilCasterDamageType { get; init; }
+
+    /// <summary>
     /// A cantrip's per-step growth — "increases by 1d8 when you reach levels 5, 11, and
     /// 17", which is the one shape every printed Cantrip Upgrade uses.
     /// </summary>
