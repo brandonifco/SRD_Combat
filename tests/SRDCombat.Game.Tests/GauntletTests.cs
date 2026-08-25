@@ -495,7 +495,14 @@ public class GauntletTests
         // reach level 4.
         var ladder = Enumerable.Repeat(new LadderStep(EncounterDifficulty.Low, RestKind.Long), 60).ToArray();
         var run = GauntletRun.Start(Content, drafts, ladder, startingLevel: 3);
-        var random = new SeededRandomSource(4242);
+
+        // Seed 4242 stopped reaching level 4 within the 60-fight budget once terrain
+        // generation started spending extra dice on density and contested-region bias
+        // (#433) — every fight's whole random stream shifts with it, and this
+        // particular seed's party was defeated at fight 12 instead. Reselected for a
+        // seed that still reaches level 4 comfortably inside the budget; the accounting
+        // under test does not care which seed gets it there.
+        var random = new SeededRandomSource(2);
 
         while (run.States[0].Level < 4 && run.Outcome == RunOutcome.InProgress && run.Next is not null)
         {

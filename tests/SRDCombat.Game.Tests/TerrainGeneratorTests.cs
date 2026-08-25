@@ -6,8 +6,8 @@ using SRDCombat.Core.Rules;
 namespace SRDCombat.Game.Tests;
 
 /// <summary>
-/// Generated terrain: seeded, between the sides, and never able to make a fight
-/// unwinnable on foot.
+/// Generated terrain: seeded, spread across the whole board, and never able to make a
+/// fight unwinnable on foot.
 /// </summary>
 /// <remarks>
 /// The guarantees are asserted over many seeds rather than one, because the failure
@@ -16,16 +16,16 @@ namespace SRDCombat.Game.Tests;
 /// </remarks>
 public class TerrainGeneratorTests
 {
-    // The shape EncounterFactory actually builds: two columns of four, six squares of
-    // gap, on a 9x6 field.
-    private static readonly GridPosition[] Spawns =
-    [
-        new(1, 1), new(1, 2), new(1, 3), new(1, 4),
-        new(7, 1), new(7, 2), new(7, 3), new(7, 4),
-    ];
+    // The shape EncounterFactory actually builds for the classic two-column fight: two
+    // columns of four, twelve squares of gap (60 feet), on a 9x6 field.
+    private static readonly GridPosition[] PartySpawns =
+        [new(1, 1), new(1, 2), new(1, 3), new(1, 4)];
+
+    private static readonly GridPosition[] MonsterSpawns =
+        [new(7, 1), new(7, 2), new(7, 3), new(7, 4)];
 
     private static Battlefield Generate(int seed) =>
-        TerrainGenerator.Generate(9, 6, Spawns, new SeededRandomSource(seed));
+        TerrainGenerator.Generate(9, 6, PartySpawns, MonsterSpawns, BattleLayout.Columns, new SeededRandomSource(seed));
 
     [Fact]
     public void TheSameSeedGrowsTheSameField()
@@ -43,33 +43,48 @@ public class TerrainGeneratorTests
     }
 
     [Fact]
-    public void TerrainNeverTouchesASpawnSquare()
+    public void TerrainNeverStandsOnOrAdjacentToASpawnSquare()
     {
+        // The free 3x3 block around every spawn (design §5) — a genuine tightening over
+        // the old rule, which only excluded the spawn square itself.
         for (var seed = 1; seed <= 200; seed++)
         {
-            var field = Generate(seed);
-
-            foreach (var spawn in Spawns)
+            foreach (var field in new[] { Generate(seed), GenerateWide(seed) })
             {
-                Assert.True(field.IsPassable(spawn), $"Seed {seed} walled spawn {spawn}.");
-                Assert.DoesNotContain(spawn, field.DifficultTerrain);
+                var spawns = field.Width == 9
+                    ? PartySpawns.Concat(MonsterSpawns)
+                    : WidePartySpawns.Concat(WideMonsterSpawns);
+
+                foreach (var spawn in spawns)
+                {
+                    Assert.True(field.IsPassable(spawn), $"Seed {seed} walled spawn {spawn}.");
+                    Assert.DoesNotContain(spawn, field.DifficultTerrain);
+
+                    foreach (var neighbour in spawn.Neighbours())
+                    {
+                        Assert.True(
+                            field.IsPassable(neighbour),
+                            $"Seed {seed} placed impassable terrain at {neighbour}, adjacent to spawn {spawn}.");
+                        Assert.DoesNotContain(neighbour, field.DifficultTerrain);
+                    }
+                }
             }
         }
     }
 
     [Fact]
-    public void TerrainStaysStrictlyBetweenTheSides()
+    public void TerrainCanNowLandInTheFlankingMargins()
     {
-        for (var seed = 1; seed <= 200; seed++)
-        {
-            var field = Generate(seed);
+        // The whole-board eligibility change's own point: the old rule confined terrain
+        // to the band strictly between the spawn columns (x in 2..6 on this fixture),
+        // leaving the flanks permanently bare. Asserted as "it happens somewhere across
+        // many seeds", not "it happens on seed 1" — the generator still rejects freely.
+        var fields = Enumerable.Range(1, 400).Select(GenerateWide).ToArray();
 
-            foreach (var square in field.Blocked.Concat(field.DifficultTerrain))
-            {
-                Assert.InRange(square.X, 2, 6);
-                Assert.InRange(square.Y, 0, 5);
-            }
-        }
+        Assert.Contains(
+            fields,
+            field => field.Blocked.Concat(field.DifficultTerrain).Concat(field.LowObstacles)
+                .Any(square => square.X < WidePartySpawns[0].X || square.X > WideMonsterSpawns[0].X));
     }
 
     [Fact]
@@ -77,24 +92,30 @@ public class TerrainGeneratorTests
     {
         for (var seed = 1; seed <= 200; seed++)
         {
-            var field = Generate(seed);
-            var reached = new HashSet<GridPosition> { Spawns[0] };
-            var frontier = new Queue<GridPosition>(reached);
-
-            while (frontier.Count > 0)
+            foreach (var field in new[] { Generate(seed), GenerateWide(seed) })
             {
-                foreach (var next in frontier.Dequeue().Neighbours())
+                var spawns = field.Width == 9
+                    ? PartySpawns.Concat(MonsterSpawns).ToArray()
+                    : WidePartySpawns.Concat(WideMonsterSpawns).ToArray();
+
+                var reached = new HashSet<GridPosition> { spawns[0] };
+                var frontier = new Queue<GridPosition>(reached);
+
+                while (frontier.Count > 0)
                 {
-                    if (field.IsPassable(next) && reached.Add(next))
+                    foreach (var next in frontier.Dequeue().Neighbours())
                     {
-                        frontier.Enqueue(next);
+                        if (field.IsPassable(next) && reached.Add(next))
+                        {
+                            frontier.Enqueue(next);
+                        }
                     }
                 }
-            }
 
-            foreach (var spawn in Spawns)
-            {
-                Assert.Contains(spawn, reached);
+                foreach (var spawn in spawns)
+                {
+                    Assert.Contains(spawn, reached);
+                }
             }
         }
     }
@@ -149,14 +170,17 @@ public class TerrainGeneratorTests
         }
     }
 
-    // The current EncounterFactory board: 18x12, spawn columns near either edge.
+    // The standard EncounterFactory board: 28x18, spawn columns at the margin/separation
+    // boundary — MarginSquares (8) and MarginSquares + separation (20).
+    private static readonly GridPosition[] WidePartySpawns =
+        [.. Enumerable.Range(7, 4).Select(y => new GridPosition(8, y))];
+
+    private static readonly GridPosition[] WideMonsterSpawns =
+        [.. Enumerable.Range(7, 4).Select(y => new GridPosition(20, y))];
+
     private static Battlefield GenerateWide(int seed) =>
         TerrainGenerator.Generate(
-            18,
-            12,
-            [.. Enumerable.Range(4, 4).Select(y => new GridPosition(3, y)),
-             .. Enumerable.Range(4, 4).Select(y => new GridPosition(14, y))],
-            new SeededRandomSource(seed));
+            28, 18, WidePartySpawns, WideMonsterSpawns, BattleLayout.Columns, new SeededRandomSource(seed));
 
     private static void AssertWholeRect(
         IReadOnlyCollection<GridPosition> component,
@@ -215,9 +239,10 @@ public class TerrainGeneratorTests
     public void TheWideBoardTypicallyCarriesSeveralObstacles()
     {
         // The density complaint from play (2026-08-20): a mean of one footprint per
-        // field read as an empty room. The dial now lands two to three on most fields.
-        // Asserted as a floor over many seeds, not an exact count, so a better landing
-        // rate never fails the build — the monster-pool convention.
+        // field read as an empty room. The dial now lands two to three or more on most
+        // fields (density tiers only raise this further). Asserted as a floor over many
+        // seeds, not an exact count, so a better landing rate never fails the build —
+        // the monster-pool convention.
         var fields = Enumerable.Range(1, 200).Select(GenerateWide).ToArray();
         var footprintCounts = fields
             .Select(field => Components([.. field.Blocked, .. field.LowObstacles]).Count())
@@ -240,17 +265,65 @@ public class TerrainGeneratorTests
     }
 
     [Fact]
-    public void ADegenerateRegionMeansABareFieldRatherThanAThrow()
+    public void ADegenerateBoardNeverThrowsAndNeverStandsAWallOnAnyoneOrDisconnects()
     {
-        // Sides in adjacent columns leave no band between them to put terrain in.
-        var field = TerrainGenerator.Generate(
-            4,
-            4,
-            [new GridPosition(1, 1), new GridPosition(2, 1)],
-            new SeededRandomSource(1));
+        // Sides in adjacent columns leave no open band between them — the contested
+        // region and the eligibility rules must both fall back gracefully rather than
+        // throw, and the guarantees that matter (nobody walled in, everyone connected)
+        // must still hold on a board this small.
+        var partySpawns = new[] { new GridPosition(1, 1) };
+        var monsterSpawns = new[] { new GridPosition(2, 1) };
 
-        Assert.Empty(field.Blocked);
-        Assert.Empty(field.DifficultTerrain);
+        for (var seed = 1; seed <= 50; seed++)
+        {
+            var field = TerrainGenerator.Generate(
+                4, 4, partySpawns, monsterSpawns, BattleLayout.Columns, new SeededRandomSource(seed));
+
+            // The 2x2 minimum footprint cannot fit in the sliver of board this leaves
+            // eligible, so no obstacle ever lands — but that is an observed consequence
+            // of the geometry, not a special case in the generator.
+            Assert.Empty(field.Blocked);
+            Assert.Empty(field.LowObstacles);
+
+            foreach (var spawn in partySpawns.Concat(monsterSpawns))
+            {
+                Assert.True(field.IsPassable(spawn));
+            }
+        }
+    }
+
+    [Fact]
+    public void DressingLeansTowardTheContestedGround()
+    {
+        // Design §5's "mild bias": two-thirds of dressing anchors draw from the
+        // contested region. Not a per-board guarantee — asserted as a density
+        // comparison over many seeds on the standard board, where the contested region
+        // (the middle third of the gap, under Columns) is a known, narrow slice of the
+        // whole field.
+        var fields = Enumerable.Range(1, 400).Select(GenerateWide).ToArray();
+
+        var bandMinX = WidePartySpawns[0].X + 1;
+        var bandMaxX = WideMonsterSpawns[0].X - 1;
+        var bandWidth = bandMaxX - bandMinX + 1;
+        var thirdWidth = Math.Max(1, bandWidth / 3);
+        var midStart = bandMinX + ((bandWidth - thirdWidth) / 2);
+        var midEnd = Math.Min(bandMaxX, midStart + thirdWidth - 1);
+
+        bool InContestedRegion(GridPosition square) => square.X >= midStart && square.X <= midEnd;
+
+        var contestedSquares = (double)(midEnd - midStart + 1) * 18;
+        var wholeBoardSquares = 28.0 * 18;
+
+        var contestedDensity = fields.Average(field =>
+            field.Blocked.Concat(field.DifficultTerrain).Concat(field.LowObstacles).Count(InContestedRegion))
+            / contestedSquares;
+        var overallDensity = fields.Average(field =>
+            field.Blocked.Count + field.DifficultTerrain.Count + field.LowObstacles.Count)
+            / wholeBoardSquares;
+
+        Assert.True(
+            contestedDensity > overallDensity,
+            $"Contested-region density {contestedDensity:P2} did not exceed overall density {overallDensity:P2}.");
     }
 
     [Fact]

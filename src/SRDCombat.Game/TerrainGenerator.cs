@@ -4,6 +4,32 @@ using SRDCombat.Core.Dice;
 namespace SRDCombat.Game;
 
 /// <summary>
+/// How thickly a battlefield is dressed. One tier is drawn per fight
+/// (<see cref="TerrainGenerator.DrawDensity"/>) and scales the dressing pass's attempt
+/// counts; it never changes what a square can mean, only how many carry one.
+/// </summary>
+/// <remarks>
+/// Weights and target realized coverage (impassable + difficult, over every square) are
+/// the design's stated numbers
+/// (<c>docs/2026-08-25-battlefield-overhaul-design.md</c> §6), validated by
+/// <c>TerrainDensityCoverageTests</c> rather than assumed: sparse 25% draw weight /
+/// 3–6% coverage, standard 50% / 7–11%, cluttered 25% / 12–16%. The bands are a mean
+/// over a seed sweep, not a per-board guarantee — a single cluttered board can still
+/// tail below its band under rejection.
+/// </remarks>
+public enum TerrainDensity
+{
+    /// <summary>Today's dial, kept as the floor of the range: ~3.6% coverage, always.</summary>
+    Sparse,
+
+    /// <summary>The new midpoint: noticeably more populated without reading as clutter.</summary>
+    Standard,
+
+    /// <summary>The densest dial the property test still lets every fight stay winnable at.</summary>
+    Cluttered,
+}
+
+/// <summary>
 /// Scatters terrain across a generated battlefield: walls nothing can enter, low
 /// obstacles to duck behind, and Difficult Terrain that costs double to cross.
 /// </summary>
@@ -14,40 +40,61 @@ namespace SRDCombat.Game;
 /// </para>
 /// <list type="bullet">
 /// <item>
-/// <b>Terrain sits strictly between the outermost spawns.</b> Features land only on
-/// columns between the leftmost and rightmost spawn columns, exclusive of both, and never
-/// on a spawn square, so nobody starts inside a wall, walled off, or with their first
-/// step already taxed. For the classic two-column layout that band is exactly the ground
-/// between the sides; for a corner or surrounded layout it is the contested middle the
-/// spawns enclose. How far apart the sides begin is the layout's decision
-/// (<c>EncounterFactory.StartingSeparationFeet</c> and its <c>BattleLayout</c>), and
-/// terrain must not quietly remake it.
+/// <b>The whole board is in play.</b> Terrain may land anywhere except (a) a spawn
+/// square, (b) any square orthogonally or diagonally adjacent to a spawn square — a
+/// free 3×3 block around every spawn — and (c) protected squares (none are threaded in
+/// this slice; the parameter exists for a later slice's carved gaps and fords). This
+/// replaces the old rule confining terrain to the columns strictly between the
+/// outermost spawns, which left the 8-square flanking margins permanently bare —
+/// battlefield-overhaul design §5. Rule (b) is a genuine tightening, not a restatement:
+/// the old rule only ever excluded spawn *squares*, so terrain could and did (~26% of
+/// boards, per the design's own measurement) stand flush against a spawn. The 3×3
+/// clearance is load-bearing for a later slice's span-aware connectivity check
+/// (design §8.1), which is exactly why it is a stated rule here rather than an
+/// accident of geometry.
 /// </item>
 /// <item>
-/// <b>Obstacles are whole footprints, Difficult Terrain comes in patches.</b> Three to
-/// six obstacle attempts — each drawn as either a wall (Total Cover, 2×4 squares
-/// upright or 4×2 lying across the field, a second coin flip per wall, 2026-08-20 at
-/// Brandon's direction with the landscape wall art) or a
-/// low obstacle (Half Cover, shot over rather than blocking, 2×2 squares), a coin flip
-/// per obstacle — and up to three patches of one to four. The attempt counts were
-/// raised from 0–3 and 0–2 on 2026-08-20, after play found the fields too sparse: with
-/// rejection, the old dial landed a mean of one footprint per field and a third of
-/// fields bare, and the new one lands two to three on most fields with four or five
-/// possible. The footprint sizes are the drawn
-/// art's own (2026-08-20, at Brandon's direction): a rock wall or a tree blocks every
-/// square its picture covers, which is why placement is all-or-nothing — a footprint
-/// that cannot land whole lands nowhere, so a partial obstacle can never contradict its
-/// art. Footprints also never touch each other, orthogonally or by kind, so a client
-/// can recover each one from the blocked squares as a connected component. A draw can
-/// still produce a bare field — rejection can refuse every attempt — but it is rare
-/// rather than a third of draws: variety includes the plain, sparingly.
+/// <b>Dressing leans toward the contested ground.</b> Two-thirds of dressing anchors
+/// (both obstacle attempts and Difficult Terrain patches) draw from the fight's
+/// contested region, one-third from the whole board — design §5's "mild bias" so the
+/// flanks gain texture without the middle losing primacy. The contested region is
+/// layout-specific (design §4.6) and approximated here as the rectangle or rectangles
+/// stated in <see cref="ContestedRegions"/>'s own remarks — a reading, not a printed
+/// rule, since no acceptance test pins its exact shape. Which region a draw uses is
+/// itself one roll, spent identically whether the draw lands or is rejected, so
+/// rejection never re-times the dice that follow it.
+/// </item>
+/// <item>
+/// <b>One density tier per fight.</b> A seeded draw before any placement picks
+/// <see cref="TerrainDensity.Sparse"/>, <see cref="TerrainDensity.Standard"/> or
+/// <see cref="TerrainDensity.Cluttered"/> (design §6) and scales the obstacle-attempt
+/// and Difficult-Terrain-patch counts by it. One tier for the whole board, not a
+/// per-obstacle coin flip, so a field reads coherently instead of half-sparse,
+/// half-cluttered.
+/// </item>
+/// <item>
+/// <b>Obstacles are whole footprints, Difficult Terrain comes in patches.</b> Each
+/// obstacle attempt is drawn as either a wall (Total Cover, 2×4 squares upright or 4×2
+/// lying across the field, a second coin flip per wall, 2026-08-20 at Brandon's
+/// direction with the landscape wall art) or a low obstacle (Half Cover, shot over
+/// rather than blocking, 2×2 squares), a coin flip per obstacle. The footprint sizes
+/// are the drawn art's own (2026-08-20, at Brandon's direction): a rock wall or a tree
+/// blocks every square its picture covers, which is why placement is all-or-nothing —
+/// a footprint that cannot land whole lands nowhere, so a partial obstacle can never
+/// contradict its art. Footprints also never touch each other, orthogonally or by
+/// kind, so a client can recover each one from the blocked squares as a connected
+/// component — unchanged in this slice; the vocabulary that retires this rule is a
+/// later one. A draw can still produce a bare field — rejection can refuse every
+/// attempt — but it is rare rather than common: variety includes the plain, sparingly.
 /// </item>
 /// <item>
 /// <b>Every fight stays winnable on foot.</b> An obstacle square — wall or low, both
 /// being impassable — whose placement would cut any spawn square off from any other is
 /// discarded rather than placed, checked one square at a time, so the guarantee holds
 /// whatever the dice drew. Both sides field melee-only creatures, and a fight the sides
-/// cannot reach each other in is not a fight.
+/// cannot reach each other in is not a fight. Single-square (span-1) connectivity, as
+/// today; a later slice generalizes this to span-aware connectivity for multi-square
+/// creatures.
 /// </item>
 /// </list>
 /// <para>
@@ -58,34 +105,81 @@ namespace SRDCombat.Game;
 /// </remarks>
 public static class TerrainGenerator
 {
+    /// <summary>
+    /// The density multiplier applied to the base obstacle-attempt and Difficult-Terrain
+    /// patch counts. Sparse is 1× — today's dial, left alone — standard and cluttered are
+    /// tuned against <c>TerrainDensityCoverageTests</c>' measured realized coverage
+    /// rather than guessed, because rejection (spawn clearance, footprint separation,
+    /// connectivity) eats a growing share of attempts as density rises, so the target
+    /// bands do not scale linearly with the multiplier.
+    /// </summary>
+    private static double MultiplierFor(TerrainDensity density) => density switch
+    {
+        TerrainDensity.Sparse => 1.0,
+        TerrainDensity.Standard => 3.3,
+        TerrainDensity.Cluttered => 6.7,
+        _ => 1.0,
+    };
+
+    /// <summary>
+    /// Draws this fight's density tier: sparse 25%, standard 50%, cluttered 25% (design
+    /// §6). Exposed so a caller — chiefly the property test — can learn which tier a
+    /// seed drew without re-deriving <see cref="Generate"/>'s internals: calling this
+    /// with a fresh <see cref="IRandomSource"/> on the same seed reproduces the exact
+    /// roll <see cref="Generate"/> spends first, because it always is the first roll a
+    /// generation call makes.
+    /// </summary>
+    public static TerrainDensity DrawDensity(IRandomSource random) => random.Roll(4) switch
+    {
+        1 => TerrainDensity.Sparse,
+        2 or 3 => TerrainDensity.Standard,
+        _ => TerrainDensity.Cluttered,
+    };
+
     /// <summary>Builds a battlefield of the given size with seeded terrain on it.</summary>
     /// <param name="width">Squares across.</param>
     /// <param name="height">Squares down.</param>
-    /// <param name="spawns">
-    /// Every square a combatant will start on. Terrain avoids them, and walls may never
-    /// disconnect them from each other.
+    /// <param name="partySpawns">Every square a party member will start on.</param>
+    /// <param name="monsterSpawns">Every square a monster will start on.</param>
+    /// <param name="layout">
+    /// The fight's opening shape, which decides where the contested ground is
+    /// (<see cref="ContestedRegions"/>).
     /// </param>
     /// <param name="random">The seeded dice the whole fight runs on.</param>
+    /// <param name="protectedSquares">
+    /// Squares terrain may never enter beyond the spawn clearance — empty in this
+    /// slice; carried for a later slice's carved gaps and fords.
+    /// </param>
     public static Battlefield Generate(
         int width,
         int height,
-        IReadOnlyCollection<GridPosition> spawns,
-        IRandomSource random)
+        IReadOnlyList<GridPosition> partySpawns,
+        IReadOnlyList<GridPosition> monsterSpawns,
+        BattleLayout layout,
+        IRandomSource random,
+        IReadOnlyCollection<GridPosition>? protectedSquares = null)
     {
-        ArgumentNullException.ThrowIfNull(spawns);
+        ArgumentNullException.ThrowIfNull(partySpawns);
+        ArgumentNullException.ThrowIfNull(monsterSpawns);
         ArgumentNullException.ThrowIfNull(random);
 
-        var spawnSet = new HashSet<GridPosition>(spawns);
+        var spawnSet = new HashSet<GridPosition>(partySpawns.Concat(monsterSpawns));
 
-        // The band strictly between the sides' columns. A degenerate band — the sides
-        // adjacent, or a single spawn column — means a bare field, not an exception.
-        var regionMinX = spawnSet.Count > 0 ? spawnSet.Min(square => square.X) + 1 : 1;
-        var regionMaxX = spawnSet.Count > 0 ? spawnSet.Max(square => square.X) - 1 : 0;
+        // A free 3x3 block around every spawn: the spawn square itself, plus its eight
+        // neighbours. See the class remarks on rule (b).
+        var clearedSquares = new HashSet<GridPosition>(spawnSet);
 
-        if (regionMaxX < regionMinX)
+        foreach (var spawn in spawnSet)
         {
-            return new Battlefield(width, height);
+            foreach (var neighbour in spawn.Neighbours())
+            {
+                clearedSquares.Add(neighbour);
+            }
         }
+
+        var protectedSet = protectedSquares is null
+            ? new HashSet<GridPosition>()
+            : new HashSet<GridPosition>(protectedSquares);
 
         var walls = new HashSet<GridPosition>();
         var lowObstacles = new HashSet<GridPosition>();
@@ -93,13 +187,36 @@ public static class TerrainGenerator
         var difficult = new HashSet<GridPosition>();
 
         bool InRegion(GridPosition square) =>
-            square.X >= regionMinX && square.X <= regionMaxX
+            square.X >= 0 && square.X < width
             && square.Y >= 0 && square.Y < height
-            && !spawnSet.Contains(square);
+            && !clearedSquares.Contains(square)
+            && !protectedSet.Contains(square);
 
-        GridPosition DrawSquare() => new(
-            regionMinX + random.Roll(regionMaxX - regionMinX + 1) - 1,
-            random.Roll(height) - 1);
+        var wholeBoard = new Region(0, width - 1, 0, height - 1);
+        var contestedRegions = ContestedRegions(layout, partySpawns, monsterSpawns, width, height);
+
+        // Padded to the same count as the contested candidates, so choosing "whole
+        // board" spends exactly the same dice as choosing "contested" — the strip pick
+        // below is rolled every time a layout has more than one contested strip,
+        // never only when the contested branch is taken.
+        var wholeBoardRegions = Enumerable.Repeat(wholeBoard, contestedRegions.Length).ToArray();
+
+        // Rolls per anchor, spent identically whether the draw lands or is rejected:
+        // which region (two-thirds contested, one-third whole board), then — for a
+        // layout whose contested ground is more than one rectangle (Surrounded's ring,
+        // split into strips so a draw never wastes itself on the party's own cleared
+        // block at the centre) — which strip, then x, then y within that rectangle's
+        // bounds.
+        GridPosition DrawAnchor()
+        {
+            var useContested = random.Roll(3) <= 2;
+            var candidates = useContested ? contestedRegions : wholeBoardRegions;
+            var region = candidates.Length == 1 ? candidates[0] : candidates[random.Roll(candidates.Length) - 1];
+
+            return new GridPosition(
+                region.MinX + random.Roll(region.Width) - 1,
+                region.MinY + random.Roll(region.Height) - 1);
+        }
 
         // One orthogonal step: 1 north, 2 east, 3 south, 4 west.
         GridPosition Step(GridPosition from) => random.Roll(4) switch
@@ -110,7 +227,10 @@ public static class TerrainGenerator
             _ => new GridPosition(from.X - 1, from.Y),
         };
 
-        var obstacleCount = random.Roll(4) + 2;
+        var density = DrawDensity(random);
+        var multiplier = MultiplierFor(density);
+
+        var obstacleCount = (int)Math.Round((random.Roll(4) + 2) * multiplier);
 
         for (var obstacle = 0; obstacle < obstacleCount; obstacle++)
         {
@@ -120,7 +240,7 @@ public static class TerrainGenerator
             // pattern per kind, and the kind itself comes off the same stream.
             var isWall = random.Roll(2) == 1;
             var isWallHorizontal = isWall && random.Roll(2) == 1;
-            var anchor = DrawSquare();
+            var anchor = DrawAnchor();
             var (footprintWidth, footprintHeight) =
                 isWall ? isWallHorizontal ? (4, 2) : (2, 4) : (2, 2);
 
@@ -158,11 +278,11 @@ public static class TerrainGenerator
             }
         }
 
-        var difficultPatches = random.Roll(4) - 1;
+        var difficultPatches = (int)Math.Round(Math.Max(0, random.Roll(4) - 1) * multiplier);
 
         for (var patch = 0; patch < difficultPatches; patch++)
         {
-            var current = DrawSquare();
+            var current = DrawAnchor();
             var size = random.Roll(4);
 
             for (var grown = 0; grown < size; grown++)
@@ -177,6 +297,136 @@ public static class TerrainGenerator
         }
 
         return new Battlefield(width, height, walls, difficult, lowObstacles);
+    }
+
+    /// <summary>A simple axis-aligned rectangle of squares, inclusive of both ends.</summary>
+    private readonly record struct Region(int MinX, int MaxX, int MinY, int MaxY)
+    {
+        public int Width => MaxX - MinX + 1;
+
+        public int Height => MaxY - MinY + 1;
+    }
+
+    /// <summary>
+    /// The fight's contested ground, as one or more axis-aligned rectangles — the
+    /// region dressing anchors are two-thirds biased toward (design §4.6, reused here
+    /// for dressing per issue #433's own acceptance criteria; §4.6 itself is written
+    /// for a later slice's site structures).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// No acceptance test pins the contested region's exact shape — only the coverage
+    /// bands, the spawn clearance and connectivity are checked — so rectangles stand in
+    /// for the design's true shapes (a middle third, a lane union, a ring) wherever they
+    /// are not already one. This is a stated reading, not a printed rule:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>
+    /// <b>Columns:</b> the middle third of the open band strictly between the two spawn
+    /// columns, full height, exactly as design §4.6 states. One rectangle.
+    /// </item>
+    /// <item>
+    /// <b>CornerGroups:</b> the whole open band strictly between the party column and
+    /// the monster column, full height — left unnarrowed (unlike Columns) because the
+    /// design calls this region the union of two approach lanes, one to each corner
+    /// group, and those lanes together already span nearly the full height between the
+    /// columns. One rectangle.
+    /// </item>
+    /// <item>
+    /// <b>Surrounded:</b> "the ring between the party block and the monster ring",
+    /// read literally as an annulus and expressed as four strips — north, south, east,
+    /// west — framing the party's own bounding box out to the monster ring's radius.
+    /// Framing it this way, rather than using the ring's whole bounding square, matters:
+    /// the square's centre is the party block plus its own spawn clearance, so a draw
+    /// landing there is guaranteed rejected, and two-thirds of every cluttered board's
+    /// anchors landing on dead centre was measured to starve the tier's coverage well
+    /// below its floor. Four rectangles.
+    /// </item>
+    /// </list>
+    /// <para>
+    /// Degenerate inputs (no party or monster spawns, or the two columns adjacent with
+    /// no open band between them) fall back to a single whole-board rectangle.
+    /// </para>
+    /// </remarks>
+    private static Region[] ContestedRegions(
+        BattleLayout layout,
+        IReadOnlyList<GridPosition> partySpawns,
+        IReadOnlyList<GridPosition> monsterSpawns,
+        int width,
+        int height)
+    {
+        var wholeBoard = new Region(0, width - 1, 0, height - 1);
+
+        if (partySpawns.Count == 0 || monsterSpawns.Count == 0)
+        {
+            return [wholeBoard];
+        }
+
+        if (layout == BattleLayout.Surrounded)
+        {
+            var centreX = (monsterSpawns.Min(square => square.X) + monsterSpawns.Max(square => square.X)) / 2;
+            var centreY = (monsterSpawns.Min(square => square.Y) + monsterSpawns.Max(square => square.Y)) / 2;
+            var ringRadius = monsterSpawns.Max(square =>
+                Math.Max(Math.Abs(square.X - centreX), Math.Abs(square.Y - centreY)));
+
+            var ringMinX = Math.Max(0, centreX - ringRadius);
+            var ringMaxX = Math.Min(width - 1, centreX + ringRadius);
+            var ringMinY = Math.Max(0, centreY - ringRadius);
+            var ringMaxY = Math.Min(height - 1, centreY + ringRadius);
+
+            var blockMinX = partySpawns.Min(square => square.X);
+            var blockMaxX = partySpawns.Max(square => square.X);
+            var blockMinY = partySpawns.Min(square => square.Y);
+            var blockMaxY = partySpawns.Max(square => square.Y);
+
+            var strips = new List<Region>(4);
+
+            if (ringMinY <= blockMinY - 1)
+            {
+                strips.Add(new Region(ringMinX, ringMaxX, ringMinY, blockMinY - 1));
+            }
+
+            if (blockMaxY + 1 <= ringMaxY)
+            {
+                strips.Add(new Region(ringMinX, ringMaxX, blockMaxY + 1, ringMaxY));
+            }
+
+            if (ringMinX <= blockMinX - 1)
+            {
+                strips.Add(new Region(ringMinX, blockMinX - 1, blockMinY, blockMaxY));
+            }
+
+            if (blockMaxX + 1 <= ringMaxX)
+            {
+                strips.Add(new Region(blockMaxX + 1, ringMaxX, blockMinY, blockMaxY));
+            }
+
+            return strips.Count > 0 ? [.. strips] : [wholeBoard];
+        }
+
+        // Columns and CornerGroups both place each side on its own constant column —
+        // see EncounterFactory.PlaceSides.
+        var partyX = partySpawns[0].X;
+        var monsterX = monsterSpawns[0].X;
+        var bandMinX = Math.Min(partyX, monsterX) + 1;
+        var bandMaxX = Math.Max(partyX, monsterX) - 1;
+
+        if (bandMaxX < bandMinX)
+        {
+            return [wholeBoard];
+        }
+
+        if (layout == BattleLayout.CornerGroups)
+        {
+            return [new Region(bandMinX, bandMaxX, 0, height - 1)];
+        }
+
+        var bandWidth = bandMaxX - bandMinX + 1;
+        var thirdWidth = Math.Max(1, bandWidth / 3);
+        var midStart = bandMinX + ((bandWidth - thirdWidth) / 2);
+        var midEnd = Math.Min(bandMaxX, midStart + thirdWidth - 1);
+
+        return [new Region(midStart, midEnd, 0, height - 1)];
     }
 
     /// <summary>

@@ -72,9 +72,9 @@ public enum BattleLayout
 /// <para>
 /// The battlefield is sized to hold both sides with room to manoeuvre round the flanks,
 /// rather than being a corridor that makes positioning meaningless — and it is not bare:
-/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain between the sides,
-/// seeded from the same dice as everything else, with its own interpretations stated on
-/// the class.
+/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain across the whole
+/// board (biased toward the contested ground between the sides), seeded from the same
+/// dice as everything else, with its own interpretations stated on the class.
 /// </para>
 /// <para>
 /// <b>Six squares is exactly one move, and widening it was measured and rejected —
@@ -258,7 +258,9 @@ public static class EncounterFactory
         var battlefield = TerrainGenerator.Generate(
             width,
             height,
-            [.. partySpawns, .. monsterSpawns],
+            partySpawns,
+            monsterSpawns,
+            layout,
             random);
 
         var placed = party
