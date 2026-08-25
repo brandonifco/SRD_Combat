@@ -187,6 +187,56 @@ public class ContentSerializerTests
         Assert.Equal(original.Save!.FailureDamage, restored.Save!.FailureDamage);
     }
 
+    /// <summary>
+    /// #386's engine half: <see cref="SaveEffect.RangeFeet"/> is the field an entry
+    /// save's printed range will reach through once the extraction half structures it.
+    /// Pins that a populated value round-trips — the same contract
+    /// <see cref="RoundTrip_PreservesASpellsEvilCasterDamageType"/> pins for
+    /// <c>EvilCasterDamageType</c>, and for the identical reason:
+    /// <c>UnmappedMemberHandling.Disallow</c> exists to catch exactly the miss where a
+    /// field is added to the runtime type but no test ever asks the serializer to
+    /// write or read it.
+    /// </summary>
+    [Fact]
+    public void RoundTrip_PreservesASaveEffectsPrintedRange()
+    {
+        var original = new SaveEffect(
+            Ability.Wisdom,
+            DifficultyClass: 11,
+            Area: null,
+            FailureDamage: [],
+            SaveSuccessOutcome.NoEffect,
+            AppliedConditions: [new AppliedCondition(ConditionType.Frightened)],
+            RangeFeet: 30);
+
+        var json = ContentSerializer.Serialize(original);
+
+        Assert.Contains("\"rangeFeet\": 30", json, StringComparison.Ordinal);
+
+        var restored = ContentSerializer.Deserialize<SaveEffect>(json);
+
+        Assert.Equal(30, restored.RangeFeet);
+    }
+
+    /// <summary>
+    /// The default, and every entry in the corpus today (#386's extraction half has not
+    /// landed): no printed range reached the structure, so nothing about a range
+    /// appears in the file at all — not a zero, not an explicit null.
+    /// </summary>
+    [Fact]
+    public void Serialize_OmitsAnAbsentSaveEffectRange()
+    {
+        var json = ContentSerializer.Serialize(new SaveEffect(
+            Ability.Wisdom,
+            DifficultyClass: 11,
+            Area: null,
+            FailureDamage: [],
+            SaveSuccessOutcome.NoEffect,
+            AppliedConditions: []));
+
+        Assert.DoesNotContain("rangeFeet", json, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void Serialize_OmitsEvilCasterDamageTypeForEverySpellButSpiritGuardians()
     {

@@ -124,6 +124,20 @@ public enum SaveSuccessOutcome
 /// against Shatter would be the spell executing weaker than print against exactly the
 /// creatures the sentence names.
 /// </param>
+/// <param name="RangeFeet">
+/// The distance a single-target or point-aimed save may be used at, when the entry
+/// prints one — a Mummy's Dreadful Glare, "one creature the mummy can see within 30
+/// feet". Null means no printed range reached this structure, which is every entry as
+/// of #386's engine half: the extractor does not populate this field yet (that is
+/// #386's remaining, deliberately separate half — see <c>UseSaveEntry</c>'s remarks),
+/// and every spell's <see cref="SaveEffect"/> too, since a spell's own range already
+/// lives on <see cref="SpellDefinition.RangeFeet"/> and is checked there before this
+/// field would ever be read. Null is read as "unenforced", the same convention
+/// <see cref="SpellDefinition.TargetRangeFeet"/> uses — not as "melee reach" or any
+/// other stand-in distance, because a printed area effect (a Cone, a Cube centred on
+/// the caster) has no target range to enforce in the first place and must keep
+/// resolving exactly as it does today.
+/// </param>
 public sealed record SaveEffect(
     Ability Ability,
     int? DifficultyClass,
@@ -132,7 +146,8 @@ public sealed record SaveEffect(
     SaveSuccessOutcome SuccessOutcome,
     IReadOnlyList<AppliedCondition> AppliedConditions,
     bool CoverIgnored = false,
-    bool ConstructsSaveAtDisadvantage = false);
+    bool ConstructsSaveAtDisadvantage = false,
+    int? RangeFeet = null);
 
 /// <summary>
 /// An effect that restores hit points: "regains a number of Hit Points equal to 2d8 plus

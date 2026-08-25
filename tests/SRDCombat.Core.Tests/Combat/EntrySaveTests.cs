@@ -243,6 +243,128 @@ public class EntrySaveTests
         Assert.False(held.HasCondition(ConditionType.Grappled));
     }
 
+    /// <summary>
+    /// #386: the Mummy's 30-foot Dreadful Glare used to land from anywhere on the
+    /// board because nothing in <c>UseSaveEntry</c> ever measured distance. These pin
+    /// the three cases the acceptance criteria names: in range executes exactly as
+    /// before, out of range refuses named and spends nothing, and a null range — every
+    /// entry in the corpus today, since the extraction half has not landed — reaches
+    /// any distance exactly as it always has.
+    /// </summary>
+    [Fact]
+    public void ASingleTargetSaveWithinItsPrintedRangeExecutesAsToday()
+    {
+        var gaze = new SaveEffect(
+            Ability.Wisdom,
+            11,
+            null,
+            [],
+            SaveSuccessOutcome.NoEffect,
+            [new AppliedCondition(ConditionType.Frightened)],
+            RangeFeet: 30);
+
+        // 4 squares * 5 ft. = 20 ft., inside the 30 ft. range.
+        var encounter = Fight(
+            new ScriptedRandomSource(1, 1, 1),
+            Breather("Dreadful Glare", gaze),
+            Hero("a", x: 4));
+
+        var victim = encounter.Combatants.Single(combatant => combatant.Id == "a");
+
+        Assert.Null(encounter.UseEntry("Dreadful Glare", victim));
+
+        Assert.True(victim.HasCondition(ConditionType.Frightened));
+    }
+
+    [Fact]
+    public void ASingleTargetSaveBeyondItsPrintedRangeRefusesAndSpendsNothing()
+    {
+        var gaze = new SaveEffect(
+            Ability.Wisdom,
+            11,
+            null,
+            [],
+            SaveSuccessOutcome.NoEffect,
+            [new AppliedCondition(ConditionType.Frightened)],
+            RangeFeet: 30);
+
+        // 10 squares * 5 ft. = 50 ft., beyond the 30 ft. range — nothing rolls, so an
+        // unscripted-roll throw would catch a refusal that spent the save anyway.
+        var encounter = Fight(
+            new ScriptedRandomSource(1, 1),
+            Breather("Dreadful Glare", gaze),
+            Hero("a", x: 10));
+
+        var actor = encounter.Combatants.Single(combatant => combatant.Id == "breather");
+        var victim = encounter.Combatants.Single(combatant => combatant.Id == "a");
+
+        var refusal = encounter.UseEntry("Dreadful Glare", victim);
+
+        Assert.Equal("entry.out_of_range", refusal?.Code);
+        Assert.True(actor.Turn.HasAction);
+        Assert.False(victim.HasCondition(ConditionType.Frightened));
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Entry);
+    }
+
+    [Fact]
+    public void ASingleTargetSaveWithNoPrintedRangeReachesAnyDistance()
+    {
+        var gaze = new SaveEffect(
+            Ability.Wisdom,
+            11,
+            null,
+            [],
+            SaveSuccessOutcome.NoEffect,
+            [new AppliedCondition(ConditionType.Frightened)]);
+
+        Assert.Null(gaze.RangeFeet);
+
+        // Far enough that a 30 ft.-range creature could never have reached it — the
+        // point of this test is that nothing here is checked at all.
+        var encounter = Fight(
+            new ScriptedRandomSource(1, 1, 1),
+            Breather("Dreadful Glare", gaze),
+            Hero("a", x: 11));
+
+        var victim = encounter.Combatants.Single(combatant => combatant.Id == "a");
+
+        Assert.Null(encounter.UseEntry("Dreadful Glare", victim));
+
+        Assert.True(victim.HasCondition(ConditionType.Frightened));
+    }
+
+    /// <summary>
+    /// The point-aimed half of the same rule: an area entry aimed at bare ground with
+    /// no creature reference answers to the identical printed range, mirroring
+    /// <c>CastSpell</c>'s own point-aimed check.
+    /// </summary>
+    [Fact]
+    public void APointAimedAreaSaveBeyondItsPrintedRangeRefusesAndSpendsNothing()
+    {
+        var blast = new SaveEffect(
+            Ability.Dexterity,
+            13,
+            new EffectArea(AreaShape.Sphere, 20),
+            [new AttackDamage(DiceExpression.Parse("2d6"), DamageType.Fire, 7)],
+            SaveSuccessOutcome.HalfDamage,
+            [],
+            RangeFeet: 30);
+
+        var encounter = Fight(
+            new ScriptedRandomSource(1, 1),
+            Breather("Blast", blast),
+            Hero("a", x: 10));
+
+        var actor = encounter.Combatants.Single(combatant => combatant.Id == "breather");
+
+        // 10 squares * 5 ft. = 50 ft., beyond the 30 ft. range.
+        var refusal = encounter.UseEntry("Blast", new GridPosition(10, 5));
+
+        Assert.Equal("entry.out_of_range", refusal?.Code);
+        Assert.True(actor.Turn.HasAction);
+        Assert.DoesNotContain(encounter.Log, step => step.Kind == CombatStepKind.Entry);
+    }
+
     [Fact]
     public void ThePolicyBreathesWhenTheConeIsClear()
     {
@@ -285,6 +407,39 @@ public class EntrySaveTests
         Assert.DoesNotContain(
             encounter.Log,
             step => step.Narration.Contains("uses Fire Breath", StringComparison.Ordinal));
+        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Move);
+    }
+
+    /// <summary>
+    /// #386's policy half: picking a target <c>UseEntry</c> would refuse just costs
+    /// the turn on a refusal, so the choice has to respect the same range the engine
+    /// enforces — the single-target shape a Mummy's Dreadful Glare actually has,
+    /// mirroring <see cref="ThePolicyHoldsItsBreathOverAPackmate"/>'s shape for the
+    /// area case.
+    /// </summary>
+    [Fact]
+    public void ThePolicyDoesNotUseASingleTargetSaveBeyondItsPrintedRange()
+    {
+        var gaze = new SaveEffect(
+            Ability.Wisdom,
+            11,
+            null,
+            [],
+            SaveSuccessOutcome.NoEffect,
+            [new AppliedCondition(ConditionType.Frightened)],
+            RangeFeet: 30);
+
+        // 10 squares * 5 ft. = 50 ft., beyond the 30 ft. range.
+        var encounter = Fight(
+            new ScriptedRandomSource(1, 1),
+            Breather("Dreadful Glare", gaze, new UsageLimit(UsageLimitKind.Recharge, RechargeMinimum: 5)),
+            Hero("a", x: 10));
+
+        SimpleTacticsPolicy.TakeTurn(encounter);
+
+        Assert.DoesNotContain(
+            encounter.Log,
+            step => step.Narration.Contains("uses Dreadful Glare", StringComparison.Ordinal));
         Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.Move);
     }
 

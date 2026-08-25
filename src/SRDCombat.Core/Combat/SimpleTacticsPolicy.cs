@@ -1241,9 +1241,20 @@ public static class SimpleTacticsPolicy
             return false;
         }
 
+        // #386: a printed range refuses the same way whether the save has an area or
+        // not — this policy always calls UseEntry with a target (never a bare point),
+        // so UseEntry's own target-range check applies identically here regardless of
+        // area, and picking a target this rejects would just cost the turn on a
+        // refusal. Null — every entry today, until the extraction half structures a
+        // range onto one — means unenforced, exactly as before.
+        if (save.RangeFeet is { } range && distance > range)
+        {
+            return false;
+        }
+
         if (save.Area is not { } area)
         {
-            // A single-target save entry models no range, so nothing gates the distance.
+            // No area to check beyond the range above.
             return true;
         }
 
