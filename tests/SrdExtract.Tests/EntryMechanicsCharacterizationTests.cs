@@ -1146,8 +1146,16 @@ public sealed class EntryMechanicsCharacterizationTests
         var rider = Assert.Single(entry.AppliedConditions);
         Assert.Equal(ConditionType.Poisoned, rider.Condition);
 
-        Assert.Contains(
-            "The target has the Poisoned condition until the start of its next turn",
+        // The other two lines are pre-existing and unrelated to the section gate: the
+        // target clause's Emanation qualifier (design §7.6 claims only the area shape
+        // and its origin word, "originating from"; the free-standing lead-in "any
+        // creature that starts its turn in a" is not one of the claimed shapes).
+        Assert.Equal(
+            [
+                "any creature that starts its turn in a",
+                "originating from the hezrou",
+                "The target has the Poisoned condition until the start of its next turn",
+            ],
             entry.UnmodelledClauses);
     }
 
@@ -1192,7 +1200,17 @@ public sealed class EntryMechanicsCharacterizationTests
         var rider = Assert.Single(entry.AppliedConditions);
         Assert.Equal(ConditionType.Blinded, rider.Condition);
 
-        Assert.Contains("The target has the Blinded condition for 1 minute", entry.UnmodelledClauses);
+        // The other two lines are pre-existing and unrelated to the section gate: the
+        // single-target save's sight qualifier (design §7.6 claims only "one
+        // creature") and the recharge clause's own "Failure or Success:" side clause
+        // (#370 — claimed by nobody, design §4.1).
+        Assert.Equal(
+            [
+                "the solar can see within 120 feet",
+                "The target has the Blinded condition for 1 minute",
+                "Failure or Success: The solar can't take this action again until the start of its next turn",
+            ],
+            entry.UnmodelledClauses);
     }
 
     #endregion

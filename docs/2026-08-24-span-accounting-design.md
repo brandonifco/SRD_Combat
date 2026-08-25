@@ -750,6 +750,16 @@ The #370 row is the brief's warning made concrete: coverage ends the omission cl
 does nothing for misattribution. Do not let the appearance of #370's side clause in
 residue read as #370 being fixed.
 
+**`KnownGapPinsTests.cs` itself is retired, in #411.** Each of the four rows above closed
+on its own terms as its issue landed — #372 (plural conditions), #371 (the alternative
+tier), #370 (the misattribution) and #373 (both the accounting flip this table describes
+and the Trait-section grading question #373 also owned) — and every pin was rewritten
+into a passing characterization fixture in `EntryMechanicsCharacterizationTests` rather
+than left in this file once it stopped pinning a bug. With the fourth gone the file held
+no open pins, so #411 deleted it; the fixtures it names above now live under
+`EntryMechanicsCharacterizationTests`'s "Plural conditions (#372)", "Alternative damage
+(#371)", "Saves" and "Head clauses" regions respectively.
+
 ### 9.3 `CorpusRoundTripTests` — the ordering that matters
 
 It re-parses all 1,318 entries and compares against the committed JSON. It is green today
@@ -876,7 +886,9 @@ plan's F1 row, the new glue-set doc comment).
   warning count — the shape of a clean run is unchanged.
 - `git diff --exit-code data/srd/spells.json` is clean (§8).
 - Corpus round-trip green against the **new** committed JSON.
-- The four `KnownGapPinsTests` updated per §9.2, each keeping its issue reference.
+- The four `KnownGapPinsTests` updated per §9.2, each keeping its issue reference. (The
+  file this bullet names no longer exists — retired in #411 once the fourth pin closed;
+  see §9.2's own closing note for where each fixture moved.)
 - Every residue-expectation change carries a comment naming the absent claim.
 - The verbatim invariant and the glue census test are in place and green.
 - The census is committed or attached, and the PR body summarises: entries gaining
