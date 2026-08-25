@@ -177,4 +177,60 @@ public static class MonsterPool
             .ThenBy(monster => monster.Name, StringComparer.Ordinal)
             .ToArray();
     }
+
+    /// <summary>
+    /// The largest footprint, in squares on a side, that this pool can field.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The pool-level question — <em>what could ever stand on this battlefield</em> —
+    /// asked of the same filters that decide admission, so it moves by itself. It answers
+    /// 3 today, on the Awakened Tree's Huge space; when coverage growth admits another
+    /// Huge creature at the Diminished floor the answer is still derived rather than
+    /// edited, and a Gargantuan creature admitted at any challenge rating would take it
+    /// to 4 with nothing to change here. A hardcoded 3 would go stale exactly the way a
+    /// curated list of pool creatures would have, which is why <see cref="Draw"/> is
+    /// derived in the first place (#429, coordination commitment with the battlefield
+    /// overhaul).
+    /// </para>
+    /// <para>
+    /// <b>Not the same question as "what is on this field".</b> A built fight knows its
+    /// own creatures and sizes anything fight-specific — where terrain may land, how much
+    /// room a spawn column needs — from their actual spaces. This is for what has to be
+    /// guaranteed <em>before</em> the draw: the width of the routes terrain generation
+    /// must leave open, decided when the battlefield is built rather than when it is
+    /// populated.
+    /// </para>
+    /// <para>
+    /// Never less than one: an empty pool still has to produce a battlefield somebody can
+    /// walk across.
+    /// </para>
+    /// </remarks>
+    /// <param name="monsters">Every monster in the content.</param>
+    /// <param name="maximumChallengeRating">The hardest creature to include; see <see cref="Draw"/>.</param>
+    /// <param name="floor">The least coverage accepted; see <see cref="Admits"/>.</param>
+    /// <param name="plausibleFoesOnly">See <see cref="Draw"/>.</param>
+    /// <param name="traditionalFoesOnly">See <see cref="Draw"/>.</param>
+    public static int LargestSpan(
+        IEnumerable<MonsterDefinition> monsters,
+        decimal maximumChallengeRating,
+        MonsterCoverage floor = MonsterCoverage.Playable,
+        bool plausibleFoesOnly = true,
+        bool traditionalFoesOnly = true) =>
+        LargestSpan(Draw(monsters, maximumChallengeRating, floor, plausibleFoesOnly, traditionalFoesOnly));
+
+    /// <summary>
+    /// The largest footprint among an already-chosen set of creatures — an authored
+    /// encounter, or a draw the caller is already holding.
+    /// </summary>
+    public static int LargestSpan(IEnumerable<MonsterDefinition> chosen)
+    {
+        ArgumentNullException.ThrowIfNull(chosen);
+
+        return chosen
+            .Select(monster => CreatureSizeRules.SpaceSpanSquares(
+                monster.Sizes.Count > 0 ? monster.Sizes[0] : CreatureSize.Medium))
+            .DefaultIfEmpty(1)
+            .Max();
+    }
 }

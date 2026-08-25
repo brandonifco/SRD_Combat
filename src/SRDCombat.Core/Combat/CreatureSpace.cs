@@ -49,8 +49,33 @@ namespace SRDCombat.Core.Combat;
 /// </param>
 public readonly record struct CreatureSpace(GridPosition Anchor, int SpanSquares)
 {
+    private readonly int _spanSquares = Math.Max(1, SpanSquares);
+
     /// <summary>How many squares the block is on a side, never less than one.</summary>
-    public int SpanSquares { get; init; } = Math.Max(1, SpanSquares);
+    /// <remarks>
+    /// <para>
+    /// Clamped on the way <em>out</em> as well as on the way in, so that
+    /// <c>default(CreatureSpace)</c> — which a struct hands out without running any
+    /// constructor — is a one-square space at the origin rather than a space of no
+    /// squares. Nothing constructs one today; the clamp is here because of what the
+    /// alternative fails like. A zero-span space enumerates nothing, so its owner would
+    /// be in no area of effect, behind nothing, blocking nothing and standing on no
+    /// square: absent from every membership test while looking entirely present. That is
+    /// the silent-loss shape this project refuses everywhere else.
+    /// </para>
+    /// <para>
+    /// One wrinkle worth knowing: a record struct's equality compares the backing field,
+    /// so <c>default(CreatureSpace)</c> and <c>new CreatureSpace(default, 1)</c> behave
+    /// identically but are not <c>==</c>. Nothing compares spaces for equality, and
+    /// making them equal would mean hand-writing equality for the sake of a value nothing
+    /// produces.
+    /// </para>
+    /// </remarks>
+    public int SpanSquares
+    {
+        get => Math.Max(1, _spanSquares);
+        init => _spanSquares = Math.Max(1, value);
+    }
 
     /// <summary>The east-most column of the block.</summary>
     public int MaximumX => Anchor.X + SpanSquares - 1;

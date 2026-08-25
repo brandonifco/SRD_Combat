@@ -43,11 +43,15 @@ namespace SRDCombat.Game;
 /// rather than a third of draws: variety includes the plain, sparingly.
 /// </item>
 /// <item>
-/// <b>Every fight stays winnable on foot.</b> An obstacle square — wall or low, both
-/// being impassable — whose placement would cut any spawn square off from any other is
-/// discarded rather than placed, checked one square at a time, so the guarantee holds
-/// whatever the dice drew. Both sides field melee-only creatures, and a fight the sides
-/// cannot reach each other in is not a fight.
+/// <b>Every fight stays winnable on foot, by every body in it.</b> An obstacle square —
+/// wall or low, both being impassable — whose placement would cut any spawn square off
+/// from any other is discarded rather than placed, so the guarantee holds whatever the
+/// dice drew. Both sides field melee-only creatures, and a fight the sides cannot reach
+/// each other in is not a fight. The question is asked for the <em>largest body on the
+/// field</em> rather than for a single square (see <see cref="GridConnectivity"/>): a
+/// corridor two squares wide connects a battlefield for every character in this game and
+/// wedges the Ogre following them through it, which is a stall the single-square check
+/// could not see.
 /// </item>
 /// </list>
 /// <para>
@@ -66,11 +70,18 @@ public static class TerrainGenerator
     /// disconnect them from each other.
     /// </param>
     /// <param name="random">The seeded dice the whole fight runs on.</param>
+    /// <param name="largestSpanSquares">
+    /// The biggest body that will stand on this field, in squares on a side. One asks the
+    /// old single-square question and is what a caller with no multi-square creatures
+    /// should pass; anything larger makes the connectivity guarantee hold for a body that
+    /// size, so a route too narrow for it is not a route.
+    /// </param>
     public static Battlefield Generate(
         int width,
         int height,
         IReadOnlyCollection<GridPosition> spawns,
-        IRandomSource random)
+        IRandomSource random,
+        int largestSpanSquares = 1)
     {
         ArgumentNullException.ThrowIfNull(spawns);
         ArgumentNullException.ThrowIfNull(random);
@@ -142,7 +153,8 @@ public static class TerrainGenerator
                     InRegion(square)
                     && !impassable.Contains(square)
                     && !square.Neighbours().Any(impassable.Contains))
-                && StaysConnected(impassable, footprint, spawnSet, width, height);
+                && GridConnectivity.StaysConnected(
+                    impassable, footprint, spawnSet, width, height, largestSpanSquares);
 
             if (!lands)
             {
@@ -179,40 +191,4 @@ public static class TerrainGenerator
         return new Battlefield(width, height, walls, difficult, lowObstacles);
     }
 
-    /// <summary>
-    /// Whether every spawn square can still reach every other with this whole footprint
-    /// added.
-    /// </summary>
-    private static bool StaysConnected(
-        HashSet<GridPosition> impassable,
-        IReadOnlyCollection<GridPosition> candidates,
-        HashSet<GridPosition> spawns,
-        int width,
-        int height)
-    {
-        if (spawns.Count <= 1)
-        {
-            return true;
-        }
-
-        var candidateSet = new HashSet<GridPosition>(candidates);
-        var reached = new HashSet<GridPosition> { spawns.First() };
-        var frontier = new Queue<GridPosition>(reached);
-
-        while (frontier.Count > 0)
-        {
-            foreach (var next in frontier.Dequeue().Neighbours())
-            {
-                if (next.X < 0 || next.X >= width || next.Y < 0 || next.Y >= height
-                    || candidateSet.Contains(next) || impassable.Contains(next) || !reached.Add(next))
-                {
-                    continue;
-                }
-
-                frontier.Enqueue(next);
-            }
-        }
-
-        return spawns.All(reached.Contains);
-    }
 }
