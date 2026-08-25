@@ -48,6 +48,15 @@ public sealed class SaveFileTests : IDisposable
     /// <summary>A real, loadable save — a fresh run, nothing cleared yet.</summary>
     private static string SomeSaveJson() => RunSave.ToJson(GauntletRun.Start(Content));
 
+    /// <summary>
+    /// A real, loadable save distinguishable from another call by its seed — needed
+    /// wherever a test must tell two successive writes' content apart on disk.
+    /// <see cref="SomeSaveJson()"/> defaults its run's seed to 0, so two calls produce
+    /// byte-identical JSON; the pregenerated party and starting state are otherwise
+    /// fully deterministic (<see cref="GauntletRun.Start(SrdContent, IReadOnlyList{LadderStep}?, int, int)"/>).
+    /// </summary>
+    private static string SomeSaveJson(int seed) => RunSave.ToJson(GauntletRun.Start(Content, seed: seed));
+
     /// <summary>Whether <paramref name="json"/> parses as a save — used to confirm a
     /// setup step actually produced the corrupt content a test needs, rather than
     /// asserting on <see cref="SaveFile"/> behaviour indirectly.</summary>
@@ -314,8 +323,12 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void ACrashBetweenTheFirstTwoRenamesOnAHealthyPrimaryLoadsTheFreshestStateNotTheOlderBackup()
     {
-        var olderContent = SomeSaveJson();
-        var currentContent = SomeSaveJson();
+        // Distinct seeds so the two writes are byte-distinguishable on disk — two
+        // default-seed SomeSaveJson() calls are byte-identical (the pregenerated party
+        // and starting state are fully deterministic), which would let this test pass
+        // whether or not LoadRun's .old fallback actually ran.
+        var olderContent = SomeSaveJson(seed: 1);
+        var currentContent = SomeSaveJson(seed: 2);
         SaveFile.Write(SavePath, olderContent);
         SaveFile.Write(SavePath, currentContent);
 

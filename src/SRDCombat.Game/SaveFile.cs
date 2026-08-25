@@ -83,9 +83,13 @@ public sealed record SaveLoadResult(
 /// <para>
 /// <b>Loading falls back past the primary</b> to <c>.old</c> and then <c>.bak</c> when the
 /// primary is missing or fails to parse — a corrupt or truncated primary is not treated as
-/// "no save", because the whole point of keeping a backup is to survive exactly that, and
-/// <c>.old</c> exists on disk only when a write crashed mid-rotation, so checking it costs
-/// nothing on the (overwhelmingly common) path where nothing ever crashed.
+/// "no save", because the whole point of keeping a backup is to survive exactly that.
+/// <c>.old</c> only ever appears on disk because some earlier write crashed mid-rotation,
+/// so checking it costs nothing on the (overwhelmingly common) path where nothing ever
+/// has — but it does not vanish the moment that crash passes; a leftover <c>.old</c> can
+/// outlive many later writes (the fresh-path branch below never clears one — #394), so
+/// this fallback keeps mattering for as long as the file survives, not just in the
+/// instant right after a crash.
 /// </para>
 /// </remarks>
 public static class SaveFile
@@ -170,10 +174,13 @@ public static class SaveFile
     /// a missing primary.
     /// </summary>
     /// <remarks>
-    /// <c>.old</c> is checked silently, ahead of <c>.bak</c>: it only exists on disk when
-    /// a write crashed partway through its rotation (see the class remarks), in which case
-    /// it holds whatever <c>path</c> held immediately before that write started — always
-    /// at least as fresh as <c>.bak</c>, and sometimes the only loadable copy left. Its
+    /// <c>.old</c> is checked silently, ahead of <c>.bak</c>: it only ever appears on disk
+    /// because some earlier write crashed partway through its rotation (see the class
+    /// remarks) — it does not necessarily mean *this* load is racing a crash, since a
+    /// leftover <c>.old</c> can survive many writes afterward (#394). Whenever it is
+    /// there, it holds whatever <c>path</c> held immediately before the write that left
+    /// it started — always at least as fresh as <c>.bak</c>, and sometimes the only
+    /// loadable copy left. Its
     /// own failure (if it exists but does not parse) is not surfaced through
     /// <see cref="SaveLoadResult"/> the way the primary's and backup's are: it is a
     /// crash-recovery implementation detail, not a copy either client shows the player.
