@@ -1485,12 +1485,30 @@
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": [],
+        "appliedConditions": [
+          {
+            "condition": "Charmed",
+            "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
+          },
+          {
+            "condition": "Frightened",
+            "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
+          }
+        ],
         "coverIgnored": false,
         "constructsSaveAtDisadvantage": false
       },
       "damage": [],
-      "appliedConditions": [],
+      "appliedConditions": [
+        {
+          "condition": "Charmed",
+          "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
+        },
+        {
+          "condition": "Frightened",
+          "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
+        }
+      ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
       "unclassifiedClauses": [],
@@ -3649,8 +3667,12 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [
           {
+            "condition": "Blinded",
+            "unmodelledRequirement": "31-40 The target has the Blinded and Deafened conditions for 10 minutes"
+          },
+          {
             "condition": "Deafened",
-            "unmodelledRequirement": "41-50 The target has the Deafened condition for 1 minute."
+            "unmodelledRequirement": "31-40 The target has the Blinded and Deafened conditions for 10 minutes"
           }
         ],
         "coverIgnored": false,
@@ -3659,8 +3681,12 @@
       "damage": [],
       "appliedConditions": [
         {
+          "condition": "Blinded",
+          "unmodelledRequirement": "31-40 The target has the Blinded and Deafened conditions for 10 minutes"
+        },
+        {
           "condition": "Deafened",
-          "unmodelledRequirement": "41-50 The target has the Deafened condition for 1 minute."
+          "unmodelledRequirement": "31-40 The target has the Blinded and Deafened conditions for 10 minutes"
         }
       ],
       "isSpellAttack": false,
@@ -6477,7 +6503,16 @@
       "text": "1,000+ GP, which the spell consumes) You conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you. The feast takes 1 hour to consume and disappears at the end of that time, and the beneficial effects don't set in until this hour is over. Up to twelve creatures can partake of the feast. A creature that partakes gains several benefits, which last for 24 hours. The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions. Its Hit Point maximum also increases by 2d10, and it gains the same number of Hit Points.",
       "mechanics": "Unmodelled",
       "damage": [],
-      "appliedConditions": [],
+      "appliedConditions": [
+        {
+          "condition": "Frightened",
+          "unmodelledRequirement": "The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions"
+        },
+        {
+          "condition": "Poisoned",
+          "unmodelledRequirement": "The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions"
+        }
+      ],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
       "unclassifiedClauses": [
@@ -6591,7 +6626,11 @@
         "appliedConditions": [
           {
             "condition": "Prone",
-            "unmodelledRequirement": "During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself"
+            "unmodelledRequirement": "On a failed save, it has the Prone and Incapacitated conditions for the duration"
+          },
+          {
+            "condition": "Incapacitated",
+            "unmodelledRequirement": "On a failed save, it has the Prone and Incapacitated conditions for the duration"
           }
         ],
         "coverIgnored": false,
@@ -6601,7 +6640,11 @@
       "appliedConditions": [
         {
           "condition": "Prone",
-          "unmodelledRequirement": "During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself"
+          "unmodelledRequirement": "On a failed save, it has the Prone and Incapacitated conditions for the duration"
+        },
+        {
+          "condition": "Incapacitated",
+          "unmodelledRequirement": "On a failed save, it has the Prone and Incapacitated conditions for the duration"
         }
       ],
       "isSpellAttack": false,

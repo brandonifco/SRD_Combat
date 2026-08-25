@@ -247,6 +247,118 @@ public sealed class EntryMechanicsCharacterizationTests
 
     #endregion
 
+    #region Plural conditions (#372)
+
+    [Fact]
+    public void APluralConjunctionWhereBothNamesAreExecutableClaimsEdgeToEdge()
+    {
+        // Rakshasa's Baleful Command, verbatim. Frightened and Incapacitated are both on
+        // ConditionRules' executable allowlist, so each name's own claim (its own word,
+        // plus the shared lead-in or the shared trailing duration that sits on the far
+        // side of its sibling — SplitPluralConditionClaim's own split) meets its
+        // neighbour with nothing between them but the bare "and " connective, which
+        // ordinary glue absorption closes. Zero residue for the rider clause: a plural
+        // conjunction is not, by itself, a reason to demote a monster's grade.
+        var entry = EntryMechanicsParser.Classify(
+            "Baleful Command",
+            MonsterEntrySection.Action,
+            "Wisdom Saving Throw: DC 18, each enemy in a 30-foot Emanation originating from the " +
+            "rakshasa. Failure: 28 (8d6) Psychic damage, and the target has the Frightened and " +
+            "Incapacitated conditions until the start of the rakshasa's next turn.");
+
+        Assert.Equal(2, entry.AppliedConditions.Count);
+
+        var frightened = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Frightened);
+        Assert.True(frightened.IsFullyModelled);
+        Assert.NotNull(frightened.Duration);
+        Assert.True(frightened.Duration!.Owner == ConditionDurationOwner.Source);
+
+        var incapacitated = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Incapacitated);
+        Assert.True(incapacitated.IsFullyModelled);
+        Assert.NotNull(incapacitated.Duration);
+
+        // The only residue left is the save's own target-clause qualifier (design
+        // §7.6 — the Emanation's origin word is claimed, "originating from the
+        // rakshasa" itself is glue-adjacent prose the target-clause matcher does not
+        // reach past), unrelated to the plural conjunction this fixture pins.
+        Assert.Equal(
+            ["each enemy in a", "originating from the rakshasa"],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void APluralConjunctionWhereTheSecondNameIsInexecutableLeavesItAndItsConnectiveAsResidue()
+    {
+        // Storm Giant's Thunderbolt, verbatim (#372's own issue text). Blinded is
+        // executable and is imposed; Deafened is not on ConditionRules.Executable
+        // (deliberately absent for want of a hearing model) and is never imposed —
+        // CanBeImposed gates that at runtime exactly as it always has, unchanged by
+        // this fix. What changes is that Deafened is now recognised at all: both names
+        // reach AppliedConditions (the model expresses the printed name and duration
+        // for each), and only Deafened's own word plus its bordering "and" — the text
+        // Blinded's claim does not reach into — is left as residue, rather than the
+        // whole clause vanishing into nothing the way it did before this fix.
+        var entry = EntryMechanicsParser.Classify(
+            "Thunderbolt",
+            MonsterEntrySection.Action,
+            "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the " +
+            "target has the Blinded and Deafened conditions until the start of the giant's next " +
+            "turn.");
+
+        Assert.Equal(2, entry.AppliedConditions.Count);
+
+        var blinded = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Blinded);
+        Assert.True(blinded.IsFullyModelled);
+        Assert.NotNull(blinded.Duration);
+
+        var deafened = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Deafened);
+        Assert.True(deafened.IsFullyModelled);
+        Assert.NotNull(deafened.Duration);
+
+        Assert.Equal(["and Deafened"], entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void APluralConjunctionWhereTheFirstNameIsInexecutableLeavesItAndItsConnectiveAsResidue()
+    {
+        // Tarrasque's Thunderous Bellow, verbatim. The mirror of the Storm Giant case
+        // above: Deafened is the FIRST printed name here, not the second, and the split
+        // still isolates exactly its own word plus its bordering "and" — "Deafened and"
+        // rather than "and Deafened" — proving the split reads the match's own group
+        // positions rather than assuming which side an inexecutable name falls on. The
+        // other two residue lines are pre-existing and unrelated to this fix: the
+        // target clause's distance/count qualifier (design §7.6, claimed only up to
+        // "in a" before the area) and the stranded "only" off "Success: Half damage
+        // only." (#397, filed separately — save.success_half claims the label, not the
+        // trailing word).
+        var entry = EntryMechanicsParser.Classify(
+            "Thunderous Bellow",
+            MonsterEntrySection.Action,
+            "Constitution Saving Throw: DC 27, each creature and each object that isn't being worn " +
+            "or carried in a 150-foot Cone. Failure: 78 (12d12) Thunder damage, and the target has " +
+            "the Deafened and Frightened conditions until the end of its next turn. Success: Half " +
+            "damage only.");
+
+        Assert.Equal(2, entry.AppliedConditions.Count);
+
+        var deafened = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Deafened);
+        Assert.True(deafened.IsFullyModelled);
+
+        var frightened = Assert.Single(entry.AppliedConditions, c => c.Condition == ConditionType.Frightened);
+        Assert.True(frightened.IsFullyModelled);
+        Assert.True(frightened.Duration!.Owner == ConditionDurationOwner.Bearer);
+
+        Assert.Equal(
+            [
+                "each creature and each object that isn't being worn or carried in a",
+                "Deafened and",
+                "only",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    #endregion
+
     #region Durations
 
     [Fact]

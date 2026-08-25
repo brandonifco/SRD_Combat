@@ -12,7 +12,11 @@ namespace SrdExtract.Tests;
 /// misattribution, not an omission, so coverage alone did not and could not fix it
 /// (design §12.1) — and is now fixed on its own terms: <c>ParseSave</c> no longer
 /// reads "Failure or Success:" anywhere in the text as governing the whole entry's
-/// outcome.
+/// outcome. #372 is fixed on its own terms too — <c>PluralConditionPattern</c>
+/// recognises "the X and Y conditions" and each name flows through the existing
+/// imposability gates independently — and its former pin now lives as a
+/// characterization fixture in <c>EntryMechanicsCharacterizationTests</c>'s "Plural
+/// conditions (#372)" region instead of here.
 /// </summary>
 public sealed class KnownGapPinsTests
 {
@@ -34,29 +38,6 @@ public sealed class KnownGapPinsTests
         var damage = Assert.Single(entry.Attack!.Damage);
         Assert.Equal(5, damage.PrintedAverage);
         Assert.Equal(["or 2 (1d4) Piercing damage if the swarm is Bloodied"], entry.UnmodelledClauses);
-    }
-
-    [Fact]
-    public void Issue372_APluralConditionsSentenceNowCountsAsResidueWhileStillImposingNothing()
-    {
-        // Storm Giant's Thunderbolt, verbatim. ConditionPattern still only recognises
-        // the singular "the X condition" shape, so "the target has the Blinded and
-        // Deafened conditions" — plural, two names — still matches nothing and no rider
-        // is imposed for either condition (#372's execution half, still open). What
-        // flips is the accounting half only (design §9.2): nothing claims this
-        // sentence any more, so it is no longer swallowed by the attack's "Hit:"
-        // credit and shows up as residue instead of vanishing.
-        var entry = EntryMechanicsParser.Classify(
-            "Thunderbolt",
-            MonsterEntrySection.Action,
-            "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the " +
-            "target has the Blinded and Deafened conditions until the start of the giant's next " +
-            "turn.");
-
-        Assert.Empty(entry.AppliedConditions);
-        Assert.Equal(
-            ["and the target has the Blinded and Deafened conditions until the start of the giant's next turn"],
-            entry.UnmodelledClauses);
     }
 
     [Fact]

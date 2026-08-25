@@ -589,7 +589,16 @@
           "name": "Mindless Rage",
           "text": "You have Immunity to the Charmed and Frightened conditions while your Rage is active. If you're Charmed or Frightened when you enter your Rage, the condition ends on you.",
           "mechanics": "Unmodelled",
-          "appliedConditions": [],
+          "appliedConditions": [
+            {
+              "condition": "Charmed",
+              "unmodelledRequirement": "You have Immunity to the Charmed and Frightened conditions while your Rage is active"
+            },
+            {
+              "condition": "Frightened",
+              "unmodelledRequirement": "You have Immunity to the Charmed and Frightened conditions while your Rage is active"
+            }
+          ],
           "unmodelledClauses": [
             "You have Immunity to the Charmed and Frightened conditions while your Rage is active",
             "If you're Charmed or Frightened when you enter your Rage, the condition ends on you."
@@ -1718,8 +1727,12 @@
           "mechanics": "Unmodelled",
           "appliedConditions": [
             {
+              "condition": "Frightened",
+              "unmodelledRequirement": "If the creature fails its save, it has the Frightened and Incapacitated conditions for 1 minute"
+            },
+            {
               "condition": "Incapacitated",
-              "unmodelledRequirement": "This effect ends early on the creature if it takes any damage, if you have the Incapacitated condition, or if you die."
+              "unmodelledRequirement": "If the creature fails its save, it has the Frightened and Incapacitated conditions for 1 minute"
             }
           ],
           "unmodelledClauses": [

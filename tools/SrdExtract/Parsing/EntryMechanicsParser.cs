@@ -795,6 +795,7 @@ internal static partial class EntryMechanicsParser
             // refused with it.
             var unmodelledCompanion = clauses.Length > 1
                 && !ConditionPattern().IsMatch(clauses[0])
+                && !PluralConditionPattern().IsMatch(clauses[0])
                 && HasResidualEffect(clauses[0]);
 
             // Each clause is a verbatim piece of `sentence` (RiderClausePattern's own
@@ -836,6 +837,61 @@ internal static partial class EntryMechanicsParser
 
                     added.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
                     addedClaims.Add(claims);
+                }
+
+                // "the target has the Blinded and Deafened conditions ..." (#372): two
+                // names sharing one lead-in and one trailing duration, which
+                // ConditionPattern's singular "condition" literal cannot see at all
+                // (confirmed empty against every one of the 13 printings — see
+                // PluralConditionPattern's own remarks). ReadRider is called once, since
+                // the lead-in, duration and every refusal check it runs depend only on
+                // the shared match span, never on which name is being credited — then
+                // each name gets its own AppliedCondition, so a rider whose sibling is
+                // refused (Deafened is not on ConditionRules.Executable, and always
+                // fails CanBeImposed below regardless of what this loop does) still
+                // stands or falls on its own imposability, exactly like every other
+                // rider in this method.
+                foreach (Match match in PluralConditionPattern().Matches(clause))
+                {
+                    int? escapeDc = match.Groups["escape"].Success
+                        ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
+                        : null;
+
+                    var (size, duration, unmodelled, sharedClaims) = unmodelledCompanion
+                        ? (null, null, sentence, (IReadOnlyList<(TextSpan Span, string Note)>)[])
+                        : ReadRider(sentence, clause, match, attackEntry, text, nextSentence, clauseAbsoluteStart);
+
+                    foreach (var first in new[] { true, false })
+                    {
+                        var group = match.Groups[first ? "first" : "second"];
+
+                        if (!Enum.TryParse<ConditionType>(group.Value, ignoreCase: true, out var condition))
+                        {
+                            continue;
+                        }
+
+                        if (conditions.Any(existing => existing.Condition == condition)
+                            || added.Any(existing => existing.Condition == condition))
+                        {
+                            continue;
+                        }
+
+                        // The shared claim ReadRider returned covers the whole clause —
+                        // lead-in through both names through the trailing duration — and
+                        // splitting it per name is what keeps an executable sibling's
+                        // claim from swallowing an inexecutable one's own word (design
+                        // §2.2: a claim says the model expresses these characters, and
+                        // "Deafened" is never expressed just because "Blinded" sits next
+                        // to it). See SplitPluralConditionClaim's own remarks for the
+                        // exact split and what each half's residue looks like when only
+                        // one name lands.
+                        var claims = unmodelled is null
+                            ? SplitPluralConditionClaim(sharedClaims, match, clauseAbsoluteStart, first)
+                            : sharedClaims;
+
+                        added.Add(new AppliedCondition(condition, escapeDc, size, duration, unmodelled));
+                        addedClaims.Add(claims);
+                    }
                 }
             }
 
@@ -1067,6 +1123,88 @@ internal static partial class EntryMechanicsParser
             && Enum.TryParse<CreatureSize>(gate.Groups["size"].Value, ignoreCase: true, out var size)
                 ? (size, duration, null, extraClaims)
                 : (null, duration, null, extraClaims);
+    }
+
+    /// <summary>
+    /// Narrows <see cref="ReadRider"/>'s single combined "condition.rider" claim — the
+    /// lead-in through both names through the shared trailing duration — to the half a
+    /// plural conjunction's <paramref name="first"/> or second name actually earns.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>ReadRider</c> is called once per plural match, because its lead-in, duration
+    /// and every refusal check depend only on the shared span, never on which name is
+    /// being credited. That means its one "condition.rider" claim — always the last
+    /// entry, added right before both of its return statements — covers the whole
+    /// clause under either name equally, and crediting it to both names verbatim would
+    /// let an executable sibling's claim swallow an inexecutable one's own word: two
+    /// names sharing one claim is exactly the sentence-level credit bug design
+    /// §2.2 exists to end, rebuilt one level down.
+    /// </para>
+    /// <para>
+    /// Each name keeps two pieces, never touching the sibling's own word: its own
+    /// name, and whichever of the shared lead-in or the shared trailing duration sits
+    /// on the far side of the sibling — the first name reaches past the second's own
+    /// word to the trailing duration ("the target has the Blinded" plus " conditions
+    /// until the start of the giant's next turn"); the second reaches past the
+    /// first's own word back to the lead-in (" the target has the" plus "Frightened
+    /// conditions until the end of its next turn"). When every name in the
+    /// conjunction is imposable the two names' claims meet with only the bare "and "
+    /// connective between them, which ordinary glue absorption closes (design §4.1),
+    /// so a fully-imposable conjunction still claims edge to edge with no residue at
+    /// all — the Rakshasa's Baleful Command. When one name is refused, the gap left
+    /// behind is exactly that name's own word plus its bordering "and" — never the
+    /// shared text either side of it, which the surviving name has already claimed —
+    /// so the residue reads as tightly as the printed conjunction allows: "and
+    /// Deafened" on the Storm Giant's Thunderbolt, "Deafened and" on the Tarrasque's
+    /// Thunderous Bellow. Both verbatim substrings, per §6.2.
+    /// </para>
+    /// <para>
+    /// Any other claim <c>ReadRider</c> returned (a repeat-save annex or cap) travels
+    /// to both names unchanged: neither depends on which name is being credited, and
+    /// duplicating them is a harmless union under §2.4, not a false claim — the corpus
+    /// prints no repeat-save wording alongside a plural conjunction today, so this is
+    /// belt-and-braces rather than a shape that is actually exercised.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<(TextSpan Span, string Note)> SplitPluralConditionClaim(
+        IReadOnlyList<(TextSpan Span, string Note)> claims, Match pluralMatch, int clauseAbsoluteStart, bool first)
+    {
+        if (claims.Count == 0 || claims[^1].Note != "condition.rider")
+        {
+            return claims;
+        }
+
+        var (combined, note) = claims[^1];
+        var firstGroup = pluralMatch.Groups["first"];
+        var secondGroup = pluralMatch.Groups["second"];
+        var firstStart = clauseAbsoluteStart + firstGroup.Index;
+        var firstEnd = firstStart + firstGroup.Length;
+        var secondStart = clauseAbsoluteStart + secondGroup.Index;
+        var secondEnd = secondStart + secondGroup.Length;
+
+        // The name itself, bundled with whichever shared text is contiguous with it
+        // and does not cross the sibling's own word: the first name sits right after
+        // the shared lead-in, so it claims both together; the second name sits right
+        // before the shared trailing duration, so it claims both together.
+        var own = first
+            ? new TextSpan(combined.Start, firstEnd - combined.Start)
+            : new TextSpan(secondStart, combined.End - secondStart);
+
+        // The shared text on the far side of the sibling's own word — never crosses
+        // into it, so an unclaimed sibling's name is never swallowed by this claim.
+        var reach = first
+            ? new TextSpan(secondEnd, combined.End - secondEnd)
+            : new TextSpan(combined.Start, firstStart - combined.Start);
+
+        var replacement = new List<(TextSpan Span, string Note)> { (own, note) };
+
+        if (reach.Length > 0)
+        {
+            replacement.Add((reach, note));
+        }
+
+        return [.. claims.Take(claims.Count - 1), .. replacement];
     }
 
     /// <summary>
@@ -1336,6 +1474,28 @@ internal static partial class EntryMechanicsParser
 
     [GeneratedRegex(@"the\s+(?<condition>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+condition(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex ConditionPattern();
+
+    // "the Blinded and Deafened conditions" (#372) — the plural conjunction
+    // ConditionPattern cannot see: its own literal "condition" never matches "conditions"
+    // ($-less, so it CAN slice a prefix of the plural word, but nothing in the monster
+    // stat blocks ever prints "the" directly before the second name — "and" always sits
+    // there instead — so the singular pattern finds nothing in either name; confirmed
+    // empty on all 13 monster printings). Two names only, and joined by "and": the
+    // monster stat blocks print no three-name conjunction ("X, Y, and Z conditions") and
+    // no "or"-joined pair, so this pattern is anchored to exactly that shape rather than
+    // generalised past what the book's bestiary prints.
+    //
+    // This method also runs over species traits, class features and spells (shared via
+    // ClassifyTrait, design §8), where the corpus is wider and the claim above does not
+    // hold: Divine Word prints a three-name row ("the Blinded, Deafened, and Stunned
+    // conditions") and Protection from Evil and Good prints an "or"-joined pair ("the
+    // Charmed or Frightened conditions"). Both are deliberate, known fall-throughs —
+    // this pattern requires a literal "and" between exactly two names, so a three-name
+    // list's middle comma and an "or" both fail to match anywhere, and the whole clause
+    // falls to residue exactly as it did before this pattern existed. Verified: neither
+    // shape produces a partial match on any of the names it contains.
+    [GeneratedRegex(@"the\s+(?<first>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+and\s+(?<second>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+conditions(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
+    private static partial Regex PluralConditionPattern();
 
     // Sentence boundaries, avoiding the abbreviations the SRD actually uses: "5 ft.",
     // "DC 12.", and decimal-free numbers are safe, but "ft." is everywhere.
