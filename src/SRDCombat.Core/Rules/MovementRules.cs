@@ -273,10 +273,22 @@ public static class MovementRules
     /// square to another.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The trigger is precise: the creature must <em>leave</em> the enemy's reach, so an
     /// enemy who was already out of reach, or who is still in reach after the step, gets
     /// nothing. Taking the Disengage action avoids provoking entirely, and an enemy who
     /// cannot act or has already spent its Reaction cannot make one.
+    /// </para>
+    /// <para>
+    /// Reach is measured <b>space to space</b>, between the nearest squares of the
+    /// threatening creature's space and the mover's — printed page 13 counts range "from
+    /// a square adjacent to one of them" and stops "in the space of the other one". So a
+    /// Large creature with five feet of reach threatens the whole ring around its 2 by 2
+    /// space, not the ring around one corner of it, and a Large <em>mover</em> provokes
+    /// while any square of its body is still inside the threatened ring. Both spaces are
+    /// taken at the step being judged rather than from <c>Position</c>, because this is
+    /// asked one square at a time as the walk happens.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<Combatant> FindOpportunityAttackers(
         Combatant mover,
@@ -306,8 +318,8 @@ public static class MovementRules
             .Where(enemy =>
             {
                 var reach = MeleeReachFeet(enemy);
-                var wasInReach = enemy.Position.DistanceFeetTo(from) <= reach;
-                var stillInReach = enemy.Position.DistanceFeetTo(to) <= reach;
+                var wasInReach = enemy.Space.DistanceFeetTo(mover.SpaceAt(from)) <= reach;
+                var stillInReach = enemy.Space.DistanceFeetTo(mover.SpaceAt(to)) <= reach;
 
                 return wasInReach && !stillInReach;
             })

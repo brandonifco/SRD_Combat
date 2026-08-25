@@ -74,7 +74,7 @@ public sealed partial class Encounter
         // A Self spell is not aimed at anybody — its area is centred on the caster — so
         // only a spell with a real target range is checked against the target.
         if (target is not null && !spell.IsSelfRanged && spell.TargetRangeFeet is { } range
-            && caster.Position.DistanceFeetTo(target.Position) > range)
+            && caster.DistanceFeetTo(target) > range)
         {
             return new ActionRefusal(
                 "spell.out_of_range",
@@ -89,7 +89,7 @@ public sealed partial class Encounter
         // resolution's needs-target refusal is the answer that teaches that rule.
         if (target is null && !spell.IsSelfRanged && spell.Save?.Area is not null
             && spell.TargetRangeFeet is { } pointRange
-            && caster.Position.DistanceFeetTo(point) > pointRange)
+            && caster.DistanceFeetTo(point) > pointRange)
         {
             return new ActionRefusal(
                 "spell.out_of_range",

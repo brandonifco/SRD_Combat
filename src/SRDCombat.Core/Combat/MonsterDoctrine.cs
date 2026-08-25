@@ -88,7 +88,7 @@ public static class MonsterDoctrine
             .Where(enemy => encounter.Combatants.Any(ally => ally.SideId == actor.SideId
                 && ally.Id != actor.Id
                 && ally.IsActive
-                && ally.Position.DistanceFeetTo(enemy.Position) <= Battlefield.FeetPerSquare))
+                && ally.DistanceFeetTo(enemy) <= Battlefield.FeetPerSquare))
             .ToArray();
 
         if (flanked.Length == 0)
@@ -98,13 +98,13 @@ public static class MonsterDoctrine
 
         var inReach = flanked
             .Where(enemy => actor.Stats.Attacks.Any(attack =>
-                attack.CanReach(actor.Position.DistanceFeetTo(enemy.Position)))
+                attack.CanReach(actor.DistanceFeetTo(enemy)))
                 && CoverRules.Between(encounter.Battlefield, actor.Position, enemy.Position, encounter.Combatants)
                     != CoverDegree.Total)
             .ToArray();
 
         return (inReach.Length > 0 ? inReach : flanked)
-            .OrderBy(enemy => actor.Position.DistanceFeetTo(enemy.Position))
+            .OrderBy(enemy => actor.DistanceFeetTo(enemy))
             .ThenBy(enemy => enemy.CurrentHitPoints)
             .ThenBy(enemy => enemy.Id, StringComparer.Ordinal)
             .FirstOrDefault();

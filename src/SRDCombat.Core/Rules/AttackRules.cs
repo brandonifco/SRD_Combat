@@ -103,7 +103,7 @@ public static class AttackRules
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(target);
 
-        var distance = attacker.Position.DistanceFeetTo(target.Position);
+        var distance = attacker.DistanceFeetTo(target);
 
         return new AttackCircumstances(
             // Dodge is lost while Incapacitated or at Speed 0 (the printed exception,
@@ -157,7 +157,7 @@ public static class AttackRules
             && !other.IsDead
             && !other.HasCondition(ConditionType.Blinded)
             && !other.HasCondition(ConditionType.Incapacitated)
-            && other.Position.DistanceFeetTo(attacker.Position) <= Battlefield.FeetPerSquare);
+            && other.DistanceFeetTo(attacker) <= Battlefield.FeetPerSquare);
     }
 
     /// <summary>
@@ -253,7 +253,7 @@ public static class AttackRules
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(target);
 
-        var distance = attacker.Position.DistanceFeetTo(target.Position);
+        var distance = attacker.DistanceFeetTo(target);
         var circumstances = DescribeCircumstances(attacker, attack, target, combatants);
         var mode = D20Test.Combine(ResolveRollMode(circumstances, distance), extraAdvantage, extraDisadvantage);
 

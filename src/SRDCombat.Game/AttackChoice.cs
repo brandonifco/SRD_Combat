@@ -42,13 +42,13 @@ public static class AttackChoice
         ArgumentNullException.ThrowIfNull(attacker);
         ArgumentNullException.ThrowIfNull(target);
 
-        var distance = attacker.Position.DistanceFeetTo(target.Position);
+        var distance = attacker.DistanceFeetTo(target);
 
         var crowded = combatants is null
             ? distance <= Battlefield.FeetPerSquare
             : combatants.Any(other => other.SideId != attacker.SideId
                 && other.IsActive
-                && attacker.Position.DistanceFeetTo(other.Position) <= Battlefield.FeetPerSquare);
+                && attacker.DistanceFeetTo(other) <= Battlefield.FeetPerSquare);
 
         return attacker.Stats.Attacks
             .Where(attack => attack.CanReach(distance))

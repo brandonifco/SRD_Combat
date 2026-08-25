@@ -231,6 +231,39 @@ public sealed record CombatantStats(
     IReadOnlyList<CombatAttack> Attacks,
     bool DiesAtZeroHitPoints)
 {
+    /// <summary>
+    /// The size the <em>grid</em> reads, as against the size the stat block prints.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is scaffolding, and it is scheduled for deletion.</b> #429 turns the
+    /// printed Creature Size and Space table into real footprints across four slices, and
+    /// the slices are only safe to land one at a time if nothing user-visible changes
+    /// until the last of them: a Large creature that occupies four squares for
+    /// <em>distance</em> while the pathfinder, the displacement sweep and the spawn
+    /// placement still think in single squares would let a character walk into an Ogre's
+    /// shoulder and would spawn one monster inside another. So the footprint machinery
+    /// ships first and switched off, exercised by tests that set this field explicitly,
+    /// and the final slice deletes this property, replaces its every use with
+    /// <see cref="Size"/>, and carries the measurement.
+    /// </para>
+    /// <para>
+    /// Until then every combatant the production code builds — <see cref="FromMonster"/>,
+    /// <see cref="FromCharacter"/>, and every construction that does not name this field —
+    /// is Medium to the grid and so occupies exactly one square, which is what it did
+    /// before this property existed. The divergence that state represents is stated on
+    /// <see cref="Size"/> itself.
+    /// </para>
+    /// </remarks>
+    public CreatureSize SpaceSize { get; init; } = CreatureSize.Medium;
+
+    /// <summary>
+    /// How many squares on a side this creature's space is — see
+    /// <see cref="CreatureSpace"/> and the printed table on
+    /// <see cref="Rules.CreatureSizeRules"/>.
+    /// </summary>
+    public int SpaceSpanSquares => Rules.CreatureSizeRules.SpaceSpanSquares(SpaceSize);
+
     /// <summary>Class features and their numbers. Null for a monster.</summary>
     public CombatantFeatures? Character { get; init; }
 
@@ -1095,7 +1128,43 @@ public sealed class Combatant
 
     public CombatantStats Stats { get; }
 
+    /// <summary>
+    /// The creature's anchor square — the north-west square of its space, and the
+    /// coordinate everything addresses it by.
+    /// </summary>
     public GridPosition Position { get; private set; }
+
+    /// <summary>
+    /// Every square the creature stands in: <see cref="Position"/> for a one-square
+    /// creature, a 2 by 2 block anchored there for a Large one.
+    /// </summary>
+    /// <remarks>
+    /// The one place a distance, an area, a cover line or an occupancy test should read
+    /// a creature's location from. Reading <see cref="Position"/> for those asks where
+    /// the creature's corner is, which is the anchored reading printed page 13 forbids.
+    /// </remarks>
+    public CreatureSpace Space => new(Position, Stats.SpaceSpanSquares);
+
+    /// <summary>The space this creature would stand in with its anchor on another square.</summary>
+    /// <remarks>
+    /// What a candidate destination is judged as — a step along a path, a square the
+    /// tactics policy is scoring, the square a displacement would put it on.
+    /// </remarks>
+    public CreatureSpace SpaceAt(GridPosition anchor) => new(anchor, Stats.SpaceSpanSquares);
+
+    /// <summary>
+    /// The distance in feet to another creature, counted between the nearest squares of
+    /// the two spaces — printed page 13's rule, see <see cref="CreatureSpace"/>.
+    /// </summary>
+    public int DistanceFeetTo(Combatant other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return Space.DistanceFeetTo(other.Space);
+    }
+
+    /// <summary>The distance in feet from this creature's space to a square.</summary>
+    public int DistanceFeetTo(GridPosition square) => Space.DistanceFeetTo(square);
 
     public int CurrentHitPoints { get; private set; }
 

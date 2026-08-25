@@ -222,7 +222,7 @@ public static class PartyDoctrine
         }
 
         var breached = enemies.Any(enemy => allies.Any(ally =>
-            enemy.Position.DistanceFeetTo(ally.Position)
+            enemy.DistanceFeetTo(ally)
                 <= enemy.Stats.SpeedFeet + MovementRules.MeleeReachFeet(enemy)));
 
         return breached ? EngagementPhase.Commit : EngagementPhase.Hold;
@@ -378,7 +378,7 @@ public static class PartyDoctrine
         foreach (var enemy in encounter.EnemiesOf(actor).Where(enemy => !enemy.IsDead))
         {
             var back = backs
-                .OrderBy(candidate => enemy.Position.DistanceFeetTo(candidate.Position))
+                .OrderBy(candidate => enemy.DistanceFeetTo(candidate))
                 .ThenBy(candidate => candidate.Id, StringComparer.Ordinal)
                 .First();
 
@@ -423,7 +423,7 @@ public static class PartyDoctrine
                 && ally.IsActive
                 && ally.Stats.Character is not null
                 && RoleOf(ally) == PartyRole.FrontLine)
-            .Select(ally => enemies.Min(enemy => ally.Position.DistanceFeetTo(enemy.Position)))
+            .Select(ally => enemies.Min(enemy => ally.DistanceFeetTo(enemy)))
             .ToArray();
 
         return distances.Length > 0 ? distances.Min() : null;
@@ -461,7 +461,7 @@ public static class PartyDoctrine
             return nearest;
         }
 
-        var distance = actor.Position.DistanceFeetTo(focus.Position);
+        var distance = actor.DistanceFeetTo(focus);
         var attackableNow = actor.Stats.Attacks.Any(attack => attack.CanReach(distance))
             && CoverRules.Between(encounter.Battlefield, actor.Position, focus.Position, encounter.Combatants)
                 != CoverDegree.Total;
@@ -473,7 +473,7 @@ public static class PartyDoctrine
 
         var somethingInReach = nearest is not null
             && actor.Stats.Attacks.Any(attack =>
-                attack.CanReach(actor.Position.DistanceFeetTo(nearest.Position)));
+                attack.CanReach(actor.DistanceFeetTo(nearest)));
 
         return somethingInReach ? nearest : focus;
     }
