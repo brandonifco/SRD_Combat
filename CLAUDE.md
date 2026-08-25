@@ -158,7 +158,7 @@ rather than new drawing, the refactor pulls forward into F2 instead. Route choic
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
 (attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
-fight 24 rather than never (only 55 of 120 and 59 of 121 runs reach level 4 — the
+fight 24 rather than never (only 53 of 120 and 59 of 121 runs reach level 4 — the
 Pacing row above, current baseline); reprice or redesign the free `Survive(3)` rung;
 per-cycle variety so the six cycles are not one cycle six times (#192, #243). Exit:
 measured curve holds through the back half on both ranges; a human run report exists
@@ -264,8 +264,9 @@ bounded (architecture, statistics), **Sonnet** where it is well-specified execut
 **Nothing may hold unimplemented rules silently.** A stat block's entries contain no
 flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
 
-- Every entry, trait, class feature and spell is **classified**. `EntryMechanics` is
-  the enum; `IsFullyModelled` is the test. There is no "just prose" state.
+- Every entry, trait, class feature and spell is **classified**; there is no "just
+  prose" state. For the stat-block, trait and feature lanes `EntryMechanics` is the
+  enum and `IsFullyModelled` is the test; spells are the stated exception below.
 - **The stat-block accounting is coverage-by-consumption** (#382,
   `docs/2026-08-24-span-accounting-design.md`; the type is `EntryCoverage` in
   `tools/SrdExtract/Parsing/`). Every structured extraction **claims** the characters
@@ -295,7 +296,7 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
 - Where a rule is a judgement call, **write the reading down** in the code's doc
   comments. `AreaTargeting` is the model.
 
-**Three bugs produced that rule, and the first bug's fourteenth recurrence retired
+**Three bugs produced that rule, and the first bug's fourteenth occurrence retired
 a mechanism. Read this before touching a parser:**
 
 1. **The Goblin Warrior's "plus 2 (1d4) damage *if the attack roll had Advantage*"**
@@ -303,7 +304,7 @@ a mechanism. Read this before touching a parser:**
    *looked* implemented. **A partly-structured entry is more dangerous than an
    unstructured one**, because the missing part is invisible. That shape — an
    **omission**: a printed clause nothing read, hidden behind an entry that looked
-   handled — recurred **fourteen times** (#382's tally) under the old
+   handled — reached **fourteen occurrences** (#382's tally) under the old
    sentence-credit accounting
    (among them rider gating, save-spell effects, Failure-tier sentences, Multiattack
    replace-clauses #290, the Clay Golem's summed alternative compositions #342 —
