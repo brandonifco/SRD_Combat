@@ -63,6 +63,27 @@ clustering to 16 colours plus one de-grain pass. The remaining grain is a
 tuning question (cluster count, de-grain passes) each batch's before/after
 will surface, not a defect in the shape of the pipeline.
 
+A second version of this script — the one first opened as PR #427 — still
+had #238's outvoting shape, just relocated inside a single frame rather
+than across a character's poses. `quantize_to_palette`'s median-cut fit ran
+over every pixel of the cropped, downscaled image, transparent ones
+included, and a cutout master's transparent region keeps whatever RGB the
+source photograph happened to have there — desk, background, whatever was
+behind the painting. qc's review of that PR measured the effect directly:
+flattening the invisible RGB to a constant (zero visible-content change)
+moved 26% of the Ogre's *opaque* output pixels to a different final
+colour, and the same straight-alpha issue in `staged_downscale`'s box
+resizes let that junk bleed into opaque edge pixels before hardening even
+ran. Both are fixed the same way — `_opaque_sample` fits the clustering on
+opaque pixels only, and `_resize_premultiplied` resizes through
+premultiplied alpha so a fully-transparent pixel can only ever contribute
+zero — and both fixes were verified the same way qc found the bugs: by
+flattening the invisible region to a constant and confirming zero pixels
+change. The lesson generalises: "never let one frame's clustering be
+decided by pixels that aren't this frame's *visible* content" is the
+correct statement of what avoids #238, not just "never share the fit
+across frames".
+
 Nothing here is run automatically against a shipped sprite. Every batch's
 before/after goes to Brandon for approval before anything lands — see
 CLAUDE.md's team protocol and the standing memory note "Art is Brandon's
@@ -93,6 +114,11 @@ Usage
     # Conformance across every shipped sprite and terrain tile at once:
     python3 tools/asset_pipeline/master_to_sprite.py conformance --shipped
 
+    # A master | currently-shipped | pipeline-output comparison sheet, for
+    # Brandon's before/after review — never committed by this script:
+    python3 tools/asset_pipeline/master_to_sprite.py compare ogre \\
+        --out /tmp/preview --zoom 8
+
     # What masters exist, and whether they already have a shipped folder:
     python3 tools/asset_pipeline/master_to_sprite.py list
 
@@ -117,10 +143,12 @@ output byte-for-byte.
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import PIL
 from PIL import Image, ImageFilter
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -128,11 +156,44 @@ MASTERS_DIR = REPO_ROOT / "client" / "assets" / "masters"
 SPRITES_DIR = REPO_ROOT / "client" / "assets" / "sprites"
 PALETTE_PATH = REPO_ROOT / "client" / "assets" / "palette" / "SRD_Combat.gpl"
 
-# The board-background-ref entry in the .gpl is explicitly a *reference*
-# swatch (what the board itself paints under everything), never a colour a
-# sprite should wear — including it as a legal sprite colour would let a
-# figure blend into the floor. Every other line is the menu of usable ramps.
-_PALETTE_EXCLUDE_NAMES = {"board-background-ref"}
+# Determinism is verified against this Pillow version specifically (see the
+# module docstring). Median-cut's internals and PNG encoding are Pillow's
+# own to change between releases; "re-runnable by anyone" means recording
+# what this was actually run against, not just declaring the dependency —
+# quote this line in a batch's PR alongside the conformance numbers.
+VERIFIED_PILLOW_VERSION = "10.2.0"
+MIN_PILLOW_VERSION = (10, 0)
+
+_pillow_version_parts = tuple(int(p) for p in PIL.__version__.split(".")[:2])
+if _pillow_version_parts < MIN_PILLOW_VERSION:
+    raise RuntimeError(
+        f"Pillow {PIL.__version__} is older than {'.'.join(map(str, MIN_PILLOW_VERSION))}, "
+        f"the minimum this pipeline has been verified against (see "
+        f"VERIFIED_PILLOW_VERSION). `pip install --upgrade Pillow` first."
+    )
+
+# Whether a sprite may legally wear board-background-ref, (22,22,29) — the
+# colour the board itself paints under everything — is an OPEN QUESTION for
+# Brandon, not something this script decides. An earlier version of this
+# file excluded it unilaterally ("a sprite shouldn't blend into the floor"),
+# which sounded right until qc's review of PR #427 found it wrong on the
+# evidence: Brandon's own already-approved Barbarian frame wears that exact
+# colour today, and the exclusion was silently re-scoring his approved art
+# as non-conformant while inventing a divergence from the review's own
+# 52-entry check (docs/2026-08-21-project-review.md) that the PR then
+# mis-described as reproducing that check exactly. So this set is empty —
+# every one of the 52 lines counts as legal, matching the review — until
+# Brandon's batch review says otherwise. If it does, add the excluded
+# name(s) here and EXPECTED_PALETTE_COLORS below drops by the same count.
+_PALETTE_EXCLUDE_NAMES: set[str] = set()
+
+# The .gpl's colour-line count, fixed by the source file. Per this
+# project's own extraction lesson ("exact counts for totals fixed by the
+# source, floors only for what should grow"), this is an assertion, not a
+# floor: load_palette raises rather than silently shipping a
+# different-sized palette because one line failed to parse or a name got
+# added to _PALETTE_EXCLUDE_NAMES without updating this constant.
+EXPECTED_PALETTE_COLORS = 52 - len(_PALETTE_EXCLUDE_NAMES)
 
 # ---------------------------------------------------------------------------
 # Per-sprite parameters. "Parameters live in the script, not in anyone's
@@ -151,13 +212,80 @@ TARGET_HEIGHT = 64
 # "target_height" overrides TARGET_HEIGHT; "reduce_colors" overrides
 # REDUCE_COLORS_K; "degrain_passes" overrides the default de-grain pass
 # count; "degrain_agreement" overrides the majority threshold (out of 8
-# neighbours) needed before an isolated pixel is folded.
+# neighbours) needed before an isolated pixel is folded; "crop_margin"
+# overrides crop_to_opaque's default zero-margin trim (see
+# crop_to_opaque's own `margin` parameter). These five are the only keys
+# _resolve_overrides recognises — an unknown key raises rather than being
+# silently accepted and ignored, the same partly-structured-table shape
+# this project's rule doc warns about elsewhere.
+_SPRITE_OVERRIDE_KEYS = {
+    "target_height",
+    "reduce_colors",
+    "degrain_passes",
+    "degrain_agreement",
+    "crop_margin",
+}
+
 SPRITE_TARGETS: dict[str, dict[str, int]] = {
     # No overrides yet — every master processes at the pipeline default
     # until a specific batch's before/after says otherwise. Add entries
     # here, never as a one-off flag on someone's command line, per the
     # issue's "parameters in the script not in anyone's head" criterion.
 }
+
+# Terrain's analog of SPRITE_TARGETS, keyed by filename (terrain tiles are
+# addressed by path, not by a master stem — see process_terrain). No crop
+# or downscale step applies to terrain (it has no separate high-resolution
+# master), so "target_height" and "crop_margin" are not recognised here.
+_TERRAIN_OVERRIDE_KEYS = {"reduce_colors", "degrain_passes", "degrain_agreement"}
+
+TERRAIN_TARGETS: dict[str, dict[str, int]] = {
+    # e.g. "Wall_Woodland.png": {"reduce_colors": 8} once a terrain batch
+    # is actually tuned — nothing here yet, same reasoning as SPRITE_TARGETS.
+}
+
+
+def _validate_override_keys(key: str, overrides: dict, known: set[str], table_name: str) -> None:
+    unknown = set(overrides) - known
+    if unknown:
+        raise ValueError(
+            f"{table_name}[{key!r}] has unrecognised key(s) {sorted(unknown)} "
+            f"— known keys are {sorted(known)}. An unknown key is silently "
+            f"ignored otherwise, which is a promise this table doesn't keep."
+        )
+
+
+def _resolve_overrides(
+    overrides: dict,
+    known: set[str],
+    table_name: str,
+    key: str,
+    **explicit: int | None,
+) -> dict[str, int]:
+    """Merges an explicit (CLI) value over a per-item override table over
+    the module defaults, with `is not None` throughout — never `or` — so
+    that an explicit `0` (or any other falsy-but-valid value) is honoured
+    rather than silently replaced by the default."""
+
+    _validate_override_keys(key, overrides, known, table_name)
+
+    defaults = {
+        "target_height": TARGET_HEIGHT,
+        "reduce_colors": REDUCE_COLORS_K,
+        "degrain_passes": DEFAULT_DEGRAIN_PASSES,
+        "degrain_agreement": DEFAULT_DEGRAIN_AGREEMENT,
+        "crop_margin": 0,
+    }
+
+    resolved: dict[str, int] = {}
+    for name in known:
+        explicit_value = explicit.get(name)
+        if explicit_value is not None:
+            resolved[name] = explicit_value
+        else:
+            resolved[name] = overrides.get(name, defaults[name])
+
+    return resolved
 
 # The per-image median-cut working set, before its colours are snapped to
 # the master palette (step 3's first pass — see the module docstring for
@@ -188,12 +316,20 @@ class Palette:
 def load_palette(path: Path = PALETTE_PATH) -> Palette:
     """Reads the GIMP .gpl palette, in file order (stable, so palette index
     0 is always the same colour across runs — that stability is what makes
-    Image.quantize's tie-breaking deterministic)."""
+    Image.quantize's tie-breaking deterministic).
+
+    Fails loudly on anything that isn't a blank line, a `#` comment, a
+    recognised header, or a valid `R G B [name]` colour line — a line this
+    project's own artist wrote wrong should stop a run, not silently shrink
+    the palette by one entry (the "wrapped class list dropped 39 of 339
+    spells while a floor test stayed green" lesson, applied here as an
+    exact-count assertion instead of a floor).
+    """
 
     colors: list[tuple[int, int, int]] = []
     names: list[str] = []
 
-    for raw_line in path.read_text().splitlines():
+    for lineno, raw_line in enumerate(path.read_text().splitlines(), start=1):
         line = raw_line.strip()
 
         if not line or line.startswith("#"):
@@ -204,12 +340,16 @@ def load_palette(path: Path = PALETTE_PATH) -> Palette:
         parts = line.split(None, 3)
 
         if len(parts) < 3:
-            continue
+            raise ValueError(
+                f"{path}:{lineno}: expected 'R G B [name]', got {raw_line!r}"
+            )
 
         try:
             r, g, b = int(parts[0]), int(parts[1]), int(parts[2])
-        except ValueError:
-            continue
+        except ValueError as exc:
+            raise ValueError(
+                f"{path}:{lineno}: non-integer colour component in {raw_line!r}"
+            ) from exc
 
         name = parts[3].strip() if len(parts) > 3 else ""
 
@@ -219,8 +359,15 @@ def load_palette(path: Path = PALETTE_PATH) -> Palette:
         colors.append((r, g, b))
         names.append(name)
 
-    if not colors:
-        raise ValueError(f"No colours parsed from palette at {path}")
+    if len(colors) != EXPECTED_PALETTE_COLORS:
+        raise ValueError(
+            f"{path}: expected exactly {EXPECTED_PALETTE_COLORS} colours "
+            f"(52 lines in the source file, minus {len(_PALETTE_EXCLUDE_NAMES)} "
+            f"excluded by name), parsed {len(colors)}. Either the .gpl file "
+            f"changed shape or _PALETTE_EXCLUDE_NAMES/EXPECTED_PALETTE_COLORS "
+            f"are out of sync — update them together, deliberately, never one "
+            f"without the other."
+        )
 
     return Palette(tuple(colors), tuple(names))
 
@@ -233,7 +380,14 @@ def crop_to_opaque(image: Image.Image, margin: int = 0) -> Image.Image:
     """Crops to the tight bounding box of non-transparent content. A master
     with no alpha channel (a flat photograph, not yet cut out) is returned
     unchanged — cropping only ever removes transparent margin, never guesses
-    at a background colour to key out."""
+    at a background colour to key out.
+
+    The no-alpha branch below is dead from `process_master`'s own call site
+    today (it always converts to "RGBA" first), but this function is public
+    and reused directly — by `compare`, and by anyone poking at the
+    pipeline's stages one at a time, as this PR's own testing did — so the
+    guard stays for a caller that hands in a flat image on purpose.
+    """
 
     if image.mode != "RGBA":
         return image
@@ -275,6 +429,22 @@ def staged_downscale(
     fringing, which is exactly what the hard-alpha step after this one has
     to clean up blindly. Colour and alpha are treated separately here so
     that step gets a clean edge to threshold instead.
+
+    Both box downscales resize through premultiplied alpha ("RGBa" —
+    lowercase a is Pillow's premultiplied mode, distinct from "RGBA"). A
+    cutout master's fully-transparent pixels keep whatever RGB the source
+    photograph happened to have there (background, desk, whatever was
+    behind the painting); resizing straight RGBA averages that leftover
+    colour into every opaque pixel near an edge, at every box-filter step.
+    Premultiplying first forces a fully-transparent pixel's RGB to exactly
+    (0, 0, 0) before the average runs, so it can only ever contribute zero
+    weight — un-premultiplying afterward recovers real colour for anything
+    that ended up with real coverage. This is the same "invisible pixels
+    are voting" shape qc's review of PR #427 found in the clustering step
+    below, one stage earlier: verified fixed by re-running with the
+    transparent region's RGB flattened to a constant before this function
+    ran — a no-visible-change edit that used to move output pixels and no
+    longer does.
     """
 
     if target_height <= 0:
@@ -298,21 +468,28 @@ def staged_downscale(
     if intermediate_size[0] >= image.width or intermediate_size[1] >= image.height:
         stage1 = image
     else:
-        rgb = image.convert("RGB").resize(intermediate_size, Image.Resampling.BOX)
-        rgb = rgb.filter(
+        resized = _resize_premultiplied(image, intermediate_size)
+        rgb = resized.convert("RGB").filter(
             ImageFilter.UnsharpMask(
                 radius=unsharp_radius,
                 percent=unsharp_percent,
                 threshold=unsharp_threshold,
             )
         )
-        alpha = image.split()[3].resize(intermediate_size, Image.Resampling.BOX)
-        stage1 = Image.merge("RGBA", (*rgb.split(), alpha))
+        stage1 = Image.merge("RGBA", (*rgb.split(), resized.split()[3]))
 
     if stage1.size == final_size:
         return stage1
 
-    return stage1.resize(final_size, Image.Resampling.BOX)
+    return _resize_premultiplied(stage1, final_size)
+
+
+def _resize_premultiplied(image: Image.Image, size: tuple[int, int]) -> Image.Image:
+    """Box-resizes an RGBA image without letting transparent-region RGB
+    bleed into opaque neighbours — see staged_downscale's docstring for
+    why. ``convert("RGBa")`` is Pillow's premultiplied-alpha mode."""
+
+    return image.convert("RGBa").resize(size, Image.Resampling.BOX).convert("RGBA")
 
 
 def harden_alpha(image: Image.Image, threshold: int = ALPHA_THRESHOLD) -> Image.Image:
@@ -336,19 +513,56 @@ def _nearest_palette_color(
     )
 
 
+def _opaque_sample(image: Image.Image, threshold: int = ALPHA_THRESHOLD) -> Image.Image:
+    """A compact 1-tall image holding only this frame's opaque pixels, in
+    scan order, position discarded.
+
+    Used to *fit* the median-cut clustering below on visible content only.
+    A cutout master's transparent region keeps whatever RGB the source
+    photograph had there — background, desk, whatever — and that RGB is
+    never displayed, but it is real data sitting in the same `.convert
+    ("RGB")` call a naive fit would hand to `quantize()`. qc's review of PR
+    #427 measured its effect directly: on the Ogre master, flattening the
+    transparent region to a constant colour (zero visible-content change)
+    moved 26% of the *opaque* output pixels to a different final colour.
+    That is #238's outvoting shape recurring inside a single frame — an
+    invisible majority deciding a visible minority's palette assignment —
+    so the fit must never see a pixel nobody will ever see.
+    """
+
+    rgba = image.convert("RGBA")
+    opaque_rgb = [pixel[:3] for pixel in rgba.getdata() if pixel[3] >= threshold]
+
+    if not opaque_rgb:
+        # Fully transparent input: nothing visible to fit on. One arbitrary
+        # colour keeps quantize() well-defined; every pixel using it is
+        # discarded by the caller's own alpha mask regardless (a
+        # fully-transparent frame survives every stage without crashing).
+        opaque_rgb = [(0, 0, 0)]
+
+    sample = Image.new("RGB", (len(opaque_rgb), 1))
+    sample.putdata(opaque_rgb)
+    return sample
+
+
 def quantize_to_palette(
     image: Image.Image, palette: Palette, reduce_colors: int = REDUCE_COLORS_K
 ) -> Image.Image:
     """Maps every opaque pixel to a colour in the fixed master palette, in
     two passes rather than one direct nearest-colour lookup per pixel.
 
-    Pass one clusters this image's own pixels down to `reduce_colors`
+    Pass one clusters this image's *opaque* pixels down to `reduce_colors`
     representative colours with Pillow's median-cut quantizer — a
-    deterministic splitting procedure, not a randomly-seeded k-means, and
-    run against nothing but this one image's own downscaled content. Pass
-    two snaps each of those *representative* colours (never each raw pixel)
-    to its nearest match in the master palette, and every pixel belonging
-    to that cluster follows it.
+    deterministic splitting procedure, not a randomly-seeded k-means, fit
+    on nothing but this one image's own visible content (see
+    `_opaque_sample`). Pass two snaps each of those *representative*
+    colours (never each raw pixel) to its nearest match in the master
+    palette, and every pixel belonging to that cluster follows it. The
+    resulting small palette is then applied — nearest-cluster assignment,
+    not a re-fit — to every pixel in the full image, transparent ones
+    included; that assignment is thrown away by the caller's alpha mask for
+    any pixel that isn't opaque, so it only has to be well-defined, not
+    meaningful.
 
     Mapping every pixel straight to its nearest of the master palette's 52
     colours (the direct approach this replaced) technically conforms —
@@ -363,32 +577,56 @@ def quantize_to_palette(
     every call — it never reads another frame's pixels and never persists
     anything between calls. That is what keeps it out of PR #238's failure
     mode: there is no shared vote for a small canvas to lose, because
-    nothing is ever shared across canvases in the first place.
+    nothing is ever shared across canvases in the first place. Restricting
+    the fit to opaque pixels is the same principle applied one level
+    deeper: no *invisible* population gets a vote either.
     """
 
-    rgb = image.convert("RGB")
-    clustered = rgb.quantize(
+    rgba = image.convert("RGBA")
+    rgb = rgba.convert("RGB")
+
+    fit_source = _opaque_sample(rgba)
+    fitted = fit_source.quantize(
         colors=reduce_colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE
     )
 
-    cluster_count = len(clustered.getpalette()) // 3
-    raw_palette = clustered.getpalette()[: cluster_count * 3]
+    cluster_count = len(fitted.getpalette()) // 3
+    raw_palette = fitted.getpalette()[: cluster_count * 3]
     cluster_colors = [
         (raw_palette[i], raw_palette[i + 1], raw_palette[i + 2])
         for i in range(0, len(raw_palette), 3)
     ]
 
-    mapped_flat: list[int] = []
-    for color in cluster_colors:
-        mapped_flat.extend(_nearest_palette_color(color, palette.colors))
+    # Apply the fitted clusters to every pixel of the *actual* image —
+    # nearest-cluster assignment against a fixed palette, not a re-fit — so
+    # transparent-region pixels get some assignment (irrelevant, discarded
+    # by the caller) without ever influencing what the clusters were.
+    fit_reference = Image.new("P", (1, 1))
+    fit_reference.putpalette(_padded_flat_palette(cluster_colors))
+    assigned = rgb.quantize(palette=fit_reference, dither=Image.Dither.NONE)
 
-    pad_color = palette.colors[-1]
-    while len(mapped_flat) < 256 * 3:
-        mapped_flat.extend(pad_color)
+    mapped_colors = [_nearest_palette_color(color, palette.colors) for color in cluster_colors]
 
-    remapped = clustered.copy()
-    remapped.putpalette(mapped_flat)
+    remapped = assigned.copy()
+    remapped.putpalette(_padded_flat_palette(mapped_colors))
     return remapped.convert("RGB")
+
+
+def _padded_flat_palette(colors: list[tuple[int, int, int]]) -> list[int]:
+    """Flattens a list of RGB tuples into the 256*3-length list
+    `Image.putpalette` wants, padding with the last real colour so an
+    unused index can never be picked by a nearest-colour distance against
+    real content."""
+
+    flat: list[int] = []
+    for r, g, b in colors:
+        flat.extend((r, g, b))
+
+    pad_color = colors[-1]
+    while len(flat) < 256 * 3:
+        flat.extend(pad_color)
+
+    return flat
 
 
 def _neighbourhoods(width: int, height: int, x: int, y: int) -> list[tuple[int, int]]:
@@ -412,10 +650,18 @@ def degrain(
 
     A pixel is "isolated" when none of its (up to 8) same-alpha-state
     neighbours share its colour. It is only folded when one neighbour
-    colour holds at least `agreement` of those neighbours (default 5 of 8)
-    — a real edge or a deliberate single-pixel highlight sits among mixed
-    neighbours and is left alone; only a clear, near-unanimous local
-    majority overrides a pixel that agrees with none of it.
+    colour holds a clear majority of those neighbours — a real edge or a
+    deliberate single-pixel highlight sits among mixed neighbours and is
+    left alone; only a near-unanimous local majority overrides a pixel that
+    agrees with none of it. `agreement` (default 5) is that threshold
+    *scaled to an 8-neighbour interior pixel* — a border pixel with fewer
+    neighbours needs `round(agreement * available / 8)` of them, not
+    `agreement` outright, which would be unreachable at a corner (3
+    neighbours can never reach 5) and needlessly strict at an edge (5 of 5
+    unanimity instead of the interior's 5 of 8). Without this scaling,
+    verified: an isolated corner speck survives while an identical interior
+    speck folds, so a sprite's silhouette edge and a terrain tile's border
+    would keep more grain than its interior for no reason but geometry.
 
     This is the same idea PR #238's consolidation pass had — flatten the
     grain a per-pixel quantize leaves behind — run the way that avoids its
@@ -429,6 +675,18 @@ def degrain(
     keeps this pass from eroding or growing the silhouette — it cleans
     colour noise inside a region and leaves the hard alpha edge exactly
     where the previous stage put it.
+
+    **Not wrap-aware.** A terrain tile is meant to repeat — the board tiles
+    it edge-to-edge — but this pass judges a border pixel's neighbourhood
+    from the tile's own edge inward only, never from the *opposite* edge
+    the tiled board would actually place next to it. A tile's border can
+    therefore end up processed differently than its interior would suggest,
+    and a residue that is grid-aligned rather than random. Left as a known
+    limitation rather than fixed here: making this wrap-aware means the
+    caller must say whether an image tiles at all (a character sprite does
+    not; a Ground/Wall/Difficult terrain strip does along one axis), which
+    is a real design decision for whoever tunes the first terrain batch,
+    not something to guess at in this pass.
     """
 
     rgba = image.convert("RGBA")
@@ -474,13 +732,37 @@ def degrain(
                     ((c, tally[c]) for c in order), key=lambda item: item[1]
                 )
 
-                if best_count >= agreement:
+                # Scaled to how many neighbours this pixel actually has —
+                # see the docstring's border-geometry note. An interior
+                # pixel (8 neighbours) sees no change from the old flat
+                # comparison; a corner (3) or edge (5) pixel gets a
+                # correspondingly lower bar instead of an unreachable or
+                # needlessly strict one.
+                required = max(1, round(agreement * len(neighbours) / 8))
+
+                if best_count >= required:
                     changes.append((x, y, (*best_color, center[3])))
 
         for x, y, color in changes:
             pixels[x, y] = color
 
     return rgba
+
+
+def _validate_pipeline_params(
+    colors: int, passes: int, agreement: int, height: int | None = None
+) -> None:
+    """`height` is None for terrain, which has no downscale step at all —
+    only a character master's target_height is checked."""
+
+    if height is not None and height <= 0:
+        raise ValueError(f"target_height must be positive, got {height}")
+    if colors < 1:
+        raise ValueError(f"reduce_colors must be at least 1, got {colors}")
+    if passes < 0:
+        raise ValueError(f"degrain_passes must be non-negative, got {passes}")
+    if not (0 <= agreement <= 8):
+        raise ValueError(f"degrain_agreement must be between 0 and 8, got {agreement}")
 
 
 def process_master(
@@ -490,24 +772,29 @@ def process_master(
     reduce_colors: int | None = None,
     degrain_passes: int | None = None,
     degrain_agreement: int | None = None,
+    crop_margin: int | None = None,
     masters_dir: Path = MASTERS_DIR,
 ) -> Image.Image:
     """Runs the full pipeline on one master file, returning the finished
     RGBA frame. Deterministic and side-effect-free — writing the result to
     disk is the caller's job."""
 
-    overrides = SPRITE_TARGETS.get(stem, {})
-    height = target_height or overrides.get("target_height", TARGET_HEIGHT)
-    colors = reduce_colors or overrides.get("reduce_colors", REDUCE_COLORS_K)
-    passes = (
-        degrain_passes
-        if degrain_passes is not None
-        else overrides.get("degrain_passes", DEFAULT_DEGRAIN_PASSES)
+    resolved = _resolve_overrides(
+        SPRITE_TARGETS.get(stem, {}),
+        _SPRITE_OVERRIDE_KEYS,
+        "SPRITE_TARGETS",
+        stem,
+        target_height=target_height,
+        reduce_colors=reduce_colors,
+        degrain_passes=degrain_passes,
+        degrain_agreement=degrain_agreement,
+        crop_margin=crop_margin,
     )
-    agreement = (
-        degrain_agreement
-        if degrain_agreement is not None
-        else overrides.get("degrain_agreement", DEFAULT_DEGRAIN_AGREEMENT)
+    _validate_pipeline_params(
+        resolved["reduce_colors"],
+        resolved["degrain_passes"],
+        resolved["degrain_agreement"],
+        height=resolved["target_height"],
     )
 
     source_path = masters_dir / f"{stem}.png"
@@ -518,12 +805,14 @@ def process_master(
         )
 
     image = Image.open(source_path).convert("RGBA")
-    image = crop_to_opaque(image)
-    image = staged_downscale(image, height)
+    image = crop_to_opaque(image, margin=resolved["crop_margin"])
+    image = staged_downscale(image, resolved["target_height"])
     image = harden_alpha(image)
-    rgb_quantized = quantize_to_palette(image, palette, reduce_colors=colors)
+    rgb_quantized = quantize_to_palette(image, palette, reduce_colors=resolved["reduce_colors"])
     reassembled = Image.merge("RGBA", (*rgb_quantized.split(), image.split()[3]))
-    return degrain(reassembled, passes=passes, agreement=agreement)
+    return degrain(
+        reassembled, passes=resolved["degrain_passes"], agreement=resolved["degrain_agreement"]
+    )
 
 
 def process_terrain(
@@ -546,15 +835,28 @@ def process_terrain(
     determinism, same conformance guarantee as a character master.
     """
 
-    colors = reduce_colors if reduce_colors is not None else REDUCE_COLORS_K
-    passes = degrain_passes if degrain_passes is not None else DEFAULT_DEGRAIN_PASSES
-    agreement = degrain_agreement if degrain_agreement is not None else DEFAULT_DEGRAIN_AGREEMENT
+    resolved = _resolve_overrides(
+        TERRAIN_TARGETS.get(path.name, {}),
+        _TERRAIN_OVERRIDE_KEYS,
+        "TERRAIN_TARGETS",
+        path.name,
+        reduce_colors=reduce_colors,
+        degrain_passes=degrain_passes,
+        degrain_agreement=degrain_agreement,
+    )
+    _validate_pipeline_params(
+        resolved["reduce_colors"],
+        resolved["degrain_passes"],
+        resolved["degrain_agreement"],
+    )
 
     image = Image.open(path).convert("RGBA")
     image = harden_alpha(image)
-    rgb_quantized = quantize_to_palette(image, palette, reduce_colors=colors)
+    rgb_quantized = quantize_to_palette(image, palette, reduce_colors=resolved["reduce_colors"])
     reassembled = Image.merge("RGBA", (*rgb_quantized.split(), image.split()[3]))
-    return degrain(reassembled, passes=passes, agreement=agreement)
+    return degrain(
+        reassembled, passes=resolved["degrain_passes"], agreement=resolved["degrain_agreement"]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -602,9 +904,38 @@ def measure_conformance(path: Path, palette: Palette) -> ConformanceReport:
 
 
 def _iter_shipped_images() -> list[Path]:
+    """Every PNG actually *shipped* with the repo under
+    client/assets/sprites — git-tracked files only.
+
+    A plain directory scan (`SPRITES_DIR.rglob`, this function's first
+    version) counts whatever happens to be sitting in the working tree,
+    tracked or not — verified wrong on this exact repo: an untracked WIP
+    drop (`Projectiles/Spell.png`, unrelated to this PR) inflated the
+    conformance denominator from the true 126 to a claimed 127. "Shipped"
+    means committed, so this asks git rather than the filesystem.
+    """
+
     if not SPRITES_DIR.exists():
         return []
-    return sorted(SPRITES_DIR.rglob("*.png"))
+
+    try:
+        listed = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "ls-files", "--", "client/assets/sprites"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        print(
+            f"warning: `git ls-files` unavailable ({exc}); falling back to a "
+            f"directory scan, which may include untracked files",
+            file=sys.stderr,
+        )
+        return sorted(SPRITES_DIR.rglob("*.png"))
+
+    return sorted(
+        REPO_ROOT / line for line in listed.splitlines() if line.endswith(".png")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -647,6 +978,7 @@ def _cmd_process(args: argparse.Namespace) -> int:
         reduce_colors=args.reduce_colors,
         degrain_passes=args.degrain_passes,
         degrain_agreement=args.degrain_agreement,
+        crop_margin=args.crop_margin,
     )
 
     out_path = out_dir / f"{args.stem}.png"
@@ -723,6 +1055,17 @@ def _print_report(report: ConformanceReport, indent: int = 0) -> None:
 
 def _cmd_conformance(args: argparse.Namespace) -> int:
     palette = load_palette()
+
+    if args.shipped and args.paths:
+        print(
+            "error: --shipped and explicit paths are mutually exclusive "
+            "(pass one or the other, not both — an earlier version of this "
+            "command silently ignored the paths and checked --shipped "
+            "instead, which is exactly the kind of thing 'nothing lies' "
+            "rules out)",
+            file=sys.stderr,
+        )
+        return 2
 
     if args.shipped:
         paths = _iter_shipped_images()
@@ -872,6 +1215,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_process.add_argument("--reduce-colors", type=int, default=None)
     p_process.add_argument("--degrain-passes", type=int, default=None)
     p_process.add_argument("--degrain-agreement", type=int, default=None)
+    p_process.add_argument("--crop-margin", type=int, default=None)
     p_process.set_defaults(func=_cmd_process)
 
     p_batch = sub.add_parser("batch", help="run the pipeline on several masters")
@@ -910,6 +1254,15 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if PIL.__version__ != VERIFIED_PILLOW_VERSION:
+        print(
+            f"note: running Pillow {PIL.__version__}, verified against "
+            f"{VERIFIED_PILLOW_VERSION} — quote this line in a batch's PR if "
+            f"output ever looks different on a different machine",
+            file=sys.stderr,
+        )
+
     return args.func(args)
 
 
