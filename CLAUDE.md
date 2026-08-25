@@ -266,8 +266,21 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
 
 - Every entry, trait, class feature and spell is **classified**. `EntryMechanics` is
   the enum; `IsFullyModelled` is the test. There is no "just prose" state.
-- Anything the model cannot express lands in `UnmodelledClauses` and is **counted**,
-  including on entries that are otherwise structured.
+- **The stat-block accounting is coverage-by-consumption** (#382,
+  `docs/2026-08-24-span-accounting-design.md`; the type is `EntryCoverage` in
+  `tools/SrdExtract/Parsing/`). Every structured extraction **claims** the characters
+  it consumed, and `UnmodelledClauses` is the uncovered **residue, computed by
+  subtraction** — nobody credits a sentence by its label. A claim asserts the model
+  *expresses* those characters — not that a regex matched them, not that a string was
+  stored — so **the claim follows the code and never leads it**: text a permissive
+  subexpression swallowed unread, and prose a field stores verbatim without an
+  executing resolver, stay unclaimed and land in residue.
+- **The glue rule is the mechanism's one rot risk, so it is deliberately tiny**: four
+  punctuation marks, and "and"/"or"/"plus" only when bounded on *both* sides by
+  claimed spans. Anything not provably glue is residue — residue is cheap (a counted
+  clause, read once in a census), while a lazy glue match is bug 2 below rebuilt
+  inside the mechanism meant to prevent it. Widen it only with the worked table in
+  the design doc §4 open.
 - **Spells are the one exception, and it is stated rather than silent.** A stat block
   entry is all mechanics in a printed grammar, so a leftover sentence is a lost rule;
   a spell description is prose that is mostly flavour, and the same accounting run over
@@ -282,26 +295,42 @@ flavour text — `it has the Grappled condition (escape DC 13)` is a rule. So:
 - Where a rule is a judgement call, **write the reading down** in the code's doc
   comments. `AreaTargeting` is the model.
 
-**Three bugs produced that rule. Read them before touching a parser:**
+**Three bugs produced that rule, and the first bug's fourteenth recurrence retired
+a mechanism. Read this before touching a parser:**
 
 1. **The Goblin Warrior's "plus 2 (1d4) damage *if the attack roll had Advantage*"**
    was read as unconditional, so every hit dealt it. Nothing failed — the attack
    *looked* implemented. **A partly-structured entry is more dangerous than an
-   unstructured one**, because the missing part is invisible. This shape has recurred
-   four times (rider gating, save-spell effects, Failure-tier sentences, and
-   Multiattack replace-clauses — closed by #290). Assume a fifth exists — it did,
-   twice: a Multiattack can print two whole alternative compositions joined by "or
-   it/he/she/they makes" and have both summed into one attack count instead of the
-   model taking the printed default and accounting the rest (the Clay Golem swung
-   five Slams a turn against a printed maximum of three — closed by #342); and a
-   Multiattack's own composition sentence can fold an unexecuted rule inside itself
-   (the Mummy's "and uses Dreadful Glare", the Kraken's "and uses Fling..."), which
-   `DescribesTheComposition` waved through with an empty `UnmodelledClauses` because
-   the composition it recognises still matches — closed by #341. Assume a seventh
-   exists.
+   unstructured one**, because the missing part is invisible. That shape — an
+   **omission**: a printed clause nothing read, hidden behind an entry that looked
+   handled — recurred **fourteen times** (#382's tally) under the old
+   sentence-credit accounting
+   (among them rider gating, save-spell effects, Failure-tier sentences, Multiattack
+   replace-clauses #290, the Clay Golem's summed alternative compositions #342 —
+   five Slams a turn against a printed maximum of three — bundled composition
+   clauses waved through with empty `UnmodelledClauses` #341, or-tiers dropped
+   whole #371, plural condition conjunctions parsed as nothing #372, riders behind
+   accounted labels #373), each patched at the instance while the credit rule that
+   produced them survived. #382 put the mechanism itself on trial: credit-by-label
+   is deleted, and under coverage-by-consumption over a closed 330-monster corpus
+   **the omission class is closed by construction** — a clause nothing claims is
+   visible residue, censused once, with nowhere left to hide. Do not hunt for the
+   fifteenth omission; the mechanism shows it to you.
+   What span coverage does **not** close is the **misattribution class**: a claim
+   that consumed text under the wrong reading. Current case law — #370 (a success
+   tier attached to the whole entry instead of the clause it governs), #375
+   (or-as-and, a spell dealing both alternatives), #407 (polarity: immunity and
+   removal prose recorded as an *imposition*), #412 (a rider claim correct only
+   because of a corpus invariant asserted nowhere). Its guards are different:
+   characterization fixtures (#189), verification against the PDF, **trip-wire
+   tests** that assert the invariant a reading rests on so the first
+   counter-example forces a decision (#412 is the pattern), and the three-strikes
+   rule. Assume the next parser bug is a misattribution, and write its trip-wire.
 2. **A "does this look mechanical?" keyword filter** let Flyby, Nimble Escape and
    Shape-Shift through as inert. The heuristic was **removed rather than tuned**: a
-   keyword list always has false negatives, and a false negative loses a rule.
+   keyword list always has false negatives, and a false negative loses a rule. (The
+   glue rule above is this bug's standing temptation — that is why it is closed-set
+   and both-sides-bounded.)
 3. **Reusing the stat block classifier on spells** read every metadata field and
    found zero of 300 saving throws — a monster prints an explicit DC and average, a
    spell prints neither. Spells have their own grammar (`SpellEffectParser`).
@@ -330,12 +359,15 @@ SRD has **no generic Escape action** — escape is Athletics *or* Acrobatics aga
 flat DC. `Encounter.EndBrokenGrapples` sweeps grapples broken by death, incapacity
 or range, from every point where either could change.
 
-**When you touch `ConditionRules.Executable`, re-run the extractor.** The accounting
-calls `CanBeImposed`, so the allowlist decides what lands in `UnmodelledClauses`;
-skipping regeneration leaves content disagreeing with code, and the symptom is a
-content test failing on an entry you did not edit.
+**When you touch `ConditionRules.Executable`, re-run the extractor.** The rider
+claims call `CanBeImposed`, so the allowlist decides what a rider may claim and
+therefore what lands in `UnmodelledClauses` as residue; skipping regeneration leaves
+content disagreeing with code, and the symptom is a content test failing on an entry
+you did not edit.
 
-**Coverage numbers are an internal check, not project status.**
+**Test-coverage percentages are an internal check, not project status.** Span
+coverage is the opposite — `UnmodelledClauses` residue *is* the honesty accounting,
+and its movements are reviewed in every regeneration.
 
 ## Working on characters and spells
 
