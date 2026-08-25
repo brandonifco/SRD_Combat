@@ -26,7 +26,13 @@ namespace SRDCombat.Core.Combat;
 /// <b>The squares that must stay connected are single squares, not anchors</b>, and they
 /// are served by a component when any legal anchor in it <em>overlaps</em> them: a spawn
 /// square is where a creature stands, and a Huge creature standing on it occupies eight
-/// other squares as well. <b>This is only sound while every such square has a free
+/// other squares as well. <b>One component has to serve all of them</b> — the point of the
+/// question is that a creature can walk from any of these squares to any other, and a
+/// square each of two unconnected components reach is a square a creature cannot get
+/// between. Unioning the reach of several components would answer a different question and
+/// answer it wrongly: two 3 by 3 clearings sharing a single corner square each have a legal
+/// anchor covering that square, so the union covers both clearings while no Huge creature
+/// can cross from one to the other. <b>This is only sound while every such square has a free
 /// <c>K × K</c> block around it</b> — otherwise a spawn could be unreachable by construction
 /// and the check would reject every draw. Both callers guarantee it and must keep doing so:
 /// <c>TerrainGenerator</c> never places terrain on a spawn square and is handed every
@@ -84,34 +90,55 @@ public static class GridConnectivity
             && !new CreatureSpace(anchor, span).Squares().Any(blocked.Contains);
 
         // Start from wherever a creature of this size could stand on the first square that
-        // has to connect. The anchors of a K x K block covering it run from K-1 back.
+        // has to connect. The anchors of a K x K block covering it run from K-1 back, and
+        // there can be several — up to K squared of them.
         var first = mustConnect.First();
-        var start = AnchorsCovering(first, span).Where(Fits).ToArray();
+        var seeds = AnchorsCovering(first, span).Where(Fits).ToArray();
 
-        if (start.Length == 0)
+        // Each seed's component is flooded and asked the question on its own. Unioning
+        // their reach instead would answer a different and wrong question: at span 3 two
+        // legal anchors covering the same square can be two apart, so they can sit in
+        // different components of the eroded space — two 3 by 3 clearings that share one
+        // corner square, which no Huge creature can actually cross between. Their union
+        // covers everything and connects nothing, and because the seeds come from the
+        // *first* square in the caller's collection, the answer would depend on the order
+        // a HashSet happened to enumerate. One component has to reach all of it.
+        var assigned = new HashSet<GridPosition>();
+
+        foreach (var seed in seeds)
         {
-            return false;
-        }
-
-        var reached = new HashSet<GridPosition>(start);
-        var frontier = new Queue<GridPosition>(start);
-        var covered = new HashSet<GridPosition>(start.SelectMany(anchor => new CreatureSpace(anchor, span).Squares()));
-
-        while (frontier.TryDequeue(out var current))
-        {
-            foreach (var next in current.Neighbours())
+            // Already flooded as part of an earlier seed's component.
+            if (!assigned.Add(seed))
             {
-                if (!Fits(next) || !reached.Add(next))
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                covered.UnionWith(new CreatureSpace(next, span).Squares());
-                frontier.Enqueue(next);
+            var frontier = new Queue<GridPosition>();
+            frontier.Enqueue(seed);
+
+            var covered = new HashSet<GridPosition>(new CreatureSpace(seed, span).Squares());
+
+            while (frontier.TryDequeue(out var current))
+            {
+                foreach (var next in current.Neighbours())
+                {
+                    if (!Fits(next) || !assigned.Add(next))
+                    {
+                        continue;
+                    }
+
+                    covered.UnionWith(new CreatureSpace(next, span).Squares());
+                    frontier.Enqueue(next);
+                }
+            }
+
+            if (mustConnect.All(covered.Contains))
+            {
+                return true;
             }
         }
 
-        return mustConnect.All(covered.Contains);
+        return false;
     }
 
     /// <summary>Every anchor whose span-sided block covers this square.</summary>
