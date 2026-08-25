@@ -846,6 +846,12 @@ public sealed class EntryMechanicsCharacterizationTests
         // successful save halves the 2d4 Fire damage, exactly as printed, rather than
         // taking it in full. The rider ("Speed decreases by 10 feet") and the side
         // clause itself are unexecuted mechanics and land in residue.
+        //
+        // "only" is pinned as its own residue line, not folded into a broader
+        // assertion: `save.success_half` claims exactly the literal "Success: Half
+        // damage" (the label `ParseSave` reads), so the trailing " only." strands as
+        // an unclaimed word. That is a real, separate gap from #370 — filed
+        // separately — not this fixture's bug to paper over with a looser assertion.
         var entry = EntryMechanicsParser.Classify(
             "Steam Breath",
             MonsterEntrySection.Action,
@@ -855,13 +861,13 @@ public sealed class EntryMechanicsCharacterizationTests
             "underwater doesn't grant Resistance to this Fire damage.");
 
         Assert.Equal(SaveSuccessOutcome.HalfDamage, entry.Save!.SuccessOutcome);
-        Assert.Contains(
-            "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
+        Assert.Equal(
+            [
+                "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
+                "only",
+                "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
+            ],
             entry.UnmodelledClauses);
-        Assert.Contains(
-            "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
-            entry.UnmodelledClauses);
-        Assert.DoesNotContain("Success: Half damage only", entry.UnmodelledClauses);
     }
 
     [Fact]
