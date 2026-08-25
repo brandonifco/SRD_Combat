@@ -611,11 +611,25 @@ internal static partial class EntryMechanicsParser
             failureDamage = ParseDamageList(text, failureIndex, coverage);
         }
 
-        var success = text.Contains("Failure or Success:", StringComparison.Ordinal)
-            ? SaveSuccessOutcome.SameAsFailure
-            : text.Contains("Success: Half damage", StringComparison.OrdinalIgnoreCase)
-                ? SaveSuccessOutcome.HalfDamage
-                : SaveSuccessOutcome.NoEffect;
+        // The tier attaches to the clause it governs, not the whole entry (#370). A
+        // printed "Failure or Success:" clause is, in every one of the 24 entries that
+        // print it, a side effect layered on top of the entry's own Failure/Success
+        // tier — "Being underwater doesn't grant Resistance to this Fire damage", "The
+        // dragon can't take this action again until the start of its next turn" — never
+        // a restatement of the Failure damage itself. Reading it as `Contains` anywhere
+        // in the text let a trailing side clause override an unrelated, already-printed
+        // "Success: Half damage" into `SameAsFailure`, so a successful save dealt full
+        // damage instead of half (Steam Mephit's Steam Breath) or full damage instead of
+        // none (the sixteen entries with no Success line at all, e.g. the dragons'
+        // "can't take this action again" legendary actions). The label that actually
+        // governs the printed outcome is `Success:` on its own — anchored exactly as
+        // `save.success_half` claims it below — so that is the only signal consulted
+        // here. `Failure or Success:` is claimed by nobody (design §4.1) and its side
+        // clause is left to residue, same as the Failure-line riders this method has
+        // never structured.
+        var success = text.Contains("Success: Half damage", StringComparison.OrdinalIgnoreCase)
+            ? SaveSuccessOutcome.HalfDamage
+            : SaveSuccessOutcome.NoEffect;
 
         if (success == SaveSuccessOutcome.HalfDamage)
         {
