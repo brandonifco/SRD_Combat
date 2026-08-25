@@ -44,21 +44,27 @@ public sealed record SaveLoadResult(
 /// file. There is no window where <c>path</c> holds a partial write.
 /// </para>
 /// <para>
-/// <b>One rolling backup survives every successful write.</b> <see cref="File.Replace(string,string,string,bool)"/>
-/// performs the rename and the backup rotation together: the file that <c>path</c>
+/// <b>One rolling backup survives every successful write.</b> The file that <c>path</c>
 /// pointed to before the write becomes <c>path</c> + <c>.bak</c>, overwriting whatever
-/// backup was there. This is not one atomic filesystem operation on Unix — .NET's
-/// implementation is <c>unlink(bak)</c>, then <c>link(path, bak)</c>, then
-/// <c>rename(tmp, path)</c> — so a crash between the first two steps really does leave a
-/// moment with no <c>.bak</c> on disk. <b>The invariant that actually holds is weaker but
-/// sufficient</b>: at every point in that sequence, at least one complete file — the
-/// untouched old <c>path</c> (before its rename), the fresh <c>.bak</c>, or the new
-/// <c>path</c> (after its rename) — is on disk for <see cref="LoadRun"/> to find. The
-/// very first write for a path has nothing to back up, so it is a plain move instead
-/// — and any <c>.bak</c> already sitting there (left over from a run whose primary
-/// was deleted separately from its backup) is deleted after the move lands the new
-/// primary — never before, so a crash between the two steps still leaves a loadable
-/// file — and a backup can then never predate the primary beside it and get
+/// backup was there — but not via <see cref="File.Replace(string,string,string,bool)"/>,
+/// whose Unix implementation is <c>unlink(bak)</c>, then <c>link(path, bak)</c>, then
+/// <c>rename(tmp, path)</c>: a crash between the first two steps discards the existing
+/// <c>.bak</c> before the new primary has landed, and if the old <c>path</c> it is
+/// unlinking-and-relinking happened to be corrupt (a fallback load's next write — #367),
+/// that crash leaves a corrupt primary with no backup at all. Instead the rotation is
+/// three separate renames, each one a single atomic filesystem operation: the current
+/// primary moves to <c>path</c> + <c>.old</c>, the new content moves from <c>.tmp</c>
+/// into <c>path</c>, and only then does <c>.old</c> move into <c>path</c> + <c>.bak</c>.
+/// <b>The invariant that holds at every one of those renames</b>: before the first move,
+/// the untouched old <c>path</c> is still there; between the first and second, <c>path</c>
+/// is briefly missing but the backup from the *previous* successful write — the exact
+/// copy a fallback load would already have used — is untouched at <c>path</c> + <c>.bak</c>;
+/// from the second move on, the new primary is live at <c>path</c> and nothing after that
+/// point can lose it. The very first write for a path has nothing to back up, so it is a
+/// plain move instead — and any <c>.bak</c> already sitting there (left over from a run
+/// whose primary was deleted separately from its backup) is deleted after the move lands
+/// the new primary — never before, so a crash between the two steps still leaves a
+/// loadable file — and a backup can then never predate the primary beside it and get
 /// resurrected as that primary's history.
 /// </para>
 /// <para>
@@ -72,6 +78,8 @@ public static class SaveFile
     private static string TempPathFor(string path) => path + ".tmp";
 
     private static string BackupPathFor(string path) => path + ".bak";
+
+    private static string OldPrimaryPathFor(string path) => path + ".old";
 
     /// <summary>
     /// Writes <paramref name="json"/> to <paramref name="path"/> atomically, keeping the
@@ -100,13 +108,18 @@ public static class SaveFile
 
         if (File.Exists(path))
         {
-            // One call does both jobs: path becomes tempPath's content, and whatever
-            // path held becomes the backup. On Unix this is unlink(bak), link(path,
-            // bak), rename(tmp, path) under the hood, not one syscall — a crash between
-            // the first two steps leaves no .bak on disk for a moment. What holds at
-            // every point regardless is weaker but enough: the untouched old path, the
-            // fresh backup, or the fresh path is always there for LoadRun to find.
-            File.Replace(tempPath, path, BackupPathFor(path), ignoreMetadataErrors: true);
+            // Three separate atomic renames rather than File.Replace — see the class
+            // remarks for why: File.Replace's Unix implementation unlinks the existing
+            // .bak before the new primary is proven, so a crash mid-Replace after a
+            // fallback load (the primary already corrupt) can leave corrupt-primary
+            // with no backup at all (#367). Moving the current primary out of the way
+            // first, landing the new primary second, and retiring the old primary into
+            // the backup slot last keeps a loadable copy on disk at every rename.
+            var oldPrimaryPath = OldPrimaryPathFor(path);
+
+            File.Move(path, oldPrimaryPath, overwrite: true);
+            File.Move(tempPath, path, overwrite: true);
+            File.Move(oldPrimaryPath, BackupPathFor(path), overwrite: true);
         }
         else
         {

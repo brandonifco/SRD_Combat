@@ -43,6 +43,8 @@ public sealed class SaveFileTests : IDisposable
 
     private string TempPath => SavePath + ".tmp";
 
+    private string OldPrimaryPath => SavePath + ".old";
+
     /// <summary>A real, loadable save — a fresh run, nothing cleared yet.</summary>
     private static string SomeSaveJson() => RunSave.ToJson(GauntletRun.Start(Content));
 
@@ -187,6 +189,104 @@ public sealed class SaveFileTests : IDisposable
 
         var run = GauntletRun.Resume(Content, loaded.Saved!);
 
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+    }
+
+    /// <summary>
+    /// #367's functional case: the write immediately after a fallback load takes the
+    /// branch that used to call <c>File.Replace</c> over a corrupt primary. The happy
+    /// path must still rotate cleanly — new content live, the old (corrupt) primary
+    /// retired into the backup slot, no scratch files left behind.
+    /// </summary>
+    [Fact]
+    public void AWriteOverACorruptPrimaryRotatesItIntoTheBackupSlotAndLeavesNoScratchFiles()
+    {
+        SaveFile.Write(SavePath, "first save");
+        SaveFile.Write(SavePath, "second save");
+
+        var intact = File.ReadAllText(SavePath);
+        File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
+        var corruptPrimary = File.ReadAllText(SavePath);
+
+        SaveFile.Write(SavePath, "third save");
+
+        Assert.Equal("third save", File.ReadAllText(SavePath));
+        Assert.Equal(corruptPrimary, File.ReadAllText(BackupPath));
+        Assert.False(File.Exists(TempPath));
+        Assert.False(File.Exists(OldPrimaryPath));
+    }
+
+    /// <summary>
+    /// #367's torn-write acceptance test: after a fallback load (primary corrupt,
+    /// <c>.bak</c> holds the copy the load actually used), the *next* <see
+    /// cref="SaveFile.Write"/> must never destroy that good backup before its own new
+    /// primary is proven on disk. The old code took <c>File.Replace</c>'s Unix path —
+    /// <c>unlink(bak)</c>, <c>link(path, bak)</c>, <c>rename(tmp, path)</c> — which
+    /// discards the backup at the very first of those three steps, long before the new
+    /// primary exists. This reproduces exactly that disk state — the corrupt primary
+    /// already moved aside, nothing yet landed at <c>path</c> — the way the rest of this
+    /// fixture simulates a torn write by reproducing its resulting disk state directly,
+    /// and confirms the good backup a fallback load already used is still there and
+    /// still resumable.
+    /// </summary>
+    [Fact]
+    public void ACrashAfterMovingAsideACorruptPrimaryStillLeavesTheFallbackBackupLoadable()
+    {
+        SaveFile.Write(SavePath, SomeSaveJson());
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var intact = File.ReadAllText(SavePath);
+        File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
+
+        var fallback = SaveFile.LoadRun(SavePath);
+        Assert.NotNull(fallback.Saved);
+        Assert.True(fallback.UsedBackup, "Setup must actually exercise the fallback-load path.");
+
+        // Reproduce the disk state one rename into the next write: the corrupt primary
+        // has been moved aside (SaveFile's first rename), but the new content has not
+        // landed at `path` yet (its second rename). This is the exact moment
+        // File.Replace's unlink(bak) used to destroy the good backup.
+        File.Move(SavePath, OldPrimaryPath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.NotNull(loaded.Saved);
+        Assert.True(loaded.UsedBackup, "The primary is missing mid-rotation; only the backup can serve it.");
+        Assert.Null(loaded.PrimaryFailureReason);
+
+        var run = GauntletRun.Resume(Content, loaded.Saved!);
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+    }
+
+    /// <summary>
+    /// The next rename in the same sequence: once the new primary has landed at
+    /// <c>path</c>, it must be loadable on its own — nothing that happens to the backup
+    /// afterward (the final rename, retiring the old corrupt primary into <c>.bak</c>)
+    /// can put the run at risk.
+    /// </summary>
+    [Fact]
+    public void ACrashAfterTheNewPrimaryLandsIsLoadableEvenBeforeTheBackupRotationCompletes()
+    {
+        SaveFile.Write(SavePath, SomeSaveJson());
+        SaveFile.Write(SavePath, SomeSaveJson());
+
+        var intact = File.ReadAllText(SavePath);
+        File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
+
+        var newContent = SomeSaveJson();
+        File.WriteAllText(TempPath, newContent);
+
+        // The first two renames of the corrupt-primary branch, stopping before the
+        // third (the backup rotation).
+        File.Move(SavePath, OldPrimaryPath);
+        File.Move(TempPath, SavePath);
+
+        var loaded = SaveFile.LoadRun(SavePath);
+
+        Assert.NotNull(loaded.Saved);
+        Assert.False(loaded.UsedBackup, "The new primary is live at `path`; it must not need the backup.");
+
+        var run = GauntletRun.Resume(Content, loaded.Saved!);
         Assert.Equal(RunOutcome.InProgress, run.Outcome);
     }
 
