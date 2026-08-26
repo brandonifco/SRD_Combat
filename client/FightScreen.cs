@@ -2111,7 +2111,7 @@ public abstract partial class FightScreen : Node2D
 
         var modulate = token.IsDead ? new Color(0.5f, 0.5f, 0.55f) : Colors.White;
         var figure = art.Figure;
-        var scale = ScaleFor(figure, token.Size);
+        var scale = ScaleFor(figure, token.Size, CellPixels);
 
         // The ground line was measured in the idle strip's canvas, and a pose sheet may
         // carry a different canvas height — the hand-drawn Fighter's thrust is 101 rows
@@ -2181,14 +2181,23 @@ public abstract partial class FightScreen : Node2D
     /// cref="SizeGrowth"/> and <see cref="FootprintAllowance"/> both read 1 there — so
     /// every creature this shipped correctly for keeps rendering exactly as before.
     /// </remarks>
-    private float ScaleFor(SpriteLibrary.Figure figure, CreatureSize size)
+    /// <param name="figure">The measured art.</param>
+    /// <param name="size">The creature's printed size.</param>
+    /// <param name="cellPixels">
+    /// A board square's edge in screen pixels. Taken as an argument rather than read off
+    /// the screen so the rule can be tested without a Godot node (#190); the sole caller
+    /// passes <see cref="CellPixels"/>, which is what it always read.
+    /// </param>
+    internal static float ScaleFor(SpriteLibrary.Figure figure, CreatureSize size, float cellPixels)
     {
-        var shared = StatureFraction * CellPixels / NominalStature * SizeGrowth(size);
+        ArgumentNullException.ThrowIfNull(figure);
+
+        var shared = StatureFraction * cellPixels / NominalStature * SizeGrowth(size);
         var allowance = FootprintAllowance(size);
 
         var fits = Math.Min(
-            WidestSpan * allowance * CellPixels / figure.Breadth,
-            TallestSpan * allowance * CellPixels / figure.Stature);
+            WidestSpan * allowance * cellPixels / figure.Breadth,
+            TallestSpan * allowance * cellPixels / figure.Stature);
 
         return shared <= fits
             ? Math.Max(0.25f, MathF.Round(shared * 4f) / 4f)
