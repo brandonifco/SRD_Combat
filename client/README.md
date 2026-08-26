@@ -411,9 +411,19 @@ disagreeing about a buildable fact is what settling it empirically is for.
 
 What the exclusion cost was the whole point of having a gate: **5,065 lines — every line
 a player actually touches — were never compiled by CI.** Nothing stopped a `Core`
-signature change from breaking the client silently, and no test covers it from either
-side. Building it is now the cheapest guard available; a test project for it is not yet
-written, and that gap is real.
+signature change from breaking the client silently.
+
+**Since 2026-08-26 there is also a test project** (`tests/SRDCombat.Viewer.Tests`, #190),
+in the solution so CI runs it. It is a plain xUnit project referencing this one, and it
+holds to a boundary worth knowing before adding to it: Godot's *managed* value types
+(`Color`, `Vector2`, `Rect2I`, the enums) work anywhere, and a `Node`-derived type's
+*static* members can be called, but constructing anything deriving from
+`GodotObject`/`RefCounted` — `Image`, `Texture2D`, `InputEventKey` — **terminates the
+test host process** rather than throwing something a test can catch. So the tests cover
+rules (the log's colouring, the sprite metrics, the draw scale) and the probe loop below
+still covers everything that needs a live scene. The gap that remains is the argument
+wiring and `PlayMode`'s own state, which need a seam that #491 and the battle-builder's
+`BattleScenario` own.
 
 Two things the arrangement never cost, and still does not:
 

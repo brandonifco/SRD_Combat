@@ -32,7 +32,7 @@ When a bullet below feels compressed, the archive has the long form with the evi
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
 | Pacing | Measured at `8ca55aa` (`main`, the F1 closing merge), 2026-08-25 — the **promoted F1-exit baseline**, superseding the provisional post-#347 entry and the #382-branch measurement. Seeds 1–120: median 18 of 30, 43 clear all, 53 reach level 4, died-by-fight-4 10; ended Cleared 43 / Defeated 77. Seeds 200–320: median 18, 43 clear all, 59 reach level 4, died-by-fight-4 8 (of 121); ended Cleared 43 / Defeated 78. **Zero `Stalled`** in both. Per-band hp-left 84→77→70→72→75→74% (1–120) and 83→77→71→72→75→72% (200–320). Against the #382 stage-4–6 measurement (clears 32/35, level-4 48/46): clears and level-4 attainment recovered past the census dip on both ranges — the direction the semantic fixes predict, since the two largest (#370, #371) each removed systematic *over*-damage against the party (full damage on successful saves; full swarm damage while Bloodied). The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Coverage gaps | 24% of production code untested (`client/` 7.4k, `Console` 1.9k lines, of 38.7k total) — down from 41%: `tools/SrdExtract` (7.0k) gained its harness in F1 (#189's first slice); the clients are F5's remaining gap (#190, and the unfiled console-tests item) |
+| Coverage gaps | 24% of production code untested (`client/` 7.4k, `Console` 1.9k lines, of 38.7k total) — down from 41%: `tools/SrdExtract` (7.0k) gained its harness in F1 (#189's first slice); the clients are F5's remaining gap. The Godot client gained `tests/SRDCombat.Viewer.Tests` on 2026-08-26 (#190) — the log highlighter, the sprite metrics and the draw scale, every test knockout-verified — but its argument wiring and `PlayMode`'s own state are still pinned by nothing (#490), pending the seam #491/#473 own; the console client's 1.9k lines remain untested *and* unfiled |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
@@ -192,7 +192,10 @@ re-run; a property test that every generated encounter resolves.
 project's first slice, #189, to F1 as the span refactor's safety net, and the
 PlayMode refactor, #327, to F3's entry gate — the broader page-fixture harness still
 grows here.) Client behaviour
-tests grown from the probe harness (#190); console client tests (1.9k lines,
+tests grown from the probe harness (#190 — the test project landed 2026-08-26 with
+the reachable half: log colouring, sprite metrics, draw scale; the parts behind
+Godot statics wait on #491/#473's spec type, and #490 stays open for them);
+console client tests (1.9k lines,
 currently untested *and* unfiled); shared test-support project; xUnit content
 fixtures (the corpus is currently loaded 27 times; `Game.Tests` took 2m14s in the
 2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case

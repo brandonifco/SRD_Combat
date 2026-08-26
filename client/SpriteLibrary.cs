@@ -571,11 +571,26 @@ public sealed class SpriteLibrary
     /// is summarised by its *median* frame so that one lunging or crouching frame cannot
     /// set the size of the whole character.
     /// </remarks>
-    private static Figure Measure(string idlePath, string? walkPath, int frameSize)
-    {
-        var idle = FrameBoxes(idlePath);
-        var walk = walkPath is null ? [] : FrameBoxes(walkPath);
+    private static Figure Measure(string idlePath, string? walkPath, int frameSize) =>
+        Measure(FrameBoxes(idlePath), walkPath is null ? [] : FrameBoxes(walkPath), frameSize);
 
+    /// <summary>
+    /// <see cref="Measure(string, string?, int)"/> over boxes already read off the
+    /// sheets — the whole of the rule, with the file reading taken out.
+    /// </summary>
+    /// <remarks>
+    /// <b>This split exists so the rule can be tested (#190).</b> Decoding a PNG means
+    /// <c>Godot.Image</c>, which is a native object and unavailable outside a running
+    /// engine, so a measurement helper that takes a path can only ever be exercised by
+    /// the <c>--probe</c> loop. The boxes themselves are <see cref="Rect2I"/> — a plain
+    /// managed struct — so this half runs anywhere. The path-taking overload above is
+    /// the only caller in the client and does nothing but read.
+    /// </remarks>
+    internal static Figure Measure(
+        IReadOnlyList<Rect2I> idle,
+        IReadOnlyList<Rect2I> walk,
+        int frameSize)
+    {
         var standing = walk.Count > 0 && Median(walk, box => box.Size.Y) > Median(idle, box => box.Size.Y)
             ? walk
             : idle;
@@ -605,10 +620,19 @@ public sealed class SpriteLibrary
     /// that low (the Knights lie propped on an elbow) falls back to the fullest frame of
     /// the strip's second half, which skips the fade for the same reason.
     /// </remarks>
-    private static int RestingFrame(string deadPath, Figure figure)
-    {
-        var frames = FrameWeights(deadPath);
+    private static int RestingFrame(string deadPath, Figure figure) =>
+        RestingFrame(FrameWeights(deadPath), figure);
 
+    /// <summary>
+    /// <see cref="RestingFrame(string, Figure)"/> over frames already weighed — the
+    /// rule, with the file reading taken out. See that overload for the reading, and
+    /// <see cref="Measure(IReadOnlyList{Rect2I}, IReadOnlyList{Rect2I}, int)"/> for why
+    /// the split exists.
+    /// </summary>
+    internal static int RestingFrame(
+        IReadOnlyList<(int Index, int Height, int Pixels)> frames,
+        Figure figure)
+    {
         if (frames.Count == 0)
         {
             return 0;
@@ -634,18 +658,23 @@ public sealed class SpriteLibrary
     /// is a consistency fix, not a behaviour change, and there is no before/after to show
     /// for it.
     /// </remarks>
-    private static List<(int Index, int Height, int Pixels)> FrameWeights(string path)
+    private static List<(int Index, int Height, int Pixels)> FrameWeights(string path) =>
+        LoadImage(path) is { } image
+            ? FrameWeights(image.GetData(), image.GetWidth(), image.GetHeight())
+            : [];
+
+    /// <summary>
+    /// <see cref="FrameWeights(string)"/> over pixels already decoded — RGBA8, four
+    /// bytes to the pixel, <paramref name="width"/> pixels to the row. See
+    /// <see cref="Measure(IReadOnlyList{Rect2I}, IReadOnlyList{Rect2I}, int)"/> for why
+    /// the split exists.
+    /// </summary>
+    internal static List<(int Index, int Height, int Pixels)> FrameWeights(
+        byte[] data,
+        int width,
+        int frameSize)
     {
         var frames = new List<(int, int, int)>();
-
-        if (LoadImage(path) is not { } image)
-        {
-            return frames;
-        }
-
-        var data = image.GetData();
-        var width = image.GetWidth();
-        var frameSize = image.GetHeight();
 
         if (frameSize == 0)
         {
@@ -724,18 +753,20 @@ public sealed class SpriteLibrary
     /// shift by a few pixels for the same reason. The fix centres the one frame exactly
     /// where <see cref="LoadStrip"/> draws it, rather than rejecting it.
     /// </remarks>
-    private static List<Rect2I> FrameBoxes(string path)
+    private static List<Rect2I> FrameBoxes(string path) =>
+        LoadImage(path) is { } image
+            ? FrameBoxes(image.GetData(), image.GetWidth(), image.GetHeight())
+            : [];
+
+    /// <summary>
+    /// <see cref="FrameBoxes(string)"/> over pixels already decoded — RGBA8, four bytes
+    /// to the pixel, <paramref name="width"/> pixels to the row. See
+    /// <see cref="Measure(IReadOnlyList{Rect2I}, IReadOnlyList{Rect2I}, int)"/> for why
+    /// the split exists.
+    /// </summary>
+    internal static List<Rect2I> FrameBoxes(byte[] data, int width, int frameSize)
     {
         var boxes = new List<Rect2I>();
-
-        if (LoadImage(path) is not { } image)
-        {
-            return boxes;
-        }
-
-        var data = image.GetData();
-        var width = image.GetWidth();
-        var frameSize = image.GetHeight();
 
         if (frameSize == 0)
         {

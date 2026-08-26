@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests for the Godot client (#190). A plain `Microsoft.NET.Sdk` project, not a
+    `Godot.NET.Sdk` one. This assembly is run by `dotnet test`, never by the engine.
+
+    **What is reachable from here, measured rather than assumed.** Godot's *managed*
+    value types (`Color`, `Vector2`, `Rect2I` and the enums) are ordinary structs in
+    `GodotSharp.dll` and work anywhere. Types deriving from `GodotObject`/`RefCounted`
+    (`Image`, `Texture2D`, `InputEventKey`) are handles onto native objects: constructing
+    one outside a running engine does not throw an exception a test can catch, it
+    **terminates the test host process**, taking every other test in the run with it. A
+    type deriving from `Node` can still have its *static* members called, because the
+    type loads and its static fields initialise; that is what lets
+    `FightScreen.ScaleFor` be tested without a screen.
+
+    So the boundary this project holds to is: pure rules over managed types. Anything
+    needing a live scene (drawing, input, `SpriteLibrary.Load`'s file reading, a whole
+    turn played through `PlayMode`) stays with the client's own probe loop, which is a
+    real Godot process.
+
+    **The Godot source generators are removed below, deliberately.** Referencing the
+    viewer pulls them in transitively, and they are written for a Godot project: one
+    fails the build outright without `GodotProjectDir`, and another emits an entry point
+    that collides by name with the client's own `Main`. Neither has anything to
+    contribute to a test assembly (there are no `Node`-derived scripts here), so the
+    right answer is to take them out rather than to feed them a made-up project
+    directory. `GodotSharp.dll` itself is referenced as normal, which is all these tests
+    need.
+
+    **No content is loaded.** Every fixture is hand-authored, so this assembly adds
+    nothing to the 27 corpus loads #319 is about, and needs no `RepositoryPaths`: it is
+    not a fourth copy of the one #318 wants to consolidate.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\client\SRDCombat.Viewer.csproj" />
+  </ItemGroup>
+
+  <Target Name="RemoveGodotSourceGenerators" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Godot.SourceGenerators'" />
+    </ItemGroup>
+  </Target>
+
+</Project>
