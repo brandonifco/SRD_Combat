@@ -23,6 +23,15 @@ answers to the scope questions, verbatim in substance:
 3. **Both outputs** — play one scenario by hand, *and* run many headless over a seed
    range with a statistical summary.
 
+**A second round of answers, later on 2026-08-26**, closed the two questions this document
+had left open and ruled on its phase recommendation. They are folded in where they belong
+rather than listed here: the scenario file is **the UI's artifact only, never hand-edited**
+([§3](#3-the-interface-decision)); scenarios live in a **committed `scenarios/` directory**
+([§5a](#5a-where-scenarios-live-a-committed-scenarios-directory)); and the phase is
+**`phase:FI-instrument`** ([§14](#14-phase-placement--decided-phasefi-instrument)). Three
+judgement calls remain genuinely open and are **not** resolved by assumption anywhere in
+this document — they are listed in [§12](#12-judgement-calls--two-answered-three-still-open).
+
 This document is the spec. The implementation slices are filed as issues (listed in
 [§11](#11-slices-and-sequencing)); each carries its own acceptance criteria and
 measurement gate. Nothing here is implemented yet. The battlefield overhaul design
@@ -126,15 +135,18 @@ so it never becomes the expected path:
   which *plays* a scenario. More flags per axis is precisely what he rejected, and it is
   not what the sequencing below builds.
 
-**What I would ask him if I could ask once more:** *is the scenario file purely the UI's
-artifact, or does he expect to open one and edit it by hand?* That single answer decides
-whether the format stays strict machine JSON (this spec's assumption, because it matches
-every other serialized thing in this tree and because he declined the file interface) or
-earns a tolerant parser, a documented grammar and human-aimed validation errors. If the
-answer turns out to be "yes, by hand", the change is additive — the strict format stays
-and a lenient front end is filed on top — so nothing here is wasted either way. The
-question is flagged in [§12](#12-judgement-calls-reserved-for-brandon), not silently
-decided.
+**Asked and answered, 2026-08-26 — the format is decided, not assumed.** The one question
+this document originally left open was whether the scenario file is purely the UI's
+artifact or something Brandon expects to open in a text editor. **His answer: purely the
+artifact — he will not hand-edit one.** So the strict format above is now a decision with
+his answer behind it rather than a default the spec picked: no tolerant parser, no
+documented grammar, no human-aimed line-and-column diagnostics, and no hand-authoring
+guide. A pinned shape test is the whole of the format's documentation, exactly as
+`SavedRunShapeTests` is for a save.
+
+The decision costs nothing later: **a tolerant front end remains purely additive.** If he
+ever changes his mind, the strict record and its shape test stay exactly as they are and a
+lenient reader is filed on top of them — so committing to strict now forecloses nothing.
 
 **And the honest note about sequencing.** He chose the expensive option. The way an
 expensive option gets built without a long dark period is to build the value first and
@@ -188,6 +200,9 @@ overhaul slice lands — site, deployment formation, theme. Every field is nulla
 without a format break, exactly as `SavedRun`'s own stated rule for adding a field
 allows.
 
+**Notes.** What this scenario exists to show. Not decoration: it is what makes the
+committed directory's admission rule enforceable — see [§5a](#5a-where-scenarios-live-a-committed-scenarios-directory).
+
 **Provenance, not identity.** A scenario records the content fingerprint it was authored
 against and, optionally, one seed — the seed a capture came from. Neither is used to
 build anything: the fingerprint warns, the seed is a bookmark.
@@ -214,6 +229,54 @@ Three traps, each an acceptance criterion rather than a hope:
    the `AreaTargeting` model. (#355 already wants the run's own refusal demoted to a
    notice; these are the same argument arriving from two directions, and this document
    does not pre-empt that issue's decision.)
+
+## 5a. Where scenarios live: a committed `scenarios/` directory
+
+**Decided by Brandon, 2026-08-26**, over the alternative of a private user directory
+beside the save file. Scenarios are **shared artifacts**: versioned, diffable, quotable in
+a bug report, reviewable in a PR, and usable by agents and CI. That answer carries three
+consequences a user-directory answer would not have, and each is a slice's acceptance
+criterion rather than a note.
+
+**1. `.gitignore` must not swallow them.** #469 is open tonight to widen the save-file
+ignore from the exact name `srdcombat-save.json` to the `--save=<path>` family, and its
+own text names an unanchored pattern as the right shape. An unanchored widening is
+correct for saves and dangerous here: a committed `scenarios/` directory sitting under a
+tree that also ignores `*.json` byproducts is one careless pattern away from being
+invisible. Whoever takes #469 must verify that `scenarios/*.json` is tracked afterwards,
+and the check belongs in that issue, not in this one.
+
+**2. A committed scenario needs a reason to be committed.** Otherwise the directory rots
+into two hundred nameless files and nobody dares delete any of them. The rule, stated
+plainly:
+
+> **If you would cite it in an issue, commit it. Otherwise use `--spawn`.**
+
+A committed scenario asks a question the tree wants asked again — a regression fixture
+(*this fight was broken; here it is*), a balance probe cited in a PR body, or a
+demonstration of a shape the generator rarely produces (a warband, a `Surrounded` opening,
+a Huge body on a narrow board). "Let me look at two Ogres" is `--spawn`, which needs no
+file at all and already ships. To make the rule enforceable rather than aspirational,
+`BattleScenario` carries a **`Notes`** field: what this scenario exists to show. A
+committed scenario with an empty `Notes` is a review finding.
+
+**3. Drift against `data/srd` gets a better answer than a save's, because a committed
+scenario lives next to the content it names.** A save is on a player's disk and cannot be
+re-checked when the corpus changes, which is why #287 stamps a content version and
+`GauntletRun.Resume` refuses a mismatch. A committed scenario has the opposite property:
+CI runs on every change to `data/srd`, with the scenario right there. So the guard is a
+**test, not a version refusal** —
+
+> **Every scenario in `scenarios/` deserializes and resolves against the current content,
+> asserted by a test in the suite.**
+
+— which is this project's standing lesson ("write the validator that asserts the shape of
+what should have been found") pointed at the new directory. A regeneration that invalidates
+a committed scenario fails CI in the same PR that caused it, rather than being discovered
+months later by somebody opening the file. `ContentVersion` stays on the record as
+**provenance only**, reported as a notice ([§5](#5-the-scenario-model) trap 3); for a
+scenario *outside* the repo — a capture on somebody's disk — `ContentDrift.Require`'s
+per-id checks remain the guard, unchanged.
 
 ## 6. The generation contract: a scenario overrides draws, it never bypasses generation
 
@@ -360,7 +423,8 @@ So the ruling, with the reason attached rather than by blanket application:
 **Three notes for the steward and for #327's architect**, filed rather than left in prose:
 
 1. **The gate's wording should say "surface", not "modal surface"** — or the next new
-   screen walks past it the same way. A doctrine-wording finding, not a blocker.
+   screen walks past it the same way. A doctrine-wording finding, not a blocker; **filed
+   as #492**.
 2. **The builder makes the case for moving #327 sooner, not later** — it adds four
    surfaces to the tally the gate was priced on.
 3. **#327's numbers are stale, in the direction that strengthens it.** The issue and
@@ -433,17 +497,27 @@ called out separately because it may be the highest-value single feature here an
 no UI at all: Brandon plays a run, hits a fight that feels wrong, and saves *that fight*
 as a scenario to replay by hand and batch over 120 seeds.
 
-## 12. Judgement calls reserved for Brandon
+## 12. Judgement calls — two answered, three still open
 
-1. **Hand-editing.** Is the scenario file purely the UI's artifact, or does he expect to
-   open one and edit it? This spec assumes the former ([§3](#3-the-interface-decision));
-   the latter is additive if he wants it.
-2. **Where scenarios live.** A committed `scenarios/` directory in the tree (shareable,
-   diffable, quotable in an issue) or a user directory beside the save file (private
-   scratch)? This spec assumes a path argument with no opinion, and the UI defaults to a
-   user directory.
-3. **The library's size.** "Multitudes" — does he want a flat list, or tags/folders? The
-   spec assumes flat until it hurts.
+**Answered by Brandon, 2026-08-26:**
+
+1. ~~**Hand-editing.**~~ **No** — the scenario file is purely the UI's artifact; he will
+   not open one in a text editor. Strict machine JSON, pinned by a shape test, no tolerant
+   parser and no hand-authoring guide. Recorded as a decision in
+   [§3](#3-the-interface-decision), where the note that a lenient front end stays purely
+   additive also lives.
+2. ~~**Where scenarios live.**~~ **A committed `scenarios/` directory in the repo** —
+   versioned, diffable, reviewable, usable by agents and CI. Its three consequences
+   (the `.gitignore` hazard, the admission rule, and a CI test in place of a version
+   refusal) are worked through in
+   [§5a](#5a-where-scenarios-live-a-committed-scenarios-directory).
+
+**Still open — do not resolve these by assumption; they have not been put to him:**
+
+3. **The library's size.** "Multitudes" — a flat list, or tags and folders? The spec
+   assumes flat until it hurts. Now partly constrained by answer 2: a committed directory
+   with an admission rule ([§5a](#5a-where-scenarios-live-a-committed-scenarios-directory))
+   should stay small enough that flat works for a long time.
 4. **The pool axes in budgeted mode.** Exposing them lets a scenario ask what the ladder
    would look like with casters admitted (#312) — genuinely useful, and genuinely a way to
    produce a number about a game we do not ship. Is the labelled-header treatment
@@ -476,11 +550,29 @@ as a scenario to replay by hand and batch over 120 seeds.
   pre-empts the other.
 - **#190** (client behaviour tests) — S10–S12 land after #327 and should carry behaviour
   tests against its new structure, as #327's own criteria ask for.
+- **#491** (qc: `ScenarioArguments` should become an adapter over a spec type) — filed as
+  input to this document and answered by it: the type is `BattleScenario` (S1) and
+  `ScenarioArguments` becomes one of its adapters via `ResolveFight`'s overload (S2). Its
+  second criterion — no further flag joining the `static bool TryParse…` shape — holds:
+  this surface adds exactly one flag, and it parses a path rather than an axis.
+- **#469** (the save-file `.gitignore` pattern is too narrow) — must be widened without
+  swallowing the committed `scenarios/` directory. See
+  [§5a](#5a-where-scenarios-live-a-committed-scenarios-directory) consequence 1; the check
+  belongs in #469.
+- **#492** (the F3 gate's wording) — the doctrine finding from
+  [§9](#9-the-327-gate-and-why-it-applies-to-a-thing-it-does-not-name), filed for the
+  steward.
 
-## 14. Phase placement — a recommendation, for the steward to rule on
+## 14. Phase placement — decided: `phase:FI-instrument`
 
-**Recommendation: a new designation, `phase:FI-instrument`, running alongside F2–F4 the
-way F5 does, with individual slices pulled forward by the work that needs them.**
+**Decided by Brandon, 2026-08-26**, taking this section's recommendation over its
+fallback: **a new designation, `phase:FI-instrument`, running alongside F2–F4 the way F5
+does, with individual slices pulled forward by the work that needs them.** The label is
+minted and every slice carries it.
+
+The reasoning is kept below rather than replaced by the ruling, because the *why* is the
+part that has to survive — in particular the last bullet, which is the one that will be
+tested when a release is near.
 
 The reasoning, and the alternatives rejected:
 
@@ -505,8 +597,16 @@ than leaving twelve issues unlabelled or mislabelled, and lets the steward pull 
 forward now — where they immediately serve F2's battlefield slices and F4's pool
 questions — while S10–S12 wait for #327 in F3's window.
 
-**If the steward prefers not to mint a phase**, the fallback with the least distortion is:
-S1–S9 labelled `phase:F4-depth` (the phase whose questions they answer) and S10–S12
-labelled `phase:F3-run-game` (the phase whose gate they wait behind). That fallback is
-worse — it puts a tool inside two content phases' exit criteria — but it is honest about
-the sequencing, which the single-phase alternatives are not.
+**The fallback, recorded as not taken:** S1–S9 under `phase:F4-depth` (the phase whose
+questions they answer) and S10–S12 under `phase:F3-run-game` (the phase whose gate they
+wait behind). Worse, because it puts a tool inside two content phases' exit criteria — but
+honest about the sequencing, which the single-phase alternatives are not. Kept here so a
+later reader knows what was weighed.
+
+**The obligation the designation carries.** A phase of its own is a licence to be pulled
+forward, not a licence to grow. Nothing in the Definition of Finished requires a battle
+builder, so `phase:FI-instrument` must never appear on the critical path to v1.0: if a
+release is near and instrument work is unfinished, the instrument waits. Every slice here
+is justified by the work it serves — F2's battlefield questions, F4's pool questions,
+Brandon's own played runs — and a slice that cannot name the work it serves should be
+closed rather than scheduled.
