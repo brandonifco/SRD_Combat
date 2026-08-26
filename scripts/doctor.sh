@@ -5,10 +5,12 @@
 # This is the "write the validator that asserts the shape of what should have been found"
 # lesson from the extraction pipeline, pointed at the development environment instead of
 # the SRD. Every environment problem this project has hit was silent: a machine with no
-# .NET 8 SDK still built green locally, because `global.json` rolled forward to .NET 10
-# while CI compiled the same source on 8.0.x. Prose in CLAUDE.md cannot catch that — it
-# describes one machine at one moment. This script answers for whichever machine you are
-# actually sitting at.
+# .NET 8 SDK still built green locally, because `global.json` used to roll forward to
+# whatever SDK was newest installed — .NET 10 on this machine, and (until #428's second
+# half) on CI's runner too, even though CI pointed `setup-dotnet` at this exact pin.
+# `global.json` now sets `rollForward: disable`, so that silent substitution can no
+# longer happen anywhere — but prose still cannot catch a machine drifting from the pin
+# on its own. This script answers for whichever machine you are actually sitting at.
 #
 # Exit code is 0 when nothing is broken, 1 when something will bite you.
 # Warnings do not fail: they mark things that only matter for specific tasks.
@@ -52,15 +54,16 @@ fi
 section '.NET SDK'
 
 # The version CI installs, and therefore the only compiler whose verdict actually gates a
-# merge. Read from the workflow rather than hardcoded, so the two cannot drift apart.
-ci_version="$(grep -hoP 'dotnet-version:\s*\K[0-9]+\.[0-9]+\.[0-9x]+' \
-    "$REPO_ROOT"/.github/workflows/*.yml 2>/dev/null | head -1)"
-ci_major="${ci_version%%.*}"
+# merge. CI's setup-dotnet step reads `global-json-file: global.json`, and since #428's
+# closing fix set `rollForward: disable`, global.json's exact patch is the *only* SDK
+# either CI or a correct local build will resolve — no substitute major, minor, or even
+# patch satisfies it. Read it here rather than hardcoding, so the two cannot drift apart.
+ci_version="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$REPO_ROOT/global.json" 2>/dev/null)"
 
 if [[ -z "$ci_version" ]]; then
-    warn 'Could not read dotnet-version from .github/workflows — skipping the CI comparison.'
+    warn 'Could not read the SDK version from global.json — skipping the CI comparison.'
 else
-    note "CI builds on $ci_version"
+    note "CI and a correct local build both resolve exactly $ci_version (rollForward: disable accepts no substitute)"
 fi
 
 if ! command -v dotnet >/dev/null 2>&1; then
@@ -84,34 +87,34 @@ else
     else
         note "Installed SDKs: ${sdks[*]}"
 
-        if [[ -n "$ci_major" ]]; then
-            matching=()
+        if [[ -n "$ci_version" ]]; then
+            has_exact=0
             for sdk in "${sdks[@]}"; do
-                [[ "${sdk%%.*}" == "$ci_major" ]] && matching+=("$sdk")
+                [[ "$sdk" == "$ci_version" ]] && has_exact=1
             done
 
-            if (( ${#matching[@]} > 0 )); then
-                pass "An SDK matching CI's major version is installed: ${matching[*]}"
+            if (( has_exact )); then
+                pass "The exact pinned SDK is installed: $ci_version"
             else
-                fail "No .NET $ci_major SDK installed, but CI builds on $ci_version."
-                note 'Your local build uses a different compiler and analyzers than the'
-                note 'one that gates your PR. A green build here does not mean green CI.'
+                fail "SDK $ci_version is not installed, and rollForward: disable accepts no substitute — not even a newer patch of 8.0."
+                note 'This is not just a different compiler and analyzers: with rollForward disabled,'
+                note '`dotnet` will refuse to resolve an SDK for this repository at all.'
                 note 'Fix: `mise install` in the repository root.'
             fi
         fi
     fi
 
-    # What the SDK actually selects here, after global.json's roll-forward is applied.
-    # This is the number that matters, and it is not necessarily any of the above.
+    # What the SDK actually selects here. With rollForward: disable there is no roll-forward
+    # left to silently apply — this is either exactly the pin or a hard resolution failure.
     if selected="$(cd "$REPO_ROOT" && dotnet --version 2>/dev/null)"; then
-        if [[ -n "$ci_major" && "${selected%%.*}" != "$ci_major" ]]; then
-            fail "This repository resolves to SDK $selected — a different major than CI's $ci_version."
+        if [[ -n "$ci_version" && "$selected" != "$ci_version" ]]; then
+            fail "This repository resolves to SDK $selected, not the pinned $ci_version."
         else
             pass "This repository resolves to SDK $selected"
         fi
     else
         fail 'dotnet could not resolve an SDK for this repository.'
-        note 'Usually means global.json pins a version no installed SDK can satisfy.'
+        note 'global.json pins an exact version with rollForward: disable, and no installed SDK matches it.'
     fi
 fi
 
@@ -123,9 +126,10 @@ if [[ -f "$REPO_ROOT/global.json" ]]; then
     roll="$(grep -oP '"rollForward"\s*:\s*"\K[^"]+' "$REPO_ROOT/global.json" 2>/dev/null)"
     pass "global.json pins $pinned (rollForward: ${roll:-default})"
 
-    if [[ "$roll" == 'latestMajor' ]]; then
-        warn 'rollForward is latestMajor: a machine missing the pinned SDK silently builds on a newer major.'
-        note 'That is exactly how this repository came to build on .NET 10 while CI used 8.0.x.'
+    if [[ "$roll" != 'disable' ]]; then
+        warn "rollForward is ${roll:-default}, not disable: a machine missing the pinned SDK can silently build on a substitute instead of failing."
+        note 'This project sets rollForward: disable deliberately (#428) — that is exactly how it'
+        note 'came to build on .NET 10 while CI, reading the same pin, built on 10.0.400 too.'
     fi
 else
     warn 'No global.json — the SDK version is whatever happens to be installed.'

@@ -11,15 +11,26 @@
 # reports the pinned version while `dotnet` resolves to whatever is first on PATH.
 
 [tools]
-# Pinned to match CI exactly. `.github/workflows` installs 8.0.x, and `Directory.Build.props`
-# targets net8.0 — so building on anything else means the compiler and analyzers that
-# gate a merge are not the ones on your desk. That has already cost this project a
-# CI-only failure (#27), where SDK 8.0.129's compiler rejected a collection-expression
-# call that CI's newer 8.0.x accepted.
+# Pinned to match CI exactly. `.github/workflows` points `setup-dotnet` at this file's
+# sibling `global.json` (`global-json-file: global.json`, not a floating `8.0.x`), and
+# `Directory.Build.props` targets net8.0 — so building on anything else means the
+# compiler and analyzers that gate a merge are not the ones on your desk.
 #
-# `global.json` still pins 8.0.129 with `rollForward: latestMajor`, which is what lets a
-# machine with no .NET 8 installed silently build on .NET 10. mise removes the need for
-# that roll-forward to ever fire.
+# Before #428, CI installed a floating `8.0.x` while this pin and `global.json` named an
+# exact patch, so the two could drift apart silently in either direction: #27 was CI
+# accepting a collection-expression call that SDK 8.0.129's compiler rejected, and #428
+# was the opposite — `main` drifted past the pin while floating CI stayed green.
+# Pointing `setup-dotnet` at `global.json` alone did not fix this: with
+# `rollForward: latestMajor`, `setup-dotnet` treats "read the pin" as "install the
+# newest LTS channel available" (that is what `latestMajor` means to both the action and
+# the .NET muxer), and the runner image preinstalls SDKs through .NET 10 — so CI kept
+# resolving whatever was newest, silently, even while reading this exact file.
+#
+# `global.json` now pins 8.0.129 with `rollForward: disable`: no other installed SDK,
+# older or newer, satisfies the pin, on the runner or on your desk. The CI workflow also
+# runs a "Verify SDK pin" step right after every `setup-dotnet` step that fails the job
+# outright if `dotnet --version` differs from `global.json`'s `version` field by even a
+# patch — the parity claim is enforced by a CI step now, not asserted in a comment.
 #
 # NOTE: .NET 8 is LTS through November 2026. When the project moves to .NET 10, this
 # line, `global.json`, `Directory.Build.props` and the CI workflow all change together.

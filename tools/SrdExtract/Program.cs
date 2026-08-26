@@ -347,7 +347,7 @@ static int RunCensus(string contentDirectory, string outputPath)
             {
                 var normalised = string.Join(
                     ' ',
-                    clause.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries));
+                    clause.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries));
                 frequency[normalised] = frequency.GetValueOrDefault(normalised) + 1;
 
                 lines.Add($"  residue: {clause}");
