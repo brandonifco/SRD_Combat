@@ -1,18 +1,42 @@
 name: .NET Build and Test
 
+# #485: push used to trigger on every branch prefix (fix/**, feature/**, etc.) as
+# well as on pull_request to main. Every branch in this project becomes a PR, and
+# every push after that point fired both events — four full [Debug, Release] test
+# runs per commit instead of two (measured on PR #470: runs 33009819026 and
+# 33009787739, same commit, one push event and one pull_request event).
+#
+# Chosen fix: restrict `push` to `main` only, and let `pull_request` cover every
+# branch once its PR exists. The alternative — a concurrency group keyed to
+# collide the push and pull_request runs for the same SHA — was rejected: getting
+# that key exactly right (event-dependent, still not double-cancelling itself) is
+# subtler than restricting the trigger, and the stated tradeoff is easier to
+# reason about later.
+#
+# Stated tradeoff (acceptance criterion, not an oversight): a branch pushed
+# *before* its PR is opened gets no CI until the PR exists. That is a real and
+# common sequence here (branch, push, then `gh pr create`) — those early pushes
+# are unverified until the PR opens pull_request's first run. Once the PR exists,
+# every subsequent push is covered exactly once per configuration.
 on:
   push:
     branches:
       - main
-      - "chore/**"
-      - "refactor/**"
-      - "feature/**"
-      - "fix/**"
-      - "test/**"
-      - "docs/**"
   pull_request:
     branches:
       - main
+
+# Dedupe rapid successive pushes to the same PR (or the same main commit) so a
+# superseded run stops burning a runner, without ever cancelling a `main` build:
+# - pull_request runs group by PR number, so pushing again while a run for that
+#   PR is in flight cancels the stale one.
+# - push runs (main only, per the trigger restriction above) group by the commit
+#   SHA, which is unique per push, and cancel-in-progress is off for push events
+#   — so a `main` build is never cancelled by anything, and two different main
+#   commits never collide in the same group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-and-test:
