@@ -227,7 +227,7 @@ public partial class PlayMode : FightScreen
             {
                 fight = ResolveFight(_seed);
             }
-            catch (InvalidOperationException refusal)
+            catch (RosterRefusedException refusal)
             {
                 // The same screen a bad save gets: the reason, on screen, and nothing
                 // started — a refusal printed only to a console nobody launched from

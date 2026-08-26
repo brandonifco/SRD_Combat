@@ -65,7 +65,7 @@ public partial class WatchMode : FightScreen
         {
             fight = ResolveFight(seed);
         }
-        catch (InvalidOperationException refusal)
+        catch (RosterRefusedException refusal)
         {
             // No snapshots and the reason in the heading — the draw path already
             // guards the empty list, so the refusal is the whole screen.
