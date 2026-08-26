@@ -507,8 +507,12 @@ check: the machine's .NET has flipped four times, and `global.json`'s roll-forwa
 means a green local build can compile on a different major than CI gates
 (`.mise.toml` pins the SDK; `mise install` is the whole setup, and the
 `mise activate` line in the shell profile is the step that actually does the work).
-SDK 8.0.129's early compiler rejects syntax newer 8.0.x accepts (#27) — local green
-does not prove CI green. `dotnet new sln` under SDK 10 emits `.slnx`, which .NET 8
+SDK 8.0.129's early compiler rejects syntax newer 8.0.x accepts (#27) — that is why
+CI's `setup-dotnet` step reads `global-json-file: global.json` rather than a floating
+`dotnet-version: 8.0.x` (#428, after `main` drifted past the pin while CI, still on a
+floating version, stayed green): parity between the pin and CI is now enforced by
+construction, so local green under the pin predicts CI green. `dotnet new sln` under
+SDK 10 emits `.slnx`, which .NET 8
 cannot read (`--format sln`), and templates write `net10.0` properties that override
 `Directory.Build.props` — strip them. The SRD PDF lives at
 `~/Downloads/SRD_CC_v5.2.1.pdf`, is never committed, and only `tools/SrdExtract`

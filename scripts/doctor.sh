@@ -52,13 +52,14 @@ fi
 section '.NET SDK'
 
 # The version CI installs, and therefore the only compiler whose verdict actually gates a
-# merge. Read from the workflow rather than hardcoded, so the two cannot drift apart.
-ci_version="$(grep -hoP 'dotnet-version:\s*\K[0-9]+\.[0-9]+\.[0-9x]+' \
-    "$REPO_ROOT"/.github/workflows/*.yml 2>/dev/null | head -1)"
+# merge. Since #428, CI's setup-dotnet step reads `global-json-file: global.json` rather
+# than a floating `dotnet-version: 8.0.x`, so global.json is now the one place this can be
+# read from — read it here rather than hardcoding, so the two cannot drift apart.
+ci_version="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$REPO_ROOT/global.json" 2>/dev/null)"
 ci_major="${ci_version%%.*}"
 
 if [[ -z "$ci_version" ]]; then
-    warn 'Could not read dotnet-version from .github/workflows — skipping the CI comparison.'
+    warn 'Could not read the SDK version from global.json — skipping the CI comparison.'
 else
     note "CI builds on $ci_version"
 fi

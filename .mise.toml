@@ -11,11 +11,16 @@
 # reports the pinned version while `dotnet` resolves to whatever is first on PATH.
 
 [tools]
-# Pinned to match CI exactly. `.github/workflows` installs 8.0.x, and `Directory.Build.props`
-# targets net8.0 — so building on anything else means the compiler and analyzers that
-# gate a merge are not the ones on your desk. That has already cost this project a
-# CI-only failure (#27), where SDK 8.0.129's compiler rejected a collection-expression
-# call that CI's newer 8.0.x accepted.
+# Pinned to match CI exactly. `.github/workflows` installs whatever SDK version this
+# file's sibling `global.json` names (`global-json-file: global.json`, not a floating
+# `8.0.x`), and `Directory.Build.props` targets net8.0 — so building on anything else
+# means the compiler and analyzers that gate a merge are not the ones on your desk.
+# Before #428, CI installed a floating `8.0.x` while this pin and `global.json` named
+# an exact patch, so the two could drift apart silently in either direction: #27 was CI
+# accepting a collection-expression call that SDK 8.0.129's compiler rejected, and #428
+# was the opposite — `main` drifted past the pin while floating CI stayed green. Reading
+# the pin from `global.json` makes that drift impossible by construction: code the
+# pinned compiler rejects can never merge green.
 #
 # `global.json` still pins 8.0.129 with `rollForward: latestMajor`, which is what lets a
 # machine with no .NET 8 installed silently build on .NET 10. mise removes the need for
