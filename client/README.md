@@ -234,7 +234,11 @@ floating in the middle of its image hovers above the ground.
 **Drawn facing right.** The screen mirrors it when it should look left, so art drawn
 facing left comes out backwards — a monster squared up to the party gets flipped away
 from them. Flip it once when you install it rather than teaching the screen about
-exceptions.
+exceptions. As of #457, "flip it once when you install it" is no longer a step someone
+has to remember by hand: `tools/asset_pipeline/master_to_sprite.py`'s `MASTER_FACING`
+table declares which masters are painted facing left, and the pipeline mirrors exactly
+those, once, at generation — never on the master file itself, and never guessed from
+pixels. A stem absent from the table is assumed right-facing, the common case.
 
 **Check the facing at 3x or larger, or by rendering it.** Judging a 64-pixel animal from
 a thumbnail is unreliable, and two of the first batch went in backwards on exactly that
@@ -242,7 +246,19 @@ mistake — a Dire Wolf and a Giant Hyena, both side-on quadrupeds, both read th
 round until a player said the wolf was facing away. Most of the set is front-facing,
 where the flip does not matter; it is the side-on animals that bite. `RestingFacesLeft`
 and the mirroring were correct throughout — the asset was simply backwards, which is
-worth remembering before going to debug the code.
+worth remembering before going to debug the code. #457's full audit found the same bug
+in fifteen more side-on paintings (the Ogre and Goblin Warrior are the two Brandon
+actually caught in play) and confirmed it as a habit rather than a one-off — Brandon
+tends to paint a side-on creature facing left, and only Dire Wolf and Giant Hyena had
+ever been caught and hand-corrected before `MASTER_FACING` existed to do it
+mechanically. Giant Hyena, Axe Beak, Owlbear, Giant Bat and Winter Wolf were already
+flipped by hand at the shipped-sprite level before this table existed; each has a
+master, so each is declared "left" in `MASTER_FACING` anyway, so a future regeneration
+keeps producing the same, already-correct facing rather than reverting to the raw
+painting. Dire Wolf has no master file to key a declaration by (one of eleven shipped
+sheets with none — a separate, pre-existing gap #457 only noted in passing) and stays
+correct only because its shipped sheet was hand-flipped directly; it cannot go through
+this pipeline until a master exists for it.
 
 **Stature is drawn, not normalised — worth knowing, yours to decide.** `NominalStature`
 is 64 and the board uses one shared pixel scale, so a figure drawn taller simply *is*

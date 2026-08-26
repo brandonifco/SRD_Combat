@@ -2,9 +2,15 @@
 """master_to_sprite.py — the committed master-to-sprite pipeline (issue #294).
 
 Turns one of Brandon's full-resolution paintings in ``client/assets/masters/``
-into a sprite frame the client can ship, by four mechanical steps applied in
+into a sprite frame the client can ship, by five mechanical steps applied in
 order:
 
+    0. facing    — a master painted facing left is mirrored so the emitted
+                   sheet faces right, like every Craftpix pack and every
+                   other hand-drawn sheet (issue #457). Declared per master
+                   in ``MASTER_FACING`` below, never inferred from pixels and
+                   never done to the master file itself — see that table's
+                   own comment for the reasoning and the audit it came from.
     1. crop      — trim to the opaque bounding box (transparent margin gone,
                    feet land on the new canvas's bottom edge, per the
                    client's own "feet on the bottom edge" convention).
@@ -21,6 +27,14 @@ order:
     4. de-grain  — an isolated pixel (one that shares its colour with none of
                    its neighbours, where the neighbourhood has a clear
                    majority) is folded into that majority colour.
+
+Facing commutes with every step after it — a horizontal mirror does not
+change a bounding box's area, a box filter's or unsharp pass's result, a
+median-cut fit (pixels, not positions, feed it), or the 3x3-neighbourhood
+de-grain majority (the neighbourhood is symmetric under a horizontal flip).
+It is applied first anyway, immediately after the master is opened, so it
+reads as what it is — a correction to the *source* — rather than something
+entangled with cropping or colour.
 
 This script never invents a palette and never clusters across frames. That
 second point is the whole lesson of PR #238 (merged, then reverted at
@@ -245,6 +259,92 @@ SPRITE_TARGETS: dict[str, dict[str, int]] = {
     # here, never as a one-off flag on someone's command line, per the
     # issue's "parameters in the script not in anyone's head" criterion.
 }
+
+# A master's native facing, as Brandon actually painted it — filled in only
+# by looking at the painting (issue #457's own acceptance criterion: no
+# heuristic ever guesses this from pixels). The client assumes every sheet
+# it loads faces right — the Craftpix convention — and mirrors a monster's
+# sheet at rest so it faces the party (`RestingFacesLeft` in
+# client/FightScreen.cs; party art is never mirrored, so it must be
+# right-facing to begin with). A master painted facing left ships backwards
+# unless this pipeline mirrors it once, here, at generation.
+#
+# Absent from this table means "painted facing right" — the common case —
+# and is never written down for that reason; only "left" is ever a real
+# entry, validated below so a typo lands as a loud error rather than a
+# silently-ignored key.
+#
+# #457's audit (visual, one master at a time, recorded in that issue's PR
+# body) found two populations among the side-on paintings — front-facing
+# poses (most humanoids, the swarms, the sessile plants and oozes) have no
+# meaningful facing and are never listed — and confirmed the bug is
+# systemic rather than a one-off: Brandon draws a side-on creature facing
+# left by habit, and only two of them (Dire Wolf, Giant Hyena) were ever
+# caught and hand-corrected before this table existed (client/README.md's
+# "two of the first batch went in backwards" note). Giant Hyena, Axe Beak,
+# Owlbear, Winter Wolf and Giant Bat are painted left but already ship
+# facing right — someone flipped the shipped sheet by hand once, before
+# this pipeline could do it at generation — so they are listed here for
+# every *future* regeneration to keep doing what the hand fix already did,
+# without this PR re-touching their currently-correct shipped sheets (no
+# visible change to justify a before/after for those five).
+MASTER_FACING: dict[str, str] = {
+    "ogre": "left",
+    "goblin_warrior": "left",
+    "ankheg": "left",
+    "giant_fire_beetle": "left",
+    "giant_lizard": "left",
+    "giant_rat": "left",
+    "giant_vulture": "left",
+    "giant_centipede": "left",
+    "centaur": "left",
+    "hippogriff": "left",
+    "manticore": "left",
+    "worg": "left",
+    "black_dragon_wyrmling": "left",
+    "blue_dragon_wyrmling": "left",
+    "green_dragon_wyrmling": "left",
+    "red_dragon_wyrmling": "left",
+    "white_dragon_wyrmling": "left",
+    # Already hand-corrected in the shipped sheet (see the note above) —
+    # declared so a future regeneration reproduces the same, already-right
+    # facing rather than reverting to the master's raw left-facing paint.
+    "giant_hyena": "left",
+    "axe_beak": "left",
+    "owlbear": "left",
+    "winter_wolf": "left",
+    "giant_bat": "left",
+}
+
+_MASTER_FACING_VALUES = {"left", "right"}
+
+
+def _validate_facing_table() -> None:
+    bad = {stem: facing for stem, facing in MASTER_FACING.items() if facing not in _MASTER_FACING_VALUES}
+    if bad:
+        raise ValueError(
+            f"MASTER_FACING has unrecognised facing value(s): {bad} — only "
+            f"{sorted(_MASTER_FACING_VALUES)} are valid. A right-facing "
+            f"master is never listed at all (see the table's own comment); "
+            f"this is not a place for a third state."
+        )
+
+
+_validate_facing_table()
+
+
+def apply_facing(image: Image.Image, stem: str) -> Image.Image:
+    """Mirrors a master painted facing left so the emitted sheet faces
+    right — see ``MASTER_FACING``'s own comment for the convention and the
+    audit behind it. A stem absent from the table is assumed already
+    right-facing (the common case) and is returned unchanged."""
+
+    return (
+        image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        if MASTER_FACING.get(stem, "right") == "left"
+        else image
+    )
+
 
 # Terrain's analog of SPRITE_TARGETS, keyed by filename (terrain tiles are
 # addressed by path, not by a master stem — see process_terrain). No crop
@@ -840,6 +940,7 @@ def process_master(
         )
 
     image = Image.open(source_path).convert("RGBA")
+    image = apply_facing(image, stem)
     image = crop_to_opaque(image, margin=resolved["crop_margin"])
     image = staged_downscale(image, resolved["target_height"])
     image = harden_alpha(image)
