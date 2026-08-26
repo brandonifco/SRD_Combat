@@ -99,7 +99,7 @@ public static class MonsterDoctrine
         var inReach = flanked
             .Where(enemy => actor.Stats.Attacks.Any(attack =>
                 attack.CanReach(actor.DistanceFeetTo(enemy)))
-                && CoverRules.Between(encounter.Battlefield, actor.Position, enemy.Position, encounter.Combatants)
+                && CoverRules.AgainstSpace(encounter.Battlefield, actor.Space, enemy.Space, encounter.Combatants)
                     != CoverDegree.Total)
             .ToArray();
 

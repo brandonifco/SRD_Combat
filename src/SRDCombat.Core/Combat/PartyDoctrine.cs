@@ -463,7 +463,7 @@ public static class PartyDoctrine
 
         var distance = actor.DistanceFeetTo(focus);
         var attackableNow = actor.Stats.Attacks.Any(attack => attack.CanReach(distance))
-            && CoverRules.Between(encounter.Battlefield, actor.Position, focus.Position, encounter.Combatants)
+            && CoverRules.AgainstSpace(encounter.Battlefield, actor.Space, focus.Space, encounter.Combatants)
                 != CoverDegree.Total;
 
         if (attackableNow)

@@ -123,7 +123,7 @@ public sealed partial class Encounter
             && !spell.IsSelfRanged
             && (spell.IsSpellAttack || spell.Heal is not null || spell.Revival is not null
                 || spell.Save is { Area: null })
-            && CoverRules.Between(Battlefield, caster.Position, target.Position, _combatants) == CoverDegree.Total)
+            && CoverRules.AgainstSpace(Battlefield, caster.Space, target.Space, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "spell.total_cover",
@@ -155,7 +155,12 @@ public sealed partial class Encounter
                     $"{target.Name} has been dead longer than the minute {spell.Name} allows.");
             }
 
-            if (_combatants.Any(other => other != target && !other.IsDead && other.Position == target.Position))
+            // Overlap rather than an equal position: a revived creature needs its whole
+            // space back, and a Large body standing across one corner of where it fell
+            // is as much in the way as somebody on the square itself. At one square per
+            // creature this is the same comparison it replaces.
+            if (_combatants.Any(other =>
+                other != target && !other.IsDead && other.Space.Overlaps(target.Space)))
             {
                 return new ActionRefusal(
                     "spell.no_room_to_stand",
@@ -602,11 +607,24 @@ public sealed partial class Encounter
             save.AppliedConditions.Where(ConditionRules.CanBeImposed).ToArray());
     }
 
+    /// <summary>Everyone an area catches.</summary>
+    /// <remarks>
+    /// <b>A creature is in an area if any square of its space is</b> — a stated reading
+    /// (#429), because print defines an area by the locations it covers and never by
+    /// creature spaces. The alternative readings are both worse: requiring the whole body
+    /// would let a Fireball wash over three quarters of an Ogre and do nothing, and
+    /// asking only about the anchor square would make which corner of a body the area
+    /// caught decide whether the creature was in it at all — the occupies-but-anchored
+    /// reading this work exists to end. At one square per creature it is the same test as
+    /// asking about the position.
+    /// </remarks>
     private IReadOnlyList<Combatant> CreaturesIn(IReadOnlyList<GridPosition> squares)
     {
         var covered = squares.ToHashSet();
 
-        return _combatants.Where(combatant => combatant.IsActive && covered.Contains(combatant.Position)).ToArray();
+        return _combatants
+            .Where(combatant => combatant.IsActive && combatant.Space.Squares().Any(covered.Contains))
+            .ToArray();
     }
 
     /// <summary>

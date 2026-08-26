@@ -63,7 +63,54 @@ public enum CoverDegree
 /// </list>
 /// <para>
 /// The attacker's and target's own squares never provide cover: the segment starts and
-/// ends in their interiors, and "behind" needs something in between.
+/// ends in their interiors, and "behind" needs something in between. Once a creature can
+/// stand in several squares that means its whole <em>space</em>, for the printed reason in
+/// the next paragraph's third bullet.
+/// </para>
+/// <para>
+/// <b>Between two spaces, an attack resolves along the best clear line — a stated
+/// interpretation</b> (#429; designer ruling, 2026-08-25). <see cref="AgainstSpace"/> runs
+/// the computation above for every pair of attacker square and target square, keeps the
+/// degree most favourable to the attacker, and lets neither party's own squares intervene.
+/// Total Cover refuses the targeting only when <em>every</em> pair is totally covered. One
+/// rule, no anchors on either side — the same space-to-space geometry the Ranges sentence
+/// fixes for distance.
+/// </para>
+/// <para>
+/// It is an interpretation rather than a divergence because <b>SRD 5.2.1 prints no
+/// cover-geometry procedure at all</b> — the 2014 corner-picking method was not carried
+/// into this document — so there is no printed sentence to contradict and the grid has to
+/// be given a method, exactly as <see cref="AreaTargeting"/> is. Three printed things fix
+/// which method:
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <b>Ranges is symmetric.</b> "Count squares from a square adjacent to one of them and
+/// stop counting in the space of the other one." Either party may be the counting start
+/// and neither has a privileged anchor — the same sentence that forbids anchored distance,
+/// so an anchored cover origin re-imports the identical contradiction. An Ogre whose reach
+/// is measured from its whole space but whose cover line is judged from one corner of it
+/// would come out "in reach but covered" while the near shoulder of its own body plainly
+/// holds the clean line: a half-anchored rule, which is the shape of the Goblin bug.
+/// </item>
+/// <item>
+/// <b>"A target can benefit from cover only when an attack or other effect originates on
+/// the opposite side of the cover."</b> The attack originates from the attacker, and the
+/// attacker <em>is</em> its whole space — "a creature's space is the area that it
+/// effectively controls in combat and the area it needs to fight effectively". If any
+/// square of that space is not on the opposite side of the cover, the attack can originate
+/// there, which is exactly the most-favourable evaluation.
+/// </item>
+/// <item>
+/// <b>The Half Cover row reads "another creature or an object".</b> A creature is never an
+/// obstacle to its own attack, and a target's own squares are what is being hit rather
+/// than what intervenes — so neither space contributes cover against the attack between
+/// them, and a Large creature does not take cover behind its own shoulder.
+/// </item>
+/// </list>
+/// <para>
+/// A multi-square creature as a cover <em>source</em> needs no new rule: all of its squares
+/// feed the computation, so it obstructs whatever its body obstructs.
 /// </para>
 /// </remarks>
 public static class CoverRules
@@ -102,18 +149,71 @@ public static class CoverRules
         Battlefield field,
         GridPosition origin,
         GridPosition target,
+        IReadOnlyCollection<Combatant>? creatures = null) =>
+        AgainstSpace(field, CreatureSpace.Of(origin), CreatureSpace.Of(target), creatures);
+
+    /// <summary>
+    /// The degree of cover a creature's whole space has against an effect originating in
+    /// another creature's whole space — the most favourable degree the attacker can find
+    /// between the two bodies. See the reading on the class.
+    /// </summary>
+    /// <param name="creatures">
+    /// Everyone on the field, when the caller has a field to offer — a living creature
+    /// the line crosses grants Half Cover. Null (a bare-geometry unit test) reads only
+    /// the terrain. Neither space's own squares count, whoever stands in them.
+    /// </param>
+    public static CoverDegree AgainstSpace(
+        Battlefield field,
+        CreatureSpace origin,
+        CreatureSpace target,
         IReadOnlyCollection<Combatant>? creatures = null)
     {
         ArgumentNullException.ThrowIfNull(field);
 
+        var occupied = creatures is null
+            ? null
+            : creatures
+                .Where(creature => !creature.IsDead)
+                .SelectMany(creature => creature.Space.Squares())
+                .ToHashSet();
+
+        var best = CoverDegree.Total;
+
+        foreach (var from in origin.Squares())
+        {
+            foreach (var to in target.Squares())
+            {
+                var degree = Along(field, from, to, occupied, origin, target);
+
+                if (degree < best)
+                {
+                    best = degree;
+                }
+
+                // Nothing beats a clean line, so there is no point looking for one twice.
+                if (best == CoverDegree.None)
+                {
+                    return best;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>The degree of cover along one centre-to-centre line.</summary>
+    private static CoverDegree Along(
+        Battlefield field,
+        GridPosition origin,
+        GridPosition target,
+        HashSet<GridPosition>? occupied,
+        CreatureSpace originSpace,
+        CreatureSpace targetSpace)
+    {
         if (origin == target)
         {
             return CoverDegree.None;
         }
-
-        var occupied = creatures is null
-            ? null
-            : creatures.Where(creature => !creature.IsDead).Select(creature => creature.Position).ToHashSet();
 
         var lowObstaclesCrossed = 0;
         var creatureCrossed = false;
@@ -129,7 +229,11 @@ public static class CoverRules
             {
                 var square = new GridPosition(x, y);
 
-                if (square == origin || square == target || !SegmentCrossesInterior(origin, target, square))
+                // Neither body covers itself, so every square of either space is skipped
+                // rather than only the two the line runs between.
+                if (originSpace.Contains(square)
+                    || targetSpace.Contains(square)
+                    || !SegmentCrossesInterior(origin, target, square))
                 {
                     continue;
                 }

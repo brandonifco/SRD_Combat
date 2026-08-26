@@ -39,9 +39,14 @@ public static class PartyVision
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(combatants);
 
+        // A viewer looks out of its whole space, not out of one corner of it: a Large
+        // creature can see round a pillar its anchor square cannot. The other half of
+        // the fog reading — a creature is *seen* when any square of its space is seen —
+        // belongs to whoever asks whether a creature is visible, which today is the
+        // client (#430); nothing in this project asks it engine-side.
         var viewers = combatants
             .Where(combatant => combatant.SideId == sideId && CanSee(combatant))
-            .Select(combatant => combatant.Position)
+            .SelectMany(combatant => combatant.Space.Squares())
             .ToList();
 
         var visible = new HashSet<GridPosition>();

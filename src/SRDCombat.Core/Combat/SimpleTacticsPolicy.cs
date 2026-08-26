@@ -702,10 +702,14 @@ public static class SimpleTacticsPolicy
         var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
             .ToHashSet();
 
+        // Caught if any square of the body is caught — the same membership reading
+        // Encounter.CreaturesIn resolves the cast with. Counting anchors instead would
+        // hold the spell back waiting for a second victim while two shoulder-clipped
+        // Ogres were already standing in the blast.
         var caught = encounter.Combatants.Count(combatant =>
             combatant.IsActive
             && combatant.SideId != actor.SideId
-            && covered.Contains(combatant.Position));
+            && combatant.Space.Squares().Any(covered.Contains));
 
         return caught < 2;
     }
@@ -832,11 +836,14 @@ public static class SimpleTacticsPolicy
         var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
             .ToHashSet();
 
+        // Caught if any square of the body is caught — the same membership reading
+        // Encounter.CreaturesIn resolves the cast with, so what the policy counts and
+        // what the area actually hits cannot disagree.
         var enemies = encounter.Combatants.Count(c =>
-            c.IsActive && c.SideId != actor.SideId && covered.Contains(c.Position));
+            c.IsActive && c.SideId != actor.SideId && c.Space.Squares().Any(covered.Contains));
 
         var friends = encounter.Combatants.Count(c =>
-            c.IsActive && c.SideId == actor.SideId && covered.Contains(c.Position));
+            c.IsActive && c.SideId == actor.SideId && c.Space.Squares().Any(covered.Contains));
 
         return damage * (enemies - friends);
     }
@@ -1282,10 +1289,13 @@ public static class SimpleTacticsPolicy
         var covered = AreaTargeting.Cover(area, actor.Position, target.Position, encounter.Battlefield)
             .ToHashSet();
 
+        // An ally is in the way if any square of its body is — the same membership
+        // reading the cast itself resolves with. Asking only about the anchor would let
+        // this gate call a Large packmate safe and then fry it.
         return !encounter.Combatants.Any(combatant =>
             combatant.IsActive
             && combatant.SideId == actor.SideId
-            && covered.Contains(combatant.Position));
+            && combatant.Space.Squares().Any(covered.Contains));
     }
 
     /// <summary>
@@ -1315,7 +1325,7 @@ public static class SimpleTacticsPolicy
 
         var currentDistance = actor.DistanceFeetTo(target);
         var canAttackFromHere = currentDistance <= reach
-            && CoverRules.Between(encounter.Battlefield, actor.Position, target.Position, others)
+            && CoverRules.AgainstSpace(encounter.Battlefield, actor.Space, target.Space, others)
                 != CoverDegree.Total;
 
         var best = ScoreSquares(encounter, actor, target, others, reach)
@@ -1357,8 +1367,8 @@ public static class SimpleTacticsPolicy
         var reach = ReachOf(actor);
         var others = OthersThan(encounter, actor);
 
-        var currentCover = CoverRules.Between(
-            encounter.Battlefield, actor.Position, target.Position, others);
+        var currentCover = CoverRules.AgainstSpace(
+            encounter.Battlefield, actor.Space, target.Space, others);
         var currentPenalty = CoverRules.Bonus(currentCover);
 
         // Out of reach or fully blocked is MoveTowards' problem; a clean shot needs no

@@ -449,7 +449,7 @@ public sealed partial class Encounter
                 $"{target.Name} is beyond Divine Spark's {DivineSparkRangeFeet} ft. range.");
         }
 
-        if (CoverRules.Between(Battlefield, combatant.Position, target.Position, _combatants) == CoverDegree.Total)
+        if (CoverRules.AgainstSpace(Battlefield, combatant.Space, target.Space, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "feature.total_cover",
