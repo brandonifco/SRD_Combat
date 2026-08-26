@@ -504,15 +504,23 @@ been found.**
 
 Every environment problem this project has had was silent. The reasons behind each
 check: the machine's .NET has flipped four times, and `global.json`'s roll-forward
-means a green local build can compile on a different major than CI gates
+used to mean a green local build could compile on a different major than CI gates
 (`.mise.toml` pins the SDK; `mise install` is the whole setup, and the
 `mise activate` line in the shell profile is the step that actually does the work).
 SDK 8.0.129's early compiler rejects syntax newer 8.0.x accepts (#27) — that is why
 CI's `setup-dotnet` step reads `global-json-file: global.json` rather than a floating
 `dotnet-version: 8.0.x` (#428, after `main` drifted past the pin while CI, still on a
-floating version, stayed green): parity between the pin and CI is now enforced by
-construction, so local green under the pin predicts CI green. `dotnet new sln` under
-SDK 10 emits `.slnx`, which .NET 8
+floating version, stayed green). Reading the pin from `global.json` alone did not
+close the gap: with `rollForward: latestMajor`, `setup-dotnet` reads "the pin" as
+"install the newest LTS channel," so CI kept silently resolving whatever SDK the
+runner image preinstalled newest (up through .NET 10) — a second, narrower #428. The
+closing fix set `rollForward: disable`: no SDK but the exact pinned patch satisfies
+`global.json`, on the runner or on your desk, and a CI step right after every
+`setup-dotnet` step fails the job outright if `dotnet --version` differs from the pin
+at all. That hazard — a machine with no .NET 8 silently building on .NET 10 while
+believing it built on the pin — is closed, not just documented as closed: local green
+under the pin now predicts CI green, or CI fails loudly instead of drifting quietly.
+`dotnet new sln` under SDK 10 emits `.slnx`, which .NET 8
 cannot read (`--format sln`), and templates write `net10.0` properties that override
 `Directory.Build.props` — strip them. The SRD PDF lives at
 `~/Downloads/SRD_CC_v5.2.1.pdf`, is never committed, and only `tools/SrdExtract`
