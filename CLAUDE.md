@@ -59,7 +59,13 @@ concentration surviving Incapacitated — is fixed (#289); a reload used to re-r
 ladder because the seed was not saved, and a save-vs-content mismatch used to crash
 instead of refusing — both closed (#286, #287, and the last Loot and resume
 indexers, #350/#366); the art
-pipeline is unrepeatable and one sprite in ~60 matches the project's own palette.
+pipeline is unrepeatable and one sprite in ~60 matches the project's own palette —
+repeatability was answered by the committed script (#294/#427), but the
+palette-matching half of that finding was **retired as a goal on 2026-08-26**:
+after three colour-step rejections in a row (#238's revert, PR #461's regeneration
+redone as lossless mirrors, PR #446 withheld with "looks like it's made of metal"),
+Brandon ruled the pipeline mechanical-only — palette coherence comes from his hand,
+not a script (closed #458 by policy).
 **The finishing plan below is the ordered answer.**
 
 ## The finishing plan
@@ -137,7 +143,9 @@ doctrine rewrite of "The rule this project runs on" (#419) is the steward's,
 directly after this close; #189's broader extractor harness returns to F5.
 
 **F2 — Feel.** The largest gap per hour of work. One committed master→sprite pipeline
-script per #238's own diagnosis, applied to every sprite and terrain tile —
+script — **mechanical-only since 2026-08-26** (facing, crop, downscale, hard alpha;
+the palette and de-grain steps were removed at Brandon's direction after PR #446's
+"made of metal" verdict — colour is his alone, and no script reinterprets it) —
 Brandon approves before/after for every batch; ship the ~23 finished-but-unshipped
 masters (they cover most creatures now rendering as circles); fix the stature clamp
 (an Ogre must not render shorter than a Goblin); integer-snap ground scaling. Board
@@ -222,7 +230,7 @@ bounded (architecture, statistics), **Sonnet** where it is well-specified execut
 | `architect` | opus | Seams and refactors, extractor test harness, threat-model instrument, save evolution |
 | `analyst` | opus | PacingMeasure runs and interpretation, statistical discipline |
 | `engineer` | sonnet | Scoped implementation with written acceptance criteria |
-| `art-tech` | sonnet | The asset pipeline, palette conformance, stature, shipping masters |
+| `art-tech` | sonnet | The asset pipeline (mechanical-only — never colour), stature, shipping masters |
 
 **Protocol.**
 

@@ -11,8 +11,9 @@ namespace SRDCombat.Viewer;
 /// <para>
 /// <b>Almost everything shipped today is Brandon's own committed still</b> — one
 /// hand-drawn frame per pose, run through the committed pipeline
-/// (<c>tools/asset_pipeline/master_to_sprite.py</c>, #294) and palette-mapped, rather
-/// than an animated pack. The loader itself is still pack-agnostic: it reads whatever
+/// (<c>tools/asset_pipeline/master_to_sprite.py</c>, #294 — mechanical-only since
+/// 2026-08-26; frames shipped before then also carried its since-removed palette
+/// mapping, and stay as Brandon approved them), rather than an animated pack. The loader itself is still pack-agnostic: it reads whatever
 /// strips a mapped folder holds, multi-frame or single. That generality used to matter
 /// because most of the roster wore the free Craftpix character packs; as of #295 no
 /// entry in either map below points at one any more (the last, gitignored-only
@@ -116,14 +117,15 @@ public sealed class SpriteLibrary
         // Hand-drawn sets — single frames per pose (four, five with a Cast — the
         // Cleric is the first to carry one), produced from painted sources
         // through the measured pipeline the Barbarian repaint recorded (crop, box
-        // downscale with an unsharp pass at twice target size, quantize to the master
-        // palette at client/assets/palette/SRD_Combat.gpl with hard alpha). Each pose
+        // downscale with an unsharp pass at twice target size, hard alpha — plus,
+        // for frames shipped before 2026-08-26, a quantize to the master palette
+        // at client/assets/palette/SRD_Combat.gpl and a de-grain pass, both since
+        // removed from the script at Brandon's direction: the pipeline is
+        // mechanical-only now, and colour is his alone; see
+        // tools/asset_pipeline/master_to_sprite.py's module docstring). Each pose
         // is one frame, which the loader pads and plays across its duration. That
-        // recipe is now a committed, deterministic script rather than a hand
-        // process — tools/asset_pipeline/master_to_sprite.py (#294) — with a
-        // per-image de-grain pass added on top; see its module docstring for why
-        // it clusters per image rather than across a character's poses the way
-        // PR #238's reverted pass did.
+        // recipe is a committed, deterministic script rather than a hand
+        // process — tools/asset_pipeline/master_to_sprite.py (#294).
         ["Fighter"] = "Fighter_Drawn",
         ["Barbarian"] = "Barbarian_Drawn",
         ["Rogue"] = "Rogue_Drawn",
@@ -255,8 +257,9 @@ public sealed class SpriteLibrary
 
         // #295: two more of Brandon's stills, run through the committed pipeline
         // (tools/asset_pipeline/master_to_sprite.py) at its default parameters —
-        // both were 100% palette-conformant on the first pass, so neither needed a
-        // SPRITE_TARGETS override.
+        // both were 100% palette-conformant on the first pass (a concept of the
+        // pre-2026-08-26 pipeline, whose colour steps have since been removed),
+        // so neither needed a SPRITE_TARGETS override.
         ["Guard Captain"] = "Guard_Captain",
         ["Warrior Infantry"] = "Warrior_Infantry",
     };
