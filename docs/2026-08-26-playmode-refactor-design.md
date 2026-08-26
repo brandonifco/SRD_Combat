@@ -508,17 +508,22 @@ One concern, one branch, one PR. **Every slice ends with a client that builds, p
 ships** — there is no intermediate state where the client is half-migrated across a merge,
 because each slice converts one field group completely.
 
-| # | Slice | Blocked on | Pinned by |
-| --- | --- | --- | --- |
-| S0 | Probe visits every modal; a two-run capture-diff script | — | itself (no production change) |
-| S1 | `FocusStack<T>`, `PlayFocus`, `PlayFocusRouter`; the menu + targeting cluster becomes the stack | S0, #190 | S0's captures + §4's table as router tests |
-| S2 | Shop and the outcome card become layers | S1 | S0's new shop/outcome captures |
-| S3 | The quit confirm becomes a layer | S2 | S0's new quit-card capture |
-| S4 | The click pipeline moves into the router | S3 | router tests + all captures |
-| S5 | `_Draw` takes its order from the stack | S4 | all captures |
-| S6 | One row list behind the three menus; `_menuIndex` moves onto the layer | S5 | S0's slot/attack-menu captures |
-| S7 | `CreateMode` stops inheriting `FightScreen`; completion callback; party size | #486 | the `--create --probe` captures |
-| S8 | `PlayMode.cs` splits into partials by concern | S6 | compiler + all captures |
+| # | Slice | Issue | Blocked on | Pinned by |
+| --- | --- | --- | --- | --- |
+| S0 | Probe visits every modal; a two-run capture-diff script | #499 | — | itself (no production change) |
+| S1 | `FocusStack<T>`, `PlayFocus`, `PlayFocusRouter`; the menu + targeting cluster becomes the stack | #500 | S0, #190 | S0's captures + §4's table as router tests |
+| S2 | Shop and the outcome card become layers | #501 | S1 | S0's new shop/outcome captures |
+| S3 | The quit confirm becomes a layer | #502 | S2 | S0's new quit-card capture |
+| S4 | The click pipeline moves into the router | #503 | S3 | router tests + all captures |
+| S5 | `_Draw` takes its order from the stack | #504 | S4 | all captures |
+| S6 | One row list behind the three menus; `_menuIndex` moves onto the layer | #505 | S5 | S0's slot/attack-menu captures |
+| S7 | `CreateMode` stops inheriting `FightScreen`; completion callback; party size | #506 | #486 | the `--create --probe` captures |
+| S8 | `PlayMode.cs` splits into partials by concern | #508 | S6 | compiler + all captures |
+
+The two reserved judgement calls in [§12](#12-judgement-calls-reserved) are filed as
+**#509** (should Esc step back one level?) and **#510** (the auto-end-turn under the quit
+confirm). Neither is a blocker on any slice; both become one-line changes once S1 and S3
+have landed, which is itself the argument for landing the structure first.
 
 **Critical path:** S0 → S1 → S2 → S3 → S4 → S5 → S6 → S8. **S7 is parallel** and may land
 at any point after #486.
@@ -672,12 +677,12 @@ and all three are the steward's call, not the architect's:
 
 Not resolved by assumption anywhere above.
 
-1. **Should Esc step back one level instead of dropping to the board?** §4 lands the
+1. **Should Esc step back one level instead of dropping to the board? (#509)** §4 lands the
    current flat-clear because the refactor is behaviour-preserving. Whether the *game*
    wants pop-one is `designer`'s, on its own issue, after the structure exists — at which
    point it is a one-line change to one table row, which is the argument for doing the
    structure first.
-2. **Should the auto-end-turn be suppressed while the quit confirm is up?** §4.1's second
+2. **Should the auto-end-turn be suppressed while the quit confirm is up? (#510)** §4.1's second
    oddity. Preserved as-is; filed as a question.
 3. **How far does `FightScreen` itself want splitting?** 2,432 lines with camera, sprites,
    animation acts, board drawing, content loading and fight resolution in one class. S7
