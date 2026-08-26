@@ -72,9 +72,9 @@ public enum BattleLayout
 /// <para>
 /// The battlefield is sized to hold both sides with room to manoeuvre round the flanks,
 /// rather than being a corridor that makes positioning meaningless — and it is not bare:
-/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain between the sides,
-/// seeded from the same dice as everything else, with its own interpretations stated on
-/// the class.
+/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain across the whole
+/// board (biased toward the contested ground between the sides), seeded from the same
+/// dice as everything else, with its own interpretations stated on the class.
 /// </para>
 /// <para>
 /// <b>Six squares is exactly one move, and widening it was measured and rejected —
@@ -322,17 +322,25 @@ public static class EncounterFactory
         var monsterSpawns = spawns.Skip(party.Count).ToArray();
 
         // Terrain avoids every square a body will stand on, not just the anchor squares,
-        // and the connectivity guarantee is asked for the largest body on this field.
-        var reserved = partySpawns
+        // and the connectivity guarantee is asked for the largest body on this field. Kept
+        // per side (rather than concatenated) because the contested-ground bias needs each
+        // side's own footprint extent to place its band, not just its anchors.
+        var partyReserved = partySpawns
             .Select((anchor, index) => new CreatureSpace(anchor, partySpans[index]))
-            .Concat(monsterSpawns.Select((anchor, index) => new CreatureSpace(anchor, monsterSpans[index])))
+            .SelectMany(space => space.Squares())
+            .ToArray();
+
+        var monsterReserved = monsterSpawns
+            .Select((anchor, index) => new CreatureSpace(anchor, monsterSpans[index]))
             .SelectMany(space => space.Squares())
             .ToArray();
 
         var battlefield = TerrainGenerator.Generate(
             width,
             height,
-            reserved,
+            partyReserved,
+            monsterReserved,
+            layout,
             random,
             partySpans.Concat(monsterSpans).DefaultIfEmpty(1).Max());
 
