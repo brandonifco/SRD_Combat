@@ -41,6 +41,21 @@ public partial class WatchMode : FightScreen
         if (ArgumentValue("capture") is { } path)
         {
             _playing = false;
+
+            if (_snapshots.Count == 0)
+            {
+                // The fight never ran — a refused --spawn/--level (Resolve, below,
+                // catches it and leaves _snapshots empty). There is nothing to
+                // capture, so say why on stdout and exit non-zero rather than either
+                // of the two things this used to do: throw out of
+                // Math.Clamp(wanted, 0, -1) when --at was given, or fall through to
+                // CaptureAndQuit and write a blank PNG while printing "turn -1 of -1"
+                // and reporting success (#486).
+                GD.Print(_subtitle);
+                GetTree().Quit(1);
+                return;
+            }
+
             _index = ArgumentValue("at") is { } at && int.TryParse(at, out var wanted)
                 ? Math.Clamp(wanted, 0, _snapshots.Count - 1)
                 : _snapshots.Count - 1;
@@ -67,8 +82,12 @@ public partial class WatchMode : FightScreen
         }
         catch (RosterRefusedException refusal)
         {
-            // No snapshots and the reason in the heading — the draw path already
-            // guards the empty list, so the refusal is the whole screen.
+            // No snapshots and the reason in _subtitle. _Draw used to return before
+            // DrawHeading on an empty _snapshots list, so this comment's old claim —
+            // "the draw path already guards the empty list, so the refusal is the
+            // whole screen" — was backwards: that guard was what suppressed the
+            // refusal, leaving an empty window with no reason given (#486). _Draw now
+            // special-cases this case to draw the heading alone.
             _subtitle = refusal.Message;
             return;
         }
@@ -197,6 +216,12 @@ public partial class WatchMode : FightScreen
     {
         if (_snapshots.Count == 0)
         {
+            // A refused --spawn/--level (Resolve, above) leaves _subtitle holding the
+            // reason and no fight to show. Draw the heading alone rather than nothing
+            // at all — an empty window with no reason given is exactly the bug this
+            // guard used to cause (#486).
+            DrawBackdrop();
+            DrawHeading(_subtitle, "[esc] quit");
             return;
         }
 

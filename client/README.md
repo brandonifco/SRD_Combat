@@ -13,16 +13,19 @@ one fight up front and lets you scrub through it. Either takes
 `--spawn="Ogre, 2 Goblin Warrior"` to field exactly that cast instead of drawing from
 the budget — a test aid (#456): comma-separated, optional leading count (up to 20),
 names matched against the bestiary ignoring case, and a roster with any entry it cannot
-parse is refused on screen with every failed entry named, wrapped rather than cut off
-mid-remedy (#470). In spawn mode `--level=1..5` sets the party's level (default 3); a
-non-numeric or out-of-range value is refused the same way, naming the value typed and
-the accepted range — never a silent fallback to 3 or a silent clamp into range (#463).
-This client only ever recognises `--flag=value`, one shell word — the console client's
-separate `--flag value` form is not accepted here, and a `--spawn` or `--level` given
-without an `=value` (bare, or that unsupported space form) is refused by name rather
-than silently read as if the flag were never passed (#470). `--spawn` without
-`--one-fight` or `--watch` is refused too, since the gauntlet loop draws its own roster
-every fight and would otherwise ignore the flag.
+parse is refused on screen with every failed entry named. Under `--one-fight`, that
+refusal is the gauntlet's own between-fights screen and is wrapped rather than cut off
+mid-remedy (#470); under `--watch` (or `--capture`, which implies it — see below) there
+is no interlude to wrap into, so the refusal is the whole heading, one line, sized to
+its own text rather than truncated (#486). In spawn mode `--level=1..5` sets the
+party's level (default 3); a non-numeric or out-of-range value is refused the same way,
+naming the value typed and the accepted range — never a silent fallback to 3 or a
+silent clamp into range (#463). This client only ever recognises `--flag=value`, one
+shell word — the console client's separate `--flag value` form is not accepted here,
+and a `--spawn` or `--level` given without an `=value` (bare, or that unsupported space
+form) is refused by name rather than silently read as if the flag were never passed
+(#470). `--spawn` without `--one-fight` or `--watch` is refused too, since the gauntlet
+loop draws its own roster every fight and would otherwise ignore the flag.
 
 ## Running it
 
@@ -378,7 +381,11 @@ godot --path client -- --watch
 
 Space plays/pauses, ←/→ step one turn, Home/End jump, Esc quits. `--capture=<path>`
 renders one frame to a PNG and quits (with `--at=<turn>` choosing the turn), and implies
-`--watch` — a capture of a fight nobody is playing is the watch screen's job.
+`--watch` — a capture of a fight nobody is playing is the watch screen's job. A refused
+`--spawn`/`--level` never reaches a fight to render: `--watch` alone shows the reason in
+the heading with no snapshots to scrub, and `--capture` prints the same reason to
+stdout and exits non-zero, writing no PNG at all — never the blank frame reported as a
+successful capture that this used to write (#486).
 
 ### The probe
 
