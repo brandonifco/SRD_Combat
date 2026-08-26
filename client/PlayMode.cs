@@ -210,6 +210,25 @@ public partial class PlayMode : FightScreen
     {
         _seed = SeedArgument();
 
+        // The gauntlet loop below never calls ResolveFight — it draws its own roster
+        // every fight — so --spawn here would silently do nothing (#463). Refuse it
+        // the same way a bad roster refuses, rather than starting a run that quietly
+        // ignored what was asked for. HasArgument("spawn") is the same presence
+        // predicate ResolveFight's own spawn branch keys on (FightScreen.cs) — a bare
+        // --spawn or the console's space form counts as "given" in both places, so
+        // this gate and that branch never disagree about whether the flag was passed
+        // (#470, M2 — they used to: this gate on HasArgument, that branch on
+        // ArgumentValue, which let a valueless --spawn slip past both silently).
+        if (HasArgument("spawn") && !HasArgument("one-fight"))
+        {
+            _phase = Phase.RunOver;
+            _interlude.Add(
+                "--spawn refused: the gauntlet does not read it — it draws its own roster " +
+                "every fight. Pass --one-fight (or run with --watch) to field a chosen cast.");
+            _subtitle = $"seed {_seed}";
+            return;
+        }
+
         // A probe run drives the screen through its own input path — synthesized clicks
         // through the viewport — and captures what each one produced. Monsters hurry so
         // the probe spends its time on the party's turns, the part being verified.
@@ -2050,6 +2069,11 @@ public partial class PlayMode : FightScreen
 
         var y = UiTop + 8f;
 
+        // Wrapped, not Trim()'d: a refusal names both the problem and the remedy, and
+        // a hard 100-character cut can (and did — qc's #470 review, measured) sever the
+        // remedy from a message compiled with both in one string. Every _interlude
+        // entry goes through this, not just the one qc measured, because the next
+        // multi-flag refusal is one string concatenation away from the same cut.
         foreach (var line in _interlude)
         {
             if (line.Length == 0)
@@ -2058,8 +2082,11 @@ public partial class PlayMode : FightScreen
                 continue;
             }
 
-            DrawString(TextFont, new Vector2(UiLeft, y), Trim(line, 100), fontSize: 14, modulate: Ink);
-            y += 22;
+            foreach (var wrapped in Wrap(line, 100))
+            {
+                DrawString(TextFont, new Vector2(UiLeft, y), wrapped, fontSize: 14, modulate: Ink);
+                y += 22;
+            }
         }
 
         if (_phase == Phase.Interlude)

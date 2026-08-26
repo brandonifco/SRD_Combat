@@ -480,33 +480,56 @@ public abstract partial class FightScreen : Node2D
     /// <summary>
     /// Builds the same fight the console client would, from the same content — or, with
     /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456). In
-    /// spawn mode <c>--level=1..5</c> sets the party's level; the budgeted path keeps
-    /// its fixed level 3 Moderate, which is #443's own concern. A roster that cannot be
-    /// parsed throws <see cref="RosterRefusedException"/> with every failed entry named
-    /// — the caller decides how to show it.
+    /// spawn mode <c>--level=1..5</c> sets the party's level (default 3); the budgeted
+    /// path keeps its fixed level 3 Moderate, which is #443's own concern. Presence is
+    /// judged by <see cref="HasArgument"/> alone — the same predicate the caller's
+    /// spawn/gauntlet gate uses (<c>PlayMode.OnReady</c>) — so a bare <c>--spawn</c> or
+    /// the console's space form (<c>--spawn value</c>, which this client does not
+    /// accept; see <see cref="ArgumentValue"/>) is judged "given" here exactly as it is
+    /// there, rather than silently falling through to the budgeted pool fight the way
+    /// it did before #470's fix landed. A roster that cannot be parsed, a <c>--spawn</c>
+    /// given without a value, or a <c>--level</c> that is not a whole number 1–5 (see
+    /// <see cref="ScenarioArguments.TryParseLevel"/>), throws
+    /// <see cref="RosterRefusedException"/> naming every failure — no fallback, no
+    /// clamp, and the caller decides how to show it (#463).
     /// </summary>
     protected static Fight ResolveFight(int seed)
     {
         var content = LoadContent();
         var random = new SeededRandomSource(seed);
 
-        if (ArgumentValue("spawn") is { } text)
+        if (HasArgument("spawn"))
         {
-            var roster = RosterParser.Parse(text, content.Monsters);
+            var errors = new List<string>();
+            IReadOnlyList<MonsterDefinition> monsters = [];
 
-            if (roster.Errors.Count > 0)
+            if (ArgumentValue("spawn") is { } text)
             {
-                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", roster.Errors)}");
+                var roster = RosterParser.Parse(text, content.Monsters);
+                errors.AddRange(roster.Errors);
+                monsters = roster.Monsters;
+            }
+            else
+            {
+                errors.Add("--spawn: no value given (use --spawn=\"...\")");
             }
 
-            var level = ArgumentValue("level") is { } chosen
-                && int.TryParse(chosen, out var parsed)
-                    ? Math.Clamp(parsed, 1, 5)
-                    : 3;
+            var levelOk = ScenarioArguments.TryParseLevel(
+                ArgumentValue("level"), HasArgument("level"), out var level, out var levelError);
+
+            if (!levelOk)
+            {
+                errors.Add(levelError!);
+            }
+
+            if (errors.Count > 0)
+            {
+                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", errors)}");
+            }
 
             return EncounterFactory.BuildChosen(
                 PregeneratedParty.Build(content, level),
-                roster.Monsters,
+                monsters,
                 random);
         }
 
@@ -2355,6 +2378,18 @@ public abstract partial class FightScreen : Node2D
             : $"could not save {path}: {error}");
     }
 
+    /// <summary>
+    /// This client's own dialect is <c>--name=value</c>, one shell word, and that is
+    /// the only form recognised here — the console client's separate <c>--name
+    /// value</c> form (<c>src/SRDCombat.Console/Program.cs</c>'s <c>LevelFrom</c> and
+    /// its siblings) is a different binary's convention and is deliberately not
+    /// accepted. <c>null</c> therefore means two different things a caller must not
+    /// conflate: the flag was never passed, or it was passed bare (<c>--name</c>, or
+    /// the space form, which Godot hands through as an unrelated second argument no
+    /// different from a bare flag followed by something else). <see cref="HasArgument"/>
+    /// answers "was it passed at all"; a caller that must refuse a present-but-valueless
+    /// flag rather than silently treating it as absent needs both (#470, M2).
+    /// </summary>
     protected internal static string? ArgumentValue(string name)
     {
         foreach (var argument in OS.GetCmdlineUserArgs())
@@ -2368,6 +2403,7 @@ public abstract partial class FightScreen : Node2D
         return null;
     }
 
+    /// <summary>Whether <c>--name</c> appears at all, bare or with a value.</summary>
     protected internal static bool HasArgument(string name) =>
         OS.GetCmdlineUserArgs().Contains($"--{name}") || ArgumentValue(name) is not null;
 
