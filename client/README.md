@@ -14,7 +14,11 @@ one fight up front and lets you scrub through it. Either takes
 the budget — a test aid (#456): comma-separated, optional leading count (up to 20),
 names matched against the bestiary ignoring case, and a roster with any entry it cannot
 parse is refused on screen with every failed entry named. In spawn mode `--level=1..5`
-sets the party's level (default 3).
+sets the party's level (default 3); a non-numeric or out-of-range value is refused the
+same way, naming the value typed and the accepted range — never a silent fallback to 3
+or a silent clamp into range (#463). `--spawn` without `--one-fight` or `--watch` is
+refused too, since the gauntlet loop draws its own roster every fight and would
+otherwise ignore the flag.
 
 ## Running it
 

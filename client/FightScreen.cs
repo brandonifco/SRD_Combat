@@ -480,10 +480,12 @@ public abstract partial class FightScreen : Node2D
     /// <summary>
     /// Builds the same fight the console client would, from the same content — or, with
     /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456). In
-    /// spawn mode <c>--level=1..5</c> sets the party's level; the budgeted path keeps
-    /// its fixed level 3 Moderate, which is #443's own concern. A roster that cannot be
-    /// parsed throws <see cref="RosterRefusedException"/> with every failed entry named
-    /// — the caller decides how to show it.
+    /// spawn mode <c>--level=1..5</c> sets the party's level (default 3); the budgeted
+    /// path keeps its fixed level 3 Moderate, which is #443's own concern. A roster
+    /// that cannot be parsed, or a <c>--level</c> that is not a whole number 1–5 (see
+    /// <see cref="ScenarioArguments.TryParseLevel"/>), throws
+    /// <see cref="RosterRefusedException"/> naming every failure — no fallback, no
+    /// clamp, and the caller decides how to show it (#463).
     /// </summary>
     protected static Fight ResolveFight(int seed)
     {
@@ -493,16 +495,19 @@ public abstract partial class FightScreen : Node2D
         if (ArgumentValue("spawn") is { } text)
         {
             var roster = RosterParser.Parse(text, content.Monsters);
+            var errors = new List<string>(roster.Errors);
 
-            if (roster.Errors.Count > 0)
+            var levelOk = ScenarioArguments.TryParseLevel(ArgumentValue("level"), out var level, out var levelError);
+
+            if (!levelOk)
             {
-                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", roster.Errors)}");
+                errors.Add(levelError!);
             }
 
-            var level = ArgumentValue("level") is { } chosen
-                && int.TryParse(chosen, out var parsed)
-                    ? Math.Clamp(parsed, 1, 5)
-                    : 3;
+            if (errors.Count > 0)
+            {
+                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", errors)}");
+            }
 
             return EncounterFactory.BuildChosen(
                 PregeneratedParty.Build(content, level),

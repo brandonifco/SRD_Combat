@@ -210,6 +210,20 @@ public partial class PlayMode : FightScreen
     {
         _seed = SeedArgument();
 
+        // The gauntlet loop below never calls ResolveFight — it draws its own roster
+        // every fight — so --spawn here would silently do nothing (#463). Refuse it
+        // the same way a bad roster refuses, rather than starting a run that quietly
+        // ignored what was asked for.
+        if (HasArgument("spawn") && !HasArgument("one-fight"))
+        {
+            _phase = Phase.RunOver;
+            _interlude.Add(
+                "--spawn refused: the gauntlet does not read it — it draws its own roster " +
+                "every fight. Pass --one-fight (or run with --watch) to field a chosen cast.");
+            _subtitle = $"seed {_seed}";
+            return;
+        }
+
         // A probe run drives the screen through its own input path — synthesized clicks
         // through the viewport — and captures what each one produced. Monsters hurry so
         // the probe spends its time on the party's turns, the part being verified.

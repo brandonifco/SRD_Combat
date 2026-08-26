@@ -1,0 +1,55 @@
+namespace SRDCombat.Game;
+
+/// <summary>
+/// Parses the flags that shape a <c>--spawn</c> scenario alongside the roster itself
+/// (#463) — today just <c>--level</c>, with room for the composition, terrain and
+/// repeat-count flags Brandon has asked for next as this grows into a custom battle
+/// builder. Every flag here fails the way <see cref="RosterParser"/>'s roster does: a
+/// named value, the accepted range, refused rather than defaulted or clamped — a
+/// silent fallback here is the same shape as a silently thinned roster (rule 2 in
+/// CLAUDE.md), just for a number instead of a cast.
+/// </summary>
+public static class ScenarioArguments
+{
+    /// <summary>The party level range a spawned scenario may ask for.</summary>
+    public const int MinimumLevel = 1;
+
+    public const int MaximumLevel = 5;
+
+    /// <summary>
+    /// Parses <c>--level</c>'s value for spawn mode. A <c>null</c> text (the flag was
+    /// not passed) succeeds with the default level 3 — the budgeted path's own fixed
+    /// level stays #443's concern and is untouched by this helper. A present value
+    /// that is not a whole number, or is outside <see cref="MinimumLevel"/>–
+    /// <see cref="MaximumLevel"/>, fails and names both the value typed and the
+    /// accepted range; there is no fallback and no clamp, because either would let a
+    /// tester believe the fight ran at a level they never typed.
+    /// </summary>
+    public static bool TryParseLevel(string? text, out int level, out string? error)
+    {
+        if (text is null)
+        {
+            level = 3;
+            error = null;
+            return true;
+        }
+
+        if (!int.TryParse(text, out var parsed))
+        {
+            level = default;
+            error = $"--level=\"{text}\": not a whole number ({MinimumLevel}-{MaximumLevel})";
+            return false;
+        }
+
+        if (parsed < MinimumLevel || parsed > MaximumLevel)
+        {
+            level = default;
+            error = $"--level={parsed}: out of range ({MinimumLevel}-{MaximumLevel})";
+            return false;
+        }
+
+        level = parsed;
+        error = null;
+        return true;
+    }
+}
