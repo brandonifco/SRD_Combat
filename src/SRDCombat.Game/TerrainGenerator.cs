@@ -349,7 +349,9 @@ public static class TerrainGenerator
     /// monsters' occupied columns, full height — left unnarrowed (unlike Columns)
     /// because the design calls this region the union of two approach lanes, one to
     /// each corner group, and those lanes together already span nearly the full height
-    /// between the columns. One rectangle.
+    /// between the columns. One rectangle. Designer-approved reading for dressing
+    /// (2026-08-26, #453); site placement (S3+) states its own CornerGroups reading
+    /// per slice.
     /// </item>
     /// <item>
     /// <b>Surrounded:</b> "the ring between the party block and the monster ring",
