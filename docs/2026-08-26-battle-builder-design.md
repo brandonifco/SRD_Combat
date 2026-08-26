@@ -397,7 +397,7 @@ gates on it.
 
 ## 11. Slices and sequencing
 
-Filed as issues, one concern each, in dependency order. The first four have **no #327
+Filed as issues, one concern each, in dependency order; tracking issue **#472**. The first four have **no #327
 dependency and no unlanded-work dependency** and can start immediately; they are also
 where most of the value is.
 
@@ -410,20 +410,20 @@ duplicates the other's decisions. That overload is S2's client-side deliverable 
 later slice reuses it. It lands **after #463 merges**, which is currently editing that
 method.
 
-| # | Slice | Blocked on |
-| --- | --- | --- |
-| S1 | `BattleScenario`: the model and its serializer | — |
-| S2 | `ScenarioRunner`: build a `Fight` from (scenario, seed) | S1 |
-| S3 | `tools/ScenarioMeasure`: the headless batch runner | S2 |
-| S4 | `--scenario=<path>`: play one scenario by hand | S2 |
-| S5 | Objective authoring, including a named leader | S1 |
-| S6 | Battlefield overrides I: layout and density tier | S2 |
-| S7 | Battlefield overrides II: site, formation, theme | S6, #437, #438, #439 |
-| S8 | Party starting state: wounds, spent resources, the dead | S1 |
-| S9 | Capture a scenario from a live fight | S8 |
-| S10 | UI: builder shell and scenario library | **#327** |
-| S11 | UI: cast and party editors | S10, **#327** |
-| S12 | UI: battlefield and objective editors, and run-batch-from-the-UI | S11, S6, **#327** |
+| # | Slice | Issue | Blocked on |
+| --- | --- | --- | --- |
+| S1 | `BattleScenario`: the model and its serializer | #473 | — |
+| S2 | `ScenarioRunner`: build a `Fight` from (scenario, seed) | #474 | S1 |
+| S3 | `tools/ScenarioMeasure`: the headless batch runner | #475 | S2 |
+| S4 | `--scenario=<path>`: play one scenario by hand | #476 | S2, #463 |
+| S5 | Objective authoring, including a named leader | #477 | S1 |
+| S6 | Battlefield overrides I: layout and density tier | #478 | S2 |
+| S7 | Battlefield overrides II: site, formation, theme | #479 | S6, #437, #438, #439 |
+| S8 | Party starting state: wounds, spent resources, the dead | #480 | S1 |
+| S9 | Capture a scenario from a live fight | #481 | S8 |
+| S10 | UI: builder shell and scenario library | #482 | **#327**, S4 |
+| S11 | UI: cast and party editors | #483 | S10, **#327** |
+| S12 | UI: battlefield and objective editors, and run-batch-from-the-UI | #484 | S11, S6, **#327** |
 
 **Why this order.** S1–S4 deliver the whole of answer 3 (both outputs) plus two of the
 four axes, with no gate to wait on. S5–S9 complete the remaining axes as engine work,
