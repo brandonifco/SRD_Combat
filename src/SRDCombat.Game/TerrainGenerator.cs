@@ -40,18 +40,20 @@ public enum TerrainDensity
 /// </para>
 /// <list type="bullet">
 /// <item>
-/// <b>The whole board is in play.</b> Terrain may land anywhere except (a) a spawn
-/// square, (b) any square orthogonally or diagonally adjacent to a spawn square — a
-/// free 3×3 block around every spawn — and (c) protected squares (none are threaded in
-/// this slice; the parameter exists for a later slice's carved gaps and fords). This
-/// replaces the old rule confining terrain to the columns strictly between the
-/// outermost spawns, which left the 8-square flanking margins permanently bare —
-/// battlefield-overhaul design §5. Rule (b) is a genuine tightening, not a restatement:
-/// the old rule only ever excluded spawn *squares*, so terrain could and did (~26% of
-/// boards, per the design's own measurement) stand flush against a spawn. The 3×3
-/// clearance is load-bearing for a later slice's span-aware connectivity check
-/// (design §8.1), which is exactly why it is a stated rule here rather than an
-/// accident of geometry.
+/// <b>The whole board is in play.</b> Terrain may land anywhere except (a) a reserved
+/// square — every square any body occupies, not just its anchor, so a Large or bigger
+/// creature clears its whole footprint — (b) any square orthogonally or diagonally
+/// adjacent to a reserved square — a free 3×3 block around every one — and (c) protected
+/// squares (none are threaded in this slice; the parameter exists for a later slice's
+/// carved gaps and fords). This replaces the old rule confining terrain to the columns
+/// strictly between the outermost spawns, which left the 8-square flanking margins
+/// permanently bare — battlefield-overhaul design §5. Rule (b) is a genuine tightening,
+/// not a restatement: the old rule only ever excluded spawn *squares*, so terrain could
+/// and did (~26% of boards, per the design's own measurement) stand flush against a
+/// spawn. The 3×3 clearance is load-bearing for <see cref="GridConnectivity"/>'s own
+/// soundness (design §8.1): its check is only sound while every square that must stay
+/// connected already has a free K×K block around it, which this clearance guarantees
+/// directly.
 /// </item>
 /// <item>
 /// <b>Dressing leans toward the contested ground.</b> Two-thirds of dressing anchors
@@ -88,13 +90,15 @@ public enum TerrainDensity
 /// attempt — but it is rare rather than common: variety includes the plain, sparingly.
 /// </item>
 /// <item>
-/// <b>Every fight stays winnable on foot.</b> An obstacle square — wall or low, both
-/// being impassable — whose placement would cut any spawn square off from any other is
-/// discarded rather than placed, checked one square at a time, so the guarantee holds
-/// whatever the dice drew. Both sides field melee-only creatures, and a fight the sides
-/// cannot reach each other in is not a fight. Single-square (span-1) connectivity, as
-/// today; a later slice generalizes this to span-aware connectivity for multi-square
-/// creatures.
+/// <b>Every fight stays winnable on foot, by every body in it.</b> An obstacle square —
+/// wall or low, both being impassable — whose placement would cut any reserved square
+/// off from any other is discarded rather than placed, so the guarantee holds whatever
+/// the dice drew. Both sides field melee-only creatures, and a fight the sides cannot
+/// reach each other in is not a fight. The question is asked for the <em>largest body on
+/// the field</em> rather than for a single square (see <see cref="GridConnectivity"/>): a
+/// corridor two squares wide connects a battlefield for every character in this game and
+/// wedges the Ogre following them through it, which is a stall the single-square check
+/// could not see — there is no squeezing rule in this SRD (design §8.1).
 /// </item>
 /// </list>
 /// <para>
@@ -109,7 +113,7 @@ public static class TerrainGenerator
     /// The density multiplier applied to the base obstacle-attempt and Difficult-Terrain
     /// patch counts. Sparse is 1× — today's dial, left alone — standard and cluttered are
     /// tuned against <c>TerrainDensityCoverageTests</c>' measured realized coverage
-    /// rather than guessed, because rejection (spawn clearance, footprint separation,
+    /// rather than guessed, because rejection (reserved clearance, footprint separation,
     /// connectivity) eats a growing share of attempts as density rises, so the target
     /// bands do not scale linearly with the multiplier.
     /// </summary>
@@ -139,39 +143,52 @@ public static class TerrainGenerator
     /// <summary>Builds a battlefield of the given size with seeded terrain on it.</summary>
     /// <param name="width">Squares across.</param>
     /// <param name="height">Squares down.</param>
-    /// <param name="partySpawns">Every square a party member will start on.</param>
-    /// <param name="monsterSpawns">Every square a monster will start on.</param>
+    /// <param name="partyReserved">
+    /// Every square any party member's body occupies — every square of every footprint,
+    /// not just its anchor, so a multi-square body is cleared whole.
+    /// </param>
+    /// <param name="monsterReserved">
+    /// Every square any monster's body occupies, same shape as <paramref name="partyReserved"/>.
+    /// </param>
     /// <param name="layout">
     /// The fight's opening shape, which decides where the contested ground is
     /// (<see cref="ContestedRegions"/>).
     /// </param>
     /// <param name="random">The seeded dice the whole fight runs on.</param>
+    /// <param name="largestSpanSquares">
+    /// The biggest body that will stand on this field, in squares on a side. One asks the
+    /// old single-square question and is what a caller with no multi-square creatures
+    /// should pass; anything larger makes the connectivity guarantee hold for a body that
+    /// size, so a route too narrow for it is not a route.
+    /// </param>
     /// <param name="protectedSquares">
-    /// Squares terrain may never enter beyond the spawn clearance — empty in this
+    /// Squares terrain may never enter beyond the reserved clearance — empty in this
     /// slice; carried for a later slice's carved gaps and fords.
     /// </param>
     public static Battlefield Generate(
         int width,
         int height,
-        IReadOnlyList<GridPosition> partySpawns,
-        IReadOnlyList<GridPosition> monsterSpawns,
+        IReadOnlyList<GridPosition> partyReserved,
+        IReadOnlyList<GridPosition> monsterReserved,
         BattleLayout layout,
         IRandomSource random,
+        int largestSpanSquares = 1,
         IReadOnlyCollection<GridPosition>? protectedSquares = null)
     {
-        ArgumentNullException.ThrowIfNull(partySpawns);
-        ArgumentNullException.ThrowIfNull(monsterSpawns);
+        ArgumentNullException.ThrowIfNull(partyReserved);
+        ArgumentNullException.ThrowIfNull(monsterReserved);
         ArgumentNullException.ThrowIfNull(random);
 
-        var spawnSet = new HashSet<GridPosition>(partySpawns.Concat(monsterSpawns));
+        var reservedSet = new HashSet<GridPosition>(partyReserved.Concat(monsterReserved));
 
-        // A free 3x3 block around every spawn: the spawn square itself, plus its eight
-        // neighbours. See the class remarks on rule (b).
-        var clearedSquares = new HashSet<GridPosition>(spawnSet);
+        // A free 3x3 block around every reserved square: the square itself, plus its
+        // eight neighbours, for every square any body occupies — not just its anchor.
+        // See the class remarks on rule (b).
+        var clearedSquares = new HashSet<GridPosition>(reservedSet);
 
-        foreach (var spawn in spawnSet)
+        foreach (var square in reservedSet)
         {
-            foreach (var neighbour in spawn.Neighbours())
+            foreach (var neighbour in square.Neighbours())
             {
                 clearedSquares.Add(neighbour);
             }
@@ -193,7 +210,7 @@ public static class TerrainGenerator
             && !protectedSet.Contains(square);
 
         var wholeBoard = new Region(0, width - 1, 0, height - 1);
-        var contestedRegions = ContestedRegions(layout, partySpawns, monsterSpawns, width, height);
+        var contestedRegions = ContestedRegions(layout, partyReserved, monsterReserved, width, height);
 
         // Padded to the same count as the contested candidates, so choosing "whole
         // board" spends exactly the same dice as choosing "contested" — the strip pick
@@ -257,12 +274,14 @@ public static class TerrainGenerator
             // All or nothing: every square legal, nothing already standing there, a
             // clear square of separation from every earlier footprint (which is what
             // lets a client recover footprints as connected components), and the whole
-            // block placed without cutting any spawn off from any other.
+            // block placed without cutting any reserved square off from any other, for
+            // the largest body that will walk this field.
             var lands = footprint.All(square =>
                     InRegion(square)
                     && !impassable.Contains(square)
                     && !square.Neighbours().Any(impassable.Contains))
-                && StaysConnected(impassable, footprint, spawnSet, width, height);
+                && GridConnectivity.StaysConnected(
+                    impassable, footprint, reservedSet, width, height, largestSpanSquares);
 
             if (!lands)
             {
@@ -316,57 +335,63 @@ public static class TerrainGenerator
     /// <remarks>
     /// <para>
     /// No acceptance test pins the contested region's exact shape — only the coverage
-    /// bands, the spawn clearance and connectivity are checked — so rectangles stand in
-    /// for the design's true shapes (a middle third, a lane union, a ring) wherever they
-    /// are not already one. This is a stated reading, not a printed rule:
+    /// bands, the reserved clearance and connectivity are checked — so rectangles stand
+    /// in for the design's true shapes (a middle third, a lane union, a ring) wherever
+    /// they are not already one. This is a stated reading, not a printed rule:
     /// </para>
     /// <list type="bullet">
     /// <item>
-    /// <b>Columns:</b> the middle third of the open band strictly between the two spawn
-    /// columns, full height, exactly as design §4.6 states. One rectangle.
+    /// <b>Columns:</b> the middle third of the open band strictly between the two sides'
+    /// occupied columns, full height, exactly as design §4.6 states. One rectangle.
     /// </item>
     /// <item>
-    /// <b>CornerGroups:</b> the whole open band strictly between the party column and
-    /// the monster column, full height — left unnarrowed (unlike Columns) because the
-    /// design calls this region the union of two approach lanes, one to each corner
-    /// group, and those lanes together already span nearly the full height between the
-    /// columns. One rectangle.
+    /// <b>CornerGroups:</b> the whole open band strictly between the party's and the
+    /// monsters' occupied columns, full height — left unnarrowed (unlike Columns)
+    /// because the design calls this region the union of two approach lanes, one to
+    /// each corner group, and those lanes together already span nearly the full height
+    /// between the columns. One rectangle.
     /// </item>
     /// <item>
     /// <b>Surrounded:</b> "the ring between the party block and the monster ring",
     /// read literally as an annulus and expressed as four strips — north, south, east,
     /// west — framing the party's own bounding box out to the monster ring's radius.
     /// Framing it this way, rather than using the ring's whole bounding square, matters:
-    /// the square's centre is the party block plus its own spawn clearance, so a draw
+    /// the square's centre is the party block plus its own reserved clearance, so a draw
     /// landing there is guaranteed rejected, and two-thirds of every cluttered board's
     /// anchors landing on dead centre was measured to starve the tier's coverage well
     /// below its floor. Four rectangles.
     /// </item>
     /// </list>
     /// <para>
-    /// Degenerate inputs (no party or monster spawns, or the two columns adjacent with
-    /// no open band between them) fall back to a single whole-board rectangle.
+    /// Both the Surrounded ring and the Columns/CornerGroups band are read from the
+    /// <em>extent</em> of each side's reserved squares (min/max over every square any
+    /// body on that side occupies), never a single representative square — a multi-square
+    /// body's footprint can span more than one column, and reading only its anchor (or
+    /// only the first spawn in the list) would misplace the band by however far that body
+    /// reaches into what should be open ground. Degenerate inputs (no party or monster
+    /// squares, or the two sides' column ranges overlapping so no open band exists between
+    /// them) fall back to a single whole-board rectangle.
     /// </para>
     /// </remarks>
     private static Region[] ContestedRegions(
         BattleLayout layout,
-        IReadOnlyList<GridPosition> partySpawns,
-        IReadOnlyList<GridPosition> monsterSpawns,
+        IReadOnlyList<GridPosition> partyReserved,
+        IReadOnlyList<GridPosition> monsterReserved,
         int width,
         int height)
     {
         var wholeBoard = new Region(0, width - 1, 0, height - 1);
 
-        if (partySpawns.Count == 0 || monsterSpawns.Count == 0)
+        if (partyReserved.Count == 0 || monsterReserved.Count == 0)
         {
             return [wholeBoard];
         }
 
         if (layout == BattleLayout.Surrounded)
         {
-            var centreX = (monsterSpawns.Min(square => square.X) + monsterSpawns.Max(square => square.X)) / 2;
-            var centreY = (monsterSpawns.Min(square => square.Y) + monsterSpawns.Max(square => square.Y)) / 2;
-            var ringRadius = monsterSpawns.Max(square =>
+            var centreX = (monsterReserved.Min(square => square.X) + monsterReserved.Max(square => square.X)) / 2;
+            var centreY = (monsterReserved.Min(square => square.Y) + monsterReserved.Max(square => square.Y)) / 2;
+            var ringRadius = monsterReserved.Max(square =>
                 Math.Max(Math.Abs(square.X - centreX), Math.Abs(square.Y - centreY)));
 
             var ringMinX = Math.Max(0, centreX - ringRadius);
@@ -374,10 +399,10 @@ public static class TerrainGenerator
             var ringMinY = Math.Max(0, centreY - ringRadius);
             var ringMaxY = Math.Min(height - 1, centreY + ringRadius);
 
-            var blockMinX = partySpawns.Min(square => square.X);
-            var blockMaxX = partySpawns.Max(square => square.X);
-            var blockMinY = partySpawns.Min(square => square.Y);
-            var blockMaxY = partySpawns.Max(square => square.Y);
+            var blockMinX = partyReserved.Min(square => square.X);
+            var blockMaxX = partyReserved.Max(square => square.X);
+            var blockMinY = partyReserved.Min(square => square.Y);
+            var blockMaxY = partyReserved.Max(square => square.Y);
 
             var strips = new List<Region>(4);
 
@@ -404,12 +429,35 @@ public static class TerrainGenerator
             return strips.Count > 0 ? [.. strips] : [wholeBoard];
         }
 
-        // Columns and CornerGroups both place each side on its own constant column —
-        // see EncounterFactory.PlaceSides.
-        var partyX = partySpawns[0].X;
-        var monsterX = monsterSpawns[0].X;
-        var bandMinX = Math.Min(partyX, monsterX) + 1;
-        var bandMaxX = Math.Max(partyX, monsterX) - 1;
+        // Columns and CornerGroups both place each side in its own column region — see
+        // EncounterFactory.PlaceSides — but a multi-square body can spread across more
+        // than one column once SpawnPlacement.Fit has to relocate it, so the band is
+        // read from each side's full occupied range rather than a single square.
+        var partyMinX = partyReserved.Min(square => square.X);
+        var partyMaxX = partyReserved.Max(square => square.X);
+        var monsterMinX = monsterReserved.Min(square => square.X);
+        var monsterMaxX = monsterReserved.Max(square => square.X);
+
+        int bandMinX;
+        int bandMaxX;
+
+        if (partyMaxX < monsterMinX)
+        {
+            bandMinX = partyMaxX + 1;
+            bandMaxX = monsterMinX - 1;
+        }
+        else if (monsterMaxX < partyMinX)
+        {
+            bandMinX = monsterMaxX + 1;
+            bandMaxX = partyMinX - 1;
+        }
+        else
+        {
+            // The two sides' columns overlap on the X axis — not a shape either layout
+            // produces today, but not this method's call to fail on — so there is no
+            // clean open band between them.
+            return [wholeBoard];
+        }
 
         if (bandMaxX < bandMinX)
         {
@@ -427,42 +475,5 @@ public static class TerrainGenerator
         var midEnd = Math.Min(bandMaxX, midStart + thirdWidth - 1);
 
         return [new Region(midStart, midEnd, 0, height - 1)];
-    }
-
-    /// <summary>
-    /// Whether every spawn square can still reach every other with this whole footprint
-    /// added.
-    /// </summary>
-    private static bool StaysConnected(
-        HashSet<GridPosition> impassable,
-        IReadOnlyCollection<GridPosition> candidates,
-        HashSet<GridPosition> spawns,
-        int width,
-        int height)
-    {
-        if (spawns.Count <= 1)
-        {
-            return true;
-        }
-
-        var candidateSet = new HashSet<GridPosition>(candidates);
-        var reached = new HashSet<GridPosition> { spawns.First() };
-        var frontier = new Queue<GridPosition>(reached);
-
-        while (frontier.Count > 0)
-        {
-            foreach (var next in frontier.Dequeue().Neighbours())
-            {
-                if (next.X < 0 || next.X >= width || next.Y < 0 || next.Y >= height
-                    || candidateSet.Contains(next) || impassable.Contains(next) || !reached.Add(next))
-                {
-                    continue;
-                }
-
-                frontier.Enqueue(next);
-            }
-        }
-
-        return spawns.All(reached.Contains);
     }
 }

@@ -34,12 +34,35 @@ public static class MovementRules
     /// costs and can never beat cost, so what comes back is still the cheapest way there.
     /// </para>
     /// <para>
+    /// <b>The mover is a space, not a point, and the whole space has to fit.</b> Every
+    /// square of the footprint anchored at a candidate square must be on the battlefield
+    /// and passable, or the step is not offered — and that is <em>forced by print's
+    /// silence</em> rather than chosen. The word "squeeze" appears nowhere in SRD 5.2.1;
+    /// the 2014 squeezing rule was not carried into it, and nothing in this document
+    /// licenses a creature entering a space its body does not fit. So a gap narrower
+    /// than a Large creature's space simply blocks it, and <c>Encounter.Move</c> refuses
+    /// with <c>movement.no_room</c> rather than clipping, sliding or squeezing.
+    /// </para>
+    /// <para>
+    /// <b>What a step costs is print's silence too, and this is the stated reading</b>
+    /// (#429): a multi-square creature's step costs one square — five feet — per step of
+    /// its space rather than per square of its footprint, and the step is Difficult
+    /// Terrain if <em>any</em> newly entered square is difficult ground or is another
+    /// creature's space under the p. 14 clause. Print writes "Entering a Square" for a
+    /// point mover and says nothing about footprints; charging a Huge creature nine
+    /// squares per step would make speed meaningless for exactly the creatures the table
+    /// gives the most of it to. Difficult Terrain still does not stack: a newly entered
+    /// square that is both rough ground and somebody's space costs double once.
+    /// </para>
+    /// <para>
     /// Occupancy follows the printed <em>Moving around Other Creatures</em> rule: "you
     /// can pass through the space of an ally, a creature that has the Incapacitated
     /// condition, a Tiny creature, or a creature that is two sizes larger or smaller
     /// than you", "another creature's space is Difficult Terrain for you unless that
     /// creature is Tiny or your ally", and "you can't willingly end a move in a space
-    /// occupied by another creature".
+    /// occupied by another creature". Every clause is asked of each creature whose space
+    /// the mover's footprint would <em>overlap</em>, which is what "the space of" means
+    /// once a space can be four squares.
     /// </para>
     /// <para>
     /// Two of the four pass-through clauses are modelled: <b>ally</b> and
@@ -49,6 +72,10 @@ public static class MovementRules
     /// tactics policy's stuck-turn rule was carrying the workaround for a gap that
     /// belonged here. <b>Tiny</b> and <b>two size categories apart</b> stay unmodelled
     /// and so still block; both would only widen what is passable, never narrow it.
+    /// They land with #429's final slice rather than here, because both read
+    /// <c>CombatantStats.Size</c> — which is live content — and turning them on before
+    /// spaces are real would change fights in a slice whose whole claim is that it
+    /// cannot.
     /// </para>
     /// <para>
     /// The Difficult Terrain clause exempts allies, so squeezing past your own front
@@ -77,7 +104,7 @@ public static class MovementRules
         ArgumentNullException.ThrowIfNull(mover);
         ArgumentNullException.ThrowIfNull(combatants);
 
-        if (destination == mover.Position || !field.IsPassable(destination))
+        if (destination == mover.Position || !SpaceFits(field, mover.SpaceAt(destination)))
         {
             return null;
         }
@@ -93,7 +120,8 @@ public static class MovementRules
         // holding both a friend and a stranger is judged by the stranger.
         var occupants = combatants
             .Where(other => other.Id != mover.Id && !other.IsDead)
-            .ToLookup(other => other.Position);
+            .SelectMany(other => other.Space.Squares(), (other, square) => (Square: square, Creature: other))
+            .ToLookup(entry => entry.Square, entry => entry.Creature);
 
         // A move may end on a downed creature, and nowhere else.
         //
@@ -114,7 +142,7 @@ public static class MovementRules
         // reopens two creatures in one square, which is the crash that took down two of
         // sixty seeded runs when occupancy was last read as "active". A creature that
         // comes round underneath somebody now displaces them.
-        if (occupants[destination].Any(other => !CanEndOn(mover, other)))
+        if (Overlapped(occupants, mover.SpaceAt(destination)).Any(other => !CanEndOn(mover, other)))
         {
             return null;
         }
@@ -137,22 +165,31 @@ public static class MovementRules
                 return new MovementPath(Reconstruct(cameFrom, mover.Position, destination), reached.Cost);
             }
 
+            var currentSpace = mover.SpaceAt(current);
+
             foreach (var next in current.Neighbours())
             {
-                if (!field.IsPassable(next))
+                var nextSpace = mover.SpaceAt(next);
+
+                // No squeezing: the whole body has to fit, or the step does not exist.
+                if (!SpaceFits(field, nextSpace))
                 {
                     continue;
                 }
 
-                var occupied = occupants.Contains(next);
+                // Only the ground the body newly covers is entered. A Large creature
+                // sliding one square east enters two squares and keeps two, and the two
+                // it keeps are neither paid for again nor asked about again.
+                var entered = nextSpace.Squares().Where(square => !currentSpace.Contains(square)).ToArray();
+                var met = entered.SelectMany(square => occupants[square]).Distinct().ToArray();
 
-                if (occupied)
+                if (met.Length > 0)
                 {
                     // Pass through only what the printed clause names — an ally, or
                     // anyone Incapacitated — and stop only on the downed.
                     var blocked = next == destination
-                        ? occupants[next].Any(other => !CanEndOn(mover, other))
-                        : occupants[next].Any(other => !CanPassThrough(mover, other));
+                        ? met.Any(other => !CanEndOn(mover, other))
+                        : met.Any(other => !CanPassThrough(mover, other));
 
                     if (blocked)
                     {
@@ -161,11 +198,14 @@ public static class MovementRules
                 }
 
                 // "Another creature's space is Difficult Terrain for you unless that
-                // creature is Tiny or your ally." Difficult terrain does not stack, so
-                // an occupied square that is also rough ground costs double once.
-                var stepCost = occupied && !occupants[next].All(other => IsAllyOf(mover, other))
-                    ? Math.Max(Battlefield.FeetPerSquare * 2, field.EnterCostFeet(next))
-                    : field.EnterCostFeet(next);
+                // creature is Tiny or your ally." Difficult terrain does not stack, so a
+                // newly entered square that is also rough ground costs double once — and
+                // one difficult square anywhere in the newly entered ground makes the
+                // whole step difficult, per the stated reading above.
+                var stepCost = met.Any(other => !IsAllyOf(mover, other))
+                    || entered.Any(square => field.EnterCostFeet(square) > Battlefield.FeetPerSquare)
+                    ? Battlefield.FeetPerSquare * 2
+                    : Battlefield.FeetPerSquare;
 
                 var candidate = (
                     Cost: reached.Cost + stepCost,
@@ -185,6 +225,33 @@ public static class MovementRules
 
         return null;
     }
+
+    /// <summary>
+    /// Whether a creature's whole body fits here: every square of the space on the
+    /// battlefield and passable.
+    /// </summary>
+    /// <remarks>
+    /// <b>There is no squeezing in SRD 5.2.1.</b> The word appears nowhere in the
+    /// document — the 2014 rule was not carried into it — so nothing licenses a creature
+    /// entering a space its body does not fit, and a gap narrower than a Large creature's
+    /// space simply blocks it. Forced by print's silence rather than chosen, and stated
+    /// here because a reader would otherwise reasonably expect the older rule.
+    /// </remarks>
+    public static bool SpaceFits(Battlefield field, CreatureSpace space)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+
+        return space.Squares().All(field.IsPassable);
+    }
+
+    /// <summary>
+    /// The distinct creatures whose spaces this space overlaps, in the order the lookup
+    /// hands them back — deterministic, because a seed replays.
+    /// </summary>
+    private static IEnumerable<Combatant> Overlapped(
+        ILookup<GridPosition, Combatant> occupants,
+        CreatureSpace space) =>
+        space.Squares().SelectMany(square => occupants[square]).Distinct();
 
     /// <summary>Whether two creatures are on the same side.</summary>
     private static bool IsAllyOf(Combatant mover, Combatant other) =>
@@ -273,10 +340,22 @@ public static class MovementRules
     /// square to another.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The trigger is precise: the creature must <em>leave</em> the enemy's reach, so an
     /// enemy who was already out of reach, or who is still in reach after the step, gets
     /// nothing. Taking the Disengage action avoids provoking entirely, and an enemy who
     /// cannot act or has already spent its Reaction cannot make one.
+    /// </para>
+    /// <para>
+    /// Reach is measured <b>space to space</b>, between the nearest squares of the
+    /// threatening creature's space and the mover's — printed page 13 counts range "from
+    /// a square adjacent to one of them" and stops "in the space of the other one". So a
+    /// Large creature with five feet of reach threatens the whole ring around its 2 by 2
+    /// space, not the ring around one corner of it, and a Large <em>mover</em> provokes
+    /// while any square of its body is still inside the threatened ring. Both spaces are
+    /// taken at the step being judged rather than from <c>Position</c>, because this is
+    /// asked one square at a time as the walk happens.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<Combatant> FindOpportunityAttackers(
         Combatant mover,
@@ -306,8 +385,8 @@ public static class MovementRules
             .Where(enemy =>
             {
                 var reach = MeleeReachFeet(enemy);
-                var wasInReach = enemy.Position.DistanceFeetTo(from) <= reach;
-                var stillInReach = enemy.Position.DistanceFeetTo(to) <= reach;
+                var wasInReach = enemy.Space.DistanceFeetTo(mover.SpaceAt(from)) <= reach;
+                var stillInReach = enemy.Space.DistanceFeetTo(mover.SpaceAt(to)) <= reach;
 
                 return wasInReach && !stillInReach;
             })

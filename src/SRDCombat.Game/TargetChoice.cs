@@ -71,7 +71,7 @@ public static class TargetChoice
 
         return encounter.Combatants
             .Where(candidate => IsCandidate(encounter, actor, candidate, kind, attack, spell))
-            .OrderBy(candidate => actor.Position.DistanceFeetTo(candidate.Position))
+            .OrderBy(candidate => actor.DistanceFeetTo(candidate))
             // Ties break on identifier so the order is the same every time the same
             // action is armed — cycling that reshuffled itself would be unusable.
             .ThenBy(candidate => candidate.Id, StringComparer.Ordinal)
@@ -126,7 +126,7 @@ public static class TargetChoice
             return false;
         }
 
-        var distance = actor.Position.DistanceFeetTo(candidate.Position);
+        var distance = actor.DistanceFeetTo(candidate);
         var enemy = candidate.SideId != actor.SideId;
 
         return kind switch
