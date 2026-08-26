@@ -59,7 +59,19 @@ public partial class WatchMode : FightScreen
     /// </remarks>
     private void Resolve(int seed)
     {
-        var fight = ResolveFight(seed);
+        Fight fight;
+
+        try
+        {
+            fight = ResolveFight(seed);
+        }
+        catch (RosterRefusedException refusal)
+        {
+            // No snapshots and the reason in the heading — the draw path already
+            // guards the empty list, so the refusal is the whole screen.
+            _subtitle = refusal.Message;
+            return;
+        }
         var encounter = fight.Encounter;
         var labels = Labels.For(encounter.Combatants);
 

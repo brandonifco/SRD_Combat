@@ -468,12 +468,49 @@ public abstract partial class FightScreen : Node2D
     /// <summary>The extracted content, found the way the console client finds it.</summary>
     protected static SrdContent LoadContent() => ContentLoader.Load(ContentDirectory());
 
-    /// <summary>Builds the same fight the console client would, from the same content.</summary>
+    /// <summary>
+    /// A <c>--spawn</c> roster the parser refused — its own type so the callers'
+    /// catches take exactly this and nothing else. A broader catch would dress a
+    /// genuine engine failure (<c>SpawnPlacement.Fit</c>'s "bug report" throw, a
+    /// content-drift refusal) up as a calmly-worded user error, in the very tool
+    /// built for stress-testing.
+    /// </summary>
+    protected sealed class RosterRefusedException(string message) : Exception(message);
+
+    /// <summary>
+    /// Builds the same fight the console client would, from the same content — or, with
+    /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456). In
+    /// spawn mode <c>--level=1..5</c> sets the party's level; the budgeted path keeps
+    /// its fixed level 3 Moderate, which is #443's own concern. A roster that cannot be
+    /// parsed throws <see cref="RosterRefusedException"/> with every failed entry named
+    /// — the caller decides how to show it.
+    /// </summary>
     protected static Fight ResolveFight(int seed)
     {
         var content = LoadContent();
-        var party = PregeneratedParty.Build(content, level: 3);
         var random = new SeededRandomSource(seed);
+
+        if (ArgumentValue("spawn") is { } text)
+        {
+            var roster = RosterParser.Parse(text, content.Monsters);
+
+            if (roster.Errors.Count > 0)
+            {
+                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", roster.Errors)}");
+            }
+
+            var level = ArgumentValue("level") is { } chosen
+                && int.TryParse(chosen, out var parsed)
+                    ? Math.Clamp(parsed, 1, 5)
+                    : 3;
+
+            return EncounterFactory.BuildChosen(
+                PregeneratedParty.Build(content, level),
+                roster.Monsters,
+                random);
+        }
+
+        var party = PregeneratedParty.Build(content, level: 3);
 
         return EncounterFactory.Build(content, party, EncounterDifficulty.Moderate, random);
     }

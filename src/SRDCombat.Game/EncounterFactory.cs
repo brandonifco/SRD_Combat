@@ -231,6 +231,49 @@ public static class EncounterFactory
                 ? HordeMinimum
                 : objective?.Kind == ObjectiveKind.KillLeader ? 3 : null);
 
+        return Assemble(party, built, random, lowestLevel, objective);
+    }
+
+    /// <summary>
+    /// Builds a fight from an explicit roster instead of a budget — the test aid behind
+    /// the clients' <c>--spawn</c> flag (#456). None of the pool's four axes apply: this
+    /// is a hand-picked cast, so coverage, plausibility, aquatic and genre are the
+    /// caller's own lookout, and there is no CR cap and no objective. The
+    /// <see cref="BuiltEncounter"/> records Budget = Spent = the roster's summed printed
+    /// XP, because nothing was budgeted and pretending headroom existed would misstate
+    /// the one number the record exists to state.
+    /// </summary>
+    public static Fight BuildChosen(
+        IReadOnlyList<PartyMember> party,
+        IReadOnlyList<MonsterDefinition> monsters,
+        IRandomSource random)
+    {
+        ArgumentNullException.ThrowIfNull(party);
+        ArgumentNullException.ThrowIfNull(monsters);
+        ArgumentNullException.ThrowIfNull(random);
+        ArgumentOutOfRangeException.ThrowIfZero(party.Count);
+        ArgumentOutOfRangeException.ThrowIfZero(monsters.Count);
+
+        var experience = monsters.Sum(monster => monster.ExperiencePoints);
+        var built = new BuiltEncounter([.. monsters], experience, experience);
+        var lowestLevel = party.Min(member => member.Sheet.Level);
+
+        return Assemble(party, built, random, lowestLevel, objective: null);
+    }
+
+    /// <summary>
+    /// The half of fight-building that is not about choosing monsters: board sizing,
+    /// layout, spawn fitting, terrain, and combatant construction — shared verbatim by
+    /// the budgeted path and the chosen-roster path so a spawned fight stands on exactly
+    /// the board a drawn one would.
+    /// </summary>
+    private static Fight Assemble(
+        IReadOnlyList<PartyMember> party,
+        BuiltEncounter built,
+        IRandomSource random,
+        int lowestLevel,
+        ObjectiveSpec? objective)
+    {
         var separation = StartingSeparationFeet / Battlefield.FeetPerSquare;
 
         // Both axes doubled (2026-08-17). The old board was 9 by 6 or so: the sides
