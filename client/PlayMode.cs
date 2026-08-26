@@ -221,7 +221,22 @@ public partial class PlayMode : FightScreen
 
         if (HasArgument("one-fight"))
         {
-            var fight = ResolveFight(_seed);
+            Fight fight;
+
+            try
+            {
+                fight = ResolveFight(_seed);
+            }
+            catch (RosterRefusedException refusal)
+            {
+                // The same screen a bad save gets: the reason, on screen, and nothing
+                // started — a refusal printed only to a console nobody launched from
+                // is a refusal nobody sees.
+                _phase = Phase.RunOver;
+                _interlude.Add(refusal.Message);
+                _subtitle = $"seed {_seed}";
+                return;
+            }
 
             _fight = null;
             _encounter = fight.Encounter;

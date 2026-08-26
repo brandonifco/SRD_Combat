@@ -72,9 +72,9 @@ public enum BattleLayout
 /// <para>
 /// The battlefield is sized to hold both sides with room to manoeuvre round the flanks,
 /// rather than being a corridor that makes positioning meaningless — and it is not bare:
-/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain between the sides,
-/// seeded from the same dice as everything else, with its own interpretations stated on
-/// the class.
+/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain across the whole
+/// board (biased toward the contested ground between the sides), seeded from the same
+/// dice as everything else, with its own interpretations stated on the class.
 /// </para>
 /// <para>
 /// <b>Six squares is exactly one move, and widening it was measured and rejected —
@@ -231,6 +231,49 @@ public static class EncounterFactory
                 ? HordeMinimum
                 : objective?.Kind == ObjectiveKind.KillLeader ? 3 : null);
 
+        return Assemble(party, built, random, lowestLevel, objective);
+    }
+
+    /// <summary>
+    /// Builds a fight from an explicit roster instead of a budget — the test aid behind
+    /// the clients' <c>--spawn</c> flag (#456). None of the pool's four axes apply: this
+    /// is a hand-picked cast, so coverage, plausibility, aquatic and genre are the
+    /// caller's own lookout, and there is no CR cap and no objective. The
+    /// <see cref="BuiltEncounter"/> records Budget = Spent = the roster's summed printed
+    /// XP, because nothing was budgeted and pretending headroom existed would misstate
+    /// the one number the record exists to state.
+    /// </summary>
+    public static Fight BuildChosen(
+        IReadOnlyList<PartyMember> party,
+        IReadOnlyList<MonsterDefinition> monsters,
+        IRandomSource random)
+    {
+        ArgumentNullException.ThrowIfNull(party);
+        ArgumentNullException.ThrowIfNull(monsters);
+        ArgumentNullException.ThrowIfNull(random);
+        ArgumentOutOfRangeException.ThrowIfZero(party.Count);
+        ArgumentOutOfRangeException.ThrowIfZero(monsters.Count);
+
+        var experience = monsters.Sum(monster => monster.ExperiencePoints);
+        var built = new BuiltEncounter([.. monsters], experience, experience);
+        var lowestLevel = party.Min(member => member.Sheet.Level);
+
+        return Assemble(party, built, random, lowestLevel, objective: null);
+    }
+
+    /// <summary>
+    /// The half of fight-building that is not about choosing monsters: board sizing,
+    /// layout, spawn fitting, terrain, and combatant construction — shared verbatim by
+    /// the budgeted path and the chosen-roster path so a spawned fight stands on exactly
+    /// the board a drawn one would.
+    /// </summary>
+    private static Fight Assemble(
+        IReadOnlyList<PartyMember> party,
+        BuiltEncounter built,
+        IRandomSource random,
+        int lowestLevel,
+        ObjectiveSpec? objective)
+    {
         var separation = StartingSeparationFeet / Battlefield.FeetPerSquare;
 
         // Both axes doubled (2026-08-17). The old board was 9 by 6 or so: the sides
@@ -279,17 +322,25 @@ public static class EncounterFactory
         var monsterSpawns = spawns.Skip(party.Count).ToArray();
 
         // Terrain avoids every square a body will stand on, not just the anchor squares,
-        // and the connectivity guarantee is asked for the largest body on this field.
-        var reserved = partySpawns
+        // and the connectivity guarantee is asked for the largest body on this field. Kept
+        // per side (rather than concatenated) because the contested-ground bias needs each
+        // side's own footprint extent to place its band, not just its anchors.
+        var partyReserved = partySpawns
             .Select((anchor, index) => new CreatureSpace(anchor, partySpans[index]))
-            .Concat(monsterSpawns.Select((anchor, index) => new CreatureSpace(anchor, monsterSpans[index])))
+            .SelectMany(space => space.Squares())
+            .ToArray();
+
+        var monsterReserved = monsterSpawns
+            .Select((anchor, index) => new CreatureSpace(anchor, monsterSpans[index]))
             .SelectMany(space => space.Squares())
             .ToArray();
 
         var battlefield = TerrainGenerator.Generate(
             width,
             height,
-            reserved,
+            partyReserved,
+            monsterReserved,
+            layout,
             random,
             partySpans.Concat(monsterSpans).DefaultIfEmpty(1).Max());
 

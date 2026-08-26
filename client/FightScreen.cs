@@ -1,6 +1,7 @@
 using Godot;
 using SRDCombat.Content;
 using SRDCombat.Core.Combat;
+using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
 using SRDCombat.Game;
@@ -412,7 +413,8 @@ public abstract partial class FightScreen : Node2D
         bool IsDead,
         bool IsDown,
         string Conditions,
-        string? ClassName);
+        string? ClassName,
+        CreatureSize Size);
 
     public override void _Ready()
     {
@@ -466,12 +468,49 @@ public abstract partial class FightScreen : Node2D
     /// <summary>The extracted content, found the way the console client finds it.</summary>
     protected static SrdContent LoadContent() => ContentLoader.Load(ContentDirectory());
 
-    /// <summary>Builds the same fight the console client would, from the same content.</summary>
+    /// <summary>
+    /// A <c>--spawn</c> roster the parser refused — its own type so the callers'
+    /// catches take exactly this and nothing else. A broader catch would dress a
+    /// genuine engine failure (<c>SpawnPlacement.Fit</c>'s "bug report" throw, a
+    /// content-drift refusal) up as a calmly-worded user error, in the very tool
+    /// built for stress-testing.
+    /// </summary>
+    protected sealed class RosterRefusedException(string message) : Exception(message);
+
+    /// <summary>
+    /// Builds the same fight the console client would, from the same content — or, with
+    /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456). In
+    /// spawn mode <c>--level=1..5</c> sets the party's level; the budgeted path keeps
+    /// its fixed level 3 Moderate, which is #443's own concern. A roster that cannot be
+    /// parsed throws <see cref="RosterRefusedException"/> with every failed entry named
+    /// — the caller decides how to show it.
+    /// </summary>
     protected static Fight ResolveFight(int seed)
     {
         var content = LoadContent();
-        var party = PregeneratedParty.Build(content, level: 3);
         var random = new SeededRandomSource(seed);
+
+        if (ArgumentValue("spawn") is { } text)
+        {
+            var roster = RosterParser.Parse(text, content.Monsters);
+
+            if (roster.Errors.Count > 0)
+            {
+                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", roster.Errors)}");
+            }
+
+            var level = ArgumentValue("level") is { } chosen
+                && int.TryParse(chosen, out var parsed)
+                    ? Math.Clamp(parsed, 1, 5)
+                    : 3;
+
+            return EncounterFactory.BuildChosen(
+                PregeneratedParty.Build(content, level),
+                roster.Monsters,
+                random);
+        }
+
+        var party = PregeneratedParty.Build(content, level: 3);
 
         return EncounterFactory.Build(content, party, EncounterDifficulty.Moderate, random);
     }
@@ -787,7 +826,8 @@ public abstract partial class FightScreen : Node2D
         combatant.IsDead,
         !combatant.IsDead && combatant.CurrentHitPoints == 0,
         string.Join(", ", combatant.Conditions),
-        combatant.Stats.Character?.ClassName);
+        combatant.Stats.Character?.ClassName,
+        combatant.Stats.Size);
 
     /// <summary>Initiative order, not build order: it is what a watcher actually tracks.</summary>
     protected static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
@@ -1894,11 +1934,12 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>
-    /// The figure height, in source pixels, that a square is sized around. It is what a
-    /// standing human is drawn at across every one of these packs, so measuring against
-    /// it puts one pixel scale on the whole board: a goblin then reads shorter than an
-    /// orc because the artist drew it shorter, and every pack keeps the same pixel size,
-    /// which is what makes them look like one set of art rather than several.
+    /// The figure height, in source pixels, that a square is sized around for a Medium
+    /// creature. It is what a standing human is drawn at across every one of these packs,
+    /// so measuring against it puts one pixel scale on the whole board: a goblin then
+    /// reads shorter than an orc because the artist drew it shorter, and every pack keeps
+    /// the same pixel size, which is what makes them look like one set of art rather than
+    /// several.
     /// </summary>
     private const float NominalStature = 64f;
 
@@ -1906,12 +1947,65 @@ public abstract partial class FightScreen : Node2D
     private const float StatureFraction = 0.95f;
 
     /// <summary>
-    /// How far past its square a figure may draw before it is shrunk to fit. Generous —
-    /// a tall orc standing over its square looks right, and only something built on a
-    /// different scale entirely (the dragon, half as tall as it is wide) is cut down.
+    /// How far past its square a figure may draw before it is shrunk to fit, for a Medium
+    /// creature. Generous — a tall orc standing over its square looks right, and only
+    /// something built on a different scale entirely (the dragon, half as tall as it is
+    /// wide) is cut down.
     /// </summary>
     private const float WidestSpan = 1.6f;
     private const float TallestSpan = 1.45f;
+
+    /// <summary>
+    /// How much bigger a printed size reads than a Medium creature, before the footprint
+    /// clamp has a say.
+    /// </summary>
+    /// <remarks>
+    /// <b>Why this exists (#296):</b> the pixel-consistency scheme above (one shared scale,
+    /// let each pack's own drawn height carry the size difference) quietly assumed every
+    /// pack draws its creature proportionally to its printed size. That held until the
+    /// Ogre and the Ettin: both are Large, and both are drawn with a raised weapon or a
+    /// second head spanning nearly the whole canvas, so their *measured* footprint
+    /// (<see cref="SpriteLibrary.Figure.Breadth"/>) is wide enough to trip
+    /// <see cref="WidestSpan"/> and shrink them — the exact same clamp a Small goblin's
+    /// narrow art never touches. The clamp then decided size, inverting the printed
+    /// ordering. The fix stops treating every creature's pixels as equally trustworthy:
+    /// <see cref="CreatureSize"/> now sets a floor on the *target* scale (below), so a
+    /// Large creature aims higher than a Medium one regardless of how its own art is
+    /// proportioned.
+    /// </remarks>
+    private static float SizeGrowth(CreatureSize size) => size switch
+    {
+        CreatureSize.Tiny => 0.6f,
+        CreatureSize.Small => 0.8f,
+        CreatureSize.Medium => 1.0f,
+        CreatureSize.Large => 1.35f,
+        CreatureSize.Huge => 1.6f,
+        CreatureSize.Gargantuan => 1.85f,
+        _ => 1.0f,
+    };
+
+    /// <summary>
+    /// How much more footprint (<see cref="WidestSpan"/> and <see cref="TallestSpan"/>)
+    /// a printed size is allowed before the clamp shrinks it, on top of
+    /// <see cref="SizeGrowth"/>.
+    /// </summary>
+    /// <remarks>
+    /// A bigger creature's stance, weapon or extra limbs genuinely need more room than a
+    /// Small one's — the Ogre's club and the Ettin's second head are exactly this, not a
+    /// drawing error — so the *allowance* grows with size a good deal faster than the
+    /// *target* does. This is still a real clamp, not a removed one: a Medium creature
+    /// (allowance 1×, unchanged from before this issue) whose art was this disproportionate
+    /// would still be cut down, and a big creature whose art is disproportionate even by
+    /// its own generous allowance still gets clamped — the Ogre and the Ettin both do, just
+    /// to a floor comfortably above a Small creature's, rather than below it.
+    /// </remarks>
+    private static float FootprintAllowance(CreatureSize size) => size switch
+    {
+        CreatureSize.Large => 1.8f,
+        CreatureSize.Huge => 2.2f,
+        CreatureSize.Gargantuan => 2.6f,
+        _ => 1.0f,
+    };
 
     /// <summary>The token as animated art, with the letter kept in the cell's corner.</summary>
     /// <remarks>
@@ -1994,7 +2088,7 @@ public abstract partial class FightScreen : Node2D
 
         var modulate = token.IsDead ? new Color(0.5f, 0.5f, 0.55f) : Colors.White;
         var figure = art.Figure;
-        var scale = ScaleFor(figure);
+        var scale = ScaleFor(figure, token.Size);
 
         // The ground line was measured in the idle strip's canvas, and a pose sheet may
         // carry a different canvas height — the hand-drawn Fighter's thrust is 101 rows
@@ -2050,23 +2144,28 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>
-    /// How much to magnify one figure: the board's shared pixel scale, cut down only for
-    /// a creature that would not fit its square at it.
+    /// How much to magnify one figure: the board's shared pixel scale times its printed
+    /// size's own growth (<see cref="SizeGrowth"/>), cut down only for a creature that
+    /// would not fit its (equally size-grown) footprint at that scale.
     /// </summary>
     /// <remarks>
     /// The result is snapped to a quarter step. Pixel art enlarged by an arbitrary
     /// fraction gives its source pixels uneven sizes on screen — some one screen pixel,
     /// some two — which crawls as the frames cycle; a clean ratio keeps the grid of
     /// pixels even. At today's board a square comes out 66 pixels, which puts the shared
-    /// scale on exactly 1.0: the art is drawn at its own resolution.
+    /// scale on exactly 1.0 for a Medium creature: the art is drawn at its own resolution.
+    /// <see cref="CreatureSize.Medium"/> is unaffected by #296's fix — <see
+    /// cref="SizeGrowth"/> and <see cref="FootprintAllowance"/> both read 1 there — so
+    /// every creature this shipped correctly for keeps rendering exactly as before.
     /// </remarks>
-    private float ScaleFor(SpriteLibrary.Figure figure)
+    private float ScaleFor(SpriteLibrary.Figure figure, CreatureSize size)
     {
-        var shared = StatureFraction * CellPixels / NominalStature;
+        var shared = StatureFraction * CellPixels / NominalStature * SizeGrowth(size);
+        var allowance = FootprintAllowance(size);
 
         var fits = Math.Min(
-            WidestSpan * CellPixels / figure.Breadth,
-            TallestSpan * CellPixels / figure.Stature);
+            WidestSpan * allowance * CellPixels / figure.Breadth,
+            TallestSpan * allowance * CellPixels / figure.Stature);
 
         return shared <= fits
             ? Math.Max(0.25f, MathF.Round(shared * 4f) / 4f)

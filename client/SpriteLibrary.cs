@@ -623,6 +623,14 @@ public sealed class SpriteLibrary
     }
 
     /// <summary>Each frame's height and how much of it is actually drawn.</summary>
+    /// <remarks>
+    /// <b>#296 follow-up (qc, non-blocking):</b> kept aligned with <see cref="FrameBoxes"/>'s
+    /// narrow-sheet fix rather than left as its half-fixed sibling. Every shipped
+    /// <c>Dead.png</c> is a genuine multi-frame strip today (a death animation needs more
+    /// than one frame), so <c>width &lt; frameSize</c> does not currently fire here — this
+    /// is a consistency fix, not a behaviour change, and there is no before/after to show
+    /// for it.
+    /// </remarks>
     private static List<(int Index, int Height, int Pixels)> FrameWeights(string path)
     {
         var frames = new List<(int, int, int)>();
@@ -636,22 +644,27 @@ public sealed class SpriteLibrary
         var width = image.GetWidth();
         var frameSize = image.GetHeight();
 
-        if (frameSize == 0 || width < frameSize)
+        if (frameSize == 0)
         {
             return frames;
         }
 
-        for (var frame = 0; frame < width / frameSize; frame++)
+        var narrow = width < frameSize;
+        var frameWidth = narrow ? width : frameSize;
+        var frameCount = narrow ? 1 : width / frameSize;
+
+        for (var frame = 0; frame < frameCount; frame++)
         {
             int top = frameSize, bottom = -1, pixels = 0;
+            var frameLeft = frame * frameWidth;
 
             for (var y = 0; y < frameSize; y++)
             {
-                for (var x = 0; x < frameSize; x++)
+                for (var x = 0; x < frameWidth; x++)
                 {
                     // Weighed by opacity rather than counted: these strips fade a body
                     // out as well as flattening it, and a ghost is not a corpse either.
-                    var alpha = data[(((y * width) + (frame * frameSize) + x) * 4) + 3];
+                    var alpha = data[(((y * width) + frameLeft + x) * 4) + 3];
 
                     if (alpha < 32)
                     {
@@ -682,6 +695,32 @@ public sealed class SpriteLibrary
     }
 
     /// <summary>Each frame's opaque box, in that frame's own coordinates.</summary>
+    /// <remarks>
+    /// <b>#296 follow-up:</b> this used to treat a sheet narrower than its own height as
+    /// "not a strip at all" and return nothing, the same test <see cref="LoadStrip"/>
+    /// uses to decide a sheet needs horizontal padding — but here it meant every
+    /// single-drawing pack (a hand-painted portrait, not an animated strip: Fighter,
+    /// Rogue, Bandit, Goblin and two dozen more) measured zero frames. <see
+    /// cref="Median"/> defaults an empty set to 1, so <see cref="Measure"/> put every
+    /// one of their <see cref="Figure.Stature"/>/<see cref="Figure.Breadth"/> on that
+    /// floor. The footprint-clamp half of that genuinely never showed — dividing by a
+    /// floor of 1 makes the clamp's own bound enormous, and every affected pack's real
+    /// proportions already fall well inside a merely generous bound anyway (verified:
+    /// identical <em>scale</em> before and after, for all of them). <b>The
+    /// <see cref="Figure.Stature"/> half did show</b>, and qc's review of #296 caught
+    /// it: a pack with no <c>Dead.png</c> draws its fallen body by rotating the idle
+    /// frame about <c>ground - (Stature / 2)</c> (see <c>FightScreen.DrawSpriteToken</c>'s
+    /// <c>lying</c> branch), so a corpse that used to pivot at
+    /// <c>Stature = 1</c> — effectively its feet — now pivots at its real mid-height,
+    /// moving roughly half a cell for every one of the ~22 affected packs with no death
+    /// strip (Bandit, Skeleton, Zombie and the rest). That is almost certainly the
+    /// position the expression always intended — a body centred on the square it fell
+    /// in, not one hinged at the floor — so this reads as a second, previously-unseen
+    /// bug fixed alongside the first, not a side effect to explain away. <see
+    /// cref="Figure.CentreX"/> and a couple of packs' <see cref="Figure.GroundY"/> also
+    /// shift by a few pixels for the same reason. The fix centres the one frame exactly
+    /// where <see cref="LoadStrip"/> draws it, rather than rejecting it.
+    /// </remarks>
     private static List<Rect2I> FrameBoxes(string path)
     {
         var boxes = new List<Rect2I>();
@@ -695,27 +734,33 @@ public sealed class SpriteLibrary
         var width = image.GetWidth();
         var frameSize = image.GetHeight();
 
-        if (frameSize == 0 || width < frameSize)
+        if (frameSize == 0)
         {
             return boxes;
         }
 
-        for (var frame = 0; frame < width / frameSize; frame++)
+        var narrow = width < frameSize;
+        var offsetX = narrow ? (frameSize - width) / 2 : 0;
+        var frameWidth = narrow ? width : frameSize;
+        var frameCount = narrow ? 1 : width / frameSize;
+
+        for (var frame = 0; frame < frameCount; frame++)
         {
             int minX = frameSize, minY = frameSize, maxX = -1, maxY = -1;
+            var frameLeft = frame * frameWidth;
 
             for (var y = 0; y < frameSize; y++)
             {
-                for (var x = 0; x < frameSize; x++)
+                for (var x = 0; x < frameWidth; x++)
                 {
-                    if (data[(((y * width) + (frame * frameSize) + x) * 4) + 3] < 32)
+                    if (data[(((y * width) + frameLeft + x) * 4) + 3] < 32)
                     {
                         continue;
                     }
 
-                    minX = Math.Min(minX, x);
+                    minX = Math.Min(minX, x + offsetX);
                     minY = Math.Min(minY, y);
-                    maxX = Math.Max(maxX, x);
+                    maxX = Math.Max(maxX, x + offsetX);
                     maxY = Math.Max(maxY, y);
                 }
             }

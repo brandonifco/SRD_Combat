@@ -32,7 +32,18 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
+
+      - name: Verify SDK pin
+        run: |
+          pinned="$(grep -oP '"version"\s*:\s*"\K[^"]+' global.json)"
+          resolved="$(dotnet --version)"
+          echo "global.json pins: $pinned"
+          echo "dotnet resolved:  $resolved"
+          if [[ "$resolved" != "$pinned" ]]; then
+            echo "::error::dotnet resolved SDK $resolved, but global.json pins $pinned. CI is not building on the pinned SDK — the #428 drift class is open again."
+            exit 1
+          fi
 
       - name: Restore
         run: dotnet restore
@@ -64,7 +75,18 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
+
+      - name: Verify SDK pin
+        run: |
+          pinned="$(grep -oP '"version"\s*:\s*"\K[^"]+' global.json)"
+          resolved="$(dotnet --version)"
+          echo "global.json pins: $pinned"
+          echo "dotnet resolved:  $resolved"
+          if [[ "$resolved" != "$pinned" ]]; then
+            echo "::error::dotnet resolved SDK $resolved, but global.json pins $pinned. CI is not building on the pinned SDK — the #428 drift class is open again."
+            exit 1
+          fi
 
       - name: Restore
         run: dotnet restore
