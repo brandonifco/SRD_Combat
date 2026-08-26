@@ -17,21 +17,37 @@ public static class ScenarioArguments
     public const int MaximumLevel = 5;
 
     /// <summary>
-    /// Parses <c>--level</c>'s value for spawn mode. A <c>null</c> text (the flag was
-    /// not passed) succeeds with the default level 3 — the budgeted path's own fixed
-    /// level stays #443's concern and is untouched by this helper. A present value
-    /// that is not a whole number, or is outside <see cref="MinimumLevel"/>–
-    /// <see cref="MaximumLevel"/>, fails and names both the value typed and the
-    /// accepted range; there is no fallback and no clamp, because either would let a
+    /// Parses <c>--level</c>'s value for spawn mode. <paramref name="text"/> alone
+    /// cannot tell "the flag was not passed" from "the flag was passed with no
+    /// value" — both read as <c>null</c> from the client's own
+    /// <c>ArgumentValue</c>, which only recognises the <c>--level=value</c> form
+    /// (see its doc comment) — so <paramref name="present"/> carries that fact
+    /// explicitly; callers pass their own <c>HasArgument("level")</c>. Not present
+    /// succeeds with the default level 3 — the budgeted path's own fixed level stays
+    /// #443's concern and is untouched by this helper. Present with no value (a bare
+    /// <c>--level</c>, or the space form <c>--level 5</c>, which this client does not
+    /// accept — see <c>ArgumentValue</c>) is refused rather than defaulted, the same
+    /// as any other bad value: silently falling back to 3 here is exactly the shape
+    /// #463 exists to close, just one flag over. A present value that is not a whole
+    /// number, or is outside <see cref="MinimumLevel"/>–<see cref="MaximumLevel"/>,
+    /// fails and names both the value typed and the accepted range; there is no
+    /// fallback and no clamp anywhere in this method, because any of them would let a
     /// tester believe the fight ran at a level they never typed.
     /// </summary>
-    public static bool TryParseLevel(string? text, out int level, out string? error)
+    public static bool TryParseLevel(string? text, bool present, out int level, out string? error)
     {
-        if (text is null)
+        if (!present)
         {
             level = 3;
             error = null;
             return true;
+        }
+
+        if (text is null)
+        {
+            level = default;
+            error = "--level: no value given (use --level=1-5; the space form \"--level 5\" is not accepted)";
+            return false;
         }
 
         if (!int.TryParse(text, out var parsed))
