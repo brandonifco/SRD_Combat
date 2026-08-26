@@ -127,6 +127,56 @@ public abstract partial class FightScreen : Node2D
     protected static readonly Color Dim = new("8a8a96");
 
     /// <summary>
+    /// The active-combatant ring's blink period, in seconds (#494) — a played-run
+    /// complaint that the ring "reads as one more piece of board furniture" on a
+    /// crowded 28x18 board. <b>Chosen to read like a resting text cursor, not a
+    /// strobe</b>: 1.2 s is 0.83 Hz, nowhere near the 3-30 Hz photosensitivity band —
+    /// state it here so nobody "speeds it up a bit" into that band later without
+    /// re-checking it.
+    /// </summary>
+    private const double ActiveRingBlinkPeriodSeconds = 1.2;
+
+    /// <summary>
+    /// The ring's dimmest point in its cycle. Never fully invisible: a hard on/off
+    /// blink reads as the ring vanishing rather than pulsing, and a beat where the
+    /// only marker of whose turn it is disappears entirely is worse than the static
+    /// ring it replaces.
+    /// </summary>
+    private const float ActiveRingBlinkFloorAlpha = 0.25f;
+
+    /// <summary>
+    /// The active ring's colour for this draw: pulsing on <see
+    /// cref="ActiveRingBlinkPeriodSeconds"/> so the eye finds whoever is up without
+    /// hunting, per #494.
+    /// </summary>
+    /// <remarks>
+    /// <b>Read straight off the engine's real clock</b> (<see cref="Time.GetTicksMsec"/>)
+    /// rather than a stored timer — the cadence comes out identical whether the frame
+    /// rate is 30 or 300, and it costs no new field on a class already carrying
+    /// forty-eight of them (#327). <b>Held fully solid while <see
+    /// cref="ActInProgress"/></b>: a fading ring competing for attention with the
+    /// blow it is pointing at read worse in a capture than holding it steady, so the
+    /// blink stops rather than continues through the animation.
+    /// </remarks>
+    private Color ActiveRingNow
+    {
+        get
+        {
+            if (ActInProgress)
+            {
+                return ActiveRing;
+            }
+
+            var phase = (Time.GetTicksMsec() / 1000.0 % ActiveRingBlinkPeriodSeconds)
+                / ActiveRingBlinkPeriodSeconds;
+            var wave = 0.5f + (0.5f * Mathf.Sin((2f * Mathf.Pi * (float)phase) - (Mathf.Pi / 2f)));
+            var alpha = ActiveRingBlinkFloorAlpha + ((1f - ActiveRingBlinkFloorAlpha) * wave);
+
+            return new Color(ActiveRing, alpha);
+        }
+    }
+
+    /// <summary>
     /// How many frames a second every sprite animation advances at.
     /// </summary>
     /// <remarks>
@@ -1840,7 +1890,7 @@ public abstract partial class FightScreen : Node2D
 
             if (token.Id == activeId)
             {
-                DrawCircle(centre, (CellPixels / 2f) - 2, ActiveRing, filled: false, width: 2);
+                DrawCircle(centre, (CellPixels / 2f) - 2, ActiveRingNow, filled: false, width: 2);
             }
 
             if (_sprites.ForToken(token.IsParty, token.ClassName, token.Name) is { } art)
