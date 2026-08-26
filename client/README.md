@@ -9,7 +9,12 @@ who levelled, what was found — and a Continue button marches on. At each Long 
 Shop button opens the merchant's stall: every offer at its printed price, the purse in
 the header, the unaffordable dimmed, a click buys, Back or Esc returns. `--one-fight` plays a
 single encounter instead; `--watch` keeps the original read-only screen, which resolves
-one fight up front and lets you scrub through it.
+one fight up front and lets you scrub through it. Either takes
+`--spawn="Ogre, 2 Goblin Warrior"` to field exactly that cast instead of drawing from
+the budget — a test aid (#456): comma-separated, optional leading count (up to 20),
+names matched against the bestiary ignoring case, and a roster with any entry it cannot
+parse is refused on screen with every failed entry named. In spawn mode `--level=1..5`
+sets the party's level (default 3).
 
 ## Running it
 
