@@ -329,18 +329,27 @@ to be checked before that criterion could be relied on. Both were checked tonigh
 
 ### 5.1 Captures are byte-reproducible — measured, and they are
 
-Two `--seed=1 --probe` runs, same build, same display, each cut off at 300 seconds,
-compared with `cmp`:
+Two complete `--seed=1 --probe` runs to termination, same build, same display, compared
+with `cmp`:
 
 ```
 SAME play-1-turn-ready.png     SAME play-2-refused.png    SAME play-2b-hint.png
 SAME play-2c-tab-armed.png     SAME play-3-moved.png      SAME play-4-attacked.png
 SAME play-6-turn-ended.png     SAME play-7-spell-menu.png SAME run-0-interlude.png
+SAME run-9-after-fight.png
 ```
 
-Nine of nine byte-identical. Real-time pacing, an animation queue and a hover clock
+**Ten of ten byte-identical.** Real-time pacing, an animation queue and a hover clock
 measured in wall-clock seconds all sit between the input and the shutter, so this was not
-safe to assume. **The criterion is usable.**
+safe to assume. **The criterion is usable**, and it is the strongest evidence available to
+this refactor.
+
+**It costs 15 minutes a run.** The two runs took 15m30s and 15m08s. Almost all of it is the
+play-out loop at the end (`while (_phase == Phase.Fighting && safety < 5000)`, 2578–2591):
+5,000 frames at the ~5 fps the client manages while `RefreshAfterAction` runs 504
+pathfinds, full-board LOS and a fog upload after every action by anyone. So **a
+before-and-after capture pair costs about half an hour of wall clock per slice** — nine
+slices, twice each. S0 should decide whether to shorten it; it is not a reason to skip it.
 
 **Operational notes for whoever executes S0, all measured tonight, none of them in any
 document today:**
@@ -348,13 +357,12 @@ document today:**
 - The probe needs `--display-driver x11` and a reachable `DISPLAY`. **`:1`, as named in
   CLAUDE.md's Environment section, was not reachable on this machine tonight; `:0` was.**
   Worth asking Brandon rather than editing the claim on one night's evidence.
-- **The probe's last three captures were never produced in any run.**
-  `play-5-feature.png` and `play-8-cast.png` are skipped silently when the commanded
-  character has no feature button and no spell rows — the probe does not say so — and
-  `run-9-after-fight.png`, which sits after the play-out loop, was not reached in runs of
-  300 s, 300 s, or 20 minutes. Whether the loop is merely slow or does not terminate at
-  this seed is S0's to find out. Either way, **the acceptance criterion's own artifact is
-  partly imaginary**, which is a second reason S0 exists.
+- **Two of the probe's captures are never produced, and the probe does not say so.**
+  `play-5-feature.png` is skipped when the commanded character has no feature button;
+  `play-8-cast.png` is skipped when `_spellRows` is empty. Neither skip is reported —
+  both were absent from every run tonight, and nothing distinguishes "the step passed"
+  from "the step never happened". **A capture set that can silently shrink is a weak
+  gate**, which is a second reason S0 exists.
 
 ### 5.2 The probe does not visit the states this refactor moves — measured, and it does not
 
