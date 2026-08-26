@@ -247,19 +247,51 @@ public static class EncounterFactory
         // and not a squeeze along the wall. Grown again on 2026-08-21 (18 wide → 28,
         // the standard fight 18 tall): all margin, the separation untouched — see the
         // constants' own comments.
+        // Each creature's space, read from the statistics the combatant will actually be
+        // built with rather than derived a second time here — so what the board reserves
+        // and what walks around on it can never disagree about a size.
+        var monsterStats = built.Monsters.Select(CombatantStats.FromMonster).ToArray();
+        var partySpans = party.Select(member => member.Combatant.Stats.SpaceSpanSquares).ToArray();
+        var monsterSpans = monsterStats.Select(stats => stats.SpaceSpanSquares).ToArray();
+
+        // A column of bodies needs a row per square of each body, not a row per creature.
+        // At one square each — every fight until #429's final slice — the sums are the
+        // counts and the board is exactly the size it always was.
         var width = separation + (MarginSquares * 2);
-        var side = Math.Max(party.Count, Math.Max(built.Monsters.Count, 1));
+        var side = Math.Max(partySpans.Sum(), Math.Max(monsterSpans.Sum(), 1));
         var height = (side * 2) + (VerticalMarginSquares * 2);
 
         var layout = DrawLayout(random, lowestLevel);
-        var (partySpawns, monsterSpawns) =
+        var (intendedParty, intendedMonsters) =
             PlaceSides(layout, party.Count, built.Monsters.Count, width, height, separation);
+
+        // The layout decides the shape; this decides where the bodies actually fit in it.
+        // Both sides are fitted in one pass so a monster cannot be placed on top of a
+        // character, and the party goes first because the layouts anchor their shapes on
+        // the party's column or block.
+        var spawns = SpawnPlacement.Fit(
+            [.. intendedParty, .. intendedMonsters],
+            [.. partySpans, .. monsterSpans],
+            width,
+            height);
+
+        var partySpawns = spawns.Take(party.Count).ToArray();
+        var monsterSpawns = spawns.Skip(party.Count).ToArray();
+
+        // Terrain avoids every square a body will stand on, not just the anchor squares,
+        // and the connectivity guarantee is asked for the largest body on this field.
+        var reserved = partySpawns
+            .Select((anchor, index) => new CreatureSpace(anchor, partySpans[index]))
+            .Concat(monsterSpawns.Select((anchor, index) => new CreatureSpace(anchor, monsterSpans[index])))
+            .SelectMany(space => space.Squares())
+            .ToArray();
 
         var battlefield = TerrainGenerator.Generate(
             width,
             height,
-            [.. partySpawns, .. monsterSpawns],
-            random);
+            reserved,
+            random,
+            partySpans.Concat(monsterSpans).DefaultIfEmpty(1).Max());
 
         var placed = party
             .Select((member, index) => member.AtPosition(partySpawns[index]))
@@ -267,15 +299,15 @@ public static class EncounterFactory
 
         var combatants = new List<Combatant>(placed.Select(member => member.Combatant));
 
-        foreach (var (monster, index) in built.Monsters.Select((monster, index) => (monster, index)))
+        foreach (var (stats, index) in monsterStats.Select((stats, index) => (stats, index)))
         {
             combatants.Add(new Combatant(
                 // Unique whatever the encounter repeats — "2 Giant Wasps" is a legal
                 // encounter and both need their own identity.
                 $"monster{index}",
-                monster.Name,
+                built.Monsters[index].Name,
                 MonsterSideId,
-                CombatantStats.FromMonster(monster),
+                stats,
                 monsterSpawns[index]));
         }
 
