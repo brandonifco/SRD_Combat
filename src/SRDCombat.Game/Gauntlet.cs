@@ -259,6 +259,7 @@ public sealed class GauntletRun
     private readonly List<string> _levelUps = [];
     private readonly List<string> _returns = [];
     private readonly List<string> _lootFound = [];
+    private readonly List<int> _magicItemFinders = [];
 
     private GauntletRun(
         SrdContent content,
@@ -701,6 +702,7 @@ public sealed class GauntletRun
 
         Party = party;
         _lootFound.Add($"{party[index].Draft.Name} finds {award.Description}");
+        _magicItemFinders.Add(index);
     }
 
     /// <summary>
@@ -886,6 +888,15 @@ public sealed class GauntletRun
 
     /// <summary>Loot found, in the order it dropped, for a client to narrate.</summary>
     public IReadOnlyList<string> LootFound => _lootFound;
+
+    /// <summary>
+    /// <see cref="Party"/> indices, in the order each found a permanent magic item —
+    /// one entry per <see cref="LootFound"/> line that came from <c>AwardLoot</c> rather
+    /// than a potion (#534). A client reads <c>Party[index].Sheet</c> at that point to
+    /// say what the item resolves to, rather than parsing <see cref="LootFound"/>'s
+    /// prose to guess which line was a permanent item and whom it landed on.
+    /// </summary>
+    public IReadOnlyList<int> MagicItemFinders => _magicItemFinders;
 
     /// <summary>Characters who are dead right now, as opposed to who has ever fallen.</summary>
     /// <remarks>

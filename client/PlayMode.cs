@@ -173,13 +173,16 @@ public partial class PlayMode : FightScreen
     /// <summary>
     /// Baseline of the active-combatant banner. A fixed strip at the window's bottom
     /// rather than a line under the grid: the field fills the whole window now, so the
-    /// banner, the buttons and the notice float over it on the shared veil.
+    /// banner, the buttons, the equipment line and the notice float over it on the
+    /// shared veil. 18px taller than before #534 added the equipment line — every
+    /// other row keeps its old spacing, shifted up to make room, so the notice keeps
+    /// the same distance from the strip's bottom edge it always had.
     /// </summary>
-    private float BannerTop => ScreenHeight - 118f;
+    private float BannerTop => ScreenHeight - 136f;
 
     private float ButtonRowTop => BannerTop + 42f;
 
-    /// <summary>The translucent strip the banner, buttons and notice sit on.</summary>
+    /// <summary>The translucent strip the banner, buttons, equipment line and notice sit on.</summary>
     private Rect2 BottomStrip => new(8, BannerTop - 26, PanelLeft - 40, ScreenHeight - (BannerTop - 26) - 8);
 
     /// <summary>
@@ -547,6 +550,7 @@ public partial class PlayMode : FightScreen
 
         var levelUpsBefore = run.LevelUps.Count;
         var lootBefore = run.LootFound.Count;
+        var magicItemFindersBefore = run.MagicItemFinders.Count;
 
         run.CompleteFight(fight, _dice);
 
@@ -559,6 +563,25 @@ public partial class PlayMode : FightScreen
 
         after.AddRange(run.LevelUps.Skip(levelUpsBefore).Select(line => line + "!"));
         after.AddRange(run.LootFound.Skip(lootBefore).Select(line => line + "!"));
+
+        // Right where the award lands, not one screen later (#534): a permanent
+        // item's resolved effect is stated here, next to the "finds ..." line that
+        // named it, rather than only surfacing the next time this character's panel
+        // draws.
+        foreach (var finder in run.MagicItemFinders.Skip(magicItemFindersBefore))
+        {
+            var sheet = run.Party[finder].Sheet;
+            var announcement = MagicItemReadout.Announce(
+                run.Party[finder].Draft.Name,
+                sheet.MagicItemNames,
+                sheet.SpellAttackItemBonus,
+                sheet.IgnoresHalfCoverOnSpellAttacks);
+
+            if (announcement.Length > 0)
+            {
+                after.Add(announcement);
+            }
+        }
 
         if (run.Outcome != RunOutcome.Defeated)
         {
@@ -1915,6 +1938,22 @@ public partial class PlayMode : FightScreen
                 fontSize: 12,
                 modulate: Dim);
 
+            // A separate line from ResourceLine on purpose (#534): that method's
+            // contract is "what this character has left to spend", and every entry in
+            // it is expendable — slots, uses, potions. A passive item spends nothing,
+            // so it gets its own row rather than corrupting that grammar.
+            var equipment = EquipmentLine(character);
+
+            if (equipment.Length > 0)
+            {
+                DrawString(
+                    TextFont,
+                    new Vector2(UiLeft, ButtonRowTop + 28 + 34),
+                    Trim(equipment, 95),
+                    fontSize: 12,
+                    modulate: Dim);
+            }
+
             DrawSpellMenu(character);
             DrawAttackMenu(character);
             DrawSlotMenu(character);
@@ -1924,7 +1963,7 @@ public partial class PlayMode : FightScreen
         {
             DrawString(
                 TextFont,
-                new Vector2(UiLeft, ButtonRowTop + 28 + 38),
+                new Vector2(UiLeft, ButtonRowTop + 28 + 56),
                 Trim(notice, 78),
                 fontSize: 13,
                 modulate: MonsterColour);
@@ -2274,6 +2313,26 @@ public partial class PlayMode : FightScreen
         }
 
         return string.Join(" · ", parts);
+    }
+
+    /// <summary>
+    /// What this character carries and what it resolves to (#534) — separate from
+    /// <see cref="ResourceLine"/> because a passive item spends nothing, so it does not
+    /// belong in a line whose every other entry is a use counting down. Empty for a
+    /// character with nothing equipped.
+    /// </summary>
+    private static string EquipmentLine(Combatant character)
+    {
+        if (character.Stats.Character is not { } features || features.MagicItemNames.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return "Equipment: " + MagicItemReadout.Describe(
+            features.MagicItemNames,
+            features.SpellAttackItemBonus,
+            character.Stats.IgnoresHalfCoverOnSpellAttacks,
+            features.SpellAttackBonus);
     }
 
     private void DrawSpellMenu(Combatant character)

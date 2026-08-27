@@ -133,6 +133,37 @@ public class LootTests
         Assert.Empty(low.LootFound);
     }
 
+    /// <summary>
+    /// #534: a client reading which <see cref="LootFound"/> line was a permanent item
+    /// and whom it landed on used to have nothing but the announcement's prose to go
+    /// on. <see cref="MagicItemFinders"/> names the party index directly, so the
+    /// interlude can read that finder's resolved sheet for the readout rather than
+    /// parsing "X finds Y!" to guess. A Moderate rung's potion must never appear here —
+    /// it is not equipped, and <c>MagicItemNames</c> would have nothing to say about it.
+    /// </summary>
+    [Fact]
+    public void AMagicItemDropIsRecordedByFinderAndAPotionIsNot()
+    {
+        var high = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.High)]);
+        PlayOut(high, seed: 3);
+
+        if (high.Outcome == RunOutcome.Survived)
+        {
+            var finder = Assert.Single(high.MagicItemFinders);
+            Assert.True(high.Party[finder].Draft.MagicItems.Count > 0);
+        }
+
+        var moderate = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.Moderate)]);
+        PlayOut(moderate, seed: 3);
+
+        if (moderate.Outcome == RunOutcome.Survived)
+        {
+            Assert.Single(moderate.LootFound);
+        }
+
+        Assert.Empty(moderate.MagicItemFinders);
+    }
+
     [Fact]
     public void FoundLootSurvivesASaveAndReload()
     {
