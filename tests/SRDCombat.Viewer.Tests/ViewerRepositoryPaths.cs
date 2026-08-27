@@ -14,6 +14,9 @@ internal static class ViewerRepositoryPaths
     public static string SpritesDirectory =>
         Path.Combine(RepositoryRoot, "client", "assets", "sprites");
 
+    /// <summary>The client's own C# sources, for the seam guard in <c>FightSeamTests</c>.</summary>
+    public static string ClientSourceDirectory => Path.Combine(RepositoryRoot, "client");
+
     /// <summary>This project's own committed fixtures — the geometry manifest among them.</summary>
     public static string FixtureDirectory =>
         Path.Combine(RepositoryRoot, "tests", "SRDCombat.Viewer.Tests", "Fixtures");

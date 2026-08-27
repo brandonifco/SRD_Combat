@@ -59,4 +59,51 @@ public class RosterParserTests
         Assert.Empty(roster.Monsters);
         Assert.Single(roster.Errors);
     }
+
+    /// <summary>
+    /// <see cref="RosterParser.ToRoster"/> (#474) is exactly reversible: expanding the
+    /// entries it returns reproduces the cast it was given, in order. That is the whole
+    /// contract — the cast's order decides which creature takes which spawn square and
+    /// which index its combatant id carries, so a conversion that grouped by name would
+    /// quietly rearrange the fight a <c>--spawn</c> line asked for.
+    /// </summary>
+    [Theory]
+    [InlineData("Ogre, 2 Goblin Warrior, Wolf")]
+    [InlineData("Goblin Warrior, Ogre, Goblin Warrior")]
+    [InlineData("Wolf")]
+    [InlineData("20 Wolf, 20 Wolf")]
+    public void ACastSurvivesTheRoundTripThroughScenarioEntries(string text)
+    {
+        var cast = RosterParser.Parse(text, Content.Monsters).Monsters;
+
+        var expanded = RosterParser.ToRoster(cast)
+            .SelectMany(entry => Enumerable.Repeat(entry.MonsterId, entry.Count))
+            .ToArray();
+
+        Assert.Equal(cast.Select(monster => monster.Id).ToArray(), expanded);
+    }
+
+    /// <summary>
+    /// Adjacent heads fold into one entry, and a run longer than the per-entry ceiling is
+    /// split rather than clamped — forty wolves are two entries of twenty, never twenty
+    /// wolves and a silently lost twenty.
+    /// </summary>
+    [Fact]
+    public void RunsFoldToTheCeilingAndThenStartAgain()
+    {
+        var cast = RosterParser.Parse("20 Wolf, 20 Wolf", Content.Monsters).Monsters;
+
+        Assert.Equal(
+            [RosterParser.MaximumCount, RosterParser.MaximumCount],
+            RosterParser.ToRoster(cast).Select(entry => entry.Count).ToArray());
+    }
+
+    /// <summary>Only adjacent equal ids fold; a repeat after another creature is its own entry.</summary>
+    [Fact]
+    public void ASeparatedRepeatIsItsOwnEntry()
+    {
+        var cast = RosterParser.Parse("Goblin Warrior, Ogre, Goblin Warrior", Content.Monsters).Monsters;
+
+        Assert.Equal(3, RosterParser.ToRoster(cast).Count);
+    }
 }

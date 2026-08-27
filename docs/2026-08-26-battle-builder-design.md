@@ -72,6 +72,9 @@ pregenerated four. Of the other three:
   nothing was budgeted. `ObjectiveSpec` (the serializable form; `EncounterObjective`
   itself is factory-constructed and get-only, so it cannot round-trip) and
   `EncounterDifficulty` both exist and are already carried as data on `LadderStep`.
+  (**Superseded at S2, #474**: `BuildChosen` now takes an optional `ObjectiveSpec?`
+  that defaults to null, which is the behaviour described here exactly — the budget
+  half of the sentence still stands.)
 
 And there is no batch anything. `tools/PacingMeasure` sweeps seeds, but its unit of
 observation is a **run** — thirty fights, figure = fights cleared — not a fight.
@@ -340,6 +343,24 @@ property test worth writing:
 
 This is the `#412` pattern: assert the invariant a reading rests on, so the first
 counter-example forces a decision.
+
+**Landed in S2 (#474), and the one line the implementation had to draw.** The runner is
+`ScenarioRunner.Build(content, scenario, seed)` in `src/SRDCombat.Game/ScenarioRunner.cs`.
+A budgeted scenario goes to a new `EncounterFactory.Build` overload taking a
+`ScenarioBudget`; an explicit cast goes to `BuildChosen`, which grew the optional
+objective. Both overloads delegate to one private `BuildBudgeted`/`Assemble` pair, so the
+identity criterion is true by construction and pinned by a test that plays both fights to
+completion and compares the whole narration.
+
+The line the slice had to draw is **where `ScenarioBudget.Level` stops**. It reaches
+`EncounterBuilder.ForLevels` and nothing else — which means the printed budget, and with
+it the count bounds and the warband gate, since all three are what "priced for a level 3
+party" means. The `BattleLayout` draw's level gate keeps reading the party's own lowest
+level, because that gate is about a fragile party paying for being flanked rather than
+about a price. Bypassing the layout gate is a legitimate thing to author, and this
+document gives it to the battlefield override block (S6, #478) where the batch report's
+header can label it; it must not fall out of the budget level as an unlabelled side
+effect. Both halves of that line have their own test.
 
 **A scenario may compose fights the ladder never generates — and that is the point, but
 it must be labelled.** `DrawLayout` gates `CornerGroups` and `Surrounded` below level 3;
