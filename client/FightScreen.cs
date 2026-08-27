@@ -2,7 +2,6 @@ using Godot;
 using SRDCombat.Content;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
-using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 
@@ -563,50 +562,107 @@ public abstract partial class FightScreen : Node2D
     /// <see cref="RosterRefusedException"/> naming every failure — no fallback, no
     /// clamp, and the caller decides how to show it (#463).
     /// </summary>
+    /// <remarks>
+    /// <b>This method now parses argv into a <see cref="BattleScenario"/> and builds
+    /// nothing itself</b> (#474). <c>--scenario</c> (S4) and the builder screen (S10)
+    /// author the same value, so all three feed one path and none of them duplicates
+    /// another's decisions about what a fight is. Both flags above keep their meaning
+    /// exactly: <c>--spawn</c> becomes a scenario with an explicit roster at the level
+    /// <c>--level</c> named, and the flagless case becomes the fixed level 3 Moderate
+    /// budget, whose every remaining field is already
+    /// <see cref="EncounterFactory.Build"/>'s own default.
+    /// </remarks>
     protected static Fight ResolveFight(int seed)
     {
         var content = LoadContent();
-        var random = new SeededRandomSource(seed);
 
-        if (HasArgument("spawn"))
+        return ResolveFight(ScenarioFromArguments(content), seed, content);
+    }
+
+    /// <summary>
+    /// Builds an authored fight — the seam <c>--scenario</c> (S4) and the builder screen
+    /// (S10) come in through, and the only route to the engine's fight-building from this
+    /// client (#474).
+    /// </summary>
+    protected static Fight ResolveFight(BattleScenario scenario, int seed) =>
+        ResolveFight(scenario, seed, LoadContent());
+
+    /// <summary>
+    /// The single funnel. Separate from the overload above only so the argv path, which
+    /// has to load content to match a roster's names against the bestiary, does not load
+    /// the whole corpus a second time to build the fight it just described.
+    /// </summary>
+    private static Fight ResolveFight(BattleScenario scenario, int seed, SrdContent content) =>
+        ScenarioRunner.Build(content, scenario, seed);
+
+    /// <summary>
+    /// Reads this client's flags into the scenario they describe, refusing exactly what
+    /// they refused before — same checks, same order, same message.
+    /// </summary>
+    private static BattleScenario ScenarioFromArguments(SrdContent content)
+    {
+        if (!HasArgument("spawn"))
         {
-            var errors = new List<string>();
-            IReadOnlyList<MonsterDefinition> monsters = [];
-
-            if (ArgumentValue("spawn") is { } text)
+            return new BattleScenario
             {
-                var roster = RosterParser.Parse(text, content.Monsters);
-                errors.AddRange(roster.Errors);
-                monsters = roster.Monsters;
-            }
-            else
-            {
-                errors.Add("--spawn: no value given (use --spawn=\"...\")");
-            }
-
-            var levelOk = ScenarioArguments.TryParseLevel(
-                ArgumentValue("level"), HasArgument("level"), out var level, out var levelError);
-
-            if (!levelOk)
-            {
-                errors.Add(levelError!);
-            }
-
-            if (errors.Count > 0)
-            {
-                throw new RosterRefusedException($"--spawn refused: {string.Join("; ", errors)}");
-            }
-
-            return EncounterFactory.BuildChosen(
-                PregeneratedParty.Build(content, level),
-                monsters,
-                random);
+                FormatVersion = ScenarioFile.CurrentFormatVersion,
+                Name = "one fight",
+                Notes = string.Empty,
+                Party = new ScenarioParty { PregeneratedLevel = BudgetedFightLevel },
+                Enemies = new ScenarioEnemies
+                {
+                    Budget = new ScenarioBudget
+                    {
+                        Difficulty = EncounterDifficulty.Moderate,
+                        Level = BudgetedFightLevel,
+                    },
+                },
+            };
         }
 
-        var party = PregeneratedParty.Build(content, level: 3);
+        var errors = new List<string>();
+        IReadOnlyList<MonsterDefinition> monsters = [];
 
-        return EncounterFactory.Build(content, party, EncounterDifficulty.Moderate, random);
+        if (ArgumentValue("spawn") is { } text)
+        {
+            var roster = RosterParser.Parse(text, content.Monsters);
+            errors.AddRange(roster.Errors);
+            monsters = roster.Monsters;
+        }
+        else
+        {
+            errors.Add("--spawn: no value given (use --spawn=\"...\")");
+        }
+
+        var levelOk = ScenarioArguments.TryParseLevel(
+            ArgumentValue("level"), HasArgument("level"), out var level, out var levelError);
+
+        if (!levelOk)
+        {
+            errors.Add(levelError!);
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new RosterRefusedException($"--spawn refused: {string.Join("; ", errors)}");
+        }
+
+        return new BattleScenario
+        {
+            FormatVersion = ScenarioFile.CurrentFormatVersion,
+            Name = "--spawn",
+            Notes = string.Empty,
+            Party = new ScenarioParty { PregeneratedLevel = level },
+            Enemies = new ScenarioEnemies { Roster = RosterParser.ToRoster(monsters) },
+        };
     }
+
+    /// <summary>
+    /// The level the flagless one-fight path has always run at, and the level its budget
+    /// is priced for. One constant because a scenario states both, and two numbers that
+    /// have to agree are one number — raising it is #443's concern, not this seam's.
+    /// </summary>
+    private const int BudgetedFightLevel = 3;
 
     /// <summary>
     /// The seed to fight on. <c>--seed=&lt;n&gt;</c> wins; a capture or probe run falls

@@ -196,9 +196,107 @@ public static class EncounterFactory
         ArgumentNullException.ThrowIfNull(random);
         ArgumentOutOfRangeException.ThrowIfZero(party.Count);
 
-        // Each character's own level, because a party diverges once somebody dies and
-        // stops earning experience.
-        //
+        return BuildBudgeted(
+            content,
+            party,
+            difficulty,
+            random,
+            // Each character's own level, because a party diverges once somebody dies
+            // and stops earning experience. A scenario's budget says otherwise and is
+            // allowed to — see the other overload.
+            party.Select(member => member.Sheet.Level),
+            maximumChallengeRating,
+            MonsterCoverage.Playable,
+            plausibleFoesOnly: true,
+            traditionalFoesOnly: true,
+            objective,
+            horde);
+    }
+
+    /// <summary>
+    /// Builds a fight to an authored budget rather than to the party's own level — the
+    /// budgeted half of <see cref="ScenarioRunner"/> (#474).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b><see cref="ScenarioBudget.Level"/> is not the party's level, and that is the
+    /// whole reason this overload exists.</b> The overload above prices the fight against
+    /// each character's own sheet; a scenario may legitimately author "a Moderate fight
+    /// priced for a level 3 party, fought by a level 1 party", so the authored level is
+    /// carried down to <c>EncounterBuilder.ForLevels</c> instead. Reading the party here
+    /// would compile, pass, and silently measure a different fight than the one written
+    /// down.
+    /// </para>
+    /// <para>
+    /// <b>The authored level reaches the budgeting step and stops there</b>, which is the
+    /// line this overload draws and the reason the two levels do not have to agree.
+    /// Everything <c>ForLevels</c> derives — the printed budget, and with it the count
+    /// bounds and the warband gate — follows the authored level, because all three are
+    /// what "priced for a level 3 party" means. Everything <see cref="Assemble"/> derives
+    /// — today the <see cref="BattleLayout"/> draw's level gate — follows the party that
+    /// is actually standing there, because that gate is about a fragile party paying for
+    /// being flanked rather than about a price. Bypassing the layout gate is a legitimate
+    /// thing to want, and the design gives it to the battlefield override block (S6,
+    /// #478) where the batch report can label it; it must not fall out of the budget
+    /// level as an unlabelled side effect.
+    /// </para>
+    /// <para>
+    /// The authored level is spread across the party's own size, so a four-character
+    /// party priced at level 3 buys the level 3 budget for four characters. Pool axes
+    /// come from the scenario too: the cuts stay exactly what they are for the shipped
+    /// game, and a scenario merely gets to ask what is on the other side of them.
+    /// </para>
+    /// </remarks>
+    public static Fight Build(
+        SrdContent content,
+        IReadOnlyList<PartyMember> party,
+        ScenarioBudget budget,
+        IRandomSource random,
+        ObjectiveSpec? objective = null)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(party);
+        ArgumentNullException.ThrowIfNull(budget);
+        ArgumentNullException.ThrowIfNull(random);
+        ArgumentOutOfRangeException.ThrowIfZero(party.Count);
+
+        return BuildBudgeted(
+            content,
+            party,
+            budget.Difficulty,
+            random,
+            Enumerable.Repeat(budget.Level, party.Count),
+            budget.MaximumChallengeRating,
+            budget.CoverageFloor,
+            budget.PlausibleFoesOnly,
+            budget.TraditionalFoesOnly,
+            objective,
+            budget.Horde);
+    }
+
+    /// <summary>
+    /// Choosing the monsters and handing them to <see cref="Assemble"/>: one code path,
+    /// shared verbatim by the ladder's own <c>Build</c> and by a scenario's budgeted
+    /// draw, so a scenario overrides the values a draw would have used without becoming
+    /// a second generator (design §6).
+    /// </summary>
+    /// <param name="budgetLevels">
+    /// One level per character, as the printed budget prices them. The ladder passes each
+    /// character's own; a scenario passes its authored level, repeated.
+    /// </param>
+    private static Fight BuildBudgeted(
+        SrdContent content,
+        IReadOnlyList<PartyMember> party,
+        EncounterDifficulty difficulty,
+        IRandomSource random,
+        IEnumerable<int> budgetLevels,
+        decimal maximumChallengeRating,
+        MonsterCoverage coverageFloor,
+        bool plausibleFoesOnly,
+        bool traditionalFoesOnly,
+        ObjectiveSpec? objective,
+        bool horde)
+    {
         // A boss fight fields an escort: a KillLeader rung ends when one creature dies,
         // which already makes it cheaper than the same encounter fought to the last —
         // measured at +11 full clears on its own when objectives landed — and a *lone*
@@ -218,12 +316,17 @@ public static class EncounterFactory
         // sizes each slot against its share of what is left, so ten slots out of one
         // Moderate budget ask for creatures a tenth of it — which is the goblin-and-
         // skeleton band the pool is thickest in. The count is the whole change.
-        var lowestLevel = party.Min(member => member.Sheet.Level);
-        var isHorde = horde && lowestLevel >= HordeMinimumLevel;
+        var levels = budgetLevels.ToArray();
+        var isHorde = horde && levels.Min() >= HordeMinimumLevel;
 
         var built = EncounterBuilder.ForLevels(
-            MonsterPool.Draw(content.Monsters, maximumChallengeRating),
-            party.Select(member => member.Sheet.Level),
+            MonsterPool.Draw(
+                content.Monsters,
+                maximumChallengeRating,
+                coverageFloor,
+                plausibleFoesOnly,
+                traditionalFoesOnly),
+            levels,
             difficulty,
             random,
             maximumMonsters: isHorde ? HordeMaximum : null,
@@ -231,22 +334,45 @@ public static class EncounterFactory
                 ? HordeMinimum
                 : objective?.Kind == ObjectiveKind.KillLeader ? 3 : null);
 
-        return Assemble(party, built, random, lowestLevel, objective);
+        // The party's own lowest level, not the budget's: the layout gate is about the
+        // party that has to survive being flanked, and an authored price must not move
+        // it. See this method's callers for the line and why it is drawn there.
+        return Assemble(party, built, random, party.Min(member => member.Sheet.Level), objective);
     }
 
     /// <summary>
-    /// Builds a fight from an explicit roster instead of a budget — the test aid behind
-    /// the clients' <c>--spawn</c> flag (#456). None of the pool's four axes apply: this
-    /// is a hand-picked cast, so coverage, plausibility, aquatic and genre are the
-    /// caller's own lookout, and there is no CR cap and no objective. The
-    /// <see cref="BuiltEncounter"/> records Budget = Spent = the roster's summed printed
-    /// XP, because nothing was budgeted and pretending headroom existed would misstate
-    /// the one number the record exists to state.
+    /// Builds a fight from an explicit roster instead of a budget.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Two callers, not one.</b> It began as the test aid behind the Godot client's
+    /// <c>--spawn</c> flag (#456 — only that client implements the flag, which is #466's
+    /// first nit against the plural this sentence used to carry); it is now also the
+    /// explicit-roster half of <see cref="ScenarioRunner"/> (#474), which is what a
+    /// scenario naming its cast by id resolves to.
+    /// </para>
+    /// <para>
+    /// None of the pool's four axes apply: this is a hand-picked cast, so coverage,
+    /// plausibility, aquatic and genre are the caller's own lookout, and there is no CR
+    /// cap. The <see cref="BuiltEncounter"/> records Budget = Spent = the roster's summed
+    /// printed XP, because nothing was budgeted and pretending headroom existed would
+    /// misstate the one number the record exists to state.
+    /// </para>
+    /// <para>
+    /// <b>The objective is optional and defaults to what it always was.</b> Before #474
+    /// this method hard-passed <c>null</c> and a spawned fight was last-side-standing
+    /// only; <see cref="Assemble"/> and <see cref="Resolve"/> were already shared with
+    /// the budgeted path, so honouring an authored one is a parameter rather than a code
+    /// path. Omitting it is the old behaviour exactly — <see cref="Resolve"/> returns
+    /// null for a null spec before it looks at anything else — which is what keeps
+    /// <c>--spawn</c> unchanged.
+    /// </para>
+    /// </remarks>
     public static Fight BuildChosen(
         IReadOnlyList<PartyMember> party,
         IReadOnlyList<MonsterDefinition> monsters,
-        IRandomSource random)
+        IRandomSource random,
+        ObjectiveSpec? objective = null)
     {
         ArgumentNullException.ThrowIfNull(party);
         ArgumentNullException.ThrowIfNull(monsters);
@@ -258,7 +384,7 @@ public static class EncounterFactory
         var built = new BuiltEncounter([.. monsters], experience, experience);
         var lowestLevel = party.Min(member => member.Sheet.Level);
 
-        return Assemble(party, built, random, lowestLevel, objective: null);
+        return Assemble(party, built, random, lowestLevel, objective);
     }
 
     /// <summary>
@@ -312,11 +438,17 @@ public static class EncounterFactory
         // Both sides are fitted in one pass so a monster cannot be placed on top of a
         // character, and the party goes first because the layouts anchor their shapes on
         // the party's column or block.
+        // The names ride along for the refusal message alone — SpawnPlacement.Fit reads
+        // them only to say which creature could not be deployed.
         var spawns = SpawnPlacement.Fit(
             [.. intendedParty, .. intendedMonsters],
             [.. partySpans, .. monsterSpans],
             width,
-            height);
+            height,
+            [
+                .. party.Select(member => member.Combatant.Name),
+                .. built.Monsters.Select(monster => monster.Name),
+            ]);
 
         var partySpawns = spawns.Take(party.Count).ToArray();
         var monsterSpawns = spawns.Skip(party.Count).ToArray();

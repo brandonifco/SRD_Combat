@@ -40,6 +40,13 @@ public static class SpawnPlacement
     /// <param name="spans">Each creature's space, in squares on a side, in the same order.</param>
     /// <param name="width">Battlefield width in squares.</param>
     /// <param name="height">Battlefield height in squares.</param>
+    /// <param name="names">
+    /// Each creature's name, in the same order, used only to say which one could not be
+    /// deployed. Optional because the throw below is a bug report and a caller that has
+    /// no names to give still deserves the rest of the sentence; a scenario names its
+    /// cast, so <see cref="ScenarioRunner"/>'s refusal can say "Awakened Tree" rather
+    /// than "a 3 by 3 creature" (#474, criterion 6).
+    /// </param>
     /// <exception cref="InvalidOperationException">
     /// When a creature's body fits nowhere on the battlefield that is not already taken.
     /// Thrown rather than clamped: a fight whose creatures cannot be deployed is not a
@@ -51,7 +58,8 @@ public static class SpawnPlacement
         IReadOnlyList<GridPosition> intended,
         IReadOnlyList<int> spans,
         int width,
-        int height)
+        int height,
+        IReadOnlyList<string>? names = null)
     {
         ArgumentNullException.ThrowIfNull(intended);
         ArgumentNullException.ThrowIfNull(spans);
@@ -67,9 +75,12 @@ public static class SpawnPlacement
         for (var index = 0; index < intended.Count; index++)
         {
             var span = Math.Max(1, spans[index]);
+            var named = names is not null && index < names.Count ? $" ({names[index]})" : string.Empty;
+
             var anchor = Nearest(intended[index], span, width, height, taken)
                 ?? throw new InvalidOperationException(
-                    $"No room on a {width} by {height} battlefield for a {span} by {span} creature near {intended[index]}.");
+                    $"No room on a {width} by {height} battlefield for a {span} by {span} creature{named} "
+                    + $"near {intended[index]}.");
 
             placed[index] = anchor;
 

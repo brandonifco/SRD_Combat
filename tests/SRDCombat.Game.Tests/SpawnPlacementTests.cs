@@ -108,6 +108,25 @@ public class SpawnPlacementTests
             SpawnPlacement.Fit([new GridPosition(0, 0), new GridPosition(1, 1)], [2, 2], 2, 2));
     }
 
+    /// <summary>
+    /// The refusal says which creature could not be deployed when the caller has names to
+    /// give (#474, criterion 6) — "a 2 by 2 creature" is not a bug report anyone can act
+    /// on when six of them are on the field.
+    /// </summary>
+    [Fact]
+    public void TheRefusalNamesTheCreatureItCouldNotDeploy()
+    {
+        var failure = Assert.Throws<InvalidOperationException>(() =>
+            SpawnPlacement.Fit(
+                [new GridPosition(0, 0), new GridPosition(1, 1)],
+                [2, 2],
+                2,
+                2,
+                ["Awakened Tree", "Ogre"]));
+
+        Assert.Contains("(Ogre)", failure.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void EverySpawnNeedsASpan() =>
         Assert.Throws<ArgumentException>(() =>

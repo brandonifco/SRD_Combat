@@ -1,5 +1,6 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
+using SRDCombat.Core.Definitions;
 
 namespace SRDCombat.Game;
 
@@ -28,10 +29,11 @@ public sealed record ScenarioCheck(IReadOnlyList<string> Errors, IReadOnlyList<s
 /// remarks describe.
 /// </summary>
 /// <remarks>
-/// This resolves the party and nothing else. Choosing monsters, rolling a board and
-/// building a <c>Fight</c> is the runner's (S2, #474); what lives here is the part that
-/// is about the <em>scenario</em> rather than about a fight: turning an authored party
-/// into resolved members, and answering whether this build can run the thing at all.
+/// This resolves what a scenario's ids <em>name</em> — the party and the explicit cast —
+/// and nothing about a fight. Rolling a board, spending a budget and assembling a
+/// <c>Fight</c> is <see cref="ScenarioRunner"/>'s (S2, #474); what lives here is the part
+/// that is about the <em>scenario</em>: turning authored ids into resolved members and
+/// monster definitions, and answering whether this build can run the thing at all.
 /// </remarks>
 public static class ScenarioContent
 {
@@ -155,6 +157,43 @@ public static class ScenarioContent
         [
             .. members.Select((member, index) =>
                 PregeneratedParty.Resolve(content, member.Draft, member.Level, x: 0, y: index)),
+        ];
+    }
+
+    /// <summary>
+    /// Turns a scenario's explicit cast into monster definitions, in the order it named
+    /// them and one per head.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Order is preserved and counts are expanded, because both are the fight.</b> The
+    /// cast's order decides which creature takes which spawn square and which index its
+    /// combatant id carries, so the entries are walked in sequence rather than grouped;
+    /// <see cref="RosterParser.ToRoster"/> is the other half of that promise, folding only
+    /// adjacent equal ids so the two are exactly reversible.
+    /// </para>
+    /// <para>
+    /// The sibling of <see cref="ResolveParty"/>, and refusing in the same voice for the
+    /// same reason: <see cref="CheckAgainst"/> is the method for a caller that wants the
+    /// list of problems, and this is the method for a caller that has already checked.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<MonsterDefinition> ResolveRoster(BattleScenario scenario, SrdContent content)
+    {
+        ArgumentNullException.ThrowIfNull(scenario);
+        ArgumentNullException.ThrowIfNull(content);
+
+        var roster = scenario.Enemies.Roster
+            ?? throw new InvalidDataException(
+                "the scenario names no roster; ScenarioFile.FromJson refuses a scenario that names "
+                + "neither a roster nor a budget, so this one was built in memory rather than loaded.");
+
+        return
+        [
+            .. roster.SelectMany(entry => Enumerable.Repeat(
+                ContentDrift.Require(
+                    content.MonstersById, entry.MonsterId, "monster", scenario.Name, Subject, Remedy),
+                entry.Count)),
         ];
     }
 
