@@ -1,0 +1,355 @@
+using SRDCombat.Game;
+using SRDCombat.Viewer.Ui;
+
+namespace SRDCombat.Viewer.Tests;
+
+/// <summary>
+/// What each input means, given what has the player's attention.
+/// </summary>
+/// <remarks>
+/// <para>
+/// One test per branch of the priority order (#500, acceptance criterion 4). The order
+/// used to live inline in <c>PlayMode._UnhandledInput</c>, where it was correct only
+/// because it had been written in the right sequence — nothing named it, nothing held it,
+/// and nothing would have failed had a later edit re-ranked it. These tests are what
+/// holds it now.
+/// </para>
+/// <para>
+/// The router takes a <c>ClientInput</c> rather than a <c>Godot.InputEvent</c> for the
+/// reason <c>ClientInput</c>'s remarks record: constructing an <c>InputEventKey</c>
+/// outside a running engine does not throw, it terminates the test host and fails every
+/// other test in the assembly with a misleading message.
+/// </para>
+/// </remarks>
+public class PlayFocusRouterTests
+{
+    /// <summary>Mid-fight, nothing in the way — the context most branches are read against.</summary>
+    private static RouteContext Fighting(
+        bool shopOpen = false,
+        bool outcomeCard = false,
+        bool quitAsked = false,
+        bool actInProgress = false,
+        int menuRowCount = 0,
+        bool canArmAttack = true,
+        bool hasCommanded = true,
+        bool hasCursor = true) =>
+        new(true, shopOpen, outcomeCard, quitAsked, actInProgress,
+            menuRowCount, canArmAttack, hasCommanded, hasCursor);
+
+    private static FocusStack<PlayFocus> Board() => new(new PlayFocus.Board());
+
+    private static FocusStack<PlayFocus> With(PlayFocus layer)
+    {
+        var stack = Board();
+        stack.Push(layer);
+        return stack;
+    }
+
+    private static RouteAction Route(FocusStack<PlayFocus> focus, ClientInput input, RouteContext context) =>
+        PlayFocusRouter.Route(focus, input, context).Action;
+
+    // ---- the quit card preempts everything ------------------------------------------
+
+    [Fact]
+    public void EscapeWhileTheQuitCardIsUpQuitsTheGame()
+    {
+        Assert.Equal(
+            RouteAction.QuitGame,
+            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(quitAsked: true)));
+    }
+
+    [Fact]
+    public void AnyOtherKeyWhileTheQuitCardIsUpTakesItDownUnharmed()
+    {
+        Assert.Equal(
+            RouteAction.DismissQuitConfirm,
+            Route(Board(), ClientInput.Typed('d'), Fighting(quitAsked: true)));
+    }
+
+    [Fact]
+    public void AClickWhileTheQuitCardIsUpTakesItDownToo()
+    {
+        Assert.Equal(
+            RouteAction.DismissQuitConfirm,
+            Route(Board(), ClientInput.Clicked(10, 10), Fighting(quitAsked: true)));
+    }
+
+    /// <summary>
+    /// The card swallows what it does not act on, rather than letting it past. Otherwise a
+    /// drag would pan the camera from behind the confirmation, which is what the old
+    /// unconditional <c>return</c> prevented.
+    /// </summary>
+    [Fact]
+    public void EverythingElseWhileTheQuitCardIsUpIsSwallowed()
+    {
+        var motion = new ClientInput(ClientInputKind.MouseMoved, ClientKey.Other, '\0', 4, 4);
+
+        Assert.Equal(RouteAction.Ignore, Route(Board(), motion, Fighting(quitAsked: true)));
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(Board(), new ClientInput(ClientInputKind.Other, ClientKey.Other, '\0', 0, 0), Fighting(quitAsked: true)));
+    }
+
+    /// <summary>
+    /// The card outranks an armed action: it is checked before the focus stack is asked
+    /// anything. The bug it was added for was Esc past the last thing to cancel quitting
+    /// the game mid-fight (reported from play, 2026-08-18).
+    /// </summary>
+    [Fact]
+    public void TheQuitCardOutranksAnArmedAction()
+    {
+        Assert.Equal(
+            RouteAction.QuitGame,
+            Route(
+                With(new PlayFocus.Targeting(TargetKind.Attack)),
+                ClientInput.Pressed(ClientKey.Escape),
+                Fighting(quitAsked: true)));
+    }
+
+    // ---- Esc, by destination ---------------------------------------------------------
+
+    [Fact]
+    public void EscapeOnTheBareBoardAsksToQuit()
+    {
+        Assert.Equal(
+            RouteAction.AskToQuit,
+            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting()));
+    }
+
+    [Fact]
+    public void EscapeClosesTheShopBeforeAnythingElse()
+    {
+        Assert.Equal(
+            RouteAction.CloseShop,
+            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(shopOpen: true)));
+    }
+
+    [Fact]
+    public void EscapeCommitsTheOutcomeCard()
+    {
+        Assert.Equal(
+            RouteAction.CommitOutcome,
+            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(outcomeCard: true)));
+    }
+
+    /// <summary>
+    /// <b>The specification, not an implementation detail.</b> Esc from the slot menu lands
+    /// the player on the board, because that is where <c>ClearPending</c> has always left
+    /// them — it cleared all three menu flags and all four pending fields at once. A stack
+    /// that popped one layer would land them on the spell menu instead: a game change
+    /// disguised as a refactor.
+    /// </summary>
+    [Fact]
+    public void EscapeFromADeepMenuDropsAllTheWayToTheBoard()
+    {
+        var focus = With(new PlayFocus.SpellMenu());
+        focus.ReplaceTop(new PlayFocus.SlotMenu(FightTestData.AnySpell()));
+
+        Assert.Equal(
+            RouteAction.DropToBoard,
+            Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting(menuRowCount: 3)));
+    }
+
+    [Fact]
+    public void EscapeWhileTargetingDropsToTheBoard()
+    {
+        Assert.Equal(
+            RouteAction.DropToBoard,
+            Route(With(new PlayFocus.Targeting(TargetKind.Spell)), ClientInput.Pressed(ClientKey.Escape), Fighting()));
+    }
+
+    // ---- the outcome card's any-key --------------------------------------------------
+
+    [Fact]
+    public void AnyKeyCommitsTheOutcomeCard()
+    {
+        Assert.Equal(
+            RouteAction.CommitOutcome,
+            Route(Board(), ClientInput.Typed('x'), Fighting(outcomeCard: true)));
+    }
+
+    [Fact]
+    public void AClickDoesNotCommitTheOutcomeCardThroughTheRouter()
+    {
+        // The card's mouse path is still PlayMode's own, below the camera handling. Moving
+        // it into the router is S4; claiming it here would change which code runs.
+        Assert.Equal(
+            RouteAction.Unhandled,
+            Route(Board(), ClientInput.Clicked(5, 5), Fighting(outcomeCard: true)));
+    }
+
+    // ---- the gates -------------------------------------------------------------------
+
+    [Fact]
+    public void TheKeyboardCommandsNothingWhileAnActIsPlayingOut()
+    {
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(Board(), ClientInput.Typed('d'), Fighting(actInProgress: true)));
+    }
+
+    /// <summary>Esc stays live through an act: quitting must not wait on an animation.</summary>
+    [Fact]
+    public void EscapeStillWorksWhileAnActIsPlayingOut()
+    {
+        Assert.Equal(
+            RouteAction.AskToQuit,
+            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(actInProgress: true)));
+    }
+
+    [Fact]
+    public void TheKeyboardIsNotTheBoardsWhileTheShopIsOpen()
+    {
+        Assert.Equal(
+            RouteAction.Unhandled,
+            Route(Board(), ClientInput.Typed('d'), Fighting(shopOpen: true)));
+    }
+
+    [Fact]
+    public void TheKeyboardIsNotTheBoardsBetweenFights()
+    {
+        var between = new RouteContext(false, false, false, false, false, 0, true, true, true);
+
+        Assert.Equal(RouteAction.Unhandled, Route(Board(), ClientInput.Typed('d'), between));
+    }
+
+    // ---- Tab -------------------------------------------------------------------------
+
+    [Fact]
+    public void TabFromAColdTurnArmsTheAttack()
+    {
+        Assert.Equal(RouteAction.ArmAttack, Route(Board(), ClientInput.Pressed(ClientKey.Tab), Fighting()));
+    }
+
+    [Fact]
+    public void TabWhileTargetingWalksTheRing()
+    {
+        Assert.Equal(
+            RouteAction.CycleTarget,
+            Route(With(new PlayFocus.Targeting(TargetKind.Attack)), ClientInput.Pressed(ClientKey.Tab), Fighting()));
+    }
+
+    [Fact]
+    public void TabNeverReachesAnAttackTheRowIsHiding()
+    {
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(Board(), ClientInput.Pressed(ClientKey.Tab), Fighting(canArmAttack: false)));
+    }
+
+    /// <summary>
+    /// Tab consumes the input even when neither branch fires — today's
+    /// <c>if (key.Keycode == Key.Tab) { …; return; }</c> returns unconditionally. It looks
+    /// like an oversight and is behaviour.
+    /// </summary>
+    [Fact]
+    public void TabWithAMenuOpenIsSwallowedRatherThanFallingThrough()
+    {
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(With(new PlayFocus.AttackMenu()), ClientInput.Pressed(ClientKey.Tab), Fighting(menuRowCount: 4)));
+    }
+
+    // ---- rows versus board -----------------------------------------------------------
+
+    [Fact]
+    public void ArrowsBelongToAnOpenMenu()
+    {
+        var route = PlayFocusRouter.Route(
+            With(new PlayFocus.SpellMenu()), ClientInput.Pressed(ClientKey.Down), Fighting(menuRowCount: 5));
+
+        Assert.Equal(RouteAction.MoveMenuIndex, route.Action);
+        Assert.Equal(1, route.StepY);
+    }
+
+    /// <summary>
+    /// Only the vertical pair. A row list has no horizontal move, so Left and Right fall
+    /// through to the board cursor rather than being swallowed with the other two.
+    /// </summary>
+    [Fact]
+    public void SidewaysArrowsFallThroughAMenuToTheBoard()
+    {
+        var route = PlayFocusRouter.Route(
+            With(new PlayFocus.SpellMenu()), ClientInput.Pressed(ClientKey.Right), Fighting(menuRowCount: 5));
+
+        Assert.Equal(RouteAction.MoveCursor, route.Action);
+        Assert.Equal(1, route.StepX);
+    }
+
+    [Fact]
+    public void EnterTakesTheHighlightedRow()
+    {
+        Assert.Equal(
+            RouteAction.TakeHighlightedRow,
+            Route(With(new PlayFocus.AttackMenu()), ClientInput.Pressed(ClientKey.Enter), Fighting(menuRowCount: 2)));
+    }
+
+    [Fact]
+    public void ArrowsWalkTheBoardCursorWhenNoMenuIsOpen()
+    {
+        var route = PlayFocusRouter.Route(Board(), ClientInput.Pressed(ClientKey.Up), Fighting());
+
+        Assert.Equal(RouteAction.MoveCursor, route.Action);
+        Assert.Equal(-1, route.StepY);
+    }
+
+    [Fact]
+    public void ArrowsDoNothingWithNobodyUnderCommand()
+    {
+        Assert.Equal(
+            RouteAction.Unhandled,
+            Route(Board(), ClientInput.Pressed(ClientKey.Left), Fighting(hasCommanded: false)));
+    }
+
+    [Fact]
+    public void EnterOnTheBoardActsOnTheCursorsSquare()
+    {
+        Assert.Equal(
+            RouteAction.ActivateSquare,
+            Route(Board(), ClientInput.Pressed(ClientKey.Enter), Fighting()));
+    }
+
+    [Fact]
+    public void EnterWithNoCursorPlacedDoesNothing()
+    {
+        Assert.Equal(
+            RouteAction.Unhandled,
+            Route(Board(), ClientInput.Pressed(ClientKey.Enter), Fighting(hasCursor: false)));
+    }
+
+    // ---- hotkeys ---------------------------------------------------------------------
+
+    [Fact]
+    public void ALetterRunsItsActionOnTheBoard()
+    {
+        var route = PlayFocusRouter.Route(Board(), ClientInput.Typed('d'), Fighting());
+
+        Assert.Equal(RouteAction.RunHotkey, route.Action);
+        Assert.Equal('d', route.Character);
+    }
+
+    /// <summary>
+    /// A letter typed while an action is armed is reaching past a choice the player is in
+    /// the middle of. This is the one focus that answers <c>SuppressesHotkeys</c>.
+    /// </summary>
+    [Fact]
+    public void ALetterIsSuppressedWhileTargetingIsArmed()
+    {
+        Assert.Equal(
+            RouteAction.Unhandled,
+            Route(With(new PlayFocus.Targeting(TargetKind.Potion)), ClientInput.Typed('d'), Fighting()));
+    }
+
+    /// <summary>
+    /// A menu does not suppress them — the old <c>if (_pending == Pending.Nothing)</c> was
+    /// about the armed state alone, and Cast pressed over the attack menu has always
+    /// swapped the menus rather than being ignored.
+    /// </summary>
+    [Fact]
+    public void AMenuDoesNotSuppressHotkeys()
+    {
+        Assert.Equal(
+            RouteAction.RunHotkey,
+            Route(With(new PlayFocus.AttackMenu()), ClientInput.Typed('c'), Fighting(menuRowCount: 3)));
+    }
+}

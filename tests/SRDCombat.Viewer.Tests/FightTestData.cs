@@ -32,6 +32,32 @@ internal static class FightTestData
     public const string Heroes = "heroes";
     public const string Monsters = "monsters";
 
+    /// <summary>
+    /// A spell definition with nothing in it but the fields a focus layer carries it for.
+    /// </summary>
+    /// <remarks>
+    /// The focus tests never read a spell's rules — <c>SlotMenu</c> holds one so the slot
+    /// choice cannot be stranded in a field, and that is all these assert. Hand-built for
+    /// the reason everything else in this file is: no corpus load in this assembly.
+    /// </remarks>
+    public static SpellDefinition AnySpell(string name = "Test Spell") =>
+        new()
+        {
+            Id = "spell.test",
+            Name = name,
+            Level = 1,
+            School = MagicSchool.Evocation,
+            Classes = ["Cleric"],
+            CastingTime = SpellCastingTime.Action,
+            CastingTimeText = "Action",
+            RangeText = "60 feet",
+            Components = SpellComponents.Verbal,
+            DurationText = "Instantaneous",
+            Text = "It does a thing.",
+            Mechanics = EntryMechanics.Attack,
+            SourcePage = 1,
+        };
+
     public static CombatAttack Attack(string name) =>
         new(
             name,
