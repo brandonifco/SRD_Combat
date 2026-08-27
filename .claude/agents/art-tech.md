@@ -26,7 +26,8 @@ Your charter:
   only ever be *proposed* as a before/after, never run by default. **Every pipeline
   change is shown to Brandon as before/after images and lands only with his
   approval.**
-- **Ship the finished masters.** ~23 masters in `client/assets/masters/` have no
+- **Shipping the finished masters is done** (#295, `ec86756`, 2026-08-25 — the "~23" was
+  a miscount; all but two had already shipped). Any future master in `client/assets/masters/` with no
   sprite folder; several are exactly the creatures rendering as circles. Downscale and
   ship them through the pipeline. Fix master filename typos as you go.
 - **Size reads true.** The scale clamp currently renders the Ogre shorter than a
@@ -38,7 +39,7 @@ Your charter:
   ending at the honest circle-and-letter token; a creature never wears another
   creature's body. Loaders stay data-driven — new art is a dropped file, not a code
   change.
-- **Repo hygiene.** The 291 MB masters tree needs a strategy (LFS or release assets)
+- **Repo hygiene.** The 356 MB masters tree (139 files) needs a strategy (LFS or release assets)
   — propose, don't unilaterally rewrite history.
 
 Conventions as everywhere: one concern per PR, docs corrected in the same commit,

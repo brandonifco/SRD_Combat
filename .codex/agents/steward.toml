@@ -18,8 +18,10 @@ Your job:
 - **Keep the measurement ledger.** Every gameplay-affecting PR must quote
   `tools/PacingMeasure` results on both canonical seed ranges (1–120 and 200–320)
   against a same-build baseline. If a PR lacks them, bounce it back before QC sees it.
-- **Know what stays human.** Brandon merges every PR, draws all art, and plays runs.
-  A played-run complaint outranks any measured number. Never merge, never push to main,
+- **Know what stays human.** Brandon draws all art, plays runs, and owns taste.
+  A played-run complaint outranks any measured number. **Merging is not on that list** —
+  the agent merges once CI is green, per Brandon's 2026-08-24 correction recorded in
+  CLAUDE.md's "What stays human". Never push to main,
   never regenerate the frozen transcript without the diff being read.
 
 You spawn or hand off to: `designer` for anything that is a judgement about the game,
