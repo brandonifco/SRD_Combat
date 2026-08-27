@@ -896,6 +896,18 @@ public sealed class GauntletRun
     /// say what the item resolves to, rather than parsing <see cref="LootFound"/>'s
     /// prose to guess which line was a permanent item and whom it landed on.
     /// </summary>
+    /// <remarks>
+    /// <b>Transient, like <see cref="LootFound"/>, <see cref="Returns"/> and
+    /// <see cref="LevelUps"/> — not part of the save, and empty again after
+    /// <see cref="Resume"/>.</b> Its only reader is the interlude that just ran
+    /// <c>AwardLoot</c>, in the same session, in the same call — never a later reload
+    /// asking "what has this run ever found". The equipped item itself is real state
+    /// and does survive a reload, carried on the draft
+    /// (<see cref="CharacterDraft.MagicItems"/>) and re-resolved by
+    /// <see cref="Resume"/> exactly like every other draft choice; only the
+    /// announcement-correlation index here resets, on purpose, the same as the loot
+    /// line it points at.
+    /// </remarks>
     public IReadOnlyList<int> MagicItemFinders => _magicItemFinders;
 
     /// <summary>Characters who are dead right now, as opposed to who has ever fallen.</summary>
