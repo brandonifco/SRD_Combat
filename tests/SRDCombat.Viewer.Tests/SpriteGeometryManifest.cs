@@ -17,15 +17,31 @@ internal static class SpriteGeometryManifest
     private const char Separator = '\t';
 
     /// <summary>
-    /// Every <c>.png</c> actually under <c>client/assets/sprites</c> right now, measured
-    /// from its header bytes (<see cref="PngGeometry"/>) — the tree's present truth,
-    /// not the committed one. <see cref="SpriteGeometryTests"/> is what compares the two.
+    /// Every <b>tracked</b> <c>.png</c> under <c>client/assets/sprites</c> right now,
+    /// measured from its header bytes (<see cref="PngGeometry"/>) — the tree's present
+    /// truth, not the committed one. <see cref="SpriteGeometryTests"/> compares the two.
     /// </summary>
+    /// <remarks>
+    /// <b>The source of truth is git, not the filesystem, and that is not a stylistic
+    /// choice</b> (#522). This gate first shipped reading the directory, which is wrong
+    /// twice over. <c>.gitignore</c> ignores <c>client/assets/sprites/*</c> and whitelists
+    /// the shipped folders back in, because Brandon keeps purchased Craftpix sheets in
+    /// that same tree deliberately un-committed — so the working tree legitimately holds
+    /// hundreds of PNGs that must never enter this manifest. A CI runner checks out only
+    /// tracked files and saw none of them, so the gate passed there and failed on his
+    /// machine with 354 phantom sheets: <b>green where merges are gated, red where a
+    /// human works</b>, which is how a suite teaches people to ignore it.
+    /// <para>
+    /// The manifest is about what the repository <i>ships</i>. `git ls-files` is the
+    /// direct expression of that; <c>Directory.EnumerateFiles</c> answers a different
+    /// question that merely looked the same. Do not "simplify" this back.
+    /// </para>
+    /// </remarks>
     public static List<SpriteGeometryEntry> MeasureShippedTree()
     {
         var root = ViewerRepositoryPaths.SpritesDirectory;
 
-        return Directory.EnumerateFiles(root, "*.png", SearchOption.AllDirectories)
+        return TrackedSheets(root)
             .Select(path =>
             {
                 var (width, height) = PngGeometry.Read(path);
@@ -34,6 +50,41 @@ internal static class SpriteGeometryManifest
             })
             .OrderBy(entry => entry.RelativePath, StringComparer.Ordinal)
             .ToList();
+    }
+
+    /// <summary>
+    /// The <c>.png</c> files under <paramref name="root"/> that git has in its index —
+    /// absolute paths. Untracked art in the same tree is invisible here by design; see
+    /// <see cref="MeasureShippedTree"/>'s remarks for why that is the whole point.
+    /// </summary>
+    private static IEnumerable<string> TrackedSheets(string root)
+    {
+        var listing = new System.Diagnostics.ProcessStartInfo("git", "ls-files -z -- *.png")
+        {
+            WorkingDirectory = root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+
+        using var git = System.Diagnostics.Process.Start(listing)
+            ?? throw new InvalidOperationException("could not run git to list tracked sprite sheets");
+
+        var output = git.StandardOutput.ReadToEnd();
+        git.WaitForExit();
+
+        if (git.ExitCode != 0)
+        {
+            // Never fall back to enumerating the directory: that is the bug this method
+            // exists to fix, and a silent fallback would restore it on exactly the
+            // machines where git is unavailable rather than reporting the problem.
+            throw new InvalidOperationException(
+                $"git ls-files failed in {root} (exit {git.ExitCode}): {git.StandardError.ReadToEnd()}");
+        }
+
+        return output
+            .Split('\0', StringSplitOptions.RemoveEmptyEntries)
+            .Select(relative => Path.Combine(root, relative));
     }
 
     /// <summary>
