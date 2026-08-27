@@ -90,6 +90,33 @@ Everything is deterministic: no random seeds anywhere, because nothing here
 samples or initialises randomly — a box filter, an unsharp mask, and an
 alpha threshold are fixed procedures. Re-running this script against the
 same master with the same flags reproduces the same output byte-for-byte.
+
+Geometry contract (#467) — read this before regenerating a shipped sheet
+--------------------------------------------------------------------------
+
+**The sheets shipped today predate this pipeline's current settings.** Most
+of the roster was hand-processed, hand-tuned per image, or produced by an
+earlier revision of this script before TARGET_HEIGHT and the two-stage
+downscale were settled. Running `process`/`batch` against a master today
+does **not** reproduce its shipped sheet's canvas size — PR #461 found this
+the hard way, regenerating 17 sheets and silently changing every one of
+their dimensions (the Ogre alone went from a shipped 169x169 down to a
+pipeline-default 119x64), with nothing in CI catching it before Brandon saw
+it break in a live fight.
+
+So: a batch's output is *never* the same size as what it replaces, and that
+is expected, not a bug in this script — the size difference belongs to
+`compare`'s before/after review, not to a diff you should be surprised by.
+What must not happen silently is the sheet actually shipping with new
+geometry unreviewed: `tests/SRDCombat.Viewer.Tests/SpriteGeometryTests.cs`
+pins every shipped sheet's canvas dimensions and frame count against a
+committed manifest (`Fixtures/sprite-geometry-manifest.tsv`), and fails the
+suite the moment `client/assets/sprites/` disagrees with it — regardless of
+whether the change came through this script, a hand edit, or anything else.
+Regenerating that manifest (`SpriteGeometryManifestWriter`, same
+un-skip/run/re-skip discipline as the frozen transcript) is part of landing
+any batch that changes a shipped sheet's size, in the same commit as the
+art.
 """
 
 from __future__ import annotations
