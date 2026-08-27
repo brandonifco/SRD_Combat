@@ -174,9 +174,16 @@ internal abstract record PlayFocus
     }
 
     /// <summary>A menu of rows over the board — the shared behaviour of the three.</summary>
+    /// <remarks>
+    /// <b>Esc closes this menu and uncovers whatever opened it</b> (#509, Brandon
+    /// 2026-08-27: "ESC should drop one level until it's at the base game, then it behaves
+    /// as it does now"). Until then every menu dropped straight to the board, because the
+    /// flags it replaced were cleared as a set and there was nothing to step back
+    /// <em>to</em>. The menus nest now, so there is.
+    /// </remarks>
     internal abstract record RowMenu : PlayFocus
     {
-        internal override EscapeMeaning Escape => EscapeMeaning.DropToBoard;
+        internal override EscapeMeaning Escape => EscapeMeaning.CloseSelf;
 
         internal override bool TakesRowKeys => true;
 
@@ -220,7 +227,10 @@ internal abstract record PlayFocus
         SpellDefinition? Spell = null,
         int? Slot = null) : PlayFocus
     {
-        internal override EscapeMeaning Escape => EscapeMeaning.DropToBoard;
+        // Esc un-aims and hands the player back the menu that armed this, or the board when
+        // nothing did — a single attack and Tab's cold arming both come straight off the
+        // board (#509).
+        internal override EscapeMeaning Escape => EscapeMeaning.CloseSelf;
 
         internal override bool TakesRowKeys => false;
 
