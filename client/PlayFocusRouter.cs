@@ -20,9 +20,6 @@ internal enum RouteAction
     /// <summary>Raise the quit confirmation.</summary>
     AskToQuit,
 
-    /// <summary>Close the merchant's stall.</summary>
-    CloseShop,
-
     /// <summary>Acknowledge the outcome card and move the run on.</summary>
     CommitOutcome,
 
@@ -79,16 +76,14 @@ internal readonly record struct Route(
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>This shrinks in S2 and S3.</b> <see cref="ShopOpen"/>, <see cref="OutcomeCard"/>
-/// and <see cref="QuitAsked"/> are here because those three are still <c>PlayMode</c>
-/// fields in this slice; each becomes a focus layer and leaves this record. The rest —
-/// what the engine currently allows, where the cursor is — are facts about the fight
-/// rather than about attention, and stay.
+/// <b>Shrinking as planned.</b> S2 took <c>ShopOpen</c> and <c>OutcomeCard</c> out of
+/// here — both are focus layers now, so the router asks the stack instead.
+/// <see cref="QuitAsked"/> is the last of the three and leaves in S3. The rest — what
+/// the engine currently allows, where the cursor is — are facts about the fight rather
+/// than about attention, and stay.
 /// </para>
 /// </remarks>
 /// <param name="Fighting">Whether the screen is in a fight rather than between them.</param>
-/// <param name="ShopOpen">Whether the merchant's stall is up. Becomes a focus in S2.</param>
-/// <param name="OutcomeCard">Whether the outcome card is up. Becomes a focus in S2.</param>
 /// <param name="QuitAsked">Whether the quit confirmation is up. Becomes a focus in S3.</param>
 /// <param name="ActInProgress">Whether an act is still playing out on screen.</param>
 /// <param name="MenuRowCount">How many rows the open menu has, or zero when none is open.</param>
@@ -97,8 +92,6 @@ internal readonly record struct Route(
 /// <param name="HasCursor">Whether the board cursor is placed.</param>
 internal readonly record struct RouteContext(
     bool Fighting,
-    bool ShopOpen,
-    bool OutcomeCard,
     bool QuitAsked,
     bool ActInProgress,
     int MenuRowCount,
@@ -161,32 +154,20 @@ internal static class PlayFocusRouter
         if (input is { Kind: ClientInputKind.KeyPressed, Key: ClientKey.Escape })
         {
             // Esc backs out of whatever is armed before it quits anything — the merchant's
-            // stall included. Shop and card are checked ahead of the stack because they are
-            // still fields; in S2 they become layers and this becomes focus.Top.Escape.
-            if (context.ShopOpen)
-            {
-                return new Route(RouteAction.CloseShop);
-            }
-
-            if (context.OutcomeCard)
-            {
-                return new Route(RouteAction.CommitOutcome);
-            }
-
-            // No depth test: at depth 1 the top *is* the root, and Board answers
-            // AskToQuit — so "nothing is open, so Esc quits" falls out of the table
-            // rather than being asked separately.
+            // stall included. The whole cascade is one table lookup now (#501): the shop
+            // and the card answer CloseSelf and Commit for themselves, and at depth 1 the
+            // top *is* the root, whose AskToQuit is "nothing is open, so Esc quits".
             return new Route(EscapeRoute(focus.Top.Escape));
         }
 
         // Any key moves the outcome card on: it asks nothing of the player but
         // acknowledgement, so hunting for the right key would be its own small annoyance.
-        if (input.IsKey && context.OutcomeCard)
+        if (input.IsKey && focus.Holds<PlayFocus.Outcome>())
         {
             return new Route(RouteAction.CommitOutcome);
         }
 
-        if (!input.IsKey || !context.Fighting || context.ShopOpen || focus.Top.SuppressesBoard)
+        if (!input.IsKey || !context.Fighting || focus.Top.SuppressesBoard)
         {
             return new Route(RouteAction.Unhandled);
         }

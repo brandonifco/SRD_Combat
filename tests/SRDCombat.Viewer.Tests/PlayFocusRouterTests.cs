@@ -24,17 +24,18 @@ namespace SRDCombat.Viewer.Tests;
 public class PlayFocusRouterTests
 {
     /// <summary>Mid-fight, nothing in the way — the context most branches are read against.</summary>
+    /// <remarks>
+    /// The shop and the outcome card left this record in S2 (#501): both are focus layers
+    /// now, so a test that wants one pushes it rather than setting a flag here.
+    /// </remarks>
     private static RouteContext Fighting(
-        bool shopOpen = false,
-        bool outcomeCard = false,
         bool quitAsked = false,
         bool actInProgress = false,
         int menuRowCount = 0,
         bool canArmAttack = true,
         bool hasCommanded = true,
         bool hasCursor = true) =>
-        new(true, shopOpen, outcomeCard, quitAsked, actInProgress,
-            menuRowCount, canArmAttack, hasCommanded, hasCursor);
+        new(true, quitAsked, actInProgress, menuRowCount, canArmAttack, hasCommanded, hasCursor);
 
     private static FocusStack<PlayFocus> Board() => new(new PlayFocus.Board());
 
@@ -117,19 +118,27 @@ public class PlayFocusRouterTests
     }
 
     [Fact]
-    public void EscapeClosesTheShopBeforeAnythingElse()
+    public void EscapeClosesTheShopRatherThanAskingToQuit()
     {
         Assert.Equal(
-            RouteAction.CloseShop,
-            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(shopOpen: true)));
+            RouteAction.CloseTopLayer,
+            Route(With(new PlayFocus.Shop()), ClientInput.Pressed(ClientKey.Escape), Fighting()));
     }
 
+    /// <summary>
+    /// <b>Esc on the outcome card advances the run — it does not dismiss it.</b>
+    /// <c>CommitOutcome</c> runs <c>CompleteAndReport</c>: experience, loot, autosave. A
+    /// structure that assumed "Esc backs out" would silently turn an acknowledgement into
+    /// a cancel and lose the fight's rewards. This is the sharpest row of the table.
+    /// </summary>
     [Fact]
-    public void EscapeCommitsTheOutcomeCard()
+    public void EscapeCommitsTheOutcomeCardRatherThanDismissingIt()
     {
-        Assert.Equal(
-            RouteAction.CommitOutcome,
-            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(outcomeCard: true)));
+        var route = Route(With(new PlayFocus.Outcome()), ClientInput.Pressed(ClientKey.Escape), Fighting());
+
+        Assert.Equal(RouteAction.CommitOutcome, route);
+        Assert.NotEqual(RouteAction.CloseTopLayer, route);
+        Assert.NotEqual(RouteAction.DropToBoard, route);
     }
 
     /// <summary>
@@ -158,6 +167,25 @@ public class PlayFocusRouterTests
             Route(With(new PlayFocus.Targeting(TargetKind.Spell)), ClientInput.Pressed(ClientKey.Escape), Fighting()));
     }
 
+    /// <summary>
+    /// The other half of "the notice leaves with the layer": Esc on a stall carrying a
+    /// purchase notice routes to the pop, and the pop is what discards the notice. The
+    /// old code had to clear two things and could clear one.
+    /// </summary>
+    [Fact]
+    public void EscapeOnAStallCarryingANoticePopsItNoticeAndAll()
+    {
+        var focus = With(new PlayFocus.Shop("Bought: a Potion of Healing."));
+
+        Assert.Equal(
+            RouteAction.CloseTopLayer,
+            Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
+
+        focus.Pop();
+
+        Assert.Null(focus.Topmost<PlayFocus.Shop>());
+    }
+
     // ---- the outcome card's any-key --------------------------------------------------
 
     [Fact]
@@ -165,7 +193,7 @@ public class PlayFocusRouterTests
     {
         Assert.Equal(
             RouteAction.CommitOutcome,
-            Route(Board(), ClientInput.Typed('x'), Fighting(outcomeCard: true)));
+            Route(With(new PlayFocus.Outcome()), ClientInput.Typed('x'), Fighting()));
     }
 
     [Fact]
@@ -175,7 +203,7 @@ public class PlayFocusRouterTests
         // it into the router is S4; claiming it here would change which code runs.
         Assert.Equal(
             RouteAction.Unhandled,
-            Route(Board(), ClientInput.Clicked(5, 5), Fighting(outcomeCard: true)));
+            Route(With(new PlayFocus.Outcome()), ClientInput.Clicked(5, 5), Fighting()));
     }
 
     // ---- the gates -------------------------------------------------------------------
@@ -197,18 +225,25 @@ public class PlayFocusRouterTests
             Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(actInProgress: true)));
     }
 
+    /// <summary>
+    /// The stall takes the whole keyboard: a board hotkey typed over it reaches nothing.
+    /// This is <c>Shop.SuppressesBoard</c>, the one focus that answers it — and the guard
+    /// it preserves is unreachable in practice, since the stall only opens from the
+    /// interlude. Kept because deleting an unreachable guard mid-refactor is the change no
+    /// capture can show.
+    /// </summary>
     [Fact]
     public void TheKeyboardIsNotTheBoardsWhileTheShopIsOpen()
     {
         Assert.Equal(
             RouteAction.Unhandled,
-            Route(Board(), ClientInput.Typed('d'), Fighting(shopOpen: true)));
+            Route(With(new PlayFocus.Shop()), ClientInput.Typed('d'), Fighting()));
     }
 
     [Fact]
     public void TheKeyboardIsNotTheBoardsBetweenFights()
     {
-        var between = new RouteContext(false, false, false, false, false, 0, true, true, true);
+        var between = new RouteContext(false, false, false, 0, true, true, true);
 
         Assert.Equal(RouteAction.Unhandled, Route(Board(), ClientInput.Typed('d'), between));
     }
