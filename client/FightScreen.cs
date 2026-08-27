@@ -156,21 +156,30 @@ public abstract partial class FightScreen : Node2D
     /// blow it is pointing at read worse in a capture than holding it steady, so the
     /// blink stops rather than continues through the animation.
     /// </remarks>
+    /// <summary>
+    /// The ring's alpha at <paramref name="seconds"/> of wall clock — the blink curve
+    /// alone, with no Godot state, so it can be pinned by a test (#518). A sine eased
+    /// between <see cref="ActiveRingBlinkFloorAlpha"/> and 1, phase-shifted so t=0 sits
+    /// at the dim end and the ring brightens into view rather than fading out of it.
+    /// </summary>
+    internal static float ActiveRingAlpha(double seconds)
+    {
+        var phase = (seconds % ActiveRingBlinkPeriodSeconds) / ActiveRingBlinkPeriodSeconds;
+        var wave = 0.5f + (0.5f * Mathf.Sin((2f * Mathf.Pi * (float)phase) - (Mathf.Pi / 2f)));
+
+        return ActiveRingBlinkFloorAlpha + ((1f - ActiveRingBlinkFloorAlpha) * wave);
+    }
+
     private Color ActiveRingNow
     {
         get
         {
-            if (ActInProgress)
+            if (ActInProgress || !_animateVisuals)
             {
                 return ActiveRing;
             }
 
-            var phase = (Time.GetTicksMsec() / 1000.0 % ActiveRingBlinkPeriodSeconds)
-                / ActiveRingBlinkPeriodSeconds;
-            var wave = 0.5f + (0.5f * Mathf.Sin((2f * Mathf.Pi * (float)phase) - (Mathf.Pi / 2f)));
-            var alpha = ActiveRingBlinkFloorAlpha + ((1f - ActiveRingBlinkFloorAlpha) * wave);
-
-            return new Color(ActiveRing, alpha);
+            return new Color(ActiveRing, ActiveRingAlpha(Time.GetTicksMsec() / 1000.0));
         }
     }
 
@@ -418,7 +427,16 @@ public abstract partial class FightScreen : Node2D
     /// Off during a probe or a capture, exactly like the walk hop: a verification image
     /// read the instant after a click must not depend on when the frame was taken.
     /// </summary>
-    private bool _animateSprites;
+    /// <remarks>
+    /// <b>This governs every visual that varies with wall-clock time, not only sprite
+    /// strips</b> — the old name said "sprites" while <see cref="ActiveRingNow"/>'s blink
+    /// read the clock unguarded, and two probe runs of identical code came out
+    /// different in a ~45x45 px box at the active ring (#518, found by S7 of #327
+    /// while establishing a determinism baseline). #327's whole safety net is
+    /// byte-identical captures, so one unguarded clock read silently blunts it.
+    /// Anything new that animates belongs behind this flag.
+    /// </remarks>
+    private bool _animateVisuals;
 
     // Chrome (Palette.cs's neighbour, #327 S7) holds the font, Trim and the heading's
     // backdrop measurement; FightScreen keeps a thin TextFont/Trim forwarder so the
@@ -476,7 +494,7 @@ public abstract partial class FightScreen : Node2D
         TextureFilter = TextureFilterEnum.Nearest;
 
         _sprites = SpriteLibrary.Load();
-        _animateSprites = !HasArgument("probe") && ArgumentValue("capture") is null;
+        _animateVisuals = !HasArgument("probe") && ArgumentValue("capture") is null;
 
         // The chrome anchors to the window's real edges, so a resize moves everything
         // derived from them; subclasses re-seat whatever they cache (the play screen's
@@ -497,7 +515,7 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     protected bool AdvanceSpriteAnimation(double delta)
     {
-        if (!_animateSprites || _sprites.IsEmpty)
+        if (!_animateVisuals || _sprites.IsEmpty)
         {
             return false;
         }
@@ -688,7 +706,7 @@ public abstract partial class FightScreen : Node2D
 
         var living = _lastShownTokens?.Where(token => !token.IsDead).ToList();
 
-        if (!_animateSprites || living is not { Count: > 0 })
+        if (!_animateVisuals || living is not { Count: > 0 })
         {
             _cameraAim = new Vector2(GridWidth / 2f, GridHeight / 2f);
             _cameraCellAim = MathF.Min(FitFieldCell(), LargestCell);
@@ -794,7 +812,7 @@ public abstract partial class FightScreen : Node2D
             return false;
         }
 
-        if (!_animateSprites)
+        if (!_animateVisuals)
         {
             _cameraCentre = _cameraAim;
             CellPixels = _cameraCellAim;
