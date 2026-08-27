@@ -230,6 +230,31 @@ Three traps, each an acceptance criterion rather than a hope:
    notice; these are the same argument arriving from two directions, and this document
    does not pre-empt that issue's decision.)
 
+**Landed in S1 (#473), and three notes for the slices that build on it.** The model is
+`BattleScenario` in `src/SRDCombat.Game/BattleScenario.cs`, with `ScenarioParty`,
+`ScenarioMember`, `ScenarioEnemies`, `ScenarioRosterEntry` and `ScenarioBudget` beside it;
+the format is `ScenarioFile` (`ToJson`/`FromJson`, structure only) and the content half is
+`ScenarioContent` (`CheckAgainst`, `ResolveParty`) — the same split `RunSave.FromJson` and
+`GauntletRun.Resume` are in, and for the same reason. Three things the implementation
+settled that this section did not:
+
+1. **`FormatVersion` is on the record**, refused rather than guessed at, exactly as
+   `SavedRun.FormatVersion` is — and it carries `SavedRun`'s stated rule for adding a
+   field, which is what makes S6's battlefield block and S8's starting state additions
+   rather than breaks. Without it a real break would have no mechanism at all.
+2. **`ScenarioBudget.Level` is the level the printed budget prices against, and it is not
+   necessarily the party's.** `EncounterFactory.Build` today derives the budget's levels
+   from the party's own sheets, so **S2 must carry the scenario's value down to
+   `EncounterBuilder.ForLevels` rather than letting `Build` read the party** — reading the
+   party instead would silently measure a different fight than the one authored. This is
+   the field's whole point: "a Moderate fight for a level 3 party, fought by a level 1
+   party" is a legitimate thing to author.
+3. **The party half of the runner already exists.** `ScenarioContent.ResolveParty` turns an
+   authored party into resolved `PartyMember`s — the preset through
+   `PregeneratedParty.Build`, so a change to the pregens applies to every scenario using
+   it. S2 owns choosing monsters, rolling the board and building the `Fight`; it does not
+   need to write party resolution again.
+
 ## 5a. Where scenarios live: a committed `scenarios/` directory
 
 **Decided by Brandon, 2026-08-26**, over the alternative of a private user directory
@@ -245,6 +270,13 @@ correct for saves and dangerous here: a committed `scenarios/` directory sitting
 tree that also ignores `*.json` byproducts is one careless pattern away from being
 invisible. Whoever takes #469 must verify that `scenarios/*.json` is tracked afterwards,
 and the check belongs in that issue, not in this one.
+
+**Verified at S1 (#473):** `git check-ignore -v scenarios/*.json` prints nothing and exits
+1 — the library is tracked. `.gitignore`'s Scratch block now carries the warning and the
+command directly above the save-file rule #469 will widen, so whoever takes that issue
+meets it before they edit. Note the failure mode the check exists for: an ignore that
+swallowed the directory would leave `ScenarioLibraryTests` green on the files already in
+the index while every *new* scenario silently failed to arrive — invisible, not loud.
 
 **2. A committed scenario needs a reason to be committed.** Otherwise the directory rots
 into two hundred nameless files and nobody dares delete any of them. The rule, stated

@@ -9,6 +9,9 @@ internal static class RepositoryPaths
     /// <summary>The directory holding the SRD content files.</summary>
     public static string SrdContentDirectory => Path.Combine(RepositoryRoot, "data", "srd");
 
+    /// <summary>The committed scenario library (#473, design §5a).</summary>
+    public static string ScenarioDirectory => Path.Combine(RepositoryRoot, ScenarioFile.DirectoryName);
+
     private static string RepositoryRoot { get; } = FindRoot();
 
     private static string FindRoot()

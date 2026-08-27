@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "name": "moderate-level-3-pool-cuts-lifted",
+  "notes": "The same Moderate level 3 budget the ladder spends, drawn from a bag with the pool's plausibility and genre cuts lifted and its coverage floor dropped to Diminished. The instrument for #312 - thirty fights contain no enemy magic because every CR <= 4 caster is filtered out, and nothing today can ask what the ladder would look like if they were admitted. Numbers taken from this scenario describe a game we do not ship, and any batch quoting them must say so.",
+  "party": {
+    "pregeneratedLevel": 3
+  },
+  "enemies": {
+    "budget": {
+      "difficulty": "Moderate",
+      "level": 3,
+      "maximumChallengeRating": 4,
+      "horde": false,
+      "coverageFloor": "Diminished",
+      "plausibleFoesOnly": false,
+      "traditionalFoesOnly": false
+    }
+  },
+  "contentVersion": "B098B65C01F5D49E5BAE0F9F41F82311437B51FFCF8CF4AF4F1A57CAE50E769B"
+}

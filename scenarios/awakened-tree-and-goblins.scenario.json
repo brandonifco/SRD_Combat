@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "name": "awakened-tree-and-goblins",
+  "notes": "A Huge body on the board. The engine has placed and moved multi-square creatures since #429's S0-S3 (MonsterPool.LargestSpan answers 3 for the Awakened Tree), but the generator draws one only rarely, and the clients cannot yet render, click-target or preview one (#430). Committed so that shape can be asked for on demand: headless it runs today, and by hand it is the fixture #430 is finished against.",
+  "party": {
+    "pregeneratedLevel": 3
+  },
+  "enemies": {
+    "roster": [
+      {
+        "monsterId": "monster.awakened-tree",
+        "count": 1
+      },
+      {
+        "monsterId": "monster.goblin-warrior",
+        "count": 4
+      }
+    ]
+  },
+  "contentVersion": "B098B65C01F5D49E5BAE0F9F41F82311437B51FFCF8CF4AF4F1A57CAE50E769B"
+}
