@@ -1983,10 +1983,18 @@ public abstract partial class FightScreen : Node2D
                 : Math.Clamp(token.HitPoints / (float)token.MaximumHitPoints, 0f, 1f);
 
             var barLeft = centre.X - (CellPixels / 2f) + 6;
-            var barTop = centre.Y + (CellPixels / 2f) - 8;
 
-            DrawRect(new Rect2(barLeft, barTop, CellPixels - 12, 3), GridLine);
-            DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, 3), colour);
+            // On the ground line, not six pixels above it. These were two independent
+            // constants — the bar at (CellPixels / 2 - 8), the feet at (CellPixels / 2
+            // - 2) — so the bar was drawn *through* the bottom six screen-pixels of
+            // every figure on the board. On anything tall that is a trailing foot and
+            // nobody sees it; on a Giant Centipede, flat and low, it is a third of the
+            // animal, and the creature reads as sunk into its own bar (#533, found in
+            // play). Both now read GroundLine, so they cannot drift apart again.
+            var barTop = BarTop(centre.Y, CellPixels);
+
+            DrawRect(new Rect2(barLeft, barTop, CellPixels - 12, BarHeight), GridLine);
+            DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, BarHeight), colour);
         }
 
         // After the tokens, so a shot passes in front of what it flies over.
@@ -2150,6 +2158,50 @@ public abstract partial class FightScreen : Node2D
         _ => 1.0f,
     };
 
+    /// <summary>How tall the hit point bar is drawn, in screen pixels.</summary>
+    internal const float BarHeight = 3f;
+
+    /// <summary>
+    /// The screen row a token's feet rest on: two pixels inside its square's bottom
+    /// edge, so a figure stands on its own tile rather than on the seam below it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The sprite anchor and the hit point bar are the only two things drawn on the board
+    /// that must agree about where the ground is. They were separate literals — the feet
+    /// at <c>CellPixels / 2 - 2</c>, the bar at <c>CellPixels / 2 - 8</c> — and so
+    /// disagreed by six pixels for as long as both existed, the bar drawn straight through
+    /// the bottom of every figure (#533, found in play on a Giant Centipede, where six
+    /// pixels is a third of the animal).
+    /// </para>
+    /// <para>
+    /// <b>The offset is <see cref="BarHeight"/>, not a number of its own.</b> The strip
+    /// between a figure's feet and the bottom of its square is exactly the strip the bar
+    /// occupies — say that once and the two cannot part again. The old literal 2 could not
+    /// express it: a three-pixel bar starting at feet two pixels inside the edge ends one
+    /// pixel into the square below, drawn over by whatever stands in the next row. Every
+    /// figure on the board therefore stands one pixel higher than it did, which is the
+    /// whole visible cost of the fix.
+    /// </para>
+    /// </remarks>
+    internal static float GroundLine(float centreY, float cellPixels) =>
+        centreY + (cellPixels / 2f) - BarHeight;
+
+    /// <summary>
+    /// The screen row the hit point bar's top edge sits on: the ground line, so the bar
+    /// begins exactly where the figure standing on it stops.
+    /// </summary>
+    /// <remarks>
+    /// <b>A separate function from <see cref="GroundLine"/> on purpose</b> — the bar is
+    /// allowed to move, and someone may yet want it a pixel or two lower. What it is not
+    /// allowed to do is climb back above the feet, or fall past its own square into the
+    /// row below, and <c>SpriteMeasurementTests</c> asserts both bounds against these
+    /// two functions rather than against the numbers in them. That is the trip-wire:
+    /// change the rule and the test still passes; break the invariant and it does not.
+    /// </remarks>
+    internal static float BarTop(float centreY, float cellPixels) =>
+        GroundLine(centreY, cellPixels);
+
     /// <summary>The token as animated art, with the letter kept in the cell's corner.</summary>
     /// <remarks>
     /// <para>
@@ -2244,7 +2296,7 @@ public abstract partial class FightScreen : Node2D
 
         // Off the centre rather than the grid square, so a gliding walker's feet move
         // with it instead of stair-stepping a square behind.
-        var anchor = new Vector2(centre.X, centre.Y + (CellPixels / 2f) - 2);
+        var anchor = new Vector2(centre.X, GroundLine(centre.Y, CellPixels));
 
         if (lying)
         {
