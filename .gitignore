@@ -119,4 +119,13 @@ client/assets/sprites/Terrain/*
 *.tmp
 *.bak
 *.old
-srdcombat-save.json
+
+# Save files (#469): the Godot client's --save=<path> writes wherever it is asked to
+# (client/README.md), not just the default srdcombat-save.json, and it lands in
+# whatever directory Godot was launched from (client/, for client work) rather than
+# the repo root — so this is deliberately unanchored, unlike the tracked JSON below it
+# is not meant to shadow. Kept narrow to the save family on purpose (srdcombat-save*,
+# plus the .bak/.old rotation the atomic-write path produces, already covered above):
+# a broader *.json rule would also hide data/srd's committed content and the
+# scenarios/ directory #473 is landing, which needs to stay visible in `git status`.
+srdcombat-save*.json
