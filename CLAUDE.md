@@ -26,13 +26,13 @@ When a bullet below feels compressed, the archive has the long form with the evi
 
 | | |
 | --- | --- |
-| Tests | **4,597 passing**, 2 skipped by design (the transcript fixture writer and the sprite-geometry manifest writer) — measured 2026-08-27 at `cbdcdc5`: `SrdExtract.Tests` 3,328, `Core.Tests` 658, `Content.Tests` 226, `Game.Tests` 336, `Viewer.Tests` 49 (new — #190). **`Game.Tests` alone takes 6m39s of that**, against the 2m14s this file recorded at F1 exit: a 3x regression, and F5's exit criterion is a suite under ~3 minutes. #319 (the corpus loaded 27 times) is the filed cause |
+| Tests | **4,718 passing**, 2 skipped by design (the transcript fixture writer and the sprite-geometry manifest writer) — measured 2026-08-27 at `8988604` by a full `dotnet test -c Debug`: `SrdExtract.Tests` 3,328, `Core.Tests` 658, `Content.Tests` 226, `Game.Tests` **362**, `Viewer.Tests` **144**. The previous entry (4,597 at `cbdcdc5`) predated #500–#502, #509, #533 and #537. **`Game.Tests` alone takes ~6m55s of that** — measured against a contended machine, so read it as "still roughly seven minutes", not as a delta on the 6m39s above it; the regression against the 2m14s recorded at F1 exit is the point, and F5's exit criterion is a suite under ~3 minutes. #319 (the corpus loaded 19 times — 27 when that issue was filed) is the filed cause |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — counts re-verified from `data/srd` at `8ca55aa`; F1's regenerations (#382, #370–#373, #421) changed entry structure and residue in `monsters.json`, never the roster |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder and nobody has played it yet**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
+| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Coverage gaps | 24% of production code untested (`client/` 7.4k, `Console` 1.9k lines, of 38.7k total) — down from 41%: `tools/SrdExtract` (7.0k) gained its harness in F1 (#189's first slice); the clients are F5's remaining gap. The Godot client gained `tests/SRDCombat.Viewer.Tests` on 2026-08-26 (#190) — the log highlighter, the sprite metrics and the draw scale, every test knockout-verified — but its argument wiring and `PlayMode`'s own state are still pinned by nothing (#490), pending the seam #491/#473 own; the console client's 1.9k lines remain untested, filed as #317 |
+| Coverage gaps | The console client is the last wholly untested production code: **1,949 lines**, filed as #317. Measured 2026-08-27 at `8988604` over `src/`, `client/` and `tools/`, excluding `bin`/`obj`: **43,568 production lines**, of which `client/` is 9,214, `tools/SrdExtract` 6,996 and `SRDCombat.Console` 1,949. **A blanket "N% untested" figure is retired here rather than restated**: the old 24% was a directory proxy that counted a whole tree as untested the moment it had no test project, and it stopped being reproducible once `tools/SrdExtract` (#189) and the Godot client (#190) got theirs — `SRDCombat.Viewer.Tests` now pins the focus stack, the router, the log highlighter, sprite metrics and the draw scale, so `client/` is neither untested nor tested but partly each, and one number cannot say which. What is still true and still specific: **#490** — the live Godot argv boundary (`--spawn` / `--level` refusal wiring) is pinned by nothing, knockout-verified; the rest of `PlayMode`'s state was substantially pinned by #500-#502 and #473/#474, so read #490 as the argv seam alone, not as the whole client |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
@@ -142,12 +142,15 @@ fill-ins; the exit mechanism review's process issues (#415–#417) go to F5; the
 doctrine rewrite of "The rule this project runs on" (#419) is the steward's,
 directly after this close; #189's broader extractor harness returns to F5.
 
-**F2 — Feel.** The largest gap per hour of work — **but its two asset lanes are deliberately sequenced last**. Brandon, 2026-08-26: *"save audio and visual art for last… i don't mean visual mechanics, i mean actual image work."* So the audio pass (#300) and every art item (#295, #460, #462, PR #446) wait, while the *mechanics* — damage numbers, hit/miss/death, the health readout, previews, threat marking, the active-ring blink (#494, shipped) and the battlefield slices — proceed at normal priority. He draws all the art himself, so that lane is human throughput best spent once the mechanics using it have settled. The paragraph below still describes the pipeline work first; read that as scope, not as running order. One committed master→sprite pipeline
+**F2 — Feel.** The largest gap per hour of work — **but its two asset lanes are deliberately sequenced last**. Brandon, 2026-08-26: *"save audio and visual art for last… i don't mean visual mechanics, i mean actual image work."* So the audio pass (#300) and every art item (#460, #462, PR #446) wait, while the *mechanics* — damage numbers, hit/miss/death, the health readout, previews, threat marking, the active-ring blink (#494, shipped) and the battlefield slices — proceed at normal priority. He draws all the art himself, so that lane is human throughput best spent once the mechanics using it have settled. The paragraph below still describes the pipeline work first; read that as scope, not as running order. One committed master→sprite pipeline
 script — **mechanical-only since 2026-08-26** (facing, crop, downscale, hard alpha;
 the palette and de-grain steps were removed at Brandon's direction after PR #446's
 "made of metal" verdict — colour is his alone, and no script reinterprets it) —
-Brandon approves before/after for every batch; ship the ~23 finished-but-unshipped
-masters (they cover most creatures now rendering as circles); fix the stature clamp
+Brandon approves before/after for every batch. **The "~23 unshipped masters" item is
+closed (#295, shipped `ec86756`, 2026-08-25) and the count was wrong**: all but two had
+already shipped in intervening batches, and fifteen pool names mapped at gitignored
+Craftpix folders were retired to the honest circle-and-letter token rather than left
+pointing at art no release build carries. Remaining art lanes: fix the stature clamp
 (an Ogre must not render shorter than a Goblin); integer-snap ground scaling. Board
 feedback: floating damage numbers, hit/miss/death visually distinct, health readout
 carrying state, an audio pass (a dozen sounds: hit, miss, death, cast, UI — silence is
@@ -170,7 +173,7 @@ rather than new drawing, the refactor pulls forward into F2 instead. Route choic
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
 (attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
-fight 24 rather than never (only 53 of 120 and 59 of 121 runs reach level 4 — the
+fight 24 rather than never (only 53 of 120 and 53 of 121 runs reach level 4 — the
 Pacing row above, current baseline); reprice or redesign the free `Survive(3)` rung;
 per-cycle variety so the six cycles are not one cycle six times (#192 — and, since
 2026-08-25, the per-cycle site weighting the battlefield overhaul deliberately left
@@ -181,8 +184,12 @@ for every new system.
 **F4 — Depth and variety.** Spellcasting enemies enter the pool (all ten CR ≤ 4
 casters are currently filtered out — thirty fights contain no enemy magic); the
 `Playable` grade reads all sections, not just Actions (#231); CR-band fill-ins (#267
-— the boss band holds three creatures); retune `ClassicMonsterWeight` (it now
-double-penalises the 14 surviving genre-appropriate Beasts); fog slice 2 (#244);
+— the boss band holds two, Guard Captain and Red Dragon Wyrmling, since the census
+demoted Ettin); retune `ClassicMonsterWeight` (it now double-penalises the 14 surviving
+genre-appropriate Beasts); fog slice 2 (**#545** — #244 was slice 1, shipped as
+`PartyVision` and closed 2026-08-27; slice 2 is Stealth, Hide and Surprise, and it is
+the slice that moves the visibility predicate from a display judgement into a `Core`
+rule, disturbing three readings that are correct only because no sight model exists);
 policy growth where measurement pays: Dodge/Disengage/retreat, behind an
 `ITacticsPolicy` seam so two policies A/B on the same seeds. Decide the six
 unoffered classes: ship or cut, not linger. Exit: distinct-creature measurement
@@ -193,11 +200,13 @@ project's first slice, #189, to F1 as the span refactor's safety net, and the
 PlayMode refactor, #327, to F3's entry gate — the broader page-fixture harness still
 grows here.) Client behaviour
 tests grown from the probe harness (#190 — the test project landed 2026-08-26 with
-the reachable half: log colouring, sprite metrics, draw scale; the parts behind
-Godot statics wait on #491/#473's spec type, and #490 stays open for them);
+the reachable half: log colouring, sprite metrics, draw scale, and — since #500–#502
+and #473/#474 — the focus stack, the router and the scenario seam. **#473's spec type
+landed**; what #490 still names is the live Godot argv boundary alone, not the client
+at large);
 console client tests (1.9k lines,
 currently untested, #317); shared test-support project; xUnit content
-fixtures (the corpus is currently loaded 27 times; `Game.Tests` took **6m59s** Debug /
+fixtures (the corpus is currently loaded 19 times; `Game.Tests` took **6m59s** Debug /
 4m25s Release measured 2026-08-27 in an uncontended worktree — the suite has regressed 3x
 against the 2m14s recorded at the
 2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case
@@ -209,8 +218,8 @@ minutes; a parser edit fails a test on a machine without the PDF.
 
 **F6 — Ship.** In-game attribution screen (CC-BY requires notice in the distributed
 artifact, not just the repo); NOTICE covers the art and the masters' licence; an
-LFS-or-release-assets strategy for the 291 MB masters tree; packaging (Linux +
-Windows), a player-facing README, a tagged release. Exit: a stranger downloads and
+LFS-or-release-assets strategy for the 356 MB masters tree, 139 files; packaging
+(Linux + Windows), a player-facing README, a tagged release. Exit: a stranger downloads and
 plays without cloning.
 
 **Sequencing rationale.** F1 first because every later phase builds on saves,
@@ -612,7 +621,10 @@ dotnet test SRDCombat.sln -c Debug
 
 - **`git add` specific paths, never `-A` or `.`**
 - **One narrowly-scoped branch per concern; branch → push → PR → wait for CI → stop.**
-  Brandon reviews and merges. Never merge your own PR, never push to `main`.
+  Never push to `main`. **Merging is the agent's**, once CI is green — see "What stays
+  human" in [The team](#the-team), which records Brandon's 2026-08-24 correction. This
+  bullet claimed the opposite until 2026-08-27; the two passages contradicted each other
+  for three days and agents got whichever rule they read first.
 - **Confirm a merge really happened** before branching from `main`
   (`gh pr view <n> --json state,mergedAt` — the 504s lie), or a stale base silently
   drops the previous slice.
