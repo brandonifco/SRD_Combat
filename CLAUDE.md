@@ -26,13 +26,13 @@ When a bullet below feels compressed, the archive has the long form with the evi
 
 | | |
 | --- | --- |
-| Tests | **4,410 passing**, 1 skipped by design (the transcript fixture writer) — measured 2026-08-25 at `8ca55aa`: `SrdExtract.Tests` 3,328 (the #189/#382 harness — characterization fixtures, whole-corpus round-trip, verbatim-invariant and glue-census checks), `Core.Tests` 618, `Content.Tests` 226, `Game.Tests` 238 |
+| Tests | **4,597 passing**, 2 skipped by design (the transcript fixture writer and the sprite-geometry manifest writer) — measured 2026-08-27 at `cbdcdc5`: `SrdExtract.Tests` 3,328, `Core.Tests` 658, `Content.Tests` 226, `Game.Tests` 336, `Viewer.Tests` 49 (new — #190). **`Game.Tests` alone takes 6m39s of that**, against the 2m14s this file recorded at F1 exit: a 3x regression, and F5's exit criterion is a suite under ~3 minutes. #319 (the corpus loaded 27 times) is the filed cause |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — counts re-verified from `data/srd` at `8ca55aa`; F1's regenerations (#382, #370–#373, #421) changed entry structure and residue in `monsters.json`, never the roster |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `8ca55aa` (`main`, the F1 closing merge), 2026-08-25 — the **promoted F1-exit baseline**, superseding the provisional post-#347 entry and the #382-branch measurement. Seeds 1–120: median 18 of 30, 43 clear all, 53 reach level 4, died-by-fight-4 10; ended Cleared 43 / Defeated 77. Seeds 200–320: median 18, 43 clear all, 59 reach level 4, died-by-fight-4 8 (of 121); ended Cleared 43 / Defeated 78. **Zero `Stalled`** in both. Per-band hp-left 84→77→70→72→75→74% (1–120) and 83→77→71→72→75→72% (200–320). Against the #382 stage-4–6 measurement (clears 32/35, level-4 48/46): clears and level-4 attainment recovered past the census dip on both ranges — the direction the semantic fixes predict, since the two largest (#370, #371) each removed systematic *over*-damage against the party (full damage on successful saves; full swarm damage while Bloodied). The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
+| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder and nobody has played it yet**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Coverage gaps | 24% of production code untested (`client/` 7.4k, `Console` 1.9k lines, of 38.7k total) — down from 41%: `tools/SrdExtract` (7.0k) gained its harness in F1 (#189's first slice); the clients are F5's remaining gap. The Godot client gained `tests/SRDCombat.Viewer.Tests` on 2026-08-26 (#190) — the log highlighter, the sprite metrics and the draw scale, every test knockout-verified — but its argument wiring and `PlayMode`'s own state are still pinned by nothing (#490), pending the seam #491/#473 own; the console client's 1.9k lines remain untested *and* unfiled |
+| Coverage gaps | 24% of production code untested (`client/` 7.4k, `Console` 1.9k lines, of 38.7k total) — down from 41%: `tools/SrdExtract` (7.0k) gained its harness in F1 (#189's first slice); the clients are F5's remaining gap. The Godot client gained `tests/SRDCombat.Viewer.Tests` on 2026-08-26 (#190) — the log highlighter, the sprite metrics and the draw scale, every test knockout-verified — but its argument wiring and `PlayMode`'s own state are still pinned by nothing (#490), pending the seam #491/#473 own; the console client's 1.9k lines remain untested, filed as #317 |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
@@ -142,7 +142,7 @@ fill-ins; the exit mechanism review's process issues (#415–#417) go to F5; the
 doctrine rewrite of "The rule this project runs on" (#419) is the steward's,
 directly after this close; #189's broader extractor harness returns to F5.
 
-**F2 — Feel.** The largest gap per hour of work. One committed master→sprite pipeline
+**F2 — Feel.** The largest gap per hour of work — **but its two asset lanes are deliberately sequenced last**. Brandon, 2026-08-26: *"save audio and visual art for last… i don't mean visual mechanics, i mean actual image work."* So the audio pass (#300) and every art item (#295, #460, #462, PR #446) wait, while the *mechanics* — damage numbers, hit/miss/death, the health readout, previews, threat marking, the active-ring blink (#494, shipped) and the battlefield slices — proceed at normal priority. He draws all the art himself, so that lane is human throughput best spent once the mechanics using it have settled. The paragraph below still describes the pipeline work first; read that as scope, not as running order. One committed master→sprite pipeline
 script — **mechanical-only since 2026-08-26** (facing, crop, downscale, hard alpha;
 the palette and de-grain steps were removed at Brandon's direction after PR #446's
 "made of metal" verdict — colour is his alone, and no script reinterprets it) —
@@ -196,8 +196,10 @@ tests grown from the probe harness (#190 — the test project landed 2026-08-26 
 the reachable half: log colouring, sprite metrics, draw scale; the parts behind
 Godot statics wait on #491/#473's spec type, and #490 stays open for them);
 console client tests (1.9k lines,
-currently untested *and* unfiled); shared test-support project; xUnit content
-fixtures (the corpus is currently loaded 27 times; `Game.Tests` took 2m14s in the
+currently untested, #317); shared test-support project; xUnit content
+fixtures (the corpus is currently loaded 27 times; `Game.Tests` took **6m59s** Debug /
+4m25s Release measured 2026-08-27 in an uncontended worktree — the suite has regressed 3x
+against the 2m14s recorded at the
 2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case
 stands on the 27 loads, not the wall clock); the
 `Encounter` guard-preamble helper, and the action seam if the class list grows —
@@ -537,7 +539,10 @@ cannot read (`--format sln`), and templates write `net10.0` properties that over
 `~/Downloads/SRD_CC_v5.2.1.pdf`, is never committed, and only `tools/SrdExtract`
 needs it. Godot 4.7 mono is on `PATH` for the client; the build itself needs neither
 Godot nor a display (the SDK is a NuGet package). A real X display exists
-(`DISPLAY=:1`) for windowed runs and captures.
+for windowed runs and captures — but **`:1` was unreachable on 2026-08-27 and `:0` was**,
+confirmed by `xdpyinfo` and independently by three agents, and the probe additionally
+needed `--display-driver x11`. Use `:0`. Whether `:1` is gone for good or was simply not
+up that night is unresolved, so this records what was measured rather than a new rule.
 
 ## The SRD source and the extraction pipeline
 
