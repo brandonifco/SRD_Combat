@@ -15,9 +15,40 @@ public partial class Main : Node2D
     {
         var watch = FightScreen.HasArgument("watch") || FightScreen.ArgumentValue("capture") is not null;
 
-        AddChild(
-            watch ? new WatchMode()
-            : FightScreen.HasArgument("create") ? new CreateMode()
-            : new PlayMode());
+        if (watch)
+        {
+            AddChild(new WatchMode());
+            return;
+        }
+
+        if (FightScreen.HasArgument("create"))
+        {
+            AddChild(NewCreateMode());
+            return;
+        }
+
+        AddChild(new PlayMode());
+    }
+
+    /// <summary>
+    /// The completion callback <c>CreateMode</c> used to hard-code as
+    /// <c>new PlayMode { CreatedDrafts = … }</c> (#327 S7) — this is the one caller
+    /// that starts a run from the finished drafts; a future caller (#483's party
+    /// editor) supplies its own.
+    /// </summary>
+    private CreateMode NewCreateMode()
+    {
+        CreateMode createMode = null!;
+
+        createMode = new CreateMode
+        {
+            OnComplete = drafts =>
+            {
+                AddChild(new PlayMode { CreatedDrafts = drafts });
+                createMode.QueueFree();
+            },
+        };
+
+        return createMode;
     }
 }

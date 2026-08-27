@@ -8,8 +8,8 @@ using SRDCombat.Game;
 namespace SRDCombat.Viewer;
 
 /// <summary>
-/// Party creation under the mouse: four drafts built by clicking, every option shown
-/// with its printed SRD text.
+/// Party creation under the mouse: drafts built by clicking, every option shown with
+/// its printed SRD text.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,13 +22,34 @@ namespace SRDCombat.Viewer;
 /// with its reason and the character restarted rather than swallowed.
 /// </para>
 /// <para>
-/// When the fourth character is kept, this node replaces itself with a
-/// <see cref="PlayMode"/> whose <see cref="PlayMode.CreatedDrafts"/> are the four
-/// drafts — from there the run is indistinguishable from one started any other way.
+/// <b>Composition, not inheritance</b> (#327 S7). This screen shares nothing with
+/// <see cref="FightScreen"/> beyond the palette and a few pixels of chrome — it draws
+/// no board, no camera, no sprite — so it composes <see cref="Chrome"/> for the font
+/// and <see cref="Palette"/> for colour rather than inheriting a 2,400-line
+/// battlefield base class for them. It does not load <c>SpriteLibrary</c>, which it
+/// never used; that is a deliberate, stated behaviour difference (no pixel changes —
+/// party creation just starts faster).
+/// </para>
+/// <para>
+/// When <see cref="PartySize"/> drafts are kept, <see cref="OnComplete"/> is invoked
+/// with them and this node stops advancing — what happens to the drafts, and to this
+/// node, is entirely the caller's decision. <c>Main</c> supplies the callback that
+/// starts a run; nothing here names the screen that follows.
 /// </para>
 /// </remarks>
-public partial class CreateMode : FightScreen
+public partial class CreateMode : Node2D
 {
+    /// <summary>How many characters this screen builds before calling <see cref="OnComplete"/>.</summary>
+    public int PartySize { get; init; } = 4;
+
+    /// <summary>
+    /// Called once, with the finished drafts, when the <see cref="PartySize"/>th
+    /// character is kept. Replaces the old hard-coded construct-and-hand-off of the
+    /// screen that used to follow, so a second caller — the battle builder's party
+    /// editor (#483) — can reuse this screen without it naming what comes next.
+    /// </summary>
+    public required Action<IReadOnlyList<CharacterDraft>> OnComplete { get; init; }
+
     private enum Step
     {
         Name,
@@ -55,6 +76,7 @@ public partial class CreateMode : FightScreen
         Summary,
     }
 
+    private Chrome _chrome = null!;
     private SrdContent _content = null!;
     private readonly List<CharacterDraft> _drafts = [];
     private Step _step = Step.Name;
@@ -91,9 +113,25 @@ public partial class CreateMode : FightScreen
     private int _textScroll;
     private bool _probeStarted;
 
-    protected override string Title => "SRD_Combat — creating a party";
+    private const string Title = "SRD_Combat — creating a party";
 
-    protected override void OnReady() => _content = LoadContent();
+    /// <summary>The window's real size, read from the viewport on every use.</summary>
+    private int ScreenWidth => (int)GetViewportRect().Size.X;
+    private int ScreenHeight => (int)GetViewportRect().Size.Y;
+
+    public override void _Ready()
+    {
+        _chrome = new Chrome(ThemeDB.GetFallbackFont());
+        _content = ClientContent.Load();
+
+        // The three things FightScreen._Ready used to give this screen for free —
+        // it never used the rest of that base class (#327 S7).
+        TextureFilter = TextureFilterEnum.Nearest; // used to arrive from the base
+        GetWindow().MinSize = new Vector2I(960, 540); // used to arrive from the base
+        GetViewport().SizeChanged += OnResized; // used to arrive from the base
+    }
+
+    private void OnResized() => QueueRedraw();
 
     public override void _Process(double delta)
     {
@@ -467,11 +505,9 @@ public partial class CreateMode : FightScreen
 
         _drafts.Add(BuildDraft());
 
-        if (_drafts.Count == 4)
+        if (_drafts.Count == PartySize)
         {
-            var play = new PlayMode { CreatedDrafts = _drafts.ToArray() };
-            GetParent().AddChild(play);
-            QueueFree();
+            OnComplete(_drafts.ToArray());
             return;
         }
 
@@ -522,20 +558,20 @@ public partial class CreateMode : FightScreen
         _rows.Clear();
         _actions.Clear();
 
-        DrawRect(new Rect2(0, 0, ScreenWidth, ScreenHeight), Background);
-        DrawString(TextFont, new Vector2(24, 34), Title, fontSize: 20, modulate: Ink);
+        DrawRect(new Rect2(0, 0, ScreenWidth, ScreenHeight), Palette.Background);
+        DrawString(_chrome.Font, new Vector2(24, 34), Title, fontSize: 20, modulate: Palette.Ink);
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(24, 58),
-            $"Character {_drafts.Count + 1} of 4 — {Caption(_step)}",
+            $"Character {_drafts.Count + 1} of {PartySize} — {Caption(_step)}",
             fontSize: 14,
-            modulate: Dim);
+            modulate: Palette.Dim);
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(24, 78),
             "Click an option to read its printed text; Take commits it.",
             fontSize: 12,
-            modulate: Dim);
+            modulate: Palette.Dim);
 
         switch (_step)
         {
@@ -571,32 +607,32 @@ public partial class CreateMode : FightScreen
 
     private void DrawName()
     {
-        DrawString(TextFont, new Vector2(RowsX, 140), "Type a name, then continue:", fontSize: 14, modulate: Ink);
-        DrawRect(new Rect2(RowsX, 156, 300, 30), GridLine);
-        DrawString(TextFont, new Vector2(RowsX + 8, 177), _name + "_", fontSize: 15, modulate: Ink);
+        DrawString(_chrome.Font, new Vector2(RowsX, 140), "Type a name, then continue:", fontSize: 14, modulate: Palette.Ink);
+        DrawRect(new Rect2(RowsX, 156, 300, 30), Palette.GridLine);
+        DrawString(_chrome.Font, new Vector2(RowsX + 8, 177), _name + "_", fontSize: 15, modulate: Palette.Ink);
         Action(new Vector2(RowsX, 210), "Continue", CommitName);
     }
 
     private void DrawMethod()
     {
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(RowsX, 140),
             "Ability scores — the printed methods:",
             fontSize: 14,
-            modulate: Ink);
+            modulate: Palette.Ink);
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(RowsX, 170),
             "Standard Array: assign 15, 14, 13, 12, 10, 8.",
             fontSize: 13,
-            modulate: Dim);
+            modulate: Palette.Dim);
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(RowsX, 190),
             $"Point Buy: {AbilityScoreRules.PointBudget} points; 8:0  9:1  10:2  11:3  12:4  13:5  14:7  15:9.",
             fontSize: 13,
-            modulate: Dim);
+            modulate: Palette.Dim);
 
         Action(new Vector2(RowsX, 220), "Standard Array", () => ChooseMethod(pointBuy: false));
         Action(new Vector2(RowsX + 160, 220), "Point Buy", () => ChooseMethod(pointBuy: true));
@@ -613,23 +649,23 @@ public partial class CreateMode : FightScreen
                 && Enum.GetValues<Ability>().First(a => !_scores.ContainsKey(a)) == ability;
 
             DrawString(
-                TextFont,
+                _chrome.Font,
                 new Vector2(RowsX, y),
                 $"{ability,-13} {value}{(next ? "   ← next" : string.Empty)}",
                 fontSize: 14,
-                modulate: next ? Ink : Dim);
+                modulate: next ? Palette.Ink : Palette.Dim);
             y += 22;
         }
 
-        DrawString(TextFont, new Vector2(RowsX, y + 14), "Click a value to assign it:", fontSize: 13, modulate: Ink);
+        DrawString(_chrome.Font, new Vector2(RowsX, y + 14), "Click a value to assign it:", fontSize: 13, modulate: Palette.Ink);
 
         var x = (float)RowsX;
 
         for (var index = 0; index < _arrayRemaining.Count; index++)
         {
             var rect = new Rect2(x, y + 26, 44, 26);
-            DrawRect(rect, GridLine);
-            DrawString(TextFont, rect.Position + new Vector2(12, 19), _arrayRemaining[index].ToString(), fontSize: 14, modulate: Ink);
+            DrawRect(rect, Palette.GridLine);
+            DrawString(_chrome.Font, rect.Position + new Vector2(12, 19), _arrayRemaining[index].ToString(), fontSize: 14, modulate: Palette.Ink);
             _rows.Add((rect, index));
             x += 52;
         }
@@ -642,16 +678,16 @@ public partial class CreateMode : FightScreen
 
         foreach (var ability in Enum.GetValues<Ability>())
         {
-            DrawString(TextFont, new Vector2(RowsX, y + 18), $"{ability,-13} {_scores[ability],2}", fontSize: 14, modulate: Ink);
+            DrawString(_chrome.Font, new Vector2(RowsX, y + 18), $"{ability,-13} {_scores[ability],2}", fontSize: 14, modulate: Palette.Ink);
 
             var minus = new Rect2(RowsX + 170, y, 26, 24);
             var plus = new Rect2(RowsX + 202, y, 26, 24);
             var held = ability;
 
-            DrawRect(minus, GridLine);
-            DrawString(TextFont, minus.Position + new Vector2(9, 17), "−", fontSize: 14, modulate: Ink);
-            DrawRect(plus, GridLine);
-            DrawString(TextFont, plus.Position + new Vector2(8, 17), "+", fontSize: 14, modulate: Ink);
+            DrawRect(minus, Palette.GridLine);
+            DrawString(_chrome.Font, minus.Position + new Vector2(9, 17), "−", fontSize: 14, modulate: Palette.Ink);
+            DrawRect(plus, Palette.GridLine);
+            DrawString(_chrome.Font, plus.Position + new Vector2(8, 17), "+", fontSize: 14, modulate: Palette.Ink);
 
             _actions.Add((minus, $"minus-{ability}", () => AdjustPointBuy(held, -1)));
             _actions.Add((plus, $"plus-{ability}", () => AdjustPointBuy(held, +1)));
@@ -659,22 +695,22 @@ public partial class CreateMode : FightScreen
         }
 
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(RowsX, y + 16),
             $"{AbilityScoreRules.PointBudget - spent} points left",
             fontSize: 14,
-            modulate: Ink);
+            modulate: Palette.Ink);
         Action(new Vector2(RowsX, y + 32), "Done", () => _step = Step.IncreaseShape);
     }
 
     private void DrawIncreaseShape()
     {
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(RowsX, 140),
             $"{_background!.Name} raises {string.Join(", ", _background.AbilityScores)}:",
             fontSize: 14,
-            modulate: Ink);
+            modulate: Palette.Ink);
 
         Action(new Vector2(RowsX, 170), "+2 to one and +1 to another", () => ChooseIncreaseShape(AbilityIncreaseChoice.TwoAndOne));
         Action(new Vector2(RowsX, 210), "+1 to each of the three", () => ChooseIncreaseShape(AbilityIncreaseChoice.OneEach));
@@ -683,11 +719,11 @@ public partial class CreateMode : FightScreen
     private void DrawAbilityImprovementShape()
     {
         DrawString(
-            TextFont,
+            _chrome.Font,
             new Vector2(RowsX, 140),
             "Ability Score Improvement (level 4):",
             fontSize: 14,
-            modulate: Ink);
+            modulate: Palette.Ink);
 
         Action(new Vector2(RowsX, 170), "+2 to one ability", () => ChooseAsiShape(split: false));
         Action(new Vector2(RowsX, 210), "+1 to two abilities", () => ChooseAsiShape(split: true));
@@ -695,7 +731,7 @@ public partial class CreateMode : FightScreen
 
     private void DrawShield()
     {
-        DrawString(TextFont, new Vector2(RowsX, 140), "Carry a Shield? (+2 AC)", fontSize: 14, modulate: Ink);
+        DrawString(_chrome.Font, new Vector2(RowsX, 140), "Carry a Shield? (+2 AC)", fontSize: 14, modulate: Palette.Ink);
         Action(new Vector2(RowsX, 170), "Shield", () => ChooseShield(true));
         Action(new Vector2(RowsX + 120, 170), "No Shield", () => ChooseShield(false));
     }
@@ -726,32 +762,32 @@ public partial class CreateMode : FightScreen
 
         void Line(string text, Color colour)
         {
-            DrawString(TextFont, new Vector2(RowsX, y), text, fontSize: 14, modulate: colour);
+            DrawString(_chrome.Font, new Vector2(RowsX, y), text, fontSize: 14, modulate: colour);
             y += 22;
         }
 
-        Line($"{sheet.Name} — {_species!.Name} {_class!.Name} ({_background!.Name})", Ink);
-        Line($"AC {sheet.ArmorClass}   {sheet.MaximumHitPoints} hit points   Speed {sheet.SpeedFeet} ft.", Ink);
+        Line($"{sheet.Name} — {_species!.Name} {_class!.Name} ({_background!.Name})", Palette.Ink);
+        Line($"AC {sheet.ArmorClass}   {sheet.MaximumHitPoints} hit points   Speed {sheet.SpeedFeet} ft.", Palette.Ink);
         Line(
             string.Join("   ", Enum.GetValues<Ability>().Select(ability =>
                 $"{ability.ToString()[..3].ToUpperInvariant()} {sheet.AbilityScores[ability]}")),
-            Dim);
+            Palette.Dim);
 
         if (_preview.Combatant.Stats.Character is { Spells.Count: > 0 } caster)
         {
-            Line($"Prepares: {string.Join(", ", caster.Spells.Select(spell => spell.Name))}.", Dim);
+            Line($"Prepares: {string.Join(", ", caster.Spells.Select(spell => spell.Name))}.", Palette.Dim);
         }
 
         if (sheet.DivineOrder != DivineOrder.Unspecified)
         {
-            Line($"Divine Order: {sheet.DivineOrder}.", Dim);
+            Line($"Divine Order: {sheet.DivineOrder}.", Palette.Dim);
         }
 
         if (_asiFirst is { } asiFirst)
         {
             Line(
                 $"Level 4 plan: {(_asiSecond is { } asiSecond ? $"+1 {asiFirst}, +1 {asiSecond}" : $"+2 {asiFirst}")}.",
-                Dim);
+                Palette.Dim);
         }
 
         if (sheet.UnimplementedFeatures.Count > 0)
@@ -789,26 +825,26 @@ public partial class CreateMode : FightScreen
 
             if (index == _browsed)
             {
-                DrawRect(rect, GridLine);
+                DrawRect(rect, Palette.GridLine);
             }
 
             DrawString(
-                TextFont,
+                _chrome.Font,
                 rect.Position + new Vector2(4, 16),
-                Trim(marker + rows[index], 40),
+                Chrome.Trim(marker + rows[index], 40),
                 fontSize: 13,
-                modulate: chosen ? ActiveRing : Ink);
+                modulate: chosen ? Palette.ActiveRing : Palette.Ink);
             _rows.Add((rect, index));
         }
 
         if (rows.Count > VisibleRows)
         {
             DrawString(
-                TextFont,
+                _chrome.Font,
                 new Vector2(RowsX, RowsTop + (VisibleRows * RowHeight) + 14),
                 $"scroll for more ({rows.Count} options)",
                 fontSize: 11,
-                modulate: Dim);
+                modulate: Palette.Dim);
         }
 
         DrawPanel();
@@ -824,17 +860,17 @@ public partial class CreateMode : FightScreen
             case Step.Class or Step.Species or Step.Background or Step.Style or Step.Order or Step.Weapon or Step.Armor:
                 if (_browsed >= 0)
                 {
-                    Action(new Vector2(RowsX, y), $"Take {Trim(RowCaptions()[_browsed], 22)}", Take);
+                    Action(new Vector2(RowsX, y), $"Take {Chrome.Trim(RowCaptions()[_browsed], 22)}", Take);
                 }
 
                 break;
             case Step.Skills:
                 DrawString(
-                    TextFont,
+                    _chrome.Font,
                     new Vector2(RowsX, y - 10),
                     $"{_skills.Count} of {SkillAllowance()} chosen — click to toggle.",
                     fontSize: 12,
-                    modulate: Dim);
+                    modulate: Palette.Dim);
 
                 if (_skills.Count == SkillAllowance())
                 {
@@ -844,30 +880,30 @@ public partial class CreateMode : FightScreen
                 break;
             case Step.Mastery:
                 DrawString(
-                    TextFont,
+                    _chrome.Font,
                     new Vector2(RowsX, y - 10),
                     $"{_masteries.Count} of up to {CharacterCreation.MasteryAllowance(_class!, 1)} — click to toggle.",
                     fontSize: 12,
-                    modulate: Dim);
+                    modulate: Palette.Dim);
                 Action(new Vector2(RowsX, y), "Continue", FinishMastery);
                 break;
             case Step.IncreasePrimary or Step.IncreaseSecondary:
                 DrawString(
-                    TextFont,
+                    _chrome.Font,
                     new Vector2(RowsX, y - 10),
                     _step == Step.IncreasePrimary ? "Click the ability taking +2." : "Click the ability taking +1.",
                     fontSize: 12,
-                    modulate: Dim);
+                    modulate: Palette.Dim);
                 break;
             case Step.AbilityImprovementFirst or Step.AbilityImprovementSecond:
                 DrawString(
-                    TextFont,
+                    _chrome.Font,
                     new Vector2(RowsX, y - 10),
                     _step == Step.AbilityImprovementFirst
                         ? (_asiSplit ? "Click the first ability taking +1." : "Click the ability taking +2.")
                         : "Click the second ability taking +1.",
                     fontSize: 12,
-                    modulate: Dim);
+                    modulate: Palette.Dim);
                 break;
             case Step.Spells:
                 if (_browsed >= 0)
@@ -875,7 +911,7 @@ public partial class CreateMode : FightScreen
                     var id = SpellRows()[_browsed].Id;
                     Action(
                         new Vector2(RowsX, y),
-                        _spells.Contains(id) ? "Put back" : $"Take {Trim(SpellRows()[_browsed].Name, 18)}",
+                        _spells.Contains(id) ? "Put back" : $"Take {Chrome.Trim(SpellRows()[_browsed].Name, 18)}",
                         Take);
                 }
 
@@ -891,11 +927,11 @@ public partial class CreateMode : FightScreen
         if (_browsed < 0 || _browsed >= RowCaptions().Count)
         {
             DrawString(
-                TextFont,
+                _chrome.Font,
                 new Vector2(PanelX, RowsTop + 8),
                 "Click an option to read about it.",
                 fontSize: 13,
-                modulate: Dim);
+                modulate: Palette.Dim);
             return;
         }
 
@@ -904,7 +940,7 @@ public partial class CreateMode : FightScreen
 
         foreach (var line in lines)
         {
-            DrawString(TextFont, new Vector2(PanelX, y), line, fontSize: 13, modulate: Ink);
+            DrawString(_chrome.Font, new Vector2(PanelX, y), line, fontSize: 13, modulate: Palette.Ink);
             y += 20;
         }
     }
@@ -977,7 +1013,7 @@ public partial class CreateMode : FightScreen
             _ => string.Empty,
         };
 
-        return Wrap(text, 74);
+        return Chrome.Wrap(text, 74);
     }
 
     private static string DescribeClass(ClassDefinition definition)
@@ -1061,8 +1097,8 @@ public partial class CreateMode : FightScreen
         var width = (caption.Length * 8) + 20;
         var rect = new Rect2(position, new Vector2(width, 28));
 
-        DrawRect(rect, GridLine);
-        DrawString(TextFont, position + new Vector2(10, 19), caption, fontSize: 13, modulate: Ink);
+        DrawRect(rect, Palette.GridLine);
+        DrawString(_chrome.Font, position + new Vector2(10, 19), caption, fontSize: 13, modulate: Palette.Ink);
         _actions.Add((rect, caption, act));
     }
 
@@ -1070,9 +1106,9 @@ public partial class CreateMode : FightScreen
     {
         var y = position.Y;
 
-        foreach (var line in Wrap(text, width))
+        foreach (var line in Chrome.Wrap(text, width))
         {
-            DrawString(TextFont, new Vector2(position.X, y), line, fontSize: 13, modulate: Ink);
+            DrawString(_chrome.Font, new Vector2(position.X, y), line, fontSize: 13, modulate: Palette.Ink);
             y += 20;
         }
     }
@@ -1087,7 +1123,7 @@ public partial class CreateMode : FightScreen
     /// </summary>
     private void RunProbeIfAsked()
     {
-        if (_probeStarted || ArgumentValue("probe") is not { } directory)
+        if (_probeStarted || ClientArguments.ArgumentValue("probe") is not { } directory)
         {
             return;
         }
@@ -1261,6 +1297,28 @@ public partial class CreateMode : FightScreen
     {
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+    }
+
+    /// <summary>
+    /// Renders one frame to a PNG. The same verification loop <c>FightScreen</c>'s
+    /// screens have, duplicated rather than shared — it needs a live <see
+    /// cref="CanvasItem"/> to redraw and a viewport to read back from, so it cannot
+    /// move to a plain composed class the way the font and the colours did (#327 S7).
+    /// </summary>
+    private async Task CaptureFrame(string path)
+    {
+        QueueRedraw();
+
+        // Two frames: the first arranges the scene, the second is drawn and readable.
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+
+        var image = GetViewport().GetTexture().GetImage();
+        var error = image.SavePng(path);
+
+        GD.Print(error == Error.Ok
+            ? $"captured to {path}"
+            : $"could not save {path}: {error}");
     }
 
     private void ClickRow(int index)
