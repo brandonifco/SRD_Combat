@@ -26,7 +26,7 @@ When a bullet below feels compressed, the archive has the long form with the evi
 
 | | |
 | --- | --- |
-| Tests | **4,718 passing**, 2 skipped by design (the transcript fixture writer and the sprite-geometry manifest writer) — measured 2026-08-27 at `8988604` by a full `dotnet test -c Debug`: `SrdExtract.Tests` 3,328, `Core.Tests` 658, `Content.Tests` 226, `Game.Tests` **362**, `Viewer.Tests` **144**. The previous entry (4,597 at `cbdcdc5`) predated #500–#502, #509, #533 and #537. **`Game.Tests` alone takes ~6m55s of that** — measured against a contended machine, so read it as "still roughly seven minutes", not as a delta on the 6m39s above it; the regression against the 2m14s recorded at F1 exit is the point, and F5's exit criterion is a suite under ~3 minutes. #319 (**34 executable `ContentLoader.Load` call sites** across the suite — Content 13, Game 19, SrdExtract 3 — measured at `8988604`) is the filed cause |
+| Tests | **4,718 passing**, 2 skipped by design (the transcript fixture writer and the sprite-geometry manifest writer) — measured 2026-08-27 at `8988604` by a full `dotnet test -c Debug`: `SrdExtract.Tests` 3,328, `Core.Tests` 658, `Content.Tests` 226, `Game.Tests` **362**, `Viewer.Tests` **144**. The previous entry (4,597 at `cbdcdc5`) predated #500–#502, #509, #533 and #537. **`Game.Tests` alone takes ~6m55s of that** — measured against a contended machine, so read it as "still roughly seven minutes", not as a delta on the 6m39s above it; the regression against the 2m14s recorded at F1 exit is the point, and F5's exit criterion is a suite under ~3 minutes. #319 (**34 executable `ContentLoader.Load` call sites** across the suite — Content 13, Game 18, SrdExtract 3 — measured at `8988604`) is the filed cause |
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — counts re-verified from `data/srd` at `8ca55aa`; F1's regenerations (#382, #370–#373, #421) changed entry structure and residue in `monsters.json`, never the roster |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
@@ -207,7 +207,7 @@ constructs it or calls `OnReady` in a test — so #490 covers that as well as th
 boundary, and `client/README.md` says the same);
 console client tests (1.9k lines,
 currently untested, #317); shared test-support project; xUnit content
-fixtures (**34 executable `ContentLoader.Load` call sites** across the suite, measured at `8988604`: Content 13, Game 19, SrdExtract 3. `TestContent.Srd` — the shared holder #473 introduced, which three classes already read instead of loading their own — is the seam this issue flips; `Game.Tests` took **6m59s** Debug /
+fixtures (**34 executable `ContentLoader.Load` call sites** across the suite, measured at `8988604`: Content 13, Game 18, SrdExtract 3. `TestContent.Srd` — the shared holder #473 introduced, which three classes already read instead of loading their own — is the seam this issue flips; `Game.Tests` took **6m59s** Debug /
 4m25s Release measured 2026-08-27 in an uncontended worktree — the suite has regressed 3x
 against the 2m14s recorded at the
 2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case
