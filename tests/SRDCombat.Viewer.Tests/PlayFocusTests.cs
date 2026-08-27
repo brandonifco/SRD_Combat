@@ -37,10 +37,10 @@ public class PlayFocusTests
     private static readonly Dictionary<string, Row> Table = new(StringComparer.Ordinal)
     {
         ["Board"] = new(new PlayFocus.Board(), EscapeMeaning.AskToQuit, false, false, false, false),
-        ["AttackMenu"] = new(new PlayFocus.AttackMenu(), EscapeMeaning.DropToBoard, true, false, false, true),
-        ["SpellMenu"] = new(new PlayFocus.SpellMenu(), EscapeMeaning.DropToBoard, true, false, false, true),
-        ["SlotMenu"] = new(new PlayFocus.SlotMenu(FightTestData.AnySpell()), EscapeMeaning.DropToBoard, true, false, false, true),
-        ["Targeting"] = new(new PlayFocus.Targeting(TargetKind.Attack), EscapeMeaning.DropToBoard, false, true, false, true),
+        ["AttackMenu"] = new(new PlayFocus.AttackMenu(), EscapeMeaning.CloseSelf, true, false, false, true),
+        ["SpellMenu"] = new(new PlayFocus.SpellMenu(), EscapeMeaning.CloseSelf, true, false, false, true),
+        ["SlotMenu"] = new(new PlayFocus.SlotMenu(FightTestData.AnySpell()), EscapeMeaning.CloseSelf, true, false, false, true),
+        ["Targeting"] = new(new PlayFocus.Targeting(TargetKind.Attack), EscapeMeaning.CloseSelf, false, true, false, true),
 
         // S2 (#501). Two rows where the obvious answer is wrong, both preserved verbatim:
         // the stall suppresses the board (a guard that never fires, kept deliberately), and

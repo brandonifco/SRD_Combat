@@ -161,29 +161,51 @@ public class PlayFocusRouterTests
     }
 
     /// <summary>
-    /// <b>The specification, not an implementation detail.</b> Esc from the slot menu lands
-    /// the player on the board, because that is where <c>ClearPending</c> has always left
-    /// them — it cleared all three menu flags and all four pending fields at once. A stack
-    /// that popped one layer would land them on the spell menu instead: a game change
-    /// disguised as a refactor.
+    /// Esc walks back out one layer at a time, and the board is the floor.
     /// </summary>
+    /// <remarks>
+    /// <b>This is a deliberate behaviour change (#509), not a refactor artefact.</b> Until
+    /// S1 the three menu flags and four pending fields were cleared as a set, so Esc from
+    /// anywhere landed on the board — there was nothing to step back *to*. Brandon,
+    /// 2026-08-27: "ESC should drop one level until it's at the base game, then it behaves
+    /// as it does now."
+    /// </remarks>
     [Fact]
-    public void EscapeFromADeepMenuDropsAllTheWayToTheBoard()
+    public void EscapeWalksBackOutOneLayerAtATime()
     {
         var focus = With(new PlayFocus.SpellMenu());
-        focus.ReplaceTop(new PlayFocus.SlotMenu(FightTestData.AnySpell()));
+        focus.Push(new PlayFocus.SlotMenu(FightTestData.AnySpell()));
+        focus.Push(new PlayFocus.Targeting(TargetKind.Spell));
 
-        Assert.Equal(
-            RouteAction.DropToBoard,
-            Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting(menuRowCount: 3)));
+        // Targeting -> slot list -> spell list -> board, one Esc each.
+        Assert.Equal(RouteAction.CloseTopLayer, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
+        focus.Pop();
+
+        Assert.Equal(RouteAction.CloseTopLayer, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting(menuRowCount: 3)));
+        focus.Pop();
+
+        Assert.Equal(RouteAction.CloseTopLayer, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting(menuRowCount: 5)));
+        focus.Pop();
+
+        // The floor: at the board it behaves as it always did.
+        Assert.Equal(RouteAction.AskToQuit, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
+        Assert.Equal(1, focus.Depth);
     }
 
+    /// <summary>
+    /// Targeting armed straight off the board — a single-attack character, or Tab from a
+    /// cold turn — has no menu under it, so one Esc reaches the board.
+    /// </summary>
     [Fact]
-    public void EscapeWhileTargetingDropsToTheBoard()
+    public void EscapeFromTargetingArmedOffTheBoardReachesTheBoardInOneStep()
     {
-        Assert.Equal(
-            RouteAction.DropToBoard,
-            Route(With(new PlayFocus.Targeting(TargetKind.Spell)), ClientInput.Pressed(ClientKey.Escape), Fighting()));
+        var focus = With(new PlayFocus.Targeting(TargetKind.Attack));
+
+        Assert.Equal(RouteAction.CloseTopLayer, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
+
+        focus.Pop();
+
+        Assert.IsType<PlayFocus.Board>(focus.Top);
     }
 
     /// <summary>

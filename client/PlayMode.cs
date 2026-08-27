@@ -700,10 +700,10 @@ public partial class PlayMode : FightScreen
         SpellDefinition? spell = null,
         int? slot = null)
     {
-        // Targeting replaces whatever menu chose it rather than stacking over it: the
-        // menu's job ended when it named the thing. That is also what the old flags did —
-        // ChooseSpell and ChooseAttack each cleared their own menu before arming.
-        _focus.PopToRoot();
+        // Targeting stacks over the menu that chose it rather than replacing it, so Esc
+        // hands that menu back (#509). The menu stays on the stack but stops drawing, since
+        // every menu draws only while it is on top — which is why the screen looks exactly
+        // as it did when targeting replaced it outright.
         _focus.Push(new PlayFocus.Targeting(kind, attack, spell, slot));
 
         if (PendingTargets() is [var nearest, ..])
@@ -770,7 +770,9 @@ public partial class PlayMode : FightScreen
         // level, or a cantrip, arms straight away and the engine picks as it always has.
         if (CommandedCombatant() is { } caster && SlotLevelsFor(caster, spell).Count > 1)
         {
-            _focus.ReplaceTop(new PlayFocus.SlotMenu(spell));
+            // Pushed, not replacing: Esc from the slot list goes back to the spell list
+            // it was chosen from (#509).
+            _focus.Push(new PlayFocus.SlotMenu(spell));
         }
         else
         {
