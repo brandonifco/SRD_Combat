@@ -897,16 +897,23 @@ public sealed class GauntletRun
     /// prose to guess which line was a permanent item and whom it landed on.
     /// </summary>
     /// <remarks>
-    /// <b>Transient, like <see cref="LootFound"/>, <see cref="Returns"/> and
-    /// <see cref="LevelUps"/> — not part of the save, and empty again after
-    /// <see cref="Resume"/>.</b> Its only reader is the interlude that just ran
-    /// <c>AwardLoot</c>, in the same session, in the same call — never a later reload
-    /// asking "what has this run ever found". The equipped item itself is real state
-    /// and does survive a reload, carried on the draft
-    /// (<see cref="CharacterDraft.MagicItems"/>) and re-resolved by
-    /// <see cref="Resume"/> exactly like every other draft choice; only the
+    /// <para>
+    /// <b>Transient, like <see cref="LootFound"/> and <see cref="Returns"/> — not part
+    /// of the save, and empty again after <see cref="Resume"/>.</b> (Not like
+    /// <see cref="LevelUps"/>, which looks transient but is not: <c>Resume</c>
+    /// repopulates it with the ASI notices re-resolving the drafts produces. Nor like
+    /// <c>Casualties</c>, which is genuinely persisted. The three read alike from the
+    /// property list and behave differently — check before borrowing one as precedent.)
+    /// </para>
+    /// <para>
+    /// Its only reader is the interlude that just ran <c>AwardLoot</c>, in the same
+    /// session, in the same call — never a later reload asking "what has this run ever
+    /// found". The equipped item itself is real state and does survive a reload,
+    /// carried on the draft (<see cref="CharacterDraft.MagicItems"/>) and re-resolved
+    /// by <see cref="Resume"/> exactly like every other draft choice; only the
     /// announcement-correlation index here resets, on purpose, the same as the loot
     /// line it points at.
+    /// </para>
     /// </remarks>
     public IReadOnlyList<int> MagicItemFinders => _magicItemFinders;
 
