@@ -7,6 +7,8 @@ using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 
+using SRDCombat.Viewer.Ui;
+
 namespace SRDCombat.Viewer;
 
 /// <summary>
@@ -42,27 +44,6 @@ namespace SRDCombat.Viewer;
 /// </remarks>
 public partial class PlayMode : FightScreen
 {
-    /// <summary>What the next click on the grid means, when it is not a move or an attack.</summary>
-    private enum Pending
-    {
-        Nothing,
-
-        /// <summary>A spell was chosen; the next token clicked is its target.</summary>
-        SpellTarget,
-
-        /// <summary>A named attack was chosen; the next enemy clicked takes it.</summary>
-        AttackTarget,
-
-        /// <summary>Give Potion was pressed; the next ally clicked drinks it.</summary>
-        PotionTarget,
-
-        /// <summary>Divine Spark (heal) was pressed; the next ally clicked is restored.</summary>
-        SparkHealTarget,
-
-        /// <summary>Divine Spark (harm) was pressed; the next enemy clicked saves or burns.</summary>
-        SparkHarmTarget,
-    }
-
     /// <summary>Where the screen is: in a fight, between fights, or after the run.</summary>
     private enum Phase
     {
@@ -140,13 +121,19 @@ public partial class PlayMode : FightScreen
     private readonly List<(Rect2 Rect, CombatAttack Attack)> _attackRows = [];
     private readonly List<(Rect2 Rect, int Level)> _slotRows = [];
     private string? _buttonsFor;
-    private bool _spellMenuOpen;
-    private bool _attackMenuOpen;
-    private bool _slotMenuOpen;
-    private Pending _pending;
-    private SpellDefinition? _pendingSpell;
-    private CombatAttack? _pendingAttack;
-    private int? _pendingSlot;
+    /// <summary>
+    /// What has the player's attention: the board, a menu over it, or an armed action
+    /// waiting for a target.
+    /// </summary>
+    /// <remarks>
+    /// <b>One field where there were seven</b> (#500). Three menu booleans, a
+    /// <c>Pending</c> enum and three loose payload fields beside it all said
+    /// something about the same fact, and nothing held them consistent: every combination
+    /// was representable, including several the screen had no drawing for — two menus open
+    /// at once, or a payload left behind by a menu that had closed. A stack is
+    /// single-valued by construction, so those states no longer exist to be reached.
+    /// </remarks>
+    private readonly FocusStack<PlayFocus> _focus = new(new PlayFocus.Board());
     private string? _notice;
     private bool _probeStarted;
 
@@ -655,26 +642,22 @@ public partial class PlayMode : FightScreen
             case TurnAction.CunningStrikeTrip: return encounter.CunningStrike(CunningStrikeEffect.Trip);
 
             case TurnAction.Attacks:
-                _spellMenuOpen = false;
                 _menuIndex = 0;
 
                 // With one attack there is nothing to choose, so it arms targeting
                 // straight away; the menu is for characters carrying a choice.
                 if (CommandedCombatant() is { } swinging && swinging.Stats.Attacks.Count == 1)
                 {
-                    _attackMenuOpen = false;
-                    _pendingAttack = swinging.Stats.Attacks[0];
-                    ArmTargeting(Pending.AttackTarget);
+                    ArmTargeting(TargetKind.Attack, attack: swinging.Stats.Attacks[0]);
                     return null;
                 }
 
-                _attackMenuOpen = !_attackMenuOpen;
+                ToggleMenu(new PlayFocus.AttackMenu());
                 return null;
 
             case TurnAction.Cast:
-                _spellMenuOpen = !_spellMenuOpen;
-                _attackMenuOpen = false;
                 _menuIndex = 0;
+                ToggleMenu(new PlayFocus.SpellMenu());
                 return null;
 
             case TurnAction.Drink:
@@ -682,9 +665,9 @@ public partial class PlayMode : FightScreen
                     ? encounter.DrinkPotion(potency)
                     : new ActionRefusal("client.no_potion", "Nothing to drink.");
 
-            case TurnAction.GivePotion: ArmTargeting(Pending.PotionTarget); return null;
-            case TurnAction.DivineSparkHeal: ArmTargeting(Pending.SparkHealTarget); return null;
-            case TurnAction.DivineSparkHarm: ArmTargeting(Pending.SparkHarmTarget); return null;
+            case TurnAction.GivePotion: ArmTargeting(TargetKind.Potion); return null;
+            case TurnAction.DivineSparkHeal: ArmTargeting(TargetKind.SparkHeal); return null;
+            case TurnAction.DivineSparkHarm: ArmTargeting(TargetKind.SparkHarm); return null;
 
             default: return null;
         }
@@ -701,9 +684,17 @@ public partial class PlayMode : FightScreen
     /// Nearest first because the nearest enemy is the one being asked about far more
     /// often than not; Tab walks the rest.
     /// </remarks>
-    private void ArmTargeting(Pending pending)
+    private void ArmTargeting(
+        TargetKind kind,
+        CombatAttack? attack = null,
+        SpellDefinition? spell = null,
+        int? slot = null)
     {
-        _pending = pending;
+        // Targeting replaces whatever menu chose it rather than stacking over it: the
+        // menu's job ended when it named the thing. That is also what the old flags did —
+        // ChooseSpell and ChooseAttack each cleared their own menu before arming.
+        _focus.PopToRoot();
+        _focus.Push(new PlayFocus.Targeting(kind, attack, spell, slot));
 
         if (PendingTargets() is [var nearest, ..])
         {
@@ -729,17 +720,9 @@ public partial class PlayMode : FightScreen
             return [];
         }
 
-        var offered = _pending switch
-        {
-            Pending.AttackTarget =>
-                TargetChoice.For(encounter, actor, TargetKind.Attack, attack: _pendingAttack),
-            Pending.SpellTarget =>
-                TargetChoice.For(encounter, actor, TargetKind.Spell, spell: _pendingSpell),
-            Pending.PotionTarget => TargetChoice.For(encounter, actor, TargetKind.Potion),
-            Pending.SparkHealTarget => TargetChoice.For(encounter, actor, TargetKind.SparkHeal),
-            Pending.SparkHarmTarget => TargetChoice.For(encounter, actor, TargetKind.SparkHarm),
-            _ => [],
-        };
+        var offered = Armed is not { } armed
+            ? []
+            : TargetChoice.For(encounter, actor, armed.Kind, attack: armed.Attack, spell: armed.Spell);
 
         // The fog filters the ring: Tab landing the cursor on a hidden monster would
         // hand the player its position for free. Allies are always seen.
@@ -771,19 +754,17 @@ public partial class PlayMode : FightScreen
     /// <summary>Takes a spell off the menu: the slot choice if there is one, else the target.</summary>
     private void ChooseSpell(SpellDefinition spell)
     {
-        _spellMenuOpen = false;
-        _pendingSpell = spell;
         _menuIndex = 0;
 
         // A slotted spell with more than one slot level to burn is a real choice; one
         // level, or a cantrip, arms straight away and the engine picks as it always has.
         if (CommandedCombatant() is { } caster && SlotLevelsFor(caster, spell).Count > 1)
         {
-            _slotMenuOpen = true;
+            _focus.ReplaceTop(new PlayFocus.SlotMenu(spell));
         }
         else
         {
-            ArmTargeting(Pending.SpellTarget);
+            ArmTargeting(TargetKind.Spell, spell: spell);
         }
 
         QueueRedraw();
@@ -791,41 +772,75 @@ public partial class PlayMode : FightScreen
 
     private void ChooseSlot(int level)
     {
-        _slotMenuOpen = false;
-        _pendingSlot = level;
-        ArmTargeting(Pending.SpellTarget);
+        // The spell comes off the layer that offered the slots, which is the one place it
+        // has been since ChooseSpell put it there — it can no longer be left behind in a
+        // field by a menu that closed.
+        var spell = _focus.Topmost<PlayFocus.SlotMenu>()?.Spell;
+
+        if (spell is null)
+        {
+            return;
+        }
+
+        ArmTargeting(TargetKind.Spell, spell: spell, slot: level);
         QueueRedraw();
     }
 
     private void ChooseAttack(CombatAttack attack)
     {
-        _attackMenuOpen = false;
-        _pendingAttack = attack;
-        ArmTargeting(Pending.AttackTarget);
+        ArmTargeting(TargetKind.Attack, attack: attack);
         QueueRedraw();
     }
 
+    /// <summary>The armed action, or null when nothing is armed.</summary>
+    private PlayFocus.Targeting? Armed => _focus.Topmost<PlayFocus.Targeting>();
+
     /// <summary>How many rows the open menu has, or zero when none is open.</summary>
-    private int OpenMenuLength =>
-        _spellMenuOpen ? _spellRows.Count
-        : _slotMenuOpen ? _slotRows.Count
-        : _attackMenuOpen ? _attackRows.Count
-        : 0;
+    private int OpenMenuLength => _focus.Top switch
+    {
+        PlayFocus.SpellMenu => _spellRows.Count,
+        PlayFocus.SlotMenu => _slotRows.Count,
+        PlayFocus.AttackMenu => _attackRows.Count,
+        _ => 0,
+    };
+
+    /// <summary>
+    /// Opens a menu over the board, or closes it again when it is the one already open.
+    /// </summary>
+    /// <remarks>
+    /// The toggle the two menu buttons have always had, now over a stack. It drops to the
+    /// board first, so pressing Cast with the attack menu up replaces it rather than
+    /// leaving both set — a pair the old booleans could hold at once, and did whenever
+    /// Cast was pressed while the slot menu was open.
+    /// </remarks>
+    private void ToggleMenu(PlayFocus menu)
+    {
+        var alreadyOpen = _focus.Top.GetType() == menu.GetType();
+
+        _focus.PopToRoot();
+
+        if (!alreadyOpen)
+        {
+            _focus.Push(menu);
+        }
+    }
 
     /// <summary>Takes the highlighted row of whichever menu is open.</summary>
     private void TakeHighlightedRow()
     {
-        if (_spellMenuOpen && _menuIndex < _spellRows.Count)
+        switch (_focus.Top)
         {
-            ChooseSpell(_spellRows[_menuIndex].Spell);
-        }
-        else if (_slotMenuOpen && _menuIndex < _slotRows.Count)
-        {
-            ChooseSlot(_slotRows[_menuIndex].Level);
-        }
-        else if (_attackMenuOpen && _menuIndex < _attackRows.Count)
-        {
-            ChooseAttack(_attackRows[_menuIndex].Attack);
+            case PlayFocus.SpellMenu when _menuIndex < _spellRows.Count:
+                ChooseSpell(_spellRows[_menuIndex].Spell);
+                break;
+
+            case PlayFocus.SlotMenu when _menuIndex < _slotRows.Count:
+                ChooseSlot(_slotRows[_menuIndex].Level);
+                break;
+
+            case PlayFocus.AttackMenu when _menuIndex < _attackRows.Count:
+                ChooseAttack(_attackRows[_menuIndex].Attack);
+                break;
         }
     }
 
@@ -983,168 +998,27 @@ public partial class PlayMode : FightScreen
         RefreshAfterAction(null);
     }
 
+    /// <summary>
+    /// Translate, route, execute — and no priority decision of its own.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>What beats what lives in <see cref="PlayFocusRouter"/></b> (#500). This method
+    /// turns a Godot event into a <see cref="ClientInput"/>, asks the router what it
+    /// means given the focus stack, and does that. It used to hold the order itself, in a
+    /// cascade whose branches were only in the right sequence because they had been put
+    /// there — a new modal inserted at the wrong depth inherited the wrong Esc, silently.
+    /// </para>
+    /// <para>
+    /// The mouse's own paths — camera, hover, click — are untouched and still run below.
+    /// Moving those into the router is S4, deliberately not this slice.
+    /// </para>
+    /// </remarks>
     public override void _UnhandledInput(InputEvent @event)
     {
-        // The quit card owns every input while it is up: Esc again really quits,
-        // anything else pressed or clicked stays. Reported from play on 2026-08-18
-        // after two accidental exits — Esc is also the key that backs out of an armed
-        // action, so one press past the last thing to cancel used to be the whole game
-        // gone mid-fight, with the run rolled back to the last cleared fight.
-        if (_quitAsked)
+        if (Perform(PlayFocusRouter.Route(_focus, Translate(@event), Context())))
         {
-            if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
-            {
-                GetTree().Quit();
-                return;
-            }
-
-            if (@event is InputEventKey { Pressed: true } or InputEventMouseButton { Pressed: true })
-            {
-                _quitAsked = false;
-                QueueRedraw();
-                return;
-            }
-
             return;
-        }
-
-        if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
-        {
-            // Esc backs out of whatever is armed before it quits anything — the
-            // merchant's stall included.
-            if (_shopView)
-            {
-                _shopView = false;
-                _shopNotice = null;
-                QueueRedraw();
-                return;
-            }
-
-            if (_outcomeCard)
-            {
-                CompleteAndReport();
-                QueueRedraw();
-                return;
-            }
-
-            if (_pending != Pending.Nothing || _spellMenuOpen || _attackMenuOpen || _slotMenuOpen)
-            {
-                ClearPending();
-                QueueRedraw();
-                return;
-            }
-
-            _quitAsked = true;
-            QueueRedraw();
-            return;
-        }
-
-        if (@event is InputEventKey { Pressed: true } && _outcomeCard)
-        {
-            // Any key moves on: the card asks nothing of the player but acknowledgement,
-            // so hunting for the right one would be its own small annoyance.
-            CompleteAndReport();
-            QueueRedraw();
-            return;
-        }
-
-        if (@event is InputEventKey { Pressed: true } key && _phase == Phase.Fighting && !_shopView)
-        {
-            // While an act is playing out, the keyboard commands nothing — the engine
-            // resolves instantly, so without this gate a key pressed mid-swing started
-            // the next action before the first had visibly happened (asked for from
-            // play, 2026-08-21). Esc stays live above: quitting must not wait on an
-            // animation. The buttons grey themselves over the same window.
-            if (ActInProgress)
-            {
-                return;
-            }
-
-            // The board under the keyboard: arrows walk a cursor, Enter acts on it
-            // through the same path a click takes. The cursor appears the moment it is
-            // asked for, starting on the character whose turn it is.
-            var step = key.Keycode switch
-            {
-                Key.Left => new GridPosition(-1, 0),
-                Key.Right => new GridPosition(1, 0),
-                Key.Up => new GridPosition(0, -1),
-                Key.Down => new GridPosition(0, 1),
-                _ => (GridPosition?)null,
-            };
-
-            // Tab walks the ring of things the armed action could be used on — and with
-            // nothing armed it arms the attack first (asked for from play, 2026-08-19),
-            // so one key reaches "aim at somebody" from a cold turn. Arming names no
-            // attack: the ring is every living enemy, and Enter picks the best attack
-            // for whoever it lands on, the same answer a bare click on an enemy has
-            // always taken. Gated the way every keypress is — only while the row
-            // actually offers Attacks — so Tab can never reach an action the row hides.
-            if (key.Keycode == Key.Tab)
-            {
-                if (_pending != Pending.Nothing)
-                {
-                    CycleTarget();
-                }
-                else if (OpenMenuLength == 0
-                    && _encounter is { } fight
-                    && CommandedCombatant() is { } swinger
-                    && TurnOptions.For(fight, swinger).Contains(TurnAction.Attacks))
-                {
-                    _pendingAttack = null;
-                    ArmTargeting(Pending.AttackTarget);
-                }
-
-                return;
-            }
-
-            // An open menu takes the arrows first: while a spell list is up, Up and Down
-            // belong to it rather than to the board behind it.
-            if (OpenMenuLength is > 0 and var rows)
-            {
-                if (step is { } scroll && scroll.X == 0)
-                {
-                    _menuIndex = Math.Clamp(_menuIndex + scroll.Y, 0, rows - 1);
-                    QueueRedraw();
-                    return;
-                }
-
-                if (key.Keycode is Key.Enter or Key.KpEnter)
-                {
-                    TakeHighlightedRow();
-                    return;
-                }
-            }
-
-            if (step is { } move && CommandedCombatant() is { } walker)
-            {
-                var from = _cursor ?? walker.Position;
-
-                _cursor = new GridPosition(
-                    Math.Clamp(from.X + move.X, 0, GridWidth - 1),
-                    Math.Clamp(from.Y + move.Y, 0, GridHeight - 1));
-
-                QueueRedraw();
-                return;
-            }
-
-            if (key.Keycode is Key.Enter or Key.KpEnter && _cursor is { } chosen)
-            {
-                ActivateSquare(chosen);
-                return;
-            }
-
-            // A key runs exactly what its button would, and only while that button is
-            // shown — so a keypress can never reach an action the row is hiding.
-            if (_pending == Pending.Nothing)
-            {
-                var typed = key.Keycode == Key.Space ? ' ' : (char)key.Keycode;
-
-                if (ActionForKey(typed) is { } action)
-                {
-                    Run(() => Invoke(action));
-                    return;
-                }
-            }
         }
 
         // The camera's inputs — wheel zoom, middle- or right-drag pan — are nobody
@@ -1217,10 +1091,7 @@ public partial class PlayMode : FightScreen
     /// </para>
     /// </remarks>
     private bool NothingLeftButEndTurn(Combatant commanded) =>
-        _pending == Pending.Nothing
-        && !_spellMenuOpen
-        && !_attackMenuOpen
-        && !_slotMenuOpen
+        !_focus.BottomUp.Any(layer => layer.HoldsTurnOpen)
         && _encounter is { } encounter
         && TurnOptions.For(encounter, commanded) is [TurnAction.EndTurn];
 
@@ -1302,15 +1173,168 @@ public partial class PlayMode : FightScreen
         return occupant is null ? null : string.Join("\n", TurnBanner.Lines(occupant));
     }
 
-    private void ClearPending()
+    /// <summary>Backs all the way out to the board.</summary>
+    private void ClearPending() => _focus.PopToRoot();
+
+    /// <summary>One Godot event in the client's own vocabulary.</summary>
+    /// <remarks>
+    /// Godot's event types derive from <c>RefCounted</c>, which cannot be constructed
+    /// outside a running engine without taking the test host down with it — so the
+    /// translation stops here and everything past it is testable. See
+    /// <see cref="ClientInput"/>'s remarks for the measurement.
+    /// </remarks>
+    private static ClientInput Translate(InputEvent @event) => @event switch
     {
-        _pending = Pending.Nothing;
-        _pendingSpell = null;
-        _pendingAttack = null;
-        _pendingSlot = null;
-        _spellMenuOpen = false;
-        _attackMenuOpen = false;
-        _slotMenuOpen = false;
+        InputEventKey { Pressed: true } key => new ClientInput(
+            ClientInputKind.KeyPressed,
+            key.Keycode switch
+            {
+                Key.Escape => ClientKey.Escape,
+                Key.Tab => ClientKey.Tab,
+                Key.Enter or Key.KpEnter => ClientKey.Enter,
+                Key.Left => ClientKey.Left,
+                Key.Right => ClientKey.Right,
+                Key.Up => ClientKey.Up,
+                Key.Down => ClientKey.Down,
+                Key.Space => ClientKey.Space,
+                _ => ClientKey.Other,
+            },
+            // Space is the End Turn hotkey and reaches ActionForKey as a space character,
+            // exactly as it did when this cast lived inline.
+            key.Keycode == Key.Space ? ' ' : (char)key.Keycode,
+            0,
+            0),
+
+        InputEventMouseButton { Pressed: true } click =>
+            ClientInput.Clicked(click.Position.X, click.Position.Y),
+
+        InputEventMouseMotion motion =>
+            new ClientInput(ClientInputKind.MouseMoved, ClientKey.Other, '\0', motion.Position.X, motion.Position.Y),
+
+        // Everything else still reaches the router, because the quit confirmation
+        // swallows every event while it is up — releases and drags included.
+        _ => new ClientInput(ClientInputKind.Other, ClientKey.Other, '\0', 0, 0),
+    };
+
+    /// <summary>Everything outside the focus stack the routing decision still reads.</summary>
+    private RouteContext Context()
+    {
+        var commanded = CommandedCombatant();
+
+        return new RouteContext(
+            Fighting: _phase == Phase.Fighting,
+            ShopOpen: _shopView,
+            OutcomeCard: _outcomeCard,
+            QuitAsked: _quitAsked,
+            ActInProgress: ActInProgress,
+            MenuRowCount: OpenMenuLength,
+            CanArmAttack: _encounter is { } fight
+                && commanded is not null
+                && TurnOptions.For(fight, commanded).Contains(TurnAction.Attacks),
+            HasCommanded: commanded is not null,
+            HasCursor: _cursor is not null);
+    }
+
+    /// <summary>
+    /// Carries out one routed decision. Returns whether the input was consumed.
+    /// </summary>
+    private bool Perform(Route route)
+    {
+        switch (route.Action)
+        {
+            case RouteAction.Unhandled:
+                return false;
+
+            case RouteAction.Ignore:
+                return true;
+
+            case RouteAction.QuitGame:
+                GetTree().Quit();
+                return true;
+
+            case RouteAction.DismissQuitConfirm:
+                _quitAsked = false;
+                break;
+
+            case RouteAction.AskToQuit:
+                _quitAsked = true;
+                break;
+
+            case RouteAction.CloseShop:
+                _shopView = false;
+                _shopNotice = null;
+                break;
+
+            case RouteAction.CommitOutcome:
+                CompleteAndReport();
+                break;
+
+            case RouteAction.DropToBoard:
+                ClearPending();
+                break;
+
+            case RouteAction.CloseTopLayer:
+                _focus.Pop();
+                break;
+
+            case RouteAction.CycleTarget:
+                CycleTarget();
+                return true;
+
+            case RouteAction.ArmAttack:
+                // Arming names no attack: the ring is every living enemy, and Enter picks
+                // the best attack for whoever it lands on — the same answer a bare click
+                // on an enemy has always given.
+                ArmTargeting(TargetKind.Attack);
+                return true;
+
+            case RouteAction.MoveMenuIndex:
+                _menuIndex = Math.Clamp(_menuIndex + route.StepY, 0, OpenMenuLength - 1);
+                break;
+
+            case RouteAction.TakeHighlightedRow:
+                TakeHighlightedRow();
+                return true;
+
+            case RouteAction.MoveCursor:
+                if (CommandedCombatant() is not { } walker)
+                {
+                    return false;
+                }
+
+                var from = _cursor ?? walker.Position;
+
+                _cursor = new GridPosition(
+                    Math.Clamp(from.X + route.StepX, 0, GridWidth - 1),
+                    Math.Clamp(from.Y + route.StepY, 0, GridHeight - 1));
+
+                break;
+
+            case RouteAction.ActivateSquare:
+                if (_cursor is not { } chosen)
+                {
+                    return false;
+                }
+
+                ActivateSquare(chosen);
+                return true;
+
+            case RouteAction.RunHotkey:
+                if (ActionForKey(route.Character) is not { } action)
+                {
+                    return false;
+                }
+
+                Run(() => Invoke(action));
+                return true;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(route), route.Action, "No handler for this route.");
+        }
+
+        QueueRedraw();
+        return true;
     }
 
     private void HandleClick(Vector2 pixel)
@@ -1379,13 +1403,13 @@ public partial class PlayMode : FightScreen
         // engine call itself. A click on an overlay is "anywhere else" — the field runs
         // under the log now, and a cancel aimed at the panel must not land on whatever
         // square happens to sit beneath it.
-        if (_pending != Pending.Nothing)
+        if (Armed is not null)
         {
             ActivateSquare(OverOverlay(pixel) ? null : SquareAt(pixel));
             return;
         }
 
-        if (_spellMenuOpen)
+        if (_focus.Top is PlayFocus.SpellMenu)
         {
             foreach (var (rect, chosen) in _spellRows)
             {
@@ -1397,7 +1421,7 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        if (_slotMenuOpen)
+        if (_focus.Top is PlayFocus.SlotMenu)
         {
             foreach (var (rect, level) in _slotRows)
             {
@@ -1409,7 +1433,7 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        if (_attackMenuOpen)
+        if (_focus.Top is PlayFocus.AttackMenu)
         {
             foreach (var (rect, chosen) in _attackRows)
             {
@@ -1430,13 +1454,12 @@ public partial class PlayMode : FightScreen
             }
         }
 
-        // A click on the grid closes an open menu rather than acting through it.
-        if (_spellMenuOpen || _attackMenuOpen || _slotMenuOpen)
+        // A click on the grid closes an open menu rather than acting through it. The
+        // spell that used to be nulled alongside the flags here rides the SlotMenu layer
+        // now, so dropping to the board takes it with it.
+        if (_focus.Top is PlayFocus.RowMenu)
         {
-            _spellMenuOpen = false;
-            _attackMenuOpen = false;
-            _slotMenuOpen = false;
-            _pendingSpell = null;
+            ClearPending();
             QueueRedraw();
             return;
         }
@@ -1475,9 +1498,9 @@ public partial class PlayMode : FightScreen
 
         var square = at ?? new GridPosition(-1, -1);
 
-        if (_pending == Pending.AttackTarget)
+        if (Armed is { Kind: TargetKind.Attack } aimedAttack)
         {
-            var chosen = _pendingAttack;
+            var chosen = aimedAttack.Attack;
             var struck = TokenAt(square);
             ClearPending();
 
@@ -1499,11 +1522,11 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
+        if (Armed is { Kind: TargetKind.Spell, Spell: { } spell } aimedSpell)
         {
             var aimed = TokenAt(square);
             var ground = square;
-            var slot = _pendingSlot;
+            var slot = aimedSpell.Slot;
             ClearPending();
 
             if (aimed is { } target)
@@ -1526,7 +1549,7 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        if (_pending == Pending.PotionTarget)
+        if (Armed is { Kind: TargetKind.Potion })
         {
             var aimed = TokenAt(square);
             ClearPending();
@@ -1547,10 +1570,10 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        if (_pending is Pending.SparkHealTarget or Pending.SparkHarmTarget)
+        if (Armed is { Kind: TargetKind.SparkHeal or TargetKind.SparkHarm } spark)
         {
             var aimed = TokenAt(square);
-            var mode = _pending == Pending.SparkHealTarget ? DivineSparkUse.Heal : DivineSparkUse.Harm;
+            var mode = spark.Kind == TargetKind.SparkHeal ? DivineSparkUse.Heal : DivineSparkUse.Harm;
             ClearPending();
 
             if (aimed is { } target)
@@ -1808,7 +1831,7 @@ public partial class PlayMode : FightScreen
             .ToHashSet();
         var shown = tokens.Where(token => !unseenIds.Contains(token.Id)).ToList();
 
-        if (commanded is not null && _pending == Pending.Nothing)
+        if (commanded is not null && Armed is null)
         {
             foreach (var enemy in encounter.EnemiesOf(commanded))
             {
@@ -2249,7 +2272,7 @@ public partial class PlayMode : FightScreen
     {
         _spellRows.Clear();
 
-        if (!_spellMenuOpen || character.Stats.Character is not { } features)
+        if (_focus.Top is not PlayFocus.SpellMenu || character.Stats.Character is not { } features)
         {
             return;
         }
@@ -2302,7 +2325,7 @@ public partial class PlayMode : FightScreen
     {
         _attackRows.Clear();
 
-        if (!_attackMenuOpen)
+        if (_focus.Top is not PlayFocus.AttackMenu)
         {
             return;
         }
@@ -2364,7 +2387,7 @@ public partial class PlayMode : FightScreen
     {
         _slotRows.Clear();
 
-        if (!_slotMenuOpen || _pendingSpell is not { } spell)
+        if (_focus.Top is not PlayFocus.SlotMenu { Spell: { } spell })
         {
             return;
         }
@@ -2432,21 +2455,21 @@ public partial class PlayMode : FightScreen
                     : "the party has fallen — [esc] quit";
         }
 
-        if (_pending == Pending.SpellTarget && _pendingSpell is { } spell)
+        if (Armed is { Kind: TargetKind.Spell, Spell: { } spell } castingAt)
         {
-            return _pendingSlot is { } slot
+            return castingAt.Slot is { } slot
                 ? $"choose a target for {spell.Name} (level {slot} slot) — click it, Tab cycles, Enter takes it; Esc cancels"
                 : $"choose a target for {spell.Name} — click it, Tab cycles, Enter takes it; Esc cancels";
         }
 
-        if (_pending == Pending.AttackTarget)
+        if (Armed is { Kind: TargetKind.Attack } swingingAt)
         {
-            return _pendingAttack is { } attack
+            return swingingAt.Attack is { } attack
                 ? $"choose a target for {attack.Name} — click it, Tab cycles, Enter takes it; Esc cancels"
                 : "choose a target — Tab cycles, Enter attacks with the best weapon; Esc cancels";
         }
 
-        if (_pending == Pending.PotionTarget)
+        if (Armed is { Kind: TargetKind.Potion })
         {
             return "choose who drinks the potion — click it, Tab cycles, Enter takes it; Esc cancels";
         }
@@ -2636,7 +2659,7 @@ public partial class PlayMode : FightScreen
                 {
                     ClickButton("Attack");
 
-                    if (_attackMenuOpen)
+                    if (_focus.Top is PlayFocus.AttackMenu)
                     {
                         await CaptureFrame(Path.Combine(directory, "play-9-attack-menu.png"));
                         attackMenuCaptured = true;
@@ -2738,7 +2761,7 @@ public partial class PlayMode : FightScreen
                 {
                     Click(upcastable.Rect.GetCenter());
 
-                    if (_slotMenuOpen)
+                    if (_focus.Top is PlayFocus.SlotMenu)
                     {
                         await CaptureFrame(Path.Combine(directory, "play-9-slot-menu.png"));
 
