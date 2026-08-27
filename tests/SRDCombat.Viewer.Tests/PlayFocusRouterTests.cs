@@ -25,17 +25,17 @@ public class PlayFocusRouterTests
 {
     /// <summary>Mid-fight, nothing in the way — the context most branches are read against.</summary>
     /// <remarks>
-    /// The shop and the outcome card left this record in S2 (#501): both are focus layers
-    /// now, so a test that wants one pushes it rather than setting a flag here.
+    /// The shop and the outcome card left this record in S2 (#501) and the quit
+    /// confirmation in S3 (#502): all three are focus layers, so a test that wants one
+    /// pushes it rather than setting a flag here. Nothing about attention is left in it.
     /// </remarks>
     private static RouteContext Fighting(
-        bool quitAsked = false,
         bool actInProgress = false,
         int menuRowCount = 0,
         bool canArmAttack = true,
         bool hasCommanded = true,
         bool hasCursor = true) =>
-        new(true, quitAsked, actInProgress, menuRowCount, canArmAttack, hasCommanded, hasCursor);
+        new(true, actInProgress, menuRowCount, canArmAttack, hasCommanded, hasCursor);
 
     private static FocusStack<PlayFocus> Board() => new(new PlayFocus.Board());
 
@@ -56,7 +56,7 @@ public class PlayFocusRouterTests
     {
         Assert.Equal(
             RouteAction.QuitGame,
-            Route(Board(), ClientInput.Pressed(ClientKey.Escape), Fighting(quitAsked: true)));
+            Route(With(new PlayFocus.QuitConfirm()), ClientInput.Pressed(ClientKey.Escape), Fighting()));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class PlayFocusRouterTests
     {
         Assert.Equal(
             RouteAction.DismissQuitConfirm,
-            Route(Board(), ClientInput.Typed('d'), Fighting(quitAsked: true)));
+            Route(With(new PlayFocus.QuitConfirm()), ClientInput.Typed('d'), Fighting()));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class PlayFocusRouterTests
     {
         Assert.Equal(
             RouteAction.DismissQuitConfirm,
-            Route(Board(), ClientInput.Clicked(10, 10), Fighting(quitAsked: true)));
+            Route(With(new PlayFocus.QuitConfirm()), ClientInput.Clicked(10, 10), Fighting()));
     }
 
     /// <summary>
@@ -84,11 +84,14 @@ public class PlayFocusRouterTests
     public void EverythingElseWhileTheQuitCardIsUpIsSwallowed()
     {
         var motion = new ClientInput(ClientInputKind.MouseMoved, ClientKey.Other, '\0', 4, 4);
+        var card = With(new PlayFocus.QuitConfirm());
 
-        Assert.Equal(RouteAction.Ignore, Route(Board(), motion, Fighting(quitAsked: true)));
+        // Motion does not dismiss it — only a key or a button going down does. The old
+        // block returned without dismissing on anything else, and this pins that reading.
+        Assert.Equal(RouteAction.Ignore, Route(card, motion, Fighting()));
         Assert.Equal(
             RouteAction.Ignore,
-            Route(Board(), new ClientInput(ClientInputKind.Other, ClientKey.Other, '\0', 0, 0), Fighting(quitAsked: true)));
+            Route(card, new ClientInput(ClientInputKind.Other, ClientKey.Other, '\0', 0, 0), Fighting()));
     }
 
     /// <summary>
@@ -99,12 +102,28 @@ public class PlayFocusRouterTests
     [Fact]
     public void TheQuitCardOutranksAnArmedAction()
     {
+        var focus = With(new PlayFocus.Targeting(TargetKind.Attack));
+        focus.Push(new PlayFocus.QuitConfirm());
+
+        Assert.Equal(RouteAction.QuitGame, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
+    }
+
+    /// <summary>
+    /// The card preempts the act gate: quitting must not wait on an animation. It sits
+    /// above <c>ActInProgress</c>, not below it.
+    /// </summary>
+    [Fact]
+    public void TheQuitCardAnswersEvenWhileAnActIsPlayingOut()
+    {
+        var card = With(new PlayFocus.QuitConfirm());
+
         Assert.Equal(
             RouteAction.QuitGame,
-            Route(
-                With(new PlayFocus.Targeting(TargetKind.Attack)),
-                ClientInput.Pressed(ClientKey.Escape),
-                Fighting(quitAsked: true)));
+            Route(card, ClientInput.Pressed(ClientKey.Escape), Fighting(actInProgress: true)));
+
+        Assert.Equal(
+            RouteAction.DismissQuitConfirm,
+            Route(card, ClientInput.Typed('d'), Fighting(actInProgress: true)));
     }
 
     // ---- Esc, by destination ---------------------------------------------------------
@@ -243,7 +262,7 @@ public class PlayFocusRouterTests
     [Fact]
     public void TheKeyboardIsNotTheBoardsBetweenFights()
     {
-        var between = new RouteContext(false, false, false, 0, true, true, true);
+        var between = new RouteContext(false, false, 0, true, true, true);
 
         Assert.Equal(RouteAction.Unhandled, Route(Board(), ClientInput.Typed('d'), between));
     }

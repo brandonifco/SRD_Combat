@@ -136,6 +136,43 @@ internal abstract record PlayFocus
         internal override bool HoldsTurnOpen => false;
     }
 
+    /// <summary>
+    /// "LEAVE THE GAME?" — the confirmation that stands between Esc and losing the fight
+    /// in progress.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The highest-consequence layer in the client.</b> It exists because two runs were
+    /// lost to accidental exits from play on 2026-08-18: Esc is also the key that backs out
+    /// of an armed action, so one press past the last thing to cancel used to be the whole
+    /// game gone mid-fight, with the run rolled back to the last cleared fight.
+    /// </para>
+    /// <para>
+    /// <b><see cref="HoldsTurnOpen"/> is false, and that preserves an oddity</b> (#510):
+    /// <c>_Process</c> never asks whether this card is up, so an auto-end-turn can fire
+    /// underneath it. That is today's behaviour, kept here deliberately — whether it
+    /// <em>should</em> be suppressed is a question filed separately, not one a
+    /// no-behaviour-change refactor gets to answer.
+    /// </para>
+    /// <para>
+    /// It is also the one layer with a rule the five members cannot express: any key that
+    /// is not Esc, and any click, takes it down. <c>PlayFocusRouter</c> spells that out
+    /// against this type by name, and says why.
+    /// </para>
+    /// </remarks>
+    internal sealed record QuitConfirm : PlayFocus
+    {
+        internal override EscapeMeaning Escape => EscapeMeaning.LeaveTheGame;
+
+        internal override bool TakesRowKeys => false;
+
+        internal override bool SuppressesHotkeys => false;
+
+        internal override bool SuppressesBoard => false;
+
+        internal override bool HoldsTurnOpen => false;
+    }
+
     /// <summary>A menu of rows over the board — the shared behaviour of the three.</summary>
     internal abstract record RowMenu : PlayFocus
     {

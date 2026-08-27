@@ -76,15 +76,13 @@ internal readonly record struct Route(
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Shrinking as planned.</b> S2 took <c>ShopOpen</c> and <c>OutcomeCard</c> out of
-/// here — both are focus layers now, so the router asks the stack instead.
-/// <see cref="QuitAsked"/> is the last of the three and leaves in S3. The rest — what
-/// the engine currently allows, where the cursor is — are facts about the fight rather
-/// than about attention, and stay.
+/// <b>No modal flags left.</b> S2 took the shop and the outcome card out of here and S3
+/// took the quit confirmation; all three are focus layers, and the router asks the stack.
+/// What remains is not about attention at all — it is what the engine currently allows and
+/// where the cursor is, which are facts about the fight.
 /// </para>
 /// </remarks>
 /// <param name="Fighting">Whether the screen is in a fight rather than between them.</param>
-/// <param name="QuitAsked">Whether the quit confirmation is up. Becomes a focus in S3.</param>
 /// <param name="ActInProgress">Whether an act is still playing out on screen.</param>
 /// <param name="MenuRowCount">How many rows the open menu has, or zero when none is open.</param>
 /// <param name="CanArmAttack">Whether the commanded character is offered the Attack action.</param>
@@ -92,7 +90,6 @@ internal readonly record struct Route(
 /// <param name="HasCursor">Whether the board cursor is placed.</param>
 internal readonly record struct RouteContext(
     bool Fighting,
-    bool QuitAsked,
     bool ActInProgress,
     int MenuRowCount,
     bool CanArmAttack,
@@ -139,11 +136,19 @@ internal static class PlayFocusRouter
         // else pressed or clicked takes it down. Reported from play on 2026-08-18 after
         // two accidental exits — Esc is also the key that backs out of an armed action, so
         // one press past the last thing to cancel used to be the whole game gone mid-fight.
-        if (context.QuitAsked)
+        // The one layer named here rather than answered by the table (#502): "any key that
+        // is not Esc, and any click, takes this down" is a rule the five members cannot
+        // express, and inventing a sixth member for a single layer would be worse than
+        // saying it once, here, where the order already lives. Esc still goes through
+        // EscapeRoute, so the table stays the authority on what Esc means.
+        //
+        // It sits above everything — including the ActInProgress gate below — because
+        // quitting must not wait on an animation.
+        if (focus.Top is PlayFocus.QuitConfirm)
         {
             if (input is { Kind: ClientInputKind.KeyPressed, Key: ClientKey.Escape })
             {
-                return new Route(RouteAction.QuitGame);
+                return new Route(EscapeRoute(focus.Top.Escape));
             }
 
             return input.Kind is ClientInputKind.KeyPressed or ClientInputKind.MousePressed

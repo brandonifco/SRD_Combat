@@ -47,6 +47,11 @@ public class PlayFocusTests
         // the card's Esc *commits* rather than cancelling.
         ["Shop"] = new(new PlayFocus.Shop(), EscapeMeaning.CloseSelf, false, false, true, false),
         ["Outcome"] = new(new PlayFocus.Outcome(), EscapeMeaning.Commit, false, false, false, false),
+
+        // S3 (#502). HoldsTurnOpen is false on purpose: _Process never asks whether this
+        // card is up, so an auto-end-turn can fire underneath it. That is today's
+        // behaviour and #510 is where it is questioned — not here.
+        ["QuitConfirm"] = new(new PlayFocus.QuitConfirm(), EscapeMeaning.LeaveTheGame, false, false, false, false),
     };
 
     public static TheoryData<string> FocusNames
@@ -174,6 +179,22 @@ public class PlayFocusTests
         focus.Pop();
 
         Assert.Null(focus.Topmost<PlayFocus.Shop>());
+    }
+
+    /// <summary>
+    /// The quit card does not hold the turn open, and that is a preserved oddity rather
+    /// than a considered answer.
+    /// </summary>
+    /// <remarks>
+    /// <c>_Process</c> never asks whether this card is up, so <c>NothingLeftButEndTurn</c>
+    /// can end a turn underneath "LEAVE THE GAME?". #510 is the issue that questions it. A
+    /// no-behaviour-change refactor is not the place to fix it, and asserting it here is
+    /// what stops it being fixed by accident.
+    /// </remarks>
+    [Fact]
+    public void TheQuitCardDoesNotHoldTheTurnOpenAndThatIsDeliberatelyPreserved()
+    {
+        Assert.False(new PlayFocus.QuitConfirm().HoldsTurnOpen);
     }
 
     [Fact]

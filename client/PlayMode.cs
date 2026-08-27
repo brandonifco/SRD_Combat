@@ -137,7 +137,6 @@ public partial class PlayMode : FightScreen
     private bool _probeStarted;
 
     /// <summary>True while the quit card is asking whether Esc really meant it.</summary>
-    private bool _quitAsked;
 
     /// <summary>How much of the fight's log has already been scanned for walks to play.</summary>
     private int _walkStepsSeen;
@@ -1238,7 +1237,6 @@ public partial class PlayMode : FightScreen
 
         return new RouteContext(
             Fighting: _phase == Phase.Fighting,
-            QuitAsked: _quitAsked,
             ActInProgress: ActInProgress,
             MenuRowCount: OpenMenuLength,
             CanArmAttack: _encounter is { } fight
@@ -1266,11 +1264,11 @@ public partial class PlayMode : FightScreen
                 return true;
 
             case RouteAction.DismissQuitConfirm:
-                _quitAsked = false;
+                _focus.Pop();
                 break;
 
             case RouteAction.AskToQuit:
-                _quitAsked = true;
+                _focus.Push(new PlayFocus.QuitConfirm());
                 break;
 
             case RouteAction.CommitOutcome:
@@ -1948,7 +1946,7 @@ public partial class PlayMode : FightScreen
     /// </summary>
     private void DrawQuitCard()
     {
-        if (!_quitAsked)
+        if (!_focus.Holds<PlayFocus.QuitConfirm>())
         {
             return;
         }
