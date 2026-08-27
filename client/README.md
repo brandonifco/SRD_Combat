@@ -398,17 +398,90 @@ successful capture that this used to write (#486).
 ### The probe
 
 ```bash
-godot --path client -- --probe=<directory>
+godot --path client --display-driver x11 -- --probe=<directory>
 ```
 
 The play screen's verification loop: it drives the screen through the real input path —
 synthesized clicks through the viewport, not calls around the input layer — and captures
-a PNG after each step: the run's opening interlude, then commanded turns (a refusal on
-purpose — Stand Up while not Prone — a walk toward the nearest enemy, an attack, a
-feature, a caster's menu-choice-target flow), then plays the fight out and captures the
-other side of it: the post-fight interlude with its save, or the defeat screen. Seed 1
-clears fight 1 that way; the default seed loses it — both ends of `HandleFightEnd` have
-been watched.
+a PNG after each step. It needs a real, reachable X display and Godot's `x11` driver — a
+capture is a rendered frame, and there is nothing to render headless. On the machine this
+was last measured on (2026-08-26), `DISPLAY=:0` worked; CLAUDE.md's Environment section
+still names `:1`, which was **not** reachable that night — that is one machine's evidence,
+not a reason to edit the doc, so ask before changing the claim.
+
+**It is two invocations, not one**, because the eight focuses #327's refactor moves
+(`docs/2026-08-26-playmode-refactor-design.md`, §4) do not all fit under one seed at one
+level:
+
+```bash
+# The main run: seed 1, the gauntlet's default level 1. Reaches six of the eight
+# focuses plus every run-lifecycle capture.
+godot --path client --display-driver x11 -- --seed=1 --probe=<directory>
+
+# The Slot menu needs a caster holding spell slots at more than one level for the same
+# spell — no level 1 character has that. --one-fight already fixes the party at level 3
+# (FightScreen.ResolveFight), so this is the second half of "the probe" rather than a
+# second full-gauntlet seed. It quits as soon as the Slot menu is reached (or its own
+# turn budget runs out).
+godot --path client --display-driver x11 -- --one-fight --seed=1 --probe=<directory>
+```
+
+Both finish in seconds, not minutes — measured together at 16 s end to end (2026-08-26).
+That was not always true: earlier the same night the main run's play-out loop alone took
+~15 minutes, because `ClickButton` (below) never actually clicked anything, and turns
+advanced only via `NothingLeftButEndTurn`'s auto-end-turn, one `_pace`-delayed tick at a
+time. Fixing `ClickButton` fixed the wall-clock cost as a side effect, not a change made
+for that reason.
+
+Both write into the same directory; their capture names do not collide. What the main run
+produces, in order: `run-0-interlude`, a commanded turn (`play-1-turn-ready`), the quit
+confirm (`play-1b-quit-confirm` — Esc asks, a key that is not Esc backs out unharmed), a
+refusal on purpose (`play-2-refused` — Stand Up while not Prone), a hover hint
+(`play-2b-hint`), Tab-arming (`play-2c-tab-armed`), a walk and an attack
+(`play-3-moved`, `play-4-attacked`), a feature (`play-5-feature`), End Turn
+(`play-6-turn-ended`), a second commanded character's cast flow if it is a caster's turn
+(`play-7-spell-menu`, `play-8-cast`), then plays fight 1 out to its end, capturing along
+the way whichever party member carrying more than one weapon takes a turn first — Brenna,
+Korrin and Sable all do at level 1, Aldous alone does not — with the Attack menu open
+(`play-9-attack-menu`), the
+Outcome card the instant it appears and before anything dismisses it
+(`run-9-outcome-card`), the post-fight interlude or defeat screen
+(`run-9-after-fight`), and — since seed 1 clears fight 1 and the ladder rests Long before
+fight 2 — the merchant's stall (`run-10-shop`). Seed 1 clears fight 1 this way; the
+default seed loses it — both ends of `HandleFightEnd` have been watched. The one-fight
+run adds `play-9-spell-menu` and `play-9-slot-menu`.
+
+**A step the probe could not reach says so — it does not skip in silence.** Whether a
+character brought a feature, whether the second commanded turn is a caster's, whether
+fight 1 stays clear long enough to reach a Long Rest, and whether a caster's slots span
+more than one level are all facts about a fight in progress, not guarantees. A capture
+the probe could not produce writes `<name>.skipped.txt` next to where the PNG would have
+gone, naming why — so a shrunk capture set is a file to notice rather than a silent
+absence.
+
+```bash
+scripts/probe-diff.sh <dirA> <dirB>
+```
+
+Runs both invocations above twice, into two directories, and `diff -rq`s the result —
+recursively, over every file including the skip markers, not a fixed PNG list — so
+"the probe still passes and its captures are unchanged" (every slice of #327 after this
+one) is a command with an exit code rather than a promise.
+
+**It works as a gate — it caught a real regression the day it was written.** A full pair
+measured 2026-08-26 came back eleven of fifteen PNGs differing, every one of them by a
+single small bounding box (`(45×45)` or less) at the active combatant's pulsing ring —
+nothing else on a 1920×1080 frame moved a pixel: not a position, not a log line, not a
+damage roll, not a menu row. That is `FightScreen.ActiveRingNow` (#494/#512, landed the
+same night), which reads a wall-clock tick with no probe/capture guard — filed as #518.
+The four captures with no active-turn ring on screen at all (`run-0-interlude`,
+`run-9-outcome-card`, `run-9-after-fight`, `run-10-shop`) came back perfectly identical,
+which is what pins the cause to the ring and nowhere else: everything RNG-driven or
+state-driven in this probe is exactly reproducible, and only the one unguarded clock read
+is not. Fixing #518 is not this slice's to do (`client/FightScreen.cs` has another PR
+in flight); the point stands regardless of when it lands — a byte-identical comparison
+that cannot yet promise "identical" still told the truth about exactly what differed and
+why, which is what a gate is for.
 
 ## Why this project *is* in SRDCombat.sln
 
