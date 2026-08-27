@@ -95,6 +95,7 @@ same master with the same flags reproduces the same output byte-for-byte.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -104,6 +105,7 @@ from PIL import Image, ImageFilter
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MASTERS_DIR = REPO_ROOT / "client" / "assets" / "masters"
 SPRITES_DIR = REPO_ROOT / "client" / "assets" / "sprites"
+SPRITE_LIBRARY_CS = REPO_ROOT / "client" / "SpriteLibrary.cs"
 
 # Determinism is verified against this Pillow version specifically (see the
 # module docstring). Resampling internals and PNG encoding are Pillow's own
@@ -501,20 +503,103 @@ def _cmd_list(_args: argparse.Namespace) -> int:
     stems = sorted({p.stem for p in MASTERS_DIR.glob("*.png")})
     print(f"{len(stems)} masters (.png cutouts) in {MASTERS_DIR}:\n")
 
+    folders = _shipped_folders_from_sprite_library()
     for stem in stems:
-        shipped = "shipped" if (SPRITES_DIR / _guess_folder(stem)).exists() else "unshipped"
-        print(f"  {stem:<28} {shipped}")
+        print(f"  {stem:<28} {_ship_status(stem, folders)}")
 
     return 0
 
 
-def _guess_folder(stem: str) -> str:
-    """A best-effort PascalCase guess at the matching sprite folder, for the
-    `list` command's shipped/unshipped hint only — not used by the actual
-    pipeline, and not a claim about which pool name a master belongs to.
-    That mapping is #295's job."""
+# A regeneration or a rewrite of SpriteLibrary.cs's two dictionaries into
+# something this regex can't see (interpolation, a multi-line value, a
+# collection initializer that isn't `["Key"] = "Value",`) would make
+# `_shipped_folders_from_sprite_library` return too few entries rather than
+# raising — the exact "a number the pipeline prints about itself is not a
+# check" trap CLAUDE.md's extraction-traps section warns about. This floor
+# is a validator, not a guess: it is comfortably below today's 76 so
+# ordinary roster growth or shrinkage never trips it, but a parse that
+# silently came back near-empty does.
+_MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES = 50
 
-    return "_".join(part.capitalize() for part in stem.split("_"))
+_SPRITE_LIBRARY_ENTRY_RE = re.compile(r'\["([^"]+)"\]\s*=\s*"([^"]+)",')
+
+
+def _shipped_folders_from_sprite_library(cs_path: Path = SPRITE_LIBRARY_CS) -> set[str]:
+    """The ground truth for "does the client actually load art for this
+    master" — parsed from ``ByClassName``/``ByMonsterName``'s literal
+    entries in ``client/SpriteLibrary.cs``, rather than guessed from the
+    master's filename (#442: the previous ``_guess_folder`` PascalCased
+    every word, including "of", so "Swarm of Bats" became the guess
+    "Swarm_Of_Bats" against the real folder "Swarm_of_Bats" and all four
+    swarms reported unshipped though they ship).
+
+    Both maps are committed as flat ``["Name"] = "Folder_Name",`` literals —
+    one entry per line, no string interpolation, no multi-line values (see
+    SpriteLibrary.cs's own doc comments) — specifically so a mechanical
+    script can read them back without reimplementing a C# parser. A regex
+    over the whole file is safe here only because that format holds: this
+    matched exactly the 76 entries in both dictionaries and nothing else in
+    the file, verified when this function was written. If SpriteLibrary.cs
+    ever grows another `["x"] = "y",`-shaped dictionary literal that isn't
+    one of these two maps, this would start returning folder names that
+    were never meant as sprite folders — low risk today (nothing else in
+    the file has that shape) but worth knowing before widening either
+    dictionary's neighbourhood.
+    """
+
+    if not cs_path.exists():
+        return set()
+
+    text = cs_path.read_text()
+    entries = _SPRITE_LIBRARY_ENTRY_RE.findall(text)
+    folders = {folder for _name, folder in entries}
+
+    if len(folders) < _MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES:
+        print(
+            f"warning: only {len(folders)} folder(s) parsed from {cs_path} — "
+            f"expected at least {_MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES}. "
+            f"SpriteLibrary.cs's ByClassName/ByMonsterName literal format may "
+            f"have changed underneath this script's regex (see "
+            f"_shipped_folders_from_sprite_library's docstring); treat "
+            f"'unshipped' results with suspicion until this is fixed.",
+            file=sys.stderr,
+        )
+
+    return folders
+
+
+def _ship_status(stem: str, folders: set[str] | None = None) -> str:
+    """Whether ``stem``'s master is shipped, per SpriteLibrary's own map —
+    never a guess. Three states, not two: SpriteLibrary either doesn't name
+    this stem at all ("unshipped"), names it and the folder is really there
+    ("shipped"), or names it but the folder is missing on disk ("mapped,
+    folder missing" — code and tree have drifted, which #467's geometry gate
+    is the deeper answer to; this at least says so instead of collapsing it
+    into an ordinary "unshipped")."""
+
+    folder = _shipped_folder_for(stem, folders)
+    if folder is None:
+        return "unshipped"
+    return "shipped" if (SPRITES_DIR / folder).exists() else "mapped, folder missing"
+
+
+def _shipped_folder_for(stem: str, folders: set[str] | None = None) -> str | None:
+    """The folder SpriteLibrary maps this master's stem to, or ``None`` if
+    nothing does. Case-insensitive because a master's filename stem is
+    already snake_case and SpriteLibrary's folder value is the same words
+    with underscores — differing only in which words are capitalised (the
+    swarms' lowercase "of" among them) — never in word order or spelling.
+    ``None`` also covers the rarer case of a master whose stem no longer
+    matches its mapped folder at all after one side was renamed and the
+    other wasn't (``goblin_warrior``/``Goblin_Drawn``, ``scout``/
+    ``Scout_Human`` are two that predate this fix and stay unresolved here —
+    a real mismatch, not the casing bug #442 is about; filed separately
+    rather than folded into this fix)."""
+
+    if folders is None:
+        folders = _shipped_folders_from_sprite_library()
+
+    return {folder.lower(): folder for folder in folders}.get(stem)
 
 
 def _cmd_process(args: argparse.Namespace) -> int:
@@ -581,11 +666,11 @@ def _cmd_compare(args: argparse.Namespace) -> int:
         (pipeline_out.width * zoom, pipeline_out.height * zoom), Image.Resampling.NEAREST
     )
 
-    shipped_folder = SPRITES_DIR / _guess_folder(args.stem)
-    shipped_path = shipped_folder / "Idle.png"
+    mapped_folder = _shipped_folder_for(args.stem)
+    shipped_path = SPRITES_DIR / mapped_folder / "Idle.png" if mapped_folder else None
     shipped_zoomed = None
 
-    if shipped_path.exists():
+    if shipped_path is not None and shipped_path.exists():
         shipped_img = Image.open(shipped_path).convert("RGBA")
         shipped_zoomed = shipped_img.resize(
             (shipped_img.width * zoom, shipped_img.height * zoom), Image.Resampling.NEAREST
