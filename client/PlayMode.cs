@@ -64,7 +64,6 @@ public partial class PlayMode : FightScreen
     /// loot and the autosave all happen on the far side of it, so the player sees the
     /// result before the reckoning.
     /// </remarks>
-    private bool _outcomeCard;
 
     private Encounter? _encounter;
     private Labels _labels = null!;
@@ -167,8 +166,6 @@ public partial class PlayMode : FightScreen
     private Rect2 _shopButton;
     private Rect2 _shopBackButton;
     private bool _shopAvailable;
-    private bool _shopView;
-    private string? _shopNotice;
     private readonly List<(Rect2 Rect, ShopOffer Offer)> _shopRows = [];
     private bool _fightEndHandled;
 
@@ -440,8 +437,7 @@ public partial class PlayMode : FightScreen
             // The merchant reaches the party at each Long Rest, exactly as the
             // console's shop does. The button is the door; nothing is automatic.
             _shopAvailable = rest == RestKind.Long;
-            _shopView = false;
-            _shopNotice = null;
+            _focus.PopToRoot();
 
             foreach (var returned in run.Returns.Skip(returnsBefore))
             {
@@ -536,14 +532,14 @@ public partial class PlayMode : FightScreen
         // input path everything else in the probe takes. This used to short-circuit
         // straight to CompleteAndReport under --probe, from before the probe could
         // press a key at all (#499) — RunProbe now dismisses the card itself.
-        _outcomeCard = true;
+        _focus.Push(new PlayFocus.Outcome());
         QueueRedraw();
     }
 
     /// <summary>Finishes the fight the card was announcing: rewards, save, interlude.</summary>
     private void CompleteAndReport()
     {
-        _outcomeCard = false;
+        _focus.PopToRoot();
 
         if (_run is not { } run || _fight is not { } fight || _encounter is not { } encounter)
         {
@@ -810,6 +806,9 @@ public partial class PlayMode : FightScreen
     /// <summary>The armed action, or null when nothing is armed.</summary>
     private PlayFocus.Targeting? Armed => _focus.Topmost<PlayFocus.Targeting>();
 
+    /// <summary>The open stall and its last notice, or null when it is closed.</summary>
+    private PlayFocus.Shop? Shopping => _focus.Topmost<PlayFocus.Shop>();
+
     /// <summary>How many rows the open menu has, or zero when none is open.</summary>
     private int OpenMenuLength => _focus.Top switch
     {
@@ -1063,7 +1062,8 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } && _outcomeCard)
+        if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }
+            && _focus.Holds<PlayFocus.Outcome>())
         {
             CompleteAndReport();
             QueueRedraw();
@@ -1154,7 +1154,7 @@ public partial class PlayMode : FightScreen
     /// </remarks>
     private string? HintAt(Vector2 pixel)
     {
-        if (_phase != Phase.Fighting || _shopView)
+        if (_phase != Phase.Fighting || Shopping is not null)
         {
             return null;
         }
@@ -1238,8 +1238,6 @@ public partial class PlayMode : FightScreen
 
         return new RouteContext(
             Fighting: _phase == Phase.Fighting,
-            ShopOpen: _shopView,
-            OutcomeCard: _outcomeCard,
             QuitAsked: _quitAsked,
             ActInProgress: ActInProgress,
             MenuRowCount: OpenMenuLength,
@@ -1273,11 +1271,6 @@ public partial class PlayMode : FightScreen
 
             case RouteAction.AskToQuit:
                 _quitAsked = true;
-                break;
-
-            case RouteAction.CloseShop:
-                _shopView = false;
-                _shopNotice = null;
                 break;
 
             case RouteAction.CommitOutcome:
@@ -1356,12 +1349,11 @@ public partial class PlayMode : FightScreen
     {
         if (_phase == Phase.Interlude)
         {
-            if (_shopView && _run is { } shopping)
+            if (Shopping is not null && _run is { } shopping)
             {
                 if (_shopBackButton.HasPoint(pixel))
                 {
-                    _shopView = false;
-                    _shopNotice = null;
+                    _focus.Pop();
                     QueueRedraw();
                     return;
                 }
@@ -1373,9 +1365,10 @@ public partial class PlayMode : FightScreen
                         // The engine's answer either way: a purchase re-lists the
                         // stall with the purse lighter, a refusal is shown with its
                         // code like every other rule.
-                        _shopNotice = shopping.Purchase(offer) is { } refusal
-                            ? $"[{refusal.Code}] {refusal.Message}"
-                            : $"Bought: {offer.Description}.";
+                        _focus.ReplaceTop(new PlayFocus.Shop(
+                            shopping.Purchase(offer) is { } refusal
+                                ? $"[{refusal.Code}] {refusal.Message}"
+                                : $"Bought: {offer.Description}."));
                         QueueRedraw();
                         return;
                     }
@@ -1386,7 +1379,7 @@ public partial class PlayMode : FightScreen
 
             if (_shopAvailable && _shopButton.HasPoint(pixel))
             {
-                _shopView = true;
+                _focus.Push(new PlayFocus.Shop());
                 QueueRedraw();
                 return;
             }
@@ -2048,7 +2041,7 @@ public partial class PlayMode : FightScreen
     /// </remarks>
     private void DrawOutcomeCard()
     {
-        if (!_outcomeCard || _encounter is not { } encounter)
+        if (!_focus.Holds<PlayFocus.Outcome>() || _encounter is not { } encounter)
         {
             return;
         }
@@ -2096,7 +2089,7 @@ public partial class PlayMode : FightScreen
     /// <summary>The between-fights screen: the run's own words, and a way onward.</summary>
     private void DrawInterlude()
     {
-        if (_shopView && _run is { } shopping)
+        if (Shopping is not null && _run is { } shopping)
         {
             DrawShop(shopping);
             return;
@@ -2220,7 +2213,7 @@ public partial class PlayMode : FightScreen
             y += rect.Size.Y + 4;
         }
 
-        if (_shopNotice is { } notice)
+        if (Shopping?.Notice is { } notice)
         {
             y += 6;
             DrawString(TextFont, new Vector2(UiLeft, y + 12), Trim(notice, 78), fontSize: 13, modulate: MonsterColour);
@@ -2463,7 +2456,7 @@ public partial class PlayMode : FightScreen
 
         if (_encounter is { IsComplete: true } encounter)
         {
-            return _outcomeCard
+            return _focus.Holds<PlayFocus.Outcome>()
                 ? "the fight is over — any key or click for the results"
                 : encounter.WinningSide == PregeneratedParty.SideId
                     ? "the party wins — [esc] quit"
@@ -2656,7 +2649,7 @@ public partial class PlayMode : FightScreen
             {
                 safety++;
 
-                if (_outcomeCard)
+                if (_focus.Holds<PlayFocus.Outcome>())
                 {
                     if (!outcomeCaptured)
                     {

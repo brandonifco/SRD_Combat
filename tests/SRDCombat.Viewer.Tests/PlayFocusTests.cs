@@ -41,6 +41,12 @@ public class PlayFocusTests
         ["SpellMenu"] = new(new PlayFocus.SpellMenu(), EscapeMeaning.DropToBoard, true, false, false, true),
         ["SlotMenu"] = new(new PlayFocus.SlotMenu(FightTestData.AnySpell()), EscapeMeaning.DropToBoard, true, false, false, true),
         ["Targeting"] = new(new PlayFocus.Targeting(TargetKind.Attack), EscapeMeaning.DropToBoard, false, true, false, true),
+
+        // S2 (#501). Two rows where the obvious answer is wrong, both preserved verbatim:
+        // the stall suppresses the board (a guard that never fires, kept deliberately), and
+        // the card's Esc *commits* rather than cancelling.
+        ["Shop"] = new(new PlayFocus.Shop(), EscapeMeaning.CloseSelf, false, false, true, false),
+        ["Outcome"] = new(new PlayFocus.Outcome(), EscapeMeaning.Commit, false, false, false, false),
     };
 
     public static TheoryData<string> FocusNames
@@ -126,6 +132,48 @@ public class PlayFocusTests
 
             return data;
         }
+    }
+
+    /// <summary>
+    /// Esc on the outcome card advances the run rather than dismissing it.
+    /// </summary>
+    /// <remarks>
+    /// Asserted on its own as well as in the table, because this is the row a later editor
+    /// is most likely to "tidy": every other modal in the client backs out on Esc, and this
+    /// one awards experience, loot and the autosave. Getting it wrong loses a fight's
+    /// rewards and nothing on screen would say so.
+    /// </remarks>
+    [Fact]
+    public void TheOutcomeCardCommitsOnEscapeRatherThanCancelling()
+    {
+        Assert.Equal(EscapeMeaning.Commit, new PlayFocus.Outcome().Escape);
+        Assert.NotEqual(EscapeMeaning.CloseSelf, new PlayFocus.Outcome().Escape);
+        Assert.NotEqual(EscapeMeaning.DropToBoard, new PlayFocus.Outcome().Escape);
+    }
+
+    /// <summary>
+    /// The stall carries its own notice, so closing it clears the notice by construction.
+    /// </summary>
+    /// <remarks>
+    /// The notice used to be a second field beside the open/closed flag, and Esc had to
+    /// remember to null it. A purchase is now one <c>ReplaceTop</c>, and the pop takes the
+    /// notice with it — there is no longer a pair to leave half-done.
+    /// </remarks>
+    [Fact]
+    public void TheShopsNoticeRidesTheLayerAndLeavesWithIt()
+    {
+        var focus = new FocusStack<PlayFocus>(new PlayFocus.Board());
+        focus.Push(new PlayFocus.Shop());
+
+        Assert.Null(focus.Topmost<PlayFocus.Shop>()!.Notice);
+
+        focus.ReplaceTop(new PlayFocus.Shop("Bought: a Potion of Healing."));
+
+        Assert.Equal("Bought: a Potion of Healing.", focus.Topmost<PlayFocus.Shop>()!.Notice);
+
+        focus.Pop();
+
+        Assert.Null(focus.Topmost<PlayFocus.Shop>());
     }
 
     [Fact]

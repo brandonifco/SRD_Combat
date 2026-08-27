@@ -19,7 +19,8 @@ namespace SRDCombat.Viewer;
 /// <item><see cref="Escape"/> — the Esc cascade's branch order.</item>
 /// <item><see cref="TakesRowKeys"/> — <c>OpenMenuLength is &gt; 0</c>, written twice.</item>
 /// <item><see cref="SuppressesHotkeys"/> — the "nothing is armed" test around the hotkey lookup.</item>
-/// <item><see cref="SuppressesBoard"/> — <c>&amp;&amp; !_shopView</c>.</item>
+/// <item><see cref="SuppressesBoard"/> — the "not while the stall is up" term on the
+/// fighting-phase keyboard gate.</item>
 /// <item><see cref="HoldsTurnOpen"/> — <c>NothingLeftButEndTurn</c>'s four-flag conjunction.</item>
 /// </list>
 /// <para>
@@ -67,6 +68,64 @@ internal abstract record PlayFocus
     internal sealed record Board : PlayFocus
     {
         internal override EscapeMeaning Escape => EscapeMeaning.AskToQuit;
+
+        internal override bool TakesRowKeys => false;
+
+        internal override bool SuppressesHotkeys => false;
+
+        internal override bool SuppressesBoard => false;
+
+        internal override bool HoldsTurnOpen => false;
+    }
+
+    /// <summary>
+    /// The merchant's stall, open between fights.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The notice rides the layer</b> (#501). It used to be a second field beside
+    /// the open/closed flag, and Esc had to remember to clear both — with the notice here,
+    /// clearing it <em>is</em> the pop, and a purchase is one <c>ReplaceTop</c> rather
+    /// than an assignment somebody could forget to pair.
+    /// </para>
+    /// <para>
+    /// <b><see cref="SuppressesBoard"/> is true, and the guard it preserves never
+    /// fires.</b> The old "not while the stall is up" term gated the fighting-phase keyboard,
+    /// but the stall can only be opened from the interlude, so the term was defence
+    /// against a state that cannot arise. It is kept deliberately: an unreachable guard
+    /// deleted during a no-behaviour-change refactor is exactly the change no capture can
+    /// show.
+    /// </para>
+    /// </remarks>
+    /// <param name="Notice">What the last purchase or refusal said, or null.</param>
+    internal sealed record Shop(string? Notice = null) : PlayFocus
+    {
+        internal override EscapeMeaning Escape => EscapeMeaning.CloseSelf;
+
+        internal override bool TakesRowKeys => false;
+
+        internal override bool SuppressesHotkeys => false;
+
+        internal override bool SuppressesBoard => true;
+
+        internal override bool HoldsTurnOpen => false;
+    }
+
+    /// <summary>
+    /// The card announcing how the fight ended, before the run moves on.
+    /// </summary>
+    /// <remarks>
+    /// <b>Escape is <see cref="EscapeMeaning.Commit"/>, not a cancel</b>, and this is the
+    /// sharp edge of the whole table (#501). Esc on this card calls
+    /// <c>CompleteAndReport</c>: it <em>advances the run</em> — experience, loot, the
+    /// autosave. A structure that assumed "Esc backs out" would silently turn an
+    /// acknowledgement into a dismissal and lose the fight's rewards. Esc is not
+    /// uniformly "back out" in this client, and the enum exists so that fact is written
+    /// down rather than remembered.
+    /// </remarks>
+    internal sealed record Outcome : PlayFocus
+    {
+        internal override EscapeMeaning Escape => EscapeMeaning.Commit;
 
         internal override bool TakesRowKeys => false;
 
