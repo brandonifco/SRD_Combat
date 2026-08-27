@@ -107,24 +107,22 @@ public abstract partial class FightScreen : Node2D
     protected float GridLeft => ((StageLeft + StageRight) / 2f) - (_cameraCentre.X * CellPixels);
     protected float GridTop => ((StageTop + StageBottom) / 2f) - (_cameraCentre.Y * CellPixels);
 
-    protected static readonly Color Background = new("16161d");
-    protected static readonly Color GridLine = new("2c2c38");
-    protected static readonly Color Difficult = new("2a2438");
-
-    /// <summary>
-    /// What difficult ground looks like over real terrain: dark enough to read as rough
-    /// going, sheer enough to leave the tile underneath recognisable.
-    /// </summary>
-    protected static readonly Color DifficultWash = new(0.10f, 0.06f, 0.16f, 0.45f);
-    protected static readonly Color Blocked = new("3a2a2a");
-    protected static readonly Color LowObstacle = new("4a4032");
-    protected static readonly Color PartyColour = new("5a9fd4");
-    protected static readonly Color MonsterColour = new("c4614f");
-    protected static readonly Color DeadColour = new("4a4a52");
-    protected static readonly Color DownColour = new("8a6a4a");
-    protected static readonly Color ActiveRing = new("e8d5a0");
-    protected static readonly Color Ink = new("d8d8e0");
-    protected static readonly Color Dim = new("8a8a96");
+    // The palette lives in Palette.cs (#327 S7) — a screen refers to it rather than
+    // declaring its own colours. These forwarders keep every existing call site in
+    // this file unchanged.
+    protected static Color Background => Palette.Background;
+    protected static Color GridLine => Palette.GridLine;
+    protected static Color Difficult => Palette.Difficult;
+    protected static Color DifficultWash => Palette.DifficultWash;
+    protected static Color Blocked => Palette.Blocked;
+    protected static Color LowObstacle => Palette.LowObstacle;
+    protected static Color PartyColour => Palette.PartyColour;
+    protected static Color MonsterColour => Palette.MonsterColour;
+    protected static Color DeadColour => Palette.DeadColour;
+    protected static Color DownColour => Palette.DownColour;
+    protected static Color ActiveRing => Palette.ActiveRing;
+    protected static Color Ink => Palette.Ink;
+    protected static Color Dim => Palette.Dim;
 
     /// <summary>
     /// The active-combatant ring's blink period, in seconds (#494) — a played-run
@@ -422,7 +420,11 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     private bool _animateSprites;
 
-    protected Font TextFont { get; private set; } = null!;
+    // Chrome (Palette.cs's neighbour, #327 S7) holds the font, Trim and the heading's
+    // backdrop measurement; FightScreen keeps a thin TextFont/Trim forwarder so the
+    // many call sites in this file are unchanged.
+    private Chrome _chrome = null!;
+    protected Font TextFont => _chrome.Font;
     protected int GridWidth { get; private set; }
     protected int GridHeight { get; private set; }
     protected IReadOnlyCollection<GridPosition> BlockedSquares { get; private set; } = [];
@@ -468,7 +470,7 @@ public abstract partial class FightScreen : Node2D
 
     public override void _Ready()
     {
-        TextFont = ThemeDB.GetFallbackFont();
+        _chrome = new Chrome(ThemeDB.GetFallbackFont());
 
         // Pixel art scaled with linear filtering smears; nearest keeps the pixels.
         TextureFilter = TextureFilterEnum.Nearest;
@@ -516,7 +518,7 @@ public abstract partial class FightScreen : Node2D
     protected abstract void OnReady();
 
     /// <summary>The extracted content, found the way the console client finds it.</summary>
-    protected static SrdContent LoadContent() => ContentLoader.Load(ContentDirectory());
+    protected static SrdContent LoadContent() => ClientContent.Load();
 
     /// <summary>
     /// A <c>--spawn</c> roster the parser refused — its own type so the callers'
@@ -1439,7 +1441,7 @@ public abstract partial class FightScreen : Node2D
     protected void DrawBackdrop() => DrawRect(new Rect2(0, 0, ScreenWidth, ScreenHeight), Background);
 
     /// <summary>The translucent wash the overlays share, so the field reads underneath.</summary>
-    protected static readonly Color Veil = new(Background.R, Background.G, Background.B, 0.85f);
+    protected static Color Veil => Palette.Veil;
 
     /// <summary>
     /// The heading, floating over the field's top-left corner. Its backdrop is measured
@@ -1448,13 +1450,7 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     protected void DrawHeading(string subtitle, string statusLine)
     {
-        var width = MathF.Max(
-            TextFont.GetStringSize(Title, fontSize: 20).X,
-            MathF.Max(
-                TextFont.GetStringSize(subtitle, fontSize: 13).X,
-                TextFont.GetStringSize(statusLine, fontSize: 12).X)) + 32;
-
-        DrawRect(new Rect2(8, 8, width, 80), Veil);
+        DrawRect(_chrome.HeadingBackdrop(Title, subtitle, statusLine), Veil);
         DrawString(TextFont, new Vector2(UiLeft, 34), Title, fontSize: 20, modulate: Ink);
         DrawString(TextFont, new Vector2(UiLeft, 58), subtitle, fontSize: 13, modulate: Dim);
         DrawString(TextFont, new Vector2(UiLeft, 78), statusLine, fontSize: 12, modulate: Dim);
@@ -2377,48 +2373,13 @@ public abstract partial class FightScreen : Node2D
     // a wrapped line that outruns its backdrop would spill onto the battlefield.
     private const int LogWidthCharacters = 56;
 
-    protected static string Trim(string text, int width) =>
-        text.Length <= width ? text : text[..(width - 1)] + "…";
+    protected static string Trim(string text, int width) => Chrome.Trim(text, width);
 
     /// <summary>
     /// Breaks text into lines of at most <paramref name="width"/> characters, on word
     /// boundaries, keeping any newlines the text already had.
     /// </summary>
-    protected static IReadOnlyList<string> Wrap(string text, int width)
-    {
-        ArgumentNullException.ThrowIfNull(text);
-
-        var lines = new List<string>();
-
-        foreach (var paragraph in text.Split('\n'))
-        {
-            if (paragraph.Length == 0)
-            {
-                lines.Add(string.Empty);
-                continue;
-            }
-
-            var line = string.Empty;
-
-            foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (line.Length + word.Length + 1 > width && line.Length > 0)
-                {
-                    lines.Add(line);
-                    line = string.Empty;
-                }
-
-                line += (line.Length > 0 ? " " : string.Empty) + word;
-            }
-
-            if (line.Length > 0)
-            {
-                lines.Add(line);
-            }
-        }
-
-        return lines;
-    }
+    protected static IReadOnlyList<string> Wrap(string text, int width) => Chrome.Wrap(text, width);
 
     /// <summary>Renders one frame to a PNG. The verification loop for these screens.</summary>
     protected async Task CaptureFrame(string path)
@@ -2437,55 +2398,10 @@ public abstract partial class FightScreen : Node2D
             : $"could not save {path}: {error}");
     }
 
-    /// <summary>
-    /// This client's own dialect is <c>--name=value</c>, one shell word, and that is
-    /// the only form recognised here — the console client's separate <c>--name
-    /// value</c> form (<c>src/SRDCombat.Console/Program.cs</c>'s <c>LevelFrom</c> and
-    /// its siblings) is a different binary's convention and is deliberately not
-    /// accepted. <c>null</c> therefore means two different things a caller must not
-    /// conflate: the flag was never passed, or it was passed bare (<c>--name</c>, or
-    /// the space form, which Godot hands through as an unrelated second argument no
-    /// different from a bare flag followed by something else). <see cref="HasArgument"/>
-    /// answers "was it passed at all"; a caller that must refuse a present-but-valueless
-    /// flag rather than silently treating it as absent needs both (#470, M2).
-    /// </summary>
-    protected internal static string? ArgumentValue(string name)
-    {
-        foreach (var argument in OS.GetCmdlineUserArgs())
-        {
-            if (argument.StartsWith($"--{name}=", StringComparison.Ordinal))
-            {
-                return argument[(name.Length + 3)..];
-            }
-        }
-
-        return null;
-    }
+    // ClientArguments.cs (#327 S7) holds the argument dialect; these forward so no
+    // call site outside this file changes.
+    protected internal static string? ArgumentValue(string name) => ClientArguments.ArgumentValue(name);
 
     /// <summary>Whether <c>--name</c> appears at all, bare or with a value.</summary>
-    protected internal static bool HasArgument(string name) =>
-        OS.GetCmdlineUserArgs().Contains($"--{name}") || ArgumentValue(name) is not null;
-
-    /// <summary>
-    /// Walks up for <c>data/srd</c>, exactly as the console client does, so the viewer
-    /// runs from wherever Godot was launched.
-    /// </summary>
-    private static string ContentDirectory()
-    {
-        var directory = new DirectoryInfo(ProjectSettings.GlobalizePath("res://"));
-
-        while (directory is not null)
-        {
-            var candidate = Path.Combine(directory.FullName, "data", "srd");
-
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("No data/srd found above the project directory.");
-    }
+    protected internal static bool HasArgument(string name) => ClientArguments.HasArgument(name);
 }
