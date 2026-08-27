@@ -114,7 +114,21 @@ client/assets/sprites/Terrain/*
 !client/assets/sprites/Terrain/Low_*.png
 !client/assets/sprites/Terrain/Difficult_*.png
 
-# Scratch
+# Scratch.
+#
+# BEFORE WIDENING ANY PATTERN HERE, READ THIS (#473, and the battle-builder design §5a).
+# `scenarios/` is a *committed* library of JSON — versioned, diffable, quotable in an
+# issue, reviewable in a PR, readable by CI — and nothing in this file may swallow it.
+# #469 is widening the save-file rule below to the `--save=<path>` family, and its own
+# criteria correctly call for an **unanchored** pattern, since saves land in `client/`
+# rather than at the root. Unanchored is right for saves and one careless `*.json` away
+# from making the whole scenario library invisible with `git status` clean — which is
+# worse than losing it outright, because tests/SRDCombat.Game.Tests/ScenarioLibraryTests
+# keeps passing on the files already in the index while every new scenario silently fails
+# to arrive.
+#
+# The check, run after any change here: `git check-ignore -v scenarios/*.json` must print
+# nothing and exit 1. It does today.
 *.log
 *.tmp
 *.bak

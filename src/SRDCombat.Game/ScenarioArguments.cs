@@ -11,10 +11,21 @@ namespace SRDCombat.Game;
 /// </summary>
 public static class ScenarioArguments
 {
-    /// <summary>The party level range a spawned scenario may ask for.</summary>
-    public const int MinimumLevel = 1;
+    /// <summary>
+    /// The party level range a spawned scenario may ask for — forwarded from
+    /// <see cref="BattleScenario"/> rather than copied.
+    /// </summary>
+    /// <remarks>
+    /// #491's second note: this band was becoming a third hard-coded copy of 1–5. The
+    /// answer the battle-builder design settled on is that <see cref="BattleScenario"/>
+    /// is the value every author produces and this class is one adapter onto it (#473,
+    /// design §13), so the band is stated on the value and every adapter forwards. The
+    /// two client-side copies are a separate concern and stay #491's.
+    /// </remarks>
+    public const int MinimumLevel = BattleScenario.MinimumLevel;
 
-    public const int MaximumLevel = 5;
+    /// <inheritdoc cref="MinimumLevel"/>
+    public const int MaximumLevel = BattleScenario.MaximumLevel;
 
     /// <summary>
     /// Parses <c>--level</c>'s value for spawn mode. <paramref name="text"/> alone

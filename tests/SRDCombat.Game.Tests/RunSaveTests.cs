@@ -17,7 +17,9 @@ namespace SRDCombat.Game.Tests;
 /// </remarks>
 public class RunSaveTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    // Shared with the scenario-format classes rather than loaded a second time — see
+    // TestContent's remarks and #319.
+    private static readonly SrdContent Content = TestContent.Srd;
 
     /// <summary>A run with one fight behind it, so the save holds real progress.</summary>
     private static GauntletRun RunWithHistory(int seed = 11)
