@@ -229,6 +229,19 @@ public partial class PlayMode : FightScreen
             return;
         }
 
+        // --scenario is the same shape one flag over (#476): the gauntlet loop below
+        // never calls ResolveFight either, so a scenario named here would be silently
+        // unplayed rather than refused — exactly the hole #463 closed for --spawn.
+        if (HasArgument("scenario") && !HasArgument("one-fight"))
+        {
+            _phase = Phase.RunOver;
+            _interlude.Add(
+                "--scenario refused: the gauntlet does not read it — it draws its own roster " +
+                "every fight. Pass --one-fight (or run with --watch) to play it.");
+            _subtitle = $"seed {_seed}";
+            return;
+        }
+
         // A probe run drives the screen through its own input path — synthesized clicks
         // through the viewport — and captures what each one produced. Monsters hurry so
         // the probe spends its time on the party's turns, the part being verified.
@@ -241,12 +254,13 @@ public partial class PlayMode : FightScreen
         if (HasArgument("one-fight"))
         {
             Fight fight;
+            IReadOnlyList<string> notices;
 
             try
             {
-                fight = ResolveFight(_seed);
+                fight = ResolveFight(_seed, out notices);
             }
-            catch (RosterRefusedException refusal)
+            catch (ScenarioRefusedException refusal)
             {
                 // The same screen a bad save gets: the reason, on screen, and nothing
                 // started — a refusal printed only to a console nobody launched from
@@ -261,7 +275,8 @@ public partial class PlayMode : FightScreen
             _encounter = fight.Encounter;
             _labels = Labels.For(_encounter.Combatants);
             AdoptBattlefield(_encounter);
-            _subtitle = $"one fight — seed {_seed} — the party against {RosterOf(fight)}";
+            _subtitle = $"one fight — seed {_seed} — the party against {RosterOf(fight)}"
+                + NoticeSuffix(notices);
             _walkStepsSeen = 0;
 
             RefreshAfterAction(null);

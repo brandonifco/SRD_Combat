@@ -538,45 +538,56 @@ public abstract partial class FightScreen : Node2D
     protected static SrdContent LoadContent() => ClientContent.Load();
 
     /// <summary>
-    /// A <c>--spawn</c> roster the parser refused — its own type so the callers'
-    /// catches take exactly this and nothing else. A broader catch would dress a
-    /// genuine engine failure (<c>SpawnPlacement.Fit</c>'s "bug report" throw, a
-    /// content-drift refusal) up as a calmly-worded user error, in the very tool
-    /// built for stress-testing.
+    /// A <c>--spawn</c> or <c>--scenario</c> the client refused before ever reaching the
+    /// engine — its own type so the callers' catches take exactly this and nothing else.
+    /// A broader catch would dress a genuine engine failure (<c>SpawnPlacement.Fit</c>'s
+    /// "bug report" throw, a content-drift refusal from a path this class does not
+    /// pre-check) up as a calmly-worded user error, in the very tool built for
+    /// stress-testing.
     /// </summary>
-    protected sealed class RosterRefusedException(string message) : Exception(message);
+    /// <remarks>
+    /// Named for the seam rather than for either flag since #476: a <c>--spawn</c> roster
+    /// the parser could not read and a <c>--scenario</c> file this build cannot run are
+    /// the same shape of problem — an authored fight that never became one — and one
+    /// caller-facing type says so. It was <c>RosterRefusedException</c> before
+    /// <c>--scenario</c> existed to refuse anything else.
+    /// </remarks>
+    protected internal sealed class ScenarioRefusedException(string message) : Exception(message);
 
     /// <summary>
     /// Builds the same fight the console client would, from the same content — or, with
-    /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456). In
-    /// spawn mode <c>--level=1..5</c> sets the party's level (default 3); the budgeted
-    /// path keeps its fixed level 3 Moderate, which is #443's own concern. Presence is
-    /// judged by <see cref="HasArgument"/> alone — the same predicate the caller's
-    /// spawn/gauntlet gate uses (<c>PlayMode.OnReady</c>) — so a bare <c>--spawn</c> or
+    /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456), or,
+    /// with <c>--scenario=&lt;path&gt;</c>, the fight that file names (#476). In spawn
+    /// mode <c>--level=1..5</c> sets the party's level (default 3); the budgeted path
+    /// keeps its fixed level 3 Moderate, which is #443's own concern; a scenario states
+    /// its own party and level, so <c>--level</c> reaches nothing there, exactly as it
+    /// already reaches nothing in the flagless budgeted path. Presence is judged by
+    /// <see cref="HasArgument"/> alone — the same predicate the caller's spawn/gauntlet
+    /// gate uses (<c>PlayMode.OnReady</c>) — so a bare <c>--spawn</c>/<c>--scenario</c> or
     /// the console's space form (<c>--spawn value</c>, which this client does not
     /// accept; see <see cref="ArgumentValue"/>) is judged "given" here exactly as it is
     /// there, rather than silently falling through to the budgeted pool fight the way
     /// it did before #470's fix landed. A roster that cannot be parsed, a <c>--spawn</c>
-    /// given without a value, or a <c>--level</c> that is not a whole number 1–5 (see
-    /// <see cref="ScenarioArguments.TryParseLevel"/>), throws
-    /// <see cref="RosterRefusedException"/> naming every failure — no fallback, no
-    /// clamp, and the caller decides how to show it (#463).
+    /// given without a value, a <c>--level</c> that is not a whole number 1–5 (see
+    /// <see cref="ScenarioArguments.TryParseLevel"/>), or a <c>--scenario</c> file this
+    /// build cannot run (see <see cref="ScenarioFromFile"/>), throws
+    /// <see cref="ScenarioRefusedException"/> naming every failure — no fallback, no
+    /// clamp, and the caller decides how to show it (#463, #476). <paramref
+    /// name="notices"/> carries anything worth telling the player that refuses nothing —
+    /// today only a scenario's content-fingerprint mismatch (design §5, note 3) — for the
+    /// caller to print; empty whenever there is nothing to say.
     /// </summary>
     /// <remarks>
-    /// <b>This method now parses argv into a <see cref="BattleScenario"/> and builds
-    /// nothing itself</b> (#474). <c>--scenario</c> (S4) and the builder screen (S10)
-    /// author the same value, so all three feed one path and none of them duplicates
-    /// another's decisions about what a fight is. Both flags above keep their meaning
-    /// exactly: <c>--spawn</c> becomes a scenario with an explicit roster at the level
-    /// <c>--level</c> named, and the flagless case becomes the fixed level 3 Moderate
-    /// budget, whose every remaining field is already
-    /// <see cref="EncounterFactory.Build"/>'s own default.
+    /// <b>This method parses argv into a <see cref="BattleScenario"/> and builds nothing
+    /// itself</b> (#474). <c>--spawn</c>, <c>--scenario</c> (S4) and the builder screen
+    /// (S10) author the same value, so all three feed one path and none of them
+    /// duplicates another's decisions about what a fight is.
     /// </remarks>
-    protected static Fight ResolveFight(int seed)
+    protected static Fight ResolveFight(int seed, out IReadOnlyList<string> notices)
     {
         var content = LoadContent();
 
-        return ResolveFight(ScenarioFromArguments(content), seed, content);
+        return ResolveFight(ScenarioFromArguments(content, out notices), seed, content);
     }
 
     /// <summary>
@@ -597,10 +608,30 @@ public abstract partial class FightScreen : Node2D
 
     /// <summary>
     /// Reads this client's flags into the scenario they describe, refusing exactly what
-    /// they refused before — same checks, same order, same message.
+    /// they refused before — same checks, same order, same message — with
+    /// <c>--scenario</c> (#476) joining as a third case above the two #474 already
+    /// carried. <paramref name="notices"/> is <see cref="ScenarioFromFile"/>'s, or empty
+    /// for the other two cases, which have nothing to report that is not a refusal.
     /// </summary>
-    private static BattleScenario ScenarioFromArguments(SrdContent content)
+    private static BattleScenario ScenarioFromArguments(SrdContent content, out IReadOnlyList<string> notices)
     {
+        notices = [];
+
+        // Named once, refused before either flag's own parsing runs: a file and a typed
+        // roster are two different answers to "what does this fight fight", and picking
+        // one over the other silently is exactly the shape #463 already closed for
+        // --spawn against the gauntlet loop, one flag pair over.
+        if (HasArgument("scenario") && HasArgument("spawn"))
+        {
+            throw new ScenarioRefusedException(
+                "--scenario and --spawn both name this fight's cast; pass one, not both.");
+        }
+
+        if (HasArgument("scenario"))
+        {
+            return ScenarioFromFile(ArgumentValue("scenario"), content, out notices);
+        }
+
         if (!HasArgument("spawn"))
         {
             return new BattleScenario
@@ -644,7 +675,7 @@ public abstract partial class FightScreen : Node2D
 
         if (errors.Count > 0)
         {
-            throw new RosterRefusedException($"--spawn refused: {string.Join("; ", errors)}");
+            throw new ScenarioRefusedException($"--spawn refused: {string.Join("; ", errors)}");
         }
 
         return new BattleScenario
@@ -655,6 +686,63 @@ public abstract partial class FightScreen : Node2D
             Party = new ScenarioParty { PregeneratedLevel = level },
             Enemies = new ScenarioEnemies { Roster = RosterParser.ToRoster(monsters) },
         };
+    }
+
+    /// <summary>
+    /// Loads <c>--scenario=&lt;path&gt;</c>'s file and turns it into the scenario it
+    /// names, refusing by name at every step: no value given, no such file, whatever
+    /// <see cref="ScenarioFile.FromJson"/> reports for unparseable JSON, an unmapped
+    /// member or a structurally broken scenario, and whatever
+    /// <see cref="ScenarioContent.CheckAgainst"/> reports for an id this build's content
+    /// no longer has. A content-fingerprint mismatch is <see cref="ScenarioCheck"/>'s
+    /// <c>Notices</c>, not an error — S1's stated divergence from a save's refusal
+    /// (<see cref="BattleScenario.ContentVersion"/>'s remarks) — so it comes back through
+    /// <paramref name="notices"/> for the caller to show rather than through the
+    /// exception this method otherwise throws.
+    /// </summary>
+    /// <param name="path">
+    /// <c>--scenario</c>'s value, or null for a bare flag — <see cref="ArgumentValue"/>'s
+    /// own null-means-two-things distinction, taken as a parameter rather than read here.
+    /// <c>ArgumentValue</c> itself calls into Godot's <c>OS</c> singleton and cannot run
+    /// outside the engine (<c>SRDCombat.Viewer.Tests</c>' stated headless boundary — see
+    /// its project file), while everything below this line is ordinary .NET and
+    /// <c>SRDCombat.Game</c> code with nothing Godot about it. Splitting the read from the
+    /// refusing is what makes every refusal here reachable from a plain xUnit test rather
+    /// than only from a probe capture.
+    /// </param>
+    internal static BattleScenario ScenarioFromFile(string? path, SrdContent content, out IReadOnlyList<string> notices)
+    {
+        notices = [];
+
+        if (path is null)
+        {
+            throw new ScenarioRefusedException("--scenario: no value given (use --scenario=<path>)");
+        }
+
+        if (!File.Exists(path))
+        {
+            throw new ScenarioRefusedException($"--scenario=\"{path}\": no such file");
+        }
+
+        var load = ScenarioFile.FromJson(File.ReadAllText(path));
+
+        if (!load.IsValid)
+        {
+            throw new ScenarioRefusedException(
+                $"--scenario=\"{path}\" refused: {string.Join("; ", load.Errors)}");
+        }
+
+        var scenario = load.Scenario!;
+        var check = ScenarioContent.CheckAgainst(scenario, content);
+
+        if (!check.IsValid)
+        {
+            throw new ScenarioRefusedException(
+                $"--scenario=\"{path}\" refused: {string.Join("; ", check.Errors)}");
+        }
+
+        notices = check.Notices;
+        return scenario;
     }
 
     /// <summary>
@@ -687,6 +775,16 @@ public abstract partial class FightScreen : Node2D
         string.Join(", ", fight.Built.Monsters
             .GroupBy(monster => monster.Name)
             .Select(group => group.Count() > 1 ? $"{group.Count()} {group.Key}s" : group.Key));
+
+    /// <summary>
+    /// " — " plus every notice <c>ResolveFight</c>'s <c>out</c> parameter carried back,
+    /// trimmed to fit the heading's single, unwrapped line — or empty when there is
+    /// nothing to say. Shared so a <c>--scenario</c> content-fingerprint mismatch (#476,
+    /// design §5's stated notice-not-refusal divergence) reads identically from
+    /// <see cref="PlayMode"/>'s one-fight subtitle and <see cref="WatchMode"/>'s.
+    /// </summary>
+    internal static string NoticeSuffix(IReadOnlyList<string> notices) =>
+        notices.Count == 0 ? string.Empty : $" — {Trim(string.Join(" ", notices), 100)}";
 
     /// <summary>Takes the battlefield's shape so the grid can be drawn.</summary>
     /// <summary>

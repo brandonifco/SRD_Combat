@@ -75,12 +75,13 @@ public partial class WatchMode : FightScreen
     private void Resolve(int seed)
     {
         Fight fight;
+        IReadOnlyList<string> notices;
 
         try
         {
-            fight = ResolveFight(seed);
+            fight = ResolveFight(seed, out notices);
         }
-        catch (RosterRefusedException refusal)
+        catch (ScenarioRefusedException refusal)
         {
             // No snapshots and the reason in _subtitle. _Draw used to return before
             // DrawHeading on an empty _snapshots list, so this comment's old claim —
@@ -96,7 +97,7 @@ public partial class WatchMode : FightScreen
 
         _log = encounter.Log;
         AdoptBattlefield(encounter);
-        _subtitle = $"seed {seed} — the party against {RosterOf(fight)}";
+        _subtitle = $"seed {seed} — the party against {RosterOf(fight)}" + NoticeSuffix(notices);
 
         Capture(encounter, labels);
 
