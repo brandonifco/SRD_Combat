@@ -52,4 +52,25 @@ public class BattlefieldTests
 
     [Fact]
     public void AllSquares_CoversTheGrid() => Assert.Equal(12, new Battlefield(4, 3).AllSquares().Count());
+
+    [Fact]
+    public void Pieces_DefaultsToEmptyWhenNoneAreGiven() => Assert.Empty(new Battlefield(4, 4).Pieces);
+
+    [Fact]
+    public void Pieces_CarriesWhateverTheCallerPasses()
+    {
+        var piece = new TerrainPiece(
+            TerrainPieceKind.WallRun,
+            [new GridPosition(1, 1), new GridPosition(1, 2)],
+            SiteType.CentralWall);
+
+        var field = new Battlefield(4, 4, pieces: [piece]);
+
+        Assert.Single(field.Pieces);
+        Assert.Same(piece, field.Pieces[0]);
+
+        // Description only, per the class remarks: a piece the caller never reflected
+        // into the rules-authority sets does not make those squares impassable.
+        Assert.True(field.IsPassable(new GridPosition(1, 1)));
+    }
 }

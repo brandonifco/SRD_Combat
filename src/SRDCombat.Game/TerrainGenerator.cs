@@ -85,9 +85,13 @@ public enum TerrainDensity
 /// a footprint that cannot land whole lands nowhere, so a partial obstacle can never
 /// contradict its art. Footprints also never touch each other, orthogonally or by
 /// kind, so a client can recover each one from the blocked squares as a connected
-/// component — unchanged in this slice; the vocabulary that retires this rule is a
-/// later one. A draw can still produce a bare field — rejection can refuse every
-/// attempt — but it is rare rather than common: variety includes the plain, sparingly.
+/// component. The battlefield-overhaul design (§7) retires this as a <em>model</em>
+/// constraint in S2 — <see cref="TerrainPiece"/> does not assume separation — but this
+/// loop's own placement behaviour keeps it exactly as printed here until S4's clusters
+/// actually use abutment; every board this generator draws is therefore still byte-for-
+/// byte what the same seed drew before S2. A draw can still produce a bare field —
+/// rejection can refuse every attempt — but it is rare rather than common: variety
+/// includes the plain, sparingly.
 /// </item>
 /// <item>
 /// <b>Every fight stays winnable on foot, by every body in it.</b> An obstacle square —
@@ -203,6 +207,13 @@ public static class TerrainGenerator
         var impassable = new HashSet<GridPosition>();
         var difficult = new HashSet<GridPosition>();
 
+        // Describes every structure the loops below place, alongside (never instead of)
+        // the square sets above — see Battlefield.Pieces and TerrainPiece's remarks. No
+        // site draw exists yet (that starts at S3), so every piece this slice can ever
+        // produce is placed by the open-field site (TerrainPieceKind and SiteType's own
+        // doc comments explain why that is the design's own reading, not a stand-in).
+        var pieces = new List<TerrainPiece>();
+
         bool InRegion(GridPosition square) =>
             square.X >= 0 && square.X < width
             && square.Y >= 0 && square.Y < height
@@ -295,6 +306,11 @@ public static class TerrainGenerator
                 kind.Add(square);
                 impassable.Add(square);
             }
+
+            pieces.Add(new TerrainPiece(
+                isWall ? TerrainPieceKind.WallRun : TerrainPieceKind.LowObstacleCluster,
+                [.. footprint],
+                SiteType.OpenField));
         }
 
         var difficultPatches = (int)Math.Round(Math.Max(0, random.Roll(4) - 1) * multiplier);
@@ -304,18 +320,31 @@ public static class TerrainGenerator
             var current = DrawAnchor();
             var size = random.Roll(4);
 
+            // Deduplicated per patch only — the walk can cross its own trail, and a
+            // TerrainPiece's own squares should not repeat, but two patches landing on
+            // the same square (already legal for `difficult` itself, a HashSet) still
+            // become two pieces: the model does not assume separation (TerrainPiece's
+            // remarks).
+            var patchSquares = new HashSet<GridPosition>();
+
             for (var grown = 0; grown < size; grown++)
             {
                 if (InRegion(current) && !impassable.Contains(current))
                 {
                     difficult.Add(current);
+                    patchSquares.Add(current);
                 }
 
                 current = Step(current);
             }
+
+            if (patchSquares.Count > 0)
+            {
+                pieces.Add(new TerrainPiece(TerrainPieceKind.DifficultRegion, [.. patchSquares], SiteType.OpenField));
+            }
         }
 
-        return new Battlefield(width, height, walls, difficult, lowObstacles);
+        return new Battlefield(width, height, walls, difficult, lowObstacles, pieces);
     }
 
     /// <summary>A simple axis-aligned rectangle of squares, inclusive of both ends.</summary>
