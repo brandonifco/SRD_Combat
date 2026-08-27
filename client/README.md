@@ -195,6 +195,14 @@ unmapped keeps the circle-and-letter token — a red dragon sprite on a Green Dr
 Wyrmling would be the display lying, which is why the wyrmlings stayed circles until
 Brandon drew all five in their printed colours (2026-08-21).
 
+**A regeneration can silently change a sheet's canvas size (#467)** — the shipped
+sheets predate the pipeline's current settings, so running it against a master today
+does not reproduce what is already shipped (PR #461's Ogre went 169×169 → 119×64 this
+way, caught only by Brandon's own eyes in a live fight). `tests/SRDCombat.Viewer.Tests`
+pins every shipped sheet's dimensions and frame count against a committed manifest and
+fails the suite on drift; see `tools/asset_pipeline/master_to_sprite.py`'s module
+docstring ("Geometry contract") for the full reasoning and the regeneration steps.
+
 **The free Craftpix character packs are retired from the shipped roster as of #295.**
 Every pool name that once mapped to one — the eight party classes without a drawing
 yet (Paladin, Monk, Bard, Ranger, Druid, Wizard, Sorcerer, Warlock) and seven monster
