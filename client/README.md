@@ -27,6 +27,23 @@ form) is refused by name rather than silently read as if the flag were never pas
 (#470). `--spawn` without `--one-fight` or `--watch` is refused too, since the gauntlet
 loop draws its own roster every fight and would otherwise ignore the flag.
 
+`--scenario=<path>` plays one authored `.scenario.json` file instead — the battle
+builder's third way in (#476), after `--spawn` and the flagless budgeted fight, and the
+only new flag the whole battle-builder surface adds: it *plays* a scenario and never
+authors one. It combines with `--seed=<n>` exactly as the other two paths do — the same
+`(seed, scenario)` pairing the console's own printed seed exists for — and rolls and
+prints one when none is given, so what is on screen is a complete bug report. Every
+failure is refused by name and nothing else: no value given, no such file, whatever the
+file's own JSON is wrong about (malformed, or naming a property this build's format does
+not have), and any id it names — a monster, a species, a weapon — that this build's
+content does not have. A mismatched content fingerprint is the one exception: it is
+shown on screen as a notice rather than refused, because a scenario is a question asked
+of the current build rather than a save that must match it exactly (design doc §5).
+`--scenario` together with `--spawn` is refused rather than one silently winning — they
+are two different answers to "what does this fight fight" — and, like `--spawn`,
+`--scenario` without `--one-fight` or `--watch` is refused too, for the same reason: the
+gauntlet loop never reads it.
+
 ## Running it
 
 Needs Godot 4.x with .NET support on `PATH` (`doctor.sh` checks, variant included), and
