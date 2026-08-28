@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
@@ -37,6 +38,39 @@ public class RunSaveTests
         Assert.Equal(RunOutcome.InProgress, run.Outcome);
 
         return run;
+    }
+
+    [Theory]
+    [InlineData("draft", "Draft")]
+    [InlineData("state", "State")]
+    public void AParsedSavedMemberMustContainEveryRequiredMember(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]![0]!.AsObject().Remove(property);
+
+        var failure = Assert.ThrowsAny<Exception>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("currentHitPoints", "CurrentHitPoints")]
+    [InlineData("hitDiceRemaining", "HitDiceRemaining")]
+    [InlineData("ragesRemaining", "RagesRemaining")]
+    [InlineData("secondWindRemaining", "SecondWindRemaining")]
+    [InlineData("actionSurgeRemaining", "ActionSurgeRemaining")]
+    [InlineData("channelDivinityRemaining", "ChannelDivinityRemaining")]
+    [InlineData("spellSlotsRemaining", "SpellSlotsRemaining")]
+    [InlineData("experiencePoints", "ExperiencePoints")]
+    [InlineData("isDead", "IsDead")]
+    public void AParsedCharacterStateMustContainEveryRequiredMember(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]![0]!["state"]!.AsObject().Remove(property);
+
+        var failure = Assert.ThrowsAny<Exception>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
 
@@ -11,7 +12,9 @@ namespace SRDCombat.Game;
 /// </remarks>
 /// <param name="Draft">The choices. Everything derived is re-resolved on load.</param>
 /// <param name="State">What the run has done to them: wounds, spent resources, experience, death.</param>
-public sealed record SavedMember(CharacterDraft Draft, CharacterState State);
+public sealed record SavedMember(
+    [property: JsonRequired] CharacterDraft Draft,
+    [property: JsonRequired] CharacterState State);
 
 /// <summary>
 /// A run on disk: drafts plus progress, never resolved sheets.
@@ -121,8 +124,13 @@ public sealed record SavedRun
 /// </summary>
 /// <remarks>
 /// Serialization goes through <see cref="ContentSerializer"/> deliberately: the same
-/// strictness that guards content guards a save — an unknown property is an error rather
-/// than skipped, and the on-disk shape is pinned by <c>SavedRunShapeTests</c>.
+/// strictness that guards content guards a save — unknown properties and missing required
+/// properties are errors rather than skipped, and the on-disk shape is pinned by
+/// <c>SavedRunShapeTests</c>. The load-path audit covers <see cref="SavedRun"/> and
+/// <see cref="CharacterDraft"/> required init properties, plus the required positional
+/// members on <see cref="SavedMember"/> and <see cref="CharacterState"/>; the
+/// <c>Core.Definitions</c> records are content-loader inputs, not save members, and are
+/// covered by the content serializer shape tests.
 /// </remarks>
 public static class RunSave
 {

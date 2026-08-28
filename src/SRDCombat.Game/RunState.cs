@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
@@ -29,15 +30,16 @@ namespace SRDCombat.Game;
 /// <param name="ExperiencePoints">Experience earned so far. Stops accruing at death.</param>
 /// <param name="IsDead">Dead for good. The gauntlet does not raise the dead.</param>
 public sealed record CharacterState(
+    [property: JsonRequired]
     int CurrentHitPoints,
-    int HitDiceRemaining,
-    int RagesRemaining,
-    int SecondWindRemaining,
-    int ActionSurgeRemaining,
-    int ChannelDivinityRemaining,
-    IReadOnlyDictionary<int, int> SpellSlotsRemaining,
-    int ExperiencePoints,
-    bool IsDead)
+    [property: JsonRequired] int HitDiceRemaining,
+    [property: JsonRequired] int RagesRemaining,
+    [property: JsonRequired] int SecondWindRemaining,
+    [property: JsonRequired] int ActionSurgeRemaining,
+    [property: JsonRequired] int ChannelDivinityRemaining,
+    [property: JsonRequired] IReadOnlyDictionary<int, int> SpellSlotsRemaining,
+    [property: JsonRequired] int ExperiencePoints,
+    [property: JsonRequired] bool IsDead)
 {
     /// <summary>
     /// Potions of Healing carried, by potency.
