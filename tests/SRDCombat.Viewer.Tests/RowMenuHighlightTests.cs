@@ -37,6 +37,19 @@ namespace SRDCombat.Viewer.Tests;
 /// (<c>Actual: -98</c>) and <see cref="MovingPastTheLastRowClampsAtTheLastRow"/>
 /// (<c>Actual: 100</c>).
 /// </para>
+/// <para>
+/// <b>Two more, added after qc's review of this slice.</b> Both
+/// <see cref="ResetHighlightForcesTheIndexBackToZero"/> and
+/// <see cref="EscBackToTheSpellMenuLandsOnRowZeroEvenAfterChoosingARow"/> call
+/// <c>RowMenu.ResetHighlight</c> directly (neither can reach <c>PlayMode.ChooseSpell</c>
+/// itself — it derives from <c>Node2D</c>); temporarily making <c>ResetHighlight</c> a
+/// no-op failed both, with <c>Expected: 0, Actual: 3</c> and <c>Expected: 0, Actual: 2</c>
+/// respectively. <see cref="AWithExpressionCopyDoesNotCarryTheOldHighlightForward"/> pins
+/// the "by construction" claim against the one gap qc found in it — a record's synthesized
+/// copy constructor copies every field, <c>MenuIndex</c> included; temporarily deleting
+/// <c>RowMenu</c>'s own hand-written copy constructor (falling back to the compiler's)
+/// failed this test with <c>Expected: 0, Actual: 2</c>.
+/// </para>
 /// </remarks>
 public class RowMenuHighlightTests
 {
@@ -136,5 +149,71 @@ public class RowMenuHighlightTests
         menu.MoveHighlight(step: 100, rowCount: 3);
 
         Assert.Equal(2, menu.MenuIndex);
+    }
+
+    /// <summary>
+    /// <c>ResetHighlight</c> forces the index back to zero directly, without a row count to
+    /// clamp against — the method <c>PlayMode.ChooseSpell</c> calls on the spell menu it
+    /// leaves on the stack, hidden, before pushing a slot menu or arming a target.
+    /// </summary>
+    [Fact]
+    public void ResetHighlightForcesTheIndexBackToZero()
+    {
+        var menu = new PlayFocus.SpellMenu();
+        menu.MoveHighlight(step: 3, rowCount: 6);
+        Assert.Equal(3, menu.MenuIndex);
+
+        menu.ResetHighlight();
+
+        Assert.Equal(0, menu.MenuIndex);
+    }
+
+    /// <summary>
+    /// The behaviour qc's review restored: choosing a spell that opens a slot menu (or arms
+    /// a target directly) resets the spell menu's own highlight, so Esc back to it lands on
+    /// row zero rather than wherever the player had scrolled — matching the pre-#505 shape,
+    /// where the one shared field was zeroed unconditionally at the top of
+    /// <c>ChooseSpell</c>.
+    /// </summary>
+    [Fact]
+    public void EscBackToTheSpellMenuLandsOnRowZeroEvenAfterChoosingARow()
+    {
+        var focus = new FocusStack<PlayFocus>(new PlayFocus.Board());
+        var spellMenu = new PlayFocus.SpellMenu();
+        focus.Push(spellMenu);
+
+        spellMenu.MoveHighlight(step: 2, rowCount: 5);
+        Assert.Equal(2, spellMenu.MenuIndex);
+
+        // Stands in for PlayMode.ChooseSpell's reset-then-push: the spell menu resets its
+        // own highlight before whatever is chosen goes on top of it.
+        spellMenu.ResetHighlight();
+        focus.Push(new PlayFocus.SlotMenu(FightTestData.AnySpell()));
+
+        // Esc from the slot menu pops back to the very same spell-menu instance.
+        focus.Pop();
+
+        Assert.Same(spellMenu, focus.Top);
+        Assert.Equal(0, ((PlayFocus.RowMenu)focus.Top).MenuIndex);
+    }
+
+    /// <summary>
+    /// The gap qc found in the "zero by construction" claim: a record's compiler-synthesized
+    /// copy constructor copies every field, so a <c>with</c> expression would otherwise carry
+    /// <see cref="PlayFocus.RowMenu.MenuIndex"/> forward. No <c>with</c> expression exists on
+    /// any <c>PlayFocus</c> today, so this pins a constructor nothing shipped currently
+    /// calls — the same reasoning <c>RowMenu</c>'s copy-constructor remarks give for writing
+    /// it now rather than when a caller first needs it.
+    /// </summary>
+    [Fact]
+    public void AWithExpressionCopyDoesNotCarryTheOldHighlightForward()
+    {
+        var original = new PlayFocus.AttackMenu();
+        original.MoveHighlight(step: 2, rowCount: 5);
+        Assert.Equal(2, original.MenuIndex);
+
+        var copy = original with { };
+
+        Assert.Equal(0, copy.MenuIndex);
     }
 }

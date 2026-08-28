@@ -128,17 +128,19 @@ public partial class PlayMode : FightScreen
     /// drawing does not (three methods still produce three different sets of pixels).
     /// </para>
     /// <para>
-    /// <b>Knockout, performed and reverted (#416):</b> no unit test can drive this class
-    /// (it derives from <c>Node2D</c>), so the wiring from a row to its
-    /// <see cref="Action"/> is pinned by the probe instead. Temporarily wiring
-    /// <c>DrawSpellMenu</c>'s row to <c>ChooseSlot(0)</c> in place of
-    /// <c>ChooseSpell(spell)</c> — a row taken from one menu running another menu's action
-    /// — turned <c>play-9-slot-menu.png</c> into a skip ("the chosen spell did not open a
-    /// Slot menu") in the <c>--one-fight --seed=1</c> probe; reverting it restored the
-    /// byte-identical 18/18 capture set the PR body records.
+    /// <b>Collapsing the three typed lists into one untyped <c>Action</c> list threw away a
+    /// guard the type system used to give for free</b> (qc review round, #505): a spell row
+    /// could not physically hold an attack's closure while there were three fields, and it
+    /// could once there was one — draw fills this list, input reads it, and between a
+    /// <c>ToggleMenu</c> swap and the next <c>_Draw</c> those two events could disagree for
+    /// one input. <see cref="MenuRowList"/> is the replacement guard: every row is stamped
+    /// with the exact layer instance that added it, and reading it back refuses unless the
+    /// caller's current top layer is that same instance, by reference — an asserted
+    /// invariant rather than a coincidence of draw timing. <c>MenuRowListTests</c> drives
+    /// the exact window this closes.
     /// </para>
     /// </remarks>
-    private readonly List<(Rect2 Rect, Action Take)> _menuRows = [];
+    private readonly MenuRowList _menuRows = new();
     private string? _buttonsFor;
     /// <summary>
     /// What has the player's attention: the board, a menu over it, or an armed action
@@ -804,6 +806,16 @@ public partial class PlayMode : FightScreen
     /// <summary>Takes a spell off the menu: the slot choice if there is one, else the target.</summary>
     private void ChooseSpell(SpellDefinition spell)
     {
+        // Matches pre-#505 behaviour (qc review round): this spell menu stays on the stack,
+        // hidden rather than popped, under whatever this call pushes or arms below — so
+        // unlike a freshly constructed menu, it would otherwise keep its old highlight
+        // across the round trip once Esc uncovers it again. ChooseAttack and ChooseSlot
+        // never did this, even before #505 — see PlayFocus.RowMenu.ResetHighlight's remarks.
+        if (_focus.Top is PlayFocus.RowMenu current)
+        {
+            current.ResetHighlight();
+        }
+
         // A slotted spell with more than one slot level to burn is a real choice; one
         // level, or a cantrip, arms straight away and the engine picks as it always has.
         if (CommandedCombatant() is { } caster && SlotLevelsFor(caster, spell).Count > 1)
@@ -848,8 +860,11 @@ public partial class PlayMode : FightScreen
     /// <summary>The open stall and its last notice, or null when it is closed.</summary>
     private PlayFocus.Shop? Shopping => _focus.Topmost<PlayFocus.Shop>();
 
-    /// <summary>How many rows the open menu has, or zero when none is open.</summary>
-    private int OpenMenuLength => _focus.Top is PlayFocus.RowMenu ? _menuRows.Count : 0;
+    /// <summary>
+    /// How many rows the open menu has, or zero when none is open — or when the layer on
+    /// top has changed since <c>_menuRows</c> was last filled (<see cref="MenuRowList"/>).
+    /// </summary>
+    private int OpenMenuLength => _menuRows.CountFor(_focus.Top as PlayFocus.RowMenu);
 
     /// <summary>
     /// Opens a menu over the board, or closes it again when it is the one already open.
@@ -888,19 +903,13 @@ public partial class PlayMode : FightScreen
     /// the pixel landed on (#503).
     /// </summary>
     /// <remarks>
-    /// No longer a switch on <c>_focus.Top</c>'s type (#505): <c>_menuRows</c> only ever
-    /// holds rectangles for the menu that is actually open — <c>ClearMenuRows</c> empties
-    /// it before each frame's traversal repopulates at most one — so an in-range index
-    /// already names the right row, and its closed-over <see cref="Action"/> is the whole
-    /// of what taking it means.
+    /// No longer a switch on <c>_focus.Top</c>'s type (#505): an in-range index already
+    /// names the right row, and its closed-over <see cref="Action"/> is the whole of what
+    /// taking it means — <em>provided</em> <c>_menuRows</c> was actually filled for the
+    /// layer that is on top right now, which <see cref="MenuRowList.TryTake"/> is the one
+    /// place that checks, by reference, rather than this method trusting the index alone.
     /// </remarks>
-    private void TakeMenuRow(int index)
-    {
-        if (index < _menuRows.Count)
-        {
-            _menuRows[index].Take();
-        }
-    }
+    private void TakeMenuRow(int index) => _menuRows.TryTake(index, _focus.Top as PlayFocus.RowMenu);
 
     /// <summary>The action a keypress means, or null when the key is not bound to a shown one.</summary>
     private TurnAction? ActionForKey(char typed)
@@ -1438,34 +1447,14 @@ public partial class PlayMode : FightScreen
     /// because at most one of them ever held live rectangles at once; the sequence is gone
     /// along with the lists it chose between, not because the priority decision this slice
     /// moves changed, but because there is only one list left to read.
+    /// <see cref="MenuRowList.RowAt"/> is deliberately blind to which layer is on top for
+    /// the same reason the rest of this method is (Whether a found row may actually be
+    /// <i>taken</i> is <see cref="PlayFocusRouter.RouteClick"/>'s call, which resolves
+    /// through <see cref="MenuRowList.TryTake"/>); it is not blind to <em>which menu filled
+    /// it</em>, which is the ownership check that closes the stale-list window (qc review
+    /// round, #505).
     /// </para>
     /// </remarks>
-
-    /// <summary>
-    /// The index of the first row whose rectangle contains <paramref name="pixel"/>, or null.
-    /// </summary>
-    /// <remarks>
-    /// Deliberately blind to focus. <see cref="ClearMenuRows"/> empties <c>_menuRows</c> at
-    /// the top of each <c>_Draw</c>, before anything decides what to repopulate, so a menu
-    /// that is not showing holds no rectangles and this finds nothing for it — the emptiness
-    /// does the filtering, not a focus test. (Until #504 round 3 each <c>Draw</c> method
-    /// cleared its own list; the unconditional sweep is strictly stronger, because it no
-    /// longer depends on that method being called.) Whether a found
-    /// row may actually be <i>taken</i> is <see cref="PlayFocusRouter.RouteClick"/>'s call.
-    /// </remarks>
-    private static int? RowAt<T>(List<(Rect2 Rect, T Value)> rows, Vector2 pixel)
-    {
-        for (var index = 0; index < rows.Count; index++)
-        {
-            if (rows[index].Rect.HasPoint(pixel))
-            {
-                return index;
-            }
-        }
-
-        return null;
-    }
-
     private ClickHit HitTest(Vector2 pixel)
     {
         var overOverlay = OverOverlay(pixel);
@@ -1490,9 +1479,10 @@ public partial class PlayMode : FightScreen
         // whether to repopulate it, so a menu that is not showing contributes no rectangles
         // and this finds nothing for it. Reading focus here would put the last gating
         // decision back on the wrong side of the seam this slice exists to draw: whether a
-        // row may be taken is the router's call (it checks <see cref="PlayFocus.RowMenu"/>),
-        // and this method's only job is to say which rectangles the pixel is inside.
-        int? menuRow = RowAt(_menuRows, pixel);
+        // row may be taken is the router's call, which resolves through
+        // <see cref="MenuRowList.TryTake"/>'s ownership check — and this method's only job
+        // is to say which rectangles the pixel is inside.
+        int? menuRow = _menuRows.RowAt(pixel);
 
         int? button = null;
 
@@ -2039,13 +2029,13 @@ public partial class PlayMode : FightScreen
                 modulate: MonsterColour);
         }
 
-        // Clearing and drawing have separate lifecycles (S5, #504 round 3). Every row list
-        // is emptied unconditionally, every frame, regardless of phase, of whether anyone is
-        // commanded, or of what the stack holds — a *stronger* form of HitTest's invariant
-        // than the three DrawXMenu methods used to give it themselves (a closed menu's rows
-        // are gone before the traversal below even runs, not merely "cleared by whichever
-        // method used to own that list"). Only then does the traversal decide whether one of
-        // them gets repopulated.
+        // Clearing and drawing have separate lifecycles (S5, #504 round 3). The row list
+        // (one now, not three — #505) is emptied unconditionally, every frame, regardless of
+        // phase, of whether anyone is commanded, or of what the stack holds — a *stronger*
+        // form of HitTest's invariant than the three DrawXMenu methods used to give it
+        // themselves before #505 (a closed menu's rows are gone before the traversal below
+        // even runs, not merely "cleared by whichever method used to own that list"). Only
+        // then does the traversal decide whether it gets repopulated.
         ClearMenuRows();
 
         // Which card is showing is the focus stack's answer, not four conditions written
@@ -2528,7 +2518,9 @@ public partial class PlayMode : FightScreen
     /// <c>_focus.Top</c> — this method itself no longer checks either (S5, #504 round 3).
     /// <c>_menuRows</c> is <em>not</em> cleared here any more: <c>ClearMenuRows</c> empties
     /// it, unconditionally, before the traversal runs at all, whether or not this method
-    /// gets called this frame.
+    /// gets called this frame. The unguarded <c>(PlayFocus.RowMenu)_focus.Top</c> cast below
+    /// relies on that same invariant — it is what every row this call adds is stamped with
+    /// (<see cref="MenuRowList"/>, #505).
     /// </summary>
     private void DrawSpellMenu(Combatant character)
     {
@@ -2551,16 +2543,16 @@ public partial class PlayMode : FightScreen
         var y = top + 6;
 
         var castable = CastableSpells(character);
-        var menuIndex = (_focus.Top as PlayFocus.RowMenu)?.MenuIndex;
+        var menu = (PlayFocus.RowMenu)_focus.Top;
 
         foreach (var spell in castable)
         {
             var rect = new Rect2(UiLeft, y, 260, 20);
-            _menuRows.Add((rect, () => ChooseSpell(spell)));
+            _menuRows.Add(menu, rect, () => ChooseSpell(spell));
 
             DrawRect(rect, GridLine);
 
-            if (_menuRows.Count - 1 == menuIndex)
+            if (_menuRows.CountFor(menu) - 1 == menu.MenuIndex)
             {
                 DrawRect(rect, ActiveRing, filled: false, width: 2f);
             }
@@ -2597,14 +2589,14 @@ public partial class PlayMode : FightScreen
 
         var y = top + 6;
 
-        var menuIndex = (_focus.Top as PlayFocus.RowMenu)?.MenuIndex;
+        var menu = (PlayFocus.RowMenu)_focus.Top;
 
         foreach (var attack in character.Stats.Attacks)
         {
             var rect = new Rect2(UiLeft, y, 300, 20);
-            _menuRows.Add((rect, () => ChooseAttack(attack)));
+            _menuRows.Add(menu, rect, () => ChooseAttack(attack));
 
-            if (_menuRows.Count - 1 == menuIndex)
+            if (_menuRows.CountFor(menu) - 1 == menu.MenuIndex)
             {
                 DrawRect(rect, ActiveRing, filled: false, width: 2f);
             }
@@ -2666,14 +2658,14 @@ public partial class PlayMode : FightScreen
 
         var y = top + 6;
 
-        var menuIndex = (_focus.Top as PlayFocus.RowMenu)?.MenuIndex;
+        var menu = (PlayFocus.RowMenu)_focus.Top;
 
         foreach (var level in SlotLevelsFor(character, spell))
         {
             var rect = new Rect2(UiLeft, y, 260, 20);
-            _menuRows.Add((rect, () => ChooseSlot(level)));
+            _menuRows.Add(menu, rect, () => ChooseSlot(level));
 
-            if (_menuRows.Count - 1 == menuIndex)
+            if (_menuRows.CountFor(menu) - 1 == menu.MenuIndex)
             {
                 DrawRect(rect, ActiveRing, filled: false, width: 2f);
             }
@@ -2863,7 +2855,7 @@ public partial class PlayMode : FightScreen
 
             if (_menuRows.Count > 0)
             {
-                Click(_menuRows[0].Rect.GetCenter());
+                Click(_menuRows[0].GetCenter());
                 Click(CentreOf(victim.Position));
                 await CaptureFrame(Path.Combine(directory, "play-8-cast.png"));
             }
@@ -3023,7 +3015,7 @@ public partial class PlayMode : FightScreen
                 }
                 else
                 {
-                    Click(_menuRows[upcastIndex].Rect.GetCenter());
+                    Click(_menuRows[upcastIndex].GetCenter());
 
                     if (_focus.Top is PlayFocus.SlotMenu)
                     {
@@ -3031,7 +3023,7 @@ public partial class PlayMode : FightScreen
 
                         if (_menuRows.Count > 0)
                         {
-                            Click(_menuRows[0].Rect.GetCenter());
+                            Click(_menuRows[0].GetCenter());
 
                             if (_cursor is { } aimed)
                             {
