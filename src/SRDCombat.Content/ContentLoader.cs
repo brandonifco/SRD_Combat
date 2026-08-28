@@ -131,7 +131,7 @@ public static class ContentLoader
         var spells = ReadPack<SpellDefinition>(directory, SpellsFileName, "spells");
         var magicItems = ReadPack<MagicItemDefinition>(directory, MagicItemsFileName, "magic items");
 
-        MonsterValidator.Validate(monsters).ThrowIfInvalid(MonstersFileName);
+        MonsterValidator.Validate(monsters, spells).ThrowIfInvalid(MonstersFileName);
         EquipmentValidator.ValidateWeapons(weapons).ThrowIfInvalid(WeaponsFileName);
         EquipmentValidator.ValidateArmor(armor).ThrowIfInvalid(ArmorFileName);
         OriginValidator.ValidateSpecies(species).ThrowIfInvalid(SpeciesFileName);
@@ -154,8 +154,9 @@ public static class ContentLoader
 
         var issues = new List<ValidationIssue>();
 
-        issues.AddRange(MonsterValidator
-            .Validate(ReadPack<MonsterDefinition>(directory, MonstersFileName, "monsters")).Issues);
+        var monsters = ReadPack<MonsterDefinition>(directory, MonstersFileName, "monsters");
+        var spells = ReadPack<SpellDefinition>(directory, SpellsFileName, "spells");
+        issues.AddRange(MonsterValidator.Validate(monsters, spells).Issues);
         issues.AddRange(EquipmentValidator
             .ValidateWeapons(ReadPack<WeaponDefinition>(directory, WeaponsFileName, "weapons")).Issues);
         issues.AddRange(EquipmentValidator
@@ -166,8 +167,7 @@ public static class ContentLoader
             .ValidateBackgrounds(ReadPack<BackgroundDefinition>(directory, BackgroundsFileName, "backgrounds")).Issues);
         issues.AddRange(ClassValidator
             .Validate(ReadPack<ClassDefinition>(directory, ClassesFileName, "classes")).Issues);
-        issues.AddRange(SpellValidator
-            .Validate(ReadPack<SpellDefinition>(directory, SpellsFileName, "spells")).Issues);
+        issues.AddRange(SpellValidator.Validate(spells).Issues);
         issues.AddRange(MagicItemValidator
             .Validate(ReadPack<MagicItemDefinition>(directory, MagicItemsFileName, "magic items")).Issues);
 

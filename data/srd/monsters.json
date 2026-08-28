@@ -3191,11 +3191,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Acid Arrow (level 3 version), Detect Magic, Fear 1/Day Each: Speak with Dead, Vitriolic Sphere Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Acid Arrow (level 3 version), Detect Magic, Fear 1/Day Each: Speak with Dead, Vitriolic Sphere Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -3421,11 +3421,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): Magic, Fear Sphere (level 5 version) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic, Fear 1/Day Each: Create Undead, Speak with Dead, Vitriolic Sphere (level 5 version) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): Magic, Fear Sphere (level 5 version) Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic, Fear 1/Day Each: Create Undead, Speak with Dead, Vitriolic Sphere (level 5 version) Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -4189,11 +4189,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Invisibility, Mage Hand, Shatter 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Invisibility, Mage Hand, Shatter 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -4394,11 +4394,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): (level 3 version) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic, Invisibility, Mage Hand, Shatter (level 3 version) 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): (level 3 version) Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic, Invisibility, Mage Hand, Shatter (level 3 version) 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -5172,11 +5172,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Minor Illusion, Scorching Ray, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Detect Thoughts, Control Weather Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Minor Illusion, Scorching Ray, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Detect Thoughts, Control Weather Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -5438,11 +5438,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Minor Illusion, Scorching Ray (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Control Weather, Detect Thoughts Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Minor Illusion, Scorching Ray (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Control Weather, Detect Thoughts Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -6071,11 +6071,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Water Breathing Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Water Breathing Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -6358,11 +6358,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy Water Breathing Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Control Water, Scrying, Water Breathing Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy Water Breathing Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Control Water, Scrying, Water Breathing Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -8176,11 +8176,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The giant casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): Telekinesis",
+          "text": "The giant casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): At Will: Detect Magic, Fog Cloud, Light 1/Day Each: Control Weather, Gaseous Form, Telekinesis",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The giant casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): Telekinesis"
+            "The giant casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): At Will: Detect Magic, Fog Cloud, Light 1/Day Each: Control Weather, Gaseous Form, Telekinesis"
           ]
         },
         {
@@ -8895,11 +8895,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 4 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 4 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -9144,11 +9144,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Project Image Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image, Project Image Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Project Image Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image, Project Image Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -9379,11 +9379,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The couatl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability (spell save DC 15): Thoughts, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Restoration, Scrying, Sleep",
+          "text": "The couatl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability (spell save DC 15): At Will: Detect Evil and Good, Detect Magic, Detect Thoughts, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Create Food and Water, Dream, Greater Restoration, Scrying, Sleep",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The couatl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability (spell save DC 15): Thoughts, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Restoration, Scrying, Sleep"
+            "The couatl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability (spell save DC 15): At Will: Detect Evil and Good, Detect Magic, Detect Thoughts, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Create Food and Water, Dream, Greater Restoration, Scrying, Sleep"
           ]
         },
         {
@@ -9707,11 +9707,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The cultist casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks):",
+          "text": "The cultist casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Light, Thaumaturgy 2/Day: Command 1/Day: Hold Person",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The cultist casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks):"
+            "The cultist casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Light, Thaumaturgy 2/Day: Command 1/Day: Hold Person"
           ]
         },
         {
@@ -10092,11 +10092,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The deva casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell)",
+          "text": "The deva casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Evil and Good, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Commune, Raise Dead",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The deva casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell)"
+            "The deva casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Evil and Good, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Commune, Raise Dead"
           ]
         },
         {
@@ -10318,11 +10318,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): instead of water), Tongues, Wind Walk Image, Plane Shift",
+          "text": "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Evil and Good, Detect Magic 2/Day Each: Create Food and Water (can create wine instead of water), Tongues, Wind Walk 1/Day Each: Creation, Gaseous Form, Invisibility, Major Image, Plane Shift",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): instead of water), Tongues, Wind Walk Image, Plane Shift"
+            "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Evil and Good, Detect Magic 2/Day Each: Create Food and Water (can create wine instead of water), Tongues, Wind Walk 1/Day Each: Creation, Gaseous Form, Invisibility, Major Image, Plane Shift"
           ]
         }
       ],
@@ -11129,11 +11129,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): strider, Moonbeam",
+          "text": "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): At Will: Druidcraft, Speak with Animals 2/Day Each: Entangle, Thunderwave 1/Day Each: Animal Messenger, Longstrider, Moonbeam",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): strider, Moonbeam"
+            "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): At Will: Druidcraft, Speak with Animals 2/Day Each: Entangle, Thunderwave 1/Day Each: Animal Messenger, Longstrider, Moonbeam"
           ]
         }
       ],
@@ -11274,11 +11274,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dryad casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14): hours; ends early if the dryad casts the spell again), Druidcraft",
+          "text": "The dryad casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14): At Will: Animal Friendship, Charm Monster (lasts 24 hours; ends early if the dryad casts the spell again), Druidcraft 1/Day Each: Entangle, Pass without Trace",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dryad casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14): hours; ends early if the dryad casts the spell again), Druidcraft"
+            "The dryad casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14): At Will: Animal Friendship, Charm Monster (lasts 24 hours; ends early if the dryad casts the spell again), Druidcraft 1/Day Each: Entangle, Pass without Trace"
           ]
         },
         {
@@ -11611,11 +11611,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): Plane Shift, Tongues, Wall of Fire (level 7 version)",
+          "text": "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Elementalism 1/Day Each: Gaseous Form, Invisibility, Major Image, Plane Shift, Tongues, Wall of Fire (level 7 version)",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): Plane Shift, Tongues, Wall of Fire (level 7 version)"
+            "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Elementalism 1/Day Each: Gaseous Form, Invisibility, Major Image, Plane Shift, Tongues, Wall of Fire (level 7 version)"
           ]
         }
       ],
@@ -14142,11 +14142,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The glabrezu casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16):",
+          "text": "The glabrezu casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Darkness, Detect Magic, Dispel Magic 1/Day Each: Confusion, Fly, Power Word Stun",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The glabrezu casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16):"
+            "The glabrezu casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Darkness, Detect Magic, Dispel Magic 1/Day Each: Confusion, Fly, Power Word Stun"
           ]
         }
       ],
@@ -15355,11 +15355,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell)",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Flame Strike, Zone of Truth",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell)"
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Flame Strike, Zone of Truth"
           ]
         },
         {
@@ -15624,11 +15624,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 24, +16 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) call, Zone of Truth",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 24, +16 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 4 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Flame Strike (level 6 version), Word of Recall, Zone of Truth",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 24, +16 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) call, Zone of Truth"
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 24, +16 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 4 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Flame Strike (level 6 version), Word of Recall, Zone of Truth"
           ]
         },
         {
@@ -16513,11 +16513,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 3 version) 1/Day: Geas Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 3 version) 1/Day: Geas Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -16744,11 +16744,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version) 1/Day Each: Geas, Modify Memory Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version) 1/Day Each: Geas, Modify Memory Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -16944,11 +16944,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): ration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion, Ray of Sickness (level 3 version)",
+          "text": "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Dancing Lights, Disguise Self (24-hour duration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion, Ray of Sickness (level 3 version)",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): ration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion, Ray of Sickness (level 3 version)"
+            "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Dancing Lights, Disguise Self (24-hour duration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion, Ray of Sickness (level 3 version)"
           ]
         }
       ],
@@ -17462,11 +17462,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): sion), Flame Strike (level 6 version), Geas, True Seeing",
+          "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): At Will: Thaumaturgy 1/Day Each: Clairvoyance, Cure Wounds (level 6 version), Flame Strike (level 6 version), Geas, True Seeing",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): sion), Flame Strike (level 6 version), Geas, True Seeing"
+            "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): At Will: Thaumaturgy 1/Day Each: Clairvoyance, Cure Wounds (level 6 version), Flame Strike (level 6 version), Geas, True Seeing"
           ]
         }
       ],
@@ -19689,11 +19689,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The incubus casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15):",
+          "text": "The incubus casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): At Will: Disguise Self, Etherealness 1/Day Each: Dream, Hypnotic Pattern",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The incubus casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15):"
+            "The incubus casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): At Will: Disguise Self, Etherealness 1/Day Each: Dream, Hypnotic Pattern"
           ]
         },
         {
@@ -20877,11 +20877,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The lamia casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): biped), Minor Illusion",
+          "text": "The lamia casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): At Will: Disguise Self (can appear as a Large or Medium biped), Minor Illusion 1/Day Each: Geas, Major Image, Scrying",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The lamia casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): biped), Minor Illusion"
+            "The lamia casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): At Will: Disguise Self (can appear as a Large or Medium biped), Minor Illusion 1/Day Each: Geas, Major Image, Scrying"
           ]
         },
         {
@@ -21172,11 +21172,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The lich casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 20): Fireball (level 5 version), Invisibility, Lightning Bolt (level 5 version), Mage Hand, Prestidigitation Plane Shift Word Kill, Scrying",
+          "text": "The lich casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Detect Thoughts, Dispel Magic, Fireball (level 5 version), Invisibility, Lightning Bolt (level 5 version), Mage Hand, Prestidigitation 2/Day Each: Animate Dead, Dimension Door, Plane Shift 1/Day Each: Chain Lightning, Finger of Death, Power Word Kill, Scrying",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The lich casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 20): Fireball (level 5 version), Invisibility, Lightning Bolt (level 5 version), Mage Hand, Prestidigitation Plane Shift Word Kill, Scrying"
+            "The lich casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Detect Thoughts, Dispel Magic, Fireball (level 5 version), Invisibility, Lightning Bolt (level 5 version), Mage Hand, Prestidigitation 2/Day Each: Animate Dead, Dimension Door, Plane Shift 1/Day Each: Chain Lightning, Finger of Death, Power Word Kill, Scrying"
           ]
         },
         {
@@ -21349,11 +21349,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The mage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 14): AC), Mage Hand, Prestidigitation",
+          "text": "The mage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation 2/Day Each: Fireball (level 4 version), Invisibility 1/Day Each: Cone of Cold, Fly",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The mage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 14): AC), Mage Hand, Prestidigitation"
+            "The mage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation 2/Day Each: Fireball (level 4 version), Invisibility 1/Day Each: Cone of Cold, Fly"
           ]
         },
         {
@@ -21499,11 +21499,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The archmage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 17): Invisibility, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation (cast before combat), Scrying, Teleport",
+          "text": "The archmage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Detect Thoughts, Disguise Self, Invisibility, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation 2/Day Each: Fly, Lightning Bolt (level 7 version) 1/Day Each: Cone of Cold (level 9 version), Mind Blank (cast before combat), Scrying, Teleport",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The archmage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 17): Invisibility, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation (cast before combat), Scrying, Teleport"
+            "The archmage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Detect Thoughts, Disguise Self, Invisibility, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation 2/Day Each: Fly, Lightning Bolt (level 7 version) 1/Day Each: Cone of Cold (level 9 version), Mind Blank (cast before combat), Scrying, Teleport"
           ]
         },
         {
@@ -23843,11 +23843,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The mummy casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): 7 version)",
+          "text": "The mummy casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Dispel Magic, Thaumaturgy 1/Day Each: Animate Dead, Harm, Insect Plague (level 7 version)",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The mummy casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): 7 version)"
+            "The mummy casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Dispel Magic, Thaumaturgy 1/Day Each: Animate Dead, Harm, Insect Plague (level 7 version)"
           ]
         },
         {
@@ -24269,11 +24269,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The hag casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 14): (level 4 version)",
+          "text": "The hag casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Etherealness, Magic Missile (level 4 version) 2/Day Each: Phantasmal Killer, Plane Shift (self only)",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The hag casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 14): (level 4 version)"
+            "The hag casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Etherealness, Magic Missile (level 4 version) 2/Day Each: Phantasmal Killer, Plane Shift (self only)"
           ]
         },
         {
@@ -24916,11 +24916,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The oni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): Gaseous Form, Sleep",
+          "text": "The oni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): 1/Day Each: Charm Person (level 2 version), Darkness, Gaseous Form, Sleep",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The oni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): Gaseous Form, Sleep"
+            "The oni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): 1/Day Each: Charm Person (level 2 version), Darkness, Gaseous Form, Sleep"
           ]
         },
         {
@@ -26241,11 +26241,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The planetar casts one of the following spells, requiring no Material components and using Charisma as spellcasting ability (spell save DC 20): and Good, Raise Dead",
+          "text": "The planetar casts one of the following spells, requiring no Material components and using Charisma as spellcasting ability (spell save DC 20): At Will: Detect Evil and Good 1/Day Each: Commune, Control Weather, Dispel Evil and Good, Raise Dead",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The planetar casts one of the following spells, requiring no Material components and using Charisma as spellcasting ability (spell save DC 20): and Good, Raise Dead"
+            "The planetar casts one of the following spells, requiring no Material components and using Charisma as spellcasting ability (spell save DC 20): At Will: Detect Evil and Good 1/Day Each: Commune, Control Weather, Dispel Evil and Good, Raise Dead"
           ]
         },
         {
@@ -26377,11 +26377,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The priest casts one of the following spells, using Wisdom as the spellcasting ability:",
+          "text": "The priest casts one of the following spells, using Wisdom as the spellcasting ability: At Will: Light, Thaumaturgy",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The priest casts one of the following spells, using Wisdom as the spellcasting ability:"
+            "The priest casts one of the following spells, using Wisdom as the spellcasting ability: At Will: Light, Thaumaturgy"
           ]
         },
         {
@@ -26530,11 +26530,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The priest casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13):",
+          "text": "The priest casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): At Will: Light, Thaumaturgy 1/Day: Spirit Guardians",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The priest casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13):"
+            "The priest casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): At Will: Light, Thaumaturgy 1/Day: Spirit Guardians"
           ]
         },
         {
@@ -27345,11 +27345,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): Mage Hand, Minor Illusion",
+          "text": "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Detect Thoughts, Disguise Self, Mage Hand, Minor Illusion 1/Day Each: Fly, Invisibility, Major Image, Plane Shift",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): Mage Hand, Minor Illusion"
+            "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Detect Thoughts, Disguise Self, Mage Hand, Minor Illusion 1/Day Each: Fly, Invisibility, Major Image, Plane Shift"
           ]
         }
       ],
@@ -27808,11 +27808,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): Scorching Ray Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray 1/Day: Fireball Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): Scorching Ray Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray 1/Day: Fireball Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -28012,11 +28012,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): Scorching Ray (level 3 version) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): Scorching Ray (level 3 version) Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -30498,11 +30498,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Ice Storm (level 5 version), Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Ice Storm (level 5 version), Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -30767,11 +30767,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) sion), Teleport, Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Control Weather, Ice Storm (level 7 version), Teleport, Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) sion), Teleport, Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Control Weather, Ice Storm (level 7 version), Teleport, Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
             "The dragon regains all expended uses at the start of each of its turns."
           ]
@@ -31336,11 +31336,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The solar casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 25): and Good, Resurrection",
+          "text": "The solar casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 25): At Will: Detect Evil and Good 1/Day Each: Commune, Control Weather, Dispel Evil and Good, Resurrection",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The solar casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 25): and Good, Resurrection"
+            "The solar casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 25): At Will: Detect Evil and Good 1/Day Each: Commune, Control Weather, Dispel Evil and Good, Resurrection"
           ]
         },
         {
@@ -31886,11 +31886,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): sion, Prestidigitation Plane Shift, Remove Curse, Tongues Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions. The sphinx regains all expended uses at the start of each of its turns.",
+          "text": "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions. The sphinx regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): sion, Prestidigitation Plane Shift, Remove Curse, Tongues Legendary Action Uses: 3 (4 in Lair)",
+            "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions",
             "The sphinx regains all expended uses at the start of each of its turns."
           ]
@@ -32099,11 +32099,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): toration, Heroes' Feast, Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions. The sphinx regains all expended uses at the start of each of its turns.",
+          "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions. The sphinx regains all expended uses at the start of each of its turns.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): toration, Heroes' Feast, Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
+            "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
             "Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions",
             "The sphinx regains all expended uses at the start of each of its turns."
           ]
@@ -32285,11 +32285,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): ter Breathing Hold Person (level 3 version), Lightning Bolt (level 4 version)",
+          "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Mage Hand, Minor Illusion, Water Breathing 2/Day Each: Detect Thoughts, Dimension Door, Hold Person (level 3 version), Lightning Bolt (level 4 version)",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): ter Breathing Hold Person (level 3 version), Lightning Bolt (level 4 version)"
+            "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Mage Hand, Minor Illusion, Water Breathing 2/Day Each: Detect Thoughts, Dimension Door, Hold Person (level 3 version), Lightning Bolt (level 4 version)"
           ]
         }
       ],
@@ -33182,11 +33182,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18):",
+          "text": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Light 1/Day: Control Weather",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18):"
+            "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Light 1/Day: Control Weather"
           ]
         }
       ],
@@ -34524,11 +34524,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The unicorn casts one of the following spells, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 14): tangle, Pass without Trace, Word of Recall",
+          "text": "The unicorn casts one of the following spells, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 14): At Will: Detect Evil and Good, Druidcraft 1/Day Each: Calm Emotions, Dispel Evil and Good, Entangle, Pass without Trace, Word of Recall",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The unicorn casts one of the following spells, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 14): tangle, Pass without Trace, Word of Recall"
+            "The unicorn casts one of the following spells, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 14): At Will: Detect Evil and Good, Druidcraft 1/Day Each: Calm Emotions, Dispel Evil and Good, Entangle, Pass without Trace, Word of Recall"
           ]
         },
         {
@@ -42815,11 +42815,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability:",
+          "text": "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability: At Will: Detect Evil and Good, Detect Magic 1/Day: Clairvoyance",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability:"
+            "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability: At Will: Detect Evil and Good, Detect Magic 1/Day: Clairvoyance"
           ]
         }
       ],

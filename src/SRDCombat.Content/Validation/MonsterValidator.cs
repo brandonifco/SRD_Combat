@@ -15,7 +15,7 @@ namespace SRDCombat.Content.Validation;
 /// <c>HP 195 (17d12 + 85)</c>, and 195 is exactly the average of that expression, so
 /// any disagreement means one of the two was misread.
 /// </remarks>
-public static class MonsterValidator
+public static partial class MonsterValidator
 {
     public static ValidationResult Validate(IReadOnlyList<MonsterDefinition> monsters)
     {
@@ -45,6 +45,157 @@ public static class MonsterValidator
 
         return new ValidationResult(issues);
     }
+
+    /// <summary>
+    /// Validates the cross-file Spellcasting invariant: every printed usage tier and
+    /// every spell name in it survived extraction.
+    /// </summary>
+    /// <remarks>
+    /// This intentionally takes the spell corpus explicitly instead of making the
+    /// single-monster validator reach into a global content pack. Unit tests can still
+    /// validate one monster in isolation, while load and extraction validation prove
+    /// the relationship between the two generated files (#530).
+    /// </remarks>
+    public static ValidationResult Validate(
+        IReadOnlyList<MonsterDefinition> monsters,
+        IReadOnlyList<SpellDefinition> spells)
+    {
+        ArgumentNullException.ThrowIfNull(monsters);
+        ArgumentNullException.ThrowIfNull(spells);
+
+        var issues = new List<ValidationIssue>(Validate(monsters).Issues);
+        var spellNames = spells
+            .Select(spell => spell.Name)
+            .OrderByDescending(name => name.Length)
+            .ToArray();
+
+        foreach (var monster in monsters)
+        {
+            foreach (var entry in monster.Entries.Where(entry => entry.Name == "Spellcasting"))
+            {
+                var tiers = SpellcastingTierPattern().Matches(entry.Text);
+                if (tiers.Count == 0)
+                {
+                    issues.Add(new ValidationIssue(
+                        ValidationSeverity.Error,
+                        "monster.spellcasting.usage_tier_missing",
+                        monster.Id,
+                        "Spellcasting has no At Will or N/Day usage tier."));
+                    continue;
+                }
+
+                foreach (Match tier in tiers)
+                {
+                    foreach (var spellName in SpellNames(tier.Groups["spells"].Value, spellNames))
+                    {
+                        if (spellName is not null)
+                        {
+                            issues.Add(new ValidationIssue(
+                                ValidationSeverity.Error,
+                                "monster.spellcasting.spell_unknown",
+                                monster.Id,
+                                $"Spellcasting tier names '{spellName}', which is absent from spells.json."));
+                        }
+                    }
+                }
+            }
+        }
+
+        return new ValidationResult(issues);
+    }
+
+    private static IEnumerable<string?> SpellNames(string text, IReadOnlyList<string> knownNames)
+    {
+        // Legendary Actions begin after some dragon lists without a new entry heading.
+        // They are a different stat-block construct, not an unknown spell name.
+        var list = LegendaryActionMarker().Replace(text, string.Empty);
+
+        foreach (var token in SplitTopLevelCommas(list))
+        {
+            var name = token.Trim().TrimEnd('.');
+            if (name.Length == 0)
+            {
+                continue;
+            }
+
+            var known = knownNames.FirstOrDefault(candidate =>
+                name.StartsWith(candidate, StringComparison.OrdinalIgnoreCase)
+                && (name.Length == candidate.Length || name[candidate.Length] is '(' or ' '));
+
+            if (known is null)
+            {
+                yield return name;
+                continue;
+            }
+
+            var suffix = name[known.Length..].TrimStart();
+            if (suffix.Length > 0 && !IsParentheticalNote(suffix))
+            {
+                yield return name;
+            }
+        }
+    }
+
+    private static IEnumerable<string> SplitTopLevelCommas(string text)
+    {
+        var depth = 0;
+        var start = 0;
+
+        for (var index = 0; index < text.Length; index++)
+        {
+            if (text[index] == '(')
+            {
+                depth++;
+            }
+            else if (text[index] == ')' && depth > 0)
+            {
+                depth--;
+            }
+            else if (text[index] == ',' && depth == 0)
+            {
+                yield return text[start..index];
+                start = index + 1;
+            }
+        }
+
+        yield return text[start..];
+    }
+
+    private static bool IsParentheticalNote(string text)
+    {
+        if (!text.StartsWith('('))
+        {
+            return false;
+        }
+
+        var depth = 0;
+        for (var index = 0; index < text.Length; index++)
+        {
+            if (text[index] == '(')
+            {
+                depth++;
+            }
+            else if (text[index] == ')')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    return string.IsNullOrWhiteSpace(text[(index + 1)..]);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Tier names delimit their own comma-separated spell lists after the extractor
+    // joins visual lines. The lookahead is deliberately the next printed tier, not a
+    // prose heuristic, so spell names such as "Dispel Evil and Good" remain intact.
+    [GeneratedRegex(@"(?:^|\s)(?:At Will|\d+/Day(?: Each)?):\s*(?<spells>.*?)(?=\s+(?:At Will|\d+/Day(?: Each)?):|$)")]
+    private static partial Regex SpellcastingTierPattern();
+
+    [GeneratedRegex(@"\s+Legendary Action Uses:\s.*$")]
+    private static partial Regex LegendaryActionMarker();
 
     private static void ValidateOne(MonsterDefinition monster, List<ValidationIssue> issues)
     {

@@ -116,7 +116,7 @@ Console.WriteLine(
     $"{magicItemResult.Items.Count(item => !MagicItemRegistry.Executes(item))} extracted and counted as unmodelled.");
 
 var validation = new List<ValidationIssue>();
-validation.AddRange(MonsterValidator.Validate(monsters).Issues);
+validation.AddRange(MonsterValidator.Validate(monsters, spellResult.Spells).Issues);
 validation.AddRange(EquipmentValidator.ValidateWeapons(equipmentResult.Weapons).Issues);
 validation.AddRange(EquipmentValidator.ValidateArmor(equipmentResult.Armor).Issues);
 validation.AddRange(OriginValidator.ValidateSpecies(originResult.Species).Issues);

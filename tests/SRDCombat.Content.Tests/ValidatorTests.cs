@@ -92,6 +92,57 @@ public class ValidatorTests
         Assert.Empty(MonsterValidator.Validate([Monster()]).Issues);
 
     [Fact]
+    public void SpellcastingWithoutAUsageTier_IsAnError()
+    {
+        var monster = Monster() with
+        {
+            Entries = [new MonsterEntry("Spellcasting", MonsterEntrySection.Action, "The priest casts spells.")],
+        };
+
+        var issues = MonsterValidator.Validate([monster], [Spell("Light")]).Issues;
+
+        Assert.Contains(issues, issue => issue.Code == "monster.spellcasting.usage_tier_missing");
+    }
+
+    [Fact]
+    public void SpellcastingTierNamingAnUnknownSpell_IsAnError()
+    {
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Spellcasting",
+                    MonsterEntrySection.Action,
+                    "The priest casts one of the following spells: At Will: Light, Longstrider."),
+            ],
+        };
+
+        var issues = MonsterValidator.Validate([monster], [Spell("Light")]).Issues;
+
+        Assert.Contains(issues, issue => issue.Code == "monster.spellcasting.spell_unknown"
+            && issue.Message.Contains("Longstrider", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SpellcastingSpellNotesWithCommas_AreNotMistakenForSpellNames()
+    {
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Spellcasting",
+                    MonsterEntrySection.Action,
+                    "The dragon casts one of the following spells: At Will: Shapechange " +
+                    "(Beast or Humanoid form only, no Temporary Hit Points gained), Speak with Animals."),
+            ],
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster], [Spell("Shapechange"), Spell("Speak with Animals")]).Issues);
+    }
+
+    [Fact]
     public void AVersatileWeaponWithoutTwoHandedDamage_IsAnError()
     {
         var weapon = Weapon() with { Properties = WeaponProperty.Versatile, VersatileDamage = null };
@@ -190,6 +241,23 @@ public class ValidatorTests
         ProficiencyBonus = 2,
         Entries = [],
         SourcePage = 261,
+    };
+
+    private static SpellDefinition Spell(string name) => new()
+    {
+        Id = "spell." + name.ToLowerInvariant(),
+        Name = name,
+        Level = 0,
+        School = MagicSchool.Evocation,
+        Classes = [],
+        CastingTime = SpellCastingTime.Action,
+        CastingTimeText = "Action",
+        RangeText = "Self",
+        Components = SpellComponents.Verbal,
+        DurationText = "Instantaneous",
+        Text = string.Empty,
+        Mechanics = EntryMechanics.Unmodelled,
+        SourcePage = 1,
     };
 
     /// <summary>A valid weapon, modelled on the printed Longsword row.</summary>
