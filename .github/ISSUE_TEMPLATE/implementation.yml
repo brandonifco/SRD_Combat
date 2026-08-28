@@ -1,0 +1,63 @@
+name: Scoped implementation slice
+description: Propose one bounded feature, confidence, documentation, or tooling change.
+title: ""
+labels: []
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What exact behavior or confidence property should become true?
+    validations:
+      required: true
+
+  - type: textarea
+    id: failure
+    attributes:
+      label: Failure mode prevented
+      description: Name the concrete bug, user cost, or verification gap this addresses.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: In scope and out of scope
+      description: Bound the slice tightly enough for one branch and one pull request.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that must hold before the issue can close.
+      placeholder: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required tests and evidence
+      description: Name focused tests, deterministic pins, measurements, source fixtures, or visual proof required.
+    validations:
+      required: true
+
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Rules, design, and provenance notes
+      description: Record open judgments, printed-rule citations, accepted divergences, and who made material decisions.
+
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness
+      options:
+        - label: This is one concern and does not hide unrelated cleanup.
+          required: true
+        - label: Any unresolved design choice is stated rather than silently decided here.
+          required: true
