@@ -60,9 +60,12 @@ public sealed record SaveLoadResult(
 /// <b>The invariant this keeps</b> is not "<c>.bak</c> is never touched before the new
 /// primary lands" — <c>path</c> + <c>.old</c> is a real gap, and the content it holds is
 /// whatever <c>path</c> held going in, which the caller may already know is corrupt (a
-/// fallback load's next write — #367). The invariant is: <b>a loadable copy exists among
-/// <c>path</c>, <c>path</c> + <c>.old</c> and <c>path</c> + <c>.bak</c> at every one of
-/// the three renames</b>, and <see cref="LoadRun"/> checks all three, in that order, to
+/// fallback load's next write — #367). The invariant is: <b>at every instant, including
+/// between any two filesystem operations of either branch, a loadable copy of the most
+/// recent successfully completed write exists among the locations <see cref="LoadRun"/>
+/// consults, and no copy belonging to a different deleted or prior run can be loaded as
+/// current state</b>. The crash-prefix tests enumerate both branches and repeat the
+/// sequence after recovery. <see cref="LoadRun"/> checks all three locations in order to
 /// honour it — not just the two a caller sees in <see cref="SaveLoadResult"/>. Before the
 /// first move, the untouched old <c>path</c> is still there. Between the first and
 /// second, <c>path</c> is briefly missing, but <c>.old</c> now holds exactly what
@@ -158,6 +161,18 @@ public static class SaveFile
             var backupPath = BackupPathFor(path);
 
             File.Move(tempPath, path);
+
+            // A missing primary can be a genuinely fresh path, or a path whose prior
+            // run was deleted separately from its crash residue. Once the new primary
+            // is live, neither residue may remain loadable as this run's history. The
+            // primary is already the newest complete copy, so these cleanup operations
+            // cannot create a no-copy window: a crash before either cleanup still lets
+            // LoadRun choose the new primary first.
+            var oldPrimaryPath = OldPrimaryPathFor(path);
+            if (File.Exists(oldPrimaryPath))
+            {
+                File.Delete(oldPrimaryPath);
+            }
 
             if (File.Exists(backupPath))
             {

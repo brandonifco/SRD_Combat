@@ -110,6 +110,63 @@ public sealed class SaveFileTests : IDisposable
     }
 
     [Fact]
+    public void CrashPointEnumerationProvesEveryRotationPrefixAndTheNextWriteAfterRecovery()
+    {
+        var first = SomeSaveJson(seed: 1);
+        var second = SomeSaveJson(seed: 2);
+        var third = SomeSaveJson(seed: 3);
+
+        SaveFile.Write(SavePath, first);
+        SaveFile.Write(SavePath, second);
+        AssertRotationPrefixes(second, third);
+    }
+
+    [Fact]
+    public void FreshPathCleanupRemovesForeignCrashResidueBeforeItCanBeLoaded()
+    {
+        var foreign = SomeSaveJson(seed: 99);
+        var current = SomeSaveJson(seed: 4);
+        File.WriteAllText(OldPrimaryPath, foreign);
+        File.WriteAllText(BackupPath, foreign);
+
+        SaveFile.Write(SavePath, current);
+
+        Assert.Equal(current, File.ReadAllText(SavePath));
+        Assert.False(File.Exists(OldPrimaryPath));
+        Assert.False(File.Exists(BackupPath));
+        Assert.Equal(current, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+    }
+
+    private void AssertRotationPrefixes(string completed, string next)
+    {
+        // Prefix 0: before the first rename.
+        File.WriteAllText(TempPath, next);
+        Assert.Equal(completed, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+
+        // Prefix 1: primary moved to .old; the previous completed state remains loadable.
+        File.Move(SavePath, OldPrimaryPath, overwrite: true);
+        Assert.Equal(completed, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+
+        // Prefix 2: new primary is live; the new state wins before backup rotation.
+        File.Move(TempPath, SavePath, overwrite: true);
+        Assert.Equal(next, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+
+        // Prefix 3: backup rotation completes; the new state still wins.
+        File.Move(OldPrimaryPath, BackupPath, overwrite: true);
+        Assert.Equal(next, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+
+        // The same four prefixes must remain safe after recovering from the prior one.
+        File.WriteAllText(TempPath, next);
+        Assert.Equal(next, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+        File.Move(SavePath, OldPrimaryPath, overwrite: true);
+        Assert.Equal(next, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+        File.Move(TempPath, SavePath, overwrite: true);
+        Assert.Equal(next, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+        File.Move(OldPrimaryPath, BackupPath, overwrite: true);
+        Assert.Equal(next, ContentSerializer.Serialize(SaveFile.LoadRun(SavePath).Saved!));
+    }
+
+    [Fact]
     public void ASecondWriteKeepsTheFirstAsExactlyOneBackup()
     {
         SaveFile.Write(SavePath, "first save");
