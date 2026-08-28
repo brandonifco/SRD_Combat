@@ -73,6 +73,38 @@ public class RunSaveTests
         Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("formatVersion", "FormatVersion")]
+    [InlineData("ladder", "Ladder")]
+    [InlineData("cleared", "Cleared")]
+    [InlineData("members", "Members")]
+    public void AParsedSavedRunMustContainEveryRequiredMember(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document.Remove(property);
+
+        var failure = Assert.ThrowsAny<Exception>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("name", "Name")]
+    [InlineData("speciesId", "SpeciesId")]
+    [InlineData("classId", "ClassId")]
+    [InlineData("backgroundId", "BackgroundId")]
+    [InlineData("level", "Level")]
+    [InlineData("baseAbilityScores", "BaseAbilityScores")]
+    public void AParsedCharacterDraftMustContainEveryRequiredMember(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]![0]!["draft"]!.AsObject().Remove(property);
+
+        var failure = Assert.ThrowsAny<Exception>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void ASaveHoldsChoicesAndProgressAndNothingDerived()
     {
