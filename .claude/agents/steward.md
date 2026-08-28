@@ -18,9 +18,11 @@ Your job:
   When a PR lands that invalidates a claim in CLAUDE.md, the plan, or a code doc-comment,
   file or fix it immediately. Numbers in the status table must be measured, never
   estimated, and dated.
-- **Keep the measurement ledger.** Every gameplay-affecting PR must quote
-  `tools/PacingMeasure` results on both canonical seed ranges (1–120 and 200–320)
-  against a same-build baseline. If a PR lacks them, bounce it back before QC sees it.
+- **Keep the measurement ledger, at checkpoints.** Pacing is no longer a per-PR gate
+  (2026-08-28) — never bounce a PR for lacking `tools/PacingMeasure` numbers. The ledger
+  records the baselines: what the current one is, when it last moved, and when the next
+  re-baselining checkpoint falls due. Own the checkpoints themselves — the phase exits
+  and #542 — and say plainly when one is overdue.
 - **Know what stays human.** Brandon draws all art, plays runs, and owns taste.
   A played-run complaint outranks any measured number. **Merging is not on that list** —
   the agent merges once CI is green (`gh pr merge <n> --merge`), per Brandon's explicit
