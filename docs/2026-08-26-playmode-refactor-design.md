@@ -259,6 +259,34 @@ game — and today it does sit there (`_Draw` 1907–1912 draws the outcome card
 under the hint and change a pixel. The exception is one line with a reason, which is
 cheaper than a sixth trait for one case.
 
+**Addendum, S5's implementation (#504, two review rounds with qc/architect):
+clearing and drawing are separate lifecycles, and the first two attempts at this section
+missed it.** The obvious reading of "iterate `_focus.BottomUp` for the card-drawing
+layers" is to visit only the layers actually on the stack and call each one's draw method.
+That is unsafe here, for a reason specific to this screen: `DrawSpellMenu`,
+`DrawAttackMenu` and `DrawSlotMenu` each own a row list (`_spellRows` etc.) that `HitTest`
+reads unconditionally every frame, and a menu that was just popped is no longer in
+`_focus.BottomUp` at all — a traversal keyed on presence would stop clearing its list at
+exactly the moment clearing it matters, leaving a stale, invisible rectangle a click could
+still land on. The fix is to decouple the two questions: a `ClearMenuRows()` step empties
+every row list unconditionally, before the traversal runs at all, regardless of what the
+stack holds; only then does the traversal decide whether one list gets repopulated. This
+is a *stronger* form of the invariant than either the pre-#504 code or #504's first two
+attempts gave it, not merely an equivalent restatement.
+
+The second thing both earlier attempts got wrong: `DrawOutcomeCard` cannot share a
+`commanded is { } character` guard with the row menus, because `CommandedCombatant()`
+requires `_encounter is { IsComplete: false }` — `commanded` is provably null in every
+single frame the outcome card exists. The traversal therefore lives *outside* that guard,
+with `commanded` required only inside the row-menu cases themselves (`when … && commanded
+is { } character`); `Outcome`'s case carries no such requirement and no
+`ReferenceEquals(layer, _focus.Top)` guard either, because nothing is ever pushed above it
+(every `Push` site was checked) — the traversal reaching that layer at all is the whole
+answer. Getting both of these wrong looks identical to getting them right until the
+specific frame that exercises them (a menu closed via Esc rather than superseded, a fight
+ending with nobody commanded) — which is exactly why this is written down here rather than
+left for the next reader to rediscover by breaking it.
+
 ### 3.5 What `Phase` does *not* become
 
 `Phase` (`Fighting` / `Interlude` / `RunOver`) stays exactly as it is and is **not** folded
