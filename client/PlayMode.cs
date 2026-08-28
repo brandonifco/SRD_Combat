@@ -69,6 +69,7 @@ public partial class PlayMode : FightScreen
     private Labels _labels = null!;
     private string _subtitle = string.Empty;
     private int _seed;
+    private bool _isNewRun;
     private double _elapsed;
     private double _pace = SecondsPerTurn;
     private readonly HashSet<GridPosition> _reachable = [];
@@ -370,6 +371,7 @@ public partial class PlayMode : FightScreen
             }
 
             _seed = _run.Seed;
+            _isNewRun = false;
             _subtitle = $"continuing after fight {_run.Cleared} of {_run.Ladder.Count} — seed {_run.Seed}";
         }
         else
@@ -381,6 +383,7 @@ public partial class PlayMode : FightScreen
             _run = CreatedDrafts is not null
                 ? GauntletRun.Start(content, CreatedDrafts, seed: _seed)
                 : GauntletRun.Start(content, GauntletLadder.Default(), level, _seed);
+            _isNewRun = true;
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
         }
 
@@ -607,7 +610,15 @@ public partial class PlayMode : FightScreen
 
         if (run.Outcome != RunOutcome.Defeated)
         {
-            SaveFile.Write(_savePath, RunSave.ToJson(run));
+            if (_isNewRun)
+            {
+                SaveFile.BeginNewRun(_savePath, RunSave.ToJson(run));
+                _isNewRun = false;
+            }
+            else
+            {
+                SaveFile.ContinueWrite(_savePath, RunSave.ToJson(run));
+            }
             after.Add($"Saved to {_savePath}.");
         }
 

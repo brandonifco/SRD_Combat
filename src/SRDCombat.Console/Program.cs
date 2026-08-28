@@ -56,6 +56,7 @@ if (SingleFightRequested(args))
 var savePath = SavePathFrom(args) ?? "srdcombat-save.json";
 
 GauntletRun run;
+var isNewRun = !ContinueRequested(args);
 
 if (ContinueRequested(args))
 {
@@ -275,7 +276,15 @@ while (run.Next is { } step)
     // the last state worth returning to, which is what makes reloading a retry.
     if (run.Outcome != RunOutcome.Defeated)
     {
-        SaveFile.Write(savePath, RunSave.ToJson(run));
+        if (isNewRun)
+        {
+            SaveFile.BeginNewRun(savePath, RunSave.ToJson(run));
+            isNewRun = false;
+        }
+        else
+        {
+            SaveFile.ContinueWrite(savePath, RunSave.ToJson(run));
+        }
     }
 }
 

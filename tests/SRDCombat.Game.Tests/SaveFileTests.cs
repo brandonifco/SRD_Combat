@@ -18,6 +18,7 @@ namespace SRDCombat.Game.Tests;
 /// cref="SavedRun"/>, because those need something <see cref="RunSave.FromJson"/> will
 /// actually accept.
 /// </remarks>
+[Collection("SaveFile filesystem fault injection")]
 public sealed class SaveFileTests : IDisposable
 {
     private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
@@ -58,6 +59,18 @@ public sealed class SaveFileTests : IDisposable
     /// </summary>
     private static string SomeSaveJson(int seed) => RunSave.ToJson(GauntletRun.Start(Content, seed: seed));
 
+    private void Write(string json)
+    {
+        if (SaveFile.LoadRun(SavePath).Saved is null)
+        {
+            SaveFile.BeginNewRun(SavePath, json);
+        }
+        else
+        {
+            SaveFile.ContinueWrite(SavePath, json);
+        }
+    }
+
     /// <summary>Whether <paramref name="json"/> parses as a save — used to confirm a
     /// setup step actually produced the corrupt content a test needs, rather than
     /// asserting on <see cref="SaveFile"/> behaviour indirectly.</summary>
@@ -77,9 +90,10 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void TheFirstWriteHasNoBackupAndLeavesNoTempFileBehind()
     {
-        SaveFile.Write(SavePath, "first save");
+        var first = SomeSaveJson(seed: 1);
+        Write(first);
 
-        Assert.Equal("first save", File.ReadAllText(SavePath));
+        Assert.Equal(first, File.ReadAllText(SavePath));
         Assert.False(File.Exists(BackupPath), "Nothing existed to back up yet.");
         Assert.False(File.Exists(TempPath), "The temp file must not survive a successful write.");
     }
@@ -95,7 +109,7 @@ public sealed class SaveFileTests : IDisposable
     {
         File.WriteAllText(BackupPath, "stale run's backup");
 
-        SaveFile.Write(SavePath, "new run's first save");
+        SaveFile.BeginNewRun(SavePath, SomeSaveJson(seed: 2));
 
         Assert.False(File.Exists(BackupPath), "A first write must clear a stale backup, not leave it beside the new primary.");
 
@@ -112,25 +126,30 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void ASecondWriteKeepsTheFirstAsExactlyOneBackup()
     {
-        SaveFile.Write(SavePath, "first save");
-        SaveFile.Write(SavePath, "second save");
+        var first = SomeSaveJson(seed: 1);
+        var second = SomeSaveJson(seed: 2);
+        Write(first);
+        Write(second);
 
-        Assert.Equal("second save", File.ReadAllText(SavePath));
-        Assert.Equal("first save", File.ReadAllText(BackupPath));
+        Assert.Equal(second, File.ReadAllText(SavePath));
+        Assert.Equal(first, File.ReadAllText(BackupPath));
         Assert.False(File.Exists(TempPath));
     }
 
     [Fact]
     public void AThirdWriteRotatesTheBackupRatherThanAccumulating()
     {
-        SaveFile.Write(SavePath, "first save");
-        SaveFile.Write(SavePath, "second save");
-        SaveFile.Write(SavePath, "third save");
+        var first = SomeSaveJson(seed: 1);
+        var second = SomeSaveJson(seed: 2);
+        var third = SomeSaveJson(seed: 3);
+        Write(first);
+        Write(second);
+        Write(third);
 
         // The backup is always exactly what the primary held one write ago, never the
         // whole history.
-        Assert.Equal("third save", File.ReadAllText(SavePath));
-        Assert.Equal("second save", File.ReadAllText(BackupPath));
+        Assert.Equal(third, File.ReadAllText(SavePath));
+        Assert.Equal(second, File.ReadAllText(BackupPath));
     }
 
     [Fact]
@@ -138,7 +157,7 @@ public sealed class SaveFileTests : IDisposable
     {
         var document = JsonNode.Parse(SomeSaveJson())!.AsObject();
         document["members"]![0]!.AsObject().Remove("state");
-        SaveFile.Write(SavePath, document.ToJsonString());
+        Write(document.ToJsonString());
 
         var loaded = SaveFile.LoadRun(SavePath);
         var message = SaveFile.DescribeUnloadable(SavePath, loaded);
@@ -151,7 +170,7 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void LoadRunReadsBackAWrittenSaveWithNoFallback()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
 
         var loaded = SaveFile.LoadRun(SavePath);
 
@@ -171,7 +190,7 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void ResumingASaveLoadedAgainstDifferentContentRefusesRatherThanCrashing()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
 
         var loaded = SaveFile.LoadRun(SavePath);
 
@@ -216,8 +235,8 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void ATornPrimaryFallsBackToAnIntactBackupAndTheRunLoads()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         var intact = File.ReadAllText(SavePath);
         File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
@@ -231,42 +250,6 @@ public sealed class SaveFileTests : IDisposable
         var run = GauntletRun.Resume(Content, loaded.Saved!);
 
         Assert.Equal(RunOutcome.InProgress, run.Outcome);
-    }
-
-    /// <summary>
-    /// #367's functional case: the write immediately after a fallback load takes the
-    /// branch that used to call <c>File.Replace</c> over a corrupt primary. The happy
-    /// path must still rotate cleanly — new content live, the old (corrupt) primary
-    /// retired into the backup slot, no scratch files left behind.
-    /// </summary>
-    /// <remarks>
-    /// The rotation retires the old primary into <c>.bak</c> unconditionally, corrupt
-    /// content included — <see cref="SaveFile.Write"/> does not parse what it moves, by
-    /// design (see the class remarks: most of these tests use plain strings for exactly
-    /// that reason). That leaves <c>.bak</c> genuinely unreadable until the next healthy
-    /// write rotates something good in, which is qc's post-review finding: a plain
-    /// primary-then-.bak fallback has nothing to offer if the *next* write is
-    /// interrupted before it lands. <see cref="LoadRun"/>'s <c>.old</c> fallback is what
-    /// actually protects that window — proven by
-    /// <see cref="ACrashAtTheStartOfTheWriteAfterACorruptPrimaryRecoveryStillLoadsTheLatestState"/>,
-    /// which continues this exact scenario one write further.
-    /// </remarks>
-    [Fact]
-    public void AWriteOverACorruptPrimaryRotatesItIntoTheBackupSlotAndLeavesNoScratchFiles()
-    {
-        SaveFile.Write(SavePath, "first save");
-        SaveFile.Write(SavePath, "second save");
-
-        var intact = File.ReadAllText(SavePath);
-        File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
-        var corruptPrimary = File.ReadAllText(SavePath);
-
-        SaveFile.Write(SavePath, "third save");
-
-        Assert.Equal("third save", File.ReadAllText(SavePath));
-        Assert.Equal(corruptPrimary, File.ReadAllText(BackupPath));
-        Assert.False(File.Exists(TempPath));
-        Assert.False(File.Exists(OldPrimaryPath));
     }
 
     /// <summary>
@@ -292,8 +275,8 @@ public sealed class SaveFileTests : IDisposable
     public void ACrashAtTheStartOfTheWriteAfterACorruptPrimaryRecoveryStillLoadsTheLatestState()
     {
         // T0: a real corrupt-primary-with-good-backup state.
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         var intact = File.ReadAllText(SavePath);
         File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
@@ -307,10 +290,10 @@ public sealed class SaveFileTests : IDisposable
         // simulated partial state, so it exercises the actual rotation that leaves
         // corrupt content in .bak.
         var t2Content = SomeSaveJson();
-        SaveFile.Write(SavePath, t2Content);
+        Write(t2Content);
 
         Assert.Equal(t2Content, File.ReadAllText(SavePath));
-        Assert.False(IsLoadableSaveJson(File.ReadAllText(BackupPath)), "T2 must end with a corrupt .bak for T3 to be meaningful.");
+        Assert.True(IsLoadableSaveJson(File.ReadAllText(BackupPath)), "Continuation preserves the valid fallback it selected until the new primary commits.");
 
         // T3: reproduce the disk state one rename into the *next* write — the good
         // primary from T2 moved aside to `.old`, nothing yet landed at `path`.
@@ -345,8 +328,8 @@ public sealed class SaveFileTests : IDisposable
         // whether or not LoadRun's .old fallback actually ran.
         var olderContent = SomeSaveJson(seed: 1);
         var currentContent = SomeSaveJson(seed: 2);
-        SaveFile.Write(SavePath, olderContent);
-        SaveFile.Write(SavePath, currentContent);
+        Write(olderContent);
+        Write(currentContent);
 
         Assert.Equal(currentContent, File.ReadAllText(SavePath));
         Assert.Equal(olderContent, File.ReadAllText(BackupPath));
@@ -382,8 +365,8 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void ACrashAfterMovingAsideACorruptPrimaryStillLeavesTheFallbackBackupLoadable()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         var intact = File.ReadAllText(SavePath);
         File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
@@ -417,8 +400,8 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void ACrashAfterTheNewPrimaryLandsIsLoadableEvenBeforeTheBackupRotationCompletes()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         var intact = File.ReadAllText(SavePath);
         File.WriteAllText(SavePath, intact[..(intact.Length / 3)]);
@@ -443,8 +426,8 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void AMissingPrimaryFallsBackToTheBackupToo()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         File.Delete(SavePath);
 
@@ -461,8 +444,8 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void NeitherCopyReadableReportsNoSaveRatherThanThrowing()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         var truncated = File.ReadAllText(SavePath)[..5];
         File.WriteAllText(SavePath, truncated);
@@ -484,7 +467,7 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void AMissingPrimaryWithACorruptBackupSurfacesTheBackupsFailure()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
 
         var truncated = File.ReadAllText(SavePath)[..5];
         File.WriteAllText(BackupPath, truncated);
@@ -508,7 +491,7 @@ public sealed class SaveFileTests : IDisposable
     public void AdoptingASeedSurvivesAReloadWithNoFightClearedInBetween()
     {
         var seedless = GauntletRun.Start(Content).ToSave() with { Seed = null };
-        SaveFile.Write(SavePath, ContentSerializer.Serialize(seedless));
+        Write(ContentSerializer.Serialize(seedless));
 
         var loaded = SaveFile.LoadRun(SavePath);
         var run = GauntletRun.Resume(Content, loaded.Saved!);
@@ -540,7 +523,7 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void DescribeUnloadableNamesACorruptBackupEvenWhenThePrimaryIsJustMissing()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
 
         var truncated = File.ReadAllText(SavePath)[..5];
         File.WriteAllText(BackupPath, truncated);
@@ -557,8 +540,8 @@ public sealed class SaveFileTests : IDisposable
     [Fact]
     public void DescribeUnloadableNamesBothFailuresWhenBothCopiesAreCorrupt()
     {
-        SaveFile.Write(SavePath, SomeSaveJson());
-        SaveFile.Write(SavePath, SomeSaveJson());
+        Write(SomeSaveJson());
+        Write(SomeSaveJson());
 
         var truncated = File.ReadAllText(SavePath)[..5];
         File.WriteAllText(SavePath, truncated);
@@ -571,4 +554,270 @@ public sealed class SaveFileTests : IDisposable
         Assert.Contains(SavePath, message, StringComparison.Ordinal);
         Assert.Contains(BackupPath, message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void CrashPrefixesOfNewRunAndEveryContinuationSelectionPreserveTheCommittedState()
+    {
+        var foreign = Save(90);
+        var current = Save(1);
+        var next = Save(2);
+        var afterNext = Save(3);
+
+        AssertCrashMatrix(
+            "new-run",
+            path =>
+            {
+                File.WriteAllText(path, foreign);
+                File.WriteAllText(path + ".old", foreign);
+                File.WriteAllText(path + ".bak", foreign);
+            },
+            (path, json) => SaveFile.BeginNewRun(path, json),
+            SaveFileOperation.NewRunCommitted,
+            beforeCommit: null,
+            committed: current,
+            next: next,
+            afterNext: afterNext);
+
+        AssertCrashMatrix(
+            "continuing-primary",
+            path => EstablishPrimary(path, current),
+            (path, json) => SaveFile.ContinueWrite(path, json),
+            SaveFileOperation.ContinuationCommitted,
+            beforeCommit: current,
+            committed: next,
+            next: afterNext,
+            afterNext: Save(4));
+
+        AssertCrashMatrix(
+            "continuing-old-after-corrupt-primary",
+            path => EstablishOldFallback(path, current),
+            (path, json) => SaveFile.ContinueWrite(path, json),
+            SaveFileOperation.ContinuationCommitted,
+            beforeCommit: current,
+            committed: next,
+            next: afterNext,
+            afterNext: Save(5));
+
+        AssertCrashMatrix(
+            "continuing-backup-after-corrupt-primary",
+            path => EstablishBackupFallback(path, current),
+            (path, json) => SaveFile.ContinueWrite(path, json),
+            SaveFileOperation.ContinuationCommitted,
+            beforeCommit: current,
+            committed: next,
+            next: afterNext,
+            afterNext: Save(6));
+    }
+
+    [Fact]
+    public void NewRunMarkerMasksResidueBeforeItIsRemovedAndContinuationRefusesIt()
+    {
+        var path = CasePath("marker");
+        var foreign = Save(90);
+        File.WriteAllText(path, foreign);
+        File.WriteAllText(path + ".old", foreign);
+        File.WriteAllText(path + ".bak", foreign);
+
+        var crash = InjectAfter(1);
+        try
+        {
+            Assert.Throws<InjectedCrash>(() => SaveFile.BeginNewRun(path, Save(1)));
+        }
+        finally
+        {
+            RemoveInjection();
+        }
+
+        // This assertion runs before fixture disposal: the injected crash left the real
+        // state intact, including the durable marker and every foreign slot it masks.
+        Assert.True(File.Exists(path + ".new"));
+        Assert.True(File.Exists(path));
+        Assert.True(File.Exists(path + ".old"));
+        Assert.True(File.Exists(path + ".bak"));
+        Assert.Null(SaveFile.LoadRun(path).Saved);
+        Assert.Throws<InvalidOperationException>(() => SaveFile.ContinueWrite(path, Save(2)));
+    }
+
+    [Fact]
+    public void ExistingUnmarkedSaveStillLoadsAndAContinuationKeepsItsBackup()
+    {
+        var path = CasePath("legacy");
+        var first = Save(1);
+        var second = Save(2);
+        SaveFile.BeginNewRun(path, first);
+        SaveFile.ContinueWrite(path, second);
+
+        Assert.Equal(second, LoadedJson(path));
+        File.Delete(path);
+        Assert.Equal(first, LoadedJson(path));
+    }
+
+    private void AssertCrashMatrix(
+        string name,
+        Action<string> setup,
+        Action<string, string> write,
+        SaveFileOperation commit,
+        string? beforeCommit,
+        string committed,
+        string next,
+        string afterNext)
+    {
+        var template = CasePath(name + "-count");
+        setup(template);
+        var operations = Capture(() => write(template, committed));
+        var commitPrefix = operations.IndexOf(commit) + 1;
+        Assert.True(commitPrefix > 0, $"{name} must expose its commit checkpoint.");
+
+        for (var prefix = 1; prefix <= operations.Count; prefix++)
+        {
+            var source = CasePath($"{name}-source-{prefix}");
+            setup(source);
+            CrashAfter(prefix, () => write(source, committed));
+            var recovered = prefix < commitPrefix ? beforeCommit : committed;
+            AssertRecovered(source, recovered);
+
+            for (var nextPrefix = 1; ; nextPrefix++)
+            {
+                var crossProduct = CasePath($"{name}-source-{prefix}-next-{nextPrefix}");
+                setup(crossProduct);
+                CrashAfter(prefix, () => write(crossProduct, committed));
+                var recoveredForNext = prefix < commitPrefix ? beforeCommit : committed;
+
+                // A pre-commit new-run crash correctly has no run to continue. Recovery
+                // starts that new run again to a real commit; only then can its next save
+                // be a continuation write.
+                if (recoveredForNext is null)
+                {
+                    SaveFile.BeginNewRun(crossProduct, committed);
+                    recoveredForNext = committed;
+                }
+
+                var countPath = CasePath($"{name}-source-{prefix}-next-count-{nextPrefix}");
+                setup(countPath);
+                CrashAfter(prefix, () => write(countPath, committed));
+                if (prefix < commitPrefix && beforeCommit is null)
+                {
+                    SaveFile.BeginNewRun(countPath, committed);
+                }
+
+                var nextOperations = Capture(() => SaveFile.ContinueWrite(countPath, next));
+                if (nextPrefix > nextOperations.Count)
+                {
+                    break;
+                }
+
+                CrashAfter(nextPrefix, () => SaveFile.ContinueWrite(crossProduct, next));
+                var nextCommitPrefix = nextOperations.IndexOf(SaveFileOperation.ContinuationCommitted) + 1;
+                AssertRecovered(crossProduct, nextPrefix < nextCommitPrefix ? recoveredForNext : next);
+            }
+        }
+
+        var completed = CasePath(name + "-completed");
+        setup(completed);
+        write(completed, committed);
+        SaveFile.ContinueWrite(completed, next);
+        SaveFile.ContinueWrite(completed, afterNext);
+        Assert.Equal(afterNext, LoadedJson(completed));
+    }
+
+    private string CasePath(string name)
+    {
+        var directory = Path.Combine(_directory, name);
+        Directory.CreateDirectory(directory);
+        return Path.Combine(directory, "save.json");
+    }
+
+    private static void EstablishPrimary(string path, string current)
+    {
+        SaveFile.BeginNewRun(path, Save(10));
+        SaveFile.ContinueWrite(path, current);
+    }
+
+    private static void EstablishOldFallback(string path, string current)
+    {
+        EstablishPrimary(path, current);
+        File.Move(path, path + ".old", overwrite: true);
+        File.WriteAllText(path, "corrupt primary");
+    }
+
+    private static void EstablishBackupFallback(string path, string current)
+    {
+        EstablishPrimary(path, current);
+        File.Copy(path, path + ".bak", overwrite: true);
+        File.Delete(path);
+        if (File.Exists(path + ".old"))
+        {
+            File.Delete(path + ".old");
+        }
+    }
+
+    private static List<SaveFileOperation> Capture(Action action)
+    {
+        var operations = new List<SaveFileOperation>();
+        SaveFile.OperationCompletedForTesting = operations.Add;
+        try
+        {
+            action();
+            return operations;
+        }
+        finally
+        {
+            RemoveInjection();
+        }
+    }
+
+    private static void CrashAfter(int prefix, Action action)
+    {
+        InjectAfter(prefix);
+        try
+        {
+            Assert.Throws<InjectedCrash>(action);
+        }
+        finally
+        {
+            // Restore only the hook. Deliberately do not remove any files: assertions
+            // must inspect the exact filesystem state the injected crash left behind.
+            RemoveInjection();
+        }
+    }
+
+    private static int InjectAfter(int prefix)
+    {
+        var seen = 0;
+        SaveFile.OperationCompletedForTesting = _ =>
+        {
+            seen++;
+            if (seen == prefix)
+            {
+                throw new InjectedCrash();
+            }
+        };
+        return prefix;
+    }
+
+    private static void RemoveInjection() => SaveFile.OperationCompletedForTesting = null;
+
+    private static void AssertRecovered(string path, string? expected)
+    {
+        var loaded = SaveFile.LoadRun(path);
+        if (expected is null)
+        {
+            Assert.Null(loaded.Saved);
+            return;
+        }
+
+        Assert.NotNull(loaded.Saved);
+        Assert.Equal(expected, ContentSerializer.Serialize(loaded.Saved!));
+    }
+
+    private static string LoadedJson(string path)
+    {
+        var loaded = SaveFile.LoadRun(path);
+        Assert.NotNull(loaded.Saved);
+        return ContentSerializer.Serialize(loaded.Saved!);
+    }
+
+    private static string Save(int seed) => RunSave.ToJson(GauntletRun.Start(Content, seed: seed));
+
+    private sealed class InjectedCrash : Exception;
 }

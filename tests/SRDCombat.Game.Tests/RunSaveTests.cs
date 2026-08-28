@@ -16,6 +16,7 @@ namespace SRDCombat.Game.Tests;
 /// change to what a save holds should fail here loudly, not surface as an unreadable
 /// file after the format has drifted.
 /// </remarks>
+[Collection("SaveFile filesystem fault injection")]
 public class RunSaveTests
 {
     // Shared with the scenario-format classes rather than loaded a second time — see
@@ -331,31 +332,34 @@ public class RunSaveTests
     public void ASaveMissingBothSeedAndContentVersionLoadsAndIsFullyStampedAfterOneAutosave()
     {
         var saved = RunWithHistory().ToSave() with { Seed = null, ContentVersion = null };
-        var loaded = RunSave.FromJson(ContentSerializer.Serialize(saved));
-
-        Assert.Null(loaded.Seed);
-        Assert.Null(loaded.ContentVersion);
-
-        var run = GauntletRun.Resume(Content, loaded);
-
-        Assert.Equal(RunOutcome.InProgress, run.Outcome);
-
         var savePath = Path.Combine(Path.GetTempPath(), $"srdcombat-adoptseed-test-{Guid.NewGuid():N}.json");
 
         try
         {
+            SaveFile.BeginNewRun(savePath, ContentSerializer.Serialize(saved));
+            var loaded = SaveFile.LoadRun(savePath);
+
+            Assert.NotNull(loaded.Saved);
+            Assert.Null(loaded.Saved!.Seed);
+            Assert.Null(loaded.Saved.ContentVersion);
+
+            var run = GauntletRun.Resume(Content, loaded.Saved);
+            Assert.Equal(RunOutcome.InProgress, run.Outcome);
+
             run.AdoptSeed(20260823, savePath);
 
-            var reSaved = run.ToSave();
-
-            Assert.Equal(20260823, reSaved.Seed);
-            Assert.Equal(Content.ContentFingerprint, reSaved.ContentVersion);
+            var reloaded = SaveFile.LoadRun(savePath);
+            Assert.NotNull(reloaded.Saved);
+            Assert.Equal(20260823, reloaded.Saved!.Seed);
+            Assert.Equal(Content.ContentFingerprint, reloaded.Saved.ContentVersion);
         }
         finally
         {
             File.Delete(savePath);
             File.Delete(savePath + ".tmp");
+            File.Delete(savePath + ".new");
             File.Delete(savePath + ".bak");
+            File.Delete(savePath + ".old");
         }
     }
 
