@@ -145,13 +145,26 @@ internal readonly record struct Route(
 /// <param name="CanArmAttack">Whether the commanded character is offered the Attack action.</param>
 /// <param name="HasCommanded">Whether a character is under the player's command right now.</param>
 /// <param name="HasCursor">Whether the board cursor is placed.</param>
+/// <param name="Interlude">
+/// Whether the phase is the interlude between fights — not simply <c>!Fighting</c>, since a
+/// finished run (<c>Phase.RunOver</c>) is neither. The click pipeline's guard on
+/// <see cref="ClickHit"/>'s shop-related facts (#503, qc review round 1): <c>PlayMode</c>'s
+/// hit-testing reports those facts unconditionally now, so the router — not the node — is
+/// what refuses to honour a stray one outside the screen it belongs to.
+/// </param>
+/// <param name="ShopAvailable">
+/// Whether this interlude offers a stall at all (a Long Rest's own fact, unrelated to the
+/// focus stack). Gates <see cref="ClickHit.ShopOpen"/> the same way.
+/// </param>
 internal readonly record struct RouteContext(
     bool Fighting,
     bool ActInProgress,
     int MenuRowCount,
     bool CanArmAttack,
     bool HasCommanded,
-    bool HasCursor);
+    bool HasCursor,
+    bool Interlude = false,
+    bool ShopAvailable = false);
 
 /// <summary>
 /// Decides what one input means, given what has the player's attention.
@@ -310,23 +323,37 @@ internal static class PlayFocusRouter
     /// made the two agree, and they agreed only because people read the file carefully.
     /// </para>
     /// <para>
+    /// <b>This method owns every guard, not just the order.</b> (qc review round 1.)
+    /// <c>PlayMode.HitTest</c> reports <see cref="ClickHit"/>'s fields unconditionally —
+    /// every rect tested against the pixel regardless of phase, of what is open, of what is
+    /// available — so a fact reaching here is only ever honoured because <i>this method</i>
+    /// checked <see cref="RouteContext.Interlude"/>, <see cref="RouteContext.ShopAvailable"/>
+    /// or the focus stack first, never because the node declined to compute it. A hit-test
+    /// that pre-filters is a hit-test that has already made the decision it was supposed to
+    /// hand over.
+    /// </para>
+    /// <para>
     /// <b>The nine steps below are numbered to match the issue and the design doc, and the
     /// order is preserved exactly — including two steps that look like bugs and are not:</b>
     /// </para>
     /// <list type="number">
-    /// <item>the interlude screen — its four kinds are mutually exclusive with everything
-    /// below, since <see cref="PlayMode"/>'s hit-testing only ever produces them outside a
-    /// fight;</item>
+    /// <item>the interlude screen, gated on <see cref="RouteContext.Interlude"/> explicitly
+    /// rather than trusted from which <see cref="ClickHit"/> fields happen to be set —
+    /// within it, the back button and the stall's rows only while the shop
+    /// (<c>focus.Top is PlayFocus.Shop</c>) is open, else the open-stall button (also gated
+    /// on <see cref="RouteContext.ShopAvailable"/>) and the continue button;</item>
     /// <item>nobody to command;</item>
     /// <item>an act still playing out;</item>
     /// <item>an armed action, which resolves against <see cref="ClickHit.Square"/> and
-    /// <see cref="ClickHit.OverOverlay"/> directly rather than waiting on
-    /// <see cref="ClickHit.Kind"/>'s own classification — a click on the chrome is
-    /// "anywhere else", and cancelling must never cost anything;</item>
-    /// <item>the open menu's rows;</item>
-    /// <item><b>the button row — after the menu's rows and before the close-menu
-    /// fallback.</b> Clicking a button while a menu is open runs the button, which may
-    /// itself toggle that very menu, rather than closing the menu first;</item>
+    /// <see cref="ClickHit.OverOverlay"/> directly rather than waiting on any other field —
+    /// a click on the chrome is "anywhere else", and cancelling must never cost anything;</item>
+    /// <item>the open menu's rows (<see cref="ClickHit.MenuRow"/>);</item>
+    /// <item><b>the button row (<see cref="ClickHit.Button"/>) — after the menu's rows and
+    /// before the close-menu fallback.</b> Clicking a button while a menu is open runs the
+    /// button, which may itself toggle that very menu, rather than closing the menu first.
+    /// Both fields are populated independently by <c>HitTest</c>, so this order is a real
+    /// choice this method makes rather than one <c>HitTest</c> already made by testing menu
+    /// rows first;</item>
     /// <item><b>a menu still open, swallowing the click.</b> Neither a row nor a button
     /// caught it, so the menu closes rather than being acted through — the square
     /// underneath is not touched, even though one might be there;</item>
@@ -338,21 +365,38 @@ internal static class PlayFocusRouter
     {
         ArgumentNullException.ThrowIfNull(focus);
 
-        // Step 1 — the interlude screen. PlayMode's hit-testing only ever reports these
-        // four kinds outside a fight, so nothing below can fire once one of them has.
-        switch (hit.Kind)
+        // Step 1 — the interlude screen. Gated on context.Interlude explicitly: hit's
+        // shop-related fields are computed unconditionally by HitTest, so this check, not
+        // whichever fields happen to be set, is what confines this branch to the screen it
+        // belongs to.
+        if (context.Interlude)
         {
-            case HitKind.ShopBack:
-                return new Route(RouteAction.CloseTopLayer);
+            if (focus.Top is PlayFocus.Shop)
+            {
+                if (hit.ShopBack)
+                {
+                    return new Route(RouteAction.CloseTopLayer);
+                }
 
-            case HitKind.ShopRow:
-                return new Route(RouteAction.PurchaseShopRow, Index: hit.Index);
+                if (hit.ShopRow is { } shopRow)
+                {
+                    return new Route(RouteAction.PurchaseShopRow, Index: shopRow);
+                }
 
-            case HitKind.ShopOpen:
+                return new Route(RouteAction.Ignore);
+            }
+
+            if (context.ShopAvailable && hit.ShopOpen)
+            {
                 return new Route(RouteAction.OpenShop);
+            }
 
-            case HitKind.Continue:
+            if (hit.Continue)
+            {
                 return new Route(RouteAction.ContinueFight);
+            }
+
+            return new Route(RouteAction.Ignore);
         }
 
         // Step 2 — nobody to command: no encounter, or it is not the party's turn.
@@ -369,23 +413,25 @@ internal static class PlayFocusRouter
 
         // Step 4 — an armed action resolves before anything else the pixel might have hit.
         // A click on the overlay is "anywhere else": it backs out without spending, so this
-        // reads OverOverlay and Square straight through rather than hit.Kind's own answer.
+        // reads OverOverlay and Square straight through rather than any other field.
         if (focus.Top is PlayFocus.Targeting)
         {
             return new Route(RouteAction.ActivateSquareAt, Square: hit.OverOverlay ? null : hit.Square);
         }
 
-        // Step 5 — the open menu's rows.
-        if (hit.Kind == HitKind.MenuRow)
+        // Step 5 — the open menu's rows. Independent of step 6's fact: HitTest sets both
+        // MenuRow and Button whenever their rects match, so this method is the one place
+        // that picks a winner when they could both be set.
+        if (hit.MenuRow is { } menuRow)
         {
-            return new Route(RouteAction.TakeMenuRowAt, Index: hit.Index);
+            return new Route(RouteAction.TakeMenuRowAt, Index: menuRow);
         }
 
         // Step 6 — the button row. Deliberately after the rows and before step 7's
         // close-menu fallback: see this method's remarks.
-        if (hit.Kind == HitKind.Button)
+        if (hit.Button is { } button)
         {
-            return new Route(RouteAction.RunButtonRow, Index: hit.Index);
+            return new Route(RouteAction.RunButtonRow, Index: button);
         }
 
         // Step 7 — a menu is still open and neither of the above caught the click. It
@@ -396,7 +442,7 @@ internal static class PlayFocusRouter
         }
 
         // Step 8 — the fixed chrome, with nothing open to close.
-        if (hit.Kind == HitKind.Overlay)
+        if (hit.OverOverlay)
         {
             return new Route(RouteAction.Ignore);
         }
