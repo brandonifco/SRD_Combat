@@ -183,6 +183,27 @@ internal abstract record PlayFocus
     /// </remarks>
     internal abstract record RowMenu : PlayFocus
     {
+        /// <summary>The default constructor every concrete menu (<c>new AttackMenu()</c>, and so on) uses.</summary>
+        protected RowMenu()
+        {
+        }
+
+        /// <summary>
+        /// The copy constructor a <c>with</c> expression on a concrete menu would use.
+        /// </summary>
+        /// <remarks>
+        /// Declared explicitly, and deliberately does not copy <see cref="MenuIndex"/> —
+        /// see its remarks (qc review round, #505). No <c>with</c> expression exists on any
+        /// <c>PlayFocus</c> today, so this constructor is presently unreachable in shipped
+        /// code; it exists so it stays unreachable in the specific way that matters if one
+        /// is ever added; a compiler-synthesized copy constructor would copy every field
+        /// including this one, silently making the "zero by construction" claim false.
+        /// </remarks>
+        protected RowMenu(RowMenu original)
+            : base(original)
+        {
+        }
+
         internal override EscapeMeaning Escape => EscapeMeaning.CloseSelf;
 
         internal override bool TakesRowKeys => true;
@@ -192,6 +213,47 @@ internal abstract record PlayFocus
         internal override bool SuppressesBoard => false;
 
         internal override bool HoldsTurnOpen => true;
+
+        /// <summary>
+        /// The highlighted row. Zero on every fresh instance — a freshly pushed menu
+        /// starts at the top <em>by construction</em>, not because some caller remembered
+        /// to reset a field it shares with two other menus (#505) — <em>and</em> zero on
+        /// every copy, including a hypothetical <c>with</c> expression (see the copy
+        /// constructor above), so "by construction" covers every way an instance of this
+        /// type can come to exist, not merely <c>new</c>. Arrow keys move it through
+        /// <see cref="MoveHighlight"/>; a click or Enter reads it once and takes the row it
+        /// names; <see cref="ResetHighlight"/> is the one place something other than a fresh
+        /// instance forces it back to zero.
+        /// </summary>
+        internal int MenuIndex { get; private set; }
+
+        /// <summary>
+        /// Moves the highlight by <paramref name="step"/>, clamped to the rows this menu
+        /// is currently showing.
+        /// </summary>
+        /// <remarks>
+        /// The clamp itself moved here from <c>PlayMode</c> along with the field it
+        /// clamps — the two were never separable, and leaving the arithmetic behind while
+        /// the state it reads moved would have been the same defect in miniature.
+        /// </remarks>
+        internal void MoveHighlight(int step, int rowCount) =>
+            MenuIndex = Math.Clamp(MenuIndex + step, 0, rowCount - 1);
+
+        /// <summary>
+        /// Forces the highlight back to row zero without a row count to clamp against.
+        /// </summary>
+        /// <remarks>
+        /// Restores a specific pre-#505 behaviour (qc review round): <c>PlayMode.ChooseSpell</c>
+        /// is the one path that leaves a <see cref="RowMenu"/> instance on the focus stack,
+        /// hidden rather than popped, while pushing a new layer over it (a <c>SlotMenu</c>,
+        /// or <c>Targeting</c>) — so unlike a freshly constructed menu, this exact instance's
+        /// old highlight would otherwise survive the round trip once Esc uncovers it again.
+        /// Before #505, the one field the three menus shared was zeroed unconditionally at
+        /// the top of <c>ChooseSpell</c>, covering both of its exit paths; nothing in
+        /// <c>ChooseAttack</c> or <c>ChooseSlot</c> ever did the same, even then — this
+        /// method exists for <c>ChooseSpell</c> alone, and is not called from either of them.
+        /// </remarks>
+        internal void ResetHighlight() => MenuIndex = 0;
     }
 
     /// <summary>The list of a character's attacks.</summary>
