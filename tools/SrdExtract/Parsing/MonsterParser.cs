@@ -155,12 +155,10 @@ public static partial class MonsterParser
                 // while the spell names after it use regular/italic runs. Attribute
                 // that exact labelled line to the open Spellcasting entry rather than
                 // treating it as a new stat line (#530).
-                case StatBlockFonts.Stat when IsSpellcastingUsageTier(line.Text):
-                    if (_entries.Count > 0 && _entries[^1].Name == "Spellcasting")
-                    {
-                        _entries[^1].Append(line.Text);
-                    }
-
+                case StatBlockFonts.Stat when _entries.Count > 0
+                                                 && _entries[^1].Name == "Spellcasting"
+                                                 && IsSpellcastingUsageTier(line.Text):
+                    _entries[^1].Append(line.Text);
                     return;
 
                 case StatBlockFonts.Stat:
