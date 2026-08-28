@@ -248,10 +248,32 @@ presentation, so it stays in `client/` — but it stops living inside a `Node2D`
 
 ### 3.4 Drawing comes off the stack
 
-`_Draw` ends with `…layers bottom-up… → hint → quit card`, iterating
-`_focus.BottomUp` for the card-drawing layers. `Targeting` draws no card (it changes how
-the board draws, which the board already does by asking the stack). Z-order and input
-priority stop being two lists.
+**Corrected 2026-08-28, after S5 shipped and review knocked the original claim out.** This
+section used to say `_Draw` iterates `_focus.BottomUp` for the card-drawing layers and that
+"z-order and input priority stop being two lists". The first half was built; the second half
+was never true, and the loop that appeared to deliver it was inert.
+
+What S5 actually lands: `_Draw` asks the stack **which card is eligible** — a switch on
+`_focus.Top` for the three row menus, `Holds<Outcome>` for the outcome card — replacing four
+hand-written conditions. That is the third copy of the modal order, and it is gone.
+
+What it does **not** land, and why the loop was removed: **no two of these cards can be on
+screen in the same frame**, so traversal order is unobservable. A row menu draws only while
+it is `_focus.Top`, so at most one of three; the outcome card exists only once the fight is
+complete, which is exactly when `CommandedCombatant()` returns null and every menu case is
+dead. Review proved it by reversing the traversal — every probe capture stayed
+byte-identical. A loop whose order provably cannot matter is a mechanism that looks like it
+decides something and does not, which is the failure shape this project keeps catching, so
+it was replaced by the switch rather than shipped with a comment excusing it.
+
+Two cards genuinely can coexist — Esc during the closing animation leaves `QuitConfirm` open
+and `_Process` pushes `Outcome` above it — and that pair's order stays hand-written, by name,
+for the reason below. **When a second pair of stack-traversed cards can coexist, the
+`BottomUp` loop earns its place; until then `FocusStack.BottomUp` is stack order and nothing
+promises it is draw order.**
+
+`Targeting` draws no card (it changes how the board draws, which the board already does by
+asking the stack).
 
 **One documented exception: the quit card is still drawn last, by name.** It sits above
 even the pointer's hint, because a tooltip must never occlude the question that closes the

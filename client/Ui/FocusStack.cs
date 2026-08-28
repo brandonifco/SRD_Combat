@@ -42,7 +42,16 @@ internal sealed class FocusStack<TFocus>
     /// <summary>How many layers are open, counting the root. Never less than one.</summary>
     internal int Depth => _layers.Count;
 
-    /// <summary>Every layer, root first — the order a screen draws them in.</summary>
+    /// <summary>
+    /// Every layer, root first.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not "the order a screen draws them in"</b>, which is what this said until #504's
+    /// review. Nothing currently draws by walking this: <c>PlayMode._Draw</c> asks the stack
+    /// <i>which</i> card is eligible, not what order to paint several in, because no two of
+    /// its cards can be on screen in the same frame. Read this as stack order, and do not
+    /// infer a z-order guarantee from it that no caller provides.
+    /// </remarks>
     internal IReadOnlyList<TFocus> BottomUp => _layers;
 
     /// <summary>Opens a layer over the current one.</summary>

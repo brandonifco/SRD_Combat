@@ -1431,9 +1431,12 @@ public partial class PlayMode : FightScreen
     /// The index of the first row whose rectangle contains <paramref name="pixel"/>, or null.
     /// </summary>
     /// <remarks>
-    /// Deliberately blind to focus. Each row list is cleared by its own <c>Draw</c> method
-    /// whenever that menu is not on top, so a closed menu holds no rectangles and this finds
-    /// nothing for it — the emptiness does the filtering, not a focus test. Whether a found
+    /// Deliberately blind to focus. <see cref="ClearMenuRows"/> empties every row list at the
+    /// top of each <c>_Draw</c>, before anything decides what to repopulate, so a menu that
+    /// is not showing holds no rectangles and this finds nothing for it — the emptiness does
+    /// the filtering, not a focus test. (Until #504 round 3 each <c>Draw</c> method cleared
+    /// its own list; the unconditional sweep is strictly stronger, because it no longer
+    /// depends on that method being called.) Whether a found
     /// row may actually be <i>taken</i> is <see cref="PlayFocusRouter.RouteClick"/>'s call.
     /// </remarks>
     private static int? RowAt<T>(List<(Rect2 Rect, T Value)> rows, Vector2 pixel)
@@ -1468,10 +1471,10 @@ public partial class PlayMode : FightScreen
         var shopOpen = _shopButton.HasPoint(pixel);
         var continueHit = _continueButton.HasPoint(pixel);
 
-        // Every row list, unconditionally — no <see cref="_focus"/> branch here. Each list
-        // is cleared by its own Draw method whenever its menu is not on top
-        // (<see cref="DrawSpellMenu"/> and its two siblings clear before their early
-        // return), so a closed menu contributes no rectangles and this loop finds nothing
+        // Every row list, unconditionally — no <see cref="_focus"/> branch here. The lists
+        // are emptied by <see cref="ClearMenuRows"/> at the top of every _Draw, before
+        // anything decides which (if any) to repopulate, so a menu that is not showing
+        // contributes no rectangles and this loop finds nothing
         // for it. Reading focus here would put the last gating decision back on the wrong
         // side of the seam this slice exists to draw: whether a row may be taken is the
         // router's call (it checks <see cref="PlayFocus.RowMenu"/>), and this method's only
@@ -2032,42 +2035,52 @@ public partial class PlayMode : FightScreen
         // them gets repopulated.
         ClearMenuRows();
 
-        // The picture above the board, in the order the stack itself defines — not four
-        // names written out by hand (the third and last copy of the modal priority order,
-        // #504's own framing). PlayFocus.Board and PlayFocus.Targeting draw no card of their
-        // own and contribute no case here: that is correct, not an omission — Targeting
-        // changes how the *board* draws (the enemy rings, the cursor), which the board
-        // already reads off the stack since S1. A row-menu case fires only when its layer is
-        // literally _focus.Top (ReferenceEquals, not a type match alone) and somebody is
-        // commanded — Outcome's case has no such guard because nothing is ever pushed above
-        // it (qc's #504 review checked every Push site) and it must still draw in the one
-        // state where nobody is commanded at all: CommandedCombatant() requires
-        // "_encounter is { IsComplete: false }", so commanded is null in every frame the
-        // outcome card exists. PlayFocus.QuitConfirm is the one documented exception, drawn
-        // last by name after the hint below, never through this loop.
-        foreach (var layer in _focus.BottomUp)
+        // Which card is showing is the focus stack's answer, not four conditions written
+        // out by hand — that was the third and last copy of the modal order, and it is
+        // gone. What this is *not*, deliberately: a z-order mechanism.
+        //
+        // S5 first shipped this as a `foreach (layer in _focus.BottomUp)` dispatch, on the
+        // reading that draw order should follow stack order. Review knocked that out by
+        // reversing the traversal: every capture stayed byte-identical, because **no two of
+        // these cards can draw in the same frame**. A row menu draws only when it is
+        // _focus.Top, so at most one of the three; and the outcome card only exists once
+        // the fight is complete, which is exactly when CommandedCombatant() returns null
+        // ("_encounter is { IsComplete: false }") and every menu case is dead. An ordering
+        // loop whose order provably cannot matter is a mechanism that looks like it decides
+        // something and does not, which is the shape this project keeps having to catch.
+        // So the loop is not here, and FocusStack.BottomUp is not described as draw order.
+        //
+        // Two cards genuinely can be up at once — Esc during the closing animation leaves
+        // QuitConfirm open and _Process then pushes Outcome above it — and that pair's
+        // order is still hand-written below, by name, for the reason on DrawQuitCard.
+        // When a second pair of stack-traversed cards can coexist, the loop earns its place
+        // and this comment is the note that says so.
+        //
+        // PlayFocus.Board and PlayFocus.Targeting draw no card and appear here at all: that
+        // is correct, not an omission — Targeting changes how the *board* draws, which the
+        // board has read off the stack since S1.
+        switch (_focus.Top)
         {
-            switch (layer)
-            {
-                case PlayFocus.SpellMenu when ReferenceEquals(layer, _focus.Top)
-                    && commanded is { } spellCaster:
-                    DrawSpellMenu(spellCaster);
-                    break;
+            case PlayFocus.SpellMenu when commanded is { } spellCaster:
+                DrawSpellMenu(spellCaster);
+                break;
 
-                case PlayFocus.AttackMenu when ReferenceEquals(layer, _focus.Top)
-                    && commanded is { } attacker:
-                    DrawAttackMenu(attacker);
-                    break;
+            case PlayFocus.AttackMenu when commanded is { } attacker:
+                DrawAttackMenu(attacker);
+                break;
 
-                case PlayFocus.SlotMenu { Spell: { } spell } when ReferenceEquals(layer, _focus.Top)
-                    && commanded is { } slotCaster:
-                    DrawSlotMenu(slotCaster, spell);
-                    break;
+            case PlayFocus.SlotMenu { Spell: { } spell } when commanded is { } slotCaster:
+                DrawSlotMenu(slotCaster, spell);
+                break;
+        }
 
-                case PlayFocus.Outcome:
-                    DrawOutcomeCard();
-                    break;
-            }
+        // Not switched on Top with the menus above: the outcome card draws while it is
+        // anywhere in the stack, including underneath QuitConfirm in the Esc-during-the-
+        // closing-animation state. Holds, not Top — the pre-S5 reading, kept because it is
+        // the correct one and Top would silently blank the card under the quit question.
+        if (_focus.Holds<PlayFocus.Outcome>())
+        {
+            DrawOutcomeCard();
         }
 
         // Last, so it sits over everything it might explain.
