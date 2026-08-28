@@ -19,11 +19,16 @@ internal enum EscapeMeaning
     /// Back all the way out to the board, not one layer.
     /// </summary>
     /// <remarks>
-    /// <b>PopToRoot, deliberately.</b> Today Esc from the slot menu clears every menu
-    /// flag and every pending field at once and lands the player on the board. A stack
-    /// that popped one layer would land them on the spell menu instead — a game change
-    /// wearing a refactor's clothes. Whether the game *wants* pop-one is a designer
-    /// question and is filed separately; it is not this enum's to decide.
+    /// <b>No <see cref="PlayFocus"/> answers with this any more.</b> It shipped as the
+    /// behaviour-preserving landing for every menu and <see cref="PlayFocus.Targeting"/>
+    /// before the stack existed, when Esc had nothing to step back <em>to</em> — S1 cleared
+    /// every menu flag and pending field as one set, so PopToRoot was the only faithful
+    /// translation. #509 (Brandon, 2026-08-27: "ESC should drop one level until it's at the
+    /// base game") answered the reserved question this remark used to defer, and moved
+    /// every menu and <see cref="PlayFocus.Targeting"/> onto <see cref="CloseSelf"/>. Left
+    /// defined because <c>PlayFocusRouter.RouteAction.DropToBoard</c> still has a use — the
+    /// click pipeline's menu-swallow step (#503) — even with no <see cref="EscapeMeaning"/>
+    /// left to reach it.
     /// </remarks>
     DropToBoard,
 

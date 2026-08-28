@@ -864,20 +864,27 @@ public partial class PlayMode : FightScreen
     }
 
     /// <summary>Takes the highlighted row of whichever menu is open.</summary>
-    private void TakeHighlightedRow()
+    private void TakeHighlightedRow() => TakeMenuRow(_menuIndex);
+
+    /// <summary>
+    /// Takes one row of whichever menu is open, by index rather than by highlight — the
+    /// keyboard's Enter and a click on a row both end up here, the first with
+    /// <c>_menuIndex</c>, the second with whichever row the pixel landed on (#503).
+    /// </summary>
+    private void TakeMenuRow(int index)
     {
         switch (_focus.Top)
         {
-            case PlayFocus.SpellMenu when _menuIndex < _spellRows.Count:
-                ChooseSpell(_spellRows[_menuIndex].Spell);
+            case PlayFocus.SpellMenu when index < _spellRows.Count:
+                ChooseSpell(_spellRows[index].Spell);
                 break;
 
-            case PlayFocus.SlotMenu when _menuIndex < _slotRows.Count:
-                ChooseSlot(_slotRows[_menuIndex].Level);
+            case PlayFocus.SlotMenu when index < _slotRows.Count:
+                ChooseSlot(_slotRows[index].Level);
                 break;
 
-            case PlayFocus.AttackMenu when _menuIndex < _attackRows.Count:
-                ChooseAttack(_attackRows[_menuIndex].Attack);
+            case PlayFocus.AttackMenu when index < _attackRows.Count:
+                ChooseAttack(_attackRows[index].Attack);
                 break;
         }
     }
@@ -1368,139 +1375,177 @@ public partial class PlayMode : FightScreen
         return true;
     }
 
-    private void HandleClick(Vector2 pixel)
+    /// <summary>
+    /// A click, translated to a route and performed. The priority order that used to live
+    /// here — a second, hand-written copy of the keyboard's own — is gone; only hit-testing
+    /// (<see cref="HitTest"/>) and executing the answer (<see cref="PerformClick"/>) remain
+    /// (#503, S4).
+    /// </summary>
+    private void HandleClick(Vector2 pixel) =>
+        PerformClick(PlayFocusRouter.RouteClick(_focus, HitTest(pixel), Context()));
+
+    /// <summary>
+    /// What one pixel hit — the node's half of the click pipeline. Rect hit-testing stays
+    /// here because it is layout, not decision; <see cref="PlayFocusRouter.RouteClick"/>
+    /// decides what the hit means.
+    /// </summary>
+    /// <remarks>
+    /// Tests the same regions <c>HandleClick</c> used to, in the same order, since two
+    /// regions can occupy the same pixel only when one is drawn over the other — the shop's
+    /// back button and its rows, or an open menu's rows and the button strip beneath it.
+    /// <see cref="ClickHit.Square"/> and <see cref="ClickHit.OverOverlay"/> are computed
+    /// regardless of <see cref="ClickHit.Kind"/>, because the router reads them directly
+    /// when an action is armed, ahead of everything <see cref="ClickHit.Kind"/> otherwise
+    /// decides (S4 step 4).
+    /// </remarks>
+    private ClickHit HitTest(Vector2 pixel)
     {
+        var overOverlay = OverOverlay(pixel);
+
         if (_phase == Phase.Interlude)
         {
-            if (Shopping is not null && _run is { } shopping)
+            if (Shopping is not null && _run is not null)
             {
                 if (_shopBackButton.HasPoint(pixel))
                 {
-                    _focus.Pop();
-                    QueueRedraw();
-                    return;
+                    return new ClickHit(HitKind.ShopBack, 0, null, overOverlay);
                 }
 
-                foreach (var (rect, offer) in _shopRows)
+                for (var index = 0; index < _shopRows.Count; index++)
                 {
-                    if (rect.HasPoint(pixel))
+                    if (_shopRows[index].Rect.HasPoint(pixel))
                     {
-                        // The engine's answer either way: a purchase re-lists the
-                        // stall with the purse lighter, a refusal is shown with its
-                        // code like every other rule.
-                        _focus.ReplaceTop(new PlayFocus.Shop(
-                            shopping.Purchase(offer) is { } refusal
-                                ? $"[{refusal.Code}] {refusal.Message}"
-                                : $"Bought: {offer.Description}."));
-                        QueueRedraw();
-                        return;
+                        return new ClickHit(HitKind.ShopRow, index, null, overOverlay);
                     }
                 }
 
-                return;
+                return new ClickHit(HitKind.Nothing, 0, null, overOverlay);
             }
 
             if (_shopAvailable && _shopButton.HasPoint(pixel))
             {
-                _focus.Push(new PlayFocus.Shop());
-                QueueRedraw();
-                return;
+                return new ClickHit(HitKind.ShopOpen, 0, null, overOverlay);
             }
 
             if (_continueButton.HasPoint(pixel))
             {
-                StartNextFight();
+                return new ClickHit(HitKind.Continue, 0, null, overOverlay);
             }
 
-            return;
-        }
-
-        if (CommandedCombatant() is not { } active || _encounter is not { } encounter)
-        {
-            return;
-        }
-
-        // The mouse waits with the keyboard: while an act's animation is playing, a
-        // click on a button, a menu or the board commands nothing, so an action's
-        // effects are seen before the next one can be asked for. Nothing is armed
-        // during the window — arming itself takes an input this gate swallows.
-        if (ActInProgress)
-        {
-            return;
-        }
-
-        // An armed click resolves first: the next token is the target, anywhere else
-        // backs out. Cancelling must never cost anything, so nothing is spent until the
-        // engine call itself. A click on an overlay is "anywhere else" — the field runs
-        // under the log now, and a cancel aimed at the panel must not land on whatever
-        // square happens to sit beneath it.
-        if (Armed is not null)
-        {
-            ActivateSquare(OverOverlay(pixel) ? null : SquareAt(pixel));
-            return;
+            return new ClickHit(HitKind.Nothing, 0, null, overOverlay);
         }
 
         if (_focus.Top is PlayFocus.SpellMenu)
         {
-            foreach (var (rect, chosen) in _spellRows)
+            for (var index = 0; index < _spellRows.Count; index++)
             {
-                if (rect.HasPoint(pixel))
+                if (_spellRows[index].Rect.HasPoint(pixel))
                 {
-                    ChooseSpell(chosen);
-                    return;
+                    return new ClickHit(HitKind.MenuRow, index, null, overOverlay);
+                }
+            }
+        }
+        else if (_focus.Top is PlayFocus.SlotMenu)
+        {
+            for (var index = 0; index < _slotRows.Count; index++)
+            {
+                if (_slotRows[index].Rect.HasPoint(pixel))
+                {
+                    return new ClickHit(HitKind.MenuRow, index, null, overOverlay);
+                }
+            }
+        }
+        else if (_focus.Top is PlayFocus.AttackMenu)
+        {
+            for (var index = 0; index < _attackRows.Count; index++)
+            {
+                if (_attackRows[index].Rect.HasPoint(pixel))
+                {
+                    return new ClickHit(HitKind.MenuRow, index, null, overOverlay);
                 }
             }
         }
 
-        if (_focus.Top is PlayFocus.SlotMenu)
+        for (var index = 0; index < _buttons.Count; index++)
         {
-            foreach (var (rect, level) in _slotRows)
+            if (_buttons[index].Rect.HasPoint(pixel))
             {
-                if (rect.HasPoint(pixel))
-                {
-                    ChooseSlot(level);
-                    return;
-                }
+                return new ClickHit(HitKind.Button, index, null, overOverlay);
             }
         }
 
-        if (_focus.Top is PlayFocus.AttackMenu)
-        {
-            foreach (var (rect, chosen) in _attackRows)
-            {
-                if (rect.HasPoint(pixel))
-                {
-                    ChooseAttack(chosen);
-                    return;
-                }
-            }
-        }
+        var square = SquareAt(pixel);
 
-        foreach (var (rect, _, act) in _buttons)
+        return overOverlay
+            ? new ClickHit(HitKind.Overlay, 0, square, true)
+            : new ClickHit(HitKind.Square, 0, square, false);
+    }
+
+    /// <summary>Carries out one routed click decision.</summary>
+    private void PerformClick(Route route)
+    {
+        switch (route.Action)
         {
-            if (rect.HasPoint(pixel))
-            {
-                Run(act);
+            case RouteAction.Ignore:
                 return;
-            }
+
+            case RouteAction.CloseTopLayer:
+                _focus.Pop();
+                break;
+
+            case RouteAction.PurchaseShopRow:
+                if (_run is { } shopping && route.Index < _shopRows.Count)
+                {
+                    var offer = _shopRows[route.Index].Offer;
+
+                    // The engine's answer either way: a purchase re-lists the stall
+                    // with the purse lighter, a refusal is shown with its code like
+                    // every other rule.
+                    _focus.ReplaceTop(new PlayFocus.Shop(
+                        shopping.Purchase(offer) is { } refusal
+                            ? $"[{refusal.Code}] {refusal.Message}"
+                            : $"Bought: {offer.Description}."));
+                }
+
+                break;
+
+            case RouteAction.OpenShop:
+                _focus.Push(new PlayFocus.Shop());
+                break;
+
+            case RouteAction.ContinueFight:
+                StartNextFight();
+                return;
+
+            case RouteAction.TakeMenuRowAt:
+                TakeMenuRow(route.Index);
+                return;
+
+            case RouteAction.RunButtonRow:
+                if (route.Index < _buttons.Count)
+                {
+                    Run(_buttons[route.Index].Act);
+                }
+
+                return;
+
+            case RouteAction.DropToBoard:
+                // A click on the grid closes an open menu rather than acting through
+                // it. The spell that used to be nulled alongside the flags here rides
+                // the SlotMenu layer now, so dropping to the board takes it with it.
+                ClearPending();
+                break;
+
+            case RouteAction.ActivateSquareAt:
+                ActivateSquare(route.Square);
+                return;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(route), route.Action, "No click handler for this route.");
         }
 
-        // A click on the grid closes an open menu rather than acting through it. The
-        // spell that used to be nulled alongside the flags here rides the SlotMenu layer
-        // now, so dropping to the board takes it with it.
-        if (_focus.Top is PlayFocus.RowMenu)
-        {
-            ClearPending();
-            QueueRedraw();
-            return;
-        }
-
-        if (OverOverlay(pixel))
-        {
-            return;
-        }
-
-        ActivateSquare(SquareAt(pixel));
+        QueueRedraw();
     }
 
     /// <summary>
