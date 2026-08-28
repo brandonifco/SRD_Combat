@@ -1426,6 +1426,29 @@ public partial class PlayMode : FightScreen
     /// <c>OpenMenuLength</c> already makes.
     /// </para>
     /// </remarks>
+
+    /// <summary>
+    /// The index of the first row whose rectangle contains <paramref name="pixel"/>, or null.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately blind to focus. Each row list is cleared by its own <c>Draw</c> method
+    /// whenever that menu is not on top, so a closed menu holds no rectangles and this finds
+    /// nothing for it — the emptiness does the filtering, not a focus test. Whether a found
+    /// row may actually be <i>taken</i> is <see cref="PlayFocusRouter.RouteClick"/>'s call.
+    /// </remarks>
+    private static int? RowAt<T>(List<(Rect2 Rect, T Value)> rows, Vector2 pixel)
+    {
+        for (var index = 0; index < rows.Count; index++)
+        {
+            if (rows[index].Rect.HasPoint(pixel))
+            {
+                return index;
+            }
+        }
+
+        return null;
+    }
+
     private ClickHit HitTest(Vector2 pixel)
     {
         var overOverlay = OverOverlay(pixel);
@@ -1445,41 +1468,15 @@ public partial class PlayMode : FightScreen
         var shopOpen = _shopButton.HasPoint(pixel);
         var continueHit = _continueButton.HasPoint(pixel);
 
-        int? menuRow = null;
-
-        if (_focus.Top is PlayFocus.SpellMenu)
-        {
-            for (var index = 0; index < _spellRows.Count; index++)
-            {
-                if (_spellRows[index].Rect.HasPoint(pixel))
-                {
-                    menuRow = index;
-                    break;
-                }
-            }
-        }
-        else if (_focus.Top is PlayFocus.SlotMenu)
-        {
-            for (var index = 0; index < _slotRows.Count; index++)
-            {
-                if (_slotRows[index].Rect.HasPoint(pixel))
-                {
-                    menuRow = index;
-                    break;
-                }
-            }
-        }
-        else if (_focus.Top is PlayFocus.AttackMenu)
-        {
-            for (var index = 0; index < _attackRows.Count; index++)
-            {
-                if (_attackRows[index].Rect.HasPoint(pixel))
-                {
-                    menuRow = index;
-                    break;
-                }
-            }
-        }
+        // Every row list, unconditionally — no <see cref="_focus"/> branch here. Each list
+        // is cleared by its own Draw method whenever its menu is not on top
+        // (<see cref="DrawSpellMenu"/> and its two siblings clear before their early
+        // return), so a closed menu contributes no rectangles and this loop finds nothing
+        // for it. Reading focus here would put the last gating decision back on the wrong
+        // side of the seam this slice exists to draw: whether a row may be taken is the
+        // router's call (it checks <see cref="PlayFocus.RowMenu"/>), and this method's only
+        // job is to say which rectangles the pixel is inside.
+        int? menuRow = RowAt(_spellRows, pixel) ?? RowAt(_slotRows, pixel) ?? RowAt(_attackRows, pixel);
 
         int? button = null;
 

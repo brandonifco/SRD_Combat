@@ -309,6 +309,29 @@ public class PlayFocusRouterClickTests
         Assert.Equal(2, route.Index);
     }
 
+    /// <summary>
+    /// The gate that must live in the router, not in <c>HitTest</c>: a row may only be
+    /// taken while a row menu is on top.
+    /// </summary>
+    /// <remarks>
+    /// From qc's second review of #503. The first fix made <c>HitTest</c> report MenuRow and
+    /// Button independently, but left <c>HitTest</c> deciding <i>whether</i> a row was
+    /// eligible by reading focus — so the router honoured any MenuRow it was handed and was
+    /// correct only because production never handed it a bad one. This test hands it exactly
+    /// that: board focus, both facts set. Without the router's <c>RowMenu</c> check it picks
+    /// TakeMenuRowAt for a menu that is not open.
+    /// </remarks>
+    [Fact]
+    public void AMenuRowIsIgnoredWhenNoRowMenuIsOpenEvenIfHitTestReportedOne()
+    {
+        var hit = Hit(menuRow: 2, button: 5);
+
+        var route = Route(Board(), hit, Ready());
+
+        Assert.Equal(RouteAction.RunButtonRow, route.Action);
+        Assert.Equal(5, route.Index);
+    }
+
     [Fact]
     public void Step5AMenuRowTakesThatRow()
     {

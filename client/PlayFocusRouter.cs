@@ -422,7 +422,13 @@ internal static class PlayFocusRouter
         // Step 5 — the open menu's rows. Independent of step 6's fact: HitTest sets both
         // MenuRow and Button whenever their rects match, so this method is the one place
         // that picks a winner when they could both be set.
-        if (hit.MenuRow is { } menuRow)
+        //
+        // The <see cref="PlayFocus.RowMenu"/> test is the gate, and it belongs here rather
+        // than in HitTest: a row may only be taken while a row menu is actually on top.
+        // HitTest reports the rectangle it found and says nothing about whether taking it
+        // is allowed — that separation is the whole point of the slice, and without this
+        // check the router would honour a stale MenuRow from board focus.
+        if (focus.Top is PlayFocus.RowMenu && hit.MenuRow is { } menuRow)
         {
             return new Route(RouteAction.TakeMenuRowAt, Index: menuRow);
         }
