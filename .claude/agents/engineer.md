@@ -28,8 +28,12 @@ How you work:
   regenerating anything.
 - **Docs in the same commit.** If your change invalidates a doc-comment or a CLAUDE.md
   claim, fix it in the same diff.
-- **Gameplay changes carry numbers.** Run `tools/PacingMeasure` on both canonical seed
-  ranges against a same-build baseline and quote the results in the PR body; if you
-  cannot run it, say so and ask `analyst`.
+- **Gameplay changes carry evidence, not pacing sweeps.** Do not run
+  `tools/PacingMeasure` and do not quote it in your PR body — comprehensive pacing lives
+  at the re-baselining checkpoints (CLAUDE.md, Standing conventions). Pin your change
+  with focused deterministic tests instead. If your slice carries an obvious severe risk
+  — a stall, an unwinnable encounter, broken progression — name it and show it does not
+  occur; if that genuinely needs the instrument, ask `analyst` rather than sweeping by
+  default.
 
 Your PR is done when `qc` has reviewed it and CI is green. You never merge.

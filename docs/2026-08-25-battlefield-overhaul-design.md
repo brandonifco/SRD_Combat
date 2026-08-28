@@ -313,10 +313,13 @@ stand leaves no half-room).
   already grows with side size; nothing changes there.
 - **Determinism.** All draws through `IRandomSource` in fixed consumption patterns;
   a rejected structure consumes the same dice as an accepted one.
-- **No stall regressions.** Zero `Stalled` on both canonical seed ranges is a hard
-  gate on every slice, as it already is. Denser terrain re-rolls every fight's dice
-  and will expose latent shapes the way the denser-terrain branch exposed #256 — that
-  is the gate working, not a reason to stay sparse.
+- **No stall regressions.** A slice must not make fights unresolvable — this is the one
+  severe risk terrain work carries, and it stays a hard gate on every slice (revised
+  2026-08-28: shown directly, against the stall class's own tests and
+  `GridConnectivity`'s invariants, rather than by sweeping the canonical ranges; the
+  ranges confirm it at the re-baselining checkpoint). Denser terrain re-rolls every
+  fight's dice and will expose latent shapes the way the denser-terrain branch exposed
+  #256 — that is the gate working, not a reason to stay sparse.
 - **Performance.** #328 (504 pathfinds per action) predates this and gets worse with
   more blocked squares only marginally; the span-aware BFS runs at generation time
   only. No new per-action cost.
@@ -371,18 +374,25 @@ a batch lands with his before/after approval.
 
 ## 11. Measurement plan
 
-Terrain is a balance change (#243's standing warning: the two "cosmetic" plausibility
-fixes cost as much pacing as potions bought). Every slice quotes
-`tools/PacingMeasure -- --seeds 1-120` and `200-320` against a same-build baseline.
-The spot-check waiver never applies to this work: terrain draws after the builder, so
-the monster pool itself is untouched — but every terrain draw sits on the fight's one
-seeded stream ahead of initiative and every combat roll, so any change here re-times
-every fight's outcome on every seed, and the full ranges run on every slice.
+**Superseded 2026-08-28, Brandon's direction: per-slice pacing sweeps are retired.**
+This section originally required every slice to quote
+`tools/PacingMeasure -- --seeds 1-120` and `200-320` against a same-build baseline, and
+said the spot-check waiver never applied here (terrain sits on the fight's one seeded
+stream ahead of initiative, so any change re-times every fight on every seed — which is
+still true, and still the reason a *checkpoint* sweep must include this work). What
+changed is the cadence, not the physics: S3–S7 land without sweeps, and their combined
+effect is read at the next re-baselining checkpoint (#542). See CLAUDE.md, Standing
+conventions. Terrain remains a balance change (#243's standing warning: the two
+"cosmetic" plausibility fixes cost as much pacing as potions bought) — which is why the
+checkpoint matters, not why every PR should measure.
 
-- **Must not move:** `Stalled` stays zero on both ranges. `ended:` must stay
-  defeat/victory-shaped — a rise in round-limit endings is a red flag on any site,
-  cluttered boards especially.
-- **Expected to move, direction stated per slice:** cover-rich sites should *reduce*
+- **The one severe risk, checked per slice and directly:** a slice must not make fights
+  unresolvable. `Stalled` stays zero and `ended:` stays defeat/victory-shaped; a rise in
+  round-limit endings is a red flag on any site, cluttered boards especially. This is
+  named-risk work — the stall class has its own tests and `GridConnectivity` its own
+  invariants — not a reason to sweep the canonical ranges.
+- **Hypotheses for the checkpoint, direction stated per slice** (predictions to test
+  when the sweep runs, not per-PR acceptance criteria): cover-rich sites should *reduce*
   died-by-fight-4 (the free-ranged-shots mechanism runs both ways); central wall
   should lengthen fights (per-fight rounds, if the instrument reports them, else
   read per-band hp-left); crossing should be near-neutral.
@@ -409,6 +419,8 @@ run-structure coupling stay F3.
 3. **Sites: crossing + central wall.** Crossing first within the slice (connectivity-
    safe), then the wall (#243 item 2). First boards that ask a question.
 4. **Sites: boulder field/grove + ruined rooms.** Rooms carry the Survive-rung watch.
+   Use the stated 15% rooms weight. If the Survive-rung concern surfaces, stop for
+   Brandon's decision; do not change the weight or reopen #311 as part of this slice.
 5. **Deployment zones and formations.**
 6. **`BattlefieldTheme` on the engine; client reads it.**
 7. **Client: render `TerrainPiece` structures; file the art asks.** (art-tech +

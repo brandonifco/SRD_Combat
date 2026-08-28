@@ -30,7 +30,7 @@ When a bullet below feels compressed, the archive has the long form with the evi
 | Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
 | Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — counts re-verified from `data/srd` at `8ca55aa`; F1's regenerations (#382, #370–#373, #421) changed entry structure and residue in `monsters.json`, never the roster |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention |
+| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention. **This row now moves at re-baselining checkpoints, not per PR** (2026-08-28): `112ed19` stands as the baseline until the next checkpoint measures against it, and work landing in between is not swept |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
 | Coverage gaps | The console client is the last wholly untested production code: **1,949 lines**, filed as #317. Measured 2026-08-27 at `8988604` over `src/`, `client/` and `tools/`, excluding `bin`/`obj`: **43,568 production lines**, of which `client/` is 9,214, `tools/SrdExtract` 6,996 and `SRDCombat.Console` 1,949. **A blanket "N% untested" figure is retired here rather than restated**: the old 24% was a directory proxy that counted a whole tree as untested the moment it had no test project, and it stopped being reproducible once `tools/SrdExtract` (#189) and the Godot client (#190) got theirs — `SRDCombat.Viewer.Tests` now pins the focus stack, the router, the log highlighter, sprite metrics and the draw scale, so `client/` is neither untested nor tested but partly each, and one number cannot say which. What is still true and still specific: **#490** — the live Godot argv boundary (`--spawn` / `--level` refusal wiring) is pinned by nothing, knockout-verified. What #500-#502 and #473/#474 pinned is the *extracted* seams — the focus stack, the router, the scenario type — **not `PlayMode` as a live node: no Viewer test constructs it or invokes `OnReady`**, and that half stays probe-only. Read #490 as covering both, with the argv boundary the sharper end |
 | Work queue | `gh issue list`. **Not this file, not chat.** |
@@ -179,7 +179,9 @@ per-cycle variety so the six cycles are not one cycle six times (#192 — and, s
 2026-08-25, the per-cycle site weighting the battlefield overhaul deliberately left
 here; #243 itself was superseded into F2, see the F2 note above). Exit:
 measured curve holds through the back half on both ranges; a human run report exists
-for every new system.
+for every new system. **This exit is a re-baselining checkpoint** — with F4's
+variety re-run and #542, it is where the comprehensive pacing evaluation that PRs no
+longer carry actually happens (see Standing conventions).
 
 **F4 — Depth and variety.** Spellcasting enemies enter the pool (all ten CR ≤ 4
 casters are currently filtered out — thirty fights contain no enemy magic); the
@@ -254,9 +256,9 @@ bounded (architecture, statistics), **Sonnet** where it is well-specified execut
 - **Route by ambiguity.** An open judgement goes to `designer` (game) or `architect`
   (code); a written spec goes to `engineer`/`art-tech`. When in doubt route up — then
   write the acceptance criteria that let it route down next time.
-- **One concern, one branch, one PR** (the standing law). Every gameplay-affecting PR
-  quotes PacingMeasure on **both** canonical seed ranges against a same-build
-  baseline. `qc` reviews before Brandon sees anything.
+- **One concern, one branch, one PR** (the standing law). A PR carries direct evidence
+  that its own change is correct — focused tests, deterministic pins, the frozen
+  transcript read rather than regenerated. `qc` reviews before Brandon sees anything.
 - **What stays human.** Brandon draws all art (agents never redraw it), plays runs,
   and owns taste. A played-run complaint outranks any measured number. Art batches
   land only with his before/after approval. Merging is **not** on this list —
@@ -633,15 +635,19 @@ dotnet test SRDCombat.sln -c Debug
   chat.
 - **Gate before merge**: focused tests → full suite → Debug **and** Release at 0
   warnings → `git diff --check`.
-- **Gameplay PRs carry measurement**: `tools/PacingMeasure -- --seeds 1-120` and
-  `200-320`, same-build baseline, quoted in the PR body. The median saturates — read
-  `shape:`, `ended:`, per-band and per-count lines.
-- **A spot check stands in for the full ranges only when the change is structurally
-  CR-pool-inert.** If a diff cannot move which monsters `MonsterPool.Draw`'s CR ≤ 4
-  filter admits — proven structurally (the pool's CR ceiling, not just an eyeballed
-  diff), not merely observed after the fact — `tools/PacingMeasure -- --seeds 1-20`
-  against the same-build baseline satisfies the gate in place of both canonical
-  ranges. Precedent: #356, #357, #358.
+- **Pacing is measured at checkpoints, not per PR** (2026-08-28, Brandon's direction).
+  An ordinary gameplay-affecting PR does **not** run the canonical seed ranges and does
+  **not** quote PacingMeasure in its body — re-tuning after every adjustment cost more
+  than it bought. Comprehensive pacing and balance evaluation happens at an explicit
+  **re-baselining checkpoint**: the phase exits that already name one (F3's curve, F4's
+  variety re-run) and #542, which holds the deferred verdict on the current baseline
+  and is where the checkpoint's scope is tracked. What a PR still owes is direct
+  evidence the change itself is correct — the gate above, plus deterministic pins
+  wherever behaviour is seeded. **If a change carries an obvious severe risk — a stall,
+  an unwinnable encounter, broken progression — name that specific risk and show it
+  does not occur**, aimed at the risk rather than swept for. The former spot-check
+  waiver (`--seeds 1-20` for structurally CR-pool-inert changes, precedent #356–#358)
+  is retired along with the universal gate it was an exception to.
 - **There is no versioned DTO mirror and no generated schema, deliberately.** The
   guards are `UnmappedMemberHandling.Disallow` and the serializer shape tests. Adding
   a field to a `Core` definition plus re-running the extractor is the whole change.

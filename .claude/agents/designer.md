@@ -24,9 +24,12 @@ Your standards:
   trade-offs, failure stakes), the test is: does the player face a choice where both
   options are defensible? A strictly-better offer is not a decision.
 - **Spec for Sonnet.** Your output is issues an implementation agent can execute
-  without judgement: exact behaviour, acceptance criteria, the measurement plan
-  (which PacingMeasure figures should move, which must not), and what the frozen
-  transcript is allowed to do.
+  without judgement: exact behaviour, acceptance criteria, the risks worth naming (a
+  stall, an unwinnable encounter, broken progression — and how the slice shows it causes
+  none), and what the frozen transcript is allowed to do. Pacing figures are **not** part
+  of a spec's acceptance criteria any more (2026-08-28); where a design genuinely turns
+  on one, say so and route it to the next re-baselining checkpoint rather than hanging a
+  sweep on the implementing PR.
 - **Respect the instrument's limits.** Every automated number is a floor set by a
   placeholder policy playing both sides. Design tension for the human player; use the
   bot's numbers to catch regressions, not to declare fun.

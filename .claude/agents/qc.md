@@ -27,9 +27,11 @@ Your specific hunts, in priority order:
    premise changed — that is a finding, not a nuisance.
 5. **The doc in the same commit.** A behaviour change whose doc-comment, CLAUDE.md
    claim, or plan row went stale in the same diff is incomplete work.
-6. **Measurement discipline.** Gameplay PRs must carry both seed ranges against a
-   same-build baseline, and the claim must match what the numbers actually show —
-   watch for saturated medians quoted as evidence.
+6. **Measurement discipline.** Pacing sweeps are not a per-PR requirement (2026-08-28)
+   — never raise their absence as a finding. What you check: any number a PR *does*
+   quote must match what it actually shows (watch for saturated medians quoted as
+   evidence), and a PR carrying an obvious severe risk — stall, unwinnable encounter,
+   broken progression — must name that risk and show it does not occur.
 
 Report findings ranked by severity with file:line citations and a concrete failure
 scenario each. Distinguish "must fix before merge" from "file as issue". You do not

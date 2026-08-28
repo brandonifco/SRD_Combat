@@ -413,10 +413,12 @@ Three of those lines carry weight beyond decoration:
   that opens that fight by hand.
 
 **Explicit non-goal, stated because someone will otherwise do it:** a `ScenarioMeasure`
-run **never** substitutes for the gameplay PR gate. CLAUDE.md requires
-`tools/PacingMeasure -- --seeds 1-120` and `200-320` against a same-build baseline; a
-scenario batch measures one fight under authored conditions and cannot speak to a
-thirty-fight ladder's curve. The tool's header says so, and the tracking issue says so.
+run **never** substitutes for checkpoint pacing evaluation. A scenario batch measures one
+fight under authored conditions and cannot speak to a thirty-fight ladder's curve; only
+the canonical-range sweep at a re-baselining checkpoint can (CLAUDE.md, Standing
+conventions — per-PR sweeps were retired 2026-08-28, but the checkpoint's instrument is
+still `tools/PacingMeasure` on both ranges). The tool's header says so, and the tracking
+issue says so.
 
 ## 8. Constraints — what every slice must hold
 
@@ -428,14 +430,14 @@ thirty-fight ladder's curve. The tool's header says so, and the tracking issue s
   where a test can reach it. This is why `RosterParser` was put in `SRDCombat.Game`
   rather than the client in the first place (#456), and the same reasoning covers all
   four axes.
-- **Measurement gates, per slice, stated honestly.** Most slices here are *additive*: a
-  new caller of existing generation, touching no path the ladder uses. Those satisfy the
-  gate with `--seeds 1-20` against a same-build baseline **only with the structural proof
-  written in the PR body** — the standing waiver's requirement, precedent #356–#358. Any
-  slice that touches a shared path (`Assemble`, `TerrainGenerator.Generate`'s draw
-  sequence, `DrawLayout`) pays the full two canonical ranges. Every slice, additive or
-  not, must leave the **frozen transcript unchurned** — it uses hand-authored combatants
-  and no generator, so this is verify-don't-assume, not assume.
+- **What actually gates a slice** (revised 2026-08-28 — per-slice pacing sweeps, and the
+  `--seeds 1-20` waiver that was an exception to them, are both retired): every slice
+  must leave the **frozen transcript unchurned** — it uses hand-authored combatants and
+  no generator, so this is verify-don't-assume, not assume — and must hold determinism
+  below. Most slices here are *additive* anyway: a new caller of existing generation,
+  touching no path the ladder uses. A slice that touches a shared path (`Assemble`,
+  `TerrainGenerator.Generate`'s draw sequence, `DrawLayout`) says so in its PR body so
+  the next re-baselining checkpoint knows the ladder moved underneath it.
 - **Determinism.** Same scenario, same seed, same fight, byte-for-byte in narration.
   Pinned by a test, not asserted in prose.
 - **No new modal surface before #327.** See below.
