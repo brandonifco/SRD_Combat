@@ -2012,6 +2012,10 @@ public partial class PlayMode : FightScreen
                     modulate: Dim);
             }
 
+            // All three run every frame, in any order — neither is a decision this method
+            // makes any more. Which one actually draws a card is TopRowMenu's answer, read
+            // off the focus stack; the other two still clear their own row list so a closed
+            // menu's rectangles cannot outlive it for HitTest to stumble into (S5, #504).
             DrawSpellMenu(character);
             DrawAttackMenu(character);
             DrawSlotMenu(character);
@@ -2028,12 +2032,17 @@ public partial class PlayMode : FightScreen
         }
 
         // Over the board, under nothing: the fight is finished and this is the only
-        // thing being asked.
+        // thing being asked. Reads the stack itself (Holds<Outcome>, inside the method),
+        // the same way TopRowMenu does for the row menus above — nothing here names a
+        // second copy of "is Outcome open".
         DrawOutcomeCard();
 
         // Last, so it sits over everything it might explain.
         DrawHint();
 
+        // The one card not drawn off the stack's order (see DrawQuitCard's remarks):
+        // it stays named here, after the hint, rather than folding into a loop that would
+        // put it under a tooltip that can be raised while it is up.
         DrawQuitCard();
     }
 
@@ -2043,6 +2052,17 @@ public partial class PlayMode : FightScreen
     /// fight in progress restarts — because that cost is exactly what an accidental
     /// exit was paying without asking.
     /// </summary>
+    /// <remarks>
+    /// <b>Drawn last, by name, after <see cref="DrawHint"/> — not folded into the
+    /// <see cref="TopRowMenu"/>-style stack loop the other cards use (S5, #504).</b>
+    /// <see cref="PlayFocus.QuitConfirm"/> is a layer like any other, but a tooltip must
+    /// never occlude the question that closes the game, and the hint genuinely can be
+    /// raised while this card is up: <c>AdvanceHover</c> runs from <c>_Process</c> in
+    /// <see cref="Phase.Fighting"/> regardless of quit state, so a hint from before Esc was
+    /// pressed can still appear after it. Making <c>QuitConfirm</c> draw in its stack
+    /// position would put it under the hint and change a pixel. One documented exception is
+    /// cheaper than a sixth trait on <see cref="PlayFocus"/> for a single case.
+    /// </remarks>
     private void DrawQuitCard()
     {
         if (!_focus.Holds<PlayFocus.QuitConfirm>())
@@ -2393,11 +2413,26 @@ public partial class PlayMode : FightScreen
             features.SpellAttackBonus);
     }
 
+    /// <summary>
+    /// Whichever of the three row menus is actually showing, or null when none is —
+    /// the one fact <see cref="DrawSpellMenu"/>, <see cref="DrawAttackMenu"/> and
+    /// <see cref="DrawSlotMenu"/> each need to answer "is it my turn to draw a card".
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PlayFocus.TopOf"/> holds the reasoning and is what makes this testable
+    /// without a screen. <b>The three callers still run unconditionally, every frame,
+    /// regardless of what this returns.</b> Each clears its own row list before checking
+    /// this property (<c>HitTest</c>'s remarks explain why: a closed menu must hold no
+    /// rectangles, or a stale one could be clicked through an invisible menu), so this
+    /// decides only whether a method goes on to draw content — never whether it runs at all.
+    /// </remarks>
+    private PlayFocus.RowMenu? TopRowMenu => PlayFocus.TopOf(_focus);
+
     private void DrawSpellMenu(Combatant character)
     {
         _spellRows.Clear();
 
-        if (_focus.Top is not PlayFocus.SpellMenu || character.Stats.Character is not { } features)
+        if (TopRowMenu is not PlayFocus.SpellMenu || character.Stats.Character is not { } features)
         {
             return;
         }
@@ -2450,7 +2485,7 @@ public partial class PlayMode : FightScreen
     {
         _attackRows.Clear();
 
-        if (_focus.Top is not PlayFocus.AttackMenu)
+        if (TopRowMenu is not PlayFocus.AttackMenu)
         {
             return;
         }
@@ -2512,7 +2547,7 @@ public partial class PlayMode : FightScreen
     {
         _slotRows.Clear();
 
-        if (_focus.Top is not PlayFocus.SlotMenu { Spell: { } spell })
+        if (TopRowMenu is not PlayFocus.SlotMenu { Spell: { } spell })
         {
             return;
         }
