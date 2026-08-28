@@ -248,16 +248,66 @@ presentation, so it stays in `client/` — but it stops living inside a `Node2D`
 
 ### 3.4 Drawing comes off the stack
 
-`_Draw` ends with `…layers bottom-up… → hint → quit card`, iterating
-`_focus.BottomUp` for the card-drawing layers. `Targeting` draws no card (it changes how
-the board draws, which the board already does by asking the stack). Z-order and input
-priority stop being two lists.
+**Corrected 2026-08-28, after S5 shipped and review knocked the original claim out.** This
+section used to say `_Draw` iterates `_focus.BottomUp` for the card-drawing layers and that
+"z-order and input priority stop being two lists". The first half was built; the second half
+was never true, and the loop that appeared to deliver it was inert.
+
+What S5 actually lands: `_Draw` asks the stack **which card is eligible** — a switch on
+`_focus.Top` for the three row menus, `Holds<Outcome>` for the outcome card — replacing four
+hand-written conditions. That is the third copy of the modal order, and it is gone.
+
+What it does **not** land, and why the loop was removed: **no two of these cards can be on
+screen in the same frame**, so traversal order is unobservable. A row menu draws only while
+it is `_focus.Top`, so at most one of three; the outcome card exists only once the fight is
+complete, which is exactly when `CommandedCombatant()` returns null and every menu case is
+dead. Review proved it by reversing the traversal — every probe capture stayed
+byte-identical. A loop whose order provably cannot matter is a mechanism that looks like it
+decides something and does not, which is the failure shape this project keeps catching, so
+it was replaced by the switch rather than shipped with a comment excusing it.
+
+Two cards genuinely can coexist — Esc during the closing animation leaves `QuitConfirm` open
+and `_Process` pushes `Outcome` above it — and that pair's order stays hand-written, by name,
+for the reason below. **When a second pair of stack-traversed cards can coexist, the
+`BottomUp` loop earns its place; until then `FocusStack.BottomUp` is stack order and nothing
+promises it is draw order.**
+
+`Targeting` draws no card (it changes how the board draws, which the board already does by
+asking the stack).
 
 **One documented exception: the quit card is still drawn last, by name.** It sits above
 even the pointer's hint, because a tooltip must never occlude the question that closes the
 game — and today it does sit there (`_Draw` 1907–1912 draws the outcome card, then the hint, then the quit card). Making it a layer would put it
 under the hint and change a pixel. The exception is one line with a reason, which is
 cheaper than a sixth trait for one case.
+
+**Addendum, S5's implementation (#504, two review rounds with qc/architect):
+clearing and drawing are separate lifecycles, and the first two attempts at this section
+missed it.** The obvious reading of "iterate `_focus.BottomUp` for the card-drawing
+layers" is to visit only the layers actually on the stack and call each one's draw method.
+That is unsafe here, for a reason specific to this screen: `DrawSpellMenu`,
+`DrawAttackMenu` and `DrawSlotMenu` each own a row list (`_spellRows` etc.) that `HitTest`
+reads unconditionally every frame, and a menu that was just popped is no longer in
+`_focus.BottomUp` at all — a traversal keyed on presence would stop clearing its list at
+exactly the moment clearing it matters, leaving a stale, invisible rectangle a click could
+still land on. The fix is to decouple the two questions: a `ClearMenuRows()` step empties
+every row list unconditionally, before the traversal runs at all, regardless of what the
+stack holds; only then does the traversal decide whether one list gets repopulated. This
+is a *stronger* form of the invariant than either the pre-#504 code or #504's first two
+attempts gave it, not merely an equivalent restatement.
+
+The second thing both earlier attempts got wrong: `DrawOutcomeCard` cannot share a
+`commanded is { } character` guard with the row menus, because `CommandedCombatant()`
+requires `_encounter is { IsComplete: false }` — `commanded` is provably null in every
+single frame the outcome card exists. The traversal therefore lives *outside* that guard,
+with `commanded` required only inside the row-menu cases themselves (`when … && commanded
+is { } character`); `Outcome`'s case carries no such requirement and no
+`ReferenceEquals(layer, _focus.Top)` guard either, because nothing is ever pushed above it
+(every `Push` site was checked) — the traversal reaching that layer at all is the whole
+answer. Getting both of these wrong looks identical to getting them right until the
+specific frame that exercises them (a menu closed via Esc rather than superseded, a fight
+ending with nobody commanded) — which is exactly why this is written down here rather than
+left for the next reader to rediscover by breaking it.
 
 ### 3.5 What `Phase` does *not* become
 
