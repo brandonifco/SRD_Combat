@@ -1,5 +1,6 @@
 using SRDCombat.Content.Validation;
 using SRDCombat.Core.Characters;
+using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
@@ -153,6 +154,67 @@ public class RealMagicItemTests
         var refusal = Assert.Throws<ArgumentException>(() => Fighter(wand));
 
         Assert.Contains("Spellcaster", refusal.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// #534: the wand's numbers were never wrong — <c>CharacterSheet.SpellAttackItemBonus</c>
+    /// resolves correctly, above — but nothing carried it, or the name it came with,
+    /// onto the combatant a fight actually reads from. This pins that
+    /// <see cref="CombatantStats.FromCharacter"/> carries both across, distinct from the
+    /// total the caster's spell attack already folds them into, and that the exemption
+    /// crosses too. <c>CoverTests.TheWand_IgnoresHalfCoverOnSpellAttacks</c> (Core.Tests)
+    /// already pins the exemption acting on a live attack roll; this pins the readout
+    /// data next to it.
+    /// </summary>
+    [Fact]
+    public void TheWandCarriesIntoCombatAsADistinctContribution()
+    {
+        var sheet = Cleric(new EquippedMagicItem
+        {
+            ItemId = "magic-item.wand-of-the-war-mage-plus-1-plus-2-or-plus-3",
+            Variant = "+1",
+        });
+
+        var stats = CombatantStats.FromCharacter(sheet, spellcastingAbility: Ability.Wisdom);
+
+        Assert.NotNull(stats.Character);
+        Assert.Equal(1, stats.Character!.SpellAttackItemBonus);
+        Assert.Contains(
+            stats.Character.MagicItemNames,
+            name => name.Contains("Wand of the War Mage", StringComparison.Ordinal));
+        Assert.True(stats.IgnoresHalfCoverOnSpellAttacks);
+
+        // The total must still include the item — carrying its slice separately must
+        // not un-fold it back out of the number Encounter.Casting actually rolls
+        // against.
+        var expectedTotal =
+            SpellcastingRules.AttackBonus(sheet.ProficiencyBonus, sheet.Modifier(Ability.Wisdom)) + 1;
+
+        Assert.Equal(expectedTotal, stats.Character.SpellAttackBonus);
+    }
+
+    /// <summary>
+    /// #534's readout, over the same real sheet the resolver produces: both of the
+    /// wand's powers, in plain words, without the player needing to know what "+1"
+    /// means on an item card.
+    /// </summary>
+    [Fact]
+    public void TheReadoutStatesBothResolvedWandFacts()
+    {
+        var sheet = Cleric(new EquippedMagicItem
+        {
+            ItemId = "magic-item.wand-of-the-war-mage-plus-1-plus-2-or-plus-3",
+            Variant = "+1",
+        });
+
+        var readout = MagicItemReadout.Describe(
+            sheet.MagicItemNames,
+            sheet.SpellAttackItemBonus,
+            sheet.IgnoresHalfCoverOnSpellAttacks);
+
+        Assert.Contains("Wand of the War Mage", readout, StringComparison.Ordinal);
+        Assert.Contains("+1 to spell attack rolls", readout, StringComparison.Ordinal);
+        Assert.Contains("ignores Half Cover on spell attacks", readout, StringComparison.Ordinal);
     }
 
     [Fact]

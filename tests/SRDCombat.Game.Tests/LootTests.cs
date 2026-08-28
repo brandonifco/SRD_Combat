@@ -133,6 +133,64 @@ public class LootTests
         Assert.Empty(low.LootFound);
     }
 
+    /// <summary>
+    /// #534: a client reading which <see cref="LootFound"/> line was a permanent item
+    /// and whom it landed on used to have nothing but the announcement's prose to go
+    /// on. <see cref="MagicItemFinders"/> names the party index directly, so the
+    /// interlude can read that finder's resolved sheet for the readout rather than
+    /// parsing "X finds Y!" to guess. A Moderate rung's potion must never appear here —
+    /// it is not equipped, and <c>MagicItemNames</c> would have nothing to say about it.
+    /// </summary>
+    [Fact]
+    public void AMagicItemDropIsRecordedByFinderAndAPotionIsNot()
+    {
+        var high = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.High)]);
+        PlayOut(high, seed: 3);
+
+        // Pin the premise (#416's shape): seed 3 survives a single High rung on this
+        // content build, so this must not silently pass if AwardLoot's finder-recording
+        // line is ever deleted — an `if (Survived)` guard here would let exactly that
+        // deletion through unnoticed the day this seed stops winning.
+        Assert.Equal(RunOutcome.Survived, high.Outcome);
+
+        var finder = Assert.Single(high.MagicItemFinders);
+        Assert.True(high.Party[finder].Draft.MagicItems.Count > 0);
+
+        var moderate = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.Moderate)]);
+        PlayOut(moderate, seed: 3);
+
+        if (moderate.Outcome == RunOutcome.Survived)
+        {
+            Assert.Single(moderate.LootFound);
+        }
+
+        Assert.Empty(moderate.MagicItemFinders);
+    }
+
+    /// <summary>
+    /// #534 review: <see cref="MagicItemFinders"/> is transient narration state — the
+    /// same class as <see cref="LootFound"/>, <see cref="Returns"/> and
+    /// <see cref="LevelUps"/> — not part of the save, and its own doc comment says so.
+    /// This pins both halves of that promise: the announcement-correlation index
+    /// itself resets to empty across a reload, while the actual equipped item it
+    /// pointed at is real state and survives the same reload untouched (the sibling
+    /// case <see cref="FoundLootSurvivesASaveAndReload"/> already pins in detail).
+    /// </summary>
+    [Fact]
+    public void MagicItemFindersResetsOnReloadWhileTheEquippedItemSurvives()
+    {
+        var run = GauntletRun.Start(Content, [new LadderStep(EncounterDifficulty.High)]);
+        PlayOut(run, seed: 3);
+
+        Assert.Equal(RunOutcome.Survived, run.Outcome);
+        Assert.Single(run.MagicItemFinders);
+
+        var reloaded = GauntletRun.Resume(Content, RunSave.FromJson(RunSave.ToJson(run)));
+
+        Assert.Empty(reloaded.MagicItemFinders);
+        Assert.Contains(reloaded.Party, member => member.Draft.MagicItems.Count > 0);
+    }
+
     [Fact]
     public void FoundLootSurvivesASaveAndReload()
     {

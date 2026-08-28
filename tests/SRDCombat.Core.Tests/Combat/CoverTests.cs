@@ -1,7 +1,9 @@
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
+using SRDCombat.Core.Tests.Characters;
 
 namespace SRDCombat.Core.Tests.Combat;
 
@@ -256,6 +258,123 @@ public class CoverTests
 
         var swing = encounter.Log.Last(step => step.Narration.Contains("attacks"));
         Assert.Contains("vs AC 15 (Half Cover) — hit", swing.Narration);
+    }
+
+    /// <summary>
+    /// The other half of the chain #534's review asked for: <c>RealMagicItemTests</c>
+    /// (Content.Tests) proves real content resolves the Wand's <c>SpellAttackItemBonus</c>
+    /// and <c>IgnoresHalfCoverOnSpellAttacks</c>; <see cref="TheWand_IgnoresHalfCoverOnSpellAttacks"/>
+    /// above proves a hand-<em>set</em> flag reaches a live covered spell attack. Neither
+    /// connects a real <em>resolved</em> Wand — carried through
+    /// <see cref="CharacterResolver"/> and <see cref="CombatantStats.FromCharacter"/>,
+    /// never hand-set — to a live fight. This does: it builds the wand exactly as
+    /// <c>MagicItemRegistry</c> keys it (the same printed name and "+1" variant), equips
+    /// it on a hand-built Cleric (a real spellcasting class id, so
+    /// <c>RequiresSpellcaster</c> passes for the right reason), and makes the spell
+    /// attack through the same Half Cover obstacle the tests above use. It must fail if
+    /// either half breaks: the resolver-to-combat carry (see the knockout on
+    /// <c>CombatantStats.FromCharacter</c>'s two new assignments) or <c>Encounter</c>'s
+    /// own cover exemption (see the knockout on its <c>IgnoresHalfCoverOnSpellAttacks</c>
+    /// check) — both are exercised below, independently.
+    /// </summary>
+    [Fact]
+    public void AResolvedWandIgnoresHalfCoverOnALiveSpellAttack()
+    {
+        const string wandId = "magic-item.wand-of-the-war-mage-plus-1-plus-2-or-plus-3";
+
+        var wandDefinition = new MagicItemDefinition
+        {
+            Id = wandId,
+            Name = "Wand of the War Mage, +1, +2, or +3",
+            Category = MagicItemCategory.Wand,
+            Rarity = MagicItemRarity.Varies,
+            Variants = [new MagicItemVariant("+1", MagicItemRarity.Uncommon)],
+            RequiresAttunement = true,
+            AttunementRequirement = "by a Spellcaster",
+            Text = "While holding this wand, you gain a +1 bonus to spell attack rolls, "
+                + "and you ignore Half Cover when making a spell attack.",
+        };
+
+        var species = CharacterTestData.Species();
+        var background = CharacterTestData.Background();
+        var armor = CharacterTestData.Armor();
+        var weapon = CharacterTestData.Weapon();
+
+        // "class.cleric" specifically — SpellcastingRules.AbilityFor's curated map only
+        // recognises the eight real class ids, and the Wand's RequiresSpellcaster gate
+        // reads exactly that map. CharacterTestData.Class lowercases the name into the
+        // id, so this is the one hand-built class name that lands on a real entry.
+        var classDefinition = CharacterTestData.Class(
+            name: "Cleric",
+            spellSlotsByLevel: new Dictionary<int, IReadOnlyDictionary<int, int>>
+            {
+                [5] = new Dictionary<int, int> { [1] = 2 },
+            });
+
+        var draft = new CharacterDraft
+        {
+            Name = "Caster",
+            SpeciesId = species.Id,
+            ClassId = classDefinition.Id,
+            BackgroundId = background.Id,
+            Level = 5,
+            BaseAbilityScores = new Dictionary<Ability, int>
+            {
+                [Ability.Strength] = 10,
+                [Ability.Dexterity] = 10,
+                [Ability.Constitution] = 14,
+                [Ability.Intelligence] = 10,
+                // 14 + the level 5 proficiency bonus of +3 + the wand's +1 = +6 total,
+                // matching the "10 + 6 = 16" arithmetic the hand-set tests above use —
+                // deliberately, so this test's assertions read the same way.
+                [Ability.Wisdom] = 14,
+                [Ability.Charisma] = 10,
+            },
+            PrimaryIncrease = background.AbilityScores[0],
+            SecondaryIncrease = background.AbilityScores[1],
+            WeaponIds = [weapon.Id],
+            ArmorId = armor.Id,
+            MagicItems = [new EquippedMagicItem { ItemId = wandId, Variant = "+1" }],
+        };
+
+        var sheet = CharacterResolver.Resolve(
+            draft,
+            new CharacterBuildContent(
+                species,
+                classDefinition,
+                background,
+                new Dictionary<string, WeaponDefinition> { [weapon.Id] = weapon },
+                new Dictionary<string, ArmorDefinition> { [armor.Id] = armor },
+                new Dictionary<string, MagicItemDefinition> { [wandId] = wandDefinition }));
+
+        // The resolver's own half of the chain, restated here so a failure names which
+        // half broke rather than only failing three steps downstream in the fight.
+        Assert.Equal(1, sheet.SpellAttackItemBonus);
+        Assert.True(sheet.IgnoresHalfCoverOnSpellAttacks);
+
+        var stats = CombatantStats.FromCharacter(sheet, spells: [AttackSpell()], spellcastingAbility: Ability.Wisdom);
+        var caster = new Combatant("caster", "Caster", CombatTestData.Heroes, stats, new GridPosition(0, 1));
+        var target = CombatTestData.Combatant(
+            "target",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: -10),
+            x: 4,
+            y: 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(9, 3, lowObstacles: [new GridPosition(2, 1)]),
+            [caster, target],
+            new ScriptedRandomSource([20, 1, 10, 4]));
+
+        Assert.Null(encounter.CastSpell("spell.test-ray", target));
+
+        // 10 + 6 = 16 against the bare AC 13: the +2 the low obstacle would add is
+        // ignored, and the narration claims no cover — read off a wand this test never
+        // told the combat layer about directly; CharacterResolver and
+        // CombatantStats.FromCharacter are the only path the flag travelled.
+        var swing = encounter.Log.Last(step => step.Narration.Contains("attacks"));
+        Assert.Contains("vs AC 13 — hit", swing.Narration);
+        Assert.DoesNotContain("Cover", swing.Narration);
     }
 
     [Fact]

@@ -146,6 +146,23 @@ public sealed record CombatantFeatures(
     /// </summary>
     public string? ClassName { get; init; }
 
+    /// <summary>
+    /// Equipped magic item names, carried for display exactly as
+    /// <see cref="CharacterSheet.MagicItemNames"/> reads them (#534) — a client naming
+    /// what a character carries has nowhere else to read it from mid-fight. Empty for a
+    /// character with none, and always empty on a monster's stand-in.
+    /// </summary>
+    public IReadOnlyList<string> MagicItemNames { get; init; } = [];
+
+    /// <summary>
+    /// The item contribution to <see cref="SpellAttackBonus"/>, carried apart from the
+    /// total it is already folded into — the Wand of the War Mage's first power (#534).
+    /// <see cref="SpellAttackBonus"/> stays the number <c>Encounter.Casting</c> actually
+    /// rolls against; this is only for a readout that wants to say how much of that
+    /// total an item is responsible for, without re-deriving it.
+    /// </summary>
+    public int SpellAttackItemBonus { get; init; }
+
     /// <summary>Spells the character can cast. Never null.</summary>
     public IReadOnlyList<SpellDefinition> Spells { get; init; } = Spells ?? [];
 
@@ -433,6 +450,8 @@ public sealed record CombatantStats(
                 channelDivinityUses)
             {
                 ClassName = sheet.ClassName,
+                MagicItemNames = sheet.MagicItemNames,
+                SpellAttackItemBonus = sheet.SpellAttackItemBonus,
             },
         };
     }

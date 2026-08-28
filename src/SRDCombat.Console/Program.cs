@@ -1,5 +1,6 @@
 using SRDCombat.Console;
 using SRDCombat.Content;
+using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Dice;
 using SRDCombat.Core.Rules;
@@ -198,6 +199,19 @@ while (run.Next is { } step)
                 : $"level {state.Level}, {state.CurrentHitPoints}/{member.Sheet.MaximumHitPoints} hp, " +
                   $"{state.HitDiceRemaining} hit {(state.HitDiceRemaining == 1 ? "die" : "dice")}, " +
                   $"{state.ExperiencePoints} xp"));
+
+        // Named once at the award (above, the fight this landed) and again here on
+        // every status block after — a magic item's effect stays legible for the rest
+        // of the run, not just on the screen it arrived on (#534).
+        var equipment = MagicItemReadout.Describe(
+            member.Sheet.MagicItemNames,
+            member.Sheet.SpellAttackItemBonus,
+            member.Sheet.IgnoresHalfCoverOnSpellAttacks);
+
+        if (equipment.Length > 0)
+        {
+            Console.WriteLine($"           {equipment}");
+        }
     }
 
     var fight = run.BeginNext(dice);
@@ -217,6 +231,7 @@ while (run.Next is { } step)
 
     var levelUpsBefore = run.LevelUps.Count;
     var lootBefore = run.LootFound.Count;
+    var magicItemFindersBefore = run.MagicItemFinders.Count;
     var result = PlayFight(fight, dice);
 
     if (result == FightResult.Quit)
@@ -236,6 +251,24 @@ while (run.Next is { } step)
     foreach (var loot in run.LootFound.Skip(lootBefore))
     {
         Console.WriteLine(loot + "!");
+    }
+
+    // Right where the award lands, not one screen later (#534): a permanent item's
+    // resolved effect is stated here, next to the "finds ..." line that named it,
+    // rather than only surfacing in the next fight's status block below.
+    foreach (var finder in run.MagicItemFinders.Skip(magicItemFindersBefore))
+    {
+        var sheet = run.Party[finder].Sheet;
+        var announcement = MagicItemReadout.Announce(
+            run.Party[finder].Draft.Name,
+            sheet.MagicItemNames,
+            sheet.SpellAttackItemBonus,
+            sheet.IgnoresHalfCoverOnSpellAttacks);
+
+        if (announcement.Length > 0)
+        {
+            Console.WriteLine("  " + announcement);
+        }
     }
 
     // Saved only after a cleared fight, never after the defeat itself — the file keeps

@@ -259,6 +259,7 @@ public sealed class GauntletRun
     private readonly List<string> _levelUps = [];
     private readonly List<string> _returns = [];
     private readonly List<string> _lootFound = [];
+    private readonly List<int> _magicItemFinders = [];
 
     private GauntletRun(
         SrdContent content,
@@ -701,6 +702,7 @@ public sealed class GauntletRun
 
         Party = party;
         _lootFound.Add($"{party[index].Draft.Name} finds {award.Description}");
+        _magicItemFinders.Add(index);
     }
 
     /// <summary>
@@ -886,6 +888,34 @@ public sealed class GauntletRun
 
     /// <summary>Loot found, in the order it dropped, for a client to narrate.</summary>
     public IReadOnlyList<string> LootFound => _lootFound;
+
+    /// <summary>
+    /// <see cref="Party"/> indices, in the order each found a permanent magic item —
+    /// one entry per <see cref="LootFound"/> line that came from <c>AwardLoot</c> rather
+    /// than a potion (#534). A client reads <c>Party[index].Sheet</c> at that point to
+    /// say what the item resolves to, rather than parsing <see cref="LootFound"/>'s
+    /// prose to guess which line was a permanent item and whom it landed on.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Transient, like <see cref="LootFound"/> and <see cref="Returns"/> — not part
+    /// of the save, and empty again after <see cref="Resume"/>.</b> (Not like
+    /// <see cref="LevelUps"/>, which looks transient but is not: <c>Resume</c>
+    /// repopulates it with the ASI notices re-resolving the drafts produces. Nor like
+    /// <c>Casualties</c>, which is genuinely persisted. The three read alike from the
+    /// property list and behave differently — check before borrowing one as precedent.)
+    /// </para>
+    /// <para>
+    /// Its only reader is the interlude that just ran <c>AwardLoot</c>, in the same
+    /// session, in the same call — never a later reload asking "what has this run ever
+    /// found". The equipped item itself is real state and does survive a reload,
+    /// carried on the draft (<see cref="CharacterDraft.MagicItems"/>) and re-resolved
+    /// by <see cref="Resume"/> exactly like every other draft choice; only the
+    /// announcement-correlation index here resets, on purpose, the same as the loot
+    /// line it points at.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyList<int> MagicItemFinders => _magicItemFinders;
 
     /// <summary>Characters who are dead right now, as opposed to who has ever fallen.</summary>
     /// <remarks>
