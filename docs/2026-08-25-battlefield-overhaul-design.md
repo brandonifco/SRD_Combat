@@ -419,6 +419,8 @@ run-structure coupling stay F3.
 3. **Sites: crossing + central wall.** Crossing first within the slice (connectivity-
    safe), then the wall (#243 item 2). First boards that ask a question.
 4. **Sites: boulder field/grove + ruined rooms.** Rooms carry the Survive-rung watch.
+   Use the stated 15% rooms weight. If the Survive-rung concern surfaces, stop for
+   Brandon's decision; do not change the weight or reopen #311 as part of this slice.
 5. **Deployment zones and formations.**
 6. **`BattlefieldTheme` on the engine; client reads it.**
 7. **Client: render `TerrainPiece` structures; file the art asks.** (art-tech +
