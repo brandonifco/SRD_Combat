@@ -18,10 +18,10 @@ namespace SRDCombat.Viewer;
 /// looking at (and the input model said they were on) the spell list.
 /// </para>
 /// <para>
-/// Before #505 this could not happen even for one frame: <c>_spellRows</c>,
-/// <c>_attackRows</c> and <c>_slotRows</c> were three separate typed fields, so a spell row
-/// could not physically hold an attack's closure — the type system was the guard.
-/// Collapsing to one untyped <c>Action</c> list threw that away without replacing it.
+/// Before #505 this could not happen even for one frame: the spell, attack and slot menus
+/// each had their own typed row field, so a spell row could not physically hold an
+/// attack's closure — the type system was the guard. Collapsing the three into one
+/// untyped <c>Action</c> list threw that away without replacing it.
 /// <see cref="CountFor"/> and <see cref="TryTake"/> are the replacement: every row is
 /// stamped with the <see cref="PlayFocus.RowMenu"/> instance that was on top when it was
 /// added, and both reads refuse unless the caller's <em>current</em> top layer is that same

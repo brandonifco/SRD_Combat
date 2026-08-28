@@ -248,7 +248,7 @@ internal abstract record PlayFocus
         /// hidden rather than popped, while pushing a new layer over it (a <c>SlotMenu</c>,
         /// or <c>Targeting</c>) — so unlike a freshly constructed menu, this exact instance's
         /// old highlight would otherwise survive the round trip once Esc uncovers it again.
-        /// Before #505, the one shared <c>_menuIndex</c> field was zeroed unconditionally at
+        /// Before #505, the one field the three menus shared was zeroed unconditionally at
         /// the top of <c>ChooseSpell</c>, covering both of its exit paths; nothing in
         /// <c>ChooseAttack</c> or <c>ChooseSlot</c> ever did the same, even then — this
         /// method exists for <c>ChooseSpell</c> alone, and is not called from either of them.
