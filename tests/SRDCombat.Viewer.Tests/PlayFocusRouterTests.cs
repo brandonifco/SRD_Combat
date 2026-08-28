@@ -332,6 +332,25 @@ public class PlayFocusRouterTests
             Route(With(new PlayFocus.AttackMenu()), ClientInput.Pressed(ClientKey.Tab), Fighting(menuRowCount: 4)));
     }
 
+    /// <summary>
+    /// The stale-list window qc's second review round found (#505): right after
+    /// <c>ToggleMenu</c> swaps the top layer to a fresh menu, the row list it will
+    /// populate has not been drawn yet, so <c>MenuRowCount</c> reads zero for one input
+    /// even though a menu is visibly up. The first fix (<c>MenuRowList</c>'s ownership
+    /// check) closed the "wrong action ran" shape of this bug but left this one: a
+    /// <c>MenuRowCount == 0</c> reading used to mean "cold-arm the attack", so Tab pressed
+    /// in that exact window armed an attack behind a menu the player could see on screen.
+    /// <c>focus.Top.TakesRowKeys</c> is true for every <see cref="PlayFocus.RowMenu"/>
+    /// regardless of its row count, so this is the read that cannot be fooled by the race.
+    /// </summary>
+    [Fact]
+    public void TabWithAMenuOpenIsSwallowedEvenWhileItsRowListIsMomentarilyStale()
+    {
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(With(new PlayFocus.AttackMenu()), ClientInput.Pressed(ClientKey.Tab), Fighting(menuRowCount: 0)));
+    }
+
     // ---- rows versus board -----------------------------------------------------------
 
     [Fact]
@@ -364,6 +383,38 @@ public class PlayFocusRouterTests
         Assert.Equal(
             RouteAction.TakeHighlightedRow,
             Route(With(new PlayFocus.AttackMenu()), ClientInput.Pressed(ClientKey.Enter), Fighting(menuRowCount: 2)));
+    }
+
+    /// <summary>
+    /// The concrete misattribution qc's second review round described: Attack menu drawn,
+    /// Cast pressed (<c>ToggleMenu</c> swaps the top layer to a fresh Spell menu
+    /// immediately), Enter pressed before the next redraw fills the new menu's rows. The
+    /// Spell menu is on top and visibly up, but <c>MenuRowCount</c> reads zero for this one
+    /// input — the first fix's <c>MenuRowList</c> ownership check correctly refuses
+    /// <c>TakeHighlightedRow</c> for it, but gating this block on
+    /// <c>MenuRowCount &gt; 0</c> alone let the key fall through past it to
+    /// <c>ActivateSquare</c>, swinging or moving on the square behind a menu the player
+    /// could see. <c>focus.Top.TakesRowKeys</c> claims Enter regardless of the count, and
+    /// the answer with nothing to highlight is <c>Ignore</c> — consumed, not passed on.
+    /// </summary>
+    [Fact]
+    public void EnterWithAMenuOpenDoesNotActivateTheSquareBehindItWhileTheRowListIsStale()
+    {
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(With(new PlayFocus.SpellMenu()), ClientInput.Pressed(ClientKey.Enter), Fighting(menuRowCount: 0)));
+    }
+
+    /// <summary>
+    /// The same race, for the vertical arrows: they must not walk the board cursor behind
+    /// a menu that is visibly up just because its row list has not been redrawn yet.
+    /// </summary>
+    [Fact]
+    public void VerticalArrowsWithAMenuOpenDoNotMoveTheBoardCursorWhileTheRowListIsStale()
+    {
+        Assert.Equal(
+            RouteAction.Ignore,
+            Route(With(new PlayFocus.SpellMenu()), ClientInput.Pressed(ClientKey.Down), Fighting(menuRowCount: 0)));
     }
 
     [Fact]

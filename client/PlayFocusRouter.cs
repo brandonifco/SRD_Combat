@@ -141,7 +141,13 @@ internal readonly record struct Route(
 /// </remarks>
 /// <param name="Fighting">Whether the screen is in a fight rather than between them.</param>
 /// <param name="ActInProgress">Whether an act is still playing out on screen.</param>
-/// <param name="MenuRowCount">How many rows the open menu has, or zero when none is open.</param>
+/// <param name="MenuRowCount">
+/// How many rows the open menu has, or zero when none is open — <em>or</em> when a row
+/// menu is open but its row list has not been drawn for it yet (the one-input window
+/// right after a focus change, #505's stale-list fix). A zero reading is never on its own
+/// proof that nothing is claiming the keyboard; <c>focus.Top.TakesRowKeys</c> is the read
+/// for that.
+/// </param>
 /// <param name="CanArmAttack">Whether the commanded character is offered the Attack action.</param>
 /// <param name="HasCommanded">Whether a character is under the player's command right now.</param>
 /// <param name="HasCursor">Whether the board cursor is placed.</param>
@@ -261,6 +267,14 @@ internal static class PlayFocusRouter
         // key reaches "aim at somebody" from a cold turn. Gated the way every keypress is:
         // only while the row actually offers Attacks, so Tab can never reach an action the
         // row hides.
+        //
+        // A row menu on top claims Tab even on the one frame its own row count reads zero
+        // (qc round, #505's stale-list fix): right after a focus swap, before the next
+        // redraw repopulates the list, MenuRowCount is momentarily zero for a menu that is
+        // visibly still up, and the old `MenuRowCount == 0` reading of "nothing is open"
+        // let Tab cold-arm an attack behind it. `focus.Top.TakesRowKeys` — true for every
+        // RowMenu regardless of its current row count — is the read that cannot be fooled
+        // by that window.
         if (input.Key == ClientKey.Tab)
         {
             if (focus.Holds<PlayFocus.Targeting>())
@@ -268,25 +282,46 @@ internal static class PlayFocusRouter
                 return new Route(RouteAction.CycleTarget);
             }
 
-            return context.MenuRowCount == 0 && context.CanArmAttack
+            if (focus.Top.TakesRowKeys)
+            {
+                return new Route(RouteAction.Ignore);
+            }
+
+            return context.CanArmAttack
                 ? new Route(RouteAction.ArmAttack)
                 : new Route(RouteAction.Ignore);
         }
 
         var step = input.ArrowStep;
 
-        // An open menu takes the vertical arrows first: while a spell list is up, Up and
-        // Down belong to it rather than to the board behind it.
-        if (context.MenuRowCount > 0 && focus.Top.TakesRowKeys)
+        // An open menu takes the vertical arrows and Enter first — and keeps them even on
+        // the one frame its row list is momentarily stale (qc round, #505's stale-list
+        // fix): gating on `context.MenuRowCount > 0` alone let a menu with a zero-reading
+        // row count (the same redraw-window race Tab's comment above describes) fall
+        // through to the board arms below, so a keypress the player aimed at a menu they
+        // can see on screen moved the cursor or activated a square behind it instead.
+        // `focus.Top.TakesRowKeys` claims the key regardless of the count; only the
+        // specific menu actions below still need `MenuRowCount > 0` to have a row to act
+        // on, and consume-without-acting (Ignore) is the correct answer when there is not.
+        if (focus.Top.TakesRowKeys)
         {
-            if (step is { X: 0 } scroll)
-            {
-                return new Route(RouteAction.MoveMenuIndex, 0, scroll.Y);
-            }
+            var isMenuKey = step is { X: 0 } || input.Key == ClientKey.Enter;
 
-            if (input.Key == ClientKey.Enter)
+            if (context.MenuRowCount > 0)
             {
-                return new Route(RouteAction.TakeHighlightedRow);
+                if (step is { X: 0 } scroll)
+                {
+                    return new Route(RouteAction.MoveMenuIndex, 0, scroll.Y);
+                }
+
+                if (input.Key == ClientKey.Enter)
+                {
+                    return new Route(RouteAction.TakeHighlightedRow);
+                }
+            }
+            else if (isMenuKey)
+            {
+                return new Route(RouteAction.Ignore);
             }
         }
 
