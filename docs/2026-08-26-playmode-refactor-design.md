@@ -342,7 +342,7 @@ slice's tests assert:
 | `Targeting` | **`DropToBoard`** | no | **yes** | no | yes |
 | `Shop` | `CloseSelf` | no | no | **yes** | no |
 | `Outcome` | **`Commit`** | no | no | no | no |
-| `QuitConfirm` | `LeaveTheGame` | no | no | no | no |
+| `QuitConfirm` | `LeaveTheGame` | no | no | no | yes |
 
 Two rows deserve their reason written down, because both are places where "obvious" is
 wrong:
@@ -363,11 +363,10 @@ Found while reading, both real, neither this refactor's business:
 1. **`!_shopView` gates the fighting-phase keyboard (1054), but the shop only opens during
    `Phase.Interlude`** — the term is unreachable defence. `Shop.SuppressesBoard = true`
    preserves it verbatim.
-2. **The auto-end-turn fires underneath the quit confirm.** `_Process` never checks
-   `_quitAsked`, so `NothingLeftButEndTurn` can end a turn while the "LEAVE THE GAME?" card
-   is up. `QuitConfirm.HoldsTurnOpen = false` preserves that. Filed as a question, not
-   fixed here — fixing it inside a "no behaviour change" refactor is how a refactor stops
-   being reviewable.
+2. **The auto-end-turn is held by the quit confirm.** `QuitConfirm.HoldsTurnOpen = true`
+   makes the established `NothingLeftButEndTurn` conjunction leave the current turn alone
+   while the "LEAVE THE GAME?" decision is up. The card may dismiss or confirm leaving,
+   but the fight cannot advance underneath it (#510).
 
 ---
 

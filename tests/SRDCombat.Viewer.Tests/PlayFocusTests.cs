@@ -48,10 +48,9 @@ public class PlayFocusTests
         ["Shop"] = new(new PlayFocus.Shop(), EscapeMeaning.CloseSelf, false, false, true, false),
         ["Outcome"] = new(new PlayFocus.Outcome(), EscapeMeaning.Commit, false, false, false, false),
 
-        // S3 (#502). HoldsTurnOpen is false on purpose: _Process never asks whether this
-        // card is up, so an auto-end-turn can fire underneath it. That is today's
-        // behaviour and #510 is where it is questioned — not here.
-        ["QuitConfirm"] = new(new PlayFocus.QuitConfirm(), EscapeMeaning.LeaveTheGame, false, false, false, false),
+        // #510. The quit card holds the current turn open: NothingLeftButEndTurn
+        // consults this seam before advancing beneath a modal decision.
+        ["QuitConfirm"] = new(new PlayFocus.QuitConfirm(), EscapeMeaning.LeaveTheGame, false, false, false, true),
     };
 
     public static TheoryData<string> FocusNames
@@ -182,19 +181,16 @@ public class PlayFocusTests
     }
 
     /// <summary>
-    /// The quit card does not hold the turn open, and that is a preserved oddity rather
-    /// than a considered answer.
+    /// The quit card holds the turn open, so auto-end-turn cannot advance beneath it.
     /// </summary>
     /// <remarks>
-    /// <c>_Process</c> never asks whether this card is up, so <c>NothingLeftButEndTurn</c>
-    /// can end a turn underneath "LEAVE THE GAME?". #510 is the issue that questions it. A
-    /// no-behaviour-change refactor is not the place to fix it, and asserting it here is
-    /// what stops it being fixed by accident.
+    /// This is the focused #510 contract test: <c>NothingLeftButEndTurn</c> asks every
+    /// focus layer whether it holds the turn open before it can call <c>EndTurn</c>.
     /// </remarks>
     [Fact]
-    public void TheQuitCardDoesNotHoldTheTurnOpenAndThatIsDeliberatelyPreserved()
+    public void TheQuitCardHoldsTheTurnOpenWhileTheModalDecisionIsVisible()
     {
-        Assert.False(new PlayFocus.QuitConfirm().HoldsTurnOpen);
+        Assert.True(new PlayFocus.QuitConfirm().HoldsTurnOpen);
     }
 
     [Fact]
