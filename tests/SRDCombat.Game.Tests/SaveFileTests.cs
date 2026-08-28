@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using SRDCombat.Content;
 using SRDCombat.Core.Combat;
 using SRDCombat.Game;
@@ -130,6 +131,21 @@ public sealed class SaveFileTests : IDisposable
         // whole history.
         Assert.Equal("third save", File.ReadAllText(SavePath));
         Assert.Equal("second save", File.ReadAllText(BackupPath));
+    }
+
+    [Fact]
+    public void MissingSavedMemberPropertyIsShownByTheUnloadableSaveMessage()
+    {
+        var document = JsonNode.Parse(SomeSaveJson())!.AsObject();
+        document["members"]![0]!.AsObject().Remove("state");
+        SaveFile.Write(SavePath, document.ToJsonString());
+
+        var loaded = SaveFile.LoadRun(SavePath);
+        var message = SaveFile.DescribeUnloadable(SavePath, loaded);
+
+        Assert.Null(loaded.Saved);
+        Assert.NotNull(message);
+        Assert.Contains("State", message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

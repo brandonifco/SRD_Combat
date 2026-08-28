@@ -649,7 +649,8 @@ dotnet test SRDCombat.sln -c Debug
   waiver (`--seeds 1-20` for structurally CR-pool-inert changes, precedent #356–#358)
   is retired along with the universal gate it was an exception to.
 - **There is no versioned DTO mirror and no generated schema, deliberately.** The
-  guards are `UnmappedMemberHandling.Disallow` and the serializer shape tests. Adding
+  guards are `UnmappedMemberHandling.Disallow`, required-member metadata on load-path
+  records, and the serializer shape tests. Adding
   a field to a `Core` definition plus re-running the extractor is the whole change.
 - **When a design decision proves wrong, correct the doc in the same commit as the
   code.** History moves to `docs/history/`, never to `/dev/null`.
