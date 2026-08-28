@@ -2011,14 +2011,6 @@ public partial class PlayMode : FightScreen
                     fontSize: 12,
                     modulate: Dim);
             }
-
-            // All three run every frame, in any order — neither is a decision this method
-            // makes any more. Which one actually draws a card is TopRowMenu's answer, read
-            // off the focus stack; the other two still clear their own row list so a closed
-            // menu's rectangles cannot outlive it for HitTest to stumble into (S5, #504).
-            DrawSpellMenu(character);
-            DrawAttackMenu(character);
-            DrawSlotMenu(character);
         }
 
         if (_notice is { } notice)
@@ -2031,11 +2023,52 @@ public partial class PlayMode : FightScreen
                 modulate: MonsterColour);
         }
 
-        // Over the board, under nothing: the fight is finished and this is the only
-        // thing being asked. Reads the stack itself (Holds<Outcome>, inside the method),
-        // the same way TopRowMenu does for the row menus above — nothing here names a
-        // second copy of "is Outcome open".
-        DrawOutcomeCard();
+        // Clearing and drawing have separate lifecycles (S5, #504 round 3). Every row list
+        // is emptied unconditionally, every frame, regardless of phase, of whether anyone is
+        // commanded, or of what the stack holds — a *stronger* form of HitTest's invariant
+        // than the three DrawXMenu methods used to give it themselves (a closed menu's rows
+        // are gone before the traversal below even runs, not merely "cleared by whichever
+        // method used to own that list"). Only then does the traversal decide whether one of
+        // them gets repopulated.
+        ClearMenuRows();
+
+        // The picture above the board, in the order the stack itself defines — not four
+        // names written out by hand (the third and last copy of the modal priority order,
+        // #504's own framing). PlayFocus.Board and PlayFocus.Targeting draw no card of their
+        // own and contribute no case here: that is correct, not an omission — Targeting
+        // changes how the *board* draws (the enemy rings, the cursor), which the board
+        // already reads off the stack since S1. A row-menu case fires only when its layer is
+        // literally _focus.Top (ReferenceEquals, not a type match alone) and somebody is
+        // commanded — Outcome's case has no such guard because nothing is ever pushed above
+        // it (qc's #504 review checked every Push site) and it must still draw in the one
+        // state where nobody is commanded at all: CommandedCombatant() requires
+        // "_encounter is { IsComplete: false }", so commanded is null in every frame the
+        // outcome card exists. PlayFocus.QuitConfirm is the one documented exception, drawn
+        // last by name after the hint below, never through this loop.
+        foreach (var layer in _focus.BottomUp)
+        {
+            switch (layer)
+            {
+                case PlayFocus.SpellMenu when ReferenceEquals(layer, _focus.Top)
+                    && commanded is { } spellCaster:
+                    DrawSpellMenu(spellCaster);
+                    break;
+
+                case PlayFocus.AttackMenu when ReferenceEquals(layer, _focus.Top)
+                    && commanded is { } attacker:
+                    DrawAttackMenu(attacker);
+                    break;
+
+                case PlayFocus.SlotMenu { Spell: { } spell } when ReferenceEquals(layer, _focus.Top)
+                    && commanded is { } slotCaster:
+                    DrawSlotMenu(slotCaster, spell);
+                    break;
+
+                case PlayFocus.Outcome:
+                    DrawOutcomeCard();
+                    break;
+            }
+        }
 
         // Last, so it sits over everything it might explain.
         DrawHint();
@@ -2053,8 +2086,8 @@ public partial class PlayMode : FightScreen
     /// exit was paying without asking.
     /// </summary>
     /// <remarks>
-    /// <b>Drawn last, by name, after <see cref="DrawHint"/> — not folded into the
-    /// <see cref="TopRowMenu"/>-style stack loop the other cards use (S5, #504).</b>
+    /// <b>Drawn last, by name, after <see cref="DrawHint"/> — not decided by
+    /// <c>_focus.Top</c> the way the other cards are (S5, #504).</b>
     /// <see cref="PlayFocus.QuitConfirm"/> is a layer like any other, but a tooltip must
     /// never occlude the question that closes the game, and the hint genuinely can be
     /// raised while this card is up: <c>AdvanceHover</c> runs from <c>_Process</c> in
@@ -2152,13 +2185,24 @@ public partial class PlayMode : FightScreen
     /// The card that names how the fight ended and waits to be dismissed.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// It says *why* as well as what, because an objective rung can end with enemies
     /// still standing and a bare "you win" over a field of live goblins is the confusing
     /// part rather than the satisfying one.
+    /// </para>
+    /// <para>
+    /// <b>Called only from <c>_Draw</c>'s traversal, when the layer it is visiting is
+    /// <see cref="PlayFocus.Outcome"/> (S5, #504 round 3)</b> — no guard of its own is
+    /// needed here, unlike the row menus: nothing is ever pushed above
+    /// <see cref="PlayFocus.Outcome"/> (qc's #504 review checked every <c>Push</c> site; its
+    /// own <c>Escape</c> is <c>Commit</c>, not <c>AskToQuit</c>, so even the quit card cannot
+    /// land on top of it), so the traversal encountering this layer at all is already the
+    /// whole answer.
+    /// </para>
     /// </remarks>
     private void DrawOutcomeCard()
     {
-        if (!_focus.Holds<PlayFocus.Outcome>() || _encounter is not { } encounter)
+        if (_encounter is not { } encounter)
         {
             return;
         }
@@ -2414,25 +2458,38 @@ public partial class PlayMode : FightScreen
     }
 
     /// <summary>
-    /// Whichever of the three row menus is actually showing, or null when none is —
-    /// the one fact <see cref="DrawSpellMenu"/>, <see cref="DrawAttackMenu"/> and
-    /// <see cref="DrawSlotMenu"/> each need to answer "is it my turn to draw a card".
+    /// Empties all three row-menu lists. Called once, unconditionally, before <c>_Draw</c>'s
+    /// traversal decides whether one of them gets repopulated (S5, #504 round 3).
     /// </summary>
     /// <remarks>
-    /// <see cref="PlayFocus.TopOf"/> holds the reasoning and is what makes this testable
-    /// without a screen. <b>The three callers still run unconditionally, every frame,
-    /// regardless of what this returns.</b> Each clears its own row list before checking
-    /// this property (<c>HitTest</c>'s remarks explain why: a closed menu must hold no
-    /// rectangles, or a stale one could be clicked through an invisible menu), so this
-    /// decides only whether a method goes on to draw content — never whether it runs at all.
+    /// This is what makes <c>HitTest</c>'s invariant hold now — "a closed menu holds no
+    /// rectangles" — and it is a <em>stronger</em> guarantee than before: previously each of
+    /// <see cref="DrawSpellMenu"/>, <see cref="DrawAttackMenu"/> and
+    /// <see cref="DrawSlotMenu"/> cleared its own list at the top of a method that ran
+    /// unconditionally every frame; now all three lists are empty before the traversal even
+    /// starts, and the traversal only ever repopulates the single one <c>_focus.Top</c>
+    /// names. A menu that was just popped is no longer in <c>_focus.BottomUp</c> at all, so
+    /// a traversal keyed on presence could never have cleared it — clearing first, then
+    /// walking, is what keeps that from being a stale-rectangle regression.
     /// </remarks>
-    private PlayFocus.RowMenu? TopRowMenu => PlayFocus.TopOf(_focus);
-
-    private void DrawSpellMenu(Combatant character)
+    private void ClearMenuRows()
     {
         _spellRows.Clear();
+        _attackRows.Clear();
+        _slotRows.Clear();
+    }
 
-        if (TopRowMenu is not PlayFocus.SpellMenu || character.Stats.Character is not { } features)
+    /// <summary>
+    /// The spell list overlay. Called only from <c>_Draw</c>'s traversal, when
+    /// <see cref="PlayFocus.SpellMenu"/> is both the layer being visited and
+    /// <c>_focus.Top</c> — this method itself no longer checks either (S5, #504 round 3).
+    /// <c>_spellRows</c> is <em>not</em> cleared here any more: <c>ClearMenuRows</c> empties
+    /// it, unconditionally, before the traversal runs at all, whether or not this method
+    /// gets called this frame.
+    /// </summary>
+    private void DrawSpellMenu(Combatant character)
+    {
+        if (character.Stats.Character is not { } features)
         {
             return;
         }
@@ -2481,15 +2538,14 @@ public partial class PlayMode : FightScreen
         }
     }
 
+    /// <summary>
+    /// The attack list overlay. See <see cref="DrawSpellMenu"/>'s remarks: called only when
+    /// <see cref="PlayFocus.AttackMenu"/> is both the layer being visited and
+    /// <c>_focus.Top</c>, and <c>_attackRows</c> is cleared by <c>ClearMenuRows</c> before
+    /// the traversal runs, not by this method.
+    /// </summary>
     private void DrawAttackMenu(Combatant character)
     {
-        _attackRows.Clear();
-
-        if (TopRowMenu is not PlayFocus.AttackMenu)
-        {
-            return;
-        }
-
         // Over the board, as an overlay. These lists used to live under the second
         // button row; fullscreen gave that ground to the board, and every row below
         // already paints its own filled backdrop, so only the header needs one.
@@ -2543,15 +2599,15 @@ public partial class PlayMode : FightScreen
             .ToList();
     }
 
-    private void DrawSlotMenu(Combatant character)
+    /// <summary>
+    /// The slot-level overlay. See <see cref="DrawSpellMenu"/>'s remarks: called only when
+    /// <see cref="PlayFocus.SlotMenu"/> is both the layer being visited and
+    /// <c>_focus.Top</c>, with <paramref name="spell"/> the very layer's own
+    /// <see cref="PlayFocus.SlotMenu.Spell"/> rather than re-derived here. <c>_slotRows</c>
+    /// is cleared by <c>ClearMenuRows</c> before the traversal runs, not by this method.
+    /// </summary>
+    private void DrawSlotMenu(Combatant character, SpellDefinition spell)
     {
-        _slotRows.Clear();
-
-        if (TopRowMenu is not PlayFocus.SlotMenu { Spell: { } spell })
-        {
-            return;
-        }
-
         // Over the board, as an overlay. These lists used to live under the second
         // button row; fullscreen gave that ground to the board, and every row below
         // already paints its own filled backdrop, so only the header needs one.

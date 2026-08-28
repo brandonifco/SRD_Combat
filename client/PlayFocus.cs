@@ -208,41 +208,6 @@ internal abstract record PlayFocus
     internal sealed record SlotMenu(SpellDefinition Spell) : RowMenu;
 
     /// <summary>
-    /// Whichever row menu is actually on screen for <paramref name="focus"/>, or null when
-    /// none is.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Walks <see cref="FocusStack{TFocus}.BottomUp"/> rather than reading
-    /// <c>focus.Top</c> directly (S5, #504): every layer — menu or not — gets a turn to say
-    /// what the picture now is, and a non-menu layer sitting above a menu (
-    /// <see cref="Targeting"/>, chiefly) hides it by overwriting the running answer with
-    /// null. That is what makes an armed action correctly blank the menu that armed it
-    /// rather than leaving it showing underneath, and it is genuinely order-sensitive: walk
-    /// the layers in the wrong direction, or drop the "anything else resets it" rule, and a
-    /// stale or wrong menu shows through.
-    /// </para>
-    /// <para>
-    /// Before this, the same question — "is it my open menu on top?" — was written three
-    /// times, once inside each of <c>PlayMode</c>'s <c>DrawSpellMenu</c>,
-    /// <c>DrawAttackMenu</c> and <c>DrawSlotMenu</c>. This is the one computation all three
-    /// now share, and it is <c>static</c> and Godot-free so a test can drive it without a
-    /// screen.
-    /// </para>
-    /// </remarks>
-    internal static RowMenu? TopOf(FocusStack<PlayFocus> focus)
-    {
-        RowMenu? top = null;
-
-        foreach (var layer in focus.BottomUp)
-        {
-            top = layer as RowMenu;
-        }
-
-        return top;
-    }
-
-    /// <summary>
     /// An armed action waiting for the player to point at something.
     /// </summary>
     /// <remarks>
