@@ -114,4 +114,17 @@ public sealed class CorpusRoundTripTests
 
         Assert.Equal(expected, observed);
     }
+
+    [Fact]
+    public void PriestsDivineAidRemainsAdjacentToAnIntactSpellcastingList()
+    {
+        var priest = Assert.Single(Monsters, monster => monster.Name == "Priest");
+        var spellcasting = Assert.Single(priest.Entries, entry => entry.Name == "Spellcasting");
+        var divineAid = Assert.Single(priest.Entries, entry => entry.Name == "Divine Aid");
+
+        Assert.Contains("At Will: Light, Thaumaturgy", spellcasting.Text, StringComparison.Ordinal);
+        Assert.Contains("1/Day: Spirit Guardians", spellcasting.Text, StringComparison.Ordinal);
+        Assert.Equal(MonsterEntrySection.BonusAction, divineAid.Section);
+        Assert.Contains("Bless, Dispel Magic, Healing Word, or Lesser Restoration", divineAid.Text, StringComparison.Ordinal);
+    }
 }

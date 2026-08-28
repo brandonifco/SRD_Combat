@@ -145,6 +145,22 @@ public static partial class MonsterParser
                     ApplyMeta(line.Text);
                     return;
 
+                // A neighbouring block's size/type line is italic. It is not
+                // continuation prose for the entry currently being accumulated.
+                case StatBlockFonts.Italic when !_inStatHeader
+                                                 && StatBlockLineGrammar.ParseMeta(line.Text) is not null:
+                    return;
+
+                // The Spellcasting tier label is Optima-Bold just like a stat key,
+                // while the spell names after it use regular/italic runs. Attribute
+                // that exact labelled line to the open Spellcasting entry rather than
+                // treating it as a new stat line (#530).
+                case StatBlockFonts.Stat when _entries.Count > 0
+                                                 && _entries[^1].Name == "Spellcasting"
+                                                 && IsSpellcastingUsageTier(line.Text):
+                    _entries[^1].Append(line.Text);
+                    return;
+
                 case StatBlockFonts.Stat:
                     FlushStatBuffer();
                     _statBuffer.Append(line.Text);
@@ -157,8 +173,10 @@ public static partial class MonsterParser
                     return;
 
                 default:
-                    // Body prose: either the wrapped remainder of a stat line, or the
-                    // continuation of the entry currently being read.
+                    // Body prose and italic spell names can continue an entry. The
+                    // specific foreign italic metadata shape above is excluded; a
+                    // broader font filter would drop real wrapped text because the PDF
+                    // uses several regular Optima identities across its pages.
                     if (_inStatHeader)
                     {
                         AppendWrapped(_statBuffer, line.Text);
@@ -424,6 +442,11 @@ public static partial class MonsterParser
             return false;
         }
 
+        private static bool IsSpellcastingUsageTier(string text) =>
+            text.StartsWith("At Will:", StringComparison.Ordinal)
+            || (text.Contains("/Day", StringComparison.Ordinal)
+                && text.IndexOf(':') > 0);
+
         // The explicit array sidesteps a collection-expression overload ambiguity that the
         // SDK 8.0.1xx compiler reports and later 8.0.x compilers do not (#27).
         private static IEnumerable<string> SplitList(string text) => text
@@ -454,9 +477,11 @@ public static partial class MonsterParser
     }
 
     /// <summary>Accumulates one trait or action as its wrapped lines arrive.</summary>
-    private sealed class EntryBuilder(string name, MonsterEntrySection section, string firstLine)
+    private sealed class EntryBuilder(string entryName, MonsterEntrySection section, string firstLine)
     {
         private readonly StringBuilder _text = new(firstLine);
+
+        public string Name { get; } = entryName;
 
         public void Append(string line) => AppendWrapped(_text, line);
 
@@ -465,7 +490,7 @@ public static partial class MonsterParser
             var text = _text.ToString().Trim();
 
             // Every entry goes through classification, so none can pass as plain prose.
-            return EntryMechanicsParser.Classify(name, section, text);
+            return EntryMechanicsParser.Classify(Name, section, text);
         }
     }
 
