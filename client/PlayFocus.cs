@@ -192,6 +192,27 @@ internal abstract record PlayFocus
         internal override bool SuppressesBoard => false;
 
         internal override bool HoldsTurnOpen => true;
+
+        /// <summary>
+        /// The highlighted row. Zero on every fresh instance — a freshly pushed menu
+        /// starts at the top <em>by construction</em>, not because some caller remembered
+        /// to reset a field it shares with two other menus (#505). Arrow keys move it
+        /// through <see cref="MoveHighlight"/>; a click or Enter reads it once and takes
+        /// the row it names.
+        /// </summary>
+        internal int MenuIndex { get; private set; }
+
+        /// <summary>
+        /// Moves the highlight by <paramref name="step"/>, clamped to the rows this menu
+        /// is currently showing.
+        /// </summary>
+        /// <remarks>
+        /// The clamp itself moved here from <c>PlayMode</c> along with the field it
+        /// clamps — the two were never separable, and leaving the arithmetic behind while
+        /// the state it reads moved would have been the same defect in miniature.
+        /// </remarks>
+        internal void MoveHighlight(int step, int rowCount) =>
+            MenuIndex = Math.Clamp(MenuIndex + step, 0, rowCount - 1);
     }
 
     /// <summary>The list of a character's attacks.</summary>
