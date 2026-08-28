@@ -37,147 +37,75 @@ public sealed record SaveLoadResult(
 /// disk safely, and is the one path both clients call — there is no second writer.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <b>The write is temp-then-rename, never in place.</b> The new content lands fully in
-/// a <c>.tmp</c> file in the same directory as the target (so the rename that follows is
-/// a same-volume, effectively atomic operation, not a cross-device copy), is flushed to
-/// disk, and only then replaces the target. A crash at any point before the rename
-/// leaves the old complete file exactly as it was; a crash after leaves the new complete
-/// file. There is no window where <c>path</c> holds a partial write.
-/// </para>
-/// <para>
-/// <b>One rolling backup survives every successful write.</b> The file that <c>path</c>
-/// pointed to before the write becomes <c>path</c> + <c>.bak</c>, overwriting whatever
-/// backup was there — but not via <see cref="File.Replace(string,string,string,bool)"/>,
-/// whose Unix implementation is <c>unlink(bak)</c>, then <c>link(path, bak)</c>, then
-/// <c>rename(tmp, path)</c>: a crash between the first two steps discards the existing
-/// <c>.bak</c> before the new primary has landed. Instead the rotation is three separate
-/// renames, each one a single atomic filesystem operation: the current primary moves to
-/// <c>path</c> + <c>.old</c>, the new content moves from <c>.tmp</c> into <c>path</c>,
-/// and only then does <c>.old</c> move into <c>path</c> + <c>.bak</c>.
-/// </para>
-/// <para>
-/// <b>The invariant this keeps</b> is not "<c>.bak</c> is never touched before the new
-/// primary lands" — <c>path</c> + <c>.old</c> is a real gap, and the content it holds is
-/// whatever <c>path</c> held going in, which the caller may already know is corrupt (a
-/// fallback load's next write — #367). The invariant is: <b>at every instant, including
-/// between any two filesystem operations of either branch, a loadable copy of the most
-/// recent successfully completed write exists among the locations <see cref="LoadRun"/>
-/// consults, and no copy belonging to a different deleted or prior run can be loaded as
-/// current state</b>. The crash-prefix tests enumerate both branches and repeat the
-/// sequence after recovery. <see cref="LoadRun"/> checks all three locations in order to
-/// honour it — not just the two a caller sees in <see cref="SaveLoadResult"/>. Before the
-/// first move, the untouched old <c>path</c> is still there. Between the first and
-/// second, <c>path</c> is briefly missing, but <c>.old</c> now holds exactly what
-/// <c>path</c> held a moment ago — if that was good, <c>LoadRun</c> finds it there first,
-/// fresher than whatever stale <c>.bak</c> a moment ago's write may have left behind
-/// (this is what closes the case a plain two-copy fallback cannot: a first write over a
-/// corrupt primary leaves the *new* primary healthy but rotates the corrupt content into
-/// <c>.bak</c>, and a second write's first rename can then be interrupted with nothing
-/// good at <c>path</c> or <c>.bak</c> — only at <c>.old</c>). From the second move on, the
-/// new primary is live at <c>path</c> and nothing after that point — including what the
-/// third rename does to <c>.bak</c> — can lose it. The very first write for a path has
-/// nothing to back up, so it is a plain move instead — and any <c>.bak</c> already sitting
-/// there (left over from a run whose primary was deleted separately from its backup) is
-/// deleted after the move lands the new primary — never before, so a crash between the
-/// two steps still leaves a loadable file — and a backup can then never predate the
-/// primary beside it and get resurrected as that primary's history.
-/// </para>
-/// <para>
-/// <b>Loading falls back past the primary</b> to <c>.old</c> and then <c>.bak</c> when the
-/// primary is missing or fails to parse — a corrupt or truncated primary is not treated as
-/// "no save", because the whole point of keeping a backup is to survive exactly that.
-/// <c>.old</c> only ever appears on disk because some earlier write crashed mid-rotation,
-/// so checking it costs nothing on the (overwhelmingly common) path where nothing ever
-/// has — but it does not vanish the moment that crash passes; a leftover <c>.old</c> can
-/// outlive many later writes (the fresh-path branch below never clears one — #394), so
-/// this fallback keeps mattering for as long as the file survives, not just in the
-/// instant right after a crash.
-/// </para>
+/// <b>Commit</b> is the successful same-directory rename of a fully written and flushed
+/// staging file into <paramref name="path"/>. It is not method return: from that rename
+/// onward the new primary is authoritative and cleanup cannot change <see cref="LoadRun"/>.
+/// <see cref="BeginNewRun"/> first creates a durable, distinct <c>.new</c> marker/staging
+/// file; while it exists loading returns no save and ignores all old slots.
+/// <see cref="ContinueWrite"/> refuses that marker and preserves the exact valid primary,
+/// <c>.old</c>, or <c>.bak</c> it selected until commit.
 /// </remarks>
 public static class SaveFile
 {
     private static string TempPathFor(string path) => path + ".tmp";
 
+    private static string NewRunPathFor(string path) => path + ".new";
+
     private static string BackupPathFor(string path) => path + ".bak";
 
     private static string OldPrimaryPathFor(string path) => path + ".old";
 
-    /// <summary>
-    /// Writes <paramref name="json"/> to <paramref name="path"/> atomically, keeping the
-    /// file <paramref name="path"/> previously held as exactly one <c>.bak</c> alongside
-    /// it. On a first write for <paramref name="path"/> — no primary yet on disk — any
-    /// pre-existing <c>.bak</c> is deleted rather than left behind, so it can never
-    /// predate the primary this write creates.
-    /// </summary>
-    public static void Write(string path, string json)
+    /// <summary>Begins a distinct run, masking and removing every old save slot before
+    /// its staging file commits into the primary.</summary>
+    public static void BeginNewRun(string path, string json)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(json);
 
+        var newRunPath = NewRunPathFor(path);
+        WriteAndFlush(newRunPath, "new run pending");
+        OnOperationCompleted(SaveFileOperation.NewRunMarkerCreated);
+        WriteAndFlush(newRunPath, json);
+        OnOperationCompleted(SaveFileOperation.NewRunStagingWritten);
+        DeleteIfPresent(path, SaveFileOperation.NewRunPrimaryRemoved);
+        DeleteIfPresent(OldPrimaryPathFor(path), SaveFileOperation.NewRunOldRemoved);
+        DeleteIfPresent(BackupPathFor(path), SaveFileOperation.NewRunBackupRemoved);
+        File.Move(newRunPath, path, overwrite: true);
+        OnOperationCompleted(SaveFileOperation.NewRunCommitted);
+    }
+
+    /// <summary>Writes the next state of an existing run without overwriting its selected
+    /// valid copy before the new primary commits.</summary>
+    public static void ContinueWrite(string path, string json)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(json);
+
+        if (File.Exists(NewRunPathFor(path)))
+        {
+            throw new InvalidOperationException($"Cannot continue '{path}' while a new run is incomplete.");
+        }
+
+        var selected = SelectedCopy(path) ?? throw new InvalidOperationException(
+            $"Cannot continue '{path}' because it has no loadable committed save.");
         var tempPath = TempPathFor(path);
+        WriteAndFlush(tempPath, json);
+        OnOperationCompleted(SaveFileOperation.ContinuationStagingWritten);
 
-        using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-        using (var writer = new StreamWriter(stream))
+        var oldPrimaryPath = OldPrimaryPathFor(path);
+        if (selected == SaveCopy.Primary)
         {
-            writer.Write(json);
-            writer.Flush();
-
-            // Forces the OS to commit the bytes to disk rather than leaving them in a
-            // buffer a crash could lose before the rename below makes them visible.
-            stream.Flush(flushToDisk: true);
-        }
-
-        if (File.Exists(path))
-        {
-            // Three separate atomic renames rather than File.Replace — see the class
-            // remarks for the full invariant (#367). This unconditionally retires
-            // whatever was at `path` into `.bak`, corrupt or not — it does not need to
-            // know which, because LoadRun's .old fallback is what actually protects
-            // the crash window this rotation opens, not a promise that .bak is always
-            // good content.
-            var oldPrimaryPath = OldPrimaryPathFor(path);
-
             File.Move(path, oldPrimaryPath, overwrite: true);
-            File.Move(tempPath, path, overwrite: true);
-            File.Move(oldPrimaryPath, BackupPathFor(path), overwrite: true);
+            OnOperationCompleted(SaveFileOperation.ContinuationPrimaryMovedAside);
         }
-        else
+
+        File.Move(tempPath, path, overwrite: true);
+        OnOperationCompleted(SaveFileOperation.ContinuationCommitted);
+
+        if (selected is SaveCopy.Primary or SaveCopy.Old)
         {
-            // Nothing to back up on a first write for this path — but a stale .bak can
-            // already be sitting here, left over from a run whose primary was deleted
-            // separately from its backup. Left untouched, that stale backup would
-            // predate the new primary being created right now, and LoadRun's fallback
-            // could resurrect it as this run's history if the new primary were ever
-            // lost. Clear it — but only AFTER the move lands the new primary. The
-            // reverse order (delete, then move) opens a window with no loadable file
-            // at all, and that window is live: a resume-from-backup whose primary is
-            // missing takes this branch on its very first write, so deleting first
-            // would destroy the one copy the run was just loaded from. Deleting after
-            // keeps "at least one complete file is on disk for LoadRun to find" true
-            // at every crash point; the stale-resurrection hazard only re-opens if the
-            // just-written primary is itself lost before the delete below runs — a
-            // strictly rarer compound than a no-loadable-file window.
-            var backupPath = BackupPathFor(path);
-
-            File.Move(tempPath, path);
-
-            // A missing primary can be a genuinely fresh path, or a path whose prior
-            // run was deleted separately from its crash residue. Once the new primary
-            // is live, neither residue may remain loadable as this run's history. The
-            // primary is already the newest complete copy, so these cleanup operations
-            // cannot create a no-copy window: a crash before either cleanup still lets
-            // LoadRun choose the new primary first.
-            var oldPrimaryPath = OldPrimaryPathFor(path);
-            if (File.Exists(oldPrimaryPath))
-            {
-                File.Delete(oldPrimaryPath);
-            }
-
-            if (File.Exists(backupPath))
-            {
-                File.Delete(backupPath);
-            }
+            File.Move(oldPrimaryPath, BackupPathFor(path), overwrite: true);
+            OnOperationCompleted(SaveFileOperation.ContinuationPriorMovedToBackup);
         }
     }
 
@@ -203,6 +131,11 @@ public static class SaveFile
     public static SaveLoadResult LoadRun(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
+
+        if (File.Exists(NewRunPathFor(path)))
+        {
+            return new SaveLoadResult(null, UsedBackup: false, PrimaryFailureReason: null, BackupFailureReason: null);
+        }
 
         if (TryReadRun(path, out var primary, out var primaryFailure))
         {
@@ -255,6 +188,53 @@ public static class SaveFile
 
         return $"Cannot load a save. Primary {primaryPart}. Backup {backupPart}.";
     }
+
+    private enum SaveCopy
+    {
+        Primary,
+        Old,
+        Backup,
+    }
+
+    private static SaveCopy? SelectedCopy(string path)
+    {
+        if (TryReadRun(path, out _, out _))
+        {
+            return SaveCopy.Primary;
+        }
+
+        if (TryReadRun(OldPrimaryPathFor(path), out _, out _))
+        {
+            return SaveCopy.Old;
+        }
+
+        return TryReadRun(BackupPathFor(path), out _, out _) ? SaveCopy.Backup : null;
+    }
+
+    private static void WriteAndFlush(string path, string contents)
+    {
+        using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        using var writer = new StreamWriter(stream);
+        writer.Write(contents);
+        writer.Flush();
+        stream.Flush(flushToDisk: true);
+    }
+
+    private static void DeleteIfPresent(string path, SaveFileOperation operation)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        File.Delete(path);
+        OnOperationCompleted(operation);
+    }
+
+    internal static Action<SaveFileOperation>? OperationCompletedForTesting { get; set; }
+
+    private static void OnOperationCompleted(SaveFileOperation operation) =>
+        OperationCompletedForTesting?.Invoke(operation);
 
     private static bool TryReadRun(string path, out SavedRun? saved, out string? failureReason)
     {

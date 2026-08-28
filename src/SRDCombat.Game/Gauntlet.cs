@@ -430,7 +430,7 @@ public sealed class GauntletRun
     /// <summary>
     /// Adopts a freshly rolled seed for a run resumed from a save written before #286,
     /// which carries none, and writes it to <paramref name="savePath"/> immediately
-    /// through <see cref="SaveFile.Write"/> rather than leaving it to the next cleared
+    /// through <see cref="SaveFile.ContinueWrite"/> rather than leaving it to the next cleared
     /// fight's autosave.
     /// </summary>
     /// <remarks>
@@ -451,7 +451,7 @@ public sealed class GauntletRun
         ArgumentNullException.ThrowIfNull(savePath);
 
         Seed = seed;
-        SaveFile.Write(savePath, RunSave.ToJson(this));
+        SaveFile.ContinueWrite(savePath, RunSave.ToJson(this));
     }
 
     /// <summary>The rungs, in order.</summary>
