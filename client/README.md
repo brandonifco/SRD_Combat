@@ -527,8 +527,11 @@ holds to a boundary worth knowing before adding to it: Godot's *managed* value t
 test host process** rather than throwing something a test can catch. So the tests cover
 rules (the log's colouring, the sprite metrics, the draw scale) and the probe loop below
 still covers everything that needs a live scene. The gap that remains is the argument
-wiring and `PlayMode`'s own state, which need a seam that #491 and the battle-builder's
-`BattleScenario` own.
+wiring and `PlayMode`'s own state as a live Godot node — nothing in the test project
+constructs `PlayMode` or calls `OnReady`. `BattleScenario` (#473) has since landed and
+`SRDCombat.Viewer.Tests` now pins the focus stack, the router and the scenario seam, so
+what is left is narrower than when this paragraph was written: the argv boundary
+(#490) and live-node state, both still probe-only.
 
 Two things the arrangement never cost, and still does not:
 
