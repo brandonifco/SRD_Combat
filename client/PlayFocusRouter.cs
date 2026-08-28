@@ -1,3 +1,4 @@
+using SRDCombat.Core.Combat;
 using SRDCombat.Viewer.Ui;
 
 namespace SRDCombat.Viewer;
@@ -23,18 +24,27 @@ internal enum RouteAction
     /// <summary>Acknowledge the outcome card and move the run on.</summary>
     CommitOutcome,
 
-    /// <summary>Back out to the board, closing every layer over it.</summary>
+    /// <summary>
+    /// Back out to the board, closing every layer over it.
+    /// </summary>
+    /// <remarks>
+    /// No <see cref="EscapeMeaning"/> maps here any more — #509 moved every menu and
+    /// <see cref="PlayFocus.Targeting"/> onto <see cref="EscapeMeaning.CloseSelf"/>, so Esc
+    /// never reaches this route today. It survives for the click pipeline (#503, S4 step
+    /// 7): a click on the grid while a menu is open closes the menu <b>and swallows the
+    /// click</b> rather than acting through it, which is exactly this action's effect —
+    /// <c>ClearPending</c>, i.e. <c>PopToRoot</c> — reused rather than duplicated.
+    /// </remarks>
     DropToBoard,
 
     /// <summary>
     /// Close the top layer only, leaving whatever is under it open.
     /// </summary>
     /// <remarks>
-    /// No focus answers <see cref="EscapeMeaning.CloseSelf"/> yet — every menu in this
-    /// slice drops all the way to the board, which is today's behaviour and must stay it.
-    /// The route exists because the meaning does, and mapping <c>CloseSelf</c> onto
-    /// <see cref="DropToBoard"/> to avoid an unused member would be a lie the compiler
-    /// would never catch.
+    /// The shop, every row menu and <see cref="PlayFocus.Targeting"/> answer
+    /// <see cref="EscapeMeaning.CloseSelf"/> with this route since #509. The click pipeline
+    /// (#503) reuses it too: a click on the shop's back button is exactly "close the top
+    /// layer", so it routes here rather than growing a synonym.
     /// </remarks>
     CloseTopLayer,
 
@@ -58,6 +68,43 @@ internal enum RouteAction
 
     /// <summary>Run whatever action <c>Character</c> is the hotkey for, if any.</summary>
     RunHotkey,
+
+    // ---- click-only, from RouteClick (#503, S4) --------------------------------------
+
+    /// <summary>
+    /// Buy the shop offer at <c>Index</c>. The engine's answer either way replaces the
+    /// stall's notice — a purchase re-lists it with the purse lighter, a refusal shows its
+    /// code like every other rule.
+    /// </summary>
+    PurchaseShopRow,
+
+    /// <summary>Open the merchant's stall.</summary>
+    OpenShop,
+
+    /// <summary>Start the next fight.</summary>
+    ContinueFight,
+
+    /// <summary>
+    /// Take the open menu's row at <c>Index</c> — the click's own row, not the keyboard's
+    /// highlighted one, so a click needs no highlight to have landed first.
+    /// </summary>
+    TakeMenuRowAt,
+
+    /// <summary>
+    /// Run the button at <c>Index</c>, whatever it does — including toggling the very menu
+    /// open beneath it. Checked after the open menu's rows and before the close-menu
+    /// fallback: a button click while a menu is open runs the button rather than closing
+    /// the menu first.
+    /// </summary>
+    RunButtonRow,
+
+    /// <summary>
+    /// Act on <c>Square</c>, or on nothing when it is null — the same path Enter takes from
+    /// the board cursor, addressed by pixel instead. Null stands for "anywhere else": off
+    /// the board, or the chrome, and either backs out of an armed action without spending
+    /// it.
+    /// </summary>
+    ActivateSquareAt,
 }
 
 /// <summary>One decision about one input.</summary>
@@ -65,11 +112,21 @@ internal enum RouteAction
 /// <param name="StepX">Horizontal step, for the moves.</param>
 /// <param name="StepY">Vertical step, for the moves.</param>
 /// <param name="Character">The typed character, for <see cref="RouteAction.RunHotkey"/>.</param>
+/// <param name="Index">
+/// Which row or button, for <see cref="RouteAction.PurchaseShopRow"/>,
+/// <see cref="RouteAction.TakeMenuRowAt"/> and <see cref="RouteAction.RunButtonRow"/>.
+/// </param>
+/// <param name="Square">
+/// The square to act on, for <see cref="RouteAction.ActivateSquareAt"/>. Null means
+/// "nowhere" — off the board, or the chrome under an armed action.
+/// </param>
 internal readonly record struct Route(
     RouteAction Action,
     int StepX = 0,
     int StepY = 0,
-    char Character = '\0');
+    char Character = '\0',
+    int Index = 0,
+    GridPosition? Square = null);
 
 /// <summary>
 /// Everything outside the focus stack that the routing decision still depends on.
@@ -88,13 +145,26 @@ internal readonly record struct Route(
 /// <param name="CanArmAttack">Whether the commanded character is offered the Attack action.</param>
 /// <param name="HasCommanded">Whether a character is under the player's command right now.</param>
 /// <param name="HasCursor">Whether the board cursor is placed.</param>
+/// <param name="Interlude">
+/// Whether the phase is the interlude between fights — not simply <c>!Fighting</c>, since a
+/// finished run (<c>Phase.RunOver</c>) is neither. The click pipeline's guard on
+/// <see cref="ClickHit"/>'s shop-related facts (#503, qc review round 1): <c>PlayMode</c>'s
+/// hit-testing reports those facts unconditionally now, so the router — not the node — is
+/// what refuses to honour a stray one outside the screen it belongs to.
+/// </param>
+/// <param name="ShopAvailable">
+/// Whether this interlude offers a stall at all (a Long Rest's own fact, unrelated to the
+/// focus stack). Gates <see cref="ClickHit.ShopOpen"/> the same way.
+/// </param>
 internal readonly record struct RouteContext(
     bool Fighting,
     bool ActInProgress,
     int MenuRowCount,
     bool CanArmAttack,
     bool HasCommanded,
-    bool HasCursor);
+    bool HasCursor,
+    bool Interlude = false,
+    bool ShopAvailable = false);
 
 /// <summary>
 /// Decides what one input means, given what has the player's attention.
@@ -240,6 +310,151 @@ internal static class PlayFocusRouter
         }
 
         return new Route(RouteAction.Unhandled);
+    }
+
+    /// <summary>
+    /// Routes one click against the current focus.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The priority order lives here now too</b> (#503, S4). It used to be a second,
+    /// independent copy inside <c>PlayMode.HandleClick</c>, in a different vocabulary from
+    /// <see cref="Route(FocusStack{PlayFocus},ClientInput,RouteContext)"/>'s own — nothing
+    /// made the two agree, and they agreed only because people read the file carefully.
+    /// </para>
+    /// <para>
+    /// <b>This method owns every guard, not just the order.</b> (qc review round 1.)
+    /// <c>PlayMode.HitTest</c> reports <see cref="ClickHit"/>'s fields unconditionally —
+    /// every rect tested against the pixel regardless of phase, of what is open, of what is
+    /// available — so a fact reaching here is only ever honoured because <i>this method</i>
+    /// checked <see cref="RouteContext.Interlude"/>, <see cref="RouteContext.ShopAvailable"/>
+    /// or the focus stack first, never because the node declined to compute it. A hit-test
+    /// that pre-filters is a hit-test that has already made the decision it was supposed to
+    /// hand over.
+    /// </para>
+    /// <para>
+    /// <b>The nine steps below are numbered to match the issue and the design doc, and the
+    /// order is preserved exactly — including two steps that look like bugs and are not:</b>
+    /// </para>
+    /// <list type="number">
+    /// <item>the interlude screen, gated on <see cref="RouteContext.Interlude"/> explicitly
+    /// rather than trusted from which <see cref="ClickHit"/> fields happen to be set —
+    /// within it, the back button and the stall's rows only while the shop
+    /// (<c>focus.Top is PlayFocus.Shop</c>) is open, else the open-stall button (also gated
+    /// on <see cref="RouteContext.ShopAvailable"/>) and the continue button;</item>
+    /// <item>nobody to command;</item>
+    /// <item>an act still playing out;</item>
+    /// <item>an armed action, which resolves against <see cref="ClickHit.Square"/> and
+    /// <see cref="ClickHit.OverOverlay"/> directly rather than waiting on any other field —
+    /// a click on the chrome is "anywhere else", and cancelling must never cost anything;</item>
+    /// <item>the open menu's rows (<see cref="ClickHit.MenuRow"/>);</item>
+    /// <item><b>the button row (<see cref="ClickHit.Button"/>) — after the menu's rows and
+    /// before the close-menu fallback.</b> Clicking a button while a menu is open runs the
+    /// button, which may itself toggle that very menu, rather than closing the menu first.
+    /// Both fields are populated independently by <c>HitTest</c>, so this order is a real
+    /// choice this method makes rather than one <c>HitTest</c> already made by testing menu
+    /// rows first;</item>
+    /// <item><b>a menu still open, swallowing the click.</b> Neither a row nor a button
+    /// caught it, so the menu closes rather than being acted through — the square
+    /// underneath is not touched, even though one might be there;</item>
+    /// <item>the fixed chrome, with nothing left open to close;</item>
+    /// <item>the square itself.</item>
+    /// </list>
+    /// </remarks>
+    internal static Route RouteClick(FocusStack<PlayFocus> focus, ClickHit hit, RouteContext context)
+    {
+        ArgumentNullException.ThrowIfNull(focus);
+
+        // Step 1 — the interlude screen. Gated on context.Interlude explicitly: hit's
+        // shop-related fields are computed unconditionally by HitTest, so this check, not
+        // whichever fields happen to be set, is what confines this branch to the screen it
+        // belongs to.
+        if (context.Interlude)
+        {
+            if (focus.Top is PlayFocus.Shop)
+            {
+                if (hit.ShopBack)
+                {
+                    return new Route(RouteAction.CloseTopLayer);
+                }
+
+                if (hit.ShopRow is { } shopRow)
+                {
+                    return new Route(RouteAction.PurchaseShopRow, Index: shopRow);
+                }
+
+                return new Route(RouteAction.Ignore);
+            }
+
+            if (context.ShopAvailable && hit.ShopOpen)
+            {
+                return new Route(RouteAction.OpenShop);
+            }
+
+            if (hit.Continue)
+            {
+                return new Route(RouteAction.ContinueFight);
+            }
+
+            return new Route(RouteAction.Ignore);
+        }
+
+        // Step 2 — nobody to command: no encounter, or it is not the party's turn.
+        if (!context.HasCommanded)
+        {
+            return new Route(RouteAction.Ignore);
+        }
+
+        // Step 3 — the mouse waits with the keyboard while an act plays out.
+        if (context.ActInProgress)
+        {
+            return new Route(RouteAction.Ignore);
+        }
+
+        // Step 4 — an armed action resolves before anything else the pixel might have hit.
+        // A click on the overlay is "anywhere else": it backs out without spending, so this
+        // reads OverOverlay and Square straight through rather than any other field.
+        if (focus.Top is PlayFocus.Targeting)
+        {
+            return new Route(RouteAction.ActivateSquareAt, Square: hit.OverOverlay ? null : hit.Square);
+        }
+
+        // Step 5 — the open menu's rows. Independent of step 6's fact: HitTest sets both
+        // MenuRow and Button whenever their rects match, so this method is the one place
+        // that picks a winner when they could both be set.
+        //
+        // The <see cref="PlayFocus.RowMenu"/> test is the gate, and it belongs here rather
+        // than in HitTest: a row may only be taken while a row menu is actually on top.
+        // HitTest reports the rectangle it found and says nothing about whether taking it
+        // is allowed — that separation is the whole point of the slice, and without this
+        // check the router would honour a stale MenuRow from board focus.
+        if (focus.Top is PlayFocus.RowMenu && hit.MenuRow is { } menuRow)
+        {
+            return new Route(RouteAction.TakeMenuRowAt, Index: menuRow);
+        }
+
+        // Step 6 — the button row. Deliberately after the rows and before step 7's
+        // close-menu fallback: see this method's remarks.
+        if (hit.Button is { } button)
+        {
+            return new Route(RouteAction.RunButtonRow, Index: button);
+        }
+
+        // Step 7 — a menu is still open and neither of the above caught the click. It
+        // closes rather than being acted through, and the click is swallowed.
+        if (focus.Top is PlayFocus.RowMenu)
+        {
+            return new Route(RouteAction.DropToBoard);
+        }
+
+        // Step 8 — the fixed chrome, with nothing open to close.
+        if (hit.OverOverlay)
+        {
+            return new Route(RouteAction.Ignore);
+        }
+
+        // Step 9 — the square itself.
+        return new Route(RouteAction.ActivateSquareAt, Square: hit.Square);
     }
 
     /// <summary>

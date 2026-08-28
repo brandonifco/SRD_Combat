@@ -237,11 +237,17 @@ public class PlayFocusRouterTests
             Route(With(new PlayFocus.Outcome()), ClientInput.Typed('x'), Fighting()));
     }
 
+    /// <summary>
+    /// A left-click on the outcome card is handled by <c>PlayMode._UnhandledInput</c>
+    /// itself, before <c>HandleClick</c>'s cascade even runs — a deliberate boundary
+    /// (#503, S4 review), not a gap the click pipeline forgot. It sits above the camera
+    /// handling and is not one of the click pipeline's nine steps, so bringing it in here
+    /// would need its own scoped slice with a left-button-and-ordering characterization
+    /// test, not a drive-by move riding another slice's commit.
+    /// </summary>
     [Fact]
     public void AClickDoesNotCommitTheOutcomeCardThroughTheRouter()
     {
-        // The card's mouse path is still PlayMode's own, below the camera handling. Moving
-        // it into the router is S4; claiming it here would change which code runs.
         Assert.Equal(
             RouteAction.Unhandled,
             Route(With(new PlayFocus.Outcome()), ClientInput.Clicked(5, 5), Fighting()));
