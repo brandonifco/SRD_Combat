@@ -1031,7 +1031,9 @@ public partial class PlayMode : FightScreen
             // movement are all spent. Paced like anyone else's turn rather than snapped
             // through, so the board can be read on the way past; and gated behind
             // ActInProgress above, so the last blow's animation always finishes first.
-            if (NothingLeftButEndTurn(commanded))
+            if (PlayTurnFlow.NothingLeftButEndTurn(
+                    _focus,
+                    TurnOptions.For(encounter, commanded)))
             {
                 _elapsed += delta;
 
@@ -1151,36 +1153,6 @@ public partial class PlayMode : FightScreen
             HandleClick(click.Position);
         }
     }
-
-    /// <summary>
-    /// Whether this character has no choice left to make but ending the turn.
-    /// </summary>
-    /// <remarks>
-    /// <b>The row is the whole question, and leftover movement is deliberately not part
-    /// of it.</b> This first shipped also requiring <c>_reachable</c> to be empty, on the
-    /// reasoning that walking is not a button so a row holding only End Turn says nothing
-    /// about whether the character can still reposition. That reasoning is sound and the
-    /// behaviour was wrong: <b>attacking spends the Action, never the movement</b>, so a
-    /// character who swings from where they stand keeps a full Speed and every such turn
-    /// still had to be dismissed by hand — which is nearly every turn, and exactly the
-    /// friction this exists to remove.
-    /// <para>
-    /// The cost is stated rather than hidden: a character who attacks *before* moving no
-    /// longer gets to step away afterwards. That is the XCOM convention — acting ends
-    /// your turn — and it is predictable, which beats a rule that sometimes ends the turn
-    /// and sometimes does not depending on a number the row never showed. Move first,
-    /// then act.
-    /// </para>
-    /// <para>
-    /// Anything the player has half-started — an armed attack, an open menu — counts as
-    /// a choice in progress and holds the turn open, so the screen never closes over
-    /// something somebody was in the middle of.
-    /// </para>
-    /// </remarks>
-    private bool NothingLeftButEndTurn(Combatant commanded) =>
-        !_focus.BottomUp.Any(layer => layer.HoldsTurnOpen)
-        && _encounter is { } encounter
-        && TurnOptions.For(encounter, commanded) is [TurnAction.EndTurn];
 
     /// <summary>How long the pointer must rest before a hint appears, in seconds.</summary>
     private const double HoverDelaySeconds = 2;

@@ -190,7 +190,14 @@ public class PlayFocusTests
     [Fact]
     public void TheQuitCardHoldsTheTurnOpenWhileTheModalDecisionIsVisible()
     {
-        Assert.True(new PlayFocus.QuitConfirm().HoldsTurnOpen);
+        var focus = new FocusStack<PlayFocus>(new PlayFocus.Board());
+
+        Assert.True(PlayTurnFlow.NothingLeftButEndTurn(focus, [TurnAction.EndTurn]));
+
+        focus.Push(new PlayFocus.QuitConfirm());
+
+        Assert.True(focus.Top.HoldsTurnOpen);
+        Assert.False(PlayTurnFlow.NothingLeftButEndTurn(focus, [TurnAction.EndTurn]));
     }
 
     [Fact]

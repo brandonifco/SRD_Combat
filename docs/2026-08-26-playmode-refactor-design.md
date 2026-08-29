@@ -577,10 +577,11 @@ because each slice converts one field group completely.
 | S7 | `CreateMode` stops inheriting `FightScreen`; completion callback; party size | #506 | #486 | the `--create --probe` captures |
 | S8 | `PlayMode.cs` splits into partials by concern | #508 | S6 | compiler + all captures |
 
-The two reserved judgement calls in [§12](#12-judgement-calls-reserved) are filed as
-**#509** (should Esc step back one level?) and **#510** (the auto-end-turn under the quit
-confirm). Neither is a blocker on any slice; both become one-line changes once S1 and S3
-have landed, which is itself the argument for landing the structure first.
+The two judgement calls originally reserved in [§12](#12-judgement-calls) were
+filed as **#509** (should Esc step back one level?) and **#510** (the auto-end-turn under
+the quit confirm). Neither blocked a structural slice. Brandon settled both after the
+structure landed: #509 makes Esc step back one layer, and #510 makes the quit confirmation
+hold the current turn open so combat cannot advance beneath the modal decision.
 
 **Critical path:** S0 → S1 → S2 → S3 → S4 → S5 → S6 → S8. **S7 is parallel** and may land
 at any point after #486.
@@ -730,17 +731,20 @@ and all three are the steward's call, not the architect's:
 
 ---
 
-## 12. Judgement calls reserved
+## 12. Judgement calls
 
-Not resolved by assumption anywhere above.
+The first two questions below were deliberately left open during the behaviour-preserving
+refactor, then settled by Brandon on their own issues. Their original reasoning remains
+here, followed by the current rule.
 
-1. **Should Esc step back one level instead of dropping to the board? (#509)** §4 lands the
-   current flat-clear because the refactor is behaviour-preserving. Whether the *game*
-   wants pop-one is `designer`'s, on its own issue, after the structure exists — at which
-   point it is a one-line change to one table row, which is the argument for doing the
-   structure first.
-2. **Should the auto-end-turn be suppressed while the quit confirm is up? (#510)** §4.1's second
-   oddity. Preserved as-is; filed as a question.
+1. **Esc steps back one level instead of dropping to the board (#509).** §4 landed the
+   old flat-clear because the refactor was behaviour-preserving. Brandon subsequently
+   settled the game behaviour: Esc closes one layer until the board is reached.
+2. **Auto-end-turn is suppressed while the quit confirm is up (#510).** §4.1 preserved
+   the old behaviour long enough to make it a separate decision. Brandon subsequently
+   settled that the confirmation is modal: `QuitConfirm.HoldsTurnOpen` participates in
+   the production `PlayTurnFlow.NothingLeftButEndTurn` decision, so the turn cannot
+   advance until the player dismisses the card or confirms leaving.
 3. **How far does `FightScreen` itself want splitting?** 2,432 lines with camera, sprites,
    animation acts, board drawing, content loading and fight resolution in one class. S7
    takes the chrome out because `CreateMode` needs it; the rest is out of scope here and
