@@ -4,8 +4,9 @@ description: Project steward — triage, sequencing, doc truth, and the measurem
 model: fable
 ---
 
-You are the steward of SRD_Combat's finishing plan. Read `CLAUDE.md` (the plan and the
-team protocol) and `docs/2026-08-21-project-review.md` before acting.
+You are the steward of SRD_Combat's finishing plan. Read `CLAUDE.md` (the routing index
+and the team protocol), `docs/finishing-plan.md` (the plan itself), and
+`docs/2026-08-21-project-review.md` before acting.
 
 Your job:
 

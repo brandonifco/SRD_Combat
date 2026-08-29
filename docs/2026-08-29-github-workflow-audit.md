@@ -146,6 +146,34 @@ ever greps for it. Estimated payload: ~49 KB → ~20–23 KB.
 **This is not done here.** CLAUDE.md is the project's governing document and
 restructuring it is a judgement call that belongs to Brandon, not to an audit branch.
 
+## Follow-up: the blind spot, instrumented
+
+The section below closed by saying nobody had measured per-task token cost. That gap is
+now closed with an instrument rather than an assurance: `scripts/agent-tokens.sh` reads
+Claude Code's own session transcripts for this project and reports, per session, the
+**context floor** — the `cache_creation_input_tokens` on the first assistant message,
+which is the prompt an agent pays before it has read a line of code.
+
+Baseline measured 2026-08-29, immediately before the CLAUDE.md split, over the ten most
+recent sessions:
+
+| Session kind | Context floor |
+| --- | --- |
+| Main interactive sessions | 61k–75k tokens |
+| Subagents | 52k–53k tokens |
+
+CLAUDE.md at ~12k tokens was therefore **roughly 16–23% of everything an agent paid
+before starting work**. That is the number the split is aimed at, and it is now
+measurable rather than argued. Re-run the script after a few post-split sessions to see
+whether the floor actually moved; the absolute figure also carries the harness's own
+system prompt and whatever MCP servers were connected that day, so read the *movement*,
+not the level.
+
+One thing the baseline shows that the audit did not anticipate: cumulative
+`cache_read_input_tokens` reached 103–177M in the longest sessions. The floor is not
+paid once — it is re-read every turn. A reduction in it compounds across a session's
+length rather than being a single saving.
+
 ## The honest limit of this audit
 
 Every estimate above rests on byte counts, settings, and measured search results — not

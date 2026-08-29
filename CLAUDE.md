@@ -4,36 +4,104 @@ A turn-based tactical combat game on **SRD 5.2.1** (2024 rules, CC-BY-4.0). Part
 four, levels 1–5, full tactical grid, persistent thirty-fight gauntlet with XP,
 levelling, and loot. Combat only — no exploration, dialogue, or travel.
 
-**Three documents govern this project.** Read them in this order:
+**This file is the governing document, and it is deliberately smaller than it was.**
+On 2026-08-29 it carried 667 lines into every agent's context before that agent read a
+line of code — most of it roadmap and measurements that the task at hand did not need.
+What remains here is what is true regardless of which task you drew: the honesty rule,
+the invariants, the conventions, the environment. Everything scoped to one subsystem now
+sits behind the routing table below, one explicit read away. **Follow the table rather
+than searching** — a grep for what used to be inline costs more than the read it
+replaces.
 
-1. **This file** — the finishing plan, the team, and the operational rules.
-2. [`docs/2026-08-21-project-review.md`](docs/2026-08-21-project-review.md) — the
-   independent four-viewpoint audit the plan is built from. Every plan item cites a
-   finding there.
-3. [`docs/2026-08-11-design-and-development-plan.md`](docs/2026-08-11-design-and-development-plan.md)
-   — the original design doc: kickoff decisions, the architecture and why it diverges
-   from `5eGoldBox`, the phase history.
+## Start here
 
-**The full development narrative is archived, not deleted.** This file once carried
-2,250 lines of measured history — every pacing table, the squad-AI series, the client
-and art evolution, the closed rules backlog with its reasoning. All of it is preserved
-verbatim at [`docs/history/2026-08-21-claude-md-archive.md`](docs/history/2026-08-21-claude-md-archive.md).
-When a bullet below feels compressed, the archive has the long form with the evidence.
+**Active phase: F2 (Feel) and F3 (The run becomes a game)**, with F5 (Confidence)
+running alongside. F1 closed 2026-08-25 at `8ca55aa`. The whole plan, its phase exits
+and its sequencing rationale: [`docs/finishing-plan.md`](docs/finishing-plan.md).
 
-## Current state — read this first
+**The work queue is `gh issue list`. Not this file, not chat.** Phase labels
+(`phase:F1`–`F6`) carry every open issue, so `gh issue list --label phase:F3` is the
+board. File found-but-deferred work as an issue.
 
-**As of 2026-08-25, F1 closed at `8ca55aa` (PR #421).** All numbers verified, not estimated.
+**The gate is one command:**
+
+```bash
+./scripts/validate.sh full
+```
+
+### Read before you edit
+
+| If you are touching | Read first |
+| --- | --- |
+| `tools/SrdExtract`, `data/srd`, any parser | **"The rule this project runs on"** below, then [`docs/guides/extraction.md`](docs/guides/extraction.md) |
+| `src/SRDCombat.Core` — combat, movement, cover, conditions | [`docs/guides/engine.md`](docs/guides/engine.md) |
+| Characters, spells, levelling, items | [`docs/guides/engine.md`](docs/guides/engine.md) |
+| The gauntlet, economy, encounter building | [`docs/guides/engine.md`](docs/guides/engine.md) + [`docs/finishing-plan.md`](docs/finishing-plan.md) F3 |
+| `client/` (Godot) or `src/SRDCombat.Console` | [`client/README.md`](client/README.md). The clients hold no rules |
+| Art, sprites, `client/assets` | Brandon draws all art. The pipeline is mechanical-only and never touches colour |
+| Anything, before you commit | **"Standing conventions"** below |
+
+### Repository map
+
+| Area | Source | Tests |
+| --- | --- | --- |
+| Rules engine — pure, no I/O, no ambient randomness | `src/SRDCombat.Core` | `tests/SRDCombat.Core.Tests` |
+| Content loading from `data/srd` | `src/SRDCombat.Content` | `tests/SRDCombat.Content.Tests` |
+| Gauntlet, run state, economy, encounters | `src/SRDCombat.Game` | `tests/SRDCombat.Game.Tests` |
+| Console client | `src/SRDCombat.Console` | *none — #317* |
+| Godot client | `client/` | `tests/SRDCombat.Viewer.Tests` |
+| PDF extractor | `tools/SrdExtract` | `tests/SrdExtract.Tests` |
+| Pacing instrument | `tools/PacingMeasure` | — |
+
+### Background, when you need the reasoning
+
+Not required reading — linked so you never have to search for them.
+
+- [`docs/status.md`](docs/status.md) — measured facts, **generated** by
+  `./scripts/status.sh`. Never hand-edit it.
+- [`docs/finishing-plan.md`](docs/finishing-plan.md) — the phases, their exits, and what
+  the project review found wanting.
+- [`docs/2026-08-21-project-review.md`](docs/2026-08-21-project-review.md) — the
+  independent four-viewpoint audit the plan is built from. Every plan item cites it.
+- [`docs/2026-08-11-design-and-development-plan.md`](docs/2026-08-11-design-and-development-plan.md)
+  — the original design doc: kickoff decisions, the architecture, why it diverges from
+  `5eGoldBox`.
+- [`docs/history/2026-08-21-claude-md-archive.md`](docs/history/2026-08-21-claude-md-archive.md)
+  — **the full development narrative, archived and not deleted.** This file once carried
+  2,250 lines of measured history: every pacing table, the squad-AI series, the client
+  and art evolution, the closed rules backlog with its reasoning. When a bullet here
+  feels compressed, the archive has the long form with the evidence.
+
+### Invariants you can break without noticing
+
+The rest of each guide only matters once you are in that code. These four bite from
+anywhere, so they stay here:
+
+- **`Core` stays pure.** No I/O, no ambient time, no packages. **All randomness goes
+  through `IRandomSource`** — never `Random.Shared` in `Core`. Determinism is what the
+  frozen transcripts rest on.
+- **Nothing may hold unimplemented rules silently.** An action the engine cannot
+  resolve is **refused with a named code**, never skipped. See below.
+- **Where a rule is a judgement call, write the reading down** in the code's doc
+  comments. `AreaTargeting` is the model.
+- **Docs are part of the diff.** A change that invalidates a doc-comment, a plan row,
+  or a claim in this file fixes it in the same commit.
+
+## Current state
+
+**Measured facts are generated, not typed:** [`docs/status.md`](docs/status.md), from
+`./scripts/status.sh`. Test counts, content counts and line counts live there because
+every hand-maintained copy of them drifted — this file's table claimed 4,718 tests
+against a measured 4,814 on the day it was replaced.
+
+What a script cannot generate is the *reading* of a measurement, so those stay here.
 
 | | |
 | --- | --- |
-| Tests | **4,718 passing**, 2 skipped by design (the transcript fixture writer and the sprite-geometry manifest writer) — measured 2026-08-27 at `8988604` by a full `dotnet test -c Debug`: `SrdExtract.Tests` 3,328, `Core.Tests` 658, `Content.Tests` 226, `Game.Tests` **362**, `Viewer.Tests` **144**. The previous entry (4,597 at `cbdcdc5`) predated #500–#502, #509, #533 and #537. **`Game.Tests` alone takes ~6m55s of that** — measured against a contended machine, so read it as "still roughly seven minutes", not as a delta on the 6m39s above it; the regression against the 2m14s recorded at F1 exit is the point, and F5's exit criterion is a suite under ~3 minutes. #319 (**34 executable `ContentLoader.Load` call sites** across the suite — Content 13, Game 18, SrdExtract 3 — measured at `8988604`) is the filed cause |
-| Build | Debug and Release, **0 warnings** (`TreatWarningsAsErrors`) |
-| Content | 330 monsters · 339 spells · 12 classes · 9 species · 4 backgrounds · 38 weapons · 13 armor · 258 magic items (13 executed) — counts re-verified from `data/srd` at `8ca55aa`; F1's regenerations (#382, #370–#373, #421) changed entry structure and residue in `monsters.json`, never the roster |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
-| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention. **This row now moves at re-baselining checkpoints, not per PR** (2026-08-28): `112ed19` stands as the baseline until the next checkpoint measures against it, and work landing in between is not swept |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Coverage gaps | The console client is the last wholly untested production code: **1,949 lines**, filed as #317. Measured 2026-08-27 at `8988604` over `src/`, `client/` and `tools/`, excluding `bin`/`obj`: **43,568 production lines**, of which `client/` is 9,214, `tools/SrdExtract` 6,996 and `SRDCombat.Console` 1,949. **A blanket "N% untested" figure is retired here rather than restated**: the old 24% was a directory proxy that counted a whole tree as untested the moment it had no test project, and it stopped being reproducible once `tools/SrdExtract` (#189) and the Godot client (#190) got theirs — `SRDCombat.Viewer.Tests` now pins the focus stack, the router, the log highlighter, sprite metrics and the draw scale, so `client/` is neither untested nor tested but partly each, and one number cannot say which. What is still true and still specific: **#490** — the live Godot argv boundary (`--spawn` / `--level` refusal wiring) is pinned by nothing, knockout-verified. What #500-#502 and #473/#474 pinned is the *extracted* seams — the focus stack, the router, the scenario type — **not `PlayMode` as a live node: no Viewer test constructs it or invokes `OnReady`**, and that half stays probe-only. Read #490 as covering both, with the argv boundary the sharper end |
-| Work queue | `gh issue list`. **Not this file, not chat.** |
+| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wants Brandon's verdict, and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention. **This row now moves at re-baselining checkpoints, not per PR** (2026-08-28): `112ed19` stands as the baseline until the next checkpoint measures against it, and work landing in between is not swept |
+| Coverage gaps | The console client is the last wholly untested production code, filed as **#317** (line counts: [`docs/status.md`](docs/status.md)). **A blanket "N% untested" figure is retired rather than restated**: the old 24% was a directory proxy that counted a whole tree as untested the moment it had no test project, and it stopped being reproducible once `tools/SrdExtract` (#189) and the Godot client (#190) got theirs — `SRDCombat.Viewer.Tests` now pins the focus stack, the router, the log highlighter, sprite metrics and the draw scale, so `client/` is neither untested nor tested but partly each, and one number cannot say which. What is still true and still specific: **#490** — the live Godot argv boundary (`--spawn` / `--level` refusal wiring) is pinned by nothing, knockout-verified. What #500–#502 and #473/#474 pinned is the *extracted* seams — the focus stack, the router, the scenario type — **not `PlayMode` as a live node: no Viewer test constructs it or invokes `OnReady`**, and that half stays probe-only. Read #490 as covering both, with the argv boundary the sharper end |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
 degrees, opportunity attacks, conditions with printed durations, concentration,
@@ -41,196 +109,28 @@ areas, warbands of 6–10, three objectives, generated terrain and layouts, Weap
 Mastery, an economy, loot, rests, XP levelling, death and revival — all measured on a
 committed instrument, all print-faithful or refused with a named code.
 
-**What the review found wanting** (full detail in the review doc): the fight has
-almost no feedback — one-frame monster art, no audio at all, hit and miss visually
-identical; the run has no route choice, loot decisions or ironman stakes; the honesty
-rule's Multiattack accounting has three breaks closed and one still open — closed: the
-*replace-clause* hole (#290), alternative compositions that were summed instead of
-chosen between (#342), and the fourteen sub-sentence composition clauses folded inside
-a composition sentence that read as fully modelled (#341); open: #343, where nineteen
-enumerated fixed compositions ("one Bite attack and one Claw attack") record
-`AnyCombination: true` for want of per-name counts on `MultiattackEffect`, so a Brown
-Bear may double-Bite and nothing says so — the spell lane is answered by retiring a
-signal that could not be derived rather than faking one (#292), and species
-traits are no longer a silent one: none of the 33 printed trait instances execute, but
-`SpeciesTraitRegistry` and `CharacterSheet.UnimplementedFeatures` now say so at
-creation and on the sheet (#291); the undocumented rules gap the review found —
-concentration surviving Incapacitated — is fixed (#289); a reload used to re-roll the
-ladder because the seed was not saved, and a save-vs-content mismatch used to crash
-instead of refusing — both closed (#286, #287, and the last Loot and resume
-indexers, #350/#366); the art
-pipeline is unrepeatable and one sprite in ~60 matches the project's own palette —
-repeatability was answered by the committed script (#294/#427), but the
-palette-matching half of that finding was **retired as a goal on 2026-08-26**:
-after three colour-step rejections in a row (#238's revert, PR #461's regeneration
-redone as lossless mirrors, PR #446 withheld with "looks like it's made of metal"),
-Brandon ruled the pipeline mechanical-only — palette coherence comes from his hand,
-not a script (closed #458 by policy).
-**The finishing plan below is the ordered answer.**
+**What the review found wanting**, and how much of it is answered, is the finishing
+plan's opening section: [`docs/finishing-plan.md`](docs/finishing-plan.md).
 
 ## The finishing plan
 
-### Definition of Finished (v1.0)
+[`docs/finishing-plan.md`](docs/finishing-plan.md) is the authority. In brief:
 
-A stranger can download a release, build a party, and play a thirty-fight run with
-mouse or keyboard — and it holds up:
+- **F0** file the backlog · **F1** integrity — *closed 2026-08-25 at `8ca55aa`*
+- **F2** feel — board feedback, foresight, battlefield generation. *Art and audio are
+  deliberately sequenced last within it (Brandon, 2026-08-26); visual **mechanics** are
+  not art and proceed at normal priority.*
+- **F3** the run becomes a game — route choice, loot decisions, stakes, the XP curve.
+  Entry gate: the PlayMode modal refactor (#327). **A re-baselining checkpoint.**
+- **F4** depth and variety — enemy casters, CR fill-ins, fog slice 2 (#545)
+- **F5** confidence — client and console tests, content fixtures (#319), suite under
+  ~3 minutes. Runs continuously alongside F2–F4
+- **F6** ship — in-game attribution, packaging, a tagged release
 
-1. **Nothing lies.** Every printed rule executes or refuses with a named code; the
-   honesty accounting holds for monsters, species, classes, and items — and for spells
-   by their own curated menu rather than clause accounting, stated as the exception it
-   is (see "The rule this project runs on"); the player is told, at the point of
-   choice, what does not work yet.
-2. **Every fight ends and every save survives.** No stalls, atomic saves, a reload
-   that replays the same fight, content drift refused with a message rather than a
-   crash.
-3. **Everything on screen reads.** Every creature that can appear has art in one
-   coherent style; a hit, a miss, a death, and a spell are visibly and audibly
-   different events; the player can see threat, range, and area before committing.
-4. **The run is a game.** Decisions between fights (route, loot, shop trade-offs),
-   stakes within them (attempts are counted, ironman exists), and a difficulty curve
-   that holds through the back half.
-5. **The tree is trustworthy.** The extractor and both clients have real tests, the
-   suite runs in minutes not tens of minutes, CI gates it all.
-6. **It ships legally.** In-game CC-BY attribution, LICENSE/NOTICE accurate including
-   the art, a tagged release with binaries.
-
-### The phases
-
-Ordered by dependency and by cost-of-delay, not by appeal. Each phase's items must
-exist as GitHub issues before its work starts (**F0 is that filing pass**). Existing
-issue numbers are cited; unnumbered items come from the review doc.
-
-**F0 — File the backlog.** The steward turns every item below and every review
-finding into an issue with acceptance criteria and a phase label. Exit: the plan and
-the queue agree; this table cites only issue numbers thereafter.
-
-**F1 — Integrity (closed 2026-08-25 at `8ca55aa`, PR #421 the closing merge).**
-Cheap, compounding correctness debts, every one worked as an issue. The planned
-items all landed: atomic save write plus backup, hardened through three adversarial
-rounds into a crash-recoverable rotation (#285, #332, #361, #367); the run's seed
-persisted so `--continue` after defeat retries *the same fight* (#286); content
-version stamped into the save with drift refused via `TryGetValue` on every resume
-path (#287, #350, #366); the level-4 ASI plan carried as a fixed plan (#330);
-concentration broken by Incapacitated (#289); the Multiattack replace-clause,
-summed-alternative and sub-sentence holes (#290, #342, #341); species traits
-surfaced as unimplemented at creation and on the sheet (#291) and the
-species-table interleave fixed (#374); `SpellDefinition.IsFullyModelled` retired
-(#292 — `PreparableSpells` is the authority); the stall class (#256) and
-immunity-blind targeting (#224); the doc-drift sweep (#379, plus the stale
-upcasting pair it missed, #400). Mid-phase, the 2026-08-24 outside critique's
-adjudication (`docs/2026-08-24-span-accounting-brief.md`) grew the phase by the
-span-accounting arc: characterization fixtures first (#189's first slice, PR #384,
-the safety net), then coverage-by-consumption replacing credit-by-label (#382,
-stages 0–6, PRs #385–#389) — `UnmodelledClauses` became computed residue,
-`MatchesStructuredForm`/`IsAccountedFor` were deleted, and the census over the
-closed corpus ended the goblin shape's omission class by construction. The
-semantic fixes landed on top: success-tier scoping (#370), or-tier alternative
-damage (#371), plural condition conjunctions (#372), section-gated rider claims
-(#373), Spirit Guardians' or-as-and (#375), and printed ranges enforced on entry
-saves (#386, whose PR also closed #405 with a knockout-verified policy test). The
-#382 regeneration demoted 12 tier-1 monsters (22 lost pool admission across all
-CRs), each carrying an always-printed rider the engine never executed; the
-transitional `MonsterPoolTests` floor has since ratcheted 68→73 as #371 restored
-the swarm/Blood Hawk/Chimera tiers, with the last demotions held by #390's
-remaining shapes and #409. Exit evidence: the Pacing row above is the promoted
-F1-exit baseline; qc's exit audits of the honesty lanes filed only non-blocking
-findings (#400–#402). **Named carries, with reasons:** #393/#394 (narrow
-save-rotation crash windows, rated below must-fix) go to #414's
-crash-point-enumeration harness in F5 rather than holding the phase; the census
-exhaust (#390, #409, #413) goes to F4, where restored creatures land next to the
-fill-ins; the exit mechanism review's process issues (#415–#417) go to F5; the
-doctrine rewrite of "The rule this project runs on" (#419) is the steward's,
-directly after this close; #189's broader extractor harness returns to F5.
-
-**F2 — Feel.** The largest gap per hour of work — **but its two asset lanes are deliberately sequenced last**. Brandon, 2026-08-26: *"save audio and visual art for last… i don't mean visual mechanics, i mean actual image work."* So the audio pass (#300) and every art item (#460, #462, PR #446) wait, while the *mechanics* — damage numbers, hit/miss/death, the health readout, previews, threat marking, the active-ring blink (#494, shipped) and the battlefield slices — proceed at normal priority. He draws all the art himself, so that lane is human throughput best spent once the mechanics using it have settled. The paragraph below still describes the pipeline work first; read that as scope, not as running order. One committed master→sprite pipeline
-script — **mechanical-only since 2026-08-26** (facing, crop, downscale, hard alpha;
-the palette and de-grain steps were removed at Brandon's direction after PR #446's
-"made of metal" verdict — colour is his alone, and no script reinterprets it) —
-Brandon approves before/after for every batch. **The "~23 unshipped masters" item is
-closed (#295, shipped `ec86756`, 2026-08-25) and the count was wrong**: all but two had
-already shipped in intervening batches, and fifteen pool names mapped at gitignored
-Craftpix folders were retired to the honest circle-and-letter token rather than left
-pointing at art no release build carries. Remaining art lanes: fix the stature clamp
-(an Ogre must not render shorter than a Goblin); integer-snap ground scaling. Board
-feedback: floating damage numbers, hit/miss/death visually distinct, health readout
-carrying state, an audio pass (a dozen sounds: hit, miss, death, cast, UI — silence is
-currently total). Foresight: opportunity-attack threat marking, range/AoE previews,
-path preview, tooltip latency to ~0.5 s, terrain hints, log-space fix. Added
-2026-08-25, from Brandon's played-run verdict on the battlefields: the
-battlefield-generation overhaul (`docs/2026-08-25-battlefield-overhaul-design.md`,
-slices #433, #435–#440 — sites, density tiers, whole-board terrain, deployment
-formations; supersedes #243, whose two items it absorbs). Exit: probe
-screenshots show it; a watcher can narrate a fight with the log covered.
-
-**F3 — The run becomes a game.** The largest design gap; Fable-led design, spec'd
-before built. **Entry gate (2026-08-24): the PlayMode modal/state refactor (#327,
-pulled from F5)** lands before any new modal surface, running parallel to the phase's
-design specs so it costs no calendar — every F3 system below is a new modal, and
-landing five of them on the 39-field class first would pay for the refactor twice.
-Stated escape hatch: if F2's foresight work (#301–#303) needs new modal *states*
-rather than new drawing, the refactor pulls forward into F2 instead. Route choice
-(pick the next rung from 2–3 revealed options); loot as a
-pick-one-of-three moment, and at least a handful of items that change a turn rather
-than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
-(attempt counter, run summary, opt-in ironman); XP curve so level 5 arrives around
-fight 24 rather than never (only 53 of 120 and 53 of 121 runs reach level 4 — the
-Pacing row above, current baseline); reprice or redesign the free `Survive(3)` rung;
-per-cycle variety so the six cycles are not one cycle six times (#192 — and, since
-2026-08-25, the per-cycle site weighting the battlefield overhaul deliberately left
-here; #243 itself was superseded into F2, see the F2 note above). Exit:
-measured curve holds through the back half on both ranges; a human run report exists
-for every new system. **This exit is a re-baselining checkpoint** — with F4's
-variety re-run and #542, it is where the comprehensive pacing evaluation that PRs no
-longer carry actually happens (see Standing conventions).
-
-**F4 — Depth and variety.** Spellcasting enemies enter the pool (all ten CR ≤ 4
-casters are currently filtered out — thirty fights contain no enemy magic); the
-`Playable` grade reads all sections, not just Actions (#231); CR-band fill-ins (#267
-— the boss band holds two, Guard Captain and Red Dragon Wyrmling, since the census
-demoted Ettin); retune `ClassicMonsterWeight` (it now double-penalises the 14 surviving
-genre-appropriate Beasts); fog slice 2 (**#545** — #244 was slice 1, shipped as
-`PartyVision` and closed 2026-08-27; slice 2 is Stealth, Hide and Surprise, and it is
-the slice that moves the visibility predicate from a display judgement into a `Core`
-rule, disturbing three readings that are correct only because no sight model exists);
-policy growth where measurement pays: Dodge/Disengage/retreat, behind an
-`ITacticsPolicy` seam so two policies A/B on the same seeds. Decide the six
-unoffered classes: ship or cut, not linger. Exit: distinct-creature measurement
-re-run; a property test that every generated encounter resolves.
-
-**F5 — Confidence.** (Two items pulled forward on 2026-08-24: the extractor test
-project's first slice, #189, to F1 as the span refactor's safety net, and the
-PlayMode refactor, #327, to F3's entry gate — the broader page-fixture harness still
-grows here.) Client behaviour
-tests grown from the probe harness (#190 — the test project landed 2026-08-26 with
-the reachable half: log colouring, sprite metrics, draw scale, and — since #500–#502
-and #473/#474 — the focus stack, the router and the scenario seam. **#473's spec type
-landed.** What is still unreachable is `PlayMode` as a live Godot node — nothing
-constructs it or calls `OnReady` in a test — so #490 covers that as well as the argv
-boundary, and `client/README.md` says the same);
-console client tests (1.9k lines,
-currently untested, #317); shared test-support project; xUnit content
-fixtures (**34 executable `ContentLoader.Load` call sites** across the suite, measured at `8988604`: Content 13, Game 18, SrdExtract 3. `TestContent.Srd` — the shared holder #473 introduced, which three classes already read instead of loading their own — is the seam this issue flips; `Game.Tests` took **6m59s** Debug /
-4m25s Release measured 2026-08-27 in an uncontended worktree — the suite has regressed 3x
-against the 2m14s recorded at the
-2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case
-stands on the 27 loads, not the wall clock); the
-`Encounter` guard-preamble helper, and the action seam if the class list grows —
-trigger-based, with #369 (Turn Undead) the likeliest trigger.
-Runs continuously alongside F2–F4; has its own closing push. Exit: suite under ~3
-minutes; a parser edit fails a test on a machine without the PDF.
-
-**F6 — Ship.** In-game attribution screen (CC-BY requires notice in the distributed
-artifact, not just the repo); NOTICE covers the art and the masters' licence; an
-LFS-or-release-assets strategy for the 356 MB masters tree, 139 files; packaging
-(Linux + Windows), a player-facing README, a tagged release. Exit: a stranger downloads and
-plays without cloning.
-
-**Sequencing rationale.** F1 first because every later phase builds on saves,
-accounting, and honest baselines, and each item is small. F2 before F3 because a run
-worth choosing must be a fight worth feeling — and because the pipeline script
-unblocks Brandon's drawing to proceed in parallel with everything else. F3 before F4
-because new content lands better inside structures that give it meaning. F5 runs
-throughout (tests land with their features) but earns a dedicated push before F6.
+**Sequencing rationale**: F1 first because everything builds on saves, accounting and
+honest baselines. F2 before F3 because a run worth choosing must be a fight worth
+feeling. F3 before F4 because new content lands better inside structures that give it
+meaning. F5 throughout, with a dedicated push before F6.
 
 ## The team
 
@@ -401,124 +301,6 @@ you did not edit.
 coverage is the opposite — `UnmodelledClauses` residue *is* the honesty accounting,
 and its movements are reviewed in every regeneration.
 
-## Working on characters and spells
-
-- **`CharacterResolver` derives everything.** No number on a `CharacterSheet` is
-  stored independently of the rules that make it. Only choices the engine cannot
-  make (ability spending, skills, fighting style, spell plans, ASI plans) come from
-  the draft; levelling is re-resolving the draft at the new level, never a sheet
-  edit; the new maximum leaves damage taken.
-- **Ability increases come from the *background*, not the species** (a 2024 change).
-- **The curated allowlists** — a printed name maps to an executed effect **only
-  alongside the code that does the thing**; everything absent stays visibly reported:
-  `ClassFeatureRegistry` (→ `CharacterSheet.UnimplementedFeatures`),
-  `SpeciesTraitRegistry` (also → `UnimplementedFeatures`; empty today — none of the 33
-  printed species trait instances execute, and both creation flows tag each one "(not
-  yet implemented)" where its text is shown, via `CharacterCreation.TraitExecutes`),
-  `WeaponMasteryRules.Executed` (6 of 8; Push and Nick refused with reasons),
-  `MonsterTraitRegistry` (Pack Tactics, Magic Resistance — spells only, Flyby),
-  `MagicItemRegistry` (13 names; unregistered items are *refused at equip*),
-  `PreparableSpells` (the casting menu — shape data would offer partially-executing
-  spells, the Goblin Warrior bug wearing a spell list), and `TraditionalFoes` /
-  `PlausibleFoes` (the pool's taste and plausibility cuts).
-- **Casting works**: attack spells against AC, save spells against the caster's DC
-  halving on success, slots spent, upcasting structured at extraction (a save spell
-  carries damage in `Damage` *and* `Save.FailureDamage` — grow both or you silently
-  un-upcast every save spell), Concentration tracked and broken by damage or by
-  gaining Incapacitated by any route — a save-imposed rider, a repeat-save
-  escalation, or damage that downs the concentrator (#289) — single-target healing
-  only, refusals with reasons everywhere else.
-- **`SpellcastingRules.AbilityFor` is a curated map, not Primary Ability** — right
-  for six classes, quietly wrong for two if derived.
-- **Subclasses are derived, not chosen** — the SRD prints one per class; the
-  extraction boundary is the single backwards step in the feature-level sequence.
-- **Extra Attack and Multiattack are the same rule**: the Attack action buys several
-  attacks, never several actions. A Multiattack constrains which attacks compose it;
-  one naming an attack the creature lacks is dropped entirely.
-- **Potions**: `PotionRules` is a curated transcription (the potencies live in
-  body-text print); drinking and administering both cost the Bonus Action (page
-  204); refusals fire *before* the potion is spent.
-- **Loot rates are this project's design; the items are the book's.** The SRD prints
-  no award rate; `LootTable` states ours. Equipping is a draft change re-resolved —
-  found gear rides the save for free and cannot drift.
-
-## Extraction traps — read before parsing another SRD chapter
-
-Every one of these failed **silently**, caught only by a validator or by checking
-against the book:
-
-- **Typeface differs by chapter** (Cambria player-facing, Optima bestiary); match
-  the style suffix, not the whole font name.
-- **Weight differs within a table**; match the family (`GillSans`), not the face.
-- **A class page mixes two layouts** — two-column body plus full-width table;
-  `ClassParser` reads each page twice.
-- **Don't split key from value on a gap**; match the closed set of known keys.
-- **Table header columns are 12pt+ apart; words within a column 2–5pt.**
-- **Not every caster uses the same table** (the Warlock's slot columns).
-- **The Sorcerer's feature column wraps** — join on the raw cell, re-split, and only
-  the line directly under a parsed row may join. Validator:
-  `class.feature.no_heading`.
-- **The two-column pass can slice the full-width table into feature prose** (#116) —
-  prose is Cambria, tables are GillSans, so features append only Cambria lines.
-  Validator: `class.feature.table_noise`.
-- **The origins chapter has the same trap, and a wide column makes it worse** (#374):
-  Draconic Ancestors, Elven Lineages and Fiendish Legacies are full-width tables
-  inside the two-column species pages, sliced and interleaved into whichever trait
-  was open — `OriginParser` now appends only Cambria lines to a trait, same as
-  `ClassParser`. The Elven Lineages table's first column is wide enough to cross the
-  column boundary outright, landing its fragments in the *next* species entirely:
-  Gnome's Gnomish Lineage carried Elf's table, and Human's Versatile carried
-  Tiefling's Fiendish Legacies. Validator: `species.trait.table_noise`.
-- **A wrapped class list dropped 39 of 339 spells for months** while a `>= 300`
-  floor test stayed green. Two lessons: *a number the pipeline prints about itself
-  is not a check*, and *a floor is the wrong shape for a count fixed by the source*
-  — exact counts for the book's totals, floors only for what should grow.
-
-**The general lesson: write the validator that asserts the shape of what should have
-been found.**
-
-## Working on the combat engine
-
-- **The frozen transcript is the most valuable test here.** It pins a whole fight's
-  narration byte-for-byte and has churned five times, each time catching a real
-  gameplay change — twice catching shipped bugs no unit test found. **Read the diff
-  before touching the fixture**; regenerate only once the new behaviour is intended
-  (un-skip `TranscriptWriter`, run, re-skip, review). It uses hand-authored
-  combatants on purpose, so it fails when the *engine* changes, not the content;
-  `RealMonsterCombatTests` covers the other direction.
-- **All randomness goes through `IRandomSource`.** Never `Random.Shared` in `Core`.
-  `ScriptedRandomSource` throws on surplus rolls — if it fires, the test's premise
-  changed (an Advantage roll consumes two dice).
-- **Rules verified against print, pinned by tests** — the non-obvious set:
-  Advantage/Disadvantage cancel; crits double dice only; monsters die at 0 while
-  characters roll Death Saves; Dodge lasts to the start of the dodger's *next* turn;
-  Unconscious-at-range is a normal roll (Advantage and Prone's Disadvantage cancel
-  exactly); ranged within 5 feet of *any* able enemy has Disadvantage.
-- **Cover is judged where the battlefield is known** (`Encounter` computes,
-  `AttackRules` applies); Total Cover refuses targeting on every path *before*
-  anything is spent, and Opportunity Attacks filter it because a reach weapon can
-  genuinely span a wall.
-- **Movement**: occupancy is "not dead"; the printed pass-through clauses execute
-  (allies, the Incapacitated); the one deliberate contradiction of print is ending a
-  move on a *fallen ally* (asked twice from play, scoped exactly that narrowly), and
-  `ClearSharedSquares` displaces on wake-up. The pathfinder tie-breaks against
-  wandering (it pays real pacing via fewer provoked attacks).
-- **Encounter building is three published steps** — `EncounterBudget` (printed page
-  202, exactly), `EncounterBuilder` (spends it; count bounds and taste weights are
-  ours and stated), `EncounterFactory` (places it; layouts draw from level 3).
-  `MonsterPool` decides what may go in the bag on four separate axes — coverage
-  (derived from the accounting), plausibility, aquatic, genre — and nothing in the
-  pool weights an encounter. Printed XP wins over derived (the Archmage).
-- **Rests are a table, not a reset** (`RestRules`, each with citation): Rage and
-  Second Wind one use on Short, all on Long; Action Surge either; slots Long-only;
-  a Long Rest restores *all* Hit Dice (2024 change). The opening cycle rests Long
-  throughout — a GM's-call reading that fixed the level 1 wall; both rests need a
-  hit point to start.
-- **XP award is a stated reading** — printed XP split evenly among the fighters —
-  chosen because it makes the two published tables agree, with a test asserting it.
-- **A run owns its state; the engine owns the fight.** Nothing about `GauntletRun`
-  leaks into `Encounter`.
-
 ## Environment
 
 **Do not read this section to learn what is on the machine — run the script:**
@@ -555,38 +337,6 @@ for windowed runs and captures — but **`:1` was unreachable on 2026-08-27 and 
 confirmed by `xdpyinfo` and independently by three agents, and the probe additionally
 needed `--display-driver x11`. Use `:0`. Whether `:1` is gone for good or was simply not
 up that night is unresolved, so this records what was measured rather than a new rule.
-
-## The SRD source and the extraction pipeline
-
-The source PDF is `~/Downloads/SRD_CC_v5.2.1.pdf` (364 pages), not in the repo.
-`reference/` holds gitignored text extractions
-(`pdftotext ~/Downloads/SRD_CC_v5.2.1.pdf reference/SRD_raw.txt`; pages are
-two-column — crop per column with `-x/-W` when eyeballing, the page is 594pt wide).
-
-The real pipeline is PdfPig with per-word coordinates and fonts:
-
-```bash
-dotnet run --project tools/SrdExtract -- --out data/srd
-```
-
-It refuses to write on validation errors (`--force` overrides). A clean run reports
-330 monsters, 339 spells, 38 weapons, 13 armor, 258 magic items, 0 errors, and
-**15 warnings, all expected** (the Archmage's XP — a real SRD inconsistency kept
-deliberately; twelve column-break-truncated spell component lines; two "Rarity
-Varies" items). Trust the run over any prose count.
-
-**Fonts matter more than text** (`StatBlockFonts`): the same font at different sizes
-is different signals, and `GillSans` / `GillSans-SemiBold` / `GillSans-SemiBold-SC700`
-are three signals a substring test conflates — match exactly. Source variances
-already handled (check before assuming a parser bug): `5 ft.` and `5 feet`; four
-blocks with CR fields flipped; flat damage with no dice; `Melee or Ranged Attack
-Roll` must be first in the regex alternation; the ability table's positional
-MOD/SAVE triples. `KnownCorrections` holds the one hand repair and self-invalidates
-when stale.
-
-Page ranges (printed numbers = PDF indices): classes 28–82, origins 83–86, feats
-87–88, equipment 89–103, spells 104–175, glossary 176–191, toolbox 192–203 (**XP
-budgets on 202**), magic items 204–253, monsters 254–343, animals 344+.
 
 ## Running the game
 
@@ -626,6 +376,13 @@ validated to the run summary — read that with `gh run view <id>` rather than r
 the suite to find out whether a commit passed.
 
 New machine: `mise install && ./scripts/doctor.sh` first (see Environment).
+
+**The other two scripts generate rather than check.** `./scripts/status.sh` writes
+[`docs/status.md`](docs/status.md) — test, content and line counts, measured not typed;
+never hand-edit that file. `./scripts/agent-tokens.sh` reports what agent sessions on
+this project actually cost in context, from Claude Code's own transcripts; it is the
+instrument for the question "did that change make agents cheaper", the way
+`tools/PacingMeasure` is the instrument for balance.
 
 ## Standing conventions
 
