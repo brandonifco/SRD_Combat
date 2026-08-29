@@ -211,6 +211,17 @@ One thing the baseline shows that the audit did not anticipate: cumulative
 paid once — it is re-read every turn. A reduction in it compounds across a session's
 length rather than being a single saving.
 
+## Open work, filed
+
+Everything this audit deferred is in the issue queue, because that is this project's only
+work queue — nothing here is tracked in prose alone:
+
+| Issue | What it holds |
+| --- | --- |
+| [#565](https://github.com/brandonifco/SRD_Combat/issues/565) | Re-measure the context floor now that CLAUDE.md is split. The pre-split baseline is above; **the post-split reading does not exist yet**, so the split's benefit is a prediction until this closes — including if the answer is "it did not move" |
+| [#566](https://github.com/brandonifco/SRD_Combat/issues/566) | Decide CodeQL: enable it, or record the refusal in "Considered and rejected". It is currently undecided-by-default, which is the state that gets re-proposed forever |
+| [#567](https://github.com/brandonifco/SRD_Combat/issues/567) | The ~5 GB of scratchpad worktrees *outside* the repository. Deliberately not swept up with the in-repo ones: those were an agent-token problem, these are only disk |
+
 ## The honest limit of this audit
 
 Every estimate above rests on byte counts, settings, and measured search results — not

@@ -39,6 +39,7 @@ board. File found-but-deferred work as an issue.
 | The gauntlet, economy, encounter building | [`docs/guides/engine.md`](docs/guides/engine.md) + [`docs/finishing-plan.md`](docs/finishing-plan.md) F3 |
 | `client/` (Godot) or `src/SRDCombat.Console` | [`client/README.md`](client/README.md). The clients hold no rules |
 | Art, sprites, `client/assets` | Brandon draws all art. The pipeline is mechanical-only and never touches colour |
+| `.github/`, CI, `scripts/`, repo settings, agent instruction files | [`docs/2026-08-29-github-workflow-audit.md`](docs/2026-08-29-github-workflow-audit.md) — **especially its "Considered and rejected" list**, which exists so the same optimizations are not re-proposed without new evidence |
 | Anything, before you commit | **"Standing conventions"** below |
 
 ### Repository map
@@ -66,6 +67,11 @@ Not required reading — linked so you never have to search for them.
 - [`docs/2026-08-11-design-and-development-plan.md`](docs/2026-08-11-design-and-development-plan.md)
   — the original design doc: kickoff decisions, the architecture, why it diverges from
   `5eGoldBox`.
+- [`docs/2026-08-28-repository-development-framework.md`](docs/2026-08-28-repository-development-framework.md)
+  and [`docs/2026-08-29-github-workflow-audit.md`](docs/2026-08-29-github-workflow-audit.md) —
+  the two repository-workflow records: what the GitHub configuration is, why each feature
+  is on or off, what was deliberately **rejected**, and where the audit's own numbers were
+  wrong. Read the second before proposing a change to CI, `.github/`, or repo settings.
 - [`docs/history/2026-08-21-claude-md-archive.md`](docs/history/2026-08-21-claude-md-archive.md)
   — **the full development narrative, archived and not deleted.** This file once carried
   2,250 lines of measured history: every pacing table, the squad-AI series, the client
