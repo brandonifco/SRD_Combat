@@ -1,0 +1,58 @@
+name: Bug or correctness report
+description: Report reproducible behavior that is wrong, silent, or misleading.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report security vulnerabilities here. Use [private vulnerability reporting](https://github.com/brandonifco/SRD_Combat/security/advisories/new) instead.
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What happened, including any refusal code or narration shown?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened, and what rule or project decision establishes that?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Give the smallest deterministic reproduction, including seed, fight, command, or source text when relevant.
+      placeholder: |
+        Commit:
+        Command or steps:
+        Seed and fight:
+        Source page or entry:
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add logs, screenshots, transcript excerpts, or a minimal fixture. Remove credentials and private data.
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Suspected scope and limitations
+      description: What nearby paths were checked, and what remains unknown?
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Public-reporting check
+      options:
+        - label: This report does not disclose a security vulnerability or secret.
+          required: true
