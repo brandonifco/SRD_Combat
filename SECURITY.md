@@ -17,8 +17,8 @@ Use GitHub's private vulnerability reporting form:
 
 Include the affected commit or version, impact, reproduction steps or proof of concept,
 and any known workaround. If the private form is unavailable, contact the repository
-owner through their GitHub profile without including vulnerability details, so a private
-channel can be arranged.
+owner by opening a public issue titled `Security contact request` that contains no
+vulnerability details and asks for a private channel to be arranged.
 
 You should receive an acknowledgement within seven days. No disclosure timeline will be
 promised until the report has been reproduced and its impact assessed.

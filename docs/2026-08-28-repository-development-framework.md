@@ -22,7 +22,7 @@ work queue; this record captures live configuration facts and why controls chang
 
 | Surface | Verified before | Phase 1 after |
 | --- | --- | --- |
-| Contribution and security policy | No `CONTRIBUTING.md` or `SECURITY.md` | Concise pointers and a private-reporting policy added |
+| Contribution and security policy | No `CONTRIBUTING.md` or `SECURITY.md` | Concise pointers and an operational private-reporting policy added |
 | Intake | No PR template or issue forms | One evidence/provenance PR template; correctness and scoped-implementation forms; blank design/stewardship issues retained |
 | Dependency updates | No Dependabot configuration | Weekly grouped minor/patch NuGet and GitHub Actions version updates; major and security updates stay individually visible; no auto-merge |
 | Workflow permissions | No explicit `permissions:` | Repository workflow explicitly uses `contents: read` |
@@ -47,10 +47,12 @@ Pinned Action provenance:
   `GITHUB_TOKEN` permission was read-only and Actions could not approve pull requests.
 - Security: secret scanning and push protection enabled, with zero open secret alerts.
   Dependabot vulnerability alerts and security updates disabled; private vulnerability
-  reporting disabled; CodeQL default setup `not-configured` (detected languages:
-  Actions, C#, Python). The SBOM endpoint returned HTTP 404. The public repository's
-  dependency graph is documented by GitHub as always enabled, but SBOM availability
-  remains unverified until the security controls are enabled and the endpoint is retried.
+  reporting was disabled at audit time, then enabled on 2026-08-29 after PR #557's
+  pinned workflow passed all three jobs; CodeQL default setup `not-configured`
+  (detected languages: Actions, C#, Python). The SBOM endpoint returned HTTP 404. The
+  public repository's dependency graph is documented by GitHub as always enabled, but
+  SBOM availability remains unverified until the remaining security controls are enabled
+  and the endpoint is retried.
 - Planning: no milestones and no Projects. Existing phase labels and
   `paused:balance-design` were present; no priority label existed. The token had only
   `read:project`, so Project creation requires a later `project` scope authorization.
@@ -72,9 +74,10 @@ Pinned Action provenance:
 
 ## Ordered settings work and safety gates
 
-1. Merge Phase 1 and prove its workflow succeeds with the pinned Actions.
-2. Enable dependency alerts/updates, private reporting, and CodeQL; add dependency
-   review in a separate PR; inspect findings before requiring any new check.
+1. Prove Phase 1's workflow succeeds with the pinned Actions, then make the documented
+   private-reporting route live before merge. Both gates passed on PR #557.
+2. After merge, enable dependency alerts/updates and CodeQL; add dependency review in a
+   separate PR; inspect findings before requiring any new check.
 3. Restrict Actions and enable repository-wide SHA enforcement only after every
    committed workflow complies.
 4. Strengthen the existing legacy `main` protection rather than layering a duplicate
@@ -100,7 +103,9 @@ Phase 1 results: the environment check passed; Debug tests passed 4,814 with the
 intentional fixture writers skipped (`Game.Tests` 388 passed in 9m03s); Debug and
 Release builds both completed with zero warnings and zero errors; all committed YAML
 parsed successfully; GitHub-specific form review removed empty optional `title` keys
-that its validator rejects; `git diff --check` was clean.
+that its validator rejects; both issue forms then passed a schema-shape check for
+required keys, non-empty string fields, unique ids and labels, and checkbox structure;
+`git diff --check` was clean.
 
 GitHub state was read with `gh api`, `gh issue list`, `gh pr list`, and
 `gh project list`. Action release tags were resolved from the official Action
