@@ -1,9 +1,13 @@
 # SRD_Combat — for Codex
 
 **[`CLAUDE.md`](CLAUDE.md) is the governing document for this project. Read it first, in
-full. Everything that matters — the finishing plan, the rule this project runs on, the
-three founding bugs, the extraction traps, the standing conventions — lives there and
-only there.**
+full.** It carries what is true of every task — the rule this project runs on, the three
+founding bugs, the invariants, the standing conventions — plus a routing table naming the
+one document to read for the subsystem you are touching. As of 2026-08-29 the roadmap
+([`docs/finishing-plan.md`](docs/finishing-plan.md)), the measured status
+([`docs/status.md`](docs/status.md), generated), and the subsystem guides
+([`docs/guides/`](docs/guides/)) live outside it, so they no longer enter every agent's
+context uninvited. **Follow the routing table rather than searching for what moved.**
 
 This file exists because Codex looks for `AGENTS.md` by convention. It is deliberately a
 pointer and not a copy.

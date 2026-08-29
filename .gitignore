@@ -159,3 +159,6 @@ srdcombat-save*.json
 .claude/worktrees/
 output/
 tmp/
+
+# Test output (scripts/status.sh reads the trx from here)
+TestResults/
