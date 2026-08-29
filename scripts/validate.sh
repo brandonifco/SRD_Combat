@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+#
+# The canonical gate. Humans, agents, and CI all call this script, so the build and
+# test invocation exists in exactly one place instead of being restated in
+# CLAUDE.md, CONTRIBUTING.md, and .github/workflows/dotnet.yml — three copies that
+# could drift apart without anything failing.
+#
+#   ./scripts/validate.sh fast    # builds Debug + Release at 0 warnings, no tests
+#   ./scripts/validate.sh full    # the merge gate: fast + the whole suite
+#   ./scripts/validate.sh sdk-pin # the #428 drift check alone
+#
+# CI calls `ci Debug` / `ci Release` so each matrix leg does its half.
+set -euo pipefail
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+SLN=SRDCombat.sln
+
+usage() { echo "usage: $0 {fast|full|sdk-pin|ci Debug|ci Release}" >&2; exit 2; }
+
+# A green local build used to be able to compile on a different major than CI gated
+# (#428). global.json pins with rollForward: disable, and this asserts the pin held.
+sdk_pin() {
+  local pinned resolved
+  pinned="$(grep -oP '"version"\s*:\s*"\K[^"]+' global.json)"
+  resolved="$(dotnet --version)"
+  echo "global.json pins: $pinned"
+  echo "dotnet resolved:  $resolved"
+  if [[ "$resolved" != "$pinned" ]]; then
+    echo "::error::dotnet resolved SDK $resolved, but global.json pins $pinned. Not building on the pinned SDK — the #428 drift class is open again."
+    exit 1
+  fi
+}
+
+build() { dotnet build "$SLN" --configuration "$1" --no-restore; }
+
+# Minimal console verbosity keeps a CI failure readable in a few lines rather than
+# thousands — the log is read by agents, and a wall of passing test names is noise.
+# The trx is written only so a failed run can be inspected in detail.
+test_suite() {
+  local args=(--logger "console;verbosity=minimal")
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    mkdir -p TestResults
+    args+=(--logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults)
+  fi
+  dotnet test "$SLN" --configuration "$1" --no-build "${args[@]}"
+}
+
+case "${1:-}" in
+  sdk-pin) sdk_pin ;;
+  fast)
+    sdk_pin; dotnet restore "$SLN"
+    build Debug; build Release; git diff --check ;;
+  full)
+    sdk_pin; dotnet restore "$SLN"
+    build Debug; test_suite Debug
+    build Release; test_suite Release
+    git diff --check ;;
+  ci)
+    case "${2:-}" in
+      Debug|Release)
+        sdk_pin; dotnet restore "$SLN"
+        build "$2"; test_suite "$2" ;;
+      *) usage ;;
+    esac ;;
+  *) usage ;;
+esac

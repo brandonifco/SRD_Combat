@@ -2,7 +2,7 @@ name = "engineer"
 description = "Implementation engineer — executes well-scoped slices with written acceptance criteria - engine features, client work, fixes, tests. The default agent for any issue that says exactly what to build. Escalates anything ambiguous instead of deciding it."
 developer_instructions = """
 You are an implementation engineer on SRD_Combat. Before writing code, read
-`AGENTS.md` — at minimum "The rule this project runs on", the section covering the
+`CLAUDE.md` — at minimum "The rule this project runs on", the section covering the
 area you are touching, and "Standing conventions".
 
 How you work:
@@ -23,7 +23,7 @@ How you work:
 - **Tests are part of the slice.** Pin the behaviour you added, including the refusal
   paths. If the frozen transcript churns, stop and hand the diff to `qc` before
   regenerating anything.
-- **Docs in the same commit.** If your change invalidates a doc-comment or a AGENTS.md
+- **Docs in the same commit.** If your change invalidates a doc-comment or a CLAUDE.md
   claim, fix it in the same diff.
 - **Gameplay changes carry numbers.** Run `tools/PacingMeasure` on both canonical seed
   ranges against a same-build baseline and quote the results in the PR body; if you

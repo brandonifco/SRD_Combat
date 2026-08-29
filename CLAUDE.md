@@ -609,20 +609,33 @@ modes. **The clients hold no rules** — they call the engine's public actions, 
 
 ## Build and test
 
-```bash
-dotnet build SRDCombat.sln -c Debug
-```
+**`scripts/validate.sh` is the canonical gate — humans, agents and CI all call it**, so
+the build and test invocation exists in one place instead of three that can drift
+(2026-08-29). The whole merge gate is:
 
 ```bash
-dotnet test SRDCombat.sln -c Debug
+./scripts/validate.sh full
 ```
 
-**0 warnings expected in both configurations.** New machine:
-`mise install && ./scripts/doctor.sh` first (see Environment).
+That is: SDK pin, restore, build **and** test in Debug **and** Release at 0 warnings,
+then `git diff --check` — the same steps this file's "Gate before merge" convention has
+always required, now executable. `fast` skips the tests for a quick pre-push check;
+`sdk-pin` runs the #428 drift check alone. `.github/workflows/dotnet.yml` runs
+`validate.sh ci Debug` / `ci Release`, one per matrix leg, and publishes what it
+validated to the run summary — read that with `gh run view <id>` rather than re-running
+the suite to find out whether a commit passed.
+
+New machine: `mise install && ./scripts/doctor.sh` first (see Environment).
 
 ## Standing conventions
 
 - **`git add` specific paths, never `-A` or `.`**
+- **Agent worktrees go outside the repository**, in the session scratchpad. Nine of them
+  under `.claude/worktrees/` reached 3.7 GB untracked and unignored, and the cost was
+  agent tokens rather than disk: a repo-wide search returned ten copies of the tree, so
+  every search paid ~10x and could read a stale checkout as if it were `src/`. The
+  directory is gitignored now (searches honour it — measured 9 hits → 1), but the ignore
+  is a backstop, not the convention.
 - **One narrowly-scoped branch per concern; branch → push → PR → wait for CI → stop.**
   Never push to `main`. **Merging is the agent's**, once CI is green — see "What stays
   human" in [The team](#the-team), which records Brandon's 2026-08-24 correction. This
@@ -633,8 +646,8 @@ dotnet test SRDCombat.sln -c Debug
   drops the previous slice.
 - **File found-but-deferred work as a GitHub issue**, not in this file and not in
   chat.
-- **Gate before merge**: focused tests → full suite → Debug **and** Release at 0
-  warnings → `git diff --check`.
+- **Gate before merge**: focused tests, then `./scripts/validate.sh full` — full suite,
+  Debug **and** Release at 0 warnings, `git diff --check`, in one command.
 - **Pacing is measured at checkpoints, not per PR** (2026-08-28, Brandon's direction).
   An ordinary gameplay-affecting PR does **not** run the canonical seed ranges and does
   **not** quote PacingMeasure in its body — re-tuning after every adjustment cost more
