@@ -16,8 +16,9 @@ Sol was substituted rather than parking the work. No Gemini judgement is in this
 
 ## The finding that mattered most
 
-`.claude/worktrees/` held **3.7 GB across nine stale agent worktrees, untracked and not
-gitignored**, inside the working tree. The cost was never disk. Every repo-wide agent
+`.claude/worktrees/` held **3.7 GB across eight stale agent worktrees, untracked and not
+gitignored**, inside the working tree. (This section first said *nine*; the directory
+held eight, corrected on cleanup — see the correction note at the end.) The cost was never disk. Every repo-wide agent
 search saw ten copies of the source tree:
 
 | Search | Before | After |
@@ -29,8 +30,8 @@ search saw ten copies of the source tree:
 Every agent search paid roughly ten times its necessary tokens, and — worse than the
 cost — could read a stale checkout as though it were `src/`. The search tools honour
 `.gitignore`, so ignoring the directory is what actually restores single-copy results.
-The nine worktrees and their branches were **not deleted**; deletion is Brandon's call
-and is listed under "Requires approval" below.
+The eight worktrees were **not deleted in this pass**; deletion was Brandon's call, and
+he approved it later the same day — see "Cleanup performed" below.
 
 ## Changes made
 
@@ -110,9 +111,9 @@ Recorded so they are not re-proposed without new evidence.
 
 ## Requires approval — not done
 
-1. **Delete the nine `.claude/worktrees/` checkouts** (3.7 GB) and prune ~13 stale
-   worktree registrations pointing at deleted `/tmp` session directories. Destructive;
-   several hold unmerged branches. `git worktree list` shows all 25.
+1. ~~**Delete the `.claude/worktrees/` checkouts** and prune stale registrations.~~
+   **Done 2026-08-29** — see "Cleanup performed". The claim that several held unmerged
+   branches was wrong; all eight were fully merged.
 2. **Enable Dependabot vulnerability alerts and security updates** (both currently off;
    `automated-security-fixes.enabled=false`, `GET vulnerability-alerts` → 404). This is
    the real fix for the dependency-latency gap and is free on a public repo.
@@ -125,6 +126,42 @@ Recorded so they are not re-proposed without new evidence.
    agent could populate outside PR review.
 5. **CodeQL default setup** for C#. Free on public repos; a security decision, not an
    efficiency one, so it is listed rather than assumed.
+
+## Cleanup performed — 2026-08-29, and two corrections to this record
+
+Brandon approved the approval list the same day. What was applied:
+
+| Change | Result |
+| --- | --- |
+| Dependabot vulnerability alerts | Enabled (`204`) |
+| Dependabot security updates | Enabled (`204`) |
+| Squash and rebase merging | Disabled; merge commits only |
+| Projects and Wiki | Disabled |
+| CodeQL | **Not enabled** — this record graded it DEFER, and nothing new argues otherwise |
+| `.claude/worktrees/` | 8 worktrees removed, **3.7 GB reclaimed** |
+
+Every branch was verified before removal: all eight were **0 commits ahead of `main`**
+with no uncommitted files. `git worktree remove` does not delete branches, and the local
+branch count was 61 before and after — no work was lost, and none could have been.
+
+**Two claims in this document were wrong, and are corrected rather than quietly fixed:**
+
+1. **"Nine" worktrees. There were eight.** The count was written from a directory listing
+   read once and never re-counted. The finding is unaffected — the search pollution was
+   measured directly, not inferred from the count — but the number was repeated into two
+   commit messages and a pull request body before anyone checked it.
+2. **"~13 stale worktree registrations pointing at deleted `/tmp` session directories."**
+   None were stale. `git worktree prune` removed **zero** entries, and every one of the 18
+   remaining registrations points at a live directory. The `/tmp` scratchpad worktrees
+   from earlier sessions still exist and still hold roughly 5 GB — but they are *outside*
+   the repository, so they never caused the search pollution this document is about, and
+   removing them is disk hygiene rather than agent-token work. They are left alone: they
+   belong to other sessions' scratchpads.
+
+Both errors share a shape worth naming, because it is this project's own: **a number
+asserted from a single reading, then repeated until it looked established.** Neither was
+load-bearing, which is exactly why neither got checked. The audit's measured claim (9
+search hits → 1) was reproducible in one command and held up; the counted claims did not.
 
 ## Proposed, not implemented: the CLAUDE.md context tax
 

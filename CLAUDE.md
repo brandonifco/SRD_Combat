@@ -387,12 +387,13 @@ instrument for the question "did that change make agents cheaper", the way
 ## Standing conventions
 
 - **`git add` specific paths, never `-A` or `.`**
-- **Agent worktrees go outside the repository**, in the session scratchpad. Nine of them
+- **Agent worktrees go outside the repository**, in the session scratchpad. Eight of them
   under `.claude/worktrees/` reached 3.7 GB untracked and unignored, and the cost was
-  agent tokens rather than disk: a repo-wide search returned ten copies of the tree, so
-  every search paid ~10x and could read a stale checkout as if it were `src/`. The
-  directory is gitignored now (searches honour it — measured 9 hits → 1), but the ignore
-  is a backstop, not the convention.
+  agent tokens rather than disk: a repo-wide search returned nine copies of the tree, so
+  every search paid ~9x and could read a stale checkout as if it were `src/`. They were
+  removed on 2026-08-29 and the directory is gitignored (searches honour it — measured 9
+  hits → 1), but the ignore is a backstop, not the convention: a worktree created outside
+  the repo never lands in the working tree at all.
 - **One narrowly-scoped branch per concern; branch → push → PR → wait for CI → stop.**
   Never push to `main`. **Merging is the agent's**, once CI is green — see "What stays
   human" in [The team](#the-team), which records Brandon's 2026-08-24 correction. This
