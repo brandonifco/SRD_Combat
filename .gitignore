@@ -143,3 +143,19 @@ client/assets/sprites/Terrain/*
 # a broader *.json rule would also hide data/srd's committed content and the
 # scenarios/ directory #473 is landing, which needs to stay visible in `git status`.
 srdcombat-save*.json
+
+# Agent worktrees, scratch output, and temp working dirs.
+#
+# `.claude/worktrees/` reached 3.7 GB across nine stale agent checkouts, untracked
+# and unignored. The cost was not disk: every repo-wide agent search saw ten copies
+# of the tree (`find . -name Encounter.cs` returned 10 hits; a grep for
+# `EndBrokenGrapples` matched 9 files), so each search paid ~10x the tokens and could
+# read a stale copy as if it were `src/`. The search tools honour .gitignore, so
+# ignoring these directories is what actually restores single-copy search results.
+#
+# Prefer creating agent worktrees OUTSIDE the repository (the session scratchpad) so
+# a nested checkout never lands in the working tree at all; these entries are the
+# backstop for when one does.
+.claude/worktrees/
+output/
+tmp/

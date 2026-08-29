@@ -61,36 +61,31 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Verify SDK pin
-        run: |
-          pinned="$(grep -oP '"version"\s*:\s*"\K[^"]+' global.json)"
-          resolved="$(dotnet --version)"
-          echo "global.json pins: $pinned"
-          echo "dotnet resolved:  $resolved"
-          if [[ "$resolved" != "$pinned" ]]; then
-            echo "::error::dotnet resolved SDK $resolved, but global.json pins $pinned. CI is not building on the pinned SDK — the #428 drift class is open again."
-            exit 1
-          fi
+      - name: Validate (${{ matrix.configuration }})
+        run: ./scripts/validate.sh ci ${{ matrix.configuration }}
 
-      - name: Restore
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration ${{ matrix.configuration }} --no-restore
-
-      - name: Test
-        run: >-
-          dotnet test --configuration ${{ matrix.configuration }} --no-build
-          --logger "trx;LogFileName=test-results.trx"
-          --results-directory ./TestResults
-
+      # Only a failing run needs its trx inspected; a passing one produced an
+      # artifact nobody opened. The console logger already carries the summary.
       - name: Upload test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results-${{ matrix.configuration }}
           path: ./TestResults
           retention-days: 14
+
+      # A later agent reads this through `gh run view --json` instead of re-running
+      # the suite to learn what was validated for this commit.
+      - name: Publish validation summary
+        if: always()
+        run: |
+          {
+            echo "### ${{ matrix.configuration }} — ${{ job.status }}"
+            echo
+            echo "- commit: \`${{ github.sha }}\`"
+            echo "- SDK: \`$(dotnet --version)\` (pinned in global.json)"
+            echo "- gate: \`./scripts/validate.sh ci ${{ matrix.configuration }}\` (build at 0 warnings + full test suite)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   vulnerable-packages:
     runs-on: ubuntu-latest
@@ -105,15 +100,7 @@ jobs:
           global-json-file: global.json
 
       - name: Verify SDK pin
-        run: |
-          pinned="$(grep -oP '"version"\s*:\s*"\K[^"]+' global.json)"
-          resolved="$(dotnet --version)"
-          echo "global.json pins: $pinned"
-          echo "dotnet resolved:  $resolved"
-          if [[ "$resolved" != "$pinned" ]]; then
-            echo "::error::dotnet resolved SDK $resolved, but global.json pins $pinned. CI is not building on the pinned SDK — the #428 drift class is open again."
-            exit 1
-          fi
+        run: ./scripts/validate.sh sdk-pin
 
       - name: Restore
         run: dotnet restore
