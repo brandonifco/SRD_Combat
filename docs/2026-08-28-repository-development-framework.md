@@ -57,8 +57,18 @@ Pinned Action provenance:
 - Repository surfaces: Wiki enabled, Discussions disabled, no releases or tags.
 - Remote branches not merged into `origin/main`: `art/ship-bugbear-warrior-441`,
   `design/327-playmode-refactor`, `fix/510-quit-confirm-holds-turn-open`, and
-  `fix/save-tier-attachment`. Classification requires their issue and PR histories;
-  no branch was deleted.
+  `fix/save-tier-attachment`. Their issue and PR histories and unique commits were
+  audited on 2026-08-29:
+
+  | Branch | Classification | Evidence |
+  | --- | --- | --- |
+  | `art/ship-bugbear-warrior-441` | Intentionally retained | PR #446 was closed unmerged after Brandon rejected the visual change; #441 records that the unshipped master stays deliberately |
+  | `design/327-playmode-refactor` | Patch-equivalent to `main`; safe cleanup candidate | `git cherry origin/main origin/design/327-playmode-refactor` reports its only commit with `-`; PR #498 merged the design |
+  | `fix/510-quit-confirm-holds-turn-open` | Active | Open PR #555, linked to open issue #510 |
+  | `fix/save-tier-attachment` | Superseded, containing unique commits | Its unmerged parser/content commit is not patch-equivalent; #370 was independently closed by PR #395 |
+
+  No branch was deleted. Even the patch-equivalent cleanup candidate requires Brandon's
+  explicit confirmation before deletion.
 
 ## Ordered settings work and safety gates
 
@@ -89,7 +99,8 @@ git diff --check
 Phase 1 results: the environment check passed; Debug tests passed 4,814 with the two
 intentional fixture writers skipped (`Game.Tests` 388 passed in 9m03s); Debug and
 Release builds both completed with zero warnings and zero errors; all committed YAML
-parsed successfully; `git diff --check` was clean.
+parsed successfully; GitHub-specific form review removed empty optional `title` keys
+that its validator rejects; `git diff --check` was clean.
 
 GitHub state was read with `gh api`, `gh issue list`, `gh pr list`, and
 `gh project list`. Action release tags were resolved from the official Action

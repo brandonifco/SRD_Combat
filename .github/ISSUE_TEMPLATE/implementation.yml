@@ -1,7 +1,5 @@
 name: Scoped implementation slice
 description: Propose one bounded feature, confidence, documentation, or tooling change.
-title: ""
-labels: []
 body:
   - type: textarea
     id: outcome

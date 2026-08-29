@@ -1,6 +1,5 @@
 name: Bug or correctness report
 description: Report reproducible behavior that is wrong, silent, or misleading.
-title: ""
 labels:
   - bug
 body:
