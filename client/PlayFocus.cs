@@ -148,11 +148,11 @@ internal abstract record PlayFocus
     /// game gone mid-fight, with the run rolled back to the last cleared fight.
     /// </para>
     /// <para>
-    /// <b><see cref="HoldsTurnOpen"/> is false, and that preserves an oddity</b> (#510):
-    /// <c>_Process</c> never asks whether this card is up, so an auto-end-turn can fire
-    /// underneath it. That is today's behaviour, kept here deliberately — whether it
-    /// <em>should</em> be suppressed is a question filed separately, not one a
-    /// no-behaviour-change refactor gets to answer.
+    /// <b><see cref="HoldsTurnOpen"/> is true</b> (#510): the quit card is a modal
+    /// decision about abandoning the current fight, so <c>NothingLeftButEndTurn</c>
+    /// must not advance the turn while it is open. This is the modal contract: the
+    /// card may be dismissed or confirm leaving, but it cannot let the state underneath
+    /// it change first.
     /// </para>
     /// <para>
     /// It is also the one layer with a rule the five members cannot express: any key that
@@ -170,7 +170,7 @@ internal abstract record PlayFocus
 
         internal override bool SuppressesBoard => false;
 
-        internal override bool HoldsTurnOpen => false;
+        internal override bool HoldsTurnOpen => true;
     }
 
     /// <summary>A menu of rows over the board — the shared behaviour of the three.</summary>
