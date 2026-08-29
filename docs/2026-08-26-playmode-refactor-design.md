@@ -356,9 +356,11 @@ wrong:
   it *advances* the run. Esc is not uniformly "back out" in this client, and a generic
   "Esc pops the stack" structure would silently turn an acknowledgement into a dismissal.
 
-### 4.1 Two existing oddities the refactor preserves rather than fixes
+### 4.1 One preserved oddity and one subsequently resolved decision
 
-Found while reading, both real, neither this refactor's business:
+Both were found while reading and deliberately left unchanged by the structural refactor.
+The shop guard remains preserved history; Brandon subsequently resolved the quit-confirm
+behaviour on #510:
 
 1. **`!_shopView` gates the fighting-phase keyboard (1054), but the shop only opens during
    `Phase.Interlude`** — the term is unreachable defence. `Shop.SuppressesBoard = true`

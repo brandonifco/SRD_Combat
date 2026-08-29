@@ -198,6 +198,14 @@ public class PlayFocusTests
 
         Assert.True(focus.Top.HoldsTurnOpen);
         Assert.False(PlayTurnFlow.NothingLeftButEndTurn(focus, [TurnAction.EndTurn]));
+
+        // A fight may complete after Esc opens the quit card, placing Outcome above it.
+        // The hidden quit decision still holds the turn open; inspecting only Top would
+        // see Outcome.HoldsTurnOpen == false and advance combat underneath the stack.
+        focus.Push(new PlayFocus.Outcome());
+
+        Assert.False(focus.Top.HoldsTurnOpen);
+        Assert.False(PlayTurnFlow.NothingLeftButEndTurn(focus, [TurnAction.EndTurn]));
     }
 
     [Fact]
