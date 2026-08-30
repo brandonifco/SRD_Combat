@@ -18,7 +18,8 @@ namespace SRDCombat.Game.Tests;
 /// content-hungry test classes at once, and two more loads is the wrong direction. To
 /// keep the slice from adding even one, <c>RunSaveTests</c> — the on-disk-format class
 /// these two are modelled on — is pointed at the same holder in the same commit.
-/// Converting the remaining classes stays #319's.
+/// #319 then converted every remaining class in this project onto <see cref="Srd"/>, so
+/// the corpus now loads exactly once for the whole assembly.
 /// </para>
 /// </remarks>
 internal static class TestContent

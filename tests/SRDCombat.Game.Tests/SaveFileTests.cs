@@ -21,7 +21,7 @@ namespace SRDCombat.Game.Tests;
 [Collection("SaveFile filesystem fault injection")]
 public sealed class SaveFileTests : IDisposable
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     private readonly string _directory =
         Path.Combine(Path.GetTempPath(), "srdcombat-savefile-tests", Guid.NewGuid().ToString("N"));

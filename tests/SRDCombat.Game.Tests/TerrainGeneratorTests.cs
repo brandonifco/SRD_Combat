@@ -329,7 +329,7 @@ public class TerrainGeneratorTests
     [Fact]
     public void TheFactoryDeliversTerrainIntoARealFight()
     {
-        var content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+        var content = TestContent.Srd;
         var party = PregeneratedParty.Build(content, level: 2);
 
         // One seed is enough to prove the wiring; which seeds carry terrain is the

@@ -13,7 +13,7 @@ namespace SRDCombat.Content.Tests;
 /// </remarks>
 public class ClassContentTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     /// <summary>The six the game launches with. The extractor deliberately reads all twelve.</summary>
     private static readonly string[] LaunchClasses =

@@ -12,7 +12,7 @@ namespace SRDCombat.Game.Tests;
 /// </summary>
 public class LargestSpanTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     /// <summary>
     /// Today's answer is 3, on the Awakened Tree's Huge space.

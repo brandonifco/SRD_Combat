@@ -19,7 +19,7 @@ namespace SRDCombat.Game.Tests;
 /// </remarks>
 public class SubclassTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     [Fact]
     public void EveryClassSplitsIntoClassAndSubclassFeatures()

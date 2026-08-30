@@ -10,7 +10,7 @@ namespace SRDCombat.Content.Tests;
 /// </summary>
 public class OriginContentTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     [Fact]
     public void EverySpeciesAndBackgroundIsExtracted()

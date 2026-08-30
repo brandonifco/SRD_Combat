@@ -14,7 +14,7 @@ namespace SRDCombat.Content.Tests;
 /// </remarks>
 public class SrdContentTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     [Fact]
     public void Load_ReadsTheWholeBestiaryAndEquipmentTables()
