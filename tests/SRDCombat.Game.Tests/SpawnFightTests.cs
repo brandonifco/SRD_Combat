@@ -11,7 +11,7 @@ namespace SRDCombat.Game.Tests;
 /// </summary>
 public class SpawnFightTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     private static MonsterDefinition Named(string name) =>
         Content.Monsters.Single(monster => monster.Name == name);

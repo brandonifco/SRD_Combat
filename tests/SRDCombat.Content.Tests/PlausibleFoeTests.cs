@@ -15,7 +15,7 @@ public class PlausibleFoeTests
 {
     private const decimal TierOneMaximum = 4m;
 
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     [Fact]
     public void ThePoolNoLongerFieldsEquipment()

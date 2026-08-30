@@ -10,7 +10,7 @@ namespace SRDCombat.Content.Tests;
 /// </summary>
 public class EntryMechanicsTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     private static IReadOnlyList<MonsterEntry> TierOneEntries { get; } = Content.Monsters
         .Where(monster => monster.ChallengeRating <= 4m)

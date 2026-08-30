@@ -11,7 +11,7 @@ namespace SRDCombat.Game.Tests;
 /// </summary>
 public class ObjectiveLadderTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     [Fact]
     public void TheLadderIsMostlyStillDeathmatches()

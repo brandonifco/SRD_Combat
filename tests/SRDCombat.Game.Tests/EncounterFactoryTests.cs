@@ -16,7 +16,7 @@ namespace SRDCombat.Game.Tests;
 /// </remarks>
 public class EncounterFactoryTests
 {
-    private static readonly SrdContent Content = ContentLoader.Load(RepositoryPaths.SrdContentDirectory);
+    private static readonly SrdContent Content = TestContent.Srd;
 
     [Theory]
     [InlineData(EncounterDifficulty.Low)]
