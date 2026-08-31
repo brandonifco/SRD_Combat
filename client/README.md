@@ -123,6 +123,27 @@ parses the engine's phrasing, so a reworded narration loses a highlight rather t
 gaining a wrong one. Damage and the miss are the two exceptions and are matched as text,
 because neither is a name — and they fail the same safe way.
 
+**A hit and a miss are visually identical no longer (#298).** A number rises off the
+target and fades — red for damage, `LogHighlighter.Damage`'s own colour, the amount off
+`CombatStep.Damage` rather than parsed back out of the sentence — and a swing that did
+not connect rises the yellow word "Miss" instead of a zero, `LogHighlighter.Miss`'s own
+colour, off `CombatStep.Hit`. Both facts are the engine's, recorded on the step for the
+same reason `AttackName` and `Ranged` are: this project does not parse its own prose. A
+death is already told apart from either — the body settles rather than flinching, and
+stays dimmed once it has (see "Sprite art", below) — so the three outcomes the review
+named (hit, miss, a kill) are three different pictures with the log covered. The number
+rides on top of whatever beat is already playing (a swing, a flinch) rather than adding
+one of its own — the review's complaint was the dead air *inside* the existing beat, not
+too little time — and it advances on the same simulated-delta clock every walk and pose
+already does rather than a wall-clock read, which is what keeps two `--probe` runs of
+identical code in agreement (`FightScreen.ActiveRingNow`'s blink, #494/#518, is the
+standing lesson: a raw `Time.GetTicksMsec()` read is what disagreed, not the animation
+itself). The curve is `FightScreen.FloatingNumberMotion`, pinned by
+`FloatingNumberMotionTests` the way the ring's own curve is pinned by
+`ActiveRingBlinkTests`. Fog-safe by construction: it draws only for whichever token list
+`DrawTokens` was actually given, and the play screen never gives that list a hidden
+monster.
+
 Faint blue squares are where a walk could end; ringed enemies are ones an attack
 reaches; the **fog of war** shadows every square no party member can see (`PartyVision`
 in `Game`: a wall blocks the line, sight is the whole party's union, and Unconscious or
