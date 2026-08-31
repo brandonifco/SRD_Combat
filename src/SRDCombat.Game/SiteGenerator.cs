@@ -187,10 +187,13 @@ public static class SiteGenerator
     }
 
     /// <summary>
-    /// A band of Difficult Terrain spanning the board's height, 2-4 squares deep, its
-    /// whole extent inside the layout's contested band (design §4.5), with 1-2 clear
-    /// fords carved through it at <paramref name="gapWidth"/>. Difficult Terrain is
-    /// passable, so this structure is checked only for the spawn-clearance rule — it
+    /// A band of Difficult Terrain spanning the board's height, 2-4 squares deep, with
+    /// 1-2 clear fords carved through it at <paramref name="gapWidth"/>. Placement
+    /// (design §4.6): the band's left edge lands inside the layout's contested band, and
+    /// its centroid always does too — but on Columns, whose contested band can be
+    /// narrower than the maximum depth, the band's far edge may overhang the contested
+    /// band by up to one column; it never overhangs the board itself. Difficult Terrain
+    /// is passable, so this structure is checked only for the spawn-clearance rule — it
     /// cannot fail a connectivity check by construction (design §4.5), and none is run.
     /// </summary>
     private static SitePlan PlaceCrossing(
@@ -203,9 +206,10 @@ public static class SiteGenerator
         IRandomSource random)
     {
         // Fixed roll pattern, spent before any legality check: depth (2-4), the band's
-        // left edge within the contested band (its whole depth stays inside the band, a
-        // stronger placement than "centroid inside" but a simple, always-legible one to
-        // state), how many fords (1 or 2), then that many ford positions.
+        // left edge within the contested band (left edge in band; centroid always in
+        // band; depth may overhang the band itself by up to one column on Columns — see
+        // the summary doc comment), how many fords (1 or 2). Ford positions are computed
+        // deterministically by FordRanges from those rolls, not drawn as their own dice.
         var depth = random.Roll(3) + 1;
         var startSpan = Math.Max(1, region.Width - depth + 1);
         var bandStartX = Math.Clamp(region.MinX + random.Roll(startSpan) - 1, 0, Math.Max(0, width - depth));
