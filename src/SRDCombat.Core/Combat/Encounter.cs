@@ -1513,7 +1513,8 @@ public sealed partial class Encounter
                 attacker,
                 target,
                 ranged: ranged,
-                attackName: attack.Name);
+                attackName: attack.Name,
+                hit: false);
 
             ApplyGraze(attacker, attack, target);
             return;
@@ -1528,7 +1529,8 @@ public sealed partial class Encounter
             attacker,
             target,
             ranged: ranged,
-            attackName: attack.Name);
+            attackName: attack.Name,
+            hit: true);
 
         // Sap and Topple both read "if you hit a creature with this weapon", so they
         // land on the hit itself rather than on damage being dealt.
@@ -1637,7 +1639,8 @@ public sealed partial class Encounter
                 $"{target.Name} takes {applied.Effective} {component.Type} damage{responseNote} " +
                 $"[{roll}] — {DescribeHealth(target)}.",
                 attacker,
-                target);
+                target,
+                damage: applied.Effective);
 
             CheckConcentration(target, applied.Effective);
 
@@ -1819,7 +1822,8 @@ public sealed partial class Encounter
             CombatStepKind.Damage,
             $"{second.Name} takes {applied.Effective} {first.Type} damage [{rolled}] — {DescribeHealth(second)}.",
             attacker,
-            second);
+            second,
+            damage: applied.Effective);
 
         CheckConcentration(second, applied.Effective);
 
@@ -2116,7 +2120,8 @@ public sealed partial class Encounter
                     (halvings > 0 ? " (halved by a successful save)" : string.Empty) +
                     $" [{rolled}] — {DescribeHealth(victim)}.",
                     source,
-                    victim);
+                    victim,
+                    damage: applied.Effective);
 
                 CheckConcentration(victim, applied.Effective);
 
@@ -2273,6 +2278,8 @@ public sealed partial class Encounter
         Combatant? target = null,
         IReadOnlyList<GridPosition>? path = null,
         RangedAttackKind ranged = RangedAttackKind.None,
-        string? attackName = null) =>
-        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged, attackName));
+        string? attackName = null,
+        bool hit = true,
+        int? damage = null) =>
+        _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged, attackName, hit, damage));
 }

@@ -75,7 +75,9 @@ public sealed record CombatStep(
     string? TargetId = null,
     IReadOnlyList<GridPosition>? Path = null,
     RangedAttackKind Ranged = RangedAttackKind.None,
-    string? AttackName = null)
+    string? AttackName = null,
+    bool Hit = true,
+    int? Damage = null)
 {
     /// <summary>
     /// The name of the attack an <see cref="CombatStepKind.Attack"/> step swung, and
@@ -85,6 +87,28 @@ public sealed record CombatStep(
     /// this instead.
     /// </summary>
     public string? AttackName { get; init; } = AttackName;
+
+    /// <summary>
+    /// Whether a <see cref="CombatStepKind.Attack"/> step connected. Meaningless on every
+    /// other kind — the default of <c>true</c> is never read there. Recorded for the
+    /// reason <see cref="AttackName"/> is: "hit" and "miss" are already in the narration,
+    /// but this project does not parse its own prose, so a client telling a hit from a
+    /// miss (#298's floating damage numbers, a distinct "miss" marker) reads this instead
+    /// of the sentence. <see cref="CombatStepKind.OpportunityAttack"/> is only the
+    /// provocation's announcement — the roll it provokes is its own following <see
+    /// cref="CombatStepKind.Attack"/> step, which is what carries the real answer.
+    /// </summary>
+    public bool Hit { get; init; } = Hit;
+
+    /// <summary>
+    /// The amount a <see cref="CombatStepKind.Damage"/> step actually applied — <c>0</c>
+    /// included, for an Immune or fully-Resisted-to-nothing hit — and null on every other
+    /// kind. The same number the narration already prints ("takes 7 Slashing damage"),
+    /// recorded rather than left for a client to parse back out of the sentence, for the
+    /// reason every other fact on this record is: a reworded narration must not silently
+    /// change what a floating number on the board says (#298).
+    /// </summary>
+    public int? Damage { get; init; } = Damage;
 
     /// <summary>
     /// Whether an attack step was a <em>ranged</em> attack roll, and of which sort —

@@ -350,6 +350,184 @@ public abstract partial class FightScreen : Node2D
     private int _poseFrames;
 
     /// <summary>
+    /// The board's floating combat text — a red damage number rising off a hit, a
+    /// yellow "Miss" off a swing that did not connect (#298, "a hit and a miss are
+    /// visually identical").
+    /// </summary>
+    /// <remarks>
+    /// <b>Deliberately not an <see cref="Act"/>.</b> The review's complaint was dead air
+    /// during the beat that already exists — a swing or a flinch already holds the
+    /// board for a fraction of a second with nothing telling the watcher what it did —
+    /// so this rides on top of whatever is already playing instead of adding a further
+    /// beat of its own, which would make the fix the very problem it answers. Each entry
+    /// starts the instant its own log line is revealed (<see cref="RevealedLogCount"/>
+    /// passing <see cref="FloatingNumber.RevealStep"/>) so it can never show ahead of
+    /// the number already printed in the log, and never behind either kind of empty
+    /// beat: a creature with no art reveals its whole slice at once (see <see
+    /// cref="RevealedLogCount"/>'s remarks), and the number starts exactly then too.
+    /// </remarks>
+    private readonly List<FloatingNumber> _floatingNumbers = [];
+
+    /// <summary>One damage amount or miss marker rising off a target.</summary>
+    /// <remarks>
+    /// A class rather than a record: <see cref="Elapsed"/> is mutated in place every
+    /// frame, and a list of these is walked and pruned in place too — copying one on
+    /// every tick for a value that changes every tick would be waste for no benefit,
+    /// since nothing outside <see cref="FightScreen"/> ever reads one.
+    /// </remarks>
+    private sealed class FloatingNumber
+    {
+        public required string TargetId { get; init; }
+        public required string Text { get; init; }
+        public required Color Colour { get; init; }
+
+        /// <summary>The log index this is the picture of — see <see cref="RevealedLogCount"/>.</summary>
+        public required int RevealStep { get; init; }
+
+        /// <summary>
+        /// The target's square when this was queued. Frozen rather than tracked live,
+        /// the same choice <see cref="Path"/> replay makes for the walker: the number is
+        /// the picture of where the blow landed, not of wherever its target has since
+        /// moved to.
+        /// </summary>
+        public required GridPosition At { get; init; }
+
+        /// <summary>
+        /// How many numbers already aimed at this target were queued first, this beat —
+        /// stacked a row apart so two damage components landing on the same instant read
+        /// as two numbers rather than one smear.
+        /// </summary>
+        public required int Lane { get; init; }
+
+        /// <summary>Seconds since this started rising, or negative while still waiting to.</summary>
+        public double Elapsed = -1;
+    }
+
+    /// <summary>How long a number rises and fades before it is forgotten.</summary>
+    private const double FloatingNumberSeconds = 0.9;
+
+    /// <summary>How far a number rises over its whole life, in pixels.</summary>
+    private const float FloatingNumberRisePixels = 34f;
+
+    /// <summary>The row height between two numbers stacked on the same target.</summary>
+    private const float FloatingNumberLanePixels = 18f;
+
+    private const int FloatingNumberFontSize = 18;
+
+    /// <summary>
+    /// A floating number's vertical offset and opacity at <paramref name="elapsedSeconds"/>
+    /// of its own life — pure, with no Godot state, so it can be pinned by a test the way
+    /// <see cref="ActiveRingAlpha"/> is (#518's lesson: a curve that reads no clock is a
+    /// curve two probe runs of identical code cannot disagree about). A straight rise and
+    /// a straight fade rather than an eased one: the number needs to be legible for its
+    /// whole short life on a board already busy with a swing or a flinch, not draw
+    /// attention to its own motion.
+    /// </summary>
+    internal static (float OffsetY, float Alpha) FloatingNumberMotion(double elapsedSeconds)
+    {
+        var t = (float)Math.Clamp(elapsedSeconds / FloatingNumberSeconds, 0, 1);
+        return (-FloatingNumberRisePixels * t, 1f - t);
+    }
+
+    /// <summary>
+    /// Queues one floating number or marker, keyed to <paramref name="step"/>'s reveal —
+    /// silently, when <paramref name="targetId"/> is not (or no longer) on the board, the
+    /// same fail-safe <see cref="LogHighlighter"/>'s text matching keeps.
+    /// </summary>
+    private void QueueFloatingNumber(
+        IReadOnlyList<Token> tokens,
+        string targetId,
+        string text,
+        Color colour,
+        int step)
+    {
+        if (FindToken(tokens, targetId) is not { } target)
+        {
+            return;
+        }
+
+        var lane = _floatingNumbers.Count(number => number.TargetId == targetId && number.Elapsed < 0);
+
+        _floatingNumbers.Add(new FloatingNumber
+        {
+            TargetId = targetId,
+            Text = text,
+            Colour = colour,
+            RevealStep = step,
+            At = new GridPosition(target.X, target.Y),
+            Lane = lane,
+        });
+    }
+
+    /// <summary>
+    /// Starts and advances the queued floating numbers; true when any changed and the
+    /// screen should redraw.
+    /// </summary>
+    private bool AdvanceFloatingNumbers(double delta)
+    {
+        var changed = false;
+
+        for (var index = _floatingNumbers.Count - 1; index >= 0; index--)
+        {
+            var number = _floatingNumbers[index];
+
+            if (number.Elapsed < 0)
+            {
+                if (RevealedLogCount <= number.RevealStep)
+                {
+                    continue;
+                }
+
+                number.Elapsed = 0;
+                changed = true;
+                continue;
+            }
+
+            number.Elapsed += delta;
+            changed = true;
+
+            if (number.Elapsed >= FloatingNumberSeconds)
+            {
+                _floatingNumbers.RemoveAt(index);
+            }
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Draws every started floating number over its target — after the tokens, the same
+    /// way <see cref="DrawShot"/> draws over what it flies past. Fog-safe by construction:
+    /// it draws only for a <paramref name="tokens"/> entry, and a hidden combatant is
+    /// never in that list (<c>PlayMode.Draw</c> filters it out before calling here).
+    /// </summary>
+    private void DrawFloatingNumbers(IReadOnlyList<Token> tokens)
+    {
+        foreach (var number in _floatingNumbers)
+        {
+            if (number.Elapsed < 0 || FindToken(tokens, number.TargetId) is null)
+            {
+                continue;
+            }
+
+            var (offsetY, alpha) = FloatingNumberMotion(number.Elapsed);
+            var centre = CentreOf(number.At);
+            var width = TextFont.GetStringSize(number.Text, fontSize: FloatingNumberFontSize).X;
+
+            var at = new Vector2(
+                centre.X - (width / 2f),
+                centre.Y - (CellPixels / 2f) - 10 - (number.Lane * FloatingNumberLanePixels) + offsetY);
+
+            DrawString(
+                TextFont,
+                at,
+                number.Text,
+                fontSize: FloatingNumberFontSize,
+                modulate: new Color(number.Colour, alpha));
+        }
+    }
+
+    /// <summary>
     /// How much of the log the screen may show, so that the narration lands with the
     /// picture of it rather than ahead of it.
     /// </summary>
@@ -1146,6 +1324,16 @@ public abstract partial class FightScreen : Node2D
                         facing: strickenId,
                         revealThrough: shot ? index + 1 : null);
 
+                    // A miss is a swing with nothing to show for it — the one outcome
+                    // that is not a number, on purpose (#298's acceptance criteria: not
+                    // approximated as a zero). The Opportunity Attack announcement
+                    // itself is never the roll (see CombatStep.Hit's remarks), so this
+                    // only ever fires on the step that actually carries one.
+                    if (attackStep is { Kind: CombatStepKind.Attack, Hit: false })
+                    {
+                        QueueFloatingNumber(tokens, strickenId, "Miss", LogHighlighter.Miss, index);
+                    }
+
                     if (shot
                         && FindToken(tokens, attackerId) is { } shooter
                         && FindToken(tokens, strickenId) is { } struck)
@@ -1166,9 +1354,24 @@ public abstract partial class FightScreen : Node2D
                     QueuePose(log, index, to, tokens, casterId, Pose.Cast);
                     break;
 
-                case { Kind: CombatStepKind.Damage, TargetId: { } victimId }:
+                case { Kind: CombatStepKind.Damage, TargetId: { } victimId } damageStep:
                     HoldAppearance(victimId);
                     QueuePose(log, index, to, tokens, victimId, Pose.Flinch);
+
+                    // The amount actually applied, off the step rather than parsed back
+                    // out of the narration (CombatStep.Damage's remarks) — 0 shows too,
+                    // for an Immune or fully-Resisted hit, because that is what the log
+                    // itself already prints.
+                    if (damageStep.Damage is { } amount)
+                    {
+                        QueueFloatingNumber(
+                            tokens,
+                            victimId,
+                            amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            LogHighlighter.Damage,
+                            index);
+                    }
+
                     break;
 
                 case { Kind: CombatStepKind.Died or CombatStepKind.Downed, ActorId: { } fallenId }:
@@ -1401,6 +1604,7 @@ public abstract partial class FightScreen : Node2D
         _poseActorId = null;
         _pose = Pose.None;
         _playing = null;
+        _floatingNumbers.Clear();
 
         // Nothing is playing, so nothing is owed a picture: the log is whole again.
         RevealedLogCount = ShowEveryLine;
@@ -1431,6 +1635,10 @@ public abstract partial class FightScreen : Node2D
     /// <summary>Advances the playing act; true when the screen should redraw.</summary>
     protected bool AdvanceActs(double delta)
     {
+        // Rides on top of whatever the queue below is doing — see FloatingNumber's
+        // remarks — so it advances unconditionally rather than only when idle.
+        var floatingChanged = AdvanceFloatingNumbers(delta);
+
         if (_shotFrom is not null)
         {
             _shotElapsed += delta;
@@ -1461,7 +1669,7 @@ public abstract partial class FightScreen : Node2D
 
         if (_walkPath is null)
         {
-            return StartNextAct();
+            return StartNextAct() || floatingChanged;
         }
 
         _walkElapsed += delta;
@@ -2097,6 +2305,10 @@ public abstract partial class FightScreen : Node2D
 
         // After the tokens, so a shot passes in front of what it flies over.
         DrawShot();
+
+        // After everything else on the board, so a number is never drawn under a
+        // figure standing where it rose from.
+        DrawFloatingNumbers(tokens);
     }
 
     /// <summary>
