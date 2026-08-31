@@ -72,9 +72,12 @@ public enum BattleLayout
 /// <para>
 /// The battlefield is sized to hold both sides with room to manoeuvre round the flanks,
 /// rather than being a corridor that makes positioning meaningless — and it is not bare:
-/// <see cref="TerrainGenerator"/> scatters walls and Difficult Terrain across the whole
-/// board (biased toward the contested ground between the sides), seeded from the same
-/// dice as everything else, with its own interpretations stated on the class.
+/// once spawns are fitted, <see cref="SiteGenerator"/> draws and places the fight's one
+/// primary structure (a central wall or a crossing, from S3 — see its own remarks,
+/// including the Surrounded implementer's-choice reading), and then
+/// <see cref="TerrainGenerator"/> scatters dressing — walls, low obstacles and Difficult
+/// Terrain — around it and across the whole board (biased toward the contested ground
+/// between the sides), all seeded from the same dice as everything else.
 /// </para>
 /// <para>
 /// <b>Six squares is exactly one move, and widening it was measured and rejected —
@@ -467,6 +470,18 @@ public static class EncounterFactory
             .SelectMany(space => space.Squares())
             .ToArray();
 
+        var largestSpanSquares = partySpans.Concat(monsterSpans).DefaultIfEmpty(1).Max();
+
+        // The site draw happens between layout and terrain (design §3): spawns are
+        // already fitted, so the site can read every reserved square, and dressing has
+        // not run yet, so it scatters around the structure rather than being carved
+        // around after the fact. See SiteGenerator's own remarks for the Surrounded
+        // implementer's-choice reading and the fixed-dice-regardless-of-legality
+        // discipline this draw and placement share with TerrainGenerator's own.
+        var site = SiteGenerator.DrawSite(random, layout);
+        var plan = SiteGenerator.Place(
+            site, width, height, layout, partyReserved, monsterReserved, random, largestSpanSquares);
+
         var battlefield = TerrainGenerator.Generate(
             width,
             height,
@@ -474,7 +489,12 @@ public static class EncounterFactory
             monsterReserved,
             layout,
             random,
-            partySpans.Concat(monsterSpans).DefaultIfEmpty(1).Max());
+            largestSpanSquares,
+            protectedSquares: plan.ProtectedSquares,
+            preplacedWalls: plan.Walls,
+            preplacedLowObstacles: plan.LowObstacles,
+            preplacedDifficult: plan.DifficultTerrain,
+            preplacedPieces: plan.Pieces);
 
         var placed = party
             .Select((member, index) => member.AtPosition(partySpawns[index]))
