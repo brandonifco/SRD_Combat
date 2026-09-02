@@ -931,21 +931,54 @@ public abstract partial class FightScreen : Node2D
     private const int BudgetedFightLevel = 3;
 
     /// <summary>
-    /// The seed to fight on. <c>--seed=&lt;n&gt;</c> wins; a capture or probe run falls
-    /// back to a fixed seed, because a verification image must not change between runs;
-    /// otherwise the seed is fresh, exactly as the console rolls one — and it is in the
-    /// heading, so "it happened on seed 12345" stays a complete bug report.
+    /// The seed to fight on. <c>--seed=&lt;n&gt;</c> wins; a present value that is not a
+    /// whole number throws <see cref="ScenarioRefusedException"/> naming it rather than
+    /// silently rolling a fresh one — of every flag in this client, <c>--seed</c> is the
+    /// worst place for a quiet fallback, since it exists precisely so a run is
+    /// reproducible (CLAUDE.md: "seed 12345 is a complete bug report") and a typo'd value
+    /// that rolled a random seed anyway would defeat that instead of merely losing it
+    /// loudly (#489). Absent, a capture or probe run falls back to a fixed seed, because a
+    /// verification image must not change between runs; otherwise the seed is fresh,
+    /// exactly as the console rolls one — and it is in the heading, so "it happened on
+    /// seed 12345" stays a complete bug report.
     /// </summary>
     protected static int SeedArgument()
     {
-        if (ArgumentValue("seed") is { } text && int.TryParse(text, out var parsed))
+        if (ArgumentValue("seed") is { } text)
         {
-            return parsed;
+            if (!TryParseSeed(text, out var seed, out var error))
+            {
+                throw new ScenarioRefusedException(error!);
+            }
+
+            return seed;
         }
 
         return HasArgument("probe") || ArgumentValue("capture") is not null
             ? 20250812
             : Random.Shared.Next();
+    }
+
+    /// <summary>
+    /// The pure half of <c>--seed</c>: given the flag's already-read value, parses it or
+    /// refuses. Split from <see cref="SeedArgument"/> the same way
+    /// <see cref="ScenarioFromFile"/> is split from reading <c>--scenario</c> (#476):
+    /// <c>ArgumentValue</c> reaches into Godot's <c>OS</c> singleton and cannot run under
+    /// a plain xUnit test (see this assembly's test project's own stated boundary), while
+    /// everything below this line is ordinary <c>int.TryParse</c>.
+    /// </summary>
+    internal static bool TryParseSeed(string text, out int seed, out string? error)
+    {
+        if (!int.TryParse(text, out var parsed))
+        {
+            seed = default;
+            error = $"--seed=\"{text}\": not a whole number";
+            return false;
+        }
+
+        seed = parsed;
+        error = null;
+        return true;
     }
 
     /// <summary>"2 Animated Armors, Awakened Tree" — the fight's cast, for the heading.</summary>

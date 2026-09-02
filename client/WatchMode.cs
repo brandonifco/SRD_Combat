@@ -32,7 +32,20 @@ public partial class WatchMode : FightScreen
 
     protected override void OnReady()
     {
-        var seed = SeedArgument();
+        int seed;
+
+        try
+        {
+            seed = SeedArgument();
+        }
+        catch (ScenarioRefusedException refusal)
+        {
+            // The same shape Resolve's own catch (below) leaves for a bad --spawn or
+            // --level: no snapshots, the reason in _subtitle, and _Draw's own empty-list
+            // case draws the heading alone rather than a blank window (#486).
+            _subtitle = refusal.Message;
+            return;
+        }
 
         Resolve(seed);
 
@@ -44,24 +57,67 @@ public partial class WatchMode : FightScreen
 
             if (_snapshots.Count == 0)
             {
-                // The fight never ran — a refused --spawn/--level (Resolve, below,
-                // catches it and leaves _snapshots empty). There is nothing to
-                // capture, so say why on stdout and exit non-zero rather than either
-                // of the two things this used to do: throw out of
-                // Math.Clamp(wanted, 0, -1) when --at was given, or fall through to
-                // CaptureAndQuit and write a blank PNG while printing "turn -1 of -1"
+                // The fight never ran — a refused --seed (OnReady, above), or a refused
+                // --spawn/--level (Resolve, below, catches it and leaves _snapshots
+                // empty). There is nothing to capture, so say why on stdout and exit
+                // non-zero rather than either of the two things this used to do: throw
+                // out of Math.Clamp(wanted, 0, -1) when --at was given, or fall through
+                // to CaptureAndQuit and write a blank PNG while printing "turn -1 of -1"
                 // and reporting success (#486).
                 GD.Print(_subtitle);
                 GetTree().Quit(1);
                 return;
             }
 
-            _index = ArgumentValue("at") is { } at && int.TryParse(at, out var wanted)
-                ? Math.Clamp(wanted, 0, _snapshots.Count - 1)
-                : _snapshots.Count - 1;
+            if (!TryParseAt(ArgumentValue("at"), _snapshots.Count - 1, out _index, out var atError))
+            {
+                // Same shape as the "nothing to capture" refusal above: the reason on
+                // stdout, exit non-zero, no PNG written — never the silent "last turn"
+                // fallback or the silent clamp into range this used to do (#489).
+                GD.Print(atError);
+                GetTree().Quit(1);
+                return;
+            }
 
             CaptureAndQuit(path);
         }
+    }
+
+    /// <summary>
+    /// The pure half of <c>--at</c>: given its already-read value (or null when absent)
+    /// and the highest snapshot index this run resolved, decides which turn to capture or
+    /// refuses. Split from <see cref="OnReady"/> the same way
+    /// <see cref="FightScreen.TryParseSeed"/> is split from reading <c>--seed</c> (#476's
+    /// pattern): <c>ArgumentValue</c> reaches into Godot's <c>OS</c> singleton and cannot
+    /// run under a plain xUnit test, while everything below this line is ordinary
+    /// <c>int.TryParse</c> and a range check.
+    /// </summary>
+    internal static bool TryParseAt(string? text, int maxIndex, out int index, out string? error)
+    {
+        if (text is null)
+        {
+            index = maxIndex;
+            error = null;
+            return true;
+        }
+
+        if (!int.TryParse(text, out var wanted))
+        {
+            index = default;
+            error = $"--at=\"{text}\": not a whole number (0-{maxIndex})";
+            return false;
+        }
+
+        if (wanted < 0 || wanted > maxIndex)
+        {
+            index = default;
+            error = $"--at={wanted}: out of range (0-{maxIndex})";
+            return false;
+        }
+
+        index = wanted;
+        error = null;
+        return true;
     }
 
     /// <summary>
@@ -217,10 +273,10 @@ public partial class WatchMode : FightScreen
     {
         if (_snapshots.Count == 0)
         {
-            // A refused --spawn/--level (Resolve, above) leaves _subtitle holding the
-            // reason and no fight to show. Draw the heading alone rather than nothing
-            // at all — an empty window with no reason given is exactly the bug this
-            // guard used to cause (#486).
+            // A refused --seed, --spawn or --level leaves _subtitle holding the reason
+            // and no fight to show. Draw the heading alone rather than nothing at all —
+            // an empty window with no reason given is exactly the bug this guard used
+            // to cause (#486).
             DrawBackdrop();
             DrawHeading(_subtitle, "[esc] quit");
             return;

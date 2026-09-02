@@ -61,9 +61,17 @@ godot --path client
 The run autosaves to `srdcombat-save.json` in the directory Godot was launched from
 (`--save=<path>` moves it), and `--continue` resumes it. Defeat does not touch the save —
 the file keeps the state after the last fight the party *won*, so reloading is a retry.
-`--level=1..5` starts a new run partway up. A save that cannot be read is shown with its
-reason and nothing is started, because silently beginning a fresh run would overwrite
-the file being asked about.
+`--level=1..5` starts a new run partway up — refused the same way spawn mode's own
+`--level` is, above: a non-numeric or out-of-range value names the value typed and the
+accepted range rather than falling back to 1 or clamping into range (#488). `--level`
+together with `--continue` is refused too, rather than silently dropped, because a
+resumed run has nothing for it to apply to — it re-resolves at the level the save's own
+experience earned. `--create` (below) takes `--level` the same way a pregenerated run
+does — the created party is always drafted at level 1 and resolved up to whichever level
+the run begins at, exactly like a resumed save's own re-resolution — where it used to be
+parsed and then silently discarded. A save that cannot be read is shown with its reason
+and nothing is started, because silently beginning a fresh run would overwrite the file
+being asked about.
 
 On your turn:
 
@@ -160,7 +168,10 @@ potions — straight off the engine's state.
 Arguments go after Godot's `--` separator. `--seed=<n>` picks the run — the same promise
 the console client makes, that a seed is a complete bug report; without one the seed is
 fresh, and it is always in the heading. (A `--capture` or `--probe` run falls back to a
-fixed seed instead, because a verification image must not change between runs.)
+fixed seed instead, because a verification image must not change between runs.) A
+non-numeric `--seed` is refused by name rather than silently rolling a fresh one anyway
+(#489) — of every flag here, `--seed` is the one place a quiet fallback would be worst:
+it exists precisely so a typo cannot cost you the run you meant to reproduce.
 `--create` builds your own party first (Phase 5): every option browsed shows its printed
 SRD text and a separate Take commits it, the resolver's word is final on the summary
 step, and the four drafts hand off to this screen's ordinary run — save, `--continue`
@@ -428,10 +439,13 @@ godot --path client -- --watch
 Space plays/pauses, ←/→ step one turn, Home/End jump, Esc quits. `--capture=<path>`
 renders one frame to a PNG and quits (with `--at=<turn>` choosing the turn), and implies
 `--watch` — a capture of a fight nobody is playing is the watch screen's job. A refused
-`--spawn`/`--level` never reaches a fight to render: `--watch` alone shows the reason in
-the heading with no snapshots to scrub, and `--capture` prints the same reason to
-stdout and exits non-zero, writing no PNG at all — never the blank frame reported as a
-successful capture that this used to write (#486).
+`--spawn`/`--level`/`--seed` never reaches a fight to render: `--watch` alone shows the
+reason in the heading with no snapshots to scrub, and `--capture` prints the same reason
+to stdout and exits non-zero, writing no PNG at all — never the blank frame reported as a
+successful capture that this used to write (#486). A non-numeric or out-of-range `--at`
+is refused the same way, to stdout with a non-zero exit, naming the value and the turn
+range actually resolved — never the silent "last turn" fallback or the silent clamp into
+range this used to do (#489).
 
 ### The probe
 
