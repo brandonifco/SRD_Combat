@@ -10,6 +10,12 @@ namespace SRDCombat.Console;
 /// <c>TryParseLevel</c> and the Godot client's <c>FightScreen.TryParseSeed</c> (#489): a
 /// flag present with a value nothing here can use is refused by name, value and accepted
 /// set — never defaulted, never clamped. Absent, each keeps the default it always had.
+/// <see cref="TryResolveGauntletLevel"/> is this client's own
+/// <c>PlayMode.TryResolveGauntletLevel</c> twin (#602): whether <c>--level</c> applies at
+/// all — refused against <c>--continue</c>, forwarded into <c>--create</c>'s drafts the
+/// same as a pregenerated party — is a question <see cref="TryParseLevel"/> alone never
+/// answered, which is how #488's Godot bug (a silently dropped <c>--level</c> on a
+/// created party) had a console-side twin nothing caught.
 /// </summary>
 internal static class ConsoleArguments
 {
@@ -51,6 +57,38 @@ internal static class ConsoleArguments
         level = parsed;
         error = null;
         return true;
+    }
+
+    /// <summary>
+    /// The level a fresh gauntlet run begins at, deciding first whether <c>--level</c>
+    /// applies at all (#602, the console twin of <c>PlayMode.TryResolveGauntletLevel</c>
+    /// closing #488 on the Godot side). A resumed run has nothing for <c>--level</c> to
+    /// apply to — <see cref="SRDCombat.Game.GauntletRun.Resume"/> re-resolves at the
+    /// level the save's own experience has earned — so <c>--continue --level</c> is
+    /// refused rather than silently ignored, the same shape #489 already held every
+    /// other flag here to. Absent, a fresh run keeps its old default of level 1;
+    /// present, <see cref="TryParseLevel"/> does the actual parse and range check.
+    /// </summary>
+    internal static bool TryResolveGauntletLevel(bool continuing, string[] args, out int level, out string? error)
+    {
+        var levelGiven = args.Contains("--level");
+
+        if (continuing && levelGiven)
+        {
+            level = default;
+            error = "--level refused: --continue resumes at the level the save's own " +
+                "experience has earned; --level does not apply here. Start a new run to choose one.";
+            return false;
+        }
+
+        if (!levelGiven)
+        {
+            level = 1;
+            error = null;
+            return true;
+        }
+
+        return TryParseLevel(args, out level, out error);
     }
 
     /// <summary>The run's seed. Absent is <c>null</c> — the caller rolls a fresh one.</summary>
@@ -109,13 +147,27 @@ internal static class ConsoleArguments
 
         var text = args[index + 1];
 
-        // Enum.TryParse alone accepts numeric text too — "3" parses as the undefined
-        // value 3 (which throws downstream at the engine) and "0" silently parses as
-        // Low. Only an exact declared name (case-insensitive) is accepted; anything
-        // else, numeric or not, is refused by name like every other flag here.
-        if (!Enum.TryParse<EncounterDifficulty>(text, ignoreCase: true, out var parsed)
-            || !Enum.IsDefined(parsed)
-            || int.TryParse(text, out _))
+        // Enum.TryParse is deliberately not used here — it accepts far more than a
+        // single declared name. Numeric text parses too ("3" becomes the undefined
+        // value 3, which throws downstream at the engine rather than refusing here;
+        // "0" silently parses as Low), and so does a comma-separated name list read
+        // as a bitwise-OR combination — "low,high" parses to the defined value High
+        // even though nobody typed a single name (#602). Matching the trimmed text
+        // directly against the declared name set is the only way to accept exactly
+        // one of them and refuse everything else, numeric, combined or malformed
+        // alike.
+        EncounterDifficulty? match = null;
+
+        foreach (var value in Enum.GetValues<EncounterDifficulty>())
+        {
+            if (string.Equals(value.ToString(), text.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                match = value;
+                break;
+            }
+        }
+
+        if (match is not { } parsed)
         {
             difficulty = default;
             error = $"--difficulty {text}: not one of low, moderate, high";

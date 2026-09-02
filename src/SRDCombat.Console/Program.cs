@@ -77,6 +77,18 @@ var savePath = SavePathFrom(args) ?? "srdcombat-save.json";
 GauntletRun run;
 var isNewRun = !ContinueRequested(args);
 
+// --level only ever means one thing here: where a *new* run begins, --create's
+// party included — a resumed run has nothing for it to apply to (GauntletRun.Resume
+// re-resolves at the level the save's own experience has earned), and letting it
+// through silently there would be exactly the shape #488 closed on the Godot side,
+// just for --continue instead of a bad number. Decided once, before either branch
+// below, the same way PlayMode.TryResolveGauntletLevel decides it up front there.
+if (!ConsoleArguments.TryResolveGauntletLevel(ContinueRequested(args), args, out var startingLevel, out var startingLevelError))
+{
+    Console.Error.WriteLine(startingLevelError);
+    return 1;
+}
+
 if (ContinueRequested(args))
 {
     // Falls back to the .bak automatically when the primary is missing or unreadable —
@@ -151,7 +163,13 @@ else
     if (args.Contains("--create"))
     {
         // Creation runs before the run's dice: the drafts are choices, not rolls, and
-        // the seed governs the fights they walk into.
+        // the seed governs the fights they walk into. GauntletRun.Start's
+        // created-drafts overload takes the same startingLevel a pregenerated
+        // party's does — a created party is always drafted at level 1 (PartyCreator)
+        // and resolved up to whatever level the run begins at, exactly like the
+        // pregenerated branch below it. This used to be omitted entirely, so
+        // --create --level 4 silently started at 1 (#602, the console twin of
+        // #488's Godot bug).
         var drafts = PartyCreator.CreateParty(content);
 
         if (drafts is null)
@@ -160,17 +178,11 @@ else
             return 0;
         }
 
-        run = GauntletRun.Start(content, drafts, GauntletLadder.Default(), seed: seed);
+        run = GauntletRun.Start(content, drafts, GauntletLadder.Default(), seed: seed, startingLevel: startingLevel);
     }
     else
     {
-        if (!ConsoleArguments.TryParseLevel(args, out var level, out var levelError))
-        {
-            Console.Error.WriteLine(levelError);
-            return 1;
-        }
-
-        run = GauntletRun.Start(content, GauntletLadder.Default(), level, seed);
+        run = GauntletRun.Start(content, GauntletLadder.Default(), startingLevel, seed);
     }
 
     Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
