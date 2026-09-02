@@ -250,8 +250,8 @@ public class EntrySaveTests
     /// synthetic 30-foot gaze, not the Mummy's own print): in range executes exactly
     /// as before, out of range refuses named and spends nothing, and a null range —
     /// every entry in the corpus before #421's extraction half landed, and still every
-    /// entry with no printed range or an unstructured one today (a point-aimed Sphere,
-    /// #420) — reaches any distance exactly as it always has.
+    /// entry with no printed range at all today (a point-aimed Sphere's own range now
+    /// structures too, since #420) — reaches any distance exactly as it always has.
     /// </summary>
     [Fact]
     public void ASingleTargetSaveWithinItsPrintedRangeExecutesAsToday()

@@ -189,13 +189,13 @@ public sealed partial class Encounter
     /// own targeting paths. Extraction now structures that field for a single-target
     /// save and for a point-aimed area whose shape itself parsed (#386's second half),
     /// so this check is live: a Mummy's 60-foot Dreadful Glare (p.309) can no longer
-    /// land from anywhere on the board. It stays null — deliberately, not by gap — for
-    /// a point-aimed <b>Sphere</b> until #420 lands: every corpus Sphere prints its
-    /// radius as "N-foot-radius Sphere", which <c>AreaPattern</c> cannot read yet, so
-    /// <see cref="SaveEffect.Area"/> comes back null for one, and claiming its range
-    /// without its area would let this check narrow an area effect down to a single
-    /// target rather than refuse it honestly (see
-    /// <c>EntryMechanicsParser.ReadRange</c>'s own remarks for the full reasoning).
+    /// land from anywhere on the board. That now includes a point-aimed
+    /// <b>Sphere</b>: every corpus Sphere prints its radius as "N-foot-radius
+    /// Sphere", which <c>AreaPattern</c> reads as of #420, so <see
+    /// cref="SaveEffect.Area"/> structures for those entries too and this check
+    /// enforces their printed range instead of narrowing them to a single target
+    /// (see <c>EntryMechanicsParser.ReadRange</c>'s own remarks for the full
+    /// reasoning).
     /// A printed sight qualifier — "a creature the mummy can see" — is a different
     /// question and stays permanently unmodelled: the standing reading on
     /// <see cref="ConditionRules"/> is that this engine has no line-of-sight model, and
@@ -242,9 +242,9 @@ public sealed partial class Encounter
         }
 
         // The printed range, structured onto the save by extraction (#386) for a
-        // single-target save and for a point-aimed area whose own shape parsed — null,
-        // and so unenforced, for a point-aimed Sphere until #420 lands (this method's
-        // own remarks above have the reasoning). Slotted here, immediately before
+        // single-target save and for a point-aimed area whose own shape parsed —
+        // which now includes a point-aimed Sphere (#420; this method's own remarks
+        // above have the reasoning). Slotted here, immediately before
         // Total Cover with nothing between, the same relative position
         // attack.out_of_range and feature.divine_spark.out_of_range hold against their
         // own Total Cover checks. Two checks, mirroring CastSpell's pair: whenever a

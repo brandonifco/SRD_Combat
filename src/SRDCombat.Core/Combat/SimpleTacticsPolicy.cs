@@ -1258,10 +1258,10 @@ public static class SimpleTacticsPolicy
         // that ordering, get refused, and the call reports no entry used at all —
         // never falling through to try the second-best, in-range entry instead.
         // Extraction structures RangeFeet for a single-target save and for a
-        // point-aimed area whose shape parsed; it stays null — unenforced, same as
-        // before this method ever measured distance — for a point-aimed Sphere until
-        // #420 lands (AreaPattern has no "-radius" branch yet), and for any save the
-        // extractor found no printed distance on at all.
+        // point-aimed area whose shape parsed; that now includes a point-aimed
+        // Sphere (#420 gave AreaPattern a "-radius" branch), so RangeFeet is
+        // enforced here for those entries too. It stays null — unenforced — only for
+        // a save the extractor found no printed distance on at all.
         if (save.RangeFeet is { } range && distance > range)
         {
             return false;
