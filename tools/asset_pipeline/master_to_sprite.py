@@ -530,9 +530,9 @@ def _cmd_list(_args: argparse.Namespace) -> int:
     stems = sorted({p.stem for p in MASTERS_DIR.glob("*.png")})
     print(f"{len(stems)} masters (.png cutouts) in {MASTERS_DIR}:\n")
 
-    folders = _shipped_folders_from_sprite_library()
+    mappings = _shipped_folders_from_sprite_library()
     for stem in stems:
-        print(f"  {stem:<28} {_ship_status(stem, folders)}")
+        print(f"  {stem:<28} {_ship_status(stem, mappings)}")
 
     return 0
 
@@ -551,7 +551,7 @@ _MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES = 50
 _SPRITE_LIBRARY_ENTRY_RE = re.compile(r'\["([^"]+)"\]\s*=\s*"([^"]+)",')
 
 
-def _shipped_folders_from_sprite_library(cs_path: Path = SPRITE_LIBRARY_CS) -> set[str]:
+def _shipped_folders_from_sprite_library(cs_path: Path = SPRITE_LIBRARY_CS) -> dict[str, str]:
     """The ground truth for "does the client actually load art for this
     master" — parsed from ``ByClassName``/``ByMonsterName``'s literal
     entries in ``client/SpriteLibrary.cs``, rather than guessed from the
@@ -559,6 +559,19 @@ def _shipped_folders_from_sprite_library(cs_path: Path = SPRITE_LIBRARY_CS) -> s
     every word, including "of", so "Swarm of Bats" became the guess
     "Swarm_Of_Bats" against the real folder "Swarm_of_Bats" and all four
     swarms reported unshipped though they ship).
+
+    Returns the literal ``{name: folder}`` mapping — e.g.
+    ``{"Goblin Warrior": "Goblin_Drawn"}`` — rather than just the set of
+    folder values, because #514 found a second mismatch shape #442 didn't
+    cover: a master whose filename stem was never renamed to track its
+    *mapped name*'s own drift, so the folder itself no longer resembles the
+    stem at all (``goblin_warrior``'s master maps to folder ``Goblin_Drawn``
+    under the name "Goblin Warrior"; ``scout``'s maps to ``Scout_Human``
+    under the name "Scout"). Matching against the *name* — what a master's
+    stem is actually derived from — resolves both that shape and #442's
+    casing shape in one comparison; matching against the folder value only
+    ever resolved the casing shape, and gave up the moment the folder itself
+    was renamed independently of the stem. See ``_shipped_folder_for``.
 
     Both maps are committed as flat ``["Name"] = "Folder_Name",`` literals —
     one entry per line, no string interpolation, no multi-line values (see
@@ -575,15 +588,15 @@ def _shipped_folders_from_sprite_library(cs_path: Path = SPRITE_LIBRARY_CS) -> s
     """
 
     if not cs_path.exists():
-        return set()
+        return {}
 
     text = cs_path.read_text()
     entries = _SPRITE_LIBRARY_ENTRY_RE.findall(text)
-    folders = {folder for _name, folder in entries}
+    mapping = dict(entries)
 
-    if len(folders) < _MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES:
+    if len(mapping) < _MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES:
         print(
-            f"warning: only {len(folders)} folder(s) parsed from {cs_path} — "
+            f"warning: only {len(mapping)} entr(y/ies) parsed from {cs_path} — "
             f"expected at least {_MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES}. "
             f"SpriteLibrary.cs's ByClassName/ByMonsterName literal format may "
             f"have changed underneath this script's regex (see "
@@ -592,10 +605,10 @@ def _shipped_folders_from_sprite_library(cs_path: Path = SPRITE_LIBRARY_CS) -> s
             file=sys.stderr,
         )
 
-    return folders
+    return mapping
 
 
-def _ship_status(stem: str, folders: set[str] | None = None) -> str:
+def _ship_status(stem: str, mappings: dict[str, str] | None = None) -> str:
     """Whether ``stem``'s master is shipped, per SpriteLibrary's own map —
     never a guess. Three states, not two: SpriteLibrary either doesn't name
     this stem at all ("unshipped"), names it and the folder is really there
@@ -604,29 +617,52 @@ def _ship_status(stem: str, folders: set[str] | None = None) -> str:
     is the deeper answer to; this at least says so instead of collapsing it
     into an ordinary "unshipped")."""
 
-    folder = _shipped_folder_for(stem, folders)
+    folder = _shipped_folder_for(stem, mappings)
     if folder is None:
         return "unshipped"
     return "shipped" if (SPRITES_DIR / folder).exists() else "mapped, folder missing"
 
 
-def _shipped_folder_for(stem: str, folders: set[str] | None = None) -> str | None:
+def _normalize_for_match(text: str) -> str:
+    """Strips everything but letters and digits and lowercases what is
+    left, so "Goblin Warrior", "goblin_warrior" and "Goblin_Warrior" all
+    collapse to the same key. Comparing on this rather than on exact
+    casing/separator conventions is what makes ``_shipped_folder_for``
+    immune to both #442's shape (a folder value cased or spaced
+    differently from the stem) and #514's (a stem matching the SpriteLibrary
+    *name* but not the *folder* value at all)."""
+
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
+def _shipped_folder_for(stem: str, mappings: dict[str, str] | None = None) -> str | None:
     """The folder SpriteLibrary maps this master's stem to, or ``None`` if
-    nothing does. Case-insensitive because a master's filename stem is
-    already snake_case and SpriteLibrary's folder value is the same words
-    with underscores — differing only in which words are capitalised (the
-    swarms' lowercase "of" among them) — never in word order or spelling.
-    ``None`` also covers the rarer case of a master whose stem no longer
-    matches its mapped folder at all after one side was renamed and the
-    other wasn't (``goblin_warrior``/``Goblin_Drawn``, ``scout``/
-    ``Scout_Human`` are two that predate this fix and stay unresolved here —
-    a real mismatch, not the casing bug #442 is about; filed separately
-    rather than folded into this fix)."""
+    nothing does.
 
-    if folders is None:
-        folders = _shipped_folders_from_sprite_library()
+    Matches against SpriteLibrary's ``name`` keys (``"Goblin Warrior"``,
+    ``"Scout"``, ...) rather than its folder values — a master's filename
+    stem is what someone typed when naming the painting, and that always
+    tracks the creature's *name*, not necessarily whatever folder its
+    shipped sprite happens to live in today. #514: ``goblin_warrior`` maps
+    under the name "Goblin Warrior" to folder ``Goblin_Drawn``, and
+    ``scout`` maps under "Scout" to ``Scout_Human`` — both real, shipped
+    mappings that folder-matching alone could never see once the folder
+    diverged from the stem. Matching is case- and separator-insensitive
+    (``_normalize_for_match``), which still also covers #442's casing shape
+    (e.g. "Swarm of Bats" / ``swarm_of_bats``) for free, without this
+    function having to reconstruct SpriteLibrary's own title-casing rules
+    (including its lowercase "of").
+    """
 
-    return {folder.lower(): folder for folder in folders}.get(stem)
+    if mappings is None:
+        mappings = _shipped_folders_from_sprite_library()
+
+    target = _normalize_for_match(stem)
+    for name, folder in mappings.items():
+        if _normalize_for_match(name) == target:
+            return folder
+
+    return None
 
 
 def _cmd_process(args: argparse.Namespace) -> int:
