@@ -43,13 +43,15 @@ public enum TerrainDensity
 /// <b>The whole board is in play.</b> Terrain may land anywhere except (a) a reserved
 /// square — every square any body occupies, not just its anchor, so a Large or bigger
 /// creature clears its whole footprint — (b) any square orthogonally or diagonally
-/// adjacent to a reserved square — a free 3×3 block around every one — and (c) protected
-/// squares (none are threaded in this slice; the parameter exists for a later slice's
-/// carved gaps and fords). This replaces the old rule confining terrain to the columns
-/// strictly between the outermost spawns, which left the 8-square flanking margins
-/// permanently bare — battlefield-overhaul design §5. Rule (b) is a genuine tightening,
-/// not a restatement: the old rule only ever excluded spawn *squares*, so terrain could
-/// and did (~26% of boards, per the design's own measurement) stand flush against a
+/// adjacent to a reserved square — a free 3×3 block around every one — and (c) a
+/// protected square or any square adjacent to one — the same 3×3 clearance as (b),
+/// design §3's "in or adjacent to a protected gap" (from S3 on: a site generator's
+/// carved gaps and fords; none are threaded before S3). This replaces the old rule
+/// confining terrain to the columns strictly between the outermost spawns, which left
+/// the 8-square flanking margins permanently bare — battlefield-overhaul design §5.
+/// Rule (b) is a genuine tightening, not a restatement: the old rule only ever excluded
+/// spawn *squares*, so terrain could and did (~26% of boards, per the design's own
+/// measurement) stand flush against a
 /// spawn. The 3×3 clearance is load-bearing for <see cref="GridConnectivity"/>'s own
 /// soundness (design §8.1): its check is only sound while every square that must stay
 /// connected already has a free K×K block around it, which this clearance guarantees
@@ -166,8 +168,31 @@ public static class TerrainGenerator
     /// size, so a route too narrow for it is not a route.
     /// </param>
     /// <param name="protectedSquares">
-    /// Squares terrain may never enter beyond the reserved clearance — empty in this
-    /// slice; carried for a later slice's carved gaps and fords.
+    /// Squares terrain may never enter or stand adjacent to, beyond the reserved
+    /// clearance — empty before S3; from S3 on, a site generator's carved gaps and fords
+    /// (<see cref="SiteGenerator"/>), threaded here so the dressing pass that follows a
+    /// site never closes, or stands flush against, what the site carved open (design
+    /// §3: "in or adjacent to a protected gap"). Each square is cleared the same 3×3 way
+    /// as a reserved square — see <see cref="ClearedSquares"/>.
+    /// </param>
+    /// <param name="preplacedWalls">
+    /// Total-Cover squares a site generator already placed (<see cref="SiteGenerator"/>),
+    /// folded into <see cref="Battlefield.Blocked"/> and the dressing pass's own
+    /// impassable set before a single dressing die is rolled — empty before S3.
+    /// </param>
+    /// <param name="preplacedLowObstacles">
+    /// Half-Cover squares a site generator already placed — a central wall's ruined
+    /// stretch, for instance — folded into <see cref="Battlefield.LowObstacles"/> the same
+    /// way as <paramref name="preplacedWalls"/>. Empty before S3.
+    /// </param>
+    /// <param name="preplacedDifficult">
+    /// Difficult Terrain squares a site generator already placed — a crossing's band, for
+    /// instance — folded into <see cref="Battlefield.DifficultTerrain"/>. Empty before S3.
+    /// </param>
+    /// <param name="preplacedPieces">
+    /// The <see cref="TerrainPiece"/>s describing whatever placed the squares above, so
+    /// <see cref="Battlefield.Pieces"/> describes the site alongside the dressing this
+    /// method adds on top of it. Empty before S3.
     /// </param>
     public static Battlefield Generate(
         int width,
@@ -177,42 +202,47 @@ public static class TerrainGenerator
         BattleLayout layout,
         IRandomSource random,
         int largestSpanSquares = 1,
-        IReadOnlyCollection<GridPosition>? protectedSquares = null)
+        IReadOnlyCollection<GridPosition>? protectedSquares = null,
+        IReadOnlyCollection<GridPosition>? preplacedWalls = null,
+        IReadOnlyCollection<GridPosition>? preplacedLowObstacles = null,
+        IReadOnlyCollection<GridPosition>? preplacedDifficult = null,
+        IReadOnlyList<TerrainPiece>? preplacedPieces = null)
     {
         ArgumentNullException.ThrowIfNull(partyReserved);
         ArgumentNullException.ThrowIfNull(monsterReserved);
         ArgumentNullException.ThrowIfNull(random);
 
         var reservedSet = new HashSet<GridPosition>(partyReserved.Concat(monsterReserved));
+        var clearedSquares = ClearedSquares(reservedSet);
 
-        // A free 3x3 block around every reserved square: the square itself, plus its
-        // eight neighbours, for every square any body occupies — not just its anchor.
-        // See the class remarks on rule (b).
-        var clearedSquares = new HashSet<GridPosition>(reservedSet);
-
-        foreach (var square in reservedSet)
-        {
-            foreach (var neighbour in square.Neighbours())
-            {
-                clearedSquares.Add(neighbour);
-            }
-        }
-
+        // Cleared the same 3×3 way as a reserved square (ClearedSquares below): a
+        // protected gap — a carved doorway, a ford's mouth — excludes not just its own
+        // square but every neighbour, so dressing can never stand flush against or
+        // across it. Design §3: "dressing may not land in or adjacent to a protected
+        // gap" — membership alone left a crossing's mouth, which (unlike a wall's
+        // impassable-separated opening) has no other guard against a flush footprint.
         var protectedSet = protectedSquares is null
             ? new HashSet<GridPosition>()
-            : new HashSet<GridPosition>(protectedSquares);
+            : ClearedSquares(protectedSquares);
 
-        var walls = new HashSet<GridPosition>();
-        var lowObstacles = new HashSet<GridPosition>();
-        var impassable = new HashSet<GridPosition>();
-        var difficult = new HashSet<GridPosition>();
+        // A site generator (S3+, SiteGenerator) may already have placed the fight's
+        // primary structure before dressing runs — folded in here rather than dressing
+        // starting from nothing, so a wall or a crossing counts toward the impassable set
+        // dressing rejects into and toward the coverage tests measure, and the pieces
+        // list describes the whole board, site and dressing together.
+        var walls = new HashSet<GridPosition>(preplacedWalls ?? []);
+        var lowObstacles = new HashSet<GridPosition>(preplacedLowObstacles ?? []);
+        var impassable = new HashSet<GridPosition>(walls);
+        impassable.UnionWith(lowObstacles);
+        var difficult = new HashSet<GridPosition>(preplacedDifficult ?? []);
 
         // Describes every structure the loops below place, alongside (never instead of)
-        // the square sets above — see Battlefield.Pieces and TerrainPiece's remarks. No
-        // site draw exists yet (that starts at S3), so every piece this slice can ever
-        // produce is placed by the open-field site (TerrainPieceKind and SiteType's own
-        // doc comments explain why that is the design's own reading, not a stand-in).
-        var pieces = new List<TerrainPiece>();
+        // the square sets above — see Battlefield.Pieces and TerrainPiece's remarks.
+        // Seeded with whatever a site generator already placed (S3+); before S3, and for
+        // every caller that still passes no site, every piece this method can produce is
+        // placed by the open-field site (TerrainPieceKind and SiteType's own doc comments
+        // explain why that is the design's own reading, not a stand-in).
+        var pieces = new List<TerrainPiece>(preplacedPieces ?? []);
 
         bool InRegion(GridPosition square) =>
             square.X >= 0 && square.X < width
@@ -347,8 +377,34 @@ public static class TerrainGenerator
         return new Battlefield(width, height, walls, difficult, lowObstacles, pieces);
     }
 
+    /// <summary>
+    /// The free 3x3 block around every given square — the square itself, plus its eight
+    /// neighbours, for every square any body occupies, not just its anchor (design §5
+    /// rule (b)). Shared by the dressing pass and <see cref="SiteGenerator"/> for
+    /// reserved squares — a site structure must respect the same clearance dressing does
+    /// (battlefield-overhaul design, issue #436 point 4), and both need the identical set
+    /// to agree with <see cref="GridConnectivity"/>'s own soundness argument, which
+    /// loads-bear on every reserved square carrying exactly this block — and reused
+    /// (S3, #436 fix round) for <c>Generate</c>'s <c>protectedSquares</c>, since design
+    /// §3 states the identical adjacency for a protected gap: "in or adjacent to".
+    /// </summary>
+    internal static HashSet<GridPosition> ClearedSquares(IReadOnlyCollection<GridPosition> reserved)
+    {
+        var cleared = new HashSet<GridPosition>(reserved);
+
+        foreach (var square in reserved)
+        {
+            foreach (var neighbour in square.Neighbours())
+            {
+                cleared.Add(neighbour);
+            }
+        }
+
+        return cleared;
+    }
+
     /// <summary>A simple axis-aligned rectangle of squares, inclusive of both ends.</summary>
-    private readonly record struct Region(int MinX, int MaxX, int MinY, int MaxY)
+    internal readonly record struct Region(int MinX, int MaxX, int MinY, int MaxY)
     {
         public int Width => MaxX - MinX + 1;
 
@@ -358,8 +414,13 @@ public static class TerrainGenerator
     /// <summary>
     /// The fight's contested ground, as one or more axis-aligned rectangles — the
     /// region dressing anchors are two-thirds biased toward (design §4.6, reused here
-    /// for dressing per issue #433's own acceptance criteria; §4.6 itself is written
-    /// for a later slice's site structures).
+    /// for dressing per issue #433's own acceptance criteria). From S3 on this is also
+    /// where <see cref="SiteGenerator"/> reads a site structure's placement band for
+    /// Columns and CornerGroups — the same rectangles, because for Columns the "middle
+    /// third" reading and for CornerGroups the "lanes span nearly the full height between
+    /// the columns" reading (this method's own remarks) are exactly what a structure's
+    /// centroid falling in contested ground (design §4.6) needs. Surrounded is not read
+    /// by any site: see <see cref="SiteGenerator.DrawSite"/> for why.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -404,7 +465,7 @@ public static class TerrainGenerator
     /// them) fall back to a single whole-board rectangle.
     /// </para>
     /// </remarks>
-    private static Region[] ContestedRegions(
+    internal static Region[] ContestedRegions(
         BattleLayout layout,
         IReadOnlyList<GridPosition> partyReserved,
         IReadOnlyList<GridPosition> monsterReserved,

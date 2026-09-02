@@ -201,7 +201,9 @@ rather than assuming it.
 
 The spawn-column band rule is **retired**. New eligibility: terrain may land anywhere
 on the board except (a) any spawn square, (b) any square adjacent to a spawn square,
-and (c) protected squares (carved gaps, fords). Rule (b) is a **new, stronger
+and (c) any protected square (carved gaps, fords) or any square adjacent to one — the
+same adjacency §3 states ("dressing may not land in or adjacent to a protected gap"),
+not membership alone. Rule (b) is a **new, stronger
 guarantee, not a restatement**: today's `InRegion` excludes only spawn *squares*, and
 QC measured ~26% of current boards (511 of 2,000 on the replica) with impassable
 terrain standing flush against a spawn. S1 genuinely tightens near-spawn placement —

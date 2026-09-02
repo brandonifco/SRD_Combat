@@ -73,6 +73,43 @@ public class TerrainGeneratorTests
     }
 
     [Fact]
+    public void DressingNeverStandsOnOrAdjacentToAProtectedSquare()
+    {
+        // Design §3: dressing "may not land in or adjacent to a protected gap" — the
+        // same 3x3 clearance the spawn rule (§5 rule (b)) states, which §5 rule (c) is
+        // aligned to read in the same fix round (issue #436). Membership alone left a
+        // crossing's ford exposed: unlike a wall's impassable-separated gap, a ford has
+        // no other guard against a footprint standing flush against or across its
+        // mouth, so this is pinned directly against a synthetic protected square rather
+        // than only swept indirectly through a real crossing draw.
+        var protectedSquares = new HashSet<GridPosition>
+        {
+            new(13, 8), new(14, 8), new(13, 9), new(14, 9),
+        };
+
+        for (var seed = 1; seed <= 300; seed++)
+        {
+            var field = TerrainGenerator.Generate(
+                28, 18, WidePartySpawns, WideMonsterSpawns, BattleLayout.Columns, new SeededRandomSource(seed),
+                protectedSquares: protectedSquares);
+
+            var dressed = field.Blocked.Concat(field.LowObstacles).Concat(field.DifficultTerrain).ToHashSet();
+
+            foreach (var square in protectedSquares)
+            {
+                Assert.DoesNotContain(square, dressed);
+
+                foreach (var neighbour in square.Neighbours())
+                {
+                    Assert.False(
+                        dressed.Contains(neighbour),
+                        $"Seed {seed}: dressing stood at {neighbour}, adjacent to protected square {square}.");
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void TerrainCanNowLandInTheFlankingMargins()
     {
         // The whole-board eligibility change's own point: the old rule confined terrain
