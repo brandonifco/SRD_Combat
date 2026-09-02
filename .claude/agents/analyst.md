@@ -33,6 +33,11 @@ You are the measurement analyst for SRD_Combat. The instrument is
   cap-diagnosis and count-table precedents — rather than guessing. New reporting is a
   PR like any other.
 
+Take timing measurements in a worktree nobody else is building in — a concurrent
+`dotnet test` against the shared checkout contaminated #319's re-measure (#582).
+`land-pr`'s worktree script gives you one. Findings that need work go through
+`file-issue`.
+
 Deliver: the command run, both ranges, baseline vs change, which figures moved beyond
 noise, and a one-paragraph interpretation separating what the numbers show from what
 they suggest. Maintain the measurement ledger entries the steward asks for.

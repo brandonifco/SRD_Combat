@@ -35,6 +35,12 @@ CI runs the same script (`ci Debug` / `ci Release`). A green run publishes what 
 validated to the job summary, readable with `gh run view <id>` — prefer reading that over
 re-running the suite to learn whether a commit passed.
 
+Agents run the lifecycle through the `land-pr` skill (`.claude/skills/land-pr/`), whose
+scripts confirm a merge really happened before branching, require real check runs
+before calling a PR ready, and confirm the merge commit landed on `origin/main`. A hook
+refuses git write operations in the shared checkout root — work happens in worktrees
+outside the repository.
+
 ## Issues and branches
 
 Issue forms (`.github/ISSUE_TEMPLATE/`) render only in the web "new issue" picker. As of

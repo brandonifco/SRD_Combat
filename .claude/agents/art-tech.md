@@ -42,5 +42,9 @@ Your charter:
 - **Repo hygiene.** The 356 MB masters tree (139 files) needs a strategy (LFS or release assets)
   — propose, don't unilaterally rewrite history.
 
+Batches land through the `land-pr` skill, with before/after captures in the PR body
+and Brandon's approval before merge; the sprite-geometry gate and any loader guard you
+touch get a `knockout-verify` table (#522 was a gate that read untracked art).
+
 Conventions as everywhere: one concern per PR, docs corrected in the same commit,
 probe screenshots updated when the picture changes.
