@@ -10,10 +10,12 @@ hand after touching ``_shipped_folder_for``/``_shipped_folders_from_sprite_libra
 
 Knockout check performed by hand for #514's fix: reverting
 ``_shipped_folder_for`` to match on folder value alone (the pre-#514 shape)
-turns ``test_known_mismatches_now_report_shipped`` red — ``goblin_warrior``
-and ``scout`` come back "unshipped" — while every other test here still
-passes, confirming the test actually exercises the fixed code path rather
-than passing vacuously.
+turns five tests red — ``test_goblin_warrior_reports_shipped``,
+``test_scout_reports_shipped``, ``test_name_folder_mismatch_resolves_by_name``,
+and the ``goblin_warrior`` and ``scout`` subtests of the whole-roster pin
+(``test_full_masters_directory_ship_status_matches_known_baseline``) — as both
+masters come back "unshipped", confirming these tests exercise the fixed code
+path rather than passing vacuously.
 """
 
 from __future__ import annotations
