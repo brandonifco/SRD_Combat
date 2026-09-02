@@ -377,16 +377,61 @@ public class SpellContentTests
     }.Select(id => new object[] { id });
 
     /// <summary>
-    /// Census regression for every multi-component spell in the corpus (#375): the
-    /// fourteen spells that genuinely print more than one damage component — three
-    /// simultaneous "and"s the fix must be structurally unable to touch (Flame Strike,
-    /// Ice Storm, Meteor Swarm), eight flattened multi-event "and"s that are a
+    /// Census regression for every multi-component spell in the corpus (#375, #391):
+    /// the fourteen spells that genuinely print more than one damage component — three
+    /// simultaneous "and"s the #375 fix must be structurally unable to touch (Flame
+    /// Strike, Ice Storm, Meteor Swarm), eight flattened multi-event "and"s that are a
     /// separate, already-stated limitation (Acid Arrow, Ice Knife, Tsunami, Vitriolic
     /// Sphere, Wall of Ice, Wall of Thorns, Weird, Storm of Vengeance), and three
-    /// unrelated or-shapes out of scope for this fix (Fire Shield, Prismatic Spray,
-    /// Prismatic Wall) — plus Spirit Guardians itself, now down to one component. Exact
-    /// dice, type and count, not floors: any of the fourteen moving is the fix leaking
-    /// past its scope.
+    /// or-/roll-table shapes whose summed data is a deliberate, documented
+    /// non-representation (Fire Shield, Prismatic Spray, Prismatic Wall; the reading is
+    /// below) — plus Spirit Guardians itself, now down to one component. Exact dice,
+    /// type and count, not floors: any of the fourteen moving is a fix leaking past its
+    /// scope.
+    ///
+    /// The reading for the three or-/roll-table shapes (#391), print verified against
+    /// SRD 5.2.1:
+    ///
+    /// Fire Shield (p. 132, L4 Evocation) is one cast-time choice — a warm shield
+    /// (Resistance to Cold; a melee attacker takes 2d8 Fire) OR a chill shield
+    /// (Resistance to Fire; the attacker takes 2d8 Cold), "as you choose," fixed for the
+    /// duration. No creature ever takes both. The data sums both branches
+    /// (2d8 Fire + 2d8 Cold); its mechanics is Unmodelled (the reactive melee-eruption
+    /// is not executed) and both branches are preserved verbatim in
+    /// UnclassifiedClauses, so the branch a single cast drops is already counted, not
+    /// lost.
+    ///
+    /// Prismatic Spray (p. 154, L7) and Prismatic Wall (p. 155, L9) select ONE outcome
+    /// PER TARGET by a 1d8 roll on the Prismatic Rays / Prismatic Layers table: five of
+    /// the seven rays deal 12d6 of five different types (Fire/Acid/Lightning/Poison/
+    /// Cold), rays 6-7 are condition-only (carried as UnmodelledRequirement on the
+    /// save's applied conditions), and a roll of 8 strikes with two rays (reroll 8s). A
+    /// single affected target takes 12d6 of one type (24d6 at most, on an 8) — never the
+    /// summed 5x12d6 = 60d6 the data records in both Damage and Save.FailureDamage, a
+    /// number that describes no printed outcome.
+    ///
+    /// Why the summed data stands rather than a curated single branch or a new shape:
+    /// all three are dead data. None is on PreparableSpells (the sole castable
+    /// authority — CLAUDE.md's stated spell exception), and at L4/L7/L9 none is
+    /// reachable by a level 1-5 party or by any castable consumer, so nothing lies at
+    /// the point of play. A faithful model needs a per-target d8 roll-table selector
+    /// (Prismatic) or a cast-time-choice selector (Fire Shield) — a new Core shape the
+    /// project will not grow for spells no castable consumer can reach; that shape, if a
+    /// future castable consumer ever demands it, is architect territory triggered then,
+    /// not by these three. A curated single branch was rejected: for the uniform
+    /// Prismatic roll-table no ray is "default," so asserting one (e.g. 12d6 Fire) would
+    /// fabricate a favored type and silently drop the four other damage rows into
+    /// nothing. The transparent-but-wrong sum, pinned here with its reasoning, is the
+    /// honest disposition for inert data.
+    ///
+    /// Residual risk, documented not hidden: the Prismatic pair carry
+    /// mechanics = SavingThrow with the 60d6 sum, so were either ever added to a
+    /// castable menu WITHOUT first correcting this data, the engine would resolve a
+    /// 60d6 save-for-half that appears in no printed rule (Fire Shield's Unmodelled
+    /// mechanics is refused instead, and is safe). The last-line guard is
+    /// PreparableSpells curation. This census test is the tripwire the other way: the
+    /// moment anyone corrects the damage toward a real castable value, this test goes
+    /// red and forces the roll-table / cast-time-choice decision at that point.
     /// </summary>
     [Theory]
     [MemberData(nameof(MultiComponentSpellIds))]
