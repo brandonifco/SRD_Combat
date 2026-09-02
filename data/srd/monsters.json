@@ -41153,7 +41153,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 90
           },
           "usage": {
             "kind": "Recharge",
@@ -41166,7 +41167,7 @@
             }
           ],
           "unmodelledClauses": [
-            "The ape hurls a boulder at a point it can see within 90 feet",
+            "The ape hurls a boulder at a point it can see",
             "each creature in a",
             "centered on that point",
             "only"

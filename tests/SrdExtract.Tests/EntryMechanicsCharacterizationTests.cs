@@ -1330,6 +1330,77 @@ public sealed class EntryMechanicsCharacterizationTests
             entry.UnmodelledClauses);
     }
 
+    [Fact]
+    public void ABoulderTossesPreambleRangeStructuresOntoRangeFeetDespiteSittingAheadOfTheHeader()
+    {
+        // Giant Ape's Boulder Toss, verbatim (p.349, #422). Both of ReadRange's
+        // existing word orders sit after the save header; this one prints "within
+        // 90 feet" in the entry's own preamble sentence, a whole clause ahead of
+        // "Dexterity Saving Throw", because the Sphere that follows the header
+        // refers back to that point ("centered on that point") rather than naming
+        // a fresh one ("centered on a point ... within N feet") the way every other
+        // corpus Sphere does. ReadRange now recognises that back-reference and
+        // scans the preamble for the range instead, claiming "within 90 feet"
+        // there and leaving the hurl/sight clause that surrounds it — and the
+        // Sphere's own still-open residue (#420) — exactly as unclaimed as before.
+        var entry = EntryMechanicsParser.Classify(
+            "Boulder Toss",
+            MonsterEntrySection.Action,
+            "The ape hurls a boulder at a point it can see within 90 feet. Dexterity Saving " +
+            "Throw: DC 17, each creature in a 5-foot-radius Sphere centered on that point. " +
+            "Failure: 24 (7d6) Bludgeoning damage. If the target is a Large or smaller " +
+            "creature, it has the Prone condition. Success: Half damage only.");
+
+        Assert.Equal(AreaShape.Sphere, entry.Save!.Area!.Shape);
+        Assert.Equal(5, entry.Save.Area.SizeFeet);
+        Assert.Equal(90, entry.Save.RangeFeet);
+        Assert.Equal(
+            [
+                "The ape hurls a boulder at a point it can see",
+                "each creature in a",
+                "centered on that point",
+                "only",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ADestinationSpaceAheadOfTheHeaderIsNotMistakenForABackReferencedPoint()
+    {
+        // Bulette's Deadly Leap, verbatim. Its preamble also prints a "within N
+        // feet" ahead of the header — "jump to a space within 15 feet that
+        // contains ..." — but that distance is the bulette's own leap, not a
+        // range the save's target clause ever measures from: the clause after the
+        // header is "each creature in the bulette's destination space", which
+        // matches neither ReadRange's single-target nor point-aimed-Sphere gate
+        // (and certainly not Boulder Toss's literal "centered on that point"
+        // back-reference), so RangeFeet must stay null. This pins the boundary
+        // #422's fix draws: gating the preamble scan on the literal
+        // back-reference, not on "any preamble text containing within N feet",
+        // is what keeps this entry's leap distance from being claimed as the
+        // save's own range — see ReadRange's remarks for the full accounting of
+        // why a broader scan was rejected.
+        var entry = EntryMechanicsParser.Classify(
+            "Deadly Leap",
+            MonsterEntrySection.Action,
+            "The bulette spends 5 feet of movement to jump to a space within 15 feet that " +
+            "contains one or more Large or smaller creatures. Dexterity Saving Throw: DC 15, " +
+            "each creature in the bulette's destination space. Failure: 19 (3d12) Bludgeoning " +
+            "damage, and the target has the Prone condition. Success: Half damage, and the " +
+            "target is pushed 5 feet straight away from the bulette.");
+
+        Assert.Null(entry.Save!.RangeFeet);
+        Assert.Equal(
+            [
+                "The bulette spends 5 feet of movement to jump to a space within 15 feet that " +
+                    "contains one or more Large or smaller creatures",
+                "each creature in the bulette's destination space",
+                "and the target has the Prone condition",
+                "and the target is pushed 5 feet straight away from the bulette",
+            ],
+            entry.UnmodelledClauses);
+    }
+
     #endregion
 
     #region Accounting
