@@ -709,19 +709,23 @@ internal static partial class EntryMechanicsParser
     /// <para>
     /// <b>A point-aimed area's range is only claimed once the area itself
     /// structured.</b> qc's review of this PR (#421) caught a live instance of the
-    /// same shape: <c>AreaPattern</c> has no "-radius" branch (#420), so every
+    /// same shape: <c>AreaPattern</c> had no "-radius" branch until #420, so every
     /// printed "N-foot-radius Sphere" — the Gibbering Mouther's Blinding Spittle
-    /// included — parses to a <c>null</c> <see cref="EffectArea"/>, and
+    /// included — parsed to a <c>null</c> <see cref="EffectArea"/>, and
     /// <c>UseSaveEntry</c>'s <c>save.Area is null &amp;&amp; target is null</c>
-    /// branch then runs the entry as a single target instead of hitting everyone in
+    /// branch then ran the entry as a single target instead of hitting everyone in
     /// the sphere. Pre-#386 that silent narrowing stayed honest by accident, because
     /// "within 30 feet" was the entry's last unclaimed span; this method would have
     /// claimed it too and erased the only surviving signal. So the
     /// <paramref name="area"/> this method receives — the very value <c>ParseArea</c>
-    /// produced for this same entry, computed once by the caller — gates the
-    /// point-aimed-Sphere branch: no structured area, no range claim, and the whole
-    /// "within N feet" stays residue until #420 lands separately. The single-target
-    /// branch is unaffected — a lone target never had an area to lose.
+    /// produced for this same entry, computed once by the caller — still gates the
+    /// point-aimed-Sphere branch, but now that #420 gives every printed
+    /// "N-foot-radius Sphere" a structured area, the gate opens for all 9 corpus
+    /// entries: the range claim runs, "within N feet" is read into
+    /// <c>RangeFeet</c> instead of staying residue, and <c>UseSaveEntry</c> resolves
+    /// the entry as the area effect it is printed as rather than a single target.
+    /// The single-target branch is unaffected — a lone target never had an area to
+    /// lose.
     /// </para>
     /// <para>
     /// <b>The claim is exactly "within N feet", never the words around it.</b> Sight
@@ -761,10 +765,11 @@ internal static partial class EntryMechanicsParser
 
         // See this method's own remarks: a point-aimed area's range is only honest to
         // claim once ParseArea actually structured that area. Every corpus Sphere is
-        // printed "N-foot-radius", which AreaPattern cannot read yet (#420), so this
-        // stays false for all of them today — the whole "within N feet" clause is
-        // left as residue rather than half-claimed into a range the engine would
-        // then enforce against a single target that was never the printed shape.
+        // printed "N-foot-radius", which AreaPattern now reads (#420) — this branch
+        // stays as a guard against any future shape ParseArea still cannot structure,
+        // so a "within N feet" clause is never half-claimed into a range the engine
+        // would then enforce against a single target that was never the printed
+        // shape.
         if (isPointAimedSphere && area is null)
         {
             return null;
@@ -782,7 +787,10 @@ internal static partial class EntryMechanicsParser
         return int.Parse(match.Groups["range"].Value, CultureInfo.InvariantCulture);
     }
 
-    /// <summary>Parses "30-foot Cone", "30-foot-long, 5-foot-wide Line", "5-foot Emanation".</summary>
+    /// <summary>
+    /// Parses "30-foot Cone", "30-foot-long, 5-foot-wide Line", "5-foot Emanation",
+    /// "10-foot-radius Sphere" (#420).
+    /// </summary>
     private static EffectArea? ParseArea(string text, EntryCoverage coverage)
     {
         var match = AreaPattern().Match(text);
@@ -1569,7 +1577,11 @@ internal static partial class EntryMechanicsParser
     [GeneratedRegex(@"\bwithin\s+(?<range>\d+)\s+feet\b")]
     private static partial Regex SaveRangePattern();
 
-    [GeneratedRegex(@"(?<size>\d+)-foot(?:-long,?\s*(?<width>\d+)-foot-?\s?wide)?\s+(?<shape>Cone|Line|Emanation|Cube|Sphere|Cylinder)")]
+    // "30-foot Cone", "30-foot-long, 5-foot-wide Line", "5-foot Emanation",
+    // "10-foot-radius Sphere" (#420) — the optional "-radius" token mirrors
+    // SpellEffectParser.AreaPattern's own branch for the same printed shape, since a
+    // stat block's Sphere is worded identically to a spell's.
+    [GeneratedRegex(@"(?<size>\d+)-foot(?:-radius)?(?:-long,?\s*(?<width>\d+)-foot-?\s?wide)?\s+(?<shape>Cone|Line|Emanation|Cube|Sphere|Cylinder)")]
     private static partial Regex AreaPattern();
 
     [GeneratedRegex(@"(?<average>\d+)\s*(?:\((?<dice>\d+d\d+(?:\s*[+-]\s*\d+)?)\))?\s*(?<type>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)\s+damage")]

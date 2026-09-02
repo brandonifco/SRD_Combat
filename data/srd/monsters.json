@@ -6108,6 +6108,10 @@
           "save": {
             "ability": "Constitution",
             "difficultyClass": 17,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 20
+            },
             "failureDamage": [
               {
                 "amount": "3d6",
@@ -6131,7 +6135,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 90
           },
           "appliedConditions": [
             {
@@ -6148,7 +6153,7 @@
             }
           ],
           "unmodelledClauses": [
-            "the dragon can see within 90 feet",
+            "the dragon can see",
             "and the target has the Deafened condition until the end of its next turn"
           ]
         }
@@ -6395,6 +6400,10 @@
           "save": {
             "ability": "Constitution",
             "difficultyClass": 22,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 20
+            },
             "failureDamage": [
               {
                 "amount": "3d8",
@@ -6418,7 +6427,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 120
           },
           "appliedConditions": [
             {
@@ -6435,7 +6445,7 @@
             }
           ],
           "unmodelledClauses": [
-            "the dragon can see within 120 feet",
+            "the dragon can see",
             "and the target has the Deafened condition until the end of its next turn"
           ]
         }
@@ -13929,6 +13939,10 @@
           "save": {
             "ability": "Dexterity",
             "difficultyClass": 10,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 10
+            },
             "failureDamage": [
               {
                 "amount": "2d6",
@@ -13952,7 +13966,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 30
           },
           "usage": {
             "kind": "Recharge",
@@ -13972,9 +13987,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "within 30 feet"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 288
@@ -16540,6 +16553,10 @@
           "save": {
             "ability": "Constitution",
             "difficultyClass": 17,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 20
+            },
             "failureDamage": [
               {
                 "amount": "2d6",
@@ -16550,11 +16567,12 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 90
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see within 90 feet",
+            "the dragon can see",
             "and the target takes a -2 penalty to AC until the end of its next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -16771,6 +16789,10 @@
           "save": {
             "ability": "Constitution",
             "difficultyClass": 21,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 30
+            },
             "failureDamage": [
               {
                 "amount": "5d6",
@@ -16781,11 +16803,12 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 90
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see within 90 feet",
+            "the dragon can see",
             "and the target takes a -2 penalty to AC until the end of its next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -26221,6 +26244,10 @@
           "save": {
             "ability": "Dexterity",
             "difficultyClass": 20,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 20
+            },
             "failureDamage": [
               {
                 "amount": "7d6",
@@ -26231,11 +26258,13 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 120
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "each enemy in a 20-foot-radius Sphere centered on a point the planetar can see within 120 feet"
+            "each enemy in a",
+            "centered on a point the planetar can see"
           ]
         },
         {
@@ -37176,6 +37205,10 @@
           "save": {
             "ability": "Constitution",
             "difficultyClass": 14,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 30
+            },
             "failureDamage": [
               {
                 "amount": "2d6",
@@ -37186,11 +37219,12 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 120
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see within 120 feet",
+            "the dragon can see",
             "and the target's Speed is 0 until the end of the target's next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -37398,6 +37432,10 @@
           "save": {
             "ability": "Constitution",
             "difficultyClass": 20,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 30
+            },
             "failureDamage": [
               {
                 "amount": "4d6",
@@ -37408,11 +37446,12 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "rangeFeet": 120
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see within 120 feet",
+            "the dragon can see",
             "and the target's Speed is 0 until the end of the target's next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -41095,6 +41134,10 @@
           "save": {
             "ability": "Dexterity",
             "difficultyClass": 17,
+            "area": {
+              "shape": "Sphere",
+              "sizeFeet": 5
+            },
             "failureDamage": [
               {
                 "amount": "7d6",
@@ -41124,7 +41167,8 @@
           ],
           "unmodelledClauses": [
             "The ape hurls a boulder at a point it can see within 90 feet",
-            "each creature in a 5-foot-radius Sphere centered on that point",
+            "each creature in a",
+            "centered on that point",
             "only"
           ]
         },

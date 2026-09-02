@@ -1251,22 +1251,18 @@ public sealed class EntryMechanicsCharacterizationTests
     }
 
     [Fact]
-    public void APointAimedSpheresRangeStaysResidueUntilItsAreaDoes()
+    public void APointAimedSpheresPrintedRangeStructuresOntoRangeFeet()
     {
-        // Adult Green Dragon's Noxious Miasma, verbatim. A point-aimed Sphere's range
-        // is only honest to claim once ParseArea actually structures the Sphere
-        // itself — AreaPattern's own literal expects "N-foot Cone"/"N-foot-long...
-        // wide Line" immediately followed by the shape name, and every Sphere in the
-        // corpus instead prints "N-foot-radius Sphere", so Area comes back null for
-        // every Sphere entry today (confirmed against all 9 in the corpus,
-        // pre-existing and unrelated to #386 — filed as #420 rather than folded in
-        // here). qc's review of #421 caught the live consequence of claiming the
-        // range anyway: UseSaveEntry's save.Area is null && target is null branch
-        // would then run a Sphere entry as a single target, silently discarding
-        // "each creature in" — so ReadRange now gates its point-aimed-Sphere branch
-        // on the same ParseArea result this entry's own Area field uses, and until
-        // #420 lands, the whole "within N feet" stays folded into the sight
-        // qualifier's residue, exactly as it did before this PR.
+        // Adult Green Dragon's Noxious Miasma, verbatim (p.294). A point-aimed
+        // Sphere's range is only honest to claim once ParseArea actually structures
+        // the Sphere itself. AreaPattern now reads "N-foot-radius Sphere" (#420, the
+        // same "-radius" branch SpellEffectParser's own AreaPattern already carried),
+        // so Area structures for every one of the corpus's 9 radius-Sphere entries,
+        // and ReadRange's point-aimed-Sphere gate — added by #386/#421 specifically
+        // to avoid claiming a range without a structured area (see ReadRange's own
+        // remarks) — now opens: "within 90 feet" claims onto RangeFeet exactly as
+        // the Mummy's single-target "within 60 feet" does above, leaving only the
+        // sight qualifier ("the dragon can see") as residue.
         var entry = EntryMechanicsParser.Classify(
             "Noxious Miasma",
             MonsterEntrySection.LegendaryAction,
@@ -1276,11 +1272,13 @@ public sealed class EntryMechanicsCharacterizationTests
             "Failure or Success: The dragon can't take this action again until the start of its " +
             "next turn.");
 
-        Assert.Null(entry.Save!.Area);
-        Assert.Null(entry.Save.RangeFeet);
+        Assert.Equal(AreaShape.Sphere, entry.Save!.Area!.Shape);
+        Assert.Equal(20, entry.Save.Area.SizeFeet);
+        Assert.Null(entry.Save.Area.WidthFeet);
+        Assert.Equal(90, entry.Save.RangeFeet);
         Assert.Equal(
             [
-                "the dragon can see within 90 feet",
+                "the dragon can see",
                 "and the target takes a -2 penalty to AC until the end of its next turn",
                 "Failure or Success: The dragon can't take this action again until the start of its next turn",
             ],

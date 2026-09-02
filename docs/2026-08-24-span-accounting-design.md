@@ -606,13 +606,27 @@ awaiting a fix.
 > Toss prints its range in the entry's own preamble, ahead of the save header entirely
 > — filed as #422 alongside #420.
 
+> **Update (2026-09-02):** #420 landed: `AreaPattern` gained the `-radius` branch
+> (mirroring `SpellEffectParser.AreaPattern`'s own, which already had it), so every
+> corpus `"N-foot-radius Sphere"` now structures onto `SaveEffect.Area`. `ReadRange`'s
+> gate — added specifically to avoid claiming a Sphere's distance without its area —
+> now opens for all 9 corpus radius-Sphere entries: row 5's distance claims for the
+> six with a sight qualifier (`the dragon can see within N feet` splits into unclaimed
+> sight plus claimed `save.range`), and Gibbering Mouther's Blinding Spittle (no sight
+> qualifier) reaches zero residue outright. Two entries — Planetar's Holy Burst
+> ("enemy" not "creature") and Giant Ape's Boulder Toss ("that point" not "a point")
+> — never matched row 4's own target-clause literal either, so their residue splits
+> around the newly-claimed area span instead of losing a claim; no monster's pool
+> grade moved (`MonsterPoolTests`, verified green). #422 (Boulder Toss's preamble
+> range) is untouched and stays open.
+
 | Printed shape | Count | Claim? |
 | --- | --- | --- |
 | `each creature in a <N>-foot Cone` | 47 | **yes** — self-originating area the engine builds |
 | `each creature in a <N>-foot-long, <N>-foot-wide Line` | 24 | **yes** |
 | `each creature in a <N>-foot Emanation originating from the <creature>` | ~7 | **yes** |
 | `each creature in a <N>-foot-radius Sphere centered on a point` | 6 | **yes**, to `point` — the caller supplies the aim |
-| …that same Sphere's ` the <creature> can see within <N> feet` | 6 | **no** — sight and distance, gated on the Sphere's own radius parsing (it doesn't, #420) |
+| …that same Sphere's ` the <creature> can see within <N> feet` | 6 | sight **no**, distance **yes** as its own `save.range` span (#420, 2026-09-02) |
 | `one creature` (head of every single-target selector) | ~39 | **yes** |
 | …its ` the <creature> can see` qualifier | ~39 | **no** — sight (permanent, no sight model) |
 | …its ` within <N> feet` qualifier, where printed | most of ~39 | **yes**, as its own `save.range` span (#386) |
@@ -988,6 +1002,11 @@ check the run against, not predictions):
     > it does not yet (#420), so they remain exactly the residue population this
     > bullet originally counted.
 
+    > **Update (2026-09-02):** #420 closed the gate: `ParseArea` now structures every
+    > corpus Sphere, so the 6 Sphere qualifiers this bullet counted are claimed the
+    > same way the ~39 single-target ones were by #421 — sight stays residue, distance
+    > claims onto `save.range`. No pool grade moved (`MonsterPoolTests`, verified).
+
 Grade demotions are the mechanism: an Action-section entry gaining residue takes its
 monster from `Playable` to `Diminished`, which removes it from the pool. Expect the pool
 to thin materially. That is the accepted consequence, recorded by Brandon on 2026-08-24,
@@ -1049,6 +1068,12 @@ answer.
   > deliberately on #420 (`AreaPattern`'s missing "-radius" branch) rather than left
   > open by omission — see §7.6's own 2026-08-25 update for the reasoning qc's review
   > of #421 surfaced.
+
+  > **Update (2026-09-02):** #420 closed the gate for the point-aimed Sphere too —
+  > `AreaPattern` now reads `"N-foot-radius Sphere"`, so this non-goal is fully closed:
+  > a Sphere save now refuses beyond its printed range exactly as a single-target save
+  > already did. `UseSaveEntry` needed no change of its own — it already gated on
+  > `SaveEffect.Area`/`RangeFeet` generically; only the extraction half was missing.
 
 - **Grammar/AST parsing.** Declined at adjudication and not revisited here. The one thing
   that would reopen it is span-consuming regexes fighting the structure — the honest place
