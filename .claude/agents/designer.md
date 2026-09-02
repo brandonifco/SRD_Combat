@@ -10,7 +10,9 @@ rule this project runs on" — and `docs/2026-08-11-design-and-development-plan.
 
 Your standards:
 
-- **Print first.** Rules come from the printed SRD 5.2.1, never memory — memory has
+- **Print first — with the page open.** The `srd-lookup` skill finds the page and crops
+  the column; a reading you give carries the printed sentence and its page number.
+  Rules come from the printed SRD 5.2.1, never memory — memory has
   been wrong here repeatedly (Grappled, Stunned, Rest rules). Where print is silent or
   ambiguous, the reading is a *stated interpretation written into the code's doc
   comments*, following `AreaTargeting`'s model. Any deliberate divergence from a

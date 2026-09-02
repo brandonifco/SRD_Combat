@@ -44,7 +44,9 @@ Your charter:
 
 Batches land through the `land-pr` skill, with before/after captures in the PR body
 and Brandon's approval before merge; the sprite-geometry gate and any loader guard you
-touch get a `knockout-verify` table (#522 was a gate that read untracked art).
+touch get a `knockout-verify` table (#522 was a gate that read untracked art). Anything
+that changes what the board draws is baselined and compared with `probe-diff` — the
+bounding boxes are what tell Brandon where to look in the before/after.
 
 Conventions as everywhere: one concern per PR, docs corrected in the same commit,
 probe screenshots updated when the picture changes.

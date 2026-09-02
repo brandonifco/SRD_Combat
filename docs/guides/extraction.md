@@ -15,6 +15,10 @@ The source PDF is `~/Downloads/SRD_CC_v5.2.1.pdf` (364 pages), not in the repo.
 (`pdftotext ~/Downloads/SRD_CC_v5.2.1.pdf reference/SRD_raw.txt`; pages are
 two-column — crop per column with `-x/-W` when eyeballing, the page is 594pt wide).
 
+For eyeballing a page by column, the `srd-lookup` skill's `srd-page.sh` does the crop;
+for re-running the pipeline and reviewing the residue diff, the `regenerate-content`
+skill is the procedure.
+
 The real pipeline is PdfPig with per-word coordinates and fonts:
 
 ```bash

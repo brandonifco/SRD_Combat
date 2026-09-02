@@ -19,10 +19,10 @@
 # Usage: scripts/probe-diff.sh <dirA> <dirB>
 #
 # Needs a reachable X display and Godot's x11 driver — a headless run cannot produce a
-# frame to capture. On this machine, 2026-08-26, DISPLAY=:0 works; CLAUDE.md's
-# Environment section still names :1, which was not reachable here (ask Brandon before
-# changing that claim on one machine's evidence). Exit 0 when both runs' output
-# directories are identical, non-zero and the differing files named otherwise.
+# frame to capture. Which display is up moves (:0 on 2026-08-26/27, :1 on 2026-09-02),
+# so set DISPLAY from .claude/skills/probe-diff/scripts/find-display.sh rather than by
+# hand. Exit 0 when both runs' output directories are identical, non-zero and the
+# differing files named otherwise.
 
 set -uo pipefail
 

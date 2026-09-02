@@ -406,8 +406,9 @@ slices, twice each. S0 should decide whether to shorten it; it is not a reason t
 document today:**
 
 - The probe needs `--display-driver x11` and a reachable `DISPLAY`. **`:1`, as named in
-  CLAUDE.md's Environment section, was not reachable on this machine tonight; `:0` was.**
-  Worth asking Brandon rather than editing the claim on one night's evidence.
+  CLAUDE.md's Environment section at the time, was not reachable on this machine tonight;
+  `:0` was.** (Resolved 2026-09-02: the live display moves between the two, so CLAUDE.md
+  no longer names one — the `probe-diff` skill's `find-display.sh` detects it.)
 - **Two of the probe's captures are never produced, and the probe does not say so.**
   `play-5-feature.png` is skipped when the commanded character has no feature button;
   `play-8-cast.png` is skipped when `_spellRows` is empty. Neither skip is reported —
@@ -608,7 +609,9 @@ a command rather than a promise.
   compared for completeness and not only for pixels.
 - Documents the `--display-driver x11` requirement and the run time found in §5.1, and
   corrects CLAUDE.md's `DISPLAY=:1` claim if it is stale on Brandon's machine (ask; do not
-  assume).
+  assume). *Done 2026-09-02, the other way round: the claim was retired rather than
+  corrected, because the display moves; `find-display.sh` in the `probe-diff` skill
+  replaces it.*
 
 **Safe without client tests: yes.** It adds observations and changes no behaviour.
 

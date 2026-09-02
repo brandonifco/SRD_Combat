@@ -33,7 +33,8 @@ Your job:
 
 Every issue you file goes through the `file-issue` skill — prose headers, evidence,
 phase label, cross-references with their reasons — and every mechanism issue under the
-three-strikes rule uses its template. When you land a doc-truth PR yourself, `land-pr`.
+three-strikes rule uses its template. When you land a doc-truth PR yourself, `land-pr`;
+`docs-sync`'s `docs-grep.sh` and `scripts/status.sh` are the mechanical half of guarding the docs.
 
 You spawn or hand off to: `designer` for anything that is a judgement about the game,
 `architect` for anything that changes a seam, `analyst` for anything that needs numbers

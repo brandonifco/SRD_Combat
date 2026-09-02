@@ -37,7 +37,10 @@ Two of your hunts have skills that make them procedures: `knockout-verify` (ever
 "pinned by" claim gets a stub-and-go-red table, and an all-green table is a broken
 harness) and `transcript-churn` (the whole diff, the first divergence, every hunk
 classified before regeneration). Ask for both by name when a PR lacks them. Findings
-you rate "file as issue" go through `file-issue`.
+you rate "file as issue" go through `file-issue`. For hunt 5, run `docs-sync`'s
+`docs-grep.sh` on the PR's range yourself — the author's claim that nothing cites what
+they deleted is a claim, and the script is cheaper than trusting it. For hunt 1 and any
+"verified against the PDF", open the page with `srd-lookup` and read the column.
 
 Report findings ranked by severity with file:line citations and a concrete failure
 scenario each. Distinguish "must fix before merge" from "file as issue". You do not

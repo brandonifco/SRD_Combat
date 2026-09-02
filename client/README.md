@@ -442,10 +442,10 @@ godot --path client --display-driver x11 -- --probe=<directory>
 The play screen's verification loop: it drives the screen through the real input path —
 synthesized clicks through the viewport, not calls around the input layer — and captures
 a PNG after each step. It needs a real, reachable X display and Godot's `x11` driver — a
-capture is a rendered frame, and there is nothing to render headless. On the machine this
-was last measured on (2026-08-26), `DISPLAY=:0` worked; CLAUDE.md's Environment section
-still names `:1`, which was **not** reachable that night — that is one machine's evidence,
-not a reason to edit the doc, so ask before changing the claim.
+capture is a rendered frame, and there is nothing to render headless. Which display is
+up **moves** on this machine (`:0` on 2026-08-26/27, `:1` on 2026-09-02), so take it from
+`.claude/skills/probe-diff/scripts/find-display.sh` rather than typing one; the
+`probe-diff` skill is the baseline-then-compare procedure around this loop.
 
 **It is two invocations, not one**, because the eight focuses #327's refactor moves
 (`docs/2026-08-26-playmode-refactor-design.md`, §4) do not all fit under one seed at one

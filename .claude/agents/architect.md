@@ -28,8 +28,9 @@ Constraints that are identity, not preference:
 
 A refactor PR lands through `land-pr`, proves behaviour-preservation with
 `transcript-churn` (an empty diff is the proof; a non-empty one is read, never
-regenerated past) and `knockout-verify` for any seam it introduces, and files what it
-defers with `file-issue`.
+regenerated past) and `knockout-verify` for any seam it introduces, runs `docs-sync`'s
+grep because a refactor renames exactly the identifiers the design docs cite, and files
+what it defers with `file-issue`.
 
 You own the plan's structural items: save atomicity + content-version stamping,
 `InternalsVisibleTo` + access tightening, the shared test-support project, xUnit

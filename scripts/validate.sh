@@ -9,6 +9,11 @@
 #   ./scripts/validate.sh full    # the merge gate: fast + the whole suite
 #   ./scripts/validate.sh sdk-pin # the #428 drift check alone
 #
+# fast and full end with the docs-grep gate (#417): prose still citing what the diff
+# deleted is printed, loudly, and does not fail the run — a hit may be a justified
+# historical mention, and the rule is "fix or justify in the PR", which a script cannot
+# judge. It runs here so nobody has to remember it; CI skips it (no origin/main).
+#
 # CI calls `ci Debug` / `ci Release` so each matrix leg does its half.
 set -euo pipefail
 
@@ -35,6 +40,13 @@ sdk_pin() {
 
 build() { dotnet build "$SLN" --configuration "$1" --no-restore; }
 
+docs_grep() {
+  local script=.claude/skills/docs-sync/scripts/docs-grep.sh
+  [[ -f "$script" ]] || return 0
+  echo; echo "== docs-grep (#417): prose that cites what this diff deleted =="
+  bash "$script" || echo "== docs-grep: fix each hit, or justify it in the PR body =="
+}
+
 # Minimal console verbosity keeps a CI failure readable in a few lines rather than
 # thousands — the log is read by agents, and a wall of passing test names is noise.
 # The trx is written only so a failed run can be inspected in detail.
@@ -51,12 +63,12 @@ case "${1:-}" in
   sdk-pin) sdk_pin ;;
   fast)
     sdk_pin; dotnet restore "$SLN"
-    build Debug; build Release; git diff --check ;;
+    build Debug; build Release; git diff --check; docs_grep ;;
   full)
     sdk_pin; dotnet restore "$SLN"
     build Debug; test_suite Debug
     build Release; test_suite Release
-    git diff --check ;;
+    git diff --check; docs_grep ;;
   ci)
     case "${2:-}" in
       Debug|Release)
