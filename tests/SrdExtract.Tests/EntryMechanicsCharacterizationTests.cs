@@ -412,11 +412,12 @@ public sealed class EntryMechanicsCharacterizationTests
         // still isolates exactly its own word plus its bordering "and" — "Deafened and"
         // rather than "and Deafened" — proving the split reads the match's own group
         // positions rather than assuming which side an inexecutable name falls on. The
-        // other two residue lines are pre-existing and unrelated to this fix: the
-        // target clause's distance/count qualifier (design §7.6, claimed only up to
-        // "in a" before the area) and the stranded "only" off "Success: Half damage
-        // only." (#397, filed separately — save.success_half claims the label, not the
-        // trailing word).
+        // other residue line is pre-existing and unrelated to this fix: the target
+        // clause's distance/count qualifier (design §7.6, claimed only up to "in a"
+        // before the area). The trailing "only" off "Success: Half damage only." used
+        // to strand as its own residue line here too; #397 widened
+        // `save.success_half`'s claim to cover it, since the engine already skips
+        // every rider on a `HalfDamage` success without ever reading that word.
         var entry = EntryMechanicsParser.Classify(
             "Thunderous Bellow",
             MonsterEntrySection.Action,
@@ -438,7 +439,6 @@ public sealed class EntryMechanicsCharacterizationTests
             [
                 "each creature and each object that isn't being worn or carried in a",
                 "Deafened and",
-                "only",
             ],
             entry.UnmodelledClauses);
     }
@@ -1076,11 +1076,12 @@ public sealed class EntryMechanicsCharacterizationTests
         // taking it in full. The rider ("Speed decreases by 10 feet") and the side
         // clause itself are unexecuted mechanics and land in residue.
         //
-        // "only" is pinned as its own residue line, not folded into a broader
-        // assertion: `save.success_half` claims exactly the literal "Success: Half
-        // damage" (the label `ParseSave` reads), so the trailing " only." strands as
-        // an unclaimed word. That is a real, separate gap from #370 — filed
-        // separately — not this fixture's bug to paper over with a looser assertion.
+        // The trailing "only" used to strand as its own residue line here (filed as
+        // #397): `save.success_half` claimed exactly the literal "Success: Half
+        // damage", so " only." was left unclaimed even though it documents behaviour
+        // the engine already has — `Encounter.cs`'s rider application skips every
+        // rider on a `HalfDamage` success regardless of whether "only" was read.
+        // #397 widened the claim to cover it; it is absent from residue here now.
         var entry = EntryMechanicsParser.Classify(
             "Steam Breath",
             MonsterEntrySection.Action,
@@ -1093,7 +1094,6 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(
             [
                 "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
-                "only",
                 "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
             ],
             entry.UnmodelledClauses);

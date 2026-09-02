@@ -429,8 +429,7 @@
           ],
           "unmodelledClauses": [
             "one Medium or smaller creature in the elemental's space",
-            "and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition",
-            "only"
+            "and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition"
           ]
         }
       ],
@@ -17478,8 +17477,7 @@
             }
           ],
           "unmodelledClauses": [
-            "the naga can see",
-            "only"
+            "the naga can see"
           ]
         },
         {
@@ -20576,8 +20574,7 @@
           "unmodelledClauses": [
             "The kraken throws a Large or smaller creature Grappled by it to a space it can see within 60 feet of itself that isn't in the air",
             "the creature thrown and each creature in the destination space",
-            "and the target has the Prone condition",
-            "only"
+            "and the target has the Prone condition"
           ]
         },
         {
@@ -22934,7 +22931,6 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
-            "only",
             "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage"
           ]
         }
@@ -25141,8 +25137,7 @@
             }
           ],
           "unmodelledClauses": [
-            "each creature Grappled by the otyugh",
-            "only"
+            "each creature Grappled by the otyugh"
           ]
         }
       ],
@@ -30575,7 +30570,6 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "and the target is pushed up to 30 feet straight away from the dragon",
-            "only",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
         },
@@ -30844,7 +30838,6 @@
           "appliedConditions": [],
           "unmodelledClauses": [
             "and the target is pushed up to 30 feet straight away from the dragon",
-            "only",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
         },
@@ -33674,8 +33667,7 @@
           ],
           "unmodelledClauses": [
             "each creature and each object that isn't being worn or carried in a",
-            "Deafened and",
-            "only"
+            "Deafened and"
           ]
         },
         {
@@ -35844,8 +35836,7 @@
             "each creature in the elemental's space",
             "Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental's turns",
             "The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with Whelm",
-            "As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check",
-            "only"
+            "As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check"
           ]
         }
       ],
@@ -41168,8 +41159,7 @@
           "unmodelledClauses": [
             "The ape hurls a boulder at a point it can see within 90 feet",
             "each creature in a",
-            "centered on that point",
-            "only"
+            "centered on that point"
           ]
         },
         {
