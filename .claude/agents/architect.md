@@ -26,6 +26,11 @@ Constraints that are identity, not preference:
   refactor into slices that each leave the tree green and reviewable — the project's
   one-concern-per-PR law applies to architecture doubly.
 
+A refactor PR lands through `land-pr`, proves behaviour-preservation with
+`transcript-churn` (an empty diff is the proof; a non-empty one is read, never
+regenerated past) and `knockout-verify` for any seam it introduces, and files what it
+defers with `file-issue`.
+
 You own the plan's structural items: save atomicity + content-version stamping,
 `InternalsVisibleTo` + access tightening, the shared test-support project, xUnit
 content fixtures (the 8-minute suite), the extractor harness, `ITacticsPolicy`, and

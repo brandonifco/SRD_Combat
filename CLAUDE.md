@@ -39,7 +39,8 @@ board. File found-but-deferred work as an issue.
 | The gauntlet, economy, encounter building | [`docs/guides/engine.md`](docs/guides/engine.md) + [`docs/finishing-plan.md`](docs/finishing-plan.md) F3 |
 | `client/` (Godot) or `src/SRDCombat.Console` | [`client/README.md`](client/README.md). The clients hold no rules |
 | Art, sprites, `client/assets` | Brandon draws all art. The pipeline is mechanical-only and never touches colour |
-| `.github/`, CI, `scripts/`, repo settings, agent instruction files | [`docs/2026-08-29-github-workflow-audit.md`](docs/2026-08-29-github-workflow-audit.md) — **especially its "Considered and rejected" list**, which exists so the same optimizations are not re-proposed without new evidence |
+| `.claude/skills/`, `.claude/hooks/`, agent charters | The skill's own `SKILL.md` and the hook's header comment; then [The team](#the-team) below |
+| `.github/`, CI, `scripts/`, repo settings | [`docs/2026-08-29-github-workflow-audit.md`](docs/2026-08-29-github-workflow-audit.md) — **especially its "Considered and rejected" list**, which exists so the same optimizations are not re-proposed without new evidence |
 | Anything, before you commit | **"Standing conventions"** below |
 
 ### Repository map
@@ -154,6 +155,15 @@ bounded (architecture, statistics), **Sonnet** where it is well-specified execut
 | `analyst` | opus | PacingMeasure runs and interpretation, statistical discipline |
 | `engineer` | sonnet | Scoped implementation with written acceptance criteria |
 | `art-tech` | sonnet | The asset pipeline (mechanical-only — never colour), stature, shipping masters |
+
+**Procedures are skills** (2026-09-02), in [`.claude/skills/`](.claude/skills/): a charter
+says *who*, a skill says *how*. A skill's body loads only when it is invoked; what every
+session pays for is the one-sentence description in the listing, kept to that on purpose. `land-pr` is the branch → worktree → gate → PR → CI → merge
+lifecycle with a script for every step that has gone wrong before; `file-issue` is the
+prose-header issue convention and the three-strikes mechanism template;
+`knockout-verify` proves a test can go red; `transcript-churn` reads a fixture diff
+before anyone regenerates it. Invoke them by name rather than re-deriving the steps from
+this file.
 
 **Protocol.**
 
@@ -399,7 +409,20 @@ instrument for the question "did that change make agents cheaper", the way
   every search paid ~9x and could read a stale checkout as if it were `src/`. They were
   removed on 2026-08-29 and the directory is gitignored (searches honour it — measured 9
   hits → 1), but the ignore is a backstop, not the convention: a worktree created outside
-  the repo never lands in the working tree at all.
+  the repo never lands in the working tree at all. **Enforced since 2026-09-02**: after
+  four concurrent sessions collided in the checkout root on 2026-08-30 (#582), a
+  PreToolUse hook (`.claude/hooks/guard-primary-checkout.py`) refuses the plain forms of
+  any git command that would move the primary checkout's HEAD, a ref, its index or its
+  working tree, refuses any push naming `main` from anywhere, and refuses
+  `git worktree remove --force`. **The primary checkout lives on `main`, clean, and
+  moves only by fast-forward** — it is where every session loads its hooks, skills and
+  this file from, so a merge takes effect only once the primary is on it; the hook allows
+  exactly `git checkout main`, `git merge --ff-only origin/main` and `git pull --ff-only`
+  there while the tree is clean, and `land-pr`'s `merge.sh` does that fast-forward as its
+  last step. The skill's `worktree.sh` is the sanctioned way to start;
+  `SRD_COMBAT_ALLOW_PRIMARY_GIT=1` under `env` in `settings.local.json` is the human escape
+  hatch (session-wide, subagents included). The hook stops accidents, not evasion — its
+  header lists what gets past it.
 - **One narrowly-scoped branch per concern; branch → push → PR → wait for CI → stop.**
   Never push to `main`. **Merging is the agent's**, once CI is green — see "What stays
   human" in [The team](#the-team), which records Brandon's 2026-08-24 correction. This
@@ -411,7 +434,9 @@ instrument for the question "did that change make agents cheaper", the way
 - **File found-but-deferred work as a GitHub issue**, not in this file and not in
   chat.
 - **Gate before merge**: focused tests, then `./scripts/validate.sh full` — full suite,
-  Debug **and** Release at 0 warnings, `git diff --check`, in one command.
+  Debug **and** Release at 0 warnings, `git diff --check`, in one command. Any new test,
+  guard or instrument is knockout-verified (`knockout-verify` skill); a frozen-transcript
+  churn is read hunk by hunk before regeneration (`transcript-churn` skill).
 - **Pacing is measured at checkpoints, not per PR** (2026-08-28, Brandon's direction).
   An ordinary gameplay-affecting PR does **not** run the canonical seed ranges and does
   **not** quote PacingMeasure in its body — re-tuning after every adjustment cost more

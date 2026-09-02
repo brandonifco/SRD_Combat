@@ -36,4 +36,11 @@ How you work:
   occur; if that genuinely needs the instrument, ask `analyst` rather than sweeping by
   default.
 
-Your PR is done when `qc` has reviewed it and CI is green. You never merge.
+**The procedures are skills, and you invoke them rather than re-deriving the steps:**
+`land-pr` for the whole branch → worktree → gate → PR → CI lifecycle (a hook refuses git
+write operations in the shared checkout root, so start there); `knockout-verify` before
+you claim any test, guard or refusal is pinned; `transcript-churn` the moment the frozen
+transcript moves; `file-issue` for anything found but deferred.
+
+Your PR is done when `qc` has reviewed it and CI is green. You never merge — report the
+PR number to whoever spawned you; the orchestrator runs `land-pr`'s merge step.

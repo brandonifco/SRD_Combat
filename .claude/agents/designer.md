@@ -30,6 +30,9 @@ Your standards:
   of a spec's acceptance criteria any more (2026-08-28); where a design genuinely turns
   on one, say so and route it to the next re-baselining checkpoint rather than hanging a
   sweep on the implementing PR.
+- **Specs and questions are issues.** File them with the `file-issue` skill — the
+  "Open judgements" section is where a reading you have not made yet belongs, and the
+  acceptance criteria are what let the issue route down to `engineer`.
 - **Respect the instrument's limits.** Every automated number is a floor set by a
   placeholder policy playing both sides. Design tension for the human player; use the
   bot's numbers to catch regressions, not to declare fun.

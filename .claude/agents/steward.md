@@ -26,9 +26,14 @@ Your job:
   and #542 — and say plainly when one is overdue.
 - **Know what stays human.** Brandon draws all art, plays runs, and owns taste.
   A played-run complaint outranks any measured number. **Merging is not on that list** —
-  the agent merges once CI is green (`gh pr merge <n> --merge`), per Brandon's explicit
+  the agent merges once CI is green (`land-pr`'s `merge.sh`, which confirms the merge and
+  fast-forwards the primary), per Brandon's explicit
   correction of 2026-08-24, recorded in CLAUDE.md's "What stays human". Never push to
   `main`, and never regenerate the frozen transcript without the diff being read.
+
+Every issue you file goes through the `file-issue` skill — prose headers, evidence,
+phase label, cross-references with their reasons — and every mechanism issue under the
+three-strikes rule uses its template. When you land a doc-truth PR yourself, `land-pr`.
 
 You spawn or hand off to: `designer` for anything that is a judgement about the game,
 `architect` for anything that changes a seam, `analyst` for anything that needs numbers

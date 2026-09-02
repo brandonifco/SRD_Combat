@@ -11,7 +11,8 @@ the detail that only becomes actionable once you are in the code.
   narration byte-for-byte and has churned five times, each time catching a real
   gameplay change — twice catching shipped bugs no unit test found. **Read the diff
   before touching the fixture**; regenerate only once the new behaviour is intended
-  (un-skip `TranscriptWriter`, run, re-skip, review). It uses hand-authored
+  (un-skip `TranscriptWriter`, run, re-skip, review — the `transcript-churn` skill
+  scripts exactly that and shows the whole diff first). It uses hand-authored
   combatants on purpose, so it fails when the *engine* changes, not the content;
   `RealMonsterCombatTests` covers the other direction.
 - **All randomness goes through `IRandomSource`.** Never `Random.Shared` in `Core`.
