@@ -33,11 +33,11 @@ board. File found-but-deferred work as an issue.
 
 | If you are touching | Read first |
 | --- | --- |
-| `tools/SrdExtract`, `data/srd`, any parser | **"The rule this project runs on"** below, then [`docs/guides/extraction.md`](docs/guides/extraction.md) |
+| `tools/SrdExtract`, `data/srd`, any parser | **"The rule this project runs on"** below, then [`docs/guides/extraction.md`](docs/guides/extraction.md); regenerate with the `regenerate-content` skill, verify with `srd-lookup` |
 | `src/SRDCombat.Core` — combat, movement, cover, conditions | [`docs/guides/engine.md`](docs/guides/engine.md) |
 | Characters, spells, levelling, items | [`docs/guides/engine.md`](docs/guides/engine.md) |
 | The gauntlet, economy, encounter building | [`docs/guides/engine.md`](docs/guides/engine.md) + [`docs/finishing-plan.md`](docs/finishing-plan.md) F3 |
-| `client/` (Godot) or `src/SRDCombat.Console` | [`client/README.md`](client/README.md). The clients hold no rules |
+| `client/` (Godot) or `src/SRDCombat.Console` | [`client/README.md`](client/README.md). The clients hold no rules. A drawing or input change is verified with the `probe-diff` skill |
 | Art, sprites, `client/assets` | Brandon draws all art. The pipeline is mechanical-only and never touches colour |
 | `.claude/skills/`, `.claude/hooks/`, agent charters | The skill's own `SKILL.md` and the hook's header comment; then [The team](#the-team) below |
 | `.github/`, CI, `scripts/`, repo settings | [`docs/2026-08-29-github-workflow-audit.md`](docs/2026-08-29-github-workflow-audit.md) — **especially its "Considered and rejected" list**, which exists so the same optimizations are not re-proposed without new evidence |
@@ -162,8 +162,11 @@ session pays for is the one-sentence description in the listing, kept to that on
 lifecycle with a script for every step that has gone wrong before; `file-issue` is the
 prose-header issue convention and the three-strikes mechanism template;
 `knockout-verify` proves a test can go red; `transcript-churn` reads a fixture diff
-before anyone regenerates it. Invoke them by name rather than re-deriving the steps from
-this file.
+before anyone regenerates it; `regenerate-content` re-runs the extractor and reviews the
+residue census; `probe-diff` baselines and compares the Godot probe's captures;
+`srd-lookup` reads a rule from the printed page, by column; `docs-sync` greps the prose
+for what a diff deleted (#417's gate) and regenerates the measured facts. Invoke them by
+name rather than re-deriving the steps from this file.
 
 **Protocol.**
 
@@ -349,10 +352,11 @@ cannot read (`--format sln`), and templates write `net10.0` properties that over
 `~/Downloads/SRD_CC_v5.2.1.pdf`, is never committed, and only `tools/SrdExtract`
 needs it. Godot 4.7 mono is on `PATH` for the client; the build itself needs neither
 Godot nor a display (the SDK is a NuGet package). A real X display exists
-for windowed runs and captures — but **`:1` was unreachable on 2026-08-27 and `:0` was**,
-confirmed by `xdpyinfo` and independently by three agents, and the probe additionally
-needed `--display-driver x11`. Use `:0`. Whether `:1` is gone for good or was simply not
-up that night is unresolved, so this records what was measured rather than a new rule.
+for windowed runs and captures — but which display is up **moves**: `:1` was
+unreachable on 2026-08-27 and `:0` was (three agents, `xdpyinfo`); on 2026-09-02 it was
+the reverse. So nothing hardcodes one — the `probe-diff` skill's `find-display.sh` probes
+`/tmp/.X11-unix` and prints the live one — and the probe additionally needs
+`--display-driver x11`.
 
 ## Running the game
 
@@ -436,7 +440,11 @@ instrument for the question "did that change make agents cheaper", the way
 - **Gate before merge**: focused tests, then `./scripts/validate.sh full` — full suite,
   Debug **and** Release at 0 warnings, `git diff --check`, in one command. Any new test,
   guard or instrument is knockout-verified (`knockout-verify` skill); a frozen-transcript
-  churn is read hunk by hunk before regeneration (`transcript-churn` skill).
+  churn is read hunk by hunk before regeneration (`transcript-churn` skill). **`fast` and
+  `full` end by running the docs-grep gate** (`docs-sync` skill's `docs-grep.sh`, #417):
+  it prints every doc, charter or `///` comment still citing what the diff deleted, and
+  does not fail the run — each hit is fixed or justified in the PR body, and qc re-runs
+  it. CI does not run it (a shallow clone has no `origin/main`).
 - **Pacing is measured at checkpoints, not per PR** (2026-08-28, Brandon's direction).
   An ordinary gameplay-affecting PR does **not** run the canonical seed ranges and does
   **not** quote PacingMeasure in its body — re-tuning after every adjustment cost more

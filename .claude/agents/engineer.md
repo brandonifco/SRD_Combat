@@ -40,7 +40,10 @@ How you work:
 `land-pr` for the whole branch → worktree → gate → PR → CI lifecycle (a hook refuses git
 write operations in the shared checkout root, so start there); `knockout-verify` before
 you claim any test, guard or refusal is pinned; `transcript-churn` the moment the frozen
-transcript moves; `file-issue` for anything found but deferred.
+transcript moves; `file-issue` for anything found but deferred; `regenerate-content`
+after any parser or allowlist change; `probe-diff` for any client change that draws or
+handles input; `srd-lookup` before implementing a rule; `docs-sync` before every commit
+that deletes or renames anything a doc might cite.
 
 Your PR is done when `qc` has reviewed it and CI is green. You never merge — report the
 PR number to whoever spawned you; the orchestrator runs `land-pr`'s merge step.
