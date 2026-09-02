@@ -109,7 +109,13 @@ internal static class ConsoleArguments
 
         var text = args[index + 1];
 
-        if (!Enum.TryParse<EncounterDifficulty>(text, ignoreCase: true, out var parsed))
+        // Enum.TryParse alone accepts numeric text too — "3" parses as the undefined
+        // value 3 (which throws downstream at the engine) and "0" silently parses as
+        // Low. Only an exact declared name (case-insensitive) is accepted; anything
+        // else, numeric or not, is refused by name like every other flag here.
+        if (!Enum.TryParse<EncounterDifficulty>(text, ignoreCase: true, out var parsed)
+            || !Enum.IsDefined(parsed)
+            || int.TryParse(text, out _))
         {
             difficulty = default;
             error = $"--difficulty {text}: not one of low, moderate, high";

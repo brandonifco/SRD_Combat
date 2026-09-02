@@ -148,4 +148,38 @@ public class ConsoleArgumentsTests
         Assert.Contains("--difficulty", error);
         Assert.Contains("no value given", error);
     }
+
+    // ---- Numeric --difficulty (#602) ----
+
+    /// <summary>
+    /// <c>Enum.TryParse</c> alone accepts numeric text for any enum, defined or not: "3"
+    /// used to parse as the undefined <c>EncounterDifficulty</c> value 3 (which throws
+    /// downstream at the engine, not here, so the refusal never named the flag) and "0"
+    /// used to silently parse as <c>Low</c> — a coincidence of <c>Low</c> sitting at
+    /// ordinal 0, not a value anyone typed. Only an exact declared name is accepted now.
+    /// </summary>
+    [Theory]
+    [InlineData("3")]
+    [InlineData("99")]
+    [InlineData("-1")]
+    public void AnUndefinedNumericDifficultyIsRefusedRatherThanThrowingDownstream(string text)
+    {
+        var ok = ConsoleArguments.TryParseDifficulty(["--difficulty", text], out _, out var error);
+
+        Assert.False(ok);
+        Assert.Contains($"--difficulty {text}", error);
+        Assert.Contains("low, moderate, high", error);
+    }
+
+    [Fact]
+    public void ANumericDifficultyMatchingADefinedOrdinalIsRefusedRatherThanAcceptedAsThatValue()
+    {
+        // "0" is Low's own ordinal — the coincidence this test guards against: numeric
+        // text is refused regardless of whether it happens to land on a defined value.
+        var ok = ConsoleArguments.TryParseDifficulty(["--difficulty", "0"], out _, out var error);
+
+        Assert.False(ok);
+        Assert.Contains("--difficulty 0", error);
+        Assert.Contains("low, moderate, high", error);
+    }
 }

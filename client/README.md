@@ -442,10 +442,16 @@ renders one frame to a PNG and quits (with `--at=<turn>` choosing the turn), and
 `--spawn`/`--level`/`--seed` never reaches a fight to render: `--watch` alone shows the
 reason in the heading with no snapshots to scrub, and `--capture` prints the same reason
 to stdout and exits non-zero, writing no PNG at all — never the blank frame reported as a
-successful capture that this used to write (#486). A non-numeric or out-of-range `--at`
+successful capture that this used to write (#486), and never a live, heading-only window
+left running with the reason unsaid, which a refused `--seed` still did in capture mode
+until #602 reordered the check that catches it. A non-numeric or out-of-range `--at`
 is refused the same way, to stdout with a non-zero exit, naming the value and the turn
 range actually resolved — never the silent "last turn" fallback or the silent clamp into
-range this used to do (#489).
+range this used to do (#489). `--seed` and `--at` given bare (present with no `=value`)
+are refused by name too, the same shape #470 already holds `--spawn`/`--level` to —
+`-- --seed` used to roll a fresh seed silently and `--capture=... --at` used to silently
+capture the last snapshot, both indistinguishable from the flag never having been passed
+at all until #602 closed the gap.
 
 ### The probe
 
