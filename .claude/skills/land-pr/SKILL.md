@@ -82,8 +82,18 @@ the whole gate:
 ```
 
 That is the SDK pin, restore, Debug and Release builds at 0 warnings, the full suite in
-both, and `git diff --check`, in one command. It takes about fifteen minutes; run it in
-the background and keep writing the PR body meanwhile.
+both, and `git diff --check`, in one command. It takes about fifteen minutes.
+
+**Who may background it — read this, it has stranded three PRs in one session (#594).**
+Only the **orchestrator** (the main/interactive session) may run this in the background
+and keep writing the PR body meanwhile: the harness re-invokes the main session when a
+background command finishes. A **subagent is _not_ woken by its own background command** —
+if you are a subagent, run the gate in the **foreground** (do not pass a background flag)
+and stay in the turn until it returns. A subagent that backgrounds the gate and then ends
+its turn *looks done and is not*: the harness marks it "completed", nothing wakes it, and
+the code you wrote is silently abandoned before it is ever committed or pushed. **The
+tell: if your turn is about to end while the gate is "still running in the background",
+you have stalled — wait for it in-turn instead.**
 
 Two things the gate does not do for you:
 
@@ -132,9 +142,13 @@ what qc says to file; push the fixes to the same branch.
 bash .claude/skills/land-pr/scripts/pr-ready.sh <pr> --wait
 ```
 
-Run it in the background; it polls once a minute and returns when nothing is in
-progress. It prints one line per check and ends with `READY` or `NOT READY`. On a
-failure, read the run rather than re-running the suite locally:
+It polls once a minute and returns when nothing is in progress, printing one line per
+check and ending with `READY` or `NOT READY`. The same backgrounding rule as the gate
+applies (#594): the **orchestrator** runs this in the background and is re-invoked on
+completion; a **subagent** runs it in the **foreground** and stays in the turn. Ending
+your turn with `--wait` "running in the background" strands the PR — nothing wakes a
+subagent to act on the result. On a failure, read the run rather than re-running the
+suite locally:
 
 ```bash
 gh run view <run-id> --log-failed
