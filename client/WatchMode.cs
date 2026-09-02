@@ -32,9 +32,22 @@ public partial class WatchMode : FightScreen
 
     protected override void OnReady()
     {
-        var seed = SeedArgument();
-
-        Resolve(seed);
+        try
+        {
+            Resolve(SeedArgument());
+        }
+        catch (ScenarioRefusedException refusal)
+        {
+            // The same shape Resolve's own catch (below) leaves for a bad --spawn or
+            // --level: no snapshots, the reason in _subtitle, and _Draw's own empty-list
+            // case draws the heading alone rather than a blank window (#486). Execution
+            // still falls through to the capture check below rather than returning here
+            // — Resolve already catches its own refusal internally and leaves
+            // _snapshots empty the same way, so a refused --seed in capture mode must
+            // hit that same "nothing to capture" branch: print to stdout and exit
+            // non-zero, never a live heading-only window (#602).
+            _subtitle = refusal.Message;
+        }
 
         // A capture run renders one frame and leaves, which is how a change to this
         // screen gets checked without a person watching it.
@@ -44,24 +57,89 @@ public partial class WatchMode : FightScreen
 
             if (_snapshots.Count == 0)
             {
-                // The fight never ran — a refused --spawn/--level (Resolve, below,
-                // catches it and leaves _snapshots empty). There is nothing to
-                // capture, so say why on stdout and exit non-zero rather than either
-                // of the two things this used to do: throw out of
-                // Math.Clamp(wanted, 0, -1) when --at was given, or fall through to
-                // CaptureAndQuit and write a blank PNG while printing "turn -1 of -1"
+                // The fight never ran — a refused --seed (OnReady, above), or a refused
+                // --spawn/--level (Resolve, below, catches it and leaves _snapshots
+                // empty). There is nothing to capture, so say why on stdout and exit
+                // non-zero rather than either of the two things this used to do: throw
+                // out of Math.Clamp(wanted, 0, -1) when --at was given, or fall through
+                // to CaptureAndQuit and write a blank PNG while printing "turn -1 of -1"
                 // and reporting success (#486).
                 GD.Print(_subtitle);
                 GetTree().Quit(1);
                 return;
             }
 
-            _index = ArgumentValue("at") is { } at && int.TryParse(at, out var wanted)
-                ? Math.Clamp(wanted, 0, _snapshots.Count - 1)
-                : _snapshots.Count - 1;
+            if (!TryResolveAt(HasArgument("at"), ArgumentValue("at"), _snapshots.Count - 1, out _index, out var atError))
+            {
+                // Same shape as the "nothing to capture" refusal above: the reason on
+                // stdout, exit non-zero, no PNG written — never the silent "last turn"
+                // fallback or the silent clamp into range this used to do (#489).
+                GD.Print(atError);
+                GetTree().Quit(1);
+                return;
+            }
 
             CaptureAndQuit(path);
         }
+    }
+
+    /// <summary>
+    /// The pure half of whether an explicit <c>--at</c> applies at all (#602): given
+    /// whether <c>--at</c> was passed and its value (<c>null</c> when passed bare, as
+    /// opposed to not passed at all), refuses a bare flag rather than reading it the same
+    /// as absent — <c>--capture=out.png --at</c> used to silently capture the last
+    /// snapshot instead of naming the missing value, the same shape #489 closed for a
+    /// non-numeric or out-of-range one. Split out the same way
+    /// <see cref="FightScreen.TryResolveSeed"/> is split from <c>--seed</c>, and split
+    /// from <see cref="OnReady"/> itself the same way <see cref="FightScreen.TryParseSeed"/>
+    /// is split from reading <c>--seed</c> (#476's pattern): <c>HasArgument</c>/
+    /// <c>ArgumentValue</c> reach into Godot's <c>OS</c> singleton and cannot run under a
+    /// plain xUnit test.
+    /// </summary>
+    internal static bool TryResolveAt(bool given, string? text, int maxIndex, out int index, out string? error)
+    {
+        if (given && text is null)
+        {
+            index = default;
+            error = "--at: no value given (use --at=<n>)";
+            return false;
+        }
+
+        return TryParseAt(text, maxIndex, out index, out error);
+    }
+
+    /// <summary>
+    /// The pure half of <c>--at</c>'s value: given its already-read value (or null when
+    /// absent) and the highest snapshot index this run resolved, decides which turn to
+    /// capture or refuses. Everything below this line is ordinary <c>int.TryParse</c> and
+    /// a range check.
+    /// </summary>
+    internal static bool TryParseAt(string? text, int maxIndex, out int index, out string? error)
+    {
+        if (text is null)
+        {
+            index = maxIndex;
+            error = null;
+            return true;
+        }
+
+        if (!int.TryParse(text, out var wanted))
+        {
+            index = default;
+            error = $"--at=\"{text}\": not a whole number (0-{maxIndex})";
+            return false;
+        }
+
+        if (wanted < 0 || wanted > maxIndex)
+        {
+            index = default;
+            error = $"--at={wanted}: out of range (0-{maxIndex})";
+            return false;
+        }
+
+        index = wanted;
+        error = null;
+        return true;
     }
 
     /// <summary>
@@ -217,10 +295,10 @@ public partial class WatchMode : FightScreen
     {
         if (_snapshots.Count == 0)
         {
-            // A refused --spawn/--level (Resolve, above) leaves _subtitle holding the
-            // reason and no fight to show. Draw the heading alone rather than nothing
-            // at all — an empty window with no reason given is exactly the bug this
-            // guard used to cause (#486).
+            // A refused --seed, --spawn or --level leaves _subtitle holding the reason
+            // and no fight to show. Draw the heading alone rather than nothing at all —
+            // an empty window with no reason given is exactly the bug this guard used
+            // to cause (#486).
             DrawBackdrop();
             DrawHeading(_subtitle, "[esc] quit");
             return;

@@ -931,21 +931,90 @@ public abstract partial class FightScreen : Node2D
     private const int BudgetedFightLevel = 3;
 
     /// <summary>
-    /// The seed to fight on. <c>--seed=&lt;n&gt;</c> wins; a capture or probe run falls
-    /// back to a fixed seed, because a verification image must not change between runs;
-    /// otherwise the seed is fresh, exactly as the console rolls one — and it is in the
-    /// heading, so "it happened on seed 12345" stays a complete bug report.
+    /// The seed to fight on. <c>--seed=&lt;n&gt;</c> wins; a present value that is not a
+    /// whole number, or present with no value at all (bare <c>--seed</c>), throws
+    /// <see cref="ScenarioRefusedException"/> naming it rather than silently rolling a
+    /// fresh one — of every flag in this client, <c>--seed</c> is the worst place for a
+    /// quiet fallback, since it exists precisely so a run is reproducible (CLAUDE.md:
+    /// "seed 12345 is a complete bug report") and a typo'd value that rolled a random
+    /// seed anyway would defeat that instead of merely losing it loudly (#489; the bare
+    /// case is #602 — <c>-- --seed</c> used to fall all the way through to
+    /// <c>ArgumentValue</c> returning <c>null</c>, indistinguishable from the flag never
+    /// having been passed at all). Absent, a capture or probe run falls back to a fixed
+    /// seed, because a verification image must not change between runs; otherwise the
+    /// seed is fresh, exactly as the console rolls one — and it is in the heading, so "it
+    /// happened on seed 12345" stays a complete bug report.
     /// </summary>
     protected static int SeedArgument()
     {
-        if (ArgumentValue("seed") is { } text && int.TryParse(text, out var parsed))
+        if (!TryResolveSeed(HasArgument("seed"), ArgumentValue("seed"), out var seed, out var error))
         {
-            return parsed;
+            throw new ScenarioRefusedException(error!);
         }
 
-        return HasArgument("probe") || ArgumentValue("capture") is not null
+        return seed ?? (HasArgument("probe") || ArgumentValue("capture") is not null
             ? 20250812
-            : Random.Shared.Next();
+            : Random.Shared.Next());
+    }
+
+    /// <summary>
+    /// The pure half of whether an explicit <c>--seed</c> applies at all (#602): given
+    /// whether <c>--seed</c> was passed and its value (<c>null</c> when passed bare, as
+    /// opposed to not passed at all), decides between three outcomes — not given, so the
+    /// caller picks its own default; given and valid, so that value wins; or given but
+    /// unusable (bare or non-numeric), which refuses rather than falling through to the
+    /// same default an absent flag would use. Split out the same way
+    /// <see cref="PlayMode.TryResolveGauntletLevel"/> is split from <c>--level</c>:
+    /// <c>HasArgument</c>/<c>ArgumentValue</c> reach into Godot's <c>OS</c> singleton and
+    /// cannot run under a plain xUnit test, while this and <see cref="TryParseSeed"/>
+    /// below are ordinary values and range checks.
+    /// </summary>
+    internal static bool TryResolveSeed(bool given, string? text, out int? seed, out string? error)
+    {
+        if (!given)
+        {
+            seed = null;
+            error = null;
+            return true;
+        }
+
+        if (text is null)
+        {
+            seed = null;
+            error = "--seed: no value given (use --seed=<n>)";
+            return false;
+        }
+
+        if (!TryParseSeed(text, out var parsed, out var parseError))
+        {
+            seed = null;
+            error = parseError;
+            return false;
+        }
+
+        seed = parsed;
+        error = null;
+        return true;
+    }
+
+    /// <summary>
+    /// The pure half of <c>--seed</c>'s value: given a non-null value already read,
+    /// parses it or refuses. Split from <see cref="TryResolveSeed"/> the same way
+    /// <see cref="ScenarioFromFile"/> is split from reading <c>--scenario</c> (#476):
+    /// everything below this line is ordinary <c>int.TryParse</c>.
+    /// </summary>
+    internal static bool TryParseSeed(string text, out int seed, out string? error)
+    {
+        if (!int.TryParse(text, out var parsed))
+        {
+            seed = default;
+            error = $"--seed=\"{text}\": not a whole number";
+            return false;
+        }
+
+        seed = parsed;
+        error = null;
+        return true;
     }
 
     /// <summary>"2 Animated Armors, Awakened Tree" — the fight's cast, for the heading.</summary>

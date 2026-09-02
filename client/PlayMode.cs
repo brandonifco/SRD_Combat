@@ -217,7 +217,20 @@ public partial class PlayMode : FightScreen
 
     protected override void OnReady()
     {
-        _seed = SeedArgument();
+        try
+        {
+            _seed = SeedArgument();
+        }
+        catch (ScenarioRefusedException refusal)
+        {
+            // No seed was ever settled, so there is nothing honest to put after "seed"
+            // in the subtitle the way every other refusal here does — the message names
+            // the bad value itself.
+            _phase = Phase.RunOver;
+            _interlude.Add(refusal.Message);
+            _subtitle = "seed refused";
+            return;
+        }
 
         // The gauntlet loop below never calls ResolveFight — it draws its own roster
         // every fight — so --spawn here would silently do nothing (#463). Refuse it
@@ -306,6 +319,20 @@ public partial class PlayMode : FightScreen
         // call would be wiped before the first frame ever showed it.
         var startupNotices = new List<string>();
 
+        // --level only ever means one thing here: where a *new* run begins. Decided once,
+        // before either branch below, because a resumed run has nothing for it to apply
+        // to (GauntletRun.Resume re-resolves at the level the save's own experience has
+        // earned) and letting it through silently there would be exactly the shape #488
+        // exists to close, just for --continue instead of a bad number.
+        if (!TryResolveGauntletLevel(
+                HasArgument("continue"), HasArgument("level"), ArgumentValue("level"), out var level, out var levelError))
+        {
+            _phase = Phase.RunOver;
+            _interlude.Add(levelError!);
+            _subtitle = $"seed {_seed}";
+            return;
+        }
+
         if (HasArgument("continue"))
         {
             // Falls back to the .bak automatically when the primary is missing or
@@ -376,12 +403,16 @@ public partial class PlayMode : FightScreen
         }
         else
         {
-            var level = ArgumentValue("level") is { } text && int.TryParse(text, out var parsed)
-                ? Math.Clamp(parsed, 1, 5)
-                : 1;
-
+            // GauntletRun.Start's created-drafts overload takes the same startingLevel a
+            // pregenerated party's does — a created party is always drafted at level 1
+            // (CreateMode) and resolved up to whatever level the run begins at, exactly
+            // like a resumed save re-resolving at the level its experience earned
+            // (ResolveMember's own ASI-default-notice handling covers both). The level
+            // parsed above used to be computed and then silently discarded on this branch
+            // (#488) — --create --level=4 started at 1 with nothing said — so it is passed
+            // through here now, the same as the pregenerated branch below it.
             _run = CreatedDrafts is not null
-                ? GauntletRun.Start(content, CreatedDrafts, seed: _seed)
+                ? GauntletRun.Start(content, CreatedDrafts, seed: _seed, startingLevel: level)
                 : GauntletRun.Start(content, GauntletLadder.Default(), level, _seed);
             _isNewRun = true;
             _subtitle = $"a gauntlet of {_run.Ladder.Count} fights — seed {_seed}";
@@ -395,6 +426,61 @@ public partial class PlayMode : FightScreen
         startupNotices.AddRange(_run.LevelUps.Select(notice => notice + "!"));
 
         EnterInterlude(startupNotices);
+    }
+
+    /// <summary>
+    /// The pure half of the gauntlet-start <c>--level</c> (#488): given whether
+    /// <c>--continue</c> and <c>--level</c> were passed and the latter's value, decides
+    /// the level a fresh run begins at, or refuses. Split out of <see cref="OnReady"/> the
+    /// same way <see cref="FightScreen.ScenarioFromFile"/> is split from reading
+    /// <c>--scenario</c> (#476) — <c>HasArgument</c>/<c>ArgumentValue</c> reach into
+    /// Godot's <c>OS</c> singleton and cannot run under a plain xUnit test, while
+    /// everything below this line is ordinary rules over plain values, closing part of
+    /// #490's stated gap that nothing pins this screen's argv wiring.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="levelGiven"/> and <paramref name="continuing"/> together decide
+    /// three cases. Both true: <c>--level</c> has nothing to apply to on a resumed
+    /// run — <see cref="GauntletRun.Resume"/> re-resolves at the level the save's
+    /// own experience earned — so this refuses rather than silently dropping the flag,
+    /// the same shape #463 closed for <c>--spawn</c> against the gauntlet loop.
+    /// <paramref name="continuing"/> true and <paramref name="levelGiven"/> false: the
+    /// caller ignores the returned level entirely, so it is set to the harmless default
+    /// below rather than left undefined. Neither: a fresh run keeps its old default of
+    /// level 1 when <c>--level</c> is absent — not <see cref="ScenarioArguments"/>'s own
+    /// default of 3, which is spawn mode's own budgeted-fight concern (its remarks say
+    /// so) — and reuses <see cref="ScenarioArguments.TryParseLevel"/> for the actual
+    /// parse and range check by forcing <c>present: true</c>, so this method's own
+    /// absent-means-1 case never touches that helper's absent-means-3 branch.
+    /// </remarks>
+    internal static bool TryResolveGauntletLevel(
+        bool continuing, bool levelGiven, string? levelText, out int level, out string? error)
+    {
+        if (continuing && levelGiven)
+        {
+            level = default;
+            error = "--level refused: --continue resumes at the level the save's own " +
+                "experience has earned; --level does not apply here. Start a new run to choose one.";
+            return false;
+        }
+
+        if (!levelGiven)
+        {
+            level = 1;
+            error = null;
+            return true;
+        }
+
+        if (!ScenarioArguments.TryParseLevel(levelText, present: true, out var parsed, out var levelError))
+        {
+            level = default;
+            error = $"--level refused: {levelError}";
+            return false;
+        }
+
+        level = parsed;
+        error = null;
+        return true;
     }
 
     public override void _Process(double delta)
