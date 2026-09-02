@@ -5,8 +5,8 @@ namespace SRDCombat.Viewer;
 /// <summary>
 /// This client's own dialect is <c>--name=value</c>, one shell word, and that is the
 /// only form recognised here — the console client's separate <c>--name value</c> form
-/// (<c>src/SRDCombat.Console/Program.cs</c>'s <c>LevelFrom</c> and its siblings) is a
-/// different binary's convention and is deliberately not accepted. <c>null</c>
+/// (<c>SRDCombat.Console.ConsoleArguments</c>, #489) is a different binary's convention
+/// and is deliberately not accepted. <c>null</c>
 /// therefore means two different things a caller must not conflate: the flag was never
 /// passed, or it was passed bare (<c>--name</c>, or the space form, which Godot hands
 /// through as an unrelated second argument no different from a bare flag followed by
