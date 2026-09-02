@@ -1563,7 +1563,17 @@
               "Flame Whip",
               "Lightning Blade"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Flame Whip",
+                "count": 1
+              },
+              {
+                "name": "Lightning Blade",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -1996,7 +2006,17 @@
               "Claws",
               "Tail"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Claws",
+                "count": 1
+              },
+              {
+                "name": "Tail",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -2305,7 +2325,17 @@
               "Beard",
               "Infernal Glaive"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Beard",
+                "count": 1
+              },
+              {
+                "name": "Infernal Glaive",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -4539,7 +4569,17 @@
               "Claw",
               "Infernal Sting"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Claw",
+                "count": 2
+              },
+              {
+                "name": "Infernal Sting",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -7362,7 +7402,21 @@
               "Bite",
               "Claw"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Ram",
+                "count": 1
+              },
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Claw",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -7925,7 +7979,17 @@
               "Attach",
               "Tail"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Attach",
+                "count": 1
+              },
+              {
+                "name": "Tail",
+                "count": 2
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -11926,7 +11990,17 @@
               "Bite",
               "Claw"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Claw",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -12120,7 +12194,17 @@
               "Battleaxe",
               "Morningstar"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Battleaxe",
+                "count": 1
+              },
+              {
+                "name": "Morningstar",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -17049,7 +17133,17 @@
               "Beak",
               "Tentacles"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Beak",
+                "count": 1
+              },
+              {
+                "name": "Tentacles",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -22117,7 +22211,17 @@
               "Claw",
               "Snake Hair"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Claw",
+                "count": 2
+              },
+              {
+                "name": "Snake Hair",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -25031,7 +25135,17 @@
               "Bite",
               "Tentacle"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Tentacle",
+                "count": 2
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -25997,7 +26111,21 @@
               "Devilish Claw",
               "Fiery Mace"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Devilish Claw",
+                "count": 2
+              },
+              {
+                "name": "Fiery Mace",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -26842,7 +26970,17 @@
               "Bite",
               "Tail Stinger"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Tail Stinger",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -28489,7 +28627,17 @@
               "Tentacle",
               "Bite"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Tentacle",
+                "count": 2
+              },
+              {
+                "name": "Bite",
+                "count": 2
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -34505,7 +34653,17 @@
               "Hooves",
               "Radiant Horn"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Hooves",
+                "count": 1
+              },
+              {
+                "name": "Radiant Horn",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -38255,7 +38413,17 @@
               "Bite",
               "Sting"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Sting",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -38427,7 +38595,17 @@
               "Bite",
               "Claw"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Claw",
+                "count": 3
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -39718,7 +39896,17 @@
               "Bite",
               "Claw"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Claw",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -41851,7 +42039,17 @@
               "Bite",
               "Tail"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Tail",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -43030,7 +43228,17 @@
               "Claw",
               "Sting"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Claw",
+                "count": 2
+              },
+              {
+                "name": "Sting",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []
@@ -47851,7 +48059,17 @@
               "Bite",
               "Tail"
             ],
-            "anyCombination": true
+            "anyCombination": false,
+            "composition": [
+              {
+                "name": "Bite",
+                "count": 1
+              },
+              {
+                "name": "Tail",
+                "count": 1
+              }
+            ]
           },
           "appliedConditions": [],
           "unmodelledClauses": []

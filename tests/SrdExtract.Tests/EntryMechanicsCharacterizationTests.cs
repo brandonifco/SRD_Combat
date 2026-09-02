@@ -864,8 +864,13 @@ public sealed class EntryMechanicsCharacterizationTests
     }
 
     [Fact]
-    public void TheBeardedDevilSumsTwoNamedSingleAttackClauses()
+    public void TheBeardedDevilRecordsAnExactPerNameComposition()
     {
+        // Issue #343 — STRICT-EXACT reading: every clause names exactly one attack and
+        // the two names are distinct, so this is a printed enumerated composition, not
+        // a free choice. Before #343 two named attacks summed to `AnyCombination:
+        // true`, wrongly letting the tactics policy swing two Beards instead of one
+        // Beard and one Infernal Glaive.
         var entry = EntryMechanicsParser.Classify(
             "Multiattack",
             MonsterEntrySection.Action,
@@ -874,9 +879,10 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.NotNull(entry.Multiattack);
         Assert.Equal(2, entry.Multiattack!.AttackCount);
         Assert.Equal(["Beard", "Infernal Glaive"], entry.Multiattack.AttackNames);
-        // Two named attacks means the creature picks between them, even though the
-        // printed text is "one of each" rather than "in any combination".
-        Assert.True(entry.Multiattack.AnyCombination);
+        Assert.False(entry.Multiattack.AnyCombination);
+        Assert.Equal(
+            [new MultiattackComponent("Beard", 1), new MultiattackComponent("Infernal Glaive", 1)],
+            entry.Multiattack.Composition);
     }
 
     [Fact]
@@ -926,6 +932,12 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.NotNull(entry.Multiattack);
         Assert.Equal(4, entry.Multiattack!.AttackCount);
         Assert.Equal(["Tentacle", "Bite"], entry.Multiattack.AttackNames);
+        // Issue #343 — both clauses name exactly one attack each, so this is a printed
+        // enumerated composition (two Tentacle, two Bite) rather than a free choice.
+        Assert.False(entry.Multiattack.AnyCombination);
+        Assert.Equal(
+            [new MultiattackComponent("Tentacle", 2), new MultiattackComponent("Bite", 2)],
+            entry.Multiattack.Composition);
 
         // #382 deleted BundledMultiattackUseClauses (design §7.4): nothing claims a
         // "uses"/"can use" clause, so it lands in residue by subtraction instead of a
@@ -940,6 +952,53 @@ public sealed class EntryMechanicsCharacterizationTests
         // saying a fragment was lost here, not a formatting slip. The string is
         // verbatim from the entry's own text (§6.2), lowercase "uses" included.
         Assert.Equal(["uses Reel, and"], entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void AThreeNameCompositionRecordsAllThreeComponentsInPrintedOrder()
+    {
+        // Chimera's Multiattack (the substitution sentence that follows in print,
+        // "It can replace the Claw attack with a use of Fire Breath if available.", is
+        // a separate sentence and out of scope here — ParseMultiattack only reads the
+        // first).
+        var entry = EntryMechanicsParser.Classify(
+            "Multiattack",
+            MonsterEntrySection.Action,
+            "The chimera makes one Ram attack, one Bite attack, and one Claw attack.");
+
+        Assert.NotNull(entry.Multiattack);
+        Assert.Equal(3, entry.Multiattack!.AttackCount);
+        Assert.Equal(["Ram", "Bite", "Claw"], entry.Multiattack.AttackNames);
+        Assert.False(entry.Multiattack.AnyCombination);
+        Assert.Equal(
+            [
+                new MultiattackComponent("Ram", 1),
+                new MultiattackComponent("Bite", 1),
+                new MultiattackComponent("Claw", 1),
+            ],
+            entry.Multiattack.Composition);
+    }
+
+    [Fact]
+    public void AMixedFixedAndChoiceCompositionIsNotClaimedAsEitherShape()
+    {
+        // Design §2.5's defensive guard for issue #343: no monster in the corpus mixes
+        // a single-named clause with a choice clause today (the Tarrasque's matching
+        // hybrid already exits earlier, via `total < 2`), but the model has no shape
+        // for a fixed part plus a free part and must not silently claim one anyway —
+        // neither a composition (which would drop the free choice) nor
+        // `AnyCombination: true` (which would drop the fixed cap). The whole sentence
+        // falls to Unmodelled instead, honestly.
+        var entry = EntryMechanicsParser.Classify(
+            "Multiattack",
+            MonsterEntrySection.Action,
+            "The chimera makes one Ram attack and two Claw or Bite attacks.");
+
+        Assert.Equal(EntryMechanics.Unmodelled, entry.Mechanics);
+        Assert.Null(entry.Multiattack);
+        Assert.Equal(
+            ["The chimera makes one Ram attack and two Claw or Bite attacks."],
+            entry.UnmodelledClauses);
     }
 
     [Fact]
