@@ -1416,6 +1416,7 @@ public sealed partial class Encounter
         if (applied.Effective > 0)
         {
             BreakTurnEffectOnDamage(target);
+            EndTurnEffectsWhoseSourceIsDown();
         }
 
         if (applied.Died)
@@ -1728,6 +1729,7 @@ public sealed partial class Encounter
             if (applied.Effective > 0)
             {
                 BreakTurnEffectOnDamage(target);
+                EndTurnEffectsWhoseSourceIsDown();
             }
 
             if (applied.DeathSaveFailures > 0)
@@ -1916,6 +1918,7 @@ public sealed partial class Encounter
         if (applied.Effective > 0)
         {
             BreakTurnEffectOnDamage(second);
+            EndTurnEffectsWhoseSourceIsDown();
         }
 
         if (applied.Died)
@@ -2219,6 +2222,7 @@ public sealed partial class Encounter
                 if (applied.Effective > 0)
                 {
                     BreakTurnEffectOnDamage(victim);
+                    EndTurnEffectsWhoseSourceIsDown();
                 }
 
                 if (applied.Died)

@@ -551,17 +551,23 @@ public sealed partial class Encounter
     /// by <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/> rather than by a
     /// fourth <see cref="ConditionDuration"/> shape — see that flag's remarks and
     /// <see cref="BreakTurnEffectOnDamage"/>/<see cref="EndTurnEffectsWhoseSourceIsDown"/>
-    /// for where each out is read. The flee behaviour ("tries to move as far from you
-    /// as it can") is deliberately <b>not</b> implemented: it is an AI instruction
-    /// rather than an engine rule, so it belongs on <c>SimpleTacticsPolicy</c>, but
-    /// that policy is never invoked with a turned creature active in the first place —
-    /// <see cref="Encounter"/>'s own turn loop already skips any Incapacitated
-    /// creature's turn outright before any policy runs. Turn Undead is the first
+    /// for where each out is read. <b>"Tries to move as far from you as it can on its
+    /// turns" is a rule — a movement compulsion, not AI tactics — and it is
+    /// unimplemented, not refused: <see cref="Encounter"/>'s own turn loop skips any
+    /// Incapacitated creature's turn outright before any tactics policy runs, so a
+    /// turned creature never reaches a turn to move on. Turn Undead is the first
     /// printed effect that needs a turn for a creature that cannot act but is not
-    /// immobile, and nothing in this engine has that seam yet — filed as #615, with the
-    /// flee code's shape kept there. This ships without it: the turned creature is
-    /// fully neutralised and simply does not retreat, which is strictly weaker than
-    /// print and never stronger.
+    /// immobile, and nothing in this engine has that seam yet.</b> Rather than leaving
+    /// the gap in prose alone, both conditions Turn Undead imposes carry it on
+    /// <see cref="ActiveCondition.UnmodelledBehaviour"/> — a machine-checkable record
+    /// that the printed movement compulsion did not execute, the same accounting
+    /// <see cref="Definitions.AppliedCondition.UnmodelledRequirement"/> gives a
+    /// stat-block rider. The seam itself is filed as #615, with the flee code's shape
+    /// kept there for reuse. What ships without it: the turned creature is fully
+    /// neutralised (Frightened, Incapacitated, its own turn skipped) but its <em>body</em>
+    /// stays exactly where it was turned rather than retreating — not weaker than print
+    /// in every sense, since a frozen Undead can still block a doorway or grant cover
+    /// the book's fleeing version would not have offered the party.
     /// </para>
     /// <para>
     /// Targeting is an explicit chosen list — "Each Undead <b>of your choice</b>", never
@@ -618,6 +624,24 @@ public sealed partial class Encounter
             return new ActionRefusal(
                 "feature.turn_undead.no_targets",
                 "Turn Undead needs at least one chosen target.");
+        }
+
+        // "Each Undead of your choice" reads as each distinct creature, not each list
+        // entry — a caller passing the same target twice would otherwise roll its
+        // Wisdom save twice, spend Sear Undead's shared roll on it twice, and (since
+        // the second pass's BreakTurnEffectOnDamage would see a target already turned
+        // by the first) misread its own just-imposed condition as damage breaking it.
+        // Refused with a named code rather than silently de-duplicated, so a caller
+        // bug is visible rather than swallowed.
+        var duplicate = targets
+            .GroupBy(candidate => candidate.Id, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Count() > 1);
+
+        if (duplicate is not null)
+        {
+            return new ActionRefusal(
+                "feature.turn_undead.duplicate_target",
+                $"{duplicate.First().Name} was chosen more than once.");
         }
 
         // The whole list is validated before anything is spent — Divine Spark's own
@@ -748,7 +772,8 @@ public sealed partial class Encounter
                     conditionType,
                     combatant.Id,
                     expiry,
-                    EndsEarlyOnDamageOrSourceDown: true);
+                    EndsEarlyOnDamageOrSourceDown: true,
+                    UnmodelledBehaviour: UnmodelledFleeBehaviour);
 
                 if (target.AddCondition(imposed))
                 {
@@ -776,6 +801,14 @@ public sealed partial class Encounter
         ConditionType.Frightened,
         ConditionType.Incapacitated,
     ];
+
+    /// <summary>
+    /// The one printed clause of Turn Undead this engine does not execute, recorded on
+    /// every condition it imposes — see <see cref="ActiveCondition.UnmodelledBehaviour"/>.
+    /// </summary>
+    private const string UnmodelledFleeBehaviour =
+        "flees maximally on its turns — SRD 5.2.1 p.37; engine cannot grant an " +
+        "Incapacitated-but-mobile turn yet (#615)";
 
     /// <summary>Rogue Cunning Action: Dash or Disengage as a Bonus Action.</summary>
     public ActionRefusal? CunningAction(CunningActionKind kind)

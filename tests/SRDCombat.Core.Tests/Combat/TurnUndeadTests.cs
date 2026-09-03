@@ -19,6 +19,176 @@ namespace SRDCombat.Core.Tests.Combat;
 public class TurnUndeadTests
 {
     [Fact]
+    public void ADuplicateTargetIsRefusedBeforeAnythingIsSpent()
+    {
+        // "Each Undead of your choice" reads as each distinct creature, not each list
+        // entry — passing the same target twice must not roll its save twice, spend
+        // Sear Undead's shared roll on it twice, or let a later pass's
+        // BreakTurnEffectOnDamage see a target already turned by the earlier one.
+        var (encounter, cleric, undead) = OneUndeadFight(new ScriptedRandomSource(20, 1));
+
+        var refusal = encounter.TurnUndead([undead, undead]);
+
+        Assert.Equal("feature.turn_undead.duplicate_target", refusal?.Code);
+        Assert.Equal(2, cleric.Features.ChannelDivinityRemaining);
+        Assert.True(cleric.Turn.HasAction);
+        Assert.False(undead.HasCondition(ConditionType.Frightened));
+        Assert.False(undead.HasCondition(ConditionType.Incapacitated));
+    }
+
+    [Fact]
+    public void DamageDoesNotStripAFrightenedThatBelongsToAnotherSource()
+    {
+        // Finding 2(a): an Undead already Frightened by an unrelated source (X)
+        // before the Cleric ever turns it. Turn Undead's own Frightened attempt
+        // must not silently take over X's SourceId/Expiry while (via the old merge
+        // logic) leaving the "ends on damage" flag stuck on the record — that is
+        // exactly the over-removal shape: a later, unrelated source's condition
+        // inheriting a flag that was never printed for it, or a flagged condition's
+        // ownership being reassigned to whoever last touched the slot.
+        var (encounter, _, ally, undead) = ThreeSidedFight(new ScriptedRandomSource(20, 15, 1, 1, 15, 1));
+
+        undead.AddCondition(ConditionType.Frightened, sourceId: "some-other-source");
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        // Turn Undead's own Frightened rider was refused outright — the slot X
+        // already held is untouched, not merged.
+        var frightenedBeforeDamage = undead.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal("some-other-source", frightenedBeforeDamage.SourceId);
+        Assert.False(frightenedBeforeDamage.EndsEarlyOnDamageOrSourceDown);
+
+        Assert.True(undead.HasCondition(ConditionType.Incapacitated));
+
+        encounter.EndTurn(); // Cleric's turn ends; ally goes next.
+        encounter.Attack(ally.Stats.Attacks[0].Name, undead);
+
+        // Only the Cleric's own turning condition (Incapacitated) is removed by the
+        // damage — X's Frightened, never flagged, was never at risk and survives
+        // with its own ownership intact.
+        Assert.True(undead.HasCondition(ConditionType.Frightened));
+        Assert.Equal("some-other-source", undead.ConditionState(ConditionType.Frightened)!.SourceId);
+        Assert.False(undead.HasCondition(ConditionType.Incapacitated));
+    }
+
+    [Fact]
+    public void CharacterizationAlreadyFrightenedByAnotherSource_TurnUndeadsOwnRiderNeverEstablishes()
+    {
+        // Finding 2(b): the flip side of the test above. Reachability was checked
+        // directly against the party's executable surface — every preparable spell,
+        // class feature and weapon mastery a level 1-5 party can use — and nothing
+        // imposes Frightened or Incapacitated on anything: Hold Person is the only
+        // spell in the preparable list that imposes an Incapacitated-bringer
+        // (Paralyzed), and it targets only Humanoids, never Undead. So an Undead
+        // already Frightened or Incapacitated from a party source before being
+        // turned cannot arise from a real party's kit today — the same #614 model
+        // gap T10 already named, characterized rather than fixed.
+        //
+        // The correct reading per print: the Undead is turned (Incapacitated lands,
+        // fully flagged) and separately remains Frightened for whatever reason
+        // already scared it — two independent reasons for the same condition type,
+        // which Dictionary<ConditionType, ActiveCondition>'s one-slot-per-type model
+        // cannot track at once. What actually happens instead: Turn Undead's own
+        // Frightened rider is refused outright rather than co-existing alongside
+        // the pre-existing occupant, so it never lands as its own tracked effect —
+        // no early-out flag, no #615 accounting — even though the Undead is still
+        // fully turned in every way that matters for CanAct (Incapacitated landed
+        // clean, in the slot nothing already occupied).
+        var (encounter, cleric, undead) = OneUndeadFight(new ScriptedRandomSource(20, 1, 1));
+
+        undead.AddCondition(ConditionType.Frightened, sourceId: "some-other-source");
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        var frightened = undead.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal("some-other-source", frightened.SourceId);
+        Assert.False(frightened.EndsEarlyOnDamageOrSourceDown);
+        Assert.Null(frightened.UnmodelledBehaviour);
+
+        var incapacitated = undead.ConditionState(ConditionType.Incapacitated)!;
+        Assert.Equal(cleric.Id, incapacitated.SourceId);
+        Assert.True(incapacitated.EndsEarlyOnDamageOrSourceDown);
+    }
+
+    [Fact]
+    public void TheClericBeingIncapacitatedByADamageComponentFreesTheTurningImmediately()
+    {
+        // Finding 3: EndTurnEffectsWhoseSourceIsDown must fire at each damage site
+        // itself, not only in EndTurn — a Cleric incapacitated mid-round, by
+        // someone else's attack on its own turn later in the round, must free
+        // anything it turned right then, not merely once whoever incapacitated it
+        // gets around to ending their own turn.
+        var cleric = ClericCombatant(wisdom: 10, uses: 2, x: 0, initiativeBonus: 30);
+
+        var bigHit = new CombatAttack(
+            "Big Hit",
+            AttackKind.Melee,
+            10,
+            5,
+            null,
+            null,
+            [new AttackDamage(new DiceExpression(30, 1, 0), DamageType.Bludgeoning, 30)]);
+
+        var attacker = CombatTestData.Combatant(
+            "attacker",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: 20, attacks: [bigHit]),
+            x: 1);
+
+        var undead = UndeadCombatant("undead", x: 2, initiativeBonus: -10);
+
+        // Initiative x3 (Cleric 30+20, attacker 20+20, Undead -10+1 — Cleric first,
+        // attacker second), Turn Undead's save (fails, 1), the attacker's attack
+        // roll on the Cleric (15, an easy hit short of a natural 20), then thirty
+        // d1s for exactly 30 damage — the Cleric's whole 30 hit points, downing it
+        // without killing it (a character falls Unconscious at 0, rather than
+        // dying) in one component.
+        var dice = new[] { 20, 20, 1, 1, 15 }.Concat(Enumerable.Repeat(1, 30)).ToArray();
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [cleric, attacker, undead],
+            new ScriptedRandomSource(dice));
+
+        Assert.Null(encounter.TurnUndead([undead]));
+        Assert.True(undead.HasCondition(ConditionType.Incapacitated));
+
+        encounter.EndTurn(); // Cleric's turn ends; the attacker goes next.
+        Assert.Same(attacker, encounter.ActiveCombatant);
+
+        encounter.Attack(bigHit.Name, cleric);
+
+        Assert.Equal(0, cleric.CurrentHitPoints);
+        Assert.True(cleric.HasCondition(ConditionType.Incapacitated));
+
+        // Freed immediately, inside the very Attack() call that incapacitated the
+        // Cleric — not merely by the time anyone's EndTurn() next runs.
+        Assert.False(undead.HasCondition(ConditionType.Incapacitated));
+    }
+
+    [Fact]
+    public void ImposedConditionsRecordTheUnmodelledFleeBehaviour()
+    {
+        // Finding #4 (designer ruling): the printed flee is a rule this engine
+        // cannot yet grant a turned creature (#615), and it is accounted on the
+        // condition itself — the same shape AppliedCondition.UnmodelledRequirement
+        // gives a stat-block rider — rather than left in a doc comment alone.
+        var (encounter, _, undead) = OneUndeadFight(new ScriptedRandomSource(20, 1, 1));
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        var frightened = undead.ConditionState(ConditionType.Frightened)!;
+        var incapacitated = undead.ConditionState(ConditionType.Incapacitated)!;
+
+        Assert.False(string.IsNullOrWhiteSpace(frightened.UnmodelledBehaviour));
+        Assert.Contains("#615", frightened.UnmodelledBehaviour, StringComparison.Ordinal);
+        Assert.Contains("flee", frightened.UnmodelledBehaviour, StringComparison.Ordinal);
+
+        Assert.False(string.IsNullOrWhiteSpace(incapacitated.UnmodelledBehaviour));
+        Assert.Contains("#615", incapacitated.UnmodelledBehaviour, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AFailedSaveGainsBothConditionsFlaggedAndTimedAPassGainsNeither()
     {
         // Initiative 20 / 1 / 1 (Cleric first), then a low Wisdom save for the first

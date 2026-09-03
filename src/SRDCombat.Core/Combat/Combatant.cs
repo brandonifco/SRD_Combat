@@ -998,6 +998,17 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// same shape <c>EndBrokenGrapples</c> already reads off a grapple's source. False
 /// for every other condition this engine imposes.
 /// </param>
+/// <param name="UnmodelledBehaviour">
+/// A printed clause tied to <em>this landed condition</em> that the model does not
+/// execute — the same accounting <see cref="Definitions.AppliedCondition.UnmodelledRequirement"/>
+/// gives a stat-block rider, applied here to a condition once it is actually on a
+/// creature rather than to the extracted content that might impose it. Null for
+/// every condition with no such gap. Turn Undead's Frightened and Incapacitated both
+/// set it: the printed "tries to move as far from you as it can on its turns" is a
+/// movement compulsion — a rule, not an AI tactic — that <c>Encounter.BeginTurn</c>'s
+/// own "cannot act" gate makes unexpressable today (#615), so the gap is recorded on
+/// the condition itself rather than only in a doc comment nobody at runtime reads.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
@@ -1008,7 +1019,8 @@ public sealed record ActiveCondition(
     int? RepeatSaveDifficultyClass = null,
     bool TiedToConcentration = false,
     ConditionType? EscalatesTo = null,
-    bool EndsEarlyOnDamageOrSourceDown = false);
+    bool EndsEarlyOnDamageOrSourceDown = false,
+    string? UnmodelledBehaviour = null);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.
@@ -1373,6 +1385,25 @@ public sealed class Combatant
 
         if (_conditions.TryGetValue(condition, out var existing))
         {
+            // A flag mismatch means two logically distinct effects are competing for
+            // the one dictionary slot this model gives every condition type — the
+            // closed-set collision #614 tracks (Turn Undead is the first rider to
+            // impose a condition with EndsEarlyOnDamageOrSourceDown set at all, so
+            // before it existed this branch could never disagree). Neither side may
+            // silently take over the other's SourceId, Expiry or flag: the occupant
+            // simply keeps the slot, and the new application is refused rather than
+            // partially merged into something neither effect actually is. This is
+            // what stops an unrelated Frightened from inheriting Turn Undead's
+            // "ends on damage" flag (over-removal) just as much as it stops Turn
+            // Undead's own rider from being silently corrupted by a later,
+            // unrelated re-application. Both flagged (a second Turn Undead landing)
+            // or both unflagged (every condition this engine imposed before Turn
+            // Undead existed) fall through unchanged, refreshing exactly as always.
+            if (existing.EndsEarlyOnDamageOrSourceDown != active.EndsEarlyOnDamageOrSourceDown)
+            {
+                return false;
+            }
+
             _conditions[condition] = existing with
             {
                 SourceId = active.SourceId ?? existing.SourceId,

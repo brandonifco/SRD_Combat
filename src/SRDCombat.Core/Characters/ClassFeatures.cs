@@ -243,18 +243,24 @@ public static class ClassFeatureRegistry
             // Undead (level 5) maps to its own feature below and rides the same Turn
             // Undead call.
             //
-            // One printed clause is honestly NOT executed: "For that duration, it
-            // tries to move as far from you as it can on its turns." A turned creature
-            // is fully neutralised — Frightened, Incapacitated, its turn skipped by
-            // Encounter.BeginTurn's own "cannot act" gate — but does not actively
-            // retreat, because that gate skips an Incapacitated creature's turn
-            // outright before any AI policy ever runs, and nothing in this engine
-            // before Turn Undead needed a turn for a creature that cannot act but is
-            // not immobile. This is strictly weaker than print, never stronger — the
-            // turned creature never gets an advantage the book withholds — so it ships
-            // rather than blocking on the seam. The retreat behaviour and the seam it
-            // needs are filed as #615, and the flee code it would use is kept there
-            // rather than left as dead code here.
+            // One printed clause of Turn Undead is unimplemented, and it is accounted
+            // rather than left in prose alone: "For that duration, it tries to move as
+            // far from you as it can on its turns" is a movement compulsion — a rule,
+            // not AI tactics — and Encounter.BeginTurn's own "cannot act" gate skips an
+            // Incapacitated creature's turn outright before any tactics policy runs,
+            // so a turned creature never reaches a turn to move on. Nothing in this
+            // engine before Turn Undead needed a turn for a creature that cannot act
+            // but is not immobile. This is not a refusal — the feature is claimed, and
+            // Frightened and Incapacitated both land — and it is not merely a doc-
+            // comment claim either: both conditions Turn Undead imposes carry the gap
+            // on ActiveCondition.UnmodelledBehaviour, the same accounting
+            // AppliedCondition.UnmodelledRequirement gives a stat-block rider. The seam
+            // this needs — letting an Incapacitated-but-mobile creature take a turn at
+            // all — is filed as #615, with the flee code's shape kept there rather than
+            // left as dead code here. Read the gap precisely: the turned creature's
+            // body stays exactly where it was turned rather than retreating, which is
+            // not simply "weaker than print" — a frozen Undead can still block a
+            // doorway or grant cover the book's fleeing version would not have offered.
             ["Channel Divinity"] = ClassFeature.ChannelDivinity,
 
             // Divine Order executes whole once a role is chosen: Protector grows the
