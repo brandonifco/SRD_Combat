@@ -1402,6 +1402,13 @@ public sealed class EntryMechanicsCharacterizationTests
         // scans the preamble for the range instead, claiming "within 90 feet"
         // there and leaving the hurl/sight clause that surrounds it — and the
         // Sphere's own still-open residue (#420) — exactly as unclaimed as before.
+        //
+        // The trailing "only" from "Success: Half damage only." is not residue
+        // here (#397/#608's SaveSuccessHalfPattern claims it as save.success_half,
+        // same as the other nine entries printing that fuller form) — this fixture
+        // originally pinned "only" as leftover before that fix existed; #608 didn't
+        // know to update it because it landed after this test was written. Merging
+        // #606 and #608 together (#343) is what surfaces the skew.
         var entry = EntryMechanicsParser.Classify(
             "Boulder Toss",
             MonsterEntrySection.Action,
@@ -1418,7 +1425,6 @@ public sealed class EntryMechanicsCharacterizationTests
                 "The ape hurls a boulder at a point it can see",
                 "each creature in a",
                 "centered on that point",
-                "only",
             ],
             entry.UnmodelledClauses);
     }
