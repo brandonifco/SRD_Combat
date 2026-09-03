@@ -591,6 +591,13 @@ public sealed partial class Encounter
     /// ordinary path — <see cref="DamageRules.Apply"/> for resistance and immunity,
     /// <see cref="CheckConcentration"/> for a concentrating Undead, death and downing —
     /// because nothing printed exempts Sear Undead from any rule but the one it names.
+    /// A kill (<c>DamageResult.Died</c>) skips the Frightened/Incapacitated imposition
+    /// below outright — there is no creature left to turn — and
+    /// <see cref="EndTurnEffectsWhoseSourceIsDown"/> is swept alongside
+    /// <see cref="BreakTurnEffectOnDamage"/> at this damage site, joining it as the
+    /// fifth site in this file's damage-application census, even though a turning's
+    /// source can only be a Cleric and this loop's targets are always Undead, so the
+    /// sweep is a no-op here today.
     /// </para>
     /// </remarks>
     public ActionRefusal? TurnUndead(IReadOnlyList<Combatant> targets)
@@ -687,10 +694,21 @@ public sealed partial class Encounter
             // to Incapacitated specifically stays "active" while its Frightened is
             // still flagged and owned by the first Cleric — exactly the gap this
             // closes.
-            if (TurnUndeadConditions.Any(conditionType =>
-                    target.ConditionState(conditionType) is
-                        { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } turnedBy }
-                    && !string.Equals(turnedBy, combatant.Id, StringComparison.Ordinal)))
+            //
+            // Checked on Frightened alone, not both printed conditions (#618, item 3).
+            // The IsActive refusal immediately above is CanAct's own definition, one of
+            // whose clauses is "!HasCondition(Incapacitated)" — so reaching this line
+            // already proves target.HasCondition(ConditionType.Incapacitated) is false.
+            // HasCondition and ConditionState read the same backing dictionary
+            // (Combatant.cs), so ConditionState(Incapacitated) is provably null here too:
+            // an Incapacitated condition flagged by a *different* source can never
+            // coexist with a live IsActive, so checking it in this guard would be dead
+            // code carried for no reason. Confirmed empirically as well as by proof: qc
+            // patched this predicate to Frightened-only during PR #617's third review
+            // pass and got identical results across the whole suite.
+            if (target.ConditionState(ConditionType.Frightened) is
+                    { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } turnedBy }
+                && !string.Equals(turnedBy, combatant.Id, StringComparison.Ordinal))
             {
                 return new ActionRefusal(
                     "feature.turn_undead.already_turned",
@@ -735,6 +753,16 @@ public sealed partial class Encounter
         // One shared roll for the whole use — "add the rolls together" — never one per
         // target, and only rolled at all when there is at least one failure to spend it
         // on.
+        //
+        // Printed as a choice — "Whenever you use Turn Undead, you CAN roll ..." (p. 37)
+        // — collapsed to automatic here rather than modelled as a parameter, unlike
+        // Divine Spark's sibling Heal/Harm choice (the explicit DivineSparkUse parameter
+        // above), which is stated as a reading rather than left silent (#618, item 5).
+        // The two are not alike: Divine Spark's choice changes the outcome, while Sear
+        // Undead's roll only ever adds Radiant damage to a target that already failed
+        // its save, with no printed downside to taking it — so a rational Cleric rolls
+        // every time it is available, and "optional" collapsing to "automatic" changes
+        // nothing a player would have chosen differently.
         var searUndead = combatant.Stats.Has(ClassFeature.SearUndead);
         var searRoll = searUndead && failed.Count > 0
             ? DiceRoller.Roll(_random, new DiceExpression(Math.Max(1, wisdom), 8, 0))
@@ -770,6 +798,18 @@ public sealed partial class Encounter
                 if (applied.Effective > 0)
                 {
                     BreakTurnEffectOnDamage(target);
+
+                    // Joins ApplyGraze, the attack/Multiattack loop, TryCleave and
+                    // ResolveSaveEffect as the fifth site that sweeps both calls back to
+                    // back (#618, item 2). A no-op today by construction, not by luck:
+                    // this loop's own targets are validated Undead (the not_undead
+                    // refusal above), and only a Cleric can be a turning's SourceId, so
+                    // Sear Undead's damage can never bring down the source of any turn
+                    // effect — living or otherwise. Kept rather than reasoned-and-
+                    // omitted, so the invariant is enforced by code that runs instead of
+                    // resting on a comment nobody re-checks if a future change ever lets
+                    // it stop holding.
+                    EndTurnEffectsWhoseSourceIsDown();
                 }
 
                 if (applied.Died)

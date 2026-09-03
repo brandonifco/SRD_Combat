@@ -172,6 +172,55 @@ public class TurnUndeadTests
     }
 
     [Fact]
+    public void AClericMayRetargetItsOwnAlreadyTurnedUndeadOnALaterTurn()
+    {
+        // Item 4 (#618): the already_turned guard's ALLOW path — the source
+        // exclusion in the test above (`!string.Equals(turnedBy, combatant.Id, ...)`)
+        // — had no direct test; only the refusal path was pinned. Only observable
+        // against an Undead immune to Incapacitated, the same reason the test above
+        // needs it: an ordinarily-turned Undead is caught by the plain
+        // IsActive/"inactive" refusal before this guard is ever reached.
+        var cleric = ClericCombatant(wisdom: 10, uses: 2, x: 0);
+        var undead = UndeadCombatant(
+            "undead",
+            x: 1,
+            initiativeBonus: -10,
+            conditionImmunities: [ConditionType.Incapacitated]);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [cleric, undead],
+            // Initiative x2, the first Turn Undead's save (fails, 1). The Undead is
+            // immune, so it stays active and its own turn actually begins rather
+            // than being skipped — but nothing drives it (Encounter.EndTurn never
+            // runs a tactics policy on its own), so it sits idle and costs no dice.
+            // Then the second Turn Undead's save (fails again, 1).
+            new ScriptedRandomSource(20, 1, 1, 1));
+
+        Assert.Null(encounter.TurnUndead([undead]));
+        Assert.True(undead.IsActive); // immune to Incapacitated, so still active
+
+        var frightenedAfterFirst = undead.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal(cleric.Id, frightenedAfterFirst.SourceId);
+
+        encounter.EndTurn(); // Cleric's turn ends; the (idle) Undead's turn begins.
+        Assert.Same(undead, encounter.ActiveCombatant);
+
+        encounter.EndTurn(); // Undead's untouched turn ends; back to the Cleric.
+        Assert.Same(cleric, encounter.ActiveCombatant);
+
+        // The same Cleric, re-targeting the same Undead it already turned itself —
+        // the allow path: falls through to AddCondition's own same-source refresh
+        // rather than being refused as already_turned.
+        var refusal = encounter.TurnUndead([undead]);
+
+        Assert.Null(refusal);
+        Assert.Equal(0, cleric.Features.ChannelDivinityRemaining);
+        Assert.True(undead.HasCondition(ConditionType.Frightened));
+        Assert.Equal(cleric.Id, undead.ConditionState(ConditionType.Frightened)!.SourceId);
+    }
+
+    [Fact]
     public void TheClericBeingIncapacitatedByADamageComponentFreesTheTurningImmediately()
     {
         // Finding 3: EndTurnEffectsWhoseSourceIsDown must fire at each damage site
@@ -410,11 +459,12 @@ public class TurnUndeadTests
     // and a turned creature is Incapacitated — so a turned Undead can never be
     // Cleave's auto-selected second target in the first place. The
     // BreakTurnEffectOnDamage call at that site (Encounter.cs, beside
-    // CheckConcentration(second, ...)) is still wired for four-site census
-    // consistency with Graze, the attack/Multiattack loop and the save-effect loop —
-    // and stands ready the moment Cleave's own filter ever changes — but it is not
-    // independently reachable or knockout-verifiable against a turned creature today.
-    // Stated here rather than faked with a test that cannot exercise what it claims to.
+    // CheckConcentration(second, ...)) is still wired for five-site census
+    // consistency with Graze, the attack/Multiattack loop, the save-effect loop and
+    // Sear Undead (#618) — and stands ready the moment Cleave's own filter ever
+    // changes — but it is not independently reachable or knockout-verifiable against
+    // a turned creature today. Stated here rather than faked with a test that cannot
+    // exercise what it claims to.
 
     [Fact]
     public void ASaveEffectAlsoBreaksTheTurning()
@@ -619,6 +669,53 @@ public class TurnUndeadTests
         Assert.Null(encounter.TurnUndead([undead]));
 
         Assert.Equal(20, undead.CurrentHitPoints);
+    }
+
+    [Fact]
+    public void SearUndeadKillingItsTargetSkipsImposingTheTurnConditions()
+    {
+        // Item 1 (#618): the `if (applied.Died)` branch inside the Sear Undead loop
+        // was reachable but untested. A trap for whoever writes this test: MarkDead's
+        // own Unconscious rider brings a fresh, unflagged, source-less Incapacitated
+        // via BringsIncapacitated regardless of whether Turn Undead's own logic is
+        // correct, so a bare Assert.False(undead.HasCondition(Incapacitated)) would
+        // fail against CORRECT code. Frightened is untouched by any of MarkDead's
+        // cascade, so its absence — and the flagged/sourced shape of Incapacitated,
+        // not just its presence — is what actually distinguishes "the imposition
+        // block never ran" from "it ran and then the target separately died".
+        var cleric = ClericCombatant(wisdom: 14, uses: 2, x: 0, searUndead: true);
+        var undead = UndeadCombatant("undead", x: 1, initiativeBonus: -10, maximumHitPoints: 5);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [cleric, undead],
+            // Initiative x2, Turn Undead's save (fails, 1), the shared Sear Undead
+            // 2d8 (5 and 3 = 8 — more than the Undead's 5 hit points, and a monster
+            // dies outright at 0 rather than falling Unconscious).
+            new ScriptedRandomSource(20, 1, 1, 5, 3));
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        Assert.True(undead.IsDead);
+        Assert.Equal(0, undead.CurrentHitPoints);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Died && step.Narration == $"{undead.Name} is dead.");
+
+        // Turn Undead's own rider never landed — the `continue` fired before the
+        // imposition block below it ever ran.
+        Assert.False(undead.HasCondition(ConditionType.Frightened));
+
+        // The trap: HasCondition(Incapacitated) reads true regardless of whether the
+        // `continue` fired — but this is MarkDead's own unflagged, source-less rider
+        // (via Unconscious/BringsIncapacitated), not Turn Undead's. A flagged,
+        // Cleric-sourced Incapacitated here would mean the imposition block ran
+        // despite the target already being dead.
+        var incapacitated = undead.ConditionState(ConditionType.Incapacitated);
+        Assert.NotNull(incapacitated);
+        Assert.Null(incapacitated!.SourceId);
+        Assert.False(incapacitated.EndsEarlyOnDamageOrSourceDown);
+        Assert.Null(incapacitated.UnmodelledBehaviour);
     }
 
     [Fact]

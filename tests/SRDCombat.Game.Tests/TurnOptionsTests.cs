@@ -180,6 +180,27 @@ public class TurnOptionsTests
     }
 
     [Fact]
+    public void TurnUndeadIsHiddenAgainstATargetAlreadyTurnedByAnotherCleric()
+    {
+        // Item 6 (#618): AnyTurnableUndeadWithinReach mirrored 4 of TurnUndead's 5
+        // per-target refusal checks but omitted already_turned, so the button could
+        // show available against the only reachable Undead even though the engine
+        // would refuse it. Frightened is applied directly here, flagged and sourced
+        // to a different Cleric, sidestepping Encounter.TurnUndead's own save roll —
+        // this file's SeededRandomSource is a real seeded RNG, not scripted the way
+        // Core.Tests' is, and the point under test is TurnOptions' own predicate, not
+        // the engine's saving throw.
+        var (encounter, cleric, undead) = TurnUndeadFight(undeadDistanceFeet: 10);
+
+        undead.AddCondition(new ActiveCondition(
+            ConditionType.Frightened,
+            SourceId: "some-other-cleric",
+            EndsEarlyOnDamageOrSourceDown: true));
+
+        Assert.DoesNotContain(TurnAction.TurnUndead, TurnOptions.For(encounter, cleric));
+    }
+
+    [Fact]
     public void TurnUndeadIsHiddenOnceChannelDivinityIsExhausted()
     {
         var (encounter, cleric, undead) = TurnUndeadFight(undeadDistanceFeet: 10);

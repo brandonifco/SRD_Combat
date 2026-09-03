@@ -364,12 +364,37 @@ public static class TurnOptions
     private const int TurnUndeadRangeFeet = 30;
 
     /// <summary>Whether at least one Undead is actually turnable right now.</summary>
-    /// <remarks>Mirrors <c>Encounter.TurnUndead</c>'s per-target validation (AC-3).</remarks>
+    /// <remarks>
+    /// Mirrors <c>Encounter.TurnUndead</c>'s per-target validation (AC-3), all five
+    /// refusal checks (#618, item 6: the fifth, already-turned, was missing until now —
+    /// the button could show available against the only reachable Undead when it was
+    /// already turned by a different Cleric; the engine refused it correctly regardless,
+    /// since the offer is a hint and the engine is the authority, but the row should not
+    /// have shown it in the first place).
+    /// </remarks>
     private static bool AnyTurnableUndeadWithinReach(Encounter encounter, Combatant actor) =>
         encounter.Combatants.Any(other =>
             other.IsActive
             && other.Stats.Type == CreatureType.Undead
             && actor.DistanceFeetTo(other) <= TurnUndeadRangeFeet
             && CoverRules.AgainstSpace(encounter.Battlefield, actor.Space, other.Space, encounter.Combatants)
-                != CoverDegree.Total);
+                != CoverDegree.Total
+            && !AlreadyTurnedByAnotherCleric(other, actor));
+
+    /// <summary>
+    /// Whether <paramref name="target"/> is still held by a different Cleric's earlier
+    /// Turn Undead — <c>Encounter.TurnUndead</c>'s own already_turned guard, read here
+    /// for the offer rather than the cast.
+    /// </summary>
+    /// <remarks>
+    /// Checked on Frightened alone, not Incapacitated, for the same reason the engine's
+    /// own guard now is: <c>other.IsActive</c> in <see cref="AnyTurnableUndeadWithinReach"/>
+    /// already guarantees <c>!other.HasCondition(ConditionType.Incapacitated)</c> — that
+    /// is CanAct's own definition — so an Incapacitated condition flagged by a different
+    /// source can never coexist with a live IsActive here either.
+    /// </remarks>
+    private static bool AlreadyTurnedByAnotherCleric(Combatant target, Combatant actor) =>
+        target.ConditionState(ConditionType.Frightened) is
+            { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } turnedBy }
+        && !string.Equals(turnedBy, actor.Id, StringComparison.Ordinal);
 }
