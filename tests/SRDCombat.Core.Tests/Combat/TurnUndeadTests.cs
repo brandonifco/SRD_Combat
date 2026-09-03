@@ -597,6 +597,16 @@ public class TurnUndeadTests
             encounter.Log,
             step => step.Narration.Contains("Sear Undead", StringComparison.Ordinal)
                 && step.Narration.Contains("Radiant", StringComparison.Ordinal));
+
+        // #584: each Sear application is a CombatStepKind.Damage step carrying the
+        // effective amount — not a Feature step a client's damage-only channel would
+        // silently drop — located by kind and target rather than only by narration.
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Damage && step.TargetId == undead1.Id && step.Damage == 8);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Damage && step.TargetId == undead2.Id && step.Damage == 8);
     }
 
     [Fact]

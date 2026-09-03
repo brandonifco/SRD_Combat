@@ -1404,12 +1404,17 @@ public sealed partial class Encounter
 
         var applied = DamageRules.Apply(target, attack.AbilityModifier, attack.Damage[0].Type);
 
+        // A CombatStepKind.Damage step, not Feature — this changed hit points, can
+        // trigger Concentration, and can down or kill the target, same as any other
+        // damage application (#584). The preceding Attack step already recorded the
+        // miss (Hit: false); this step needs no hit-or-miss answer of its own.
         Add(
-            CombatStepKind.Feature,
+            CombatStepKind.Damage,
             $"{attack.Name}'s Graze deals {applied.Effective} {attack.Damage[0].Type} damage anyway — " +
             $"{DescribeHealth(target)}.",
             attacker,
-            target);
+            target,
+            damage: applied.Effective);
 
         CheckConcentration(target, applied.Effective);
 
@@ -2379,7 +2384,7 @@ public sealed partial class Encounter
         IReadOnlyList<GridPosition>? path = null,
         RangedAttackKind ranged = RangedAttackKind.None,
         string? attackName = null,
-        bool hit = true,
+        bool? hit = null,
         int? damage = null) =>
         _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged, attackName, hit, damage));
 }

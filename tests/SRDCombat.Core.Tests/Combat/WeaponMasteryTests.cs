@@ -25,6 +25,17 @@ public class WeaponMasteryTests
         encounter.Attack(attacker.Stats.Attacks[0].Name, target);
 
         Assert.Equal(17, target.CurrentHitPoints);
+
+        // #584: the structured log must carry both the miss and the damage Graze deals
+        // anyway, as a CombatStepKind.Damage step — not a Feature step invisible to a
+        // client's damage-only channel.
+        var attackStep = Assert.Single(encounter.Log, step => step.Kind == CombatStepKind.Attack);
+        Assert.False(attackStep.Hit);
+
+        var damageStep = Assert.Single(encounter.Log, step => step.Kind == CombatStepKind.Damage);
+        Assert.Equal(target.Id, damageStep.TargetId);
+        Assert.Equal(3, damageStep.Damage);
+        Assert.Contains("Graze", damageStep.Narration, StringComparison.Ordinal);
     }
 
     [Fact]
