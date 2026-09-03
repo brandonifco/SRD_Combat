@@ -18,6 +18,7 @@ public enum TurnAction
     Cast,
     Drink,
     GivePotion,
+    Trade,
     Rage,
     RecklessAttack,
     SecondWind,
@@ -74,6 +75,7 @@ public static class TurnOptions
         TurnAction.Cast => 'C',
         TurnAction.Drink => 'Q',
         TurnAction.GivePotion => 'P',
+        TurnAction.Trade => 'V',
         TurnAction.Rage => 'F',
         TurnAction.RecklessAttack => 'K',
         TurnAction.SecondWind => 'W',
@@ -101,6 +103,7 @@ public static class TurnOptions
         TurnAction.Cast => "Cast",
         TurnAction.Drink => "Drink",
         TurnAction.GivePotion => "Give Potion",
+        TurnAction.Trade => "Trade",
         TurnAction.Rage => "Rage",
         TurnAction.RecklessAttack => "Reckless",
         TurnAction.SecondWind => "Second Wind",
@@ -162,6 +165,8 @@ public static class TurnOptions
         TurnAction.GivePotion =>
             "Bonus Action. Pour a potion into an ally within 5 feet — this is how somebody "
             + "at 0 hit points gets back up.",
+        TurnAction.Trade =>
+            "Free once per turn. Give one potion from your pack to an ally within 5 feet.",
         TurnAction.Rage =>
             "Bonus Action. Bonus damage on Strength attacks and resistance to Bludgeoning, "
             + "Piercing and Slashing. Rage first, then attack — the bonus only reaches swings made after it. "
@@ -258,6 +263,17 @@ public static class TurnOptions
             TurnAction.GivePotion =>
                 turn.HasBonusAction
                 && (actor.Inventory.TotalPotions > 0 || PotionWithinReach(encounter, actor)),
+
+            // Free once a turn, so the button needs all three of its resources still
+            // available: the interaction unspent, something in the actor's own pack to
+            // give — unlike GivePotion, a trade never reaches into the recipient's own
+            // pack — and a living ally in reach to receive it. An Unconscious adjacent
+            // ally still counts: DrinkPotion's own precedent is that inability to act
+            // does not lock a creature's carried supplies away from it.
+            TurnAction.Trade =>
+                turn.HasTradeInteraction
+                && actor.Inventory.TotalPotions > 0
+                && AnyAllyWithinTradeReach(encounter, actor),
 
             // Raging again while raging is the printed Bonus Action extension, so the
             // button stays while a Rage is running even with no uses left.
@@ -358,6 +374,18 @@ public static class TurnOptions
             && !ReferenceEquals(other, actor)
             && !other.IsDead
             && other.Inventory.TotalPotions > 0
+            && actor.DistanceFeetTo(other) <= PotionRules.ReachFeet);
+
+    /// <summary>
+    /// Whether some other, living, same-side combatant is within Trade's reach — unlike
+    /// <see cref="PotionWithinReach"/>, what the recipient already carries plays no part,
+    /// since a trade moves what the actor has rather than finding a flask that exists
+    /// somewhere between the two packs.
+    /// </summary>
+    private static bool AnyAllyWithinTradeReach(Encounter encounter, Combatant actor) =>
+        encounter.Combatants.Any(other => other.SideId == actor.SideId
+            && !ReferenceEquals(other, actor)
+            && !other.IsDead
             && actor.DistanceFeetTo(other) <= PotionRules.ReachFeet);
 
     /// <summary>Turn Undead's own range and validity, read for the offer rather than the cast.</summary>

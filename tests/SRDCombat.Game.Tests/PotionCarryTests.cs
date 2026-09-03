@@ -119,6 +119,92 @@ public class PotionCarryTests
         Assert.Equal(1, combatant.Inventory.TotalPotions);
     }
 
+    [Fact]
+    public void ATradedPotionSurvivesFightCompletionSaveReloadAndTheNextFight()
+    {
+        // GauntletRun starts everybody with no potions, and seeding one directly needs
+        // InventoryState.Seed, which is internal to Core (TargetChoiceTests.
+        // APotionNeedsAFlaskSomewhere makes the same call). A save/resume round trip is
+        // the public route: hand Brenna one before the first fight is ever built.
+        var fresh = GauntletRun.Start(Content, [
+            new LadderStep(EncounterDifficulty.Moderate),
+            new LadderStep(EncounterDifficulty.Moderate, RestKind.Long),
+        ]);
+
+        var seeded = fresh.ToSave();
+        var run = GauntletRun.Resume(Content, seeded with
+        {
+            Members = seeded.Members
+                .Select(member => member.Draft.Name == "Brenna"
+                    ? member with { State = member.State.Carrying(HealingPotion.Standard) }
+                    : member)
+                .ToArray(),
+        });
+
+        var random = new SeededRandomSource(5);
+        run.PrepareForNext(random);
+        var fight = run.BeginNext(random);
+
+        // The party's own starting column places these two one square apart, and
+        // Brenna acts first on this seed — no movement or turn-cycling needed to reach
+        // the actual transfer this test exists to execute.
+        var giver = fight.Encounter.Combatants.Single(combatant => combatant.Name == "Brenna");
+        var recipient = fight.Encounter.Combatants.Single(combatant => combatant.Name == "Korrin");
+
+        Assert.Same(giver, fight.Encounter.ActiveCombatant);
+        Assert.Equal(1, giver.Inventory.TotalPotions);
+        Assert.Equal(0, recipient.Inventory.TotalPotions);
+        Assert.True(giver.DistanceFeetTo(recipient) <= PotionRules.ReachFeet);
+
+        var totalBeforeTrade = fight.Encounter.Combatants
+            .Where(combatant => combatant.SideId == PregeneratedParty.SideId)
+            .Sum(combatant => combatant.Inventory.TotalPotions);
+
+        // The actual transfer, on the real Encounter this fight was built from — not a
+        // hand-built post-trade CharacterState.
+        Assert.Null(fight.Encounter.TradeItem(new CombatTradeItem.Potion(HealingPotion.Standard), recipient));
+
+        Assert.Equal(0, giver.Inventory.TotalPotions);
+        Assert.Equal(1, recipient.Inventory.TotalPotions);
+
+        var totalAfterTrade = fight.Encounter.Combatants
+            .Where(combatant => combatant.SideId == PregeneratedParty.SideId)
+            .Sum(combatant => combatant.Inventory.TotalPotions);
+
+        Assert.Equal(totalBeforeTrade, totalAfterTrade);
+
+        // No loot rolled — CompleteFight's null random keeps this a pure carry-over
+        // check, with nothing else able to add or remove a potion along the way.
+        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
+        run.CompleteFight(fight);
+
+        var giverIndex = run.Party.ToList().FindIndex(member => member.Draft.Name == "Brenna");
+        var recipientIndex = run.Party.ToList().FindIndex(member => member.Draft.Name == "Korrin");
+
+        Assert.Equal(0, run.States[giverIndex].Potions.Values.Sum());
+        Assert.Equal(1, run.States[recipientIndex].Potions.GetValueOrDefault(HealingPotion.Standard));
+
+        // Serialize, reload, and confirm the ownership rides the save exactly as it
+        // does for a potion nobody ever traded (PotionsRideTheSaveByName, above).
+        var json = RunSave.ToJson(run);
+        var reloaded = GauntletRun.Resume(Content, RunSave.FromJson(json));
+
+        Assert.Equal(0, reloaded.States[giverIndex].Potions.Values.Sum());
+        Assert.Equal(1, reloaded.States[recipientIndex].Potions.GetValueOrDefault(HealingPotion.Standard));
+
+        // And the next encounter actually starts that way — the plumbing this test
+        // exists to prove, not merely the state sitting correctly in a save file.
+        var nextRandom = new SeededRandomSource(6);
+        reloaded.PrepareForNext(nextRandom);
+        var nextFight = reloaded.BeginNext(nextRandom);
+
+        var nextGiver = nextFight.Encounter.Combatants.SingleOrDefault(combatant => combatant.Name == "Brenna");
+        var nextRecipient = nextFight.Encounter.Combatants.Single(combatant => combatant.Name == "Korrin");
+
+        Assert.Equal(0, nextGiver?.Inventory.TotalPotions ?? 0);
+        Assert.Equal(1, nextRecipient.Inventory.TotalPotions);
+    }
+
     private static void PlayOut(GauntletRun run, int seed)
     {
         var random = new SeededRandomSource(seed);

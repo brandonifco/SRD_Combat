@@ -2,6 +2,7 @@ using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Dice;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Game.Tests;
 
@@ -216,6 +217,71 @@ public class TurnOptionsTests
     }
 
     [Fact]
+    public void TradeIsOfferedWithAPotionTheInteractionAndALivingAllyInReach()
+    {
+        var (encounter, actor, _) = TradeFight();
+
+        Assert.Contains(TurnAction.Trade, TurnOptions.For(encounter, actor));
+    }
+
+    [Fact]
+    public void TradeIsHiddenWithNoPotionToGive()
+    {
+        var (encounter, actor, _) = TradeFight(actorPotions: 0);
+
+        Assert.DoesNotContain(TurnAction.Trade, TurnOptions.For(encounter, actor));
+    }
+
+    [Fact]
+    public void TradeIsHiddenWithNoAllyInReach()
+    {
+        var (encounter, actor, _) = TradeFight(allyX: 4);
+
+        Assert.DoesNotContain(TurnAction.Trade, TurnOptions.For(encounter, actor));
+    }
+
+    [Fact]
+    public void TradeStaysOfferedForAnAdjacentUnconsciousAlly()
+    {
+        // DrinkPotion's own precedent: inability to act does not lock a creature's pack.
+        var (encounter, actor, ally) = TradeFight();
+        DamageRules.Apply(ally, ally.Stats.MaximumHitPoints, DamageType.Slashing);
+
+        Assert.True(ally.HasCondition(ConditionType.Unconscious));
+        Assert.Contains(TurnAction.Trade, TurnOptions.For(encounter, actor));
+    }
+
+    [Fact]
+    public void TradeIsHiddenOnceThisTurnsFreeTradeIsSpent()
+    {
+        // Two potions, not one: spending the trade interaction must be what hides the
+        // button on its own, not a side effect of the actor's own pack running dry —
+        // one potion would leave both TotalPotions == 0 and HasTradeInteraction ==
+        // false true at once, and the test would pass without either clause doing
+        // anything.
+        var (encounter, actor, ally) = TradeFight(actorPotions: 2);
+
+        Assert.Contains(TurnAction.Trade, TurnOptions.For(encounter, actor));
+        Assert.Null(encounter.TradeItem(new CombatTradeItem.Potion(HealingPotion.Standard), ally));
+
+        Assert.True(actor.Inventory.TotalPotions > 0, "the fixture no longer isolates the interaction from the pack");
+        Assert.DoesNotContain(TurnAction.Trade, TurnOptions.For(encounter, actor));
+    }
+
+    [Fact]
+    public void HidingTradeForAMissingPotionMatchesTheEnginesOwnRefusal()
+    {
+        // The invariant this class exists to hold: whatever it hides, the engine would
+        // have refused anyway.
+        var (encounter, actor, ally) = TradeFight(actorPotions: 0);
+
+        Assert.DoesNotContain(TurnAction.Trade, TurnOptions.For(encounter, actor));
+        Assert.Equal(
+            "trade.item_missing",
+            encounter.TradeItem(new CombatTradeItem.Potion(HealingPotion.Standard), ally)?.Code);
+    }
+
+    [Fact]
     public void EverythingHiddenIsAlsoRefusedByTheEngine()
     {
         // The invariant the duplication has to hold to: an action this class hides is
@@ -367,6 +433,56 @@ public class TurnOptionsTests
             new SeededRandomSource(3));
 
         return (encounter, fighter);
+    }
+
+    /// <summary>A fighter carrying potions, an ally at a chosen distance, and a distant enemy.</summary>
+    private static (Encounter Encounter, Combatant Actor, Combatant Ally) TradeFight(
+        int actorPotions = 1,
+        int allyX = 1)
+    {
+        var abilities = Enum.GetValues<Ability>().ToDictionary(ability => ability, _ => new MonsterAbility(12, 1));
+
+        var actorStats = new CombatantStats(
+            16, 30, 30, 10, abilities, 2, CreatureSize.Medium,
+            new Dictionary<DamageType, DamageResponse>(), [],
+            [new CombatAttack("Longsword", AttackKind.Melee, 5, 5, null, null,
+                [new AttackDamage(DiceExpression.Parse("1d8 + 3"), DamageType.Slashing, 7)])],
+            DiesAtZeroHitPoints: false);
+
+        // A distinctly lower initiative bonus than the actor's, so the actor reliably
+        // goes first — the same gap PotionTests' own fixture uses (10 vs -10).
+        var allyStats = actorStats with { InitiativeBonus = -10 };
+
+        var actor = new Combatant(
+            "brenna", "Brenna", "party", actorStats, new GridPosition(0, 0),
+            new CombatantCarryOver(
+                20,
+                Potions: actorPotions > 0
+                    ? new Dictionary<HealingPotion, int> { [HealingPotion.Standard] = actorPotions }
+                    : null));
+
+        var ally = new Combatant(
+            "mira", "Mira", "party", allyStats, new GridPosition(allyX, 0),
+            new CombatantCarryOver(20));
+
+        var monster = new Combatant(
+            "goblin",
+            "Goblin",
+            "monsters",
+            new CombatantStats(
+                13, 20, 30, -20, abilities, 2, CreatureSize.Medium,
+                new Dictionary<DamageType, DamageResponse>(), [],
+                [new CombatAttack("Scimitar", AttackKind.Melee, 4, 5, null, null,
+                    [new AttackDamage(DiceExpression.Parse("1d6 + 2"), DamageType.Slashing, 5)])],
+                DiesAtZeroHitPoints: true),
+            new GridPosition(6, 0));
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [actor, ally, monster],
+            new SeededRandomSource(3));
+
+        return (encounter, actor, ally);
     }
 
     /// <summary>A Cleric with one Channel Divinity use, an Undead at a chosen distance.</summary>

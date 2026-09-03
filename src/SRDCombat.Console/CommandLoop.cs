@@ -2,6 +2,7 @@ using SRDCombat.Game;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Console;
 
@@ -118,6 +119,7 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
             "aim" => encounter.SteadyAim(),
             "cunning" => CunningAction(words),
             "drink" => Drink(active, words),
+            "trade" => Trade(active, words),
             "trip" => encounter.CunningStrike(CunningStrikeEffect.Trip),
             "spark" => Spark(active, words),
             "end" or "e" => EndTurn(),
@@ -266,6 +268,66 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
     }
 
     /// <summary>
+    /// Hands one potion from the giver's own pack to somebody adjacent.
+    /// </summary>
+    /// <remarks>
+    /// Unlike <see cref="Drink"/>'s administer path, the direction is always giver to
+    /// target: <c>Encounter.TradeItem</c> never falls back to the recipient's own pack, so
+    /// this does not either — there is no "whoever has one" reading for a trade, only
+    /// "what the actor is handing over". Everything past parsing — adjacency, allegiance,
+    /// death, the once-per-turn cost, ownership — is the engine's to rule on.
+    /// </remarks>
+    private ActionRefusal? Trade(Combatant active, string[] words)
+    {
+        if (words.Length < 2)
+        {
+            return new ActionRefusal(
+                "client.usage",
+                "trade <target letter> [standard|greater|superior|supreme]");
+        }
+
+        if (Find(words[1]) is not { } target)
+        {
+            return new ActionRefusal("client.no_target", $"Nobody here is called '{words[1]}'.");
+        }
+
+        HealingPotion potency;
+
+        if (words.Length > 2)
+        {
+            if (!TryParsePotency(words[2], out potency))
+            {
+                return new ActionRefusal(
+                    "client.usage",
+                    "trade <target letter> [standard|greater|superior|supreme]");
+            }
+        }
+        else if (active.Inventory.Weakest is { } weakest)
+        {
+            potency = weakest;
+        }
+        else
+        {
+            return new ActionRefusal("client.no_potion", $"{active.Name} carries no potions.");
+        }
+
+        return encounter.TradeItem(new CombatTradeItem.Potion(potency), target);
+    }
+
+    /// <summary>Reads one of the four printed potencies by name.</summary>
+    private static bool TryParsePotency(string word, out HealingPotion potency)
+    {
+        switch (word.ToLowerInvariant())
+        {
+            case "standard": potency = HealingPotion.Standard; return true;
+            case "greater": potency = HealingPotion.Greater; return true;
+            case "superior": potency = HealingPotion.Superior; return true;
+            case "supreme": potency = HealingPotion.Supreme; return true;
+            default: potency = default; return false;
+        }
+    }
+
+    /// <summary>
     /// Divine Spark: heal an ally or harm an enemy.
     /// </summary>
     /// <remarks>
@@ -353,6 +415,8 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
         Display.Say("spark <letter> [heal|necrotic|radiant]  Divine Spark; allies healed, enemies harmed");
         Display.Say("cunning <dash|disengage>");
         Display.Say("drink [letter]          drink a potion, or give one to somebody adjacent");
+        Display.Say("trade <letter> [standard|greater|superior|supreme]");
+        Display.Say("                        give a potion to somebody adjacent — free once per turn");
         Display.Say("look                    redraw the grid");
         Display.Say("end                     end your turn");
         Display.Say("quit                    leave the fight");

@@ -259,6 +259,10 @@ public partial class PlayMode : FightScreen
             case PlayFocus.SlotMenu { Spell: { } spell } when commanded is { } slotCaster:
                 DrawSlotMenu(slotCaster, spell);
                 break;
+
+            case PlayFocus.TradeMenu when commanded is { } trader:
+                DrawTradeMenu(trader);
+                break;
         }
 
         // Not switched on Top with the menus above: the outcome card draws while it is
@@ -861,6 +865,56 @@ public partial class PlayMode : FightScreen
                 TextFont,
                 new Vector2(rect.Position.X + 8, rect.Position.Y + 15),
                 $"level {level} slot — {left} left" + (level > spell.Level ? " (upcast)" : string.Empty),
+                fontSize: 12,
+                modulate: Ink);
+
+            y += 24;
+        }
+    }
+
+    /// <summary>
+    /// The Trade menu: the acting character's potions, weakest potency first, each with
+    /// how many are carried. See <see cref="DrawSpellMenu"/>'s remarks: called only when
+    /// <see cref="PlayFocus.TradeMenu"/> is both the layer being visited and
+    /// <c>_focus.Top</c>, and <c>_menuRows</c> is cleared by <c>ClearMenuRows</c> before
+    /// the traversal runs, not by this method.
+    /// </summary>
+    private void DrawTradeMenu(Combatant character)
+    {
+        // Over the board, as an overlay. These lists used to live under the second
+        // button row; fullscreen gave that ground to the board, and every row below
+        // already paints its own filled backdrop, so only the header needs one.
+        var top = UiTop + 28;
+
+        DrawRect(
+            new Rect2(UiLeft - 8, top - 24, 470, 30),
+            new Color(Background.R, Background.G, Background.B, 0.9f));
+
+        DrawString(TextFont, new Vector2(UiLeft, top - 6), "TRADE — click a potion, or arrows and Enter", fontSize: 12, modulate: Dim);
+
+        var y = top + 6;
+
+        var menu = (PlayFocus.RowMenu)_focus.Top;
+
+        // Weakest potency first, matching InventoryState.Weakest and the console's own
+        // default — the potion a client reaches for by default is never the wrong end of
+        // that trade by much.
+        foreach (var (potency, count) in character.Inventory.Potions.OrderBy(pair => pair.Key))
+        {
+            var rect = new Rect2(UiLeft, y, 260, 20);
+            _menuRows.Add(menu, rect, () => ChooseTradePotency(potency));
+
+            DrawRect(rect, GridLine);
+
+            if (_menuRows.CountFor(menu) - 1 == menu.MenuIndex)
+            {
+                DrawRect(rect, ActiveRing, filled: false, width: 2f);
+            }
+
+            DrawString(
+                TextFont,
+                new Vector2(rect.Position.X + 8, rect.Position.Y + 15),
+                $"{PotionRules.PrintedName(potency)} ×{count}",
                 fontSize: 12,
                 modulate: Ink);
 

@@ -1,5 +1,6 @@
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 using SRDCombat.Viewer.Ui;
 
@@ -270,6 +271,16 @@ internal abstract record PlayFocus
     internal sealed record SlotMenu(SpellDefinition Spell) : RowMenu;
 
     /// <summary>
+    /// The potion potencies the acting character carries, offered for Trade.
+    /// </summary>
+    /// <remarks>
+    /// No payload of its own: unlike <see cref="SlotMenu"/>'s spell, which of the party
+    /// this menu belongs to is always whoever is currently commanded, so its rows are
+    /// read straight off that character's <c>Inventory</c> when it draws.
+    /// </remarks>
+    internal sealed record TradeMenu : RowMenu;
+
+    /// <summary>
     /// An armed action waiting for the player to point at something.
     /// </summary>
     /// <remarks>
@@ -283,11 +294,17 @@ internal abstract record PlayFocus
     /// <param name="Attack">The named attack, when one was chosen off the menu.</param>
     /// <param name="Spell">The spell, when a spell is armed.</param>
     /// <param name="Slot">The slot level chosen, when the caster was offered a choice.</param>
+    /// <param name="Potency">
+    /// The potion potency chosen off <see cref="TradeMenu"/>, when a trade is armed. Carried
+    /// by this layer rather than an unrelated field on <c>PlayMode</c> — the same reason
+    /// <paramref name="Attack"/>, <paramref name="Spell"/> and <paramref name="Slot"/> are.
+    /// </param>
     internal sealed record Targeting(
         TargetKind Kind,
         CombatAttack? Attack = null,
         SpellDefinition? Spell = null,
-        int? Slot = null) : PlayFocus
+        int? Slot = null,
+        HealingPotion? Potency = null) : PlayFocus
     {
         // Esc un-aims and hands the player back the menu that armed this, or the board when
         // nothing did — a single attack and Tab's cold arming both come straight off the

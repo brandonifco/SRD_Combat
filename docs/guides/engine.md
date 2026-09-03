@@ -85,6 +85,14 @@ the detail that only becomes actionable once you are in the code.
 - **Potions**: `PotionRules` is a curated transcription (the potencies live in
   body-text print); drinking and administering both cost the Bonus Action (page
   204); refusals fire *before* the potion is spent.
+- **Trade** (`Encounter.TradeItem`, #536) moves one potion from the active combatant to
+  an adjacent ally, free once a turn — a stated designer reading, not a printed cost,
+  tracked on `TurnResources.HasTradeInteraction` rather than the Action or Bonus Action.
+  Consumables only: a live `Encounter` cannot re-resolve two combatants' equipment
+  mid-fight, so a gear request is refused with `trade.gear_in_fight` rather than
+  attempted. Unlike `DrinkPotion`, the direction is always giver to recipient — it never
+  falls back to the recipient's own pack — and an Unconscious ally may still receive one,
+  following `DrinkPotion`'s own precedent.
 - **Loot rates are this project's design; the items are the book's.** The SRD prints
   no award rate; `LootTable` states ours. Equipping is a draft change re-resolved —
   found gear rides the save for free and cannot drift.

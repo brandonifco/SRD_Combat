@@ -16,6 +16,9 @@ public enum TargetKind
     /// <summary>An ally within reach who could drink a potion.</summary>
     Potion,
 
+    /// <summary>An ally within reach who could receive a traded item.</summary>
+    Trade,
+
     /// <summary>An ally, for Divine Spark's healing half.</summary>
     SparkHeal,
 
@@ -145,6 +148,13 @@ public static class TargetChoice
                 !enemy
                 && (ReferenceEquals(candidate, actor) || distance <= PotionRules.ReachFeet)
                 && (candidate.Inventory.TotalPotions > 0 || actor.Inventory.TotalPotions > 0),
+
+            // Trading needs only reach and a living ally other than the actor — what the
+            // recipient already carries plays no part, unlike Potion's candidate list,
+            // because the point is redistributing what the actor already has rather than
+            // finding a flask that exists somewhere between the two packs.
+            TargetKind.Trade =>
+                !enemy && !ReferenceEquals(candidate, actor) && distance <= PotionRules.ReachFeet,
 
             // A spell's own printed range, and its own shape deciding which side it
             // wants. Self-range spells have no target but the caster.

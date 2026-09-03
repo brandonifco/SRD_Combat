@@ -40,6 +40,7 @@ public class PlayFocusTests
         ["AttackMenu"] = new(new PlayFocus.AttackMenu(), EscapeMeaning.CloseSelf, true, false, false, true),
         ["SpellMenu"] = new(new PlayFocus.SpellMenu(), EscapeMeaning.CloseSelf, true, false, false, true),
         ["SlotMenu"] = new(new PlayFocus.SlotMenu(FightTestData.AnySpell()), EscapeMeaning.CloseSelf, true, false, false, true),
+        ["TradeMenu"] = new(new PlayFocus.TradeMenu(), EscapeMeaning.CloseSelf, true, false, false, true),
         ["Targeting"] = new(new PlayFocus.Targeting(TargetKind.Attack), EscapeMeaning.CloseSelf, false, true, false, true),
 
         // S2 (#501). Two rows where the obvious answer is wrong, both preserved verbatim:

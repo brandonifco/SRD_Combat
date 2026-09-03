@@ -132,6 +132,44 @@ public class TargetChoiceTests
         Assert.Empty(TargetChoice.For(encounter, actor, TargetKind.Potion));
     }
 
+    [Fact]
+    public void TradeTargetsAreLivingAlliesWithinReachExcludingSelfEnemiesAndDistantAllies()
+    {
+        // Unlike Potion, ownership plays no part: the point is redistributing what the
+        // actor already carries, so an ally offering nothing of their own is still a
+        // legal recipient.
+        var (encounter, actor, ally, _) = TradeFight();
+
+        var targets = TargetChoice.For(encounter, actor, TargetKind.Trade);
+
+        Assert.Equal([ally.Id], targets.Select(target => target.Id));
+    }
+
+    [Fact]
+    public void AnUnconsciousAllyIsStillATradeTarget()
+    {
+        var (encounter, actor, ally, _) = TradeFight();
+        DamageRules.Apply(ally, ally.Stats.MaximumHitPoints, DamageType.Slashing);
+
+        Assert.True(ally.HasCondition(ConditionType.Unconscious));
+        Assert.Contains(
+            TargetChoice.For(encounter, actor, TargetKind.Trade),
+            target => target.Id == ally.Id);
+    }
+
+    [Fact]
+    public void ADeadAllyIsNotATradeTarget()
+    {
+        var (encounter, actor, ally, _) = TradeFight();
+        DamageRules.Apply(ally, ally.Stats.MaximumHitPoints, DamageType.Slashing);
+        DamageRules.Apply(ally, ally.Stats.MaximumHitPoints, DamageType.Slashing);
+
+        Assert.True(ally.IsDead);
+        Assert.DoesNotContain(
+            TargetChoice.For(encounter, actor, TargetKind.Trade),
+            target => target.Id == ally.Id);
+    }
+
     private const string Party = "party";
     private const string Monsters = "monsters";
 
@@ -175,6 +213,29 @@ public class TargetChoiceTests
             new SeededRandomSource(5));
 
         return (encounter, encounter.Combatants.Single(combatant => combatant.Id == "hero"));
+    }
+
+    /// <summary>
+    /// A hero, an adjacent ally, a distant ally 30 feet off, and an adjacent enemy —
+    /// Trade's own candidate rules read allegiance and distance, not who carries what.
+    /// </summary>
+    private static (Encounter Encounter, Combatant Actor, Combatant Ally, Combatant Distant) TradeFight()
+    {
+        var encounter = Encounter.Start(
+            new Battlefield(20, 12),
+            [
+                Combatant("hero", Party, 0, 0, initiative: 10),
+                Combatant("ally", Party, 0, 1),
+                Combatant("distant", Party, 0, 6),
+                Combatant("near", Monsters, 1, 0),
+            ],
+            new SeededRandomSource(5));
+
+        return (
+            encounter,
+            encounter.Combatants.Single(combatant => combatant.Id == "hero"),
+            encounter.Combatants.Single(combatant => combatant.Id == "ally"),
+            encounter.Combatants.Single(combatant => combatant.Id == "distant"));
     }
 
     private static Combatant Combatant(string id, string side, int x, int y, int initiative = -10)
