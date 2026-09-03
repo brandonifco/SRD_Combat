@@ -459,11 +459,12 @@ public class TurnUndeadTests
     // and a turned creature is Incapacitated — so a turned Undead can never be
     // Cleave's auto-selected second target in the first place. The
     // BreakTurnEffectOnDamage call at that site (Encounter.cs, beside
-    // CheckConcentration(second, ...)) is still wired for four-site census
-    // consistency with Graze, the attack/Multiattack loop and the save-effect loop —
-    // and stands ready the moment Cleave's own filter ever changes — but it is not
-    // independently reachable or knockout-verifiable against a turned creature today.
-    // Stated here rather than faked with a test that cannot exercise what it claims to.
+    // CheckConcentration(second, ...)) is still wired for five-site census
+    // consistency with Graze, the attack/Multiattack loop, the save-effect loop and
+    // Sear Undead (#618) — and stands ready the moment Cleave's own filter ever
+    // changes — but it is not independently reachable or knockout-verifiable against
+    // a turned creature today. Stated here rather than faked with a test that cannot
+    // exercise what it claims to.
 
     [Fact]
     public void ASaveEffectAlsoBreaksTheTurning()

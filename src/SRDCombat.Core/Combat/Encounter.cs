@@ -936,7 +936,7 @@ public sealed partial class Encounter
     /// The same shape <see cref="EndBrokenGrapples"/> already reads off a grapple's
     /// source, generalised from one condition (Grappled) to every condition flagged
     /// <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>. Swept from the same
-    /// boundaries: <see cref="EndTurn"/>, and after each of the four sites that can
+    /// boundaries: <see cref="EndTurn"/>, and after each of the five sites that can
     /// apply damage — a Cleric downed or killed mid-round should free anything it
     /// turned promptly, not merely at its own next turn boundary.
     /// </remarks>

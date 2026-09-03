@@ -594,8 +594,8 @@ public sealed partial class Encounter
     /// A kill (<c>DamageResult.Died</c>) skips the Frightened/Incapacitated imposition
     /// below outright — there is no creature left to turn — and
     /// <see cref="EndTurnEffectsWhoseSourceIsDown"/> is swept alongside
-    /// <see cref="BreakTurnEffectOnDamage"/> at this damage site for the same
-    /// four-site-census consistency the rest of this file keeps, even though a turning's
+    /// <see cref="BreakTurnEffectOnDamage"/> at this damage site, joining it as the
+    /// fifth site in this file's damage-application census, even though a turning's
     /// source can only be a Cleric and this loop's targets are always Undead, so the
     /// sweep is a no-op here today.
     /// </para>
@@ -799,16 +799,16 @@ public sealed partial class Encounter
                 {
                     BreakTurnEffectOnDamage(target);
 
-                    // Paired for four-site census consistency with ApplyGraze, the
-                    // attack/Multiattack loop, TryCleave and ResolveSaveEffect, which
-                    // all sweep both calls back to back (#618, item 2). A no-op today by
-                    // construction, not by luck: this loop's own targets are validated
-                    // Undead (the not_undead refusal above), and only a Cleric can be a
-                    // turning's SourceId, so Sear Undead's damage can never bring down
-                    // the source of any turn effect — living or otherwise. Kept rather
-                    // than reasoned-and-omitted, so the invariant is enforced by code
-                    // that runs instead of resting on a comment nobody re-checks if a
-                    // future change ever lets it stop holding.
+                    // Joins ApplyGraze, the attack/Multiattack loop, TryCleave and
+                    // ResolveSaveEffect as the fifth site that sweeps both calls back to
+                    // back (#618, item 2). A no-op today by construction, not by luck:
+                    // this loop's own targets are validated Undead (the not_undead
+                    // refusal above), and only a Cleric can be a turning's SourceId, so
+                    // Sear Undead's damage can never bring down the source of any turn
+                    // effect — living or otherwise. Kept rather than reasoned-and-
+                    // omitted, so the invariant is enforced by code that runs instead of
+                    // resting on a comment nobody re-checks if a future change ever lets
+                    // it stop holding.
                     EndTurnEffectsWhoseSourceIsDown();
                 }
 
