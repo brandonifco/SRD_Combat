@@ -275,6 +275,33 @@ public sealed partial class Encounter
                 $"{attack.Name} is not part of {attacker.Name}'s Multiattack.");
         }
 
+        // A printed enumerated composition ("one Bite attack and one Claw attack",
+        // issue #343) binds each name to its own exact count — membership above is not
+        // enough, because it says nothing about a second Bite in the Claw's place.
+        // Refused before anything is spent, like every other targeting/usage rule here.
+        //
+        // Deliberately placed after the "attacksLeft <= 0 && !HasAction" action.spent
+        // check further up, not before it: MultiattackEffect's own invariant
+        // (Composition's component counts sum to AttackCount, which is
+        // CombatantStats.AttacksPerAction — see EntryEffects.cs and
+        // EntryMechanicsTests.EveryEnumeratedCompositionSatisfiesItsInvariants) makes
+        // "a capped name attempted with zero action budget left" unreachable through
+        // this branch by construction — the whole action is always spent at the exact
+        // moment the composition's last slot fills, so that state hits action.spent
+        // first, which is the truer refusal (there is no action left at all,
+        // independent of composition). This code exists to refuse one thing only:
+        // repeating an already-capped name while budget remains for a name that has
+        // not been used yet — the exact substitution the printed enumeration forbids.
+        // If this branch is ever observed firing at zero remaining budget, the
+        // invariant above has broken, not this guard.
+        if (attacker.Stats.MultiattackCapFor(attack.Name) is { } cap
+            && attacker.Features.MultiattackSwingsThisAction.GetValueOrDefault(attack.Name) >= cap)
+        {
+            return new ActionRefusal(
+                "attack.composition_exhausted",
+                $"{attacker.Name} has already made all its {attack.Name} attacks this turn.");
+        }
+
         // "(Recharge 5-6)" and "(3/Day)" gate an attack wherever it is used from — the
         // Minotaur's Gore is a plain attack with a recharge printed on it.
         if (CheckUsage(attacker, attack.Name) is { } unavailable)
@@ -290,7 +317,11 @@ public sealed partial class Encounter
         {
             attacker.Turn.SpendAction();
             attacker.Features.AttacksRemainingThisAction = Math.Max(0, attacker.Stats.AttacksPerAction - 1);
+            attacker.Features.MultiattackSwingsThisAction.Clear();
         }
+
+        attacker.Features.MultiattackSwingsThisAction[attack.Name] =
+            attacker.Features.MultiattackSwingsThisAction.GetValueOrDefault(attack.Name) + 1;
 
         attacker.Uses.Spend(attack.Name);
         ResolveAttack(attacker, attack, target, isOpportunityAttack: false);

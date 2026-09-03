@@ -397,6 +397,14 @@ public sealed record AppliedCondition(
 }
 
 /// <summary>
+/// One named attack's exact share of a printed enumerated Multiattack composition —
+/// <c>Bite×1</c> in "The bear makes one Bite attack and one Claw attack."
+/// </summary>
+/// <param name="Name">The attack's name, matched against the creature's named attacks.</param>
+/// <param name="Count">How many of this attack this Attack action makes.</param>
+public sealed record MultiattackComponent(string Name, int Count);
+
+/// <summary>
 /// A Multiattack: <c>The bandit makes two attacks, using Scimitar and Pistol in any
 /// combination.</c>
 /// </summary>
@@ -409,10 +417,26 @@ public sealed record AppliedCondition(
 /// True when the creature may mix the named attacks freely, false when the text names
 /// one attack to repeat.
 /// </param>
+/// <param name="Composition">
+/// Non-null exactly for a printed <em>multi-name</em> enumerated composition —
+/// "one Bite attack and one Claw attack" — where the enumeration is exact and mandatory:
+/// each component names an attack and how many of that attack this Attack action makes,
+/// an exact per-name cap. The SRD prints substitution ("It can replace one attack with
+/// …") and free combination ("in any combination") with distinct grammar; where neither
+/// appears, the enumeration binds and no name may be swapped for another. Null for
+/// single-name repeats and free combinations, whose <see cref="AttackCount"/>,
+/// <see cref="AttackNames"/> and <see cref="AnyCombination"/> already express them in
+/// full — see <see cref="SRDCombat.Core.Combat.AreaTargeting"/> for the general shape of
+/// this kind of reading.
+/// When set: <see cref="AnyCombination"/> is false, <see cref="AttackNames"/> equals the
+/// component names in printed order, and <see cref="AttackCount"/> equals the sum of the
+/// components' counts.
+/// </param>
 public sealed record MultiattackEffect(
     int AttackCount,
     IReadOnlyList<string> AttackNames,
-    bool AnyCombination);
+    bool AnyCombination,
+    IReadOnlyList<MultiattackComponent>? Composition = null);
 
 /// <summary>How often an entry can be used.</summary>
 public enum UsageLimitKind

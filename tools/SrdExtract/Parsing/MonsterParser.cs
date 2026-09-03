@@ -101,11 +101,13 @@ public static partial class MonsterParser
         private readonly List<string> _gear = [];
         private readonly List<EntryBuilder> _entries = [];
         private readonly StringBuilder _statBuffer = new();
+        private readonly StringBuilder _legendaryActionsPreamble = new();
 
         private MonsterEntrySection _section = MonsterEntrySection.Trait;
         private bool _inStatHeader = true;
         private bool _metaSeen;
         private bool _canHover;
+        private bool _awaitingLegendaryActionsPreamble;
         private int? _armorClass;
         private int? _initiative;
         private int? _hitPoints;
@@ -115,6 +117,9 @@ public static partial class MonsterParser
         private int? _experience;
         private int? _lairExperience;
         private int? _proficiencyBonus;
+        private int? _legendaryActionUses;
+        private int? _legendaryActionUsesInLair;
+        private string? _legendaryActionsFailure;
         private IReadOnlyList<CreatureSize> _sizes = [];
         private CreatureType _type;
         private string? _subtype;
@@ -130,8 +135,17 @@ public static partial class MonsterParser
                 // column label, not a section.
                 case StatBlockFonts.SectionHeader when line.Height >= StatBlockFonts.MinimumSectionHeaderHeight:
                     FlushStatBuffer();
+                    FlushLegendaryActionsPreamble();
                     _inStatHeader = false;
-                    _section = ParseSection(line.Text) ?? _section;
+                    var parsedSection = ParseSection(line.Text);
+                    _section = parsedSection ?? _section;
+
+                    // The Legendary Actions header is followed by its own preamble
+                    // paragraph ("Legendary Action Uses: N...") before the first named
+                    // legendary action — prose with no entry heading of its own, which
+                    // would otherwise fall through to whichever entry was last open
+                    // (#423). Route it to its own buffer instead of _entries[^1].
+                    _awaitingLegendaryActionsPreamble = parsedSection == MonsterEntrySection.LegendaryAction;
                     return;
 
                 case StatBlockFonts.SectionHeader:
@@ -168,6 +182,7 @@ public static partial class MonsterParser
 
                 case StatBlockFonts.EntryName:
                     FlushStatBuffer();
+                    FlushLegendaryActionsPreamble();
                     _inStatHeader = false;
                     StartEntry(line);
                     return;
@@ -180,6 +195,10 @@ public static partial class MonsterParser
                     if (_inStatHeader)
                     {
                         AppendWrapped(_statBuffer, line.Text);
+                    }
+                    else if (_awaitingLegendaryActionsPreamble)
+                    {
+                        AppendWrapped(_legendaryActionsPreamble, line.Text);
                     }
                     else if (_entries.Count > 0)
                     {
@@ -194,6 +213,13 @@ public static partial class MonsterParser
         {
             monster = null!;
             FlushStatBuffer();
+            FlushLegendaryActionsPreamble();
+
+            if (_legendaryActionsFailure is not null)
+            {
+                reason = _legendaryActionsFailure;
+                return false;
+            }
 
             if (_armorClass is null || _hitPoints is null || _hitDice is null)
             {
@@ -249,6 +275,8 @@ public static partial class MonsterParser
                 ExperiencePoints = _experience.Value,
                 LairExperiencePoints = _lairExperience,
                 ProficiencyBonus = _proficiencyBonus.Value,
+                LegendaryActionUses = _legendaryActionUses,
+                LegendaryActionUsesInLair = _legendaryActionUsesInLair,
                 Entries = _entries.Select(entry => entry.Build()).ToArray(),
                 SourcePage = page,
             };
@@ -288,6 +316,42 @@ public static partial class MonsterParser
             _type = meta.Type;
             _subtype = meta.Subtype;
             _alignment = meta.Alignment;
+        }
+
+        /// <summary>
+        /// Parses the buffered Legendary Actions preamble once it is known to be
+        /// complete — the first entry name of that section, another section header, or
+        /// the end of the block. A grammar mismatch is recorded rather than dropped
+        /// (#423): the corpus-verified sentence shape is closed, so a mismatch means
+        /// either the printed text changed or the wrong prose reached this buffer, and
+        /// either is a genuine loss if it built the monster anyway.
+        /// </summary>
+        private void FlushLegendaryActionsPreamble()
+        {
+            if (!_awaitingLegendaryActionsPreamble)
+            {
+                return;
+            }
+
+            _awaitingLegendaryActionsPreamble = false;
+
+            if (_legendaryActionsPreamble.Length == 0)
+            {
+                return;
+            }
+
+            var text = _legendaryActionsPreamble.ToString().Trim();
+            _legendaryActionsPreamble.Clear();
+
+            if (StatBlockLineGrammar.ParseLegendaryActionUses(text) is { } uses)
+            {
+                _legendaryActionUses = uses.Uses;
+                _legendaryActionUsesInLair = uses.UsesInLair;
+                return;
+            }
+
+            _legendaryActionsFailure =
+                $"the Legendary Actions preamble did not match the expected grammar: '{text}'";
         }
 
         /// <summary>

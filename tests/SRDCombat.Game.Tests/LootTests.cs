@@ -342,19 +342,11 @@ public class LootTests
         Assert.Contains("weapon 'weapon.nonexistent'", failure.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void ASeededRunWithLootPlaysToItsEndWithoutRefusals()
-    {
-        // The long-haul guard: thirty rungs of drops, upgrades and re-resolves must
-        // never produce a draft the resolver refuses mid-run.
-        for (var seed = 1; seed <= 10; seed++)
-        {
-            var run = GauntletRun.Start(Content);
-            PlayOut(run, seed);
-
-            Assert.NotEqual(RunOutcome.InProgress, run.Outcome);
-        }
-    }
+    // The long-haul guard — thirty rungs of drops, upgrades and re-resolves must never
+    // produce a draft the resolver refuses mid-run — lives in SeededLootRunTests, split
+    // one seed per class so its ten full-gauntlet runs parallelise across cores instead
+    // of running one after another as a single ~208s serial block. See that file's
+    // remarks; the seeds (1..10) and assertion are unchanged.
 
     private static void PlayOut(GauntletRun run, int seed)
     {

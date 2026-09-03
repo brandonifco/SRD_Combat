@@ -167,13 +167,22 @@ public class EntryMechanicsTests
             "or it makes three Slam attacks if it used Hasten this turn",
             Assert.Single(golemMultiattack.UnmodelledClauses));
 
+        // Post-#342, the Barbed Devil's and the Medusa's first (unconditional) branch
+        // is a clean fixed enumeration — each clause names exactly one attack, two
+        // distinct names — so issue #343's STRICT-EXACT reading applies here too: an
+        // exact per-name composition, not a free choice. The alternative branch stays
+        // exactly where #382 put it, residue by subtraction — this change only reads
+        // the quantities the parser already matched in the kept branch.
         var devil = Content.MonstersById["monster.barbed-devil"];
         var devilMultiattack = devil.Entries.Single(entry => entry.Name == "Multiattack");
         var devilEffect = Assert.IsType<MultiattackEffect>(devilMultiattack.Multiattack);
 
         Assert.Equal(2, devilEffect.AttackCount);
-        Assert.True(devilEffect.AnyCombination);
+        Assert.False(devilEffect.AnyCombination);
         Assert.Equal(["Claws", "Tail"], devilEffect.AttackNames);
+        Assert.Equal(
+            [new MultiattackComponent("Claws", 1), new MultiattackComponent("Tail", 1)],
+            devilEffect.Composition);
         Assert.Equal(
             "or it makes two Hurl Flame attacks",
             Assert.Single(devilMultiattack.UnmodelledClauses));
@@ -183,8 +192,11 @@ public class EntryMechanicsTests
         var medusaEffect = Assert.IsType<MultiattackEffect>(medusaMultiattack.Multiattack);
 
         Assert.Equal(3, medusaEffect.AttackCount);
-        Assert.True(medusaEffect.AnyCombination);
+        Assert.False(medusaEffect.AnyCombination);
         Assert.Equal(["Claw", "Snake Hair"], medusaEffect.AttackNames);
+        Assert.Equal(
+            [new MultiattackComponent("Claw", 2), new MultiattackComponent("Snake Hair", 1)],
+            medusaEffect.Composition);
         Assert.Equal(
             "or it makes three Poison Ray attacks",
             Assert.Single(medusaMultiattack.UnmodelledClauses));
@@ -256,13 +268,20 @@ public class EntryMechanicsTests
         // trailing connective is ever considered (design §4.2 rule 1). TrimGlue never
         // trims a trailing connective word on purpose (§4.2 rule 3): a dangling "and"
         // says a fragment was lost here, which is honest, not untidy.
+        // Issue #343: both clauses name exactly one attack each ("two Tentacle
+        // attacks" ... "two Bite attacks"), so this is a printed enumerated
+        // composition rather than a free choice — unaffected by the bundled "uses
+        // Reel" clause between them, which stays exactly the residue it was.
         var roper = Content.MonstersById["monster.roper"];
         var roperMultiattack = roper.Entries.Single(entry => entry.Name == "Multiattack");
         var roperEffect = Assert.IsType<MultiattackEffect>(roperMultiattack.Multiattack);
 
         Assert.Equal(4, roperEffect.AttackCount);
-        Assert.True(roperEffect.AnyCombination);
+        Assert.False(roperEffect.AnyCombination);
         Assert.Equal(["Tentacle", "Bite"], roperEffect.AttackNames);
+        Assert.Equal(
+            [new MultiattackComponent("Tentacle", 2), new MultiattackComponent("Bite", 2)],
+            roperEffect.Composition);
         Assert.Equal("uses Reel, and", Assert.Single(roperMultiattack.UnmodelledClauses));
     }
 
@@ -334,6 +353,118 @@ public class EntryMechanicsTests
         Assert.Equal(2, effect.AttackCount);
         Assert.False(effect.AnyCombination);
         Assert.Equal("Slam", Assert.Single(effect.AttackNames));
+    }
+
+    [Fact]
+    public void EveryEnumeratedCompositionSatisfiesItsInvariants()
+    {
+        // Design §2.2's invariants, checked against the real corpus for every monster
+        // whose Multiattack carries a non-null Composition (issue #343).
+        var compositions = Content.Monsters
+            .SelectMany(monster => monster.Entries
+                .Where(entry => entry.Mechanics == EntryMechanics.Multiattack)
+                .Select(entry => entry.Multiattack)
+                .OfType<MultiattackEffect>()
+                .Where(effect => effect.Composition is not null)
+                .Select(effect => (monster.Name, Effect: effect)))
+            .ToList();
+
+        // A change here without a corresponding regeneration would mean this test is
+        // running against stale content — guard the guard.
+        Assert.NotEmpty(compositions);
+
+        foreach (var (name, effect) in compositions)
+        {
+            var composition = effect.Composition!;
+
+            Assert.False(effect.AnyCombination, $"{name}: a composition must not also be AnyCombination.");
+
+            Assert.Equal(composition.Select(component => component.Name), effect.AttackNames);
+
+            // Load-bearing beyond this test: Encounter.Attack's composition_exhausted
+            // guard relies on this exact equality to know that the whole Attack action
+            // is always spent at the moment the last component fills — see the comment
+            // on that guard in Encounter.cs. Loosening this invariant would let a
+            // capped name be attempted with the action already spent, a state that
+            // guard does not defend against (action.spent fires first there, by
+            // design).
+            Assert.Equal(composition.Sum(component => component.Count), effect.AttackCount);
+
+            Assert.All(
+                composition,
+                component => Assert.True(component.Count >= 1, $"{name}: {component.Name} has count {component.Count}."));
+
+            var distinctNames = composition
+                .Select(component => component.Name)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Count();
+            Assert.Equal(composition.Count, distinctNames);
+        }
+    }
+
+    [Fact]
+    public void TheEnumeratedCompositionCensusIsExactlyTheDesignersTwentyOne()
+    {
+        // The corrected census from the designer's spec for issue #343 (21, not the
+        // issue's original estimate of 19 — post-#341/#342, the Barbed Devil and the
+        // Medusa's kept branch is now a clean fixed enumeration too). A creature
+        // leaving or joining this set is a real reading change and must be argued for,
+        // not an incidental side effect of an unrelated parser edit.
+        var expected = new Dictionary<string, MultiattackComponent[]>
+        {
+            ["monster.brown-bear"] = [new("Bite", 1), new("Claw", 1)],
+            ["monster.ettercap"] = [new("Bite", 1), new("Claw", 1)],
+            ["monster.grick"] = [new("Beak", 1), new("Tentacles", 1)],
+            ["monster.bearded-devil"] = [new("Beard", 1), new("Infernal Glaive", 1)],
+            ["monster.giant-scorpion"] = [new("Claw", 2), new("Sting", 1)],
+            ["monster.ettin"] = [new("Battleaxe", 1), new("Morningstar", 1)],
+            ["monster.barbed-devil"] = [new("Claws", 1), new("Tail", 1)],
+            ["monster.giant-crocodile"] = [new("Bite", 1), new("Tail", 1)],
+            ["monster.otyugh"] = [new("Bite", 1), new("Tentacle", 2)],
+            ["monster.roper"] = [new("Tentacle", 2), new("Bite", 2)],
+            ["monster.unicorn"] = [new("Hooves", 1), new("Radiant Horn", 1)],
+            ["monster.xorn"] = [new("Bite", 1), new("Claw", 3)],
+            ["monster.chimera"] = [new("Ram", 1), new("Bite", 1), new("Claw", 1)],
+            ["monster.medusa"] = [new("Claw", 2), new("Snake Hair", 1)],
+            ["monster.wyvern"] = [new("Bite", 1), new("Sting", 1)],
+            ["monster.cloaker"] = [new("Attach", 1), new("Tail", 2)],
+            ["monster.tyrannosaurus-rex"] = [new("Bite", 1), new("Tail", 1)],
+            ["monster.bone-devil"] = [new("Claw", 2), new("Infernal Sting", 1)],
+            ["monster.purple-worm"] = [new("Bite", 1), new("Tail Stinger", 1)],
+            ["monster.balor"] = [new("Flame Whip", 1), new("Lightning Blade", 1)],
+            ["monster.pit-fiend"] = [new("Bite", 1), new("Devilish Claw", 2), new("Fiery Mace", 1)],
+        };
+
+        var actual = Content.Monsters
+            .Where(monster => monster.Entries.Any(entry =>
+                entry.Mechanics == EntryMechanics.Multiattack && entry.Multiattack?.Composition is not null))
+            .ToDictionary(
+                monster => monster.Id,
+                monster => monster.Entries.Single(entry => entry.Mechanics == EntryMechanics.Multiattack)
+                    .Multiattack!.Composition!);
+
+        Assert.Equal(expected.Count, actual.Count);
+
+        foreach (var (id, composition) in expected)
+        {
+            Assert.True(actual.TryGetValue(id, out var actualComposition), $"{id} is missing from the census.");
+            Assert.Equal(composition, actualComposition);
+        }
+
+        // Design §2.5's defensive guard: no modelled (non-Unmodelled) Multiattack may
+        // carry the mixed single-named-plus-choice shape the model cannot express —
+        // every one either has a Composition (this census) or is a free choice
+        // (AnyCombination true, Composition null) or a single-name repeat
+        // (AnyCombination false, Composition null, exactly one AttackName).
+        var mixedShape = Content.Monsters
+            .SelectMany(monster => monster.Entries
+                .Where(entry => entry.Mechanics == EntryMechanics.Multiattack)
+                .Select(entry => entry.Multiattack)
+                .OfType<MultiattackEffect>())
+            .Where(effect => effect.Composition is null && !effect.AnyCombination && effect.AttackNames.Count > 1)
+            .ToList();
+
+        Assert.Empty(mixedShape);
     }
 
     [Fact]

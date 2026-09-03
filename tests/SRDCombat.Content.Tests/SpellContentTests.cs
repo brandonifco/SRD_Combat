@@ -377,16 +377,75 @@ public class SpellContentTests
     }.Select(id => new object[] { id });
 
     /// <summary>
-    /// Census regression for every multi-component spell in the corpus (#375): the
-    /// fourteen spells that genuinely print more than one damage component — three
-    /// simultaneous "and"s the fix must be structurally unable to touch (Flame Strike,
-    /// Ice Storm, Meteor Swarm), eight flattened multi-event "and"s that are a
+    /// Census regression for every multi-component spell in the corpus (#375, #391):
+    /// the fourteen spells that genuinely print more than one damage component — three
+    /// simultaneous "and"s the #375 fix must be structurally unable to touch (Flame
+    /// Strike, Ice Storm, Meteor Swarm), eight flattened multi-event "and"s that are a
     /// separate, already-stated limitation (Acid Arrow, Ice Knife, Tsunami, Vitriolic
     /// Sphere, Wall of Ice, Wall of Thorns, Weird, Storm of Vengeance), and three
-    /// unrelated or-shapes out of scope for this fix (Fire Shield, Prismatic Spray,
-    /// Prismatic Wall) — plus Spirit Guardians itself, now down to one component. Exact
-    /// dice, type and count, not floors: any of the fourteen moving is the fix leaking
-    /// past its scope.
+    /// distinct shapes the #375 fix does not address, whose summed data is a
+    /// deliberate, documented non-representation (Fire Shield, Prismatic Spray,
+    /// Prismatic Wall; the reading is below) — plus Spirit Guardians itself, now down
+    /// to one component. Exact dice, type and count, not floors: any of the fourteen
+    /// moving is a fix leaking past its scope.
+    ///
+    /// The reading for the three (#391), print verified against SRD 5.2.1 — and the
+    /// three are NOT the same shape, so the reasons the sum stands differ:
+    ///
+    /// Fire Shield (p. 132, L4 Evocation) is one cast-time choice — a warm shield
+    /// (Resistance to Cold; a melee attacker takes 2d8 Fire) OR a chill shield
+    /// (Resistance to Fire; the attacker takes 2d8 Cold), "as you choose," fixed for the
+    /// duration. No creature ever takes both. The data sums both branches
+    /// (2d8 Fire + 2d8 Cold); its mechanics is Unmodelled (the reactive melee-eruption
+    /// is not executed) and both branches are preserved verbatim in UnclassifiedClauses,
+    /// so the branch a single cast drops is already counted, not lost.
+    ///
+    /// Prismatic Spray (p. 154, L7) selects ONE outcome PER TARGET by a 1d8 roll on the
+    /// Prismatic Rays table: five of the seven rays deal 12d6 of five different types
+    /// (Fire/Acid/Lightning/Poison/Cold), rays 6-7 are condition-only (carried as
+    /// UnmodelledRequirement on the save's applied conditions), and a roll of 8 strikes
+    /// with two rays (reroll 8s). A single target takes 12d6 of one type (24d6 at most,
+    /// on an 8) — so the summed 5x12d6 = 60d6 the data records OVERCOUNTS; no target
+    /// ever takes it.
+    ///
+    /// Prismatic Wall (p. 155, L9) is the opposite shape and must NOT be read as a
+    /// roll-table. A creature passes through the wall "one layer at a time through all
+    /// the layers," and "Each layer forces the creature to make a Dexterity saving
+    /// throw." So a pass-through is hit by ALL five damaging layers (Red/Orange/Yellow/
+    /// Green/Blue, 12d6 each), each its own save — the additive 5x12d6 = 60d6 IS a
+    /// genuine printed total, not a fabrication. What is unmodelled is the shape: the
+    /// data collapses five independent per-layer Dex saves into one all-or-nothing save
+    /// with 60d6 FailureDamage, whereas print rolls each layer separately (a creature
+    /// can fail some layers and take half on others). The total is right; the structure
+    /// is wrong.
+    ///
+    /// Why the summed data stands rather than a curated single branch or a new shape:
+    /// all three are dead data. None is on PreparableSpells (the sole castable authority
+    /// — CLAUDE.md's stated spell exception), and at L4/L7/L9 none is reachable or
+    /// executable by any castable consumer — not a level 1-5 party, not a monster
+    /// policy. (Prismatic Spray is named as an inert castable in the Helm of Brilliance
+    /// text in magic-items.json — prose the engine never executes, not a consumer.) So
+    /// nothing lies at the point of play. A faithful model needs a per-target d8
+    /// roll-table selector (Spray), a five-independent-saves sequence (Wall), or a
+    /// cast-time-choice selector (Fire Shield) — new Core shapes the project will not
+    /// grow for spells no castable consumer can reach; that work, if a future castable
+    /// consumer ever demands it, is architect territory triggered then, not by these
+    /// three. A curated single branch was rejected for both Prismatic spells, for
+    /// opposite reasons: for Spray's uniform roll no ray is "default," so asserting one
+    /// (e.g. 12d6 Fire) fabricates a favored type; for Wall the 60d6 total is correct,
+    /// so reducing to one layer would UNDERcount four genuine damage layers. The summed
+    /// data, pinned here with its reasoning, is the honest disposition for inert data.
+    ///
+    /// Residual risk, documented not hidden: the Prismatic pair carry
+    /// mechanics = SavingThrow with the 60d6 sum, so were either ever added to a
+    /// castable menu WITHOUT first correcting this data, the engine would resolve a
+    /// single 60d6 save-for-half — for Spray a gross overcount, for Wall the right total
+    /// in the wrong (all-or-nothing) shape; neither matches print (Fire Shield's
+    /// Unmodelled mechanics is refused instead, and is safe). The last-line guard is
+    /// PreparableSpells curation. This census test is the tripwire the other way: the
+    /// moment anyone corrects the damage toward a real castable value, this test goes
+    /// red and forces the selector / multi-save / cast-time-choice decision at that
+    /// point.
     /// </summary>
     [Theory]
     [MemberData(nameof(MultiComponentSpellIds))]

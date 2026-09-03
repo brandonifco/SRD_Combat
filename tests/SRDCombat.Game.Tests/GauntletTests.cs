@@ -598,31 +598,10 @@ public class GauntletTests
         Assert.Equal(dead.ExperiencePoints, dead.Earning(500).ExperiencePoints);
     }
 
-    [Fact]
-    public void ARunReachesLevelFiveIfItIsPlayedOutFarEnough()
-    {
-        // The pacing claim the default ladder's length rests on: thirty fights is enough
-        // to carry a party from level 1 to the top of this game's tier. Fought by the
-        // policy on both sides, so it is the arithmetic being tested, not tactics.
-        var run = GauntletRun.Start(Content, GauntletLadder.Default());
-        var random = new SeededRandomSource(4242);
-
-        while (run.Next is not null)
-        {
-            run.PrepareForNext(random);
-            var fight = run.BeginNext(random);
-            SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
-            run.CompleteFight(fight);
-        }
-
-        // However the run ended, nobody may exceed the supported tier.
-        Assert.All(run.States, state => Assert.InRange(state.Level, 1, AdvancementRules.MaximumSupportedLevel));
-
-        if (run.Outcome == RunOutcome.Survived)
-        {
-            Assert.Contains(run.States, state => state.Level >= 3);
-        }
-    }
+    // ARunReachesLevelFiveIfItIsPlayedOutFarEnough — the full thirty-fight playthrough,
+    // this class's single longest serial run — lives in GauntletFullRunTests so it runs
+    // in its own collection rather than serialising behind the rest of this class. Seed
+    // and assertions unchanged.
 
     [Fact]
     public void AFallenCharacterRejoinsOnALongRest()

@@ -12,11 +12,22 @@ namespace SRDCombat.Game.Tests;
 /// repaired when anything is wrong with it.
 /// </summary>
 /// <remarks>
+/// <para>
 /// These pin the on-disk shape the way <c>ContentSerializerTests</c> pins content — a
 /// change to what a save holds should fail here loudly, not surface as an unreadable
 /// file after the format has drifted.
+/// </para>
+/// <para>
+/// This class is deliberately <em>not</em> in the "SaveFile filesystem fault injection"
+/// collection: every test here is pure in-memory work (<see cref="RunSave.ToJson"/> /
+/// <see cref="RunSave.FromJson"/>, <see cref="GauntletRun.Resume"/>, played-out fights),
+/// so it is free to run in parallel with the rest of the suite. The one test that touched
+/// the process-wide <c>SaveFile</c> seam — and so had to be serialised against the fault
+/// injection — was moved to <see cref="RunSaveFileStampingTests"/>, which carries the
+/// collection. Keeping this class out of it lets its full-ladder playthrough
+/// (<see cref="AResumedRunPlaysOnToItsEnd"/>) overlap the rest rather than forcing a
+/// ~70s window in which the fault collection runs alone.
 /// </remarks>
-[Collection("SaveFile filesystem fault injection")]
 public class RunSaveTests
 {
     // Shared with the scenario-format classes rather than loaded a second time — see
@@ -321,47 +332,10 @@ public class RunSaveTests
             StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// A save missing both #286's and #287's fields — the exact shape of a save
-    /// written before either landed — loads, resumes, and is fully stamped with real
-    /// values for both: the content version by the resolve <see cref="GauntletRun.ToSave"/>
-    /// does on any autosave, the seed immediately by <see cref="GauntletRun.AdoptSeed"/>
-    /// itself (#361).
-    /// </summary>
-    [Fact]
-    public void ASaveMissingBothSeedAndContentVersionLoadsAndIsFullyStampedAfterOneAutosave()
-    {
-        var saved = RunWithHistory().ToSave() with { Seed = null, ContentVersion = null };
-        var savePath = Path.Combine(Path.GetTempPath(), $"srdcombat-adoptseed-test-{Guid.NewGuid():N}.json");
-
-        try
-        {
-            SaveFile.BeginNewRun(savePath, ContentSerializer.Serialize(saved));
-            var loaded = SaveFile.LoadRun(savePath);
-
-            Assert.NotNull(loaded.Saved);
-            Assert.Null(loaded.Saved!.Seed);
-            Assert.Null(loaded.Saved.ContentVersion);
-
-            var run = GauntletRun.Resume(Content, loaded.Saved);
-            Assert.Equal(RunOutcome.InProgress, run.Outcome);
-
-            run.AdoptSeed(20260823, savePath);
-
-            var reloaded = SaveFile.LoadRun(savePath);
-            Assert.NotNull(reloaded.Saved);
-            Assert.Equal(20260823, reloaded.Saved!.Seed);
-            Assert.Equal(Content.ContentFingerprint, reloaded.Saved.ContentVersion);
-        }
-        finally
-        {
-            File.Delete(savePath);
-            File.Delete(savePath + ".tmp");
-            File.Delete(savePath + ".new");
-            File.Delete(savePath + ".bak");
-            File.Delete(savePath + ".old");
-        }
-    }
+    // The one test that stamps a save through the process-wide SaveFile seam —
+    // ASaveMissingBothSeedAndContentVersionLoadsAndIsFullyStampedAfterOneAutosave — moved
+    // to RunSaveFileStampingTests so it can carry the "SaveFile filesystem fault
+    // injection" collection while this class stays parallelisable.
 
     /// <summary>
     /// The reversed policy #287 shipped with after review: a save written before it
