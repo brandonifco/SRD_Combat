@@ -343,6 +343,24 @@ public sealed record MonsterDefinition
 
     public required int ProficiencyBonus { get; init; }
 
+    /// <summary>
+    /// The Legendary Actions section's own printed preamble — <c>Legendary Action
+    /// Uses: 3 (4 in Lair).</c> — kept on the monster rather than folded into whichever
+    /// entry happened to be open when the "Legendary Actions" header appeared (#423).
+    /// Null for the 300 monsters with no Legendary Actions section. The rest of the
+    /// preamble sentence ("Immediately after another creature's turn, ... can expend a
+    /// use...") is the legendary-action-economy rule itself, identical on every
+    /// instance in the corpus, so only the counts are kept.
+    /// </summary>
+    public int? LegendaryActionUses { get; init; }
+
+    /// <summary>
+    /// The larger per-round use count some legendary creatures get in their lair, from
+    /// the same preamble's "(4 in Lair)" clause. Null when the block prints no lair
+    /// figure — including every monster with no Legendary Actions section.
+    /// </summary>
+    public int? LegendaryActionUsesInLair { get; init; }
+
     /// <summary>Traits, actions, bonus actions, reactions and legendary actions, in printed order.</summary>
     public required IReadOnlyList<MonsterEntry> Entries { get; init; }
 

@@ -701,7 +701,7 @@ internal static partial class EntryMechanicsParser
         // range that UseSaveEntry's #403 check should see regardless of whether the
         // gate itself is ever modelled. See ReadRange's own remarks for the shapes
         // this does and does not populate.
-        var rangeFeet = ReadRange(text, header.Index + header.Length, coverage, area);
+        var rangeFeet = ReadRange(text, header.Index, header.Index + header.Length, coverage, area);
 
         var failureIndex = text.IndexOf("Failure", StringComparison.Ordinal);
         IReadOnlyList<AttackDamage> failureDamage;
@@ -736,18 +736,25 @@ internal static partial class EntryMechanicsParser
         // here. `Failure or Success:` is claimed by nobody (design §4.1) and its side
         // clause is left to residue, same as the Failure-line riders this method has
         // never structured.
-        var success = text.Contains("Success: Half damage", StringComparison.OrdinalIgnoreCase)
+        //
+        // #397: ten entries print the fuller "Success: Half damage only." — the SRD's
+        // way of saying no rider carries over on a success. The trailing "only" is not
+        // a rule of its own: `Encounter.cs`'s rider application already gates on
+        // `!succeeded || SuccessOutcome == SameAsFailure`, so a `HalfDamage` success
+        // skips every rider regardless of whether "only" was ever read. Reading only
+        // "Success: Half damage" left that word as one-word residue, overstating a gap
+        // that does not exist. `SaveSuccessHalfPattern` claims the trailing " only"
+        // when printed, word-bounded so it cannot swallow anything past it — the
+        // period after it is glue either way, and a following "Failure or Success:"
+        // side clause (#370) starts its own sentence and is untouched.
+        var successMatch = SaveSuccessHalfPattern().Match(text);
+        var success = successMatch.Success
             ? SaveSuccessOutcome.HalfDamage
             : SaveSuccessOutcome.NoEffect;
 
         if (success == SaveSuccessOutcome.HalfDamage)
         {
-            var halfDamageIndex = text.IndexOf("Success: Half damage", StringComparison.OrdinalIgnoreCase);
-
-            if (halfDamageIndex >= 0)
-            {
-                coverage.Claim(new TextSpan(halfDamageIndex, "Success: Half damage".Length), "save.success_half");
-            }
+            coverage.Claim(new TextSpan(successMatch.Index, successMatch.Length), "save.success_half");
         }
 
         return new SaveEffect(
@@ -763,7 +770,9 @@ internal static partial class EntryMechanicsParser
     /// <summary>
     /// Reads the printed "within N feet" a single-target or point-aimed save may be
     /// used at (#386) — the Mummy's "one creature the mummy can see within 60 feet",
-    /// a Sphere's "centered on a point the dragon can see within 90 feet".
+    /// a Sphere's "centered on a point the dragon can see within 90 feet", or (#422)
+    /// the Giant Ape's Boulder Toss, whose Sphere is "centered on <i>that</i> point"
+    /// and whose "within 90 feet" prints ahead of the header entirely.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -811,17 +820,39 @@ internal static partial class EntryMechanicsParser
     /// is Charmed or Grappled by the aboleth", "that has 0 Hit Points") is a
     /// selection rule this engine does not run — claiming either would be the same
     /// false claim the target-clause matcher above already refuses them. The two
-    /// printed word orders — "the X can see within N feet" and "within N feet that
-    /// …" — are both handled by searching for the literal substring rather than
-    /// anchoring a fixed position, since anchoring one order would silently miss
-    /// the other. A third word order exists and is not handled here — the range
-    /// printed in the entry's own preamble, ahead of the save header entirely (the
-    /// Giant Ape's "The ape hurls a boulder at a point it can see within 90 feet.
-    /// Dexterity Saving Throw: DC 17, ..." — filed as #422, alongside #420, as the
-    /// documented exception to the two word orders this method does handle).
+    /// printed word orders after the header — "the X can see within N feet" and
+    /// "within N feet that …" — are both handled by searching for the literal
+    /// substring rather than anchoring a fixed position, since anchoring one order
+    /// would silently miss the other.
+    /// </para>
+    /// <para>
+    /// <b>A third word order prints the range ahead of the header, in the entry's
+    /// own preamble.</b> The Giant Ape's Boulder Toss (#422) is the corpus's only
+    /// instance, verified against the whole corpus rather than assumed: "The ape
+    /// hurls a boulder at a point it can see within 90 feet. Dexterity Saving
+    /// Throw: DC 17, each creature in a 5-foot-radius Sphere <i>centered on that
+    /// point</i>." — a back-reference to the point already named in the preceding
+    /// sentence, printed with "that point" rather than every other corpus Sphere's
+    /// "centered on <b>a</b> point [the X can see] within N feet" after the header.
+    /// That literal wording — <c>isBackReferencedPoint</c> below — is what gates
+    /// the preamble scan on, precisely because it is unique to this one entry in
+    /// the corpus (checked directly): none of the five other corpus entries that
+    /// also print a "within N feet" clause in their own preamble (Bulette's Deadly
+    /// Leap, Chain Devil's Unnerving Gaze, Djinni's Create Whirlwind, Kraken's
+    /// Fling, Rust Monster's Antennae) print "centered on that point" after their
+    /// header, so none of them opens this branch — each already fails the existing
+    /// single-target/point-aimed-Sphere gate on its own after-header clause (a
+    /// destination space, a triggering creature, a save with no target clause at
+    /// all, a thrown creature plus destination, an object's bearer), the same gate
+    /// this branch shares rather than bypasses. Widening the preamble scan to any
+    /// "within N feet" ahead of the header — rather than gating on this one literal
+    /// back-reference — would have claimed Bulette's own leap distance or Chain
+    /// Devil's Reaction-trigger radius as the save's <c>RangeFeet</c>, a distance
+    /// <c>UseSaveEntry</c> would then enforce against a target the printed rule
+    /// never measured that way — exactly the false claim design §2.2 forbids.
     /// </para>
     /// </remarks>
-    private static int? ReadRange(string text, int start, EntryCoverage coverage, EffectArea? area)
+    private static int? ReadRange(string text, int headerStart, int start, EntryCoverage coverage, EffectArea? area)
     {
         var clauseEnd = text.IndexOf('.', start);
         var clause = clauseEnd < 0 ? text[start..] : text[start..clauseEnd];
@@ -835,7 +866,14 @@ internal static partial class EntryMechanicsParser
         var isSingleTarget = clause.TrimStart(' ', ',').StartsWith("one ", StringComparison.Ordinal);
         var isPointAimedSphere = clause.Contains("Sphere centered on a point", StringComparison.Ordinal);
 
-        if (!isSingleTarget && !isPointAimedSphere)
+        // The Giant Ape's own wording (#422) — "Sphere centered on that point" — a
+        // back-reference to the point named in the preamble, rather than a fresh
+        // "a point [the X can see] within N feet" printed right here. See this
+        // method's own remarks for why this literal string, and not a general
+        // preamble scan, is the gate.
+        var isBackReferencedPoint = clause.Contains("Sphere centered on that point", StringComparison.Ordinal);
+
+        if (!isSingleTarget && !isPointAimedSphere && !isBackReferencedPoint)
         {
             return null;
         }
@@ -847,19 +885,32 @@ internal static partial class EntryMechanicsParser
         // so a "within N feet" clause is never half-claimed into a range the engine
         // would then enforce against a single target that was never the printed
         // shape.
-        if (isPointAimedSphere && area is null)
+        if ((isPointAimedSphere || isBackReferencedPoint) && area is null)
         {
             return null;
         }
 
-        var match = SaveRangePattern().Match(clause);
+        // A back-referenced point's own "within N feet" sits in the preamble, ahead
+        // of the header entirely, so the search runs over the whole entry's text,
+        // windowed to end where the header starts, rather than over the clause
+        // after it — `Match(string, int, int)` reports indices into the full string
+        // it is given, so switching the search text also switches what "absolute"
+        // means for the match it returns. The header text itself ("Dexterity Saving
+        // Throw: DC 17") never contains the word "within", so a window that reaches
+        // right up to the header's own start is harmless — nothing in the header
+        // can match.
+        var match = isBackReferencedPoint
+            ? SaveRangePattern().Match(text, 0, headerStart)
+            : SaveRangePattern().Match(clause);
 
         if (!match.Success)
         {
             return null;
         }
 
-        coverage.Claim(new TextSpan(clauseStart + match.Index, match.Length), "save.range");
+        var claimOffset = isBackReferencedPoint ? 0 : clauseStart;
+
+        coverage.Claim(new TextSpan(claimOffset + match.Index, match.Length), "save.range");
 
         return int.Parse(match.Groups["range"].Value, CultureInfo.InvariantCulture);
     }
@@ -1599,6 +1650,15 @@ internal static partial class EntryMechanicsParser
 
     [GeneratedRegex(@"(?<ability>Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+Saving\s+Throw:\s*DC\s*(?<dc>\d+)")]
     private static partial Regex SaveHeaderPattern();
+
+    // "Success: Half damage" (#382), widened for #397's "Success: Half damage only." —
+    // ten entries print the trailing word to say no rider carries over on a success,
+    // behaviour the engine already has without reading it (see ParseSave's remarks at
+    // the call site). `\b` anchors the optional " only" to the whole word, so a claim
+    // never reaches past it into a printed continuation this pattern was not written
+    // to recognise.
+    [GeneratedRegex(@"Success:\s*Half damage(?:\s+only\b)?", RegexOptions.IgnoreCase)]
+    private static partial Regex SaveSuccessHalfPattern();
 
     // The save's target clause, claimed exactly as far as UseSaveEntry's own targeting
     // reaches (design §7.6): the printed comma, then one of the shapes the engine

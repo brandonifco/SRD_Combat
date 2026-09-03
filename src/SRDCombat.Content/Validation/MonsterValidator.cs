@@ -106,11 +106,7 @@ public static partial class MonsterValidator
 
     private static IEnumerable<string?> SpellNames(string text, IReadOnlyList<string> knownNames)
     {
-        // Legendary Actions begin after some dragon lists without a new entry heading.
-        // They are a different stat-block construct, not an unknown spell name.
-        var list = LegendaryActionMarker().Replace(text, string.Empty);
-
-        foreach (var token in SplitTopLevelCommas(list))
+        foreach (var token in SplitTopLevelCommas(text))
         {
             var name = token.Trim().TrimEnd('.');
             if (name.Length == 0)
@@ -194,9 +190,6 @@ public static partial class MonsterValidator
     [GeneratedRegex(@"(?:^|\s)(?:At Will|\d+/Day(?: Each)?):\s*(?<spells>.*?)(?=\s+(?:At Will|\d+/Day(?: Each)?):|$)")]
     private static partial Regex SpellcastingTierPattern();
 
-    [GeneratedRegex(@"\s+Legendary Action Uses:\s.*$")]
-    private static partial Regex LegendaryActionMarker();
-
     private static void ValidateOne(MonsterDefinition monster, List<ValidationIssue> issues)
     {
         void Add(ValidationSeverity severity, string code, string message) =>
@@ -240,6 +233,45 @@ public static partial class MonsterValidator
         ValidateSpeeds(monster, Add);
         ValidateChallenge(monster, Add);
         ValidateEntries(monster, Add);
+        ValidateLegendaryActions(monster, Add);
+    }
+
+    /// <summary>
+    /// Guards the extraction shape #423 fixed: the Legendary Actions section's own
+    /// preamble ("Legendary Action Uses: N...") belongs on the monster, never folded
+    /// into whichever entry happened to be open when the section header appeared, and
+    /// a monster with Legendary Action entries always has its printed use count.
+    /// </summary>
+    private static void ValidateLegendaryActions(MonsterDefinition monster, Action<ValidationSeverity, string, string> add)
+    {
+        var hasLegendaryActionEntries = monster.Entries.Any(entry => entry.Section == MonsterEntrySection.LegendaryAction);
+
+        if (hasLegendaryActionEntries && monster.LegendaryActionUses is null)
+        {
+            add(
+                ValidationSeverity.Error,
+                "monster.legendary_action_uses.missing",
+                "Has Legendary Action entries but no 'Legendary Action Uses' count was extracted.");
+        }
+
+        if (!hasLegendaryActionEntries && monster.LegendaryActionUses is not null)
+        {
+            add(
+                ValidationSeverity.Error,
+                "monster.legendary_action_uses.unexpected",
+                "A Legendary Action Uses count was extracted but the block has no Legendary Action entries.");
+        }
+
+        foreach (var entry in monster.Entries)
+        {
+            if (entry.Text.Contains("Legendary Action Uses", StringComparison.Ordinal))
+            {
+                add(
+                    ValidationSeverity.Error,
+                    "monster.entry.legendary_preamble_embedded",
+                    $"'{entry.Name}' text still contains the Legendary Actions preamble (#423).");
+            }
+        }
     }
 
     private static void ValidateAbilities(MonsterDefinition monster, Action<ValidationSeverity, string, string> add)

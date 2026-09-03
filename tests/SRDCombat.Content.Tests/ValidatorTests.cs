@@ -143,6 +143,64 @@ public class ValidatorTests
     }
 
     [Fact]
+    public void LegendaryActionEntriesWithoutAUsesCount_IsAnError()
+    {
+        // The Uses count is a separate extracted field (#423) — an entry present with
+        // no count means the preamble was lost rather than merely misplaced.
+        var monster = Monster() with
+        {
+            Entries = [new MonsterEntry("Lash", MonsterEntrySection.LegendaryAction, "The dragon makes one attack.")],
+        };
+
+        AssertHasCode(monster, "monster.legendary_action_uses.missing", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void ALegendaryActionUsesCountWithoutAnyLegendaryActionEntries_IsAnError()
+    {
+        var monster = Monster() with { LegendaryActionUses = 3 };
+
+        AssertHasCode(monster, "monster.legendary_action_uses.unexpected", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AnEntryStillCarryingTheLegendaryActionsPreamble_IsAnError()
+    {
+        // The regression guard #423 asks for directly: nothing extracted after this fix
+        // should ever fold "Legendary Action Uses" prose into an entry's own text.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Dominate Mind",
+                    MonsterEntrySection.Action,
+                    "Wisdom Saving Throw: DC 16. Legendary Action Uses: 3 (4 in Lair). Immediately after " +
+                    "another creature's turn, the aboleth can expend a use to take one of the following " +
+                    "actions. The aboleth regains all expended uses at the start of each of its turns."),
+                new MonsterEntry("Lash", MonsterEntrySection.LegendaryAction, "The aboleth makes one attack."),
+            ],
+            LegendaryActionUses = 3,
+            LegendaryActionUsesInLair = 4,
+        };
+
+        AssertHasCode(monster, "monster.entry.legendary_preamble_embedded", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AWellFormedLegendaryActionsSection_ProducesNothing()
+    {
+        var monster = Monster() with
+        {
+            Entries = [new MonsterEntry("Lash", MonsterEntrySection.LegendaryAction, "The dragon makes one attack.")],
+            LegendaryActionUses = 3,
+            LegendaryActionUsesInLair = 4,
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster]).Issues);
+    }
+
+    [Fact]
     public void AVersatileWeaponWithoutTwoHandedDamage_IsAnError()
     {
         var weapon = Weapon() with { Properties = WeaponProperty.Versatile, VersatileDamage = null };
