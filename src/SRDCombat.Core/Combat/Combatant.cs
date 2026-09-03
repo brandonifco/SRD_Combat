@@ -614,6 +614,20 @@ public sealed class TurnResources
     /// <summary>True when the combatant took the Disengage action this turn.</summary>
     public bool HasDisengaged { get; private set; }
 
+    /// <summary>
+    /// True until this turn's one free consumable trade (<see cref="Encounter.TradeItem"/>)
+    /// is spent.
+    /// </summary>
+    /// <remarks>
+    /// Not the Action or the Bonus Action — a designer reading, not a printed cost. The
+    /// SRD sets no combat price on handing an item to another creature; a whole Action is
+    /// disproportionate for it, and a Bonus Action would compete directly with drinking or
+    /// administering a potion for no reason, since a bare transfer produces no combat
+    /// effect of its own. Named narrowly for the one rule implemented rather than as
+    /// though the engine holds the general Utilize/object-interaction rules. See #536.
+    /// </remarks>
+    public bool HasTradeInteraction { get; private set; } = true;
+
     /// <summary>Begins a new turn, restoring everything except an already-spent Reaction's history.</summary>
     public void BeginTurn(int speedFeet)
     {
@@ -625,6 +639,7 @@ public sealed class TurnResources
         _movementForfeited = false;
         IsDodging = false;
         HasDisengaged = false;
+        HasTradeInteraction = true;
     }
 
     public void SpendAction() => HasAction = false;
@@ -635,6 +650,9 @@ public sealed class TurnResources
     public void SpendBonusAction() => HasBonusAction = false;
 
     public void SpendReaction() => HasReaction = false;
+
+    /// <summary>Spends this turn's one free trade. See <see cref="HasTradeInteraction"/>.</summary>
+    public void SpendTradeInteraction() => HasTradeInteraction = false;
 
     public void SpendMovement(int feet)
     {
@@ -1114,6 +1132,14 @@ public sealed class InventoryState
             _potions[potency] = count - 1;
         }
     }
+
+    /// <summary>
+    /// Adds one potion of a potency to the pack — <see cref="Spend"/>'s complement, for
+    /// the other side of a trade. Internal for the same reason <see cref="Spend"/> is:
+    /// <see cref="Encounter.TradeItem"/> is the only caller, and keeping both mutations
+    /// behind one Core transaction is what makes a trade atomic.
+    /// </summary>
+    internal void Add(HealingPotion potency) => _potions[potency] = _potions.GetValueOrDefault(potency) + 1;
 }
 
 /// <summary>A creature taking part in a fight, and everything about it that changes.</summary>

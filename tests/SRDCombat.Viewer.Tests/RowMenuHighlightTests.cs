@@ -60,6 +60,7 @@ public class RowMenuHighlightTests
         ["AttackMenu"] = () => new PlayFocus.AttackMenu(),
         ["SpellMenu"] = () => new PlayFocus.SpellMenu(),
         ["SlotMenu"] = () => new PlayFocus.SlotMenu(FightTestData.AnySpell()),
+        ["TradeMenu"] = () => new PlayFocus.TradeMenu(),
     };
 
     public static TheoryData<string> RowMenuNames

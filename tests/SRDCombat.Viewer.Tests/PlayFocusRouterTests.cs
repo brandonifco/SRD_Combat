@@ -1,3 +1,4 @@
+using SRDCombat.Core.Rules;
 using SRDCombat.Game;
 using SRDCombat.Viewer.Ui;
 
@@ -203,6 +204,31 @@ public class PlayFocusRouterTests
 
         Assert.Equal(RouteAction.CloseTopLayer, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
 
+        focus.Pop();
+
+        Assert.IsType<PlayFocus.Board>(focus.Top);
+    }
+
+    /// <summary>
+    /// Trade's own two-layer nesting: a potion chosen off the Trade menu arms Targeting
+    /// over it rather than replacing it (#536, the same shape <c>ArmTargeting</c> gives
+    /// every menu-driven action), so Esc un-aims back to the menu, and a second Esc closes
+    /// the menu itself.
+    /// </summary>
+    [Fact]
+    public void EscapeFromTradeTargetingReturnsToTheTradeMenuThenCloses()
+    {
+        var focus = With(new PlayFocus.TradeMenu());
+        focus.Push(new PlayFocus.Targeting(TargetKind.Trade, Potency: HealingPotion.Standard));
+
+        Assert.Equal(RouteAction.CloseTopLayer, Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting()));
+        focus.Pop();
+
+        Assert.IsType<PlayFocus.TradeMenu>(focus.Top);
+
+        Assert.Equal(
+            RouteAction.CloseTopLayer,
+            Route(focus, ClientInput.Pressed(ClientKey.Escape), Fighting(menuRowCount: 1)));
         focus.Pop();
 
         Assert.IsType<PlayFocus.Board>(focus.Top);

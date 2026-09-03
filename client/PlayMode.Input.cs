@@ -118,6 +118,11 @@ public partial class PlayMode : FightScreen
                     : new ActionRefusal("client.no_potion", "Nothing to drink.");
 
             case TurnAction.GivePotion: ArmTargeting(TargetKind.Potion); return null;
+
+            case TurnAction.Trade:
+                ToggleMenu(new PlayFocus.TradeMenu());
+                return null;
+
             case TurnAction.DivineSparkHeal: ArmTargeting(TargetKind.SparkHeal); return null;
             case TurnAction.DivineSparkHarm: ArmTargeting(TargetKind.SparkHarm); return null;
 
@@ -140,13 +145,14 @@ public partial class PlayMode : FightScreen
         TargetKind kind,
         CombatAttack? attack = null,
         SpellDefinition? spell = null,
-        int? slot = null)
+        int? slot = null,
+        HealingPotion? potency = null)
     {
         // Targeting stacks over the menu that chose it rather than replacing it, so Esc
         // hands that menu back (#509). The menu stays on the stack but stops drawing, since
         // every menu draws only while it is on top — which is why the screen looks exactly
         // as it did when targeting replaced it outright.
-        _focus.Push(new PlayFocus.Targeting(kind, attack, spell, slot));
+        _focus.Push(new PlayFocus.Targeting(kind, attack, spell, slot, potency));
 
         if (PendingTargets() is [var nearest, ..])
         {
@@ -251,6 +257,13 @@ public partial class PlayMode : FightScreen
     private void ChooseAttack(CombatAttack attack)
     {
         ArmTargeting(TargetKind.Attack, attack: attack);
+        QueueRedraw();
+    }
+
+    /// <summary>Takes a potency off the Trade menu and arms the shared target picker.</summary>
+    private void ChooseTradePotency(HealingPotion potency)
+    {
+        ArmTargeting(TargetKind.Trade, potency: potency);
         QueueRedraw();
     }
 
@@ -921,6 +934,24 @@ public partial class PlayMode : FightScreen
                 && (target.Inventory.Weakest ?? active.Inventory.Weakest) is { } potency)
             {
                 Run(() => encounter.DrinkPotion(potency, target));
+            }
+            else
+            {
+                _notice = null;
+                QueueRedraw();
+            }
+
+            return;
+        }
+
+        if (Armed is { Kind: TargetKind.Trade, Potency: { } tradePotency })
+        {
+            var aimed = TokenAt(square);
+            ClearPending();
+
+            if (aimed is { } target)
+            {
+                Run(() => encounter.TradeItem(new CombatTradeItem.Potion(tradePotency), target));
             }
             else
             {
