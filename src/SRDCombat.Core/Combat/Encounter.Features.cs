@@ -676,6 +676,26 @@ public sealed partial class Encounter
                     "feature.turn_undead.inactive",
                     $"{target.Name} is down and cannot be turned.");
             }
+
+            // A second Cleric's Turn Undead landing on a target another Cleric
+            // already turned would fall through Combatant.AddCondition's merge as
+            // "both sides flagged" — the one shape that guard does not refuse,
+            // because it is meant to let the *same* turning refresh itself. Refused
+            // here, at the action layer, rather than silently letting the second
+            // cast's SourceId/Expiry overwrite the first's: an Undead fully turned
+            // is already caught by the IsActive refusal above, but a target immune
+            // to Incapacitated specifically stays "active" while its Frightened is
+            // still flagged and owned by the first Cleric — exactly the gap this
+            // closes.
+            if (TurnUndeadConditions.Any(conditionType =>
+                    target.ConditionState(conditionType) is
+                        { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } turnedBy }
+                    && !string.Equals(turnedBy, combatant.Id, StringComparison.Ordinal)))
+            {
+                return new ActionRefusal(
+                    "feature.turn_undead.already_turned",
+                    $"{target.Name} is already turned by another Cleric.");
+            }
         }
 
         combatant.Turn.SpendAction();

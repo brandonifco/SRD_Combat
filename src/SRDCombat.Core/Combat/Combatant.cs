@@ -1396,9 +1396,29 @@ public sealed class Combatant
             // what stops an unrelated Frightened from inheriting Turn Undead's
             // "ends on damage" flag (over-removal) just as much as it stops Turn
             // Undead's own rider from being silently corrupted by a later,
-            // unrelated re-application. Both flagged (a second Turn Undead landing)
-            // or both unflagged (every condition this engine imposed before Turn
-            // Undead existed) fall through unchanged, refreshing exactly as always.
+            // unrelated re-application. Both unflagged (every condition this engine
+            // imposed before Turn Undead existed) falls through unchanged,
+            // refreshing exactly as always. Both flagged only ever reaches here for
+            // the *same* Cleric re-turning its own target — a second, different
+            // Cleric's Turn Undead landing on an already-turned target is refused
+            // one layer up, at the action itself (Encounter.TurnUndead's
+            // "feature.turn_undead.already_turned"), because only that caller can
+            // ever produce two different-sourced flagged conditions to begin with.
+            //
+            // Every other AddCondition caller was swept for the same risk (second
+            // qc pass on #369) and cannot reach a flagged Turn Undead condition at
+            // all, given the party's actual executable kit: Encounter.Escalate's
+            // two-tier-gaze rider always deepens into Petrified, never Frightened
+            // or Incapacitated, and none of its three callers (Basilisk, Gorgon,
+            // Medusa) is ever Undead; Encounter.ImposeConditions is the same
+            // general rider path already exhaustively checked for #369's own
+            // reachability question — no preparable spell, class feature or weapon
+            // mastery a level 1-5 party can use imposes Frightened or Incapacitated
+            // on anything; the Unconscious-brings-Incapacitated link in the
+            // fresh-add branch below uses TryAdd, which never overwrites an
+            // existing entry, so it cannot corrupt a flagged one even in principle;
+            // and DamageRules' two AddCondition(Unconscious) call sites only ever
+            // target characters, which Turn Undead never imposes anything on.
             if (existing.EndsEarlyOnDamageOrSourceDown != active.EndsEarlyOnDamageOrSourceDown)
             {
                 return false;

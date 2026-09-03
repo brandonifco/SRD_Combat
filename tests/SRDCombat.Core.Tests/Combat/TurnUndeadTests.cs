@@ -111,6 +111,67 @@ public class TurnUndeadTests
     }
 
     [Fact]
+    public void ASecondClericTurningAnAlreadyTurnedUndeadIsRefusedAndTheFirstTurningIsUntouched()
+    {
+        // Second qc pass, finding 2: a genuinely reachable hole a fielded second
+        // Cleric opens. Both Frightened and Incapacitated land flagged from the
+        // same use, so Combatant.AddCondition's flag-mismatch guard (flagged vs.
+        // unflagged) never fires for a second Turn Undead landing on top of a
+        // first — both sides agree the flag is true — and without this action-
+        // layer refusal the second cast's SourceId/Expiry would silently overwrite
+        // the first's, changing who must die or be incapacitated to free the
+        // Undead without telling anyone.
+        //
+        // An Undead fully turned (both conditions landed) is already caught by the
+        // plain IsActive refusal above this one — Incapacitated makes CanAct false
+        // for anyone. What only this new check catches is an Undead immune to
+        // Incapacitated specifically: Frightened still lands and is still flagged
+        // and owned by the first Cleric, but the Undead stays IsActive (nothing
+        // stops it acting), so a second Cleric can still legally choose it as a
+        // target — and would hit the merge collision without this refusal.
+        var cleric1 = ClericCombatant(wisdom: 10, uses: 2, x: 0, id: "cleric1");
+        var cleric2 = ClericCombatant(wisdom: 10, uses: 2, x: 1, initiativeBonus: 15, id: "cleric2");
+        var undead = UndeadCombatant(
+            "undead",
+            x: 2,
+            initiativeBonus: -10,
+            conditionImmunities: [ConditionType.Incapacitated]);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [cleric1, cleric2, undead],
+            // Initiative x3 (cleric1 20+20, cleric2 15+15, undead 1-10), then
+            // cleric1's Turn Undead save (fails, 1). Cleric2's later attempt is
+            // refused before any die is rolled, so nothing more is scripted.
+            new ScriptedRandomSource(20, 15, 1, 1));
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        var frightenedBefore = undead.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal(cleric1.Id, frightenedBefore.SourceId);
+        Assert.True(frightenedBefore.EndsEarlyOnDamageOrSourceDown);
+        Assert.False(undead.HasCondition(ConditionType.Incapacitated)); // immune
+
+        // The Undead is still active — nothing stopped it acting — so cleric2's
+        // attempt reaches the new check rather than being refused as inactive.
+        Assert.True(undead.IsActive);
+
+        encounter.EndTurn(); // cleric1's turn ends; cleric2 goes next.
+        Assert.Same(cleric2, encounter.ActiveCombatant);
+
+        var refusal = encounter.TurnUndead([undead]);
+
+        Assert.Equal("feature.turn_undead.already_turned", refusal?.Code);
+        Assert.Equal(2, cleric2.Features.ChannelDivinityRemaining);
+        Assert.True(cleric2.Turn.HasAction);
+
+        // The first Cleric's turning is completely untouched: same source, same
+        // expiry, still flagged.
+        var frightenedAfter = undead.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal(frightenedBefore, frightenedAfter);
+    }
+
+    [Fact]
     public void TheClericBeingIncapacitatedByADamageComponentFreesTheTurningImmediately()
     {
         // Finding 3: EndTurnEffectsWhoseSourceIsDown must fire at each damage site
@@ -623,7 +684,8 @@ public class TurnUndeadTests
         int y = 0,
         int initiativeBonus = 20,
         bool searUndead = false,
-        bool hasAttack = true)
+        bool hasAttack = true,
+        string id = "cleric")
     {
         var features = new List<ClassFeature> { ClassFeature.ChannelDivinity };
 
@@ -651,7 +713,7 @@ public class TurnUndeadTests
                 ChannelDivinityUses: uses),
         };
 
-        return new Combatant("cleric", "Cleric", CombatTestData.Heroes, stats, new GridPosition(x, y));
+        return new Combatant(id, "Cleric", CombatTestData.Heroes, stats, new GridPosition(x, y));
     }
 
     private static Combatant UndeadCombatant(
