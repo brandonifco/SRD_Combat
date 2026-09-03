@@ -985,6 +985,19 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// Restrained becoming Petrified. Null for every condition whose repeat can only end
 /// it.
 /// </param>
+/// <param name="EndsEarlyOnDamageOrSourceDown">
+/// True for a condition whose printed text ends it early on damage, or on its
+/// source's own Incapacitated condition or death — Turn Undead's rider, citing SRD
+/// 5.2.1 p. 37: "This effect ends early on the creature if it takes any damage, if
+/// you have the Incapacitated condition, or if you die." Neither early-out is a
+/// clock, a repeat save or a Concentration tie, so none of the other duration
+/// mechanisms on this record express them; this is the minimum new vocabulary
+/// instead — a closed-set flag rather than a fresh shape, read by
+/// <c>Encounter.BreakTurnEffectOnDamage</c> (the bearer-side out) and
+/// <c>Encounter.EndTurnEffectsWhoseSourceIsDown</c> (the two source-side outs), the
+/// same shape <c>EndBrokenGrapples</c> already reads off a grapple's source. False
+/// for every other condition this engine imposes.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
@@ -994,7 +1007,8 @@ public sealed record ActiveCondition(
     Ability? RepeatSaveAbility = null,
     int? RepeatSaveDifficultyClass = null,
     bool TiedToConcentration = false,
-    ConditionType? EscalatesTo = null);
+    ConditionType? EscalatesTo = null,
+    bool EndsEarlyOnDamageOrSourceDown = false);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.

@@ -240,9 +240,15 @@ public enum ConditionDurationOwner
 /// bearer's turns, and <see cref="WhileConcentrating"/> ties the condition's life to
 /// its caster's Concentration. Still unmodelled and staying in
 /// <see cref="AppliedCondition.UnmodelledRequirement"/>: "until the grapple ends"
-/// outside its sibling grapple, "until the web is destroyed" (which needs an object
-/// with hit points), and "until it takes damage" — an early out with no die to roll,
-/// which the model still has no hook for.
+/// outside its sibling grapple, and "until the web is destroyed" (which needs an
+/// object with hit points). "Until it takes damage" now has a hook, but a narrow
+/// one rather than a general duration shape: Turn Undead's rider is the one printed
+/// effect that ends early on damage, on its source's Incapacitated condition, or on
+/// its source's death, and none of those is a clock, a repeat save or a
+/// Concentration tie — so <see cref="Combat.ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>
+/// is a closed-set flag beside this record rather than a fourth shape here. A rider
+/// printing "until it takes damage" with no further tie to Turn Undead's own wording
+/// still has nothing on <see cref="ConditionDuration"/> to reach for.
 /// </para>
 /// </remarks>
 /// <param name="Clock">Which boundary of the owner's turn it ends on.</param>

@@ -28,6 +28,7 @@ public enum TurnAction
     CunningStrikeTrip,
     DivineSparkHeal,
     DivineSparkHarm,
+    TurnUndead,
 }
 
 /// <summary>
@@ -83,6 +84,7 @@ public static class TurnOptions
         TurnAction.CunningStrikeTrip => 'T',
         TurnAction.DivineSparkHeal => 'H',
         TurnAction.DivineSparkHarm => 'J',
+        TurnAction.TurnUndead => 'N',
         _ => '?',
     };
 
@@ -109,6 +111,7 @@ public static class TurnOptions
         TurnAction.CunningStrikeTrip => "Trip",
         TurnAction.DivineSparkHeal => "Spark Heal",
         TurnAction.DivineSparkHarm => "Spark Harm",
+        TurnAction.TurnUndead => "Turn Undead",
         _ => action.ToString(),
     };
 
@@ -182,6 +185,10 @@ public static class TurnOptions
         TurnAction.DivineSparkHarm =>
             "Bonus Action, one Channel Divinity use. A creature within 30 feet makes a "
             + "Constitution save or takes 1d8 plus your Wisdom modifier, half on a success.",
+        TurnAction.TurnUndead =>
+            "Action, one Channel Divinity use. Each chosen Undead within 30 feet makes a "
+            + "Wisdom save or is Frightened and Incapacitated for a minute, ending early if "
+            + "it takes damage.",
         _ => string.Empty,
     };
 
@@ -287,6 +294,16 @@ public static class TurnOptions
                 && turn.HasAction
                 && features.ChannelDivinityRemaining > 0,
 
+            // The last clause — a turnable Undead actually in range — keeps the button
+            // off the row when nothing can be turned, matching the class's "offer only
+            // when usable" doctrine; the interactive target-picking loop stays a client
+            // concern (#317).
+            TurnAction.TurnUndead =>
+                actor.Stats.Has(ClassFeature.ChannelDivinity)
+                && turn.HasAction
+                && features.ChannelDivinityRemaining > 0
+                && AnyTurnableUndeadWithinReach(encounter, actor),
+
             _ => false,
         };
     }
@@ -342,4 +359,17 @@ public static class TurnOptions
             && !other.IsDead
             && other.Inventory.TotalPotions > 0
             && actor.DistanceFeetTo(other) <= PotionRules.ReachFeet);
+
+    /// <summary>Turn Undead's own range and validity, read for the offer rather than the cast.</summary>
+    private const int TurnUndeadRangeFeet = 30;
+
+    /// <summary>Whether at least one Undead is actually turnable right now.</summary>
+    /// <remarks>Mirrors <c>Encounter.TurnUndead</c>'s per-target validation (AC-3).</remarks>
+    private static bool AnyTurnableUndeadWithinReach(Encounter encounter, Combatant actor) =>
+        encounter.Combatants.Any(other =>
+            other.IsActive
+            && other.Stats.Type == CreatureType.Undead
+            && actor.DistanceFeetTo(other) <= TurnUndeadRangeFeet
+            && CoverRules.AgainstSpace(encounter.Battlefield, actor.Space, other.Space, encounter.Combatants)
+                != CoverDegree.Total);
 }

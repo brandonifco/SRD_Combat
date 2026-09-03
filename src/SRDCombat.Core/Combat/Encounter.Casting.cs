@@ -707,4 +707,37 @@ public sealed partial class Encounter
         Add(CombatStepKind.Spell, $"{combatant.Name} loses Concentration on {spellName}.", combatant);
         SweepConcentrationConditions(combatant);
     }
+
+    /// <summary>
+    /// Turn Undead's bearer-side early-out: "This effect ends early on the creature if
+    /// it takes any damage" (SRD 5.2.1 p. 37). Removes every condition on
+    /// <paramref name="bearer"/> flagged
+    /// <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>.
+    /// </summary>
+    /// <remarks>
+    /// A no-op when the bearer carries no such condition, so it is safe alongside every
+    /// other call on the damage path. Called from all four sites that can apply
+    /// damage, immediately after each existing <see cref="CheckConcentration"/>, and
+    /// only when the blow actually dealt damage — the same <c>applied.Effective &gt; 0</c>
+    /// guard at every call site, because a blow absorbed entirely by Resistance or
+    /// Immunity to 0 effective damage is not "takes any damage". This is the exact
+    /// census <see cref="BreakConcentrationOnIncapacitated"/>'s remarks describe having
+    /// to learn the hard way once already — Weapon Mastery's Graze and Cleave both deal
+    /// their own damage outside the ordinary attack loop, so all four sites carry this
+    /// call rather than the two most obviously "an attack landed".
+    /// </remarks>
+    internal void BreakTurnEffectOnDamage(Combatant bearer)
+    {
+        foreach (var type in bearer.Conditions.ToArray())
+        {
+            if (bearer.ConditionState(type) is { EndsEarlyOnDamageOrSourceDown: true }
+                && bearer.RemoveCondition(type))
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} is no longer {type} — the turning breaks on the blow.",
+                    bearer);
+            }
+        }
+    }
 }

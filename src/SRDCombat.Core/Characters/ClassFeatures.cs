@@ -114,9 +114,10 @@ public enum ClassFeature
 
     /// <summary>
     /// Cleric: divine energy fuelling magical effects, twice per rest arc — one use
-    /// back on a Short Rest, all on a Long, the Second Wind pattern. Divine Spark
-    /// executes whole at this game's levels; Turn Undead does not — see the registry's
-    /// remarks for why.
+    /// back on a Short Rest, all on a Long, the Second Wind pattern. Both printed
+    /// effects execute: Divine Spark whole, and Turn Undead with its three early-outs
+    /// expressed via <see cref="Combat.ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>
+    /// — see the registry's remarks for how.
     /// </summary>
     ChannelDivinity,
 
@@ -126,6 +127,14 @@ public enum ClassFeature
     /// keeps the printed name reported as unimplemented.
     /// </summary>
     DivineOrder,
+
+    /// <summary>
+    /// Cleric, level 5: whenever Turn Undead is used, roll a number of d8s equal to
+    /// Wisdom modifier (minimum 1d8) and deal that much Radiant damage to every Undead
+    /// that failed the save — without ending the turn effect Turn Undead just
+    /// imposed. See <c>Encounter.TurnUndead</c>.
+    /// </summary>
+    SearUndead,
 }
 
 /// <summary>What Divine Spark's rolled total is spent on.</summary>
@@ -221,16 +230,31 @@ public static class ClassFeatureRegistry
             ["Ability Score Improvement"] = ClassFeature.AbilityScoreImprovement,
             ["Weapon Mastery"] = ClassFeature.WeaponMastery,
 
-            // Channel Divinity maps under the Cunning Strike precedent: the feature is
-            // claimed while one of its printed effects is not. Divine Spark executes
-            // whole at levels 1-5 (its dice first grow at Cleric level 7). Turn Undead
-            // is refused rather than approximated: its Frightened-plus-Incapacitated
-            // rider prints three early outs the model cannot express — "ends early on
-            // the creature if it takes any damage, if you have the Incapacitated
-            // condition, or if you die" — plus a flee behaviour ("tries to move as far
-            // from you as it can"), and imposing the minute without the outs would hold
-            // an Undead the book lets a single hit set free. Sear Undead stays on
-            // UnimplementedFeatures with it, being a rider on Turn Undead.
+            // Channel Divinity's two starting effects both execute (#369). Divine Spark
+            // executes whole at levels 1-5 (its dice first grow at Cleric level 7).
+            // Turn Undead's Frightened-plus-Incapacitated rider prints three early
+            // outs — "ends early on the creature if it takes any damage, if you have
+            // the Incapacitated condition, or if you die" — that used to have no hook:
+            // ActiveCondition.EndsEarlyOnDamageOrSourceDown is that hook, read by
+            // Encounter.BreakTurnEffectOnDamage (the bearer-side out, called from
+            // every site that can drop a creature's hit points) and
+            // Encounter.EndTurnEffectsWhoseSourceIsDown (the two source-side outs, the
+            // same shape EndBrokenGrapples already reads off a grapple's source). Sear
+            // Undead (level 5) maps to its own feature below and rides the same Turn
+            // Undead call.
+            //
+            // One printed clause is honestly NOT executed: "For that duration, it
+            // tries to move as far from you as it can on its turns." A turned creature
+            // is fully neutralised — Frightened, Incapacitated, its turn skipped by
+            // Encounter.BeginTurn's own "cannot act" gate — but does not actively
+            // retreat, because that gate skips an Incapacitated creature's turn
+            // outright before any AI policy ever runs, and nothing in this engine
+            // before Turn Undead needed a turn for a creature that cannot act but is
+            // not immobile. This is strictly weaker than print, never stronger — the
+            // turned creature never gets an advantage the book withholds — so it ships
+            // rather than blocking on the seam. The retreat behaviour and the seam it
+            // needs are filed as #615, and the flee code it would use is kept there
+            // rather than left as dead code here.
             ["Channel Divinity"] = ClassFeature.ChannelDivinity,
 
             // Divine Order executes whole once a role is chosen: Protector grows the
@@ -242,6 +266,11 @@ public static class ClassFeatureRegistry
             // UnimplementedFeatures while the choice is Unspecified, because a mapped
             // name would otherwise vanish from the report without anything executing.
             ["Divine Order"] = ClassFeature.DivineOrder,
+
+            // Level 5: rides Turn Undead (Channel Divinity, above) rather than being a
+            // use of its own — Encounter.TurnUndead reads this feature to decide
+            // whether to roll it.
+            ["Sear Undead"] = ClassFeature.SearUndead,
 
             // Subclass features. The SRD prints exactly one subclass per class, so a
             // level 3+ character simply has it — there is no choice for a draft to

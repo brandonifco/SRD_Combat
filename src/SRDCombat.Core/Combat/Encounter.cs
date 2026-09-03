@@ -558,6 +558,7 @@ public sealed partial class Encounter
         }
 
         EndBrokenGrapples();
+        EndTurnEffectsWhoseSourceIsDown();
         ClearSharedSquares();
         Add(CombatStepKind.TurnEnded, $"{combatant.Name} ends their turn.", combatant);
 
@@ -921,6 +922,50 @@ public sealed partial class Encounter
             if (reason is not null)
             {
                 EndGrapple(victim, "is free", reason);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Ends every Turn Undead effect whose imposing Cleric is now Incapacitated or
+    /// dead — the two source-side early-outs printed alongside the bearer's own damage
+    /// out: "This effect ends early on the creature ... if you have the Incapacitated
+    /// condition, or if you die" (SRD 5.2.1 p. 37).
+    /// </summary>
+    /// <remarks>
+    /// The same shape <see cref="EndBrokenGrapples"/> already reads off a grapple's
+    /// source, generalised from one condition (Grappled) to every condition flagged
+    /// <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>. Swept from the same
+    /// boundaries: <see cref="EndTurn"/>, and after each of the four sites that can
+    /// apply damage — a Cleric downed or killed mid-round should free anything it
+    /// turned promptly, not merely at its own next turn boundary.
+    /// </remarks>
+    private void EndTurnEffectsWhoseSourceIsDown()
+    {
+        foreach (var bearer in _combatants)
+        {
+            foreach (var type in bearer.Conditions.ToArray())
+            {
+                if (bearer.ConditionState(type) is not { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } sourceId })
+                {
+                    continue;
+                }
+
+                var source = _combatants.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Id, sourceId, StringComparison.Ordinal));
+
+                if (source is null || (!source.IsDead && !source.HasCondition(ConditionType.Incapacitated)))
+                {
+                    continue;
+                }
+
+                if (bearer.RemoveCondition(type))
+                {
+                    Add(
+                        CombatStepKind.Condition,
+                        $"{bearer.Name} is no longer {type} — {source.Name} can no longer hold the turning.",
+                        bearer);
+                }
             }
         }
     }
@@ -1368,6 +1413,11 @@ public sealed partial class Encounter
 
         CheckConcentration(target, applied.Effective);
 
+        if (applied.Effective > 0)
+        {
+            BreakTurnEffectOnDamage(target);
+        }
+
         if (applied.Died)
         {
             target.RecordDeathRound(Round);
@@ -1675,6 +1725,11 @@ public sealed partial class Encounter
 
             CheckConcentration(target, applied.Effective);
 
+            if (applied.Effective > 0)
+            {
+                BreakTurnEffectOnDamage(target);
+            }
+
             if (applied.DeathSaveFailures > 0)
             {
                 Add(
@@ -1857,6 +1912,11 @@ public sealed partial class Encounter
             damage: applied.Effective);
 
         CheckConcentration(second, applied.Effective);
+
+        if (applied.Effective > 0)
+        {
+            BreakTurnEffectOnDamage(second);
+        }
 
         if (applied.Died)
         {
@@ -2155,6 +2215,11 @@ public sealed partial class Encounter
                     damage: applied.Effective);
 
                 CheckConcentration(victim, applied.Effective);
+
+                if (applied.Effective > 0)
+                {
+                    BreakTurnEffectOnDamage(victim);
+                }
 
                 if (applied.Died)
                 {
