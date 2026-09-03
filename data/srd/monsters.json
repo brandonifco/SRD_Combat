@@ -68,6 +68,8 @@
       "experiencePoints": 5900,
       "lairExperiencePoints": 7200,
       "proficiencyBonus": 4,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -209,7 +211,7 @@
         {
           "name": "Dominate Mind",
           "section": "Action",
-          "text": "Wisdom Saving Throw: DC 16, one creature the aboleth can see within 30 feet. Failure: The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target. While Charmed, the target acts as an ally to the aboleth and is under its control while within 60 feet of it. In addition, the aboleth and the target can communicate telepathically with each other over any distance. The target repeats the save whenever it takes damage as well as after every 24 hours it spends at least 1 mile away from the aboleth, ending the effect on itself on a success. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the aboleth can expend a use to take one of the following actions. The aboleth regains all expended uses at the start of each of its turns.",
+          "text": "Wisdom Saving Throw: DC 16, one creature the aboleth can see within 30 feet. Failure: The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target. While Charmed, the target acts as an ally to the aboleth and is under its control while within 60 feet of it. In addition, the aboleth and the target can communicate telepathically with each other over any distance. The target repeats the save whenever it takes damage as well as after every 24 hours it spends at least 1 mile away from the aboleth, ending the effect on itself on a success.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Wisdom",
@@ -241,10 +243,7 @@
             "The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target",
             "While Charmed, the target acts as an ally to the aboleth and is under its control while within 60 feet of it",
             "In addition, the aboleth and the target can communicate telepathically with each other over any distance",
-            "The target repeats the save whenever it takes damage as well as after every 24 hours it spends at least 1 mile away from the aboleth, ending the effect on itself on a success",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the aboleth can expend a use to take one of the following actions",
-            "The aboleth regains all expended uses at the start of each of its turns"
+            "The target repeats the save whenever it takes damage as well as after every 24 hours it spends at least 1 mile away from the aboleth, ending the effect on itself on a success"
           ]
         },
         {
@@ -3094,6 +3093,8 @@
       "experiencePoints": 11500,
       "lairExperiencePoints": 13000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -3190,13 +3191,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Acid Arrow (level 3 version), Detect Magic, Fear 1/Day Each: Speak with Dead, Vitriolic Sphere Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Acid Arrow (level 3 version), Detect Magic, Fear 1/Day Each: Speak with Dead, Vitriolic Sphere",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Acid Arrow (level 3 version), Detect Magic, Fear 1/Day Each: Speak with Dead, Vitriolic Sphere Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Acid Arrow (level 3 version), Detect Magic, Fear 1/Day Each: Speak with Dead, Vitriolic Sphere"
           ]
         },
         {
@@ -3324,6 +3323,8 @@
       "experiencePoints": 33000,
       "lairExperiencePoints": 41000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -3420,13 +3421,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic, Fear 1/Day Each: Create Undead, Speak with Dead, Vitriolic Sphere (level 5 version) Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic, Fear 1/Day Each: Create Undead, Speak with Dead, Vitriolic Sphere (level 5 version)",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic, Fear 1/Day Each: Create Undead, Speak with Dead, Vitriolic Sphere (level 5 version) Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic, Fear 1/Day Each: Create Undead, Speak with Dead, Vitriolic Sphere (level 5 version)"
           ]
         },
         {
@@ -4100,6 +4099,8 @@
       "experiencePoints": 15000,
       "lairExperiencePoints": 18000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -4188,13 +4189,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Invisibility, Mage Hand, Shatter 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Invisibility, Mage Hand, Shatter 1/Day Each: Scrying, Sending",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Invisibility, Mage Hand, Shatter 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Invisibility, Mage Hand, Shatter 1/Day Each: Scrying, Sending"
           ]
         },
         {
@@ -4305,6 +4304,8 @@
       "experiencePoints": 50000,
       "lairExperiencePoints": 62000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
@@ -4393,13 +4394,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic, Invisibility, Mage Hand, Shatter (level 3 version) 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic, Invisibility, Mage Hand, Shatter (level 3 version) 1/Day Each: Scrying, Sending",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic, Invisibility, Mage Hand, Shatter (level 3 version) 1/Day Each: Scrying, Sending Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic, Invisibility, Mage Hand, Shatter (level 3 version) 1/Day Each: Scrying, Sending"
           ]
         },
         {
@@ -5040,6 +5039,8 @@
       "experiencePoints": 10000,
       "lairExperiencePoints": 11500,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -5171,13 +5172,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Minor Illusion, Scorching Ray, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Detect Thoughts, Control Weather Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Minor Illusion, Scorching Ray, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Detect Thoughts, Control Weather",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Minor Illusion, Scorching Ray, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Detect Thoughts, Control Weather Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Minor Illusion, Scorching Ray, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Detect Thoughts, Control Weather"
           ]
         },
         {
@@ -5306,6 +5305,8 @@
       "experiencePoints": 25000,
       "lairExperiencePoints": 33000,
       "proficiencyBonus": 6,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
@@ -5437,13 +5438,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Minor Illusion, Scorching Ray (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Control Weather, Detect Thoughts Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Minor Illusion, Scorching Ray (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Control Weather, Detect Thoughts",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Minor Illusion, Scorching Ray (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Control Weather, Detect Thoughts Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Minor Illusion, Scorching Ray (level 3 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals 1/Day Each: Control Weather, Detect Thoughts"
           ]
         },
         {
@@ -5941,6 +5940,8 @@
       "experiencePoints": 13000,
       "lairExperiencePoints": 15000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -6070,13 +6071,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Water Breathing Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Water Breathing",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Water Breathing Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17, +10 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Water Breathing"
           ]
         },
         {
@@ -6233,6 +6232,8 @@
       "experiencePoints": 41000,
       "lairExperiencePoints": 50000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -6362,13 +6363,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Control Water, Scrying, Water Breathing Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Control Water, Scrying, Water Breathing",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Control Water, Scrying, Water Breathing Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22, +14 to hit with spell attacks): At Will: Detect Magic, Guiding Bolt (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell), Speak with Animals, Thaumaturgy 1/Day Each: Detect Thoughts, Control Water, Scrying, Water Breathing"
           ]
         },
         {
@@ -8790,6 +8789,8 @@
       "experiencePoints": 11500,
       "lairExperiencePoints": 13000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -8904,13 +8905,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 4 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 4 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 4 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 4 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image"
           ]
         },
         {
@@ -9039,6 +9038,8 @@
       "experiencePoints": 33000,
       "lairExperiencePoints": 41000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
@@ -9153,13 +9154,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image, Project Image Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image, Project Image",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image, Project Image Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version), Minor Illusion, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Greater Restoration, Major Image, Project Image"
           ]
         },
         {
@@ -15272,6 +15271,8 @@
       "experiencePoints": 18000,
       "lairExperiencePoints": 20000,
       "proficiencyBonus": 6,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -15377,7 +15378,7 @@
         {
           "name": "Weakening Breath",
           "section": "Action",
-          "text": "Strength Saving Throw: DC 21, each creature that isn't currently affected by this breath in a 60-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "Strength Saving Throw: DC 21, each creature that isn't currently affected by this breath in a 60-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Strength",
@@ -15397,10 +15398,7 @@
             "each creature that isn't currently affected by this breath in a",
             "The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls",
             "It repeats the save at the end of each of its turns, ending the effect on itself on a success",
-            "After 1 minute, it succeeds automatically",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns"
+            "After 1 minute, it succeeds automatically"
           ]
         },
         {
@@ -15539,6 +15537,8 @@
       "experiencePoints": 62000,
       "lairExperiencePoints": 75000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -15646,7 +15646,7 @@
         {
           "name": "Weakening Breath",
           "section": "Action",
-          "text": "Strength Saving Throw: DC 24, each creature that isn't currently affected by this breath in a 90-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 5 (1d10) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "Strength Saving Throw: DC 24, each creature that isn't currently affected by this breath in a 90-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 5 (1d10) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Strength",
@@ -15666,10 +15666,7 @@
             "each creature that isn't currently affected by this breath in a",
             "The target has Disadvantage on Strength-based D20 Tests and subtracts 5 (1d10) from its damage rolls",
             "It repeats the save at the end of each of its turns, ending the effect on itself on a success",
-            "After 1 minute, it succeeds automatically",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns"
+            "After 1 minute, it succeeds automatically"
           ]
         },
         {
@@ -16430,6 +16427,8 @@
       "experiencePoints": 13000,
       "lairExperiencePoints": 15000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -16525,13 +16524,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 3 version) 1/Day: Geas Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 3 version) 1/Day: Geas",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 3 version) 1/Day: Geas Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Magic, Mind Spike (level 3 version) 1/Day: Geas"
           ]
         },
         {
@@ -16666,6 +16663,8 @@
       "experiencePoints": 41000,
       "lairExperiencePoints": 50000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -16761,13 +16760,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version) 1/Day Each: Geas, Modify Memory Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version) 1/Day Each: Geas, Modify Memory",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version) 1/Day Each: Geas, Modify Memory Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21): At Will: Detect Magic, Mind Spike (level 5 version) 1/Day Each: Geas, Modify Memory"
           ]
         },
         {
@@ -20462,6 +20459,8 @@
       "experiencePoints": 50000,
       "lairExperiencePoints": 62000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Amphibious",
@@ -20606,7 +20605,7 @@
         {
           "name": "Swallow",
           "section": "Action",
-          "text": "Dexterity Saving Throw: DC 25, one creature Grappled by the kraken (it can have up to four creatures swallowed at a time). Failure: 23 (3d8 + 10) Piercing damage. If the target is Large or smaller, it is swallowed and no longer Grappled. A swallowed creature has the Restrained condition, has Total Cover against attacks and other effects outside the kraken, and takes 24 (7d6) Acid damage at the start of each of its turns. If the kraken takes 50 damage or more on a single turn from a creature inside it, the kraken must succeed on a DC 25 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the kraken with the Prone condition. If the kraken dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 15 feet of movement, exiting Prone. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the kraken can expend a use to take one of the following actions. The kraken regains all expended uses at the start of each of its turns.",
+          "text": "Dexterity Saving Throw: DC 25, one creature Grappled by the kraken (it can have up to four creatures swallowed at a time). Failure: 23 (3d8 + 10) Piercing damage. If the target is Large or smaller, it is swallowed and no longer Grappled. A swallowed creature has the Restrained condition, has Total Cover against attacks and other effects outside the kraken, and takes 24 (7d6) Acid damage at the start of each of its turns. If the kraken takes 50 damage or more on a single turn from a creature inside it, the kraken must succeed on a DC 25 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the kraken with the Prone condition. If the kraken dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 15 feet of movement, exiting Prone.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Dexterity",
@@ -20647,10 +20646,7 @@
             "If the target is Large or smaller, it is swallowed and no longer Grappled",
             "A swallowed creature has the Restrained condition, has Total Cover against attacks and other effects outside the kraken, and takes 24 (7d6) Acid damage at the start of each of its turns",
             "If the kraken takes 50 damage or more on a single turn from a creature inside it, the kraken must succeed on a DC 25 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the kraken with the Prone condition",
-            "If the kraken dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 15 feet of movement, exiting Prone",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the kraken can expend a use to take one of the following actions",
-            "The kraken regains all expended uses at the start of each of its turns"
+            "If the kraken dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 15 feet of movement, exiting Prone"
           ]
         },
         {
@@ -21097,6 +21093,8 @@
       "experiencePoints": 33000,
       "lairExperiencePoints": 41000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
@@ -21202,14 +21200,11 @@
         {
           "name": "Protective Magic",
           "section": "Reaction",
-          "text": "The lich casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the lich can expend a use to take one of the following actions. The lich regains all expended uses at the start of each of its turns.",
+          "text": "The lich casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The lich casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the lich can expend a use to take one of the following actions",
-            "The lich regains all expended uses at the start of each of its turns."
+            "The lich casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting."
           ]
         },
         {
@@ -23717,6 +23712,8 @@
       "experiencePoints": 13000,
       "lairExperiencePoints": 15000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -23872,25 +23869,22 @@
         {
           "name": "Whirlwind of Sand",
           "section": "Reaction",
-          "text": "Trigger: The mummy is hit by an attack roll. Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the mummy can expend a use to take one of the following actions. The mummy regains all expended uses at the start of each of its turns.",
+          "text": "Trigger: The mummy is hit by an attack roll. Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn.",
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The mummy is hit by an attack roll.",
-            "response": "The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the mummy can expend a use to take one of the following actions. The mummy regains all expended uses at the start of each of its turns."
+            "response": "The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn."
           },
           "appliedConditions": [
             {
               "condition": "Blinded",
-              "unmodelledRequirement": "Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn"
+              "unmodelledRequirement": "Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn."
             }
           ],
           "unmodelledClauses": [
             "The mummy is hit by an attack roll",
             "The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see",
-            "Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the mummy can expend a use to take one of the following actions",
-            "The mummy regains all expended uses at the start of each of its turns"
+            "Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn"
           ]
         },
         {
@@ -27745,6 +27739,8 @@
       "experiencePoints": 18000,
       "lairExperiencePoints": 20000,
       "proficiencyBonus": 6,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -27832,13 +27828,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray 1/Day: Fireball Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray 1/Day: Fireball",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray 1/Day: Fireball Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray 1/Day: Fireball"
           ]
         },
         {
@@ -27949,6 +27943,8 @@
       "experiencePoints": 62000,
       "lairExperiencePoints": 75000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
@@ -28036,13 +28032,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic, Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying"
           ]
         },
         {
@@ -30391,6 +30385,8 @@
       "experiencePoints": 15000,
       "lairExperiencePoints": 18000,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -30522,13 +30518,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Ice Storm (level 5 version), Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Ice Storm (level 5 version), Zone of Truth",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Ice Storm (level 5 version), Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 19, +11 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife, Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Ice Storm (level 5 version), Zone of Truth"
           ]
         },
         {
@@ -30659,6 +30653,8 @@
       "experiencePoints": 50000,
       "lairExperiencePoints": 62000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
@@ -30790,13 +30786,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Control Weather, Ice Storm (level 7 version), Teleport, Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Control Weather, Ice Storm (level 7 version), Teleport, Zone of Truth",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Control Weather, Ice Storm (level 7 version), Teleport, Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns."
+            "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Detect Magic, Hold Monster, Ice Knife (level 2 version), Shapechange (Beast or Humanoid form only, no Temporary Hit Points gained from the spell, and no Concentration or Temporary Hit Points required to maintain the spell) 1/Day Each: Control Weather, Ice Storm (level 7 version), Teleport, Zone of Truth"
           ]
         },
         {
@@ -31245,6 +31239,7 @@
       "challengeRating": 21,
       "experiencePoints": 33000,
       "proficiencyBonus": 7,
+      "legendaryActionUses": 3,
       "entries": [
         {
           "name": "Divine Awareness",
@@ -31368,7 +31363,7 @@
         {
           "name": "Divine Aid",
           "section": "BonusAction",
-          "text": "The solar casts Cure Wounds (level 2 version), Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting. Legendary Action Uses: 3. Immediately after another creature's turn, the solar can expend a use to take one of the following actions. The solar regains all expended uses at the start of each of its turns.",
+          "text": "The solar casts Cure Wounds (level 2 version), Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting.",
           "mechanics": "Unmodelled",
           "usage": {
             "kind": "PerDay",
@@ -31376,10 +31371,7 @@
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The solar casts Cure Wounds (level 2 version), Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting",
-            "Legendary Action Uses: 3",
-            "Immediately after another creature's turn, the solar can expend a use to take one of the following actions",
-            "The solar regains all expended uses at the start of each of its turns."
+            "The solar casts Cure Wounds (level 2 version), Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting."
           ]
         },
         {
@@ -31788,6 +31780,8 @@
       "experiencePoints": 7200,
       "lairExperiencePoints": 8400,
       "proficiencyBonus": 4,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Inscrutable",
@@ -31908,13 +31902,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions. The sphinx regains all expended uses at the start of each of its turns.",
+          "text": "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions",
-            "The sphinx regains all expended uses at the start of each of its turns."
+            "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues"
           ]
         },
         {
@@ -32026,6 +32018,8 @@
       "experiencePoints": 18000,
       "lairExperiencePoints": 20000,
       "proficiencyBonus": 6,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Inscrutable",
@@ -32121,13 +32115,11 @@
         {
           "name": "Spellcasting",
           "section": "Action",
-          "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions. The sphinx regains all expended uses at the start of each of its turns.",
+          "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the sphinx can expend a use to take one of the following actions",
-            "The sphinx regains all expended uses at the start of each of its turns."
+            "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth"
           ]
         },
         {
@@ -33455,6 +33447,7 @@
       "challengeRating": 30,
       "experiencePoints": 155000,
       "proficiencyBonus": 9,
+      "legendaryActionUses": 3,
       "entries": [
         {
           "name": "Legendary Resistance",
@@ -33673,7 +33666,7 @@
         {
           "name": "Swallow",
           "section": "BonusAction",
-          "text": "Strength Saving Throw: DC 27, one Large or smaller creature Grappled by the tarrasque (it can have up to six creatures swallowed at a time). Failure: The target is swallowed, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions and can't teleport, it has Total Cover against attacks and other effects outside the tarrasque, and it takes 56 (16d6) Acid damage at the start of each of the tarrasque's turns. If the tarrasque takes 60 damage or more on a single turn from a creature inside it, the tarrasque must succeed on a DC 20 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the tarrasque and has the Prone condition. If the tarrasque dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone. Legendary Action Uses: 3. Immediately after another creature's turn, the tarrasque can expend a use to take one of the following actions. The tarrasque regains all expended uses at the start of each of its turns.",
+          "text": "Strength Saving Throw: DC 27, one Large or smaller creature Grappled by the tarrasque (it can have up to six creatures swallowed at a time). Failure: The target is swallowed, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions and can't teleport, it has Total Cover against attacks and other effects outside the tarrasque, and it takes 56 (16d6) Acid damage at the start of each of the tarrasque's turns. If the tarrasque takes 60 damage or more on a single turn from a creature inside it, the tarrasque must succeed on a DC 20 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the tarrasque and has the Prone condition. If the tarrasque dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Strength",
@@ -33724,10 +33717,7 @@
             "The target is swallowed, and the Grappled condition ends",
             "A swallowed creature has the Blinded and Restrained conditions and can't teleport, it has Total Cover against attacks and other effects outside the tarrasque, and it takes 56 (16d6) Acid damage at the start of each of the tarrasque's turns",
             "If the tarrasque takes 60 damage or more on a single turn from a creature inside it, the tarrasque must succeed on a DC 20 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the tarrasque and has the Prone condition",
-            "If the tarrasque dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone",
-            "Legendary Action Uses: 3",
-            "Immediately after another creature's turn, the tarrasque can expend a use to take one of the following actions",
-            "The tarrasque regains all expended uses at the start of each of its turns"
+            "If the tarrasque dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone"
           ]
         },
         {
@@ -34463,6 +34453,7 @@
       "challengeRating": 5,
       "experiencePoints": 1800,
       "proficiencyBonus": 3,
+      "legendaryActionUses": 3,
       "entries": [
         {
           "name": "Legendary Resistance",
@@ -34555,7 +34546,7 @@
         {
           "name": "Unicorn's Blessing",
           "section": "BonusAction",
-          "text": "The unicorn touches another creature with its horn and casts Cure Wounds or Lesser Restoration on that creature, using the same spellcasting ability as Spellcasting. Legendary Action Uses: 3. Immediately after another creature's turn, the unicorn can expend a use to take one of the following actions. The unicorn regains all expended uses at the start of each of its turns.",
+          "text": "The unicorn touches another creature with its horn and casts Cure Wounds or Lesser Restoration on that creature, using the same spellcasting ability as Spellcasting.",
           "mechanics": "Unmodelled",
           "usage": {
             "kind": "PerDay",
@@ -34563,10 +34554,7 @@
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The unicorn touches another creature with its horn and casts Cure Wounds or Lesser Restoration on that creature, using the same spellcasting ability as Spellcasting",
-            "Legendary Action Uses: 3",
-            "Immediately after another creature's turn, the unicorn can expend a use to take one of the following actions",
-            "The unicorn regains all expended uses at the start of each of its turns."
+            "The unicorn touches another creature with its horn and casts Cure Wounds or Lesser Restoration on that creature, using the same spellcasting ability as Spellcasting."
           ]
         },
         {
@@ -34991,6 +34979,8 @@
       "experiencePoints": 10000,
       "lairExperiencePoints": 11500,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -35153,7 +35143,7 @@
         {
           "name": "Shape-Shift",
           "section": "BonusAction",
-          "text": "If the vampire isn't in sunlight or running water, it shape-shifts into a Tiny bat (Speed 5 ft., Fly Speed 30 ft.) or a Medium cloud of mist (Speed 5 ft., Fly Speed 20 ft. [hover]), or it returns to its vampire form. Anything it is wearing transforms with it. While in bat form, the vampire can't speak. Its game statistics, other than its size and Speed, are unchanged. While in mist form, the vampire can't take any actions, speak, or manipulate objects. It is weightless and can enter an enemy's space and stop there. If air can pass through a space, the mist can do so, but it can't pass through liquid. It has Resistance to all damage, except the damage it takes from sunlight. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the vampire can expend a use to take one of the following actions. The vampire regains all expended uses at the start of each of its turns.",
+          "text": "If the vampire isn't in sunlight or running water, it shape-shifts into a Tiny bat (Speed 5 ft., Fly Speed 30 ft.) or a Medium cloud of mist (Speed 5 ft., Fly Speed 20 ft. [hover]), or it returns to its vampire form. Anything it is wearing transforms with it. While in bat form, the vampire can't speak. Its game statistics, other than its size and Speed, are unchanged. While in mist form, the vampire can't take any actions, speak, or manipulate objects. It is weightless and can enter an enemy's space and stop there. If air can pass through a space, the mist can do so, but it can't pass through liquid. It has Resistance to all damage, except the damage it takes from sunlight.",
           "mechanics": "Unmodelled",
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -35164,10 +35154,7 @@
             "While in mist form, the vampire can't take any actions, speak, or manipulate objects",
             "It is weightless and can enter an enemy's space and stop there",
             "If air can pass through a space, the mist can do so, but it can't pass through liquid",
-            "It has Resistance to all damage, except the damage it takes from sunlight",
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the vampire can expend a use to take one of the following actions",
-            "The vampire regains all expended uses at the start of each of its turns."
+            "It has Resistance to all damage, except the damage it takes from sunlight."
           ]
         },
         {
@@ -37091,6 +37078,8 @@
       "experiencePoints": 10000,
       "lairExperiencePoints": 11500,
       "proficiencyBonus": 5,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Ice Walk",
@@ -37156,7 +37145,7 @@
         {
           "name": "Cold Breath",
           "section": "Action",
-          "text": "Constitution Saving Throw: DC 19, each creature in a 60-foot Cone. Failure: 54 (12d8) Cold damage. Success: Half damage. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "Constitution Saving Throw: DC 19, each creature in a 60-foot Cone. Failure: 54 (12d8) Cold damage. Success: Half damage.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Constitution",
@@ -37182,11 +37171,7 @@
             "rechargeMinimum": 5
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Freezing Burst",
@@ -37318,6 +37303,8 @@
       "experiencePoints": 25000,
       "lairExperiencePoints": 33000,
       "proficiencyBonus": 6,
+      "legendaryActionUses": 3,
+      "legendaryActionUsesInLair": 4,
       "entries": [
         {
           "name": "Ice Walk",
@@ -37383,7 +37370,7 @@
         {
           "name": "Cold Breath",
           "section": "Action",
-          "text": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Failure: 63 (14d8) Cold damage. Success: Half damage. Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the dragon can expend a use to take one of the following actions. The dragon regains all expended uses at the start of each of its turns.",
+          "text": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Failure: 63 (14d8) Cold damage. Success: Half damage.",
           "mechanics": "SavingThrow",
           "save": {
             "ability": "Constitution",
@@ -37409,11 +37396,7 @@
             "rechargeMinimum": 5
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "Legendary Action Uses: 3 (4 in Lair)",
-            "Immediately after another creature's turn, the dragon can expend a use to take one of the following actions",
-            "The dragon regains all expended uses at the start of each of its turns"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Freezing Burst",

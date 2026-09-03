@@ -113,6 +113,33 @@ internal static partial class StatBlockLineGrammar
         return (rating, experience, lair, proficiency);
     }
 
+    /// <summary>
+    /// Parses the Legendary Actions section's own preamble paragraph, e.g. <c>Legendary
+    /// Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the
+    /// aboleth can expend a use to take one of the following actions. The aboleth
+    /// regains all expended uses at the start of each of its turns.</c> Every printed
+    /// instance in the corpus uses this exact sentence shape (#423) — only the use
+    /// counts and the bearer's own lowercase noun vary — so the whole sentence is
+    /// matched and only the counts are extracted; a mismatch means the printed shape
+    /// changed or the wrong text reached this parser, either of which the caller must
+    /// treat as a failure rather than silently dropping the paragraph.
+    /// </summary>
+    public static (int Uses, int? UsesInLair)? ParseLegendaryActionUses(string text)
+    {
+        var match = LegendaryActionUsesPattern().Match(text.Trim());
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var uses = int.Parse(match.Groups["uses"].Value, CultureInfo.InvariantCulture);
+        int? usesInLair = match.Groups["lair"].Success
+            ? int.Parse(match.Groups["lair"].Value, CultureInfo.InvariantCulture)
+            : null;
+
+        return (uses, usesInLair);
+    }
+
     /// <summary>Parses <c>Senses Blindsight 60 ft., Darkvision 120 ft.; Passive Perception 21</c>.</summary>
     public static (IReadOnlyList<MonsterSense> Senses, int? PassivePerception) ParseSenses(string text)
     {
@@ -404,6 +431,15 @@ internal static partial class StatBlockLineGrammar
     // four blocks, which print "(700 XP; PB +2)" instead. Both orders are accepted.
     [GeneratedRegex(@"^CR\s+(?:(?<fraction>(?<numerator>\d+)/(?<denominator>\d+))|(?<whole>\d+))\s*\(\s*(?:XP\s+(?<xp>[\d,]+)|(?<xp2>[\d,]+)\s+XP)(?:\s*,\s*or\s+(?<lair>[\d,]+)\s+in\s+lair)?\s*;\s*PB\s+(?<pb>[+-]\s?\d+)\s*\)")]
     private static partial Regex ChallengePattern();
+
+    // Anchored at both ends deliberately: the whole paragraph is boilerplate except the
+    // two counts and the bearer's own noun, verified identical across all 30 printed
+    // instances (#423), so a mismatch is meant to be loud rather than a partial match
+    // that quietly accepts a changed sentence.
+    [GeneratedRegex(@"^Legendary Action Uses:\s*(?<uses>\d+)(?:\s*\((?<lair>\d+)\s+in Lair\))?\.\s*" +
+        @"Immediately after another creature's turn, the [a-z]+ can expend a use to take one of the following actions\.\s*" +
+        @"The [a-z]+ regains all expended uses at the start of each of its turns\.$")]
+    private static partial Regex LegendaryActionUsesPattern();
 
     [GeneratedRegex(@"(?<type>Blindsight|Darkvision|Tremorsense|Truesight)\s+(?<feet>\d+)\s*ft\.?")]
     private static partial Regex SensePattern();
