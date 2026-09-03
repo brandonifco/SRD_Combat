@@ -34,14 +34,14 @@ board. File found-but-deferred work as an issue.
 | If you are touching | Read first |
 | --- | --- |
 | `tools/SrdExtract`, `data/srd`, any parser | **"The rule this project runs on"** below, then [`docs/guides/extraction.md`](docs/guides/extraction.md); regenerate with the `regenerate-content` skill, verify with `srd-lookup` |
-| `src/SRDCombat.Core` — combat, movement, cover, conditions | [`docs/guides/engine.md`](docs/guides/engine.md) |
+| `src/SRDCombat.Core` — combat, movement, cover, conditions | [`docs/guides/engine.md`](docs/guides/engine.md); if the frozen transcript churns, read the diff with the `transcript-churn` skill before regenerating it |
 | Characters, spells, levelling, items | [`docs/guides/engine.md`](docs/guides/engine.md) |
 | The gauntlet, economy, encounter building | [`docs/guides/engine.md`](docs/guides/engine.md) + [`docs/finishing-plan.md`](docs/finishing-plan.md) F3 |
 | `client/` (Godot) or `src/SRDCombat.Console` | [`client/README.md`](client/README.md). The clients hold no rules. A drawing or input change is verified with the `probe-diff` skill |
 | Art, sprites, `client/assets` | Brandon draws all art. The pipeline is mechanical-only and never touches colour |
 | `.claude/skills/`, `.claude/hooks/`, agent charters | The skill's own `SKILL.md` and the hook's header comment; then [The team](#the-team) below |
 | `.github/`, CI, `scripts/`, repo settings | [`docs/2026-08-29-github-workflow-audit.md`](docs/2026-08-29-github-workflow-audit.md) — **especially its "Considered and rejected" list**, which exists so the same optimizations are not re-proposed without new evidence |
-| Anything, before you commit | **"Standing conventions"** below |
+| Anything, before you commit | **"Standing conventions"** below; reconcile the prose to your diff with the `docs-sync` skill |
 
 ### Repository map
 
