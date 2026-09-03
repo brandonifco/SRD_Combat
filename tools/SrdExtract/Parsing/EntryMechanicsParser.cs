@@ -659,18 +659,25 @@ internal static partial class EntryMechanicsParser
         // here. `Failure or Success:` is claimed by nobody (design §4.1) and its side
         // clause is left to residue, same as the Failure-line riders this method has
         // never structured.
-        var success = text.Contains("Success: Half damage", StringComparison.OrdinalIgnoreCase)
+        //
+        // #397: ten entries print the fuller "Success: Half damage only." — the SRD's
+        // way of saying no rider carries over on a success. The trailing "only" is not
+        // a rule of its own: `Encounter.cs`'s rider application already gates on
+        // `!succeeded || SuccessOutcome == SameAsFailure`, so a `HalfDamage` success
+        // skips every rider regardless of whether "only" was ever read. Reading only
+        // "Success: Half damage" left that word as one-word residue, overstating a gap
+        // that does not exist. `SaveSuccessHalfPattern` claims the trailing " only"
+        // when printed, word-bounded so it cannot swallow anything past it — the
+        // period after it is glue either way, and a following "Failure or Success:"
+        // side clause (#370) starts its own sentence and is untouched.
+        var successMatch = SaveSuccessHalfPattern().Match(text);
+        var success = successMatch.Success
             ? SaveSuccessOutcome.HalfDamage
             : SaveSuccessOutcome.NoEffect;
 
         if (success == SaveSuccessOutcome.HalfDamage)
         {
-            var halfDamageIndex = text.IndexOf("Success: Half damage", StringComparison.OrdinalIgnoreCase);
-
-            if (halfDamageIndex >= 0)
-            {
-                coverage.Claim(new TextSpan(halfDamageIndex, "Success: Half damage".Length), "save.success_half");
-            }
+            coverage.Claim(new TextSpan(successMatch.Index, successMatch.Length), "save.success_half");
         }
 
         return new SaveEffect(
@@ -1566,6 +1573,15 @@ internal static partial class EntryMechanicsParser
 
     [GeneratedRegex(@"(?<ability>Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+Saving\s+Throw:\s*DC\s*(?<dc>\d+)")]
     private static partial Regex SaveHeaderPattern();
+
+    // "Success: Half damage" (#382), widened for #397's "Success: Half damage only." —
+    // ten entries print the trailing word to say no rider carries over on a success,
+    // behaviour the engine already has without reading it (see ParseSave's remarks at
+    // the call site). `\b` anchors the optional " only" to the whole word, so a claim
+    // never reaches past it into a printed continuation this pattern was not written
+    // to recognise.
+    [GeneratedRegex(@"Success:\s*Half damage(?:\s+only\b)?", RegexOptions.IgnoreCase)]
+    private static partial Regex SaveSuccessHalfPattern();
 
     // The save's target clause, claimed exactly as far as UseSaveEntry's own targeting
     // reaches (design §7.6): the printed comma, then one of the shapes the engine
