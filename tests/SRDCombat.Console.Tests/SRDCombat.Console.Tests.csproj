@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The console client's first test project (#317's gap, narrowed rather than closed):
+    this pins only ConsoleArguments, the pure argument-parsing seam #489 pulled out of
+    Program.cs's top-level statements so it is reachable from xUnit at all. CommandLoop,
+    Display and PartyCreator — the interactive, Console.ReadLine-driven half of this
+    client — are untouched and remain #317's open concern.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SRDCombat.Console\SRDCombat.Console.csproj" />
+  </ItemGroup>
+
+</Project>

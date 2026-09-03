@@ -16,8 +16,16 @@ using SRDCombat.Game;
 // testing: "it happened on seed 12345" is a complete repro. Within a gauntlet run,
 // (seed, fight number) reproduces that fight's encounter regardless of the play
 // history that got there — see RunDice's remarks — so a bug report only ever needs
-// the run's seed and which fight it happened on.
-var seed = SeedFrom(args) ?? Random.Shared.Next();
+// the run's seed and which fight it happened on. A typo'd --seed is refused rather
+// than silently rolling a fresh one — the one flag where a quiet fallback would defeat
+// the exact promise it exists to keep (#489).
+if (!ConsoleArguments.TryParseSeed(args, out var parsedSeed, out var seedError))
+{
+    Console.Error.WriteLine(seedError);
+    return 1;
+}
+
+var seed = parsedSeed ?? Random.Shared.Next();
 
 var contentDirectory = PositionalArguments(args).FirstOrDefault()
     ?? FindContentDirectory()
@@ -41,13 +49,35 @@ Display.PartySideId = PregeneratedParty.SideId;
 // has.
 if (SingleFightRequested(args))
 {
-    var level = LevelFrom(args) ?? 1;
+    if (!ConsoleArguments.TryParseLevel(args, out var level, out var levelError))
+    {
+        Console.Error.WriteLine(levelError);
+        return 1;
+    }
+
+    if (!ConsoleArguments.TryResolveDifficulty(oneFight: true, args, out var difficulty, out var difficultyError))
+    {
+        Console.Error.WriteLine(difficultyError);
+        return 1;
+    }
+
     var oneFightDice = new SeededRandomSource(seed);
     var only = EncounterFactory.Build(
-        content, PregeneratedParty.Build(content, level), DifficultyFrom(args), oneFightDice);
+        content, PregeneratedParty.Build(content, level), difficulty, oneFightDice);
 
     Console.WriteLine($"SRD_Combat — one fight (seed {seed})");
     return PlayFight(only, oneFightDice) is FightResult.Won or FightResult.Lost ? 0 : 0;
+}
+
+// --difficulty only ever governs --one-fight above; on the ordinary gauntlet path
+// nothing calls TryParseDifficulty at all, so a --difficulty passed here — valid or
+// not — used to be silently ignored rather than refused. Checked once, before the
+// gauntlet's own setup, the same way TryResolveGauntletLevel below decides whether
+// --level applies before doing anything else with it (a Codex finding on #605).
+if (!ConsoleArguments.TryResolveDifficulty(oneFight: false, args, out _, out var gauntletDifficultyError))
+{
+    Console.Error.WriteLine(gauntletDifficultyError);
+    return 1;
 }
 
 // The gauntlet is persistent: the run autosaves after every cleared fight, and defeat
@@ -57,6 +87,18 @@ var savePath = SavePathFrom(args) ?? "srdcombat-save.json";
 
 GauntletRun run;
 var isNewRun = !ContinueRequested(args);
+
+// --level only ever means one thing here: where a *new* run begins, --create's
+// party included — a resumed run has nothing for it to apply to (GauntletRun.Resume
+// re-resolves at the level the save's own experience has earned), and letting it
+// through silently there would be exactly the shape #488 closed on the Godot side,
+// just for --continue instead of a bad number. Decided once, before either branch
+// below, the same way PlayMode.TryResolveGauntletLevel decides it up front there.
+if (!ConsoleArguments.TryResolveGauntletLevel(ContinueRequested(args), args, out var startingLevel, out var startingLevelError))
+{
+    Console.Error.WriteLine(startingLevelError);
+    return 1;
+}
 
 if (ContinueRequested(args))
 {
@@ -132,7 +174,13 @@ else
     if (args.Contains("--create"))
     {
         // Creation runs before the run's dice: the drafts are choices, not rolls, and
-        // the seed governs the fights they walk into.
+        // the seed governs the fights they walk into. GauntletRun.Start's
+        // created-drafts overload takes the same startingLevel a pregenerated
+        // party's does — a created party is always drafted at level 1 (PartyCreator)
+        // and resolved up to whatever level the run begins at, exactly like the
+        // pregenerated branch below it. This used to be omitted entirely, so
+        // --create --level 4 silently started at 1 (#602, the console twin of
+        // #488's Godot bug).
         var drafts = PartyCreator.CreateParty(content);
 
         if (drafts is null)
@@ -141,11 +189,11 @@ else
             return 0;
         }
 
-        run = GauntletRun.Start(content, drafts, GauntletLadder.Default(), seed: seed);
+        run = GauntletRun.Start(content, drafts, GauntletLadder.Default(), seed: seed, startingLevel: startingLevel);
     }
     else
     {
-        run = GauntletRun.Start(content, GauntletLadder.Default(), LevelFrom(args) ?? 1, seed);
+        run = GauntletRun.Start(content, GauntletLadder.Default(), startingLevel, seed);
     }
 
     Console.WriteLine($"SRD_Combat — a gauntlet of {run.Ladder.Count} fights (seed {seed})");
@@ -402,36 +450,9 @@ FightResult PlayFight(Fight fight, IRandomSource dice)
 
 static bool SingleFightRequested(string[] args) => args.Contains("--one-fight");
 
-static EncounterDifficulty DifficultyFrom(string[] args)
-{
-    var index = Array.FindIndex(args, argument => argument is "--difficulty");
-
-    return index >= 0
-        && index + 1 < args.Length
-        && Enum.TryParse<EncounterDifficulty>(args[index + 1], ignoreCase: true, out var difficulty)
-            ? difficulty
-            // Low is "one or two scary moments ... their characters should emerge
-            // victorious", which is the right default for sitting down cold.
-            : EncounterDifficulty.Low;
-}
-
-static int? LevelFrom(string[] args)
-{
-    var index = Array.FindIndex(args, argument => argument is "--level");
-
-    return index >= 0 && index + 1 < args.Length && int.TryParse(args[index + 1], out var level)
-        ? Math.Clamp(level, 1, 5)
-        : null;
-}
-
-static int? SeedFrom(string[] args)
-{
-    var index = Array.FindIndex(args, argument => argument is "--seed");
-
-    return index >= 0 && index + 1 < args.Length && int.TryParse(args[index + 1], out var seed)
-        ? seed
-        : null;
-}
+// --level, --seed and --difficulty moved to ConsoleArguments (#489): each now refuses a
+// present-but-unusable value by name instead of returning null/a default for this
+// function's caller to silently fall back from.
 
 static bool ContinueRequested(string[] args) => args.Contains("--continue");
 

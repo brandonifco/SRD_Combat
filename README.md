@@ -92,8 +92,14 @@ dotnet run --project src/SRDCombat.Console
 Both builds must produce **0 warnings** — `TreatWarningsAsErrors` is on. `--seed <n>`
 makes a run reproducible, which is a complete bug report; `--create` builds your own
 party of four at the keyboard, every option with its printed text; `--continue` resumes the
-autosave. The Godot client has its own [README](client/README.md), including the one
-build step a first launch needs.
+autosave; `--one-fight --difficulty low|moderate|high` plays a single fight at a chosen
+difficulty instead of the gauntlet. `--seed`, `--level` and `--difficulty` each refuse a
+present-but-unusable value by name, the value typed and the accepted set, rather than
+silently defaulting or clamping (#489) — the same policy the Godot client's own flags
+follow. `--difficulty` only governs `--one-fight`; passed on the ordinary gauntlet path
+it is refused too, rather than being read by nothing and dropped (#605). The Godot
+client has its own [README](client/README.md), including the one build step a first
+launch needs.
 
 ## Documentation
 
