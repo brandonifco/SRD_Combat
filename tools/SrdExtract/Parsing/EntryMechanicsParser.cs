@@ -518,6 +518,18 @@ internal static partial class EntryMechanicsParser
 
         var total = 0;
         var names = new List<string>();
+        var components = new List<MultiattackComponent>();
+
+        // A clause is a *choice* when its own name group is itself an alternation —
+        // the Bugbear Stalker's "two Javelin or Morningstar attacks" is one clause
+        // offering a pick each swing, not two distinctly-named clauses. Tracked
+        // separately from single-named clauses (design §2.3/§2.5 below): the two
+        // shapes read differently, and a composition mixing both — a fixed part plus
+        // a free part, the Tarrasque's "one Bite attack and three other attacks,
+        // using Claw or Tail in any combination" — is a shape the model has no way to
+        // express and must not be waved through as either.
+        var hasChoiceClause = false;
+        var hasSingleNamedClause = false;
 
         foreach (Match match in NamedMultiattackPattern().Matches(text))
         {
@@ -528,11 +540,45 @@ internal static partial class EntryMechanicsParser
 
             total += clauseCount;
 
-            foreach (var name in SplitAttackNames(match.Groups["attack"].Value))
+            var clauseNames = SplitAttackNames(match.Groups["attack"].Value);
+            var isChoiceClause = clauseNames.Count > 1;
+            if (isChoiceClause)
+            {
+                hasChoiceClause = true;
+            }
+            else
+            {
+                hasSingleNamedClause = true;
+            }
+
+            foreach (var name in clauseNames)
             {
                 if (!names.Contains(name, StringComparer.OrdinalIgnoreCase))
                 {
                     names.Add(name);
+                }
+            }
+
+            // Composition components are built only from single-named clauses — a
+            // choice clause names no one attack to count. Repeats of the same name
+            // across clauses are merged by summing (design §2.3's corollary; none of
+            // the 21 printed enumerations repeat a name, but the rule is defined
+            // regardless of whether the corpus currently exercises it).
+            if (!isChoiceClause)
+            {
+                var clauseName = clauseNames[0];
+                var existingIndex = components.FindIndex(
+                    component => string.Equals(component.Name, clauseName, StringComparison.OrdinalIgnoreCase));
+                if (existingIndex >= 0)
+                {
+                    components[existingIndex] = components[existingIndex] with
+                    {
+                        Count = components[existingIndex].Count + clauseCount,
+                    };
+                }
+                else
+                {
+                    components.Add(new MultiattackComponent(clauseName, clauseCount));
                 }
             }
 
@@ -560,11 +606,42 @@ internal static partial class EntryMechanicsParser
             return null;
         }
 
+        // The defensive guard (design §2.5): a composition mixing a single-named
+        // clause with a choice clause is a fixed-part-plus-free-part shape the model
+        // cannot express — not composition, not free combination. Returning null here
+        // (before the claim below) lets the whole sentence fall through to whatever
+        // this entry resolves to otherwise, unclaimed, rather than reading clean under
+        // either existing shape. Verified against all 330 monsters: nothing in the
+        // corpus takes this branch today (the Tarrasque's matching hybrid clause
+        // already exits above via total < 2) — this exists purely so a future entry of
+        // this shape is caught rather than silently mis-graded.
+        if (hasChoiceClause && hasSingleNamedClause)
+        {
+            return null;
+        }
+
         coverage.Absorb(pending);
 
-        // Several named attacks means the creature picks between them, whether the text
-        // said "in any combination" or listed them as alternatives.
-        return new MultiattackEffect(total, names, names.Count > 1);
+        if (names.Count == 1)
+        {
+            // Single-name repeat — "makes two Slam attacks" — already fully expressed
+            // by (AttackCount, one AttackName, AnyCombination=false). No composition.
+            return new MultiattackEffect(total, names, false);
+        }
+
+        if (hasChoiceClause)
+        {
+            // The sole clause is itself a choice ("two Javelin or Morningstar
+            // attacks") — every swing picks freely among the named attacks. No fixed
+            // per-name composition to record.
+            return new MultiattackEffect(total, names, true);
+        }
+
+        // Every clause named exactly one attack and at least two distinct names were
+        // printed: an enumerated, mandatory composition (design's STRICT-EXACT
+        // reading, issue #343) — "one Bite attack and one Claw attack" is one of each,
+        // not two of whichever the tactics policy prefers.
+        return new MultiattackEffect(total, names, false, components);
     }
 
     private static IReadOnlyList<string> SplitAttackNames(string text) => text

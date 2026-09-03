@@ -1071,6 +1071,30 @@ public static class SimpleTacticsPolicy
     }
 
     /// <summary>
+    /// Whether this swing may still pick <paramref name="attackName"/>: it is part of
+    /// the Multiattack at all, <b>and</b>, for a printed enumerated composition (issue
+    /// #343), its per-name cap has not already been used up this action.
+    /// </summary>
+    /// <remarks>
+    /// This is the one call site that must be cap-aware rather than the plain
+    /// membership test <see cref="CombatantStats.AllowsInMultiattack"/> alone: its
+    /// result feeds straight into <see cref="Encounter.Attack"/> for the swing about to
+    /// be made. Using the static membership test here would let the policy pick a
+    /// Brown Bear's already-spent Bite for its second swing, <c>Encounter.Attack</c>
+    /// would refuse it with <c>attack.composition_exhausted</c>, and — because a
+    /// refusal aborts the caller's attack loop — the bear would swing once and stop
+    /// instead of completing its printed Bite and Claw. Estimation call sites
+    /// (<c>BestReachingAttack</c>, the reach and movement-worthwhile filters) stay on
+    /// the static test deliberately: they judge an action's total output or where to
+    /// stand, not which swing comes next, so making them cap-aware would mis-plan
+    /// movement mid-estimate.
+    /// </remarks>
+    private static bool AllowsNextMultiattackSwing(Combatant actor, string attackName) =>
+        actor.Stats.AllowsInMultiattack(attackName)
+        && (actor.Stats.MultiattackCapFor(attackName) is not { } cap
+            || actor.Features.MultiattackSwingsThisAction.GetValueOrDefault(attackName) < cap);
+
+    /// <summary>
     /// Attacks with the most valuable attack that can reach the target — average
     /// damage, discounted at long range and against the target's own damage
     /// responses, per <see cref="ValueAt"/>.
@@ -1086,7 +1110,7 @@ public static class SimpleTacticsPolicy
 
         var attack = actor.Stats.Attacks
             .Where(candidate => candidate.CanReach(distance))
-            .Where(candidate => actor.Stats.AllowsInMultiattack(candidate.Name))
+            .Where(candidate => AllowsNextMultiattackSwing(actor, candidate.Name))
             // A spent "(Recharge 5-6)" attack would be refused, and the refusal would
             // abort the whole attack loop — filter it out so the next-best attack swings.
             .Where(candidate => actor.Uses.IsAvailable(candidate.Name))

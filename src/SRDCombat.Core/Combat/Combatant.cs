@@ -370,6 +370,27 @@ public sealed record CombatantStats(
         Multiattack is not { AttackNames.Count: > 0 } multiattack
         || multiattack.AttackNames.Contains(attackName, StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The per-name cap this attack is bound to within one printed enumerated
+    /// composition — the component's own <see cref="MultiattackComponent.Count"/> —
+    /// or null when the attack carries no per-name cap: a free combination, a
+    /// single-name repeat (already capped by <see cref="AttacksPerAction"/> alone), or
+    /// no Multiattack at all.
+    /// </summary>
+    /// <remarks>
+    /// This is the STRICT-EXACT reading (issue #343): "one Bite attack and one Claw
+    /// attack" permits exactly one Bite and exactly one Claw, never a second Bite in
+    /// the Claw's place. <c>Encounter.Attack</c> enforces the cap against swings
+    /// already made this action; the estimation call sites in the tactics policy
+    /// deliberately use <see cref="AllowsInMultiattack"/> alone, not this, because they
+    /// judge an action's total output rather than which swing comes next.
+    /// </remarks>
+    public int? MultiattackCapFor(string attackName) =>
+        Multiattack?.Composition?.FirstOrDefault(component =>
+            string.Equals(component.Name, attackName, StringComparison.OrdinalIgnoreCase)) is { } component
+            ? component.Count
+            : null;
+
     /// <summary>True when this combatant has the given implemented class feature.</summary>
     public bool Has(ClassFeature feature) => Character?.Has(feature) == true;
 
@@ -524,9 +545,32 @@ public sealed record CombatantStats(
             return null;
         }
 
+        bool HasAttack(string name) => attacks.Any(attack =>
+            string.Equals(attack.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        if (multiattack.Composition is { Count: > 0 } composition)
+        {
+            // An enumerated composition (issue #343) is meaningless once its own sum no
+            // longer matches what survives: drop any component naming an attack the
+            // creature does not have, and recompute AttackCount/AttackNames from the
+            // survivors rather than leaving the pre-drop totals stale.
+            var survivingComponents = composition.Where(component => HasAttack(component.Name)).ToArray();
+
+            if (survivingComponents.Length == 0)
+            {
+                return null;
+            }
+
+            return multiattack with
+            {
+                AttackCount = survivingComponents.Sum(component => component.Count),
+                AttackNames = survivingComponents.Select(component => component.Name).ToArray(),
+                Composition = survivingComponents,
+            };
+        }
+
         var usable = multiattack.AttackNames
-            .Where(name => attacks.Any(attack =>
-                string.Equals(attack.Name, name, StringComparison.OrdinalIgnoreCase)))
+            .Where(HasAttack)
             .ToArray();
 
         // A named-attack Multiattack whose attack does not exist is dropped entirely; a
@@ -703,6 +747,21 @@ public sealed class FeatureState
     /// </summary>
     public int AttacksRemainingThisAction { get; internal set; }
 
+    /// <summary>
+    /// How many of each named attack this creature has already made from the current
+    /// Attack action, keyed by attack name (case-insensitive).
+    /// </summary>
+    /// <remarks>
+    /// Only meaningful against <see cref="CombatantStats.MultiattackCapFor"/>, which is
+    /// non-null only for a printed enumerated composition — see issue #343. Cleared at
+    /// the start of a new turn and whenever a fresh Attack action is spent (a second
+    /// Attack action, from Action Surge, gets its own full composition), never
+    /// mid-action: the whole point is to persist across the swings <em>within</em> one
+    /// action so a Brown Bear's second Bite is refused after its one printed Bite is
+    /// already spent.
+    /// </remarks>
+    public Dictionary<string, int> MultiattackSwingsThisAction { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Spell slots left this rest, by spell level.</summary>
     public Dictionary<int, int> SpellSlotsRemaining { get; } = [];
 
@@ -774,6 +833,7 @@ public sealed class FeatureState
         SustainedRageThisTurn = false;
         AttacksRemainingThisAction = 0;
         CunningStrike = CunningStrikeEffect.None;
+        MultiattackSwingsThisAction.Clear();
     }
 }
 
