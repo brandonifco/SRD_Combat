@@ -5,18 +5,18 @@
      saturating pacing median means, why a coverage percentage was retired — stay in
      CLAUDE.md, which a script has no business writing. -->
 
-Generated from `5b4be09` on branch `feature/536-trade-command`
+Generated from `83ae869` on branch `feature/536-trade-command`
 (2026-09-03). Regenerate with `./scripts/status.sh --tests`.
 
 ## Tests
 
-**4,997 passing**, 0 failed, 2 skipped, 4,999 total, across 6 test projects.
+**5,003 passing**, 0 failed, 2 skipped, 5,005 total, across 6 test projects.
 
 | Test project | Passing | Skipped |
 | --- | ---: | ---: |
 | `SrdExtract.Tests` | 3,338 | 0 |
-| `SRDCombat.Core.Tests` | 715 | 1 |
-| `SRDCombat.Game.Tests` | 432 | 0 |
+| `SRDCombat.Core.Tests` | 720 | 1 |
+| `SRDCombat.Game.Tests` | 433 | 0 |
 | `SRDCombat.Content.Tests` | 237 | 0 |
 | `SRDCombat.Viewer.Tests` | 230 | 1 |
 | `SRDCombat.Console.Tests` | 45 | 0 |
@@ -44,12 +44,12 @@ C# lines, excluding `bin/` and `obj/`.
 
 | Tree | Lines |
 | --- | ---: |
-| `src/` | 29233 |
-| &nbsp;&nbsp;of which `src/SRDCombat.Console` | 2299 |
+| `src/` | 29327 |
+| &nbsp;&nbsp;of which `src/SRDCombat.Console` | 2304 |
 | `client/` | 10608 |
 | `tools/` | 7567 |
-| **Production total** | **47408** |
-| `tests/` | 37174 |
+| **Production total** | **47502** |
+| `tests/` | 37413 |
 
 ## What this file deliberately does not say
 
