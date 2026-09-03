@@ -123,12 +123,13 @@ public class RealCharacterTests
         // rather than presenting a Cleric that silently cannot cast.
         Assert.Contains("Spellcasting", cleric.UnimplementedFeatures);
 
-        // Channel Divinity executes (Divine Spark), so the name is claimed — while the
-        // features hanging off its unimplemented half stay reported: Sear Undead rides
-        // Turn Undead, and Turn Undead is refused for its unmodelled early outs.
+        // Channel Divinity executes both printed effects (Divine Spark and Turn
+        // Undead, #369), and Sear Undead — the level 5 rider on Turn Undead — is
+        // claimed too, so neither name is reported unimplemented.
         Assert.True(cleric.Has(ClassFeature.ChannelDivinity));
+        Assert.True(cleric.Has(ClassFeature.SearUndead));
         Assert.DoesNotContain("Channel Divinity", cleric.UnimplementedFeatures);
-        Assert.Contains("Sear Undead", cleric.UnimplementedFeatures);
+        Assert.DoesNotContain("Sear Undead", cleric.UnimplementedFeatures);
 
         // This draft never chose a Divine Order, and a choice nobody made stays
         // reported even though the registry maps the name — the honest default.

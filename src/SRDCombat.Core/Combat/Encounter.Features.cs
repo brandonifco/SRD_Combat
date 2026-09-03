@@ -530,6 +530,306 @@ public sealed partial class Encounter
         return null;
     }
 
+    /// <summary>How far Turn Undead reaches: "within 30 feet of you".</summary>
+    private const int TurnUndeadRangeFeet = 30;
+
+    /// <summary>
+    /// Cleric Channel Divinity — Turn Undead: a Magic action presenting the Holy Symbol
+    /// at chosen Undead within 30 feet, each rolling a Wisdom save or gaining the
+    /// Frightened and Incapacitated conditions for 1 minute. A level 5 Cleric's Sear
+    /// Undead rides the same use.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>"Turned" is 2014 vocabulary — SRD 5.2.1 prints no Turned condition.</b> The
+    /// printed effect (p. 37) is "the Frightened and Incapacitated conditions for 1
+    /// minute. For that duration, it tries to move as far from you as it can on its
+    /// turns. This effect ends early on the creature if it takes any damage, if you
+    /// have the Incapacitated condition, or if you die." Frightened and Incapacitated
+    /// are both already on <see cref="ConditionRules.Executable"/>; nothing is added to
+    /// the allowlist. The three early-outs are the one genuinely new piece, expressed
+    /// by <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/> rather than by a
+    /// fourth <see cref="ConditionDuration"/> shape — see that flag's remarks and
+    /// <see cref="BreakTurnEffectOnDamage"/>/<see cref="EndTurnEffectsWhoseSourceIsDown"/>
+    /// for where each out is read. <b>"Tries to move as far from you as it can on its
+    /// turns" is a rule — a movement compulsion, not AI tactics — and it is
+    /// unimplemented, not refused: <see cref="Encounter"/>'s own turn loop skips any
+    /// Incapacitated creature's turn outright before any tactics policy runs, so a
+    /// turned creature never reaches a turn to move on. Turn Undead is the first
+    /// printed effect that needs a turn for a creature that cannot act but is not
+    /// immobile, and nothing in this engine has that seam yet.</b> Rather than leaving
+    /// the gap in prose alone, both conditions Turn Undead imposes carry it on
+    /// <see cref="ActiveCondition.UnmodelledBehaviour"/> — a machine-checkable record
+    /// that the printed movement compulsion did not execute, the same accounting
+    /// <see cref="Definitions.AppliedCondition.UnmodelledRequirement"/> gives a
+    /// stat-block rider. The seam itself is filed as #615, with the flee code's shape
+    /// kept there for reuse. What ships without it: the turned creature is fully
+    /// neutralised (Frightened, Incapacitated, its own turn skipped) but its <em>body</em>
+    /// stays exactly where it was turned rather than retreating — not weaker than print
+    /// in every sense, since a frozen Undead can still block a doorway or grant cover
+    /// the book's fleeing version would not have offered the party.
+    /// </para>
+    /// <para>
+    /// Targeting is an explicit chosen list — "Each Undead <b>of your choice</b>", never
+    /// an area and never "every Undead in range" — validated whole before anything is
+    /// spent, Divine Spark's precedent: a use burned pointing at an invalid target
+    /// cannot be given back. The DC is the Cleric's spell save DC, the identical
+    /// fallback Divine Spark uses ("the DC equals the spell save DC from this class's
+    /// Spellcasting feature"). Each valid target rolls its own Wisdom save in the order
+    /// given, so the seeded dice stay reproducible.
+    /// </para>
+    /// <para>
+    /// <b>Sear Undead</b> (p. 37, level 5): "roll a number of d8s equal to your Wisdom
+    /// modifier (minimum of 1d8) and add the rolls together. Each Undead that fails its
+    /// saving throw against that use of Turn Undead takes Radiant damage equal to the
+    /// roll's total. This damage doesn't end the turn effect." One shared roll for the
+    /// whole use — never rolled per target — applied to every target that failed.
+    /// <b>Applied before the Frightened/Incapacitated land on that target</b>, so there
+    /// is no turn effect yet for <see cref="BreakTurnEffectOnDamage"/> to break: "this
+    /// damage doesn't end the turn effect" holds by construction rather than by a
+    /// special case threaded through the damage sweep. The damage still takes the
+    /// ordinary path — <see cref="DamageRules.Apply"/> for resistance and immunity,
+    /// <see cref="CheckConcentration"/> for a concentrating Undead, death and downing —
+    /// because nothing printed exempts Sear Undead from any rule but the one it names.
+    /// </para>
+    /// </remarks>
+    public ActionRefusal? TurnUndead(IReadOnlyList<Combatant> targets)
+    {
+        ArgumentNullException.ThrowIfNull(targets);
+
+        if (ActiveCombatant is not { } combatant)
+        {
+            return new ActionRefusal("encounter.complete", "The encounter is over.");
+        }
+
+        if (!combatant.Stats.Has(ClassFeature.ChannelDivinity))
+        {
+            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Channel Divinity.");
+        }
+
+        if (combatant.Features.ChannelDivinityRemaining <= 0)
+        {
+            return new ActionRefusal(
+                "feature.channel_divinity.exhausted",
+                $"{combatant.Name} has no Channel Divinity uses left.");
+        }
+
+        if (!combatant.Turn.HasAction)
+        {
+            return new ActionRefusal("action.spent", $"{combatant.Name} has already used its action.");
+        }
+
+        if (targets.Count == 0)
+        {
+            return new ActionRefusal(
+                "feature.turn_undead.no_targets",
+                "Turn Undead needs at least one chosen target.");
+        }
+
+        // "Each Undead of your choice" reads as each distinct creature, not each list
+        // entry — a caller passing the same target twice would otherwise roll its
+        // Wisdom save twice, spend Sear Undead's shared roll on it twice, and (since
+        // the second pass's BreakTurnEffectOnDamage would see a target already turned
+        // by the first) misread its own just-imposed condition as damage breaking it.
+        // Refused with a named code rather than silently de-duplicated, so a caller
+        // bug is visible rather than swallowed.
+        var duplicate = targets
+            .GroupBy(candidate => candidate.Id, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Count() > 1);
+
+        if (duplicate is not null)
+        {
+            return new ActionRefusal(
+                "feature.turn_undead.duplicate_target",
+                $"{duplicate.First().Name} was chosen more than once.");
+        }
+
+        // The whole list is validated before anything is spent — Divine Spark's own
+        // precedent — so a target invalid for any reason refuses the whole action
+        // rather than burning a use partway through.
+        foreach (var target in targets)
+        {
+            if (target.Stats.Type != CreatureType.Undead)
+            {
+                return new ActionRefusal(
+                    "feature.turn_undead.not_undead",
+                    $"{target.Name} is not Undead and cannot be turned.");
+            }
+
+            if (combatant.DistanceFeetTo(target) > TurnUndeadRangeFeet)
+            {
+                return new ActionRefusal(
+                    "feature.turn_undead.out_of_range",
+                    $"{target.Name} is beyond Turn Undead's {TurnUndeadRangeFeet} ft. range.");
+            }
+
+            if (CoverRules.AgainstSpace(Battlefield, combatant.Space, target.Space, _combatants) == CoverDegree.Total)
+            {
+                return new ActionRefusal(
+                    "feature.total_cover",
+                    $"{target.Name} has Total Cover from {combatant.Name} and can't be targeted.");
+            }
+
+            if (!target.IsActive)
+            {
+                return new ActionRefusal(
+                    "feature.turn_undead.inactive",
+                    $"{target.Name} is down and cannot be turned.");
+            }
+
+            // A second Cleric's Turn Undead landing on a target another Cleric
+            // already turned would fall through Combatant.AddCondition's merge as
+            // "both sides flagged" — the one shape that guard does not refuse,
+            // because it is meant to let the *same* turning refresh itself. Refused
+            // here, at the action layer, rather than silently letting the second
+            // cast's SourceId/Expiry overwrite the first's: an Undead fully turned
+            // is already caught by the IsActive refusal above, but a target immune
+            // to Incapacitated specifically stays "active" while its Frightened is
+            // still flagged and owned by the first Cleric — exactly the gap this
+            // closes.
+            if (TurnUndeadConditions.Any(conditionType =>
+                    target.ConditionState(conditionType) is
+                        { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } turnedBy }
+                    && !string.Equals(turnedBy, combatant.Id, StringComparison.Ordinal)))
+            {
+                return new ActionRefusal(
+                    "feature.turn_undead.already_turned",
+                    $"{target.Name} is already turned by another Cleric.");
+            }
+        }
+
+        combatant.Turn.SpendAction();
+        combatant.Features.ChannelDivinityRemaining--;
+
+        Add(
+            CombatStepKind.Feature,
+            $"{combatant.Name} uses Channel Divinity — Turn Undead " +
+            $"({combatant.Features.ChannelDivinityRemaining} use(s) left).",
+            combatant);
+
+        var wisdom = combatant.Stats.ModifierFor(Ability.Wisdom);
+        var difficultyClass = combatant.Stats.Character is { SpellSaveDifficultyClass: > 0 } caster
+            ? caster.SpellSaveDifficultyClass
+            : SpellcastingRules.SaveDifficultyClass(combatant.Stats.ProficiencyBonus, wisdom);
+
+        var failed = new List<Combatant>();
+
+        foreach (var target in targets)
+        {
+            var roll = D20Test.Roll(_random, target.Stats.SaveBonusFor(Ability.Wisdom));
+            var succeeded = roll.Total >= difficultyClass;
+
+            Add(
+                CombatStepKind.Feature,
+                $"{target.Name} makes a Wisdom saving throw against Turn Undead: " +
+                $"{roll} vs DC {difficultyClass} — {(succeeded ? "resists." : "fails.")}",
+                combatant,
+                target);
+
+            if (!succeeded)
+            {
+                failed.Add(target);
+            }
+        }
+
+        // One shared roll for the whole use — "add the rolls together" — never one per
+        // target, and only rolled at all when there is at least one failure to spend it
+        // on.
+        var searUndead = combatant.Stats.Has(ClassFeature.SearUndead);
+        var searRoll = searUndead && failed.Count > 0
+            ? DiceRoller.Roll(_random, new DiceExpression(Math.Max(1, wisdom), 8, 0))
+            : null;
+
+        foreach (var target in failed)
+        {
+            if (searRoll is { } sear)
+            {
+                var applied = DamageRules.Apply(target, sear.Total, DamageType.Radiant);
+
+                Add(
+                    CombatStepKind.Feature,
+                    $"{target.Name} takes {applied.Effective} Radiant damage from Sear Undead " +
+                    $"[{sear}] — {DescribeHealth(target)}.",
+                    combatant,
+                    target);
+
+                // The ordinary damage path applies in full — Concentration included —
+                // right down to the early-out sweep for a *pre-existing* turned state
+                // from an earlier use. What it cannot yet touch is the turn effect this
+                // very use is about to impose, below: that has not landed yet, so there
+                // is nothing for the sweep to break, which is the whole of "this damage
+                // doesn't end the turn effect".
+                CheckConcentration(target, applied.Effective);
+
+                if (applied.Effective > 0)
+                {
+                    BreakTurnEffectOnDamage(target);
+                }
+
+                if (applied.Died)
+                {
+                    target.RecordDeathRound(Round);
+                    Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
+                    continue;
+                }
+
+                if (applied.Downed)
+                {
+                    Add(
+                        CombatStepKind.Downed,
+                        $"{target.Name} drops to 0 hit points and falls Unconscious.",
+                        target);
+                    continue;
+                }
+            }
+
+            var duration = ConditionDuration.ForMinutes(1);
+            var expiry = ConditionRules.ExpiryFor(duration, combatant, target);
+
+            foreach (var conditionType in TurnUndeadConditions)
+            {
+                var imposed = new ActiveCondition(
+                    conditionType,
+                    combatant.Id,
+                    expiry,
+                    EndsEarlyOnDamageOrSourceDown: true,
+                    UnmodelledBehaviour: UnmodelledFleeBehaviour);
+
+                if (target.AddCondition(imposed))
+                {
+                    Add(
+                        CombatStepKind.Condition,
+                        $"{target.Name} has the {conditionType} condition{DescribeDuration(duration, combatant, target)}.",
+                        combatant,
+                        target);
+                }
+            }
+
+            // A rider can bring Incapacitated with no damage attached at all, exactly
+            // as ImposeConditions notes — glossary p.186 ends Concentration the instant
+            // Incapacitated lands, not on a save.
+            BreakConcentrationOnIncapacitated(target);
+        }
+
+        CheckForCompletion();
+        return null;
+    }
+
+    /// <summary>The two conditions Turn Undead imposes on a failed save, in printed order.</summary>
+    private static readonly ConditionType[] TurnUndeadConditions =
+    [
+        ConditionType.Frightened,
+        ConditionType.Incapacitated,
+    ];
+
+    /// <summary>
+    /// The one printed clause of Turn Undead this engine does not execute, recorded on
+    /// every condition it imposes — see <see cref="ActiveCondition.UnmodelledBehaviour"/>.
+    /// </summary>
+    private const string UnmodelledFleeBehaviour =
+        "flees maximally on its turns — SRD 5.2.1 p.37; engine cannot grant an " +
+        "Incapacitated-but-mobile turn yet (#615)";
+
     /// <summary>Rogue Cunning Action: Dash or Disengage as a Bonus Action.</summary>
     public ActionRefusal? CunningAction(CunningActionKind kind)
     {

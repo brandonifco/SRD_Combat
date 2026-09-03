@@ -985,6 +985,30 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// Restrained becoming Petrified. Null for every condition whose repeat can only end
 /// it.
 /// </param>
+/// <param name="EndsEarlyOnDamageOrSourceDown">
+/// True for a condition whose printed text ends it early on damage, or on its
+/// source's own Incapacitated condition or death — Turn Undead's rider, citing SRD
+/// 5.2.1 p. 37: "This effect ends early on the creature if it takes any damage, if
+/// you have the Incapacitated condition, or if you die." Neither early-out is a
+/// clock, a repeat save or a Concentration tie, so none of the other duration
+/// mechanisms on this record express them; this is the minimum new vocabulary
+/// instead — a closed-set flag rather than a fresh shape, read by
+/// <c>Encounter.BreakTurnEffectOnDamage</c> (the bearer-side out) and
+/// <c>Encounter.EndTurnEffectsWhoseSourceIsDown</c> (the two source-side outs), the
+/// same shape <c>EndBrokenGrapples</c> already reads off a grapple's source. False
+/// for every other condition this engine imposes.
+/// </param>
+/// <param name="UnmodelledBehaviour">
+/// A printed clause tied to <em>this landed condition</em> that the model does not
+/// execute — the same accounting <see cref="Definitions.AppliedCondition.UnmodelledRequirement"/>
+/// gives a stat-block rider, applied here to a condition once it is actually on a
+/// creature rather than to the extracted content that might impose it. Null for
+/// every condition with no such gap. Turn Undead's Frightened and Incapacitated both
+/// set it: the printed "tries to move as far from you as it can on its turns" is a
+/// movement compulsion — a rule, not an AI tactic — that <c>Encounter.BeginTurn</c>'s
+/// own "cannot act" gate makes unexpressable today (#615), so the gap is recorded on
+/// the condition itself rather than only in a doc comment nobody at runtime reads.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
@@ -994,7 +1018,9 @@ public sealed record ActiveCondition(
     Ability? RepeatSaveAbility = null,
     int? RepeatSaveDifficultyClass = null,
     bool TiedToConcentration = false,
-    ConditionType? EscalatesTo = null);
+    ConditionType? EscalatesTo = null,
+    bool EndsEarlyOnDamageOrSourceDown = false,
+    string? UnmodelledBehaviour = null);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.
@@ -1359,6 +1385,45 @@ public sealed class Combatant
 
         if (_conditions.TryGetValue(condition, out var existing))
         {
+            // A flag mismatch means two logically distinct effects are competing for
+            // the one dictionary slot this model gives every condition type — the
+            // closed-set collision #614 tracks (Turn Undead is the first rider to
+            // impose a condition with EndsEarlyOnDamageOrSourceDown set at all, so
+            // before it existed this branch could never disagree). Neither side may
+            // silently take over the other's SourceId, Expiry or flag: the occupant
+            // simply keeps the slot, and the new application is refused rather than
+            // partially merged into something neither effect actually is. This is
+            // what stops an unrelated Frightened from inheriting Turn Undead's
+            // "ends on damage" flag (over-removal) just as much as it stops Turn
+            // Undead's own rider from being silently corrupted by a later,
+            // unrelated re-application. Both unflagged (every condition this engine
+            // imposed before Turn Undead existed) falls through unchanged,
+            // refreshing exactly as always. Both flagged only ever reaches here for
+            // the *same* Cleric re-turning its own target — a second, different
+            // Cleric's Turn Undead landing on an already-turned target is refused
+            // one layer up, at the action itself (Encounter.TurnUndead's
+            // "feature.turn_undead.already_turned"), because only that caller can
+            // ever produce two different-sourced flagged conditions to begin with.
+            //
+            // Every other AddCondition caller was swept for the same risk (second
+            // qc pass on #369) and cannot reach a flagged Turn Undead condition at
+            // all, given the party's actual executable kit: Encounter.Escalate's
+            // two-tier-gaze rider always deepens into Petrified, never Frightened
+            // or Incapacitated, and none of its three callers (Basilisk, Gorgon,
+            // Medusa) is ever Undead; Encounter.ImposeConditions is the same
+            // general rider path already exhaustively checked for #369's own
+            // reachability question — no preparable spell, class feature or weapon
+            // mastery a level 1-5 party can use imposes Frightened or Incapacitated
+            // on anything; the Unconscious-brings-Incapacitated link in the
+            // fresh-add branch below uses TryAdd, which never overwrites an
+            // existing entry, so it cannot corrupt a flagged one even in principle;
+            // and DamageRules' two AddCondition(Unconscious) call sites only ever
+            // target characters, which Turn Undead never imposes anything on.
+            if (existing.EndsEarlyOnDamageOrSourceDown != active.EndsEarlyOnDamageOrSourceDown)
+            {
+                return false;
+            }
+
             _conditions[condition] = existing with
             {
                 SourceId = active.SourceId ?? existing.SourceId,

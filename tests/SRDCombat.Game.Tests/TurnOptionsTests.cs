@@ -156,6 +156,45 @@ public class TurnOptionsTests
     }
 
     [Fact]
+    public void TurnUndeadIsOfferedOnlyWithATurnableUndeadInReach()
+    {
+        // AC-12's predicate: Channel Divinity, the Action, a use left, AND at least one
+        // valid Undead target within 30 feet — the last clause is what keeps the
+        // button off the row when nothing can actually be turned.
+        var (encounter, cleric, undead) = TurnUndeadFight(undeadDistanceFeet: 10);
+
+        Assert.Contains(TurnAction.TurnUndead, TurnOptions.For(encounter, cleric));
+
+        Assert.Null(encounter.Dodge());
+
+        // Spending the Action takes it away, same as Divine Spark.
+        Assert.DoesNotContain(TurnAction.TurnUndead, TurnOptions.For(encounter, cleric));
+    }
+
+    [Fact]
+    public void TurnUndeadIsHiddenWhenNoUndeadIsInReach()
+    {
+        var (encounter, cleric, _) = TurnUndeadFight(undeadDistanceFeet: 35);
+
+        Assert.DoesNotContain(TurnAction.TurnUndead, TurnOptions.For(encounter, cleric));
+    }
+
+    [Fact]
+    public void TurnUndeadIsHiddenOnceChannelDivinityIsExhausted()
+    {
+        var (encounter, cleric, undead) = TurnUndeadFight(undeadDistanceFeet: 10);
+
+        Assert.Contains(TurnAction.TurnUndead, TurnOptions.For(encounter, cleric));
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        // The Action is spent too, but this confirms the exhaustion clause on its own
+        // terms — a fresh Action with no uses left still hides the button.
+        Assert.Equal(0, cleric.Features.ChannelDivinityRemaining);
+        Assert.DoesNotContain(TurnAction.TurnUndead, TurnOptions.For(encounter, cleric));
+    }
+
+    [Fact]
     public void EverythingHiddenIsAlsoRefusedByTheEngine()
     {
         // The invariant the duplication has to hold to: an action this class hides is
@@ -307,5 +346,53 @@ public class TurnOptionsTests
             new SeededRandomSource(3));
 
         return (encounter, fighter);
+    }
+
+    /// <summary>A Cleric with one Channel Divinity use, an Undead at a chosen distance.</summary>
+    private static (Encounter Encounter, Combatant Cleric, Combatant Undead) TurnUndeadFight(
+        int undeadDistanceFeet)
+    {
+        var abilities = Enum.GetValues<Ability>().ToDictionary(ability => ability, _ => new MonsterAbility(12, 1));
+
+        var stats = new CombatantStats(
+            16, 30, 30, 10, abilities, 2, CreatureSize.Medium,
+            new Dictionary<DamageType, DamageResponse>(), [],
+            [],
+            DiesAtZeroHitPoints: false)
+        {
+            Character = new CombatantFeatures(
+                [ClassFeature.ChannelDivinity],
+                AttacksPerAction: 1,
+                SneakAttackDamage: null,
+                RageDamageBonus: 0,
+                RageUses: 0,
+                SecondWindUses: 0,
+                ActionSurgeUses: 0,
+                Level: 3,
+                ChannelDivinityUses: 1),
+        };
+
+        var cleric = new Combatant("cleric", "Cleric", "party", stats, new GridPosition(0, 0));
+
+        var undead = new Combatant(
+            "undead",
+            "Undead",
+            "monsters",
+            new CombatantStats(
+                13, 20, 30, -10, abilities, 2, CreatureSize.Medium,
+                new Dictionary<DamageType, DamageResponse>(), [],
+                [],
+                DiesAtZeroHitPoints: true)
+            {
+                Type = CreatureType.Undead,
+            },
+            new GridPosition(undeadDistanceFeet / Battlefield.FeetPerSquare, 0));
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [cleric, undead],
+            new SeededRandomSource(3));
+
+        return (encounter, cleric, undead);
     }
 }
