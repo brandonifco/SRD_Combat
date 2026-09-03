@@ -279,7 +279,12 @@ internal sealed class CommandLoop(Encounter encounter, string partySideId)
     /// </remarks>
     private ActionRefusal? Trade(Combatant active, string[] words)
     {
-        if (words.Length < 2)
+        // The grammar is exactly "trade <target> [potency]" — two or three tokens,
+        // never more. A trailing token past the potency used to be silently dropped
+        // rather than refused, so "trade K standard garbage" parsed as "trade K
+        // standard" and reached the engine instead of reporting the malformed command
+        // (qc, PR #621).
+        if (words.Length is < 2 or > 3)
         {
             return new ActionRefusal(
                 "client.usage",
