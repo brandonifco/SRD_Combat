@@ -76,7 +76,7 @@ public sealed record CombatStep(
     IReadOnlyList<GridPosition>? Path = null,
     RangedAttackKind Ranged = RangedAttackKind.None,
     string? AttackName = null,
-    bool Hit = true,
+    bool? Hit = null,
     int? Damage = null)
 {
     /// <summary>
@@ -89,24 +89,36 @@ public sealed record CombatStep(
     public string? AttackName { get; init; } = AttackName;
 
     /// <summary>
-    /// Whether a <see cref="CombatStepKind.Attack"/> step connected. Meaningless on every
-    /// other kind — the default of <c>true</c> is never read there. Recorded for the
-    /// reason <see cref="AttackName"/> is: "hit" and "miss" are already in the narration,
-    /// but this project does not parse its own prose, so a client telling a hit from a
-    /// miss (#298's floating damage numbers, a distinct "miss" marker) reads this instead
-    /// of the sentence. <see cref="CombatStepKind.OpportunityAttack"/> is only the
-    /// provocation's announcement — the roll it provokes is its own following <see
-    /// cref="CombatStepKind.Attack"/> step, which is what carries the real answer.
+    /// Whether a <see cref="CombatStepKind.Attack"/> step connected, and <c>null</c> on
+    /// every other kind — a Graze application's own <see cref="CombatStepKind.Damage"/>
+    /// step included, even though Graze only ever fires as a miss's consequence: that
+    /// step is not itself an attack roll, so it carries no hit-or-miss answer of its own
+    /// (#584). Nullable rather than defaulting <c>true</c> so an
+    /// <see cref="CombatStepKind.Attack"/> emission site that forgets <c>hit:</c> fails
+    /// loud instead of silently recording a connection that never happened (#584) — the
+    /// same "loud rather than silent" rule <see cref="Damage"/> already follows. Recorded
+    /// for the reason <see cref="AttackName"/> is: "hit" and "miss" are already in the
+    /// narration, but this project does not parse its own prose, so a client telling a
+    /// hit from a miss (#298's floating damage numbers, a distinct "miss" marker) reads
+    /// this instead of the sentence. <see cref="CombatStepKind.OpportunityAttack"/> is
+    /// only the provocation's announcement — the roll it provokes is its own following
+    /// <see cref="CombatStepKind.Attack"/> step, which is what carries the real answer.
     /// </summary>
-    public bool Hit { get; init; } = Hit;
+    public bool? Hit { get; init; } = Hit;
 
     /// <summary>
     /// The amount a <see cref="CombatStepKind.Damage"/> step actually applied — <c>0</c>
     /// included, for an Immune or fully-Resisted-to-nothing hit — and null on every other
-    /// kind. The same number the narration already prints ("takes 7 Slashing damage"),
-    /// recorded rather than left for a client to parse back out of the sentence, for the
-    /// reason every other fact on this record is: a reworded narration must not silently
-    /// change what a floating number on the board says (#298).
+    /// kind. This describes any effective application of hit-point loss the engine
+    /// resolved through <c>DamageRules.Apply</c>, not only the kind that follows an
+    /// ordinary attack hit — a weapon-mastery effect that deals real damage <em>on a
+    /// miss</em> (Graze) or a feature's shared damage roll (Sear Undead) is a
+    /// <see cref="CombatStepKind.Damage"/> step exactly the same way, because it changed
+    /// hit points, can trigger Concentration, and can down or kill the target (#584). The
+    /// same number the narration already prints ("takes 7 Slashing damage"), recorded
+    /// rather than left for a client to parse back out of the sentence, for the reason
+    /// every other fact on this record is: a reworded narration must not silently change
+    /// what a floating number on the board says (#298).
     /// </summary>
     public int? Damage { get; init; } = Damage;
 

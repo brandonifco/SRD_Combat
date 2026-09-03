@@ -746,12 +746,18 @@ public sealed partial class Encounter
             {
                 var applied = DamageRules.Apply(target, sear.Total, DamageType.Radiant);
 
+                // A CombatStepKind.Damage step, not Feature — the identical shape as
+                // Graze's own promotion (#584): this changed hit points, can trigger
+                // Concentration, and can down or kill the target, same as any other
+                // damage application. The Channel Divinity use and each save above
+                // stay Feature steps; only the applied hit-point loss is Damage.
                 Add(
-                    CombatStepKind.Feature,
+                    CombatStepKind.Damage,
                     $"{target.Name} takes {applied.Effective} Radiant damage from Sear Undead " +
                     $"[{sear}] — {DescribeHealth(target)}.",
                     combatant,
-                    target);
+                    target,
+                    damage: applied.Effective);
 
                 // The ordinary damage path applies in full — Concentration included —
                 // right down to the early-out sweep for a *pre-existing* turned state
