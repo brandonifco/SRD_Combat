@@ -55,7 +55,7 @@ if (SingleFightRequested(args))
         return 1;
     }
 
-    if (!ConsoleArguments.TryParseDifficulty(args, out var difficulty, out var difficultyError))
+    if (!ConsoleArguments.TryResolveDifficulty(oneFight: true, args, out var difficulty, out var difficultyError))
     {
         Console.Error.WriteLine(difficultyError);
         return 1;
@@ -67,6 +67,17 @@ if (SingleFightRequested(args))
 
     Console.WriteLine($"SRD_Combat — one fight (seed {seed})");
     return PlayFight(only, oneFightDice) is FightResult.Won or FightResult.Lost ? 0 : 0;
+}
+
+// --difficulty only ever governs --one-fight above; on the ordinary gauntlet path
+// nothing calls TryParseDifficulty at all, so a --difficulty passed here — valid or
+// not — used to be silently ignored rather than refused. Checked once, before the
+// gauntlet's own setup, the same way TryResolveGauntletLevel below decides whether
+// --level applies before doing anything else with it (a Codex finding on #605).
+if (!ConsoleArguments.TryResolveDifficulty(oneFight: false, args, out _, out var gauntletDifficultyError))
+{
+    Console.Error.WriteLine(gauntletDifficultyError);
+    return 1;
 }
 
 // The gauntlet is persistent: the run autosaves after every cleared fight, and defeat
