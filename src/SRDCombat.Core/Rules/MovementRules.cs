@@ -197,15 +197,15 @@ public static class MovementRules
                     }
                 }
 
-                // "Another creature's space is Difficult Terrain for you unless that
-                // creature is Tiny or your ally." Difficult terrain does not stack, so a
-                // newly entered square that is also rough ground costs double once — and
-                // one difficult square anywhere in the newly entered ground makes the
-                // whole step difficult, per the stated reading above.
-                var stepCost = met.Any(other => !IsAllyOf(mover, other))
-                    || entered.Any(square => field.EnterCostFeet(square) > Battlefield.FeetPerSquare)
-                    ? Battlefield.FeetPerSquare * 2
-                    : Battlefield.FeetPerSquare;
+                // `entered`/`met` are already in hand from the blocked-check just above —
+                // the private overload prices them directly rather than the public
+                // StepCostFeet rebuilding an occupants lookup per neighbour. FindPath's
+                // Dijkstra can visit this line thousands of times in one search (every
+                // legal neighbour of every node it explores), so a per-call lookup rebuild
+                // here is not a rounding error: it turned one full-board reposition scan
+                // (SimpleTacticsPolicy.ScoreSquares, one FindPath per battlefield square)
+                // from seconds into tens of minutes. Measured, not assumed — see the PR.
+                var stepCost = StepCostFeet(field, mover, entered, met);
 
                 var candidate = (
                     Cost: reached.Cost + stepCost,
@@ -225,6 +225,86 @@ public static class MovementRules
 
         return null;
     }
+
+    /// <summary>
+    /// The movement cost in feet of one step of a walk: entering <paramref name="step"/> from
+    /// <paramref name="from"/>, double when the newly-covered ground meets a non-ally's space
+    /// or any of it is Difficult Terrain, otherwise the plain per-square cost.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The one cost authority both <see cref="FindPath"/> and <c>Encounter.WalkPath</c> price a
+    /// step with, so a route's <see cref="MovementPath.CostFeet"/> and a partial walk's spend
+    /// can never disagree (pinned by a trip-wire test summing this over a full path against
+    /// <see cref="MovementPath.CostFeet"/>).
+    /// </para>
+    /// <para>
+    /// <paramref name="from"/> is load-bearing, not a convenience. The price depends on which
+    /// ground is <em>newly</em> covered — "only the ground the body newly covers is entered",
+    /// per <see cref="FindPath"/>'s remarks — which depends on where the mover is leaving from.
+    /// Inside <see cref="FindPath"/>'s search that is the Dijkstra node being expanded, never
+    /// <c>mover.Position</c>: the search never calls <c>MoveTo</c>, so <c>mover.Position</c>
+    /// stays pinned at the true start of the whole search while the node being expanded walks
+    /// the graph. Deriving "from" as <c>mover.Position</c> would re-price every step past the
+    /// first for a multi-square mover — re-treating ground the body already covers as newly
+    /// entered, and re-charging a Difficult Terrain square it is already standing on.
+    /// </para>
+    /// </remarks>
+    public static int StepCostFeet(
+        Battlefield field,
+        Combatant mover,
+        GridPosition from,
+        GridPosition step,
+        IReadOnlyCollection<Combatant> combatants)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(mover);
+        ArgumentNullException.ThrowIfNull(combatants);
+
+        var currentSpace = mover.SpaceAt(from);
+        var nextSpace = mover.SpaceAt(step);
+
+        // Only the ground the body newly covers is entered — see FindPath's remarks.
+        var entered = nextSpace.Squares().Where(square => !currentSpace.Contains(square)).ToArray();
+
+        var occupants = combatants
+            .Where(other => other.Id != mover.Id && !other.IsDead)
+            .SelectMany(other => other.Space.Squares(), (other, square) => (Square: square, Creature: other))
+            .ToLookup(entry => entry.Square, entry => entry.Creature);
+
+        var met = entered.SelectMany(square => occupants[square]).Distinct().ToArray();
+
+        return StepCostFeet(field, mover, entered, met);
+    }
+
+    /// <summary>
+    /// The shared pricing core <see cref="StepCostFeet(Battlefield, Combatant, GridPosition,
+    /// GridPosition, IReadOnlyCollection{Combatant})"/> and <see cref="FindPath"/>'s inner
+    /// loop both price a step with, given the ground newly covered and who occupies it.
+    /// </summary>
+    /// <remarks>
+    /// Split out so <see cref="FindPath"/> can call it with the <c>entered</c>/<c>met</c> it
+    /// has already computed for the blocked-square check just above, rather than the public
+    /// overload's rebuilding an occupants lookup from scratch. That rebuild is cheap once —
+    /// it is what <see cref="Encounter.WalkPath"/> pays, at most one per square actually
+    /// walked — but <c>FindPath</c>'s Dijkstra search calls this on every legal neighbour of
+    /// every node it explores, which can run to thousands of calls in one search. Measured:
+    /// rebuilding the lookup that many times turned <c>SimpleTacticsPolicy.ScoreSquares</c>'s
+    /// one-<c>FindPath</c>-per-battlefield-square scan from seconds into tens of minutes.
+    /// "Another creature's space is Difficult Terrain for you unless that creature is Tiny or
+    /// your ally." Difficult terrain does not stack, so a newly entered square that is also
+    /// rough ground costs double once — and one difficult square anywhere in the newly
+    /// entered ground makes the whole step difficult.
+    /// </remarks>
+    private static int StepCostFeet(
+        Battlefield field,
+        Combatant mover,
+        IReadOnlyCollection<GridPosition> entered,
+        IReadOnlyCollection<Combatant> met) =>
+        met.Any(other => !IsAllyOf(mover, other))
+            || entered.Any(square => field.EnterCostFeet(square) > Battlefield.FeetPerSquare)
+            ? Battlefield.FeetPerSquare * 2
+            : Battlefield.FeetPerSquare;
 
     /// <summary>
     /// Whether a creature's whole body fits here: every square of the space on the
