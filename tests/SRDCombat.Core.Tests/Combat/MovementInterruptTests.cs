@@ -115,4 +115,36 @@ public class MovementInterruptTests
         var moveStep = encounter.Log.Last(step => step.Kind == CombatStepKind.Move);
         Assert.Equal("mover moves from (0,0) to (3,0) (15 ft.).", moveStep.Narration);
     }
+
+    /// <summary>
+    /// qc round 1 on PR #622: the delegate is caller-supplied advisory code (a fog query),
+    /// so a fault in it must not corrupt the walk. Fails open — the planned move completes
+    /// exactly as a null interrupt would — rather than leaving the mover half-relocated with
+    /// nothing spent, logged or cleaned up.
+    /// </summary>
+    [Fact]
+    public void AThrowingInterrupt_CompletesTheWalkAndIsNotConsultedAgain()
+    {
+        var mover = CombatTestData.Combatant("mover", x: 0, y: 0);
+        var encounter = Encounter.Start(new Battlefield(10, 1), [mover], new ScriptedRandomSource(20));
+
+        var faultAt = new GridPosition(2, 0);
+        var calls = 0;
+
+        MovementInterrupt interrupt = step =>
+        {
+            calls++;
+            return step.At == faultAt ? throw new InvalidOperationException("a broken visibility query") : null;
+        };
+
+        var refusal = encounter.Move(new GridPosition(5, 0), interrupt);
+
+        Assert.Null(refusal);
+        Assert.Equal(new GridPosition(5, 0), mover.Position);
+        Assert.Equal(5, mover.Turn.MovementFeet); // the full 25 ft. route was spent, exactly like a null interrupt.
+        Assert.Equal(2, calls); // consulted at (1,0) [no fault], then at (2,0) [faults] -- never again after that.
+
+        var moveStep = encounter.Log.Last(step => step.Kind == CombatStepKind.Move);
+        Assert.Equal("mover moves from (0,0) to (5,0) (25 ft.).", moveStep.Narration);
+    }
 }

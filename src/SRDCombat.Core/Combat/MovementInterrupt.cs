@@ -31,10 +31,19 @@ public readonly record struct MovementStep(
 /// each non-final step asks this delegate. Where the mover stops, how much movement it keeps,
 /// and the narration are all <see cref="Encounter.WalkPath"/>'s — the delegate supplies only
 /// the visibility verdict and the hostile to name.</para>
-/// <para><b>Read-only, by contract.</b> It is invoked mid-walk against live encounter state;
-/// it must not mutate the encounter, roll dice, or spend anything. A pure visibility query is
-/// its whole contract — which is also why supplying one cannot perturb the dice stream: the
-/// frozen transcript supplies none, and a pure query changes no roll even when one is
-/// supplied.</para>
+/// <para><b>Read-only by contract — a contract the engine does not enforce</b> (corrected
+/// after qc round 1 on PR #622 flagged the original wording as overclaiming). It is invoked
+/// mid-walk against live encounter state and must be a pure visibility query: it must not
+/// mutate the encounter, spend movement or resources, roll dice, or call back into the
+/// encounter's action methods (re-entrancy). Honouring that is the caller's responsibility —
+/// the sole caller today is the party's clicked move, whose closure only reads visibility.
+/// <b>So long as the contract is honoured</b>, supplying an interrupt perturbs neither the dice
+/// stream nor any other resolution; the frozen transcript is unaffected <em>unconditionally</em>
+/// because it supplies no interrupt at all. The engine's one enforced guard is on
+/// <see cref="Encounter.WalkPath"/>: a delegate that <b>throws</b> is caught and treated as
+/// "no stop", so a faulting visibility query completes the move as though none was supplied
+/// rather than leaving the mover half-moved. A delegate that instead violates the contract
+/// <em>silently</em> (mutating, rolling dice) can corrupt the walk and nothing stops it —
+/// which is exactly why the contract is stated rather than assumed.</para>
 /// </remarks>
 public delegate Combatant? MovementInterrupt(MovementStep step);

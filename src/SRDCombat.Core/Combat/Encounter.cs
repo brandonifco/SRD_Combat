@@ -1246,6 +1246,9 @@ public sealed partial class Encounter
         // client can show the walk without recomputing the route.
         var walked = new List<GridPosition> { start };
 
+        // A throwing delegate is consulted no further this walk — see the try/catch below.
+        var interruptFaulted = false;
+
         for (var i = 0; i < path.Steps.Count; i++)
         {
             var step = path.Steps[i];
@@ -1280,18 +1283,41 @@ public sealed partial class Encounter
             walked.Add(step);
 
             // The reveal check: consulted after the move, and never on the final step (an
-            // arrived move has nothing left to interrupt).
-            if (interrupt is not null && i < path.Steps.Count - 1
-                && interrupt(new MovementStep(mover, mover.Position, path.Steps.Skip(i + 1).ToList())) is { } spotted)
+            // arrived move has nothing left to interrupt). The delegate is caller-supplied
+            // advisory code (a fog query), so a throw must not corrupt the walk: it is
+            // caught, treated as "no stop", and not consulted again this walk — the move
+            // then completes normally below, leaving the encounter consistent. (qc round 1,
+            // PR #622.)
+            if (interrupt is not null && !interruptFaulted && i < path.Steps.Count - 1)
             {
-                mover.Turn.SpendMovement(travelled);
+                Combatant? spotted;
 
-                Add(
-                    CombatStepKind.Move,
-                    $"{mover.Name} stops at {mover.Position}: {spotted.Name} comes into view.",
-                    mover,
-                    path: walked);
-                return;
+                try
+                {
+                    spotted = interrupt(new MovementStep(mover, mover.Position, path.Steps.Skip(i + 1).ToList()));
+                }
+                catch (Exception) // broad on purpose: this is untrusted advisory code; any fault degrades to no-stop
+                {
+                    // Core has no I/O to log through; the caller owns the closure and is
+                    // where a fault surfaces if it cares. Fail-OPEN (complete the planned
+                    // move), not closed: a broken visibility computation cannot be trusted
+                    // to stop safely, and stopping the mover mid-field for no on-screen
+                    // reason is worse than the pre-#493 fallback.
+                    spotted = null;
+                    interruptFaulted = true;
+                }
+
+                if (spotted is { } revealed)
+                {
+                    mover.Turn.SpendMovement(travelled); // only the feet actually walked
+
+                    Add(
+                        CombatStepKind.Move,
+                        $"{mover.Name} stops at {mover.Position}: {revealed.Name} comes into view.",
+                        mover,
+                        path: walked);
+                    return;
+                }
             }
         }
 
