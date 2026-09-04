@@ -133,8 +133,8 @@ public sealed partial class Encounter
     /// <remarks>
     /// <paramref name="interrupt"/> is a caller's chance to halt the walk mid-route the moment
     /// a step reveals a threat — see <see cref="MovementInterrupt"/> for the full contract.
-    /// Null (every caller but the party's own clicked move) walks the whole path exactly as it
-    /// always has.
+    /// Null — what every caller passes today — walks the whole path exactly as it always has;
+    /// #495 adds the party's own clicked-move closure that supplies one.
     /// </remarks>
     public ActionRefusal? Move(GridPosition destination, MovementInterrupt? interrupt = null)
     {

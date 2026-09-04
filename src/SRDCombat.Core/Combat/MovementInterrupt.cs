@@ -36,7 +36,8 @@ public readonly record struct MovementStep(
 /// mid-walk against live encounter state and must be a pure visibility query: it must not
 /// mutate the encounter, spend movement or resources, roll dice, or call back into the
 /// encounter's action methods (re-entrancy). Honouring that is the caller's responsibility —
-/// the sole caller today is the party's clicked move, whose closure only reads visibility.
+/// today every caller passes null, so nothing exercises this yet; the intended caller, the
+/// party's clicked move, whose closure will only read visibility, lands in #495.
 /// <b>So long as the contract is honoured</b>, supplying an interrupt perturbs neither the dice
 /// stream nor any other resolution; the frozen transcript is unaffected <em>unconditionally</em>
 /// because it supplies no interrupt at all. The engine's one enforced guard is on

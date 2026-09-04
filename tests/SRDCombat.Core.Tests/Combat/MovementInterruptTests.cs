@@ -7,10 +7,11 @@ namespace SRDCombat.Core.Tests.Combat;
 /// <summary>
 /// #493: the stop-on-reveal seam. <c>Encounter.Move</c>'s <c>interrupt</c> parameter is a
 /// caller's chance to halt a multi-square walk mid-route; these pin the engine's half of the
-/// contract — the stop, the partial spend, the narration, and that a null interrupt (every
-/// caller but the party's own clicked move, until #495) leaves the walk exactly as it was
-/// before the seam existed. The visibility judgement itself (what counts as a "reveal") is
-/// the client's, landing in #495 — these tests supply the delegate by hand.
+/// contract — the stop, the partial spend, the narration, and that a null interrupt — what
+/// every caller passes today, since #495 has not yet wired the party's clicked-move closure —
+/// leaves the walk exactly as it was before the seam existed. The visibility judgement itself
+/// (what counts as a "reveal") is the client's, landing in #495 — these tests supply the
+/// delegate by hand.
 /// </summary>
 public class MovementInterruptTests
 {
