@@ -130,7 +130,13 @@ public sealed partial class Encounter
     }
 
     /// <summary>Moves the active combatant to a square, resolving Opportunity Attacks on the way.</summary>
-    public ActionRefusal? Move(GridPosition destination)
+    /// <remarks>
+    /// <paramref name="interrupt"/> is a caller's chance to halt the walk mid-route the moment
+    /// a step reveals a threat — see <see cref="MovementInterrupt"/> for the full contract.
+    /// Null (every caller but the party's own clicked move) walks the whole path exactly as it
+    /// always has.
+    /// </remarks>
+    public ActionRefusal? Move(GridPosition destination, MovementInterrupt? interrupt = null)
     {
         if (ActiveCombatant is not { } mover)
         {
@@ -192,7 +198,7 @@ public sealed partial class Encounter
                 $"{destination} is not reachable with {mover.Turn.MovementFeet} ft. of movement.");
         }
 
-        WalkPath(mover, path);
+        WalkPath(mover, path, interrupt);
 
         // Walking away from a grappled creature can be what ends the grapple.
         EndBrokenGrapples();
@@ -1224,7 +1230,14 @@ public sealed partial class Encounter
     }
 
     /// <summary>Walks a path one square at a time so Opportunity Attacks land at the right moment.</summary>
-    private void WalkPath(Combatant mover, MovementPath path)
+    /// <remarks>
+    /// <paramref name="interrupt"/> is consulted after each non-final step, once the mover has
+    /// actually entered the square (so a client's fog recompute sees the mover's new position)
+    /// — see <see cref="MovementInterrupt"/>. When it returns a hostile, the walk stops there:
+    /// only the feet actually walked are spent, mirroring the Opportunity-Attack-drop stop
+    /// immediately above it, and the remaining planned squares are never travelled.
+    /// </remarks>
+    private void WalkPath(Combatant mover, MovementPath path, MovementInterrupt? interrupt = null)
     {
         var start = mover.Position;
         var travelled = 0;
@@ -1233,8 +1246,9 @@ public sealed partial class Encounter
         // client can show the walk without recomputing the route.
         var walked = new List<GridPosition> { start };
 
-        foreach (var step in path.Steps)
+        for (var i = 0; i < path.Steps.Count; i++)
         {
+            var step = path.Steps[i];
             var from = mover.Position;
 
             // The SRD is precise that the Opportunity Attack "occurs right before it
@@ -1258,9 +1272,27 @@ public sealed partial class Encounter
                 }
             }
 
-            travelled += Battlefield.EnterCostFeet(step);
+            // `from`, not mover.Position, prices this step — see MovementRules.StepCostFeet's
+            // remarks. They agree here (this runs before MoveTo), but the local stays correct
+            // if that ever changes.
+            travelled += MovementRules.StepCostFeet(Battlefield, mover, from, step, _combatants);
             mover.MoveTo(step);
             walked.Add(step);
+
+            // The reveal check: consulted after the move, and never on the final step (an
+            // arrived move has nothing left to interrupt).
+            if (interrupt is not null && i < path.Steps.Count - 1
+                && interrupt(new MovementStep(mover, mover.Position, path.Steps.Skip(i + 1).ToList())) is { } spotted)
+            {
+                mover.Turn.SpendMovement(travelled);
+
+                Add(
+                    CombatStepKind.Move,
+                    $"{mover.Name} stops at {mover.Position}: {spotted.Name} comes into view.",
+                    mover,
+                    path: walked);
+                return;
+            }
         }
 
         mover.Turn.SpendMovement(path.CostFeet);
@@ -1270,8 +1302,6 @@ public sealed partial class Encounter
             $"{mover.Name} moves from {start} to {mover.Position} ({path.CostFeet} ft.).",
             mover,
             path: walked);
-
-        _ = travelled;
     }
 
     /// <summary>Whether this creature is Charmed by that one, off the condition's source.</summary>

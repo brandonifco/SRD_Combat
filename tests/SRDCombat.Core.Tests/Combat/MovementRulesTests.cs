@@ -286,4 +286,114 @@ public class MovementRulesTests
 
         Assert.NotNull(path);
     }
+
+    /// <summary>
+    /// #493's load-bearing correction: <c>StepCostFeet</c> is the one cost authority both
+    /// <see cref="MovementRules.FindPath"/> and <c>Encounter.WalkPath</c> price a step with, so
+    /// a route's <see cref="MovementPath.CostFeet"/> and a partial walk's running spend can
+    /// never disagree. Summing it over a full path must equal <c>CostFeet</c> exactly — the
+    /// trip-wire CLAUDE.md's #412 doctrine asks for.
+    /// </summary>
+    [Fact]
+    public void StepCostFeet_SumsToPathCostFeet_AcrossADoubleCostOccupiedSquare()
+    {
+        // A downed enemy's square is passable (Incapacitated) but double cost (not an
+        // ally) — the exact shape #493's partial-spend fix targets: a stop mid-route that
+        // has already crossed one of these must charge the walked feet correctly.
+        var field = new Battlefield(3, 1);
+        var mover = CombatTestData.Combatant("m", x: 0, y: 0);
+        var enemy = CombatTestData.Combatant("enemy", sideId: CombatTestData.Monsters, x: 1, y: 0);
+
+        enemy.AddCondition(ConditionType.Unconscious);
+
+        var path = MovementRules.FindPath(field, mover, new GridPosition(2, 0), 30, [mover, enemy]);
+        Assert.NotNull(path);
+
+        var sum = 0;
+        var from = mover.Position;
+
+        foreach (var step in path!.Steps)
+        {
+            sum += MovementRules.StepCostFeet(field, mover, from, step, [mover, enemy]);
+            from = step;
+        }
+
+        Assert.Equal(path.CostFeet, sum);
+        Assert.Equal(15, sum); // 5 clear + 10 double — matches FindPath_MayPassThroughADownedEnemyButNeverEndOnOne.
+    }
+
+    /// <summary>
+    /// The shape that makes the <c>from</c> parameter load-bearing rather than a
+    /// convenience: a multi-square mover whose <see cref="MovementRules.FindPath"/> search
+    /// node differs from <c>mover.Position</c> past the first step (the search never calls
+    /// <c>MoveTo</c>, so <c>mover.Position</c> stays pinned at the true start for the whole
+    /// search). A trip-wire built only from a one-square walker cannot see a <c>from</c> bug —
+    /// <c>entered</c> reduces to <c>{step}</c> either way for a single-square body — so this
+    /// exercises the same difficult-terrain ogre <see cref="FootprintMovementTests"/> pins.
+    /// </summary>
+    [Fact]
+    public void StepCostFeet_SumsToPathCostFeet_ForAMultiSquareMoverAcrossMultipleSteps()
+    {
+        var field = new Battlefield(6, 4, difficultTerrain: [new GridPosition(2, 1)]);
+        var ogre = CombatTestData.Combatant("ogre", stats: CombatTestData.Stats(size: CreatureSize.Large));
+
+        var path = MovementRules.FindPath(field, ogre, new GridPosition(2, 0), 30, [ogre]);
+
+        Assert.NotNull(path);
+        Assert.Equal(2, path!.Steps.Count);
+        Assert.Equal(15, path.CostFeet);
+
+        var sum = 0;
+        var from = ogre.Position;
+
+        foreach (var step in path.Steps)
+        {
+            sum += MovementRules.StepCostFeet(field, ogre, from, step, [ogre]);
+            from = step;
+        }
+
+        Assert.Equal(path.CostFeet, sum);
+    }
+
+    /// <summary>
+    /// The public <c>StepCostFeet</c> overload builds its own occupants lookup — a second
+    /// place, alongside <see cref="FindPath"/>'s, that must apply the same two exclusions
+    /// (self, dead) or the two routes to a step's price stop agreeing <em>by construction</em>
+    /// and agree only <em>by test</em>. A dead creature is the one this trip-wire can actually
+    /// catch going missing: unlike excluding the mover itself — which turns out to be inert
+    /// for pricing, since a creature's <c>SideId</c> trivially equals its own, so a
+    /// self-occupied square can never fail the "not an ally" check — a genuinely dead
+    /// creature (as opposed to merely Incapacitated, <see
+    /// cref="StepCostFeet_SumsToPathCostFeet_AcrossADoubleCostOccupiedSquare"/>'s shape) is
+    /// excluded from occupancy entirely by both <see cref="FindPath"/> and the correct
+    /// wrapper: its square costs the plain rate, not double. Drop that exclusion from the
+    /// wrapper alone and this square silently doubles while <see cref="FindPath"/>'s own
+    /// <see cref="MovementPath.CostFeet"/> — computed by the untouched private core, which
+    /// never rebuilds this lookup — does not, so the two disagree.
+    /// </summary>
+    [Fact]
+    public void StepCostFeet_SumsToPathCostFeet_ThroughAGenuinelyDeadCreaturesSquare()
+    {
+        var field = new Battlefield(3, 1);
+        var mover = CombatTestData.Combatant("m", x: 0, y: 0);
+        var corpse = CombatTestData.Combatant("corpse", sideId: CombatTestData.Monsters, x: 1, y: 0);
+
+        DamageRules.Apply(corpse, corpse.Stats.MaximumHitPoints, DamageType.Bludgeoning);
+        Assert.True(corpse.IsDead);
+
+        var path = MovementRules.FindPath(field, mover, new GridPosition(2, 0), 30, [mover, corpse]);
+        Assert.NotNull(path);
+
+        var sum = 0;
+        var from = mover.Position;
+
+        foreach (var step in path!.Steps)
+        {
+            sum += MovementRules.StepCostFeet(field, mover, from, step, [mover, corpse]);
+            from = step;
+        }
+
+        Assert.Equal(path.CostFeet, sum);
+        Assert.Equal(10, sum); // 5 + 5 — a corpse costs nothing extra, unlike the merely-downed shape above.
+    }
 }
