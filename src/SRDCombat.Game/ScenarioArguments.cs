@@ -28,14 +28,20 @@ public static class ScenarioArguments
     public const int MaximumLevel = BattleScenario.MaximumLevel;
 
     /// <summary>
-    /// Parses <c>--level</c>'s value for spawn mode. <paramref name="text"/> alone
+    /// Parses <c>--level</c>'s value for spawn mode, and, since #443, for the flagless
+    /// budgeted path too — <see cref="ScenarioComposition.Compose"/> calls this same
+    /// method for both, since a scenario's level is one number regardless of who fields
+    /// the enemies. <paramref name="text"/> alone
     /// cannot tell "the flag was not passed" from "the flag was passed with no
     /// value" — both read as <c>null</c> from the client's own
     /// <c>ArgumentValue</c>, which only recognises the <c>--level=value</c> form
     /// (see its doc comment) — so <paramref name="present"/> carries that fact
     /// explicitly; callers pass their own <c>HasArgument("level")</c>. Not present
-    /// succeeds with the default level 3 — the budgeted path's own fixed level stays
-    /// #443's concern and is untouched by this helper. Present with no value (a bare
+    /// succeeds with the default level 3, which happens to equal
+    /// <see cref="ScenarioComposition.BudgetedFightLevel"/> — the two constants are
+    /// declared separately because a spawned roster's default and the budgeted fight's
+    /// default are two different questions that presently share an answer, not one
+    /// value with two names. Present with no value (a bare
     /// <c>--level</c>, or the space form <c>--level 5</c>, which this client does not
     /// accept — see <c>ArgumentValue</c>) is refused rather than defaulted, the same
     /// as any other bad value: silently falling back to 3 here is exactly the shape
