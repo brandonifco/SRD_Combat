@@ -228,7 +228,11 @@ public sealed record ScenarioEnemies
 /// authoring a scenario <em>from</em> a typed line; once authored, the value names content
 /// by id, so a scenario cannot silently mean a different creature because a printed name
 /// moved. The count shares <see cref="RosterParser.MaximumCount"/>'s ceiling, and for the
-/// same reason: a typo must not be able to ask the engine for a two-hundred-monster board.
+/// same reason: to bound a typo's order of magnitude (a stated cap that refuses, never a
+/// clamp), the same reasoning <see cref="RosterParser.MaximumCount"/> and
+/// <see cref="ScenarioParty"/>'s own cap state. It bounds one entry, not the whole roster:
+/// enough entries at the cap still sum past a two-hundred-monster board, exactly as
+/// RosterParser's own remark now notes (#466-shape overclaim, found reviewing #464).
 /// </remarks>
 public sealed record ScenarioRosterEntry
 {
