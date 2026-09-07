@@ -12,20 +12,18 @@ using SRDCombat.Game;
 // from MonsterPool at a matching challenge rating, and hands the party's turns to the
 // player while SimpleTacticsPolicy takes the monsters'.
 
-// A seed makes a fight reproducible, which matters as much for reporting a bug as for
-// testing: "it happened on seed 12345" is a complete repro. Within a gauntlet run,
-// (seed, fight number) reproduces that fight's encounter regardless of the play
-// history that got there — see RunDice's remarks — so a bug report only ever needs
-// the run's seed and which fight it happened on. A typo'd --seed is refused rather
-// than silently rolling a fresh one — the one flag where a quiet fallback would defeat
-// the exact promise it exists to keep (#489).
-if (!ConsoleArguments.TryParseSeed(args, out var parsedSeed, out var seedError))
+// The launch-mode decision — one-fight / continue / create / fresh gauntlet, and
+// which flags each of those reads — is ConsoleLaunch's alone (#624): a pure function
+// of args, callable and testable outside these top-level statements, which is what
+// used to let --one-fight silently drop --continue/--create/--save (it returned
+// before any of the three was ever read) and --continue silently drop a syntactically
+// valid --seed or an accompanying --create. Everything from here on dispatches on the
+// resolved mode, never by re-reading args.
+if (!ConsoleLaunch.TryResolve(args, out var launch, out var launchError))
 {
-    Console.Error.WriteLine(seedError);
+    Console.Error.WriteLine(launchError);
     return 1;
 }
-
-var seed = parsedSeed ?? Random.Shared.Next();
 
 var contentDirectory = PositionalArguments(args).FirstOrDefault()
     ?? FindContentDirectory()
@@ -47,60 +45,26 @@ Display.PartySideId = PregeneratedParty.SideId;
 // thing; the gauntlet is the game. It has no GauntletRun and so no per-fight
 // boundary to derive dice from — --seed governs it directly, exactly as it always
 // has.
-if (SingleFightRequested(args))
+if (launch.Mode == ConsoleLaunchMode.OneFight)
 {
-    if (!ConsoleArguments.TryParseLevel(args, out var level, out var levelError))
-    {
-        Console.Error.WriteLine(levelError);
-        return 1;
-    }
-
-    if (!ConsoleArguments.TryResolveDifficulty(oneFight: true, args, out var difficulty, out var difficultyError))
-    {
-        Console.Error.WriteLine(difficultyError);
-        return 1;
-    }
-
-    var oneFightDice = new SeededRandomSource(seed);
+    var oneFightSeed = launch.Seed ?? Random.Shared.Next();
+    var oneFightDice = new SeededRandomSource(oneFightSeed);
     var only = EncounterFactory.Build(
-        content, PregeneratedParty.Build(content, level), difficulty, oneFightDice);
+        content, PregeneratedParty.Build(content, launch.Level), launch.Difficulty, oneFightDice);
 
-    Console.WriteLine($"SRD_Combat — one fight (seed {seed})");
+    Console.WriteLine($"SRD_Combat — one fight (seed {oneFightSeed})");
     return PlayFight(only, oneFightDice) is FightResult.Won or FightResult.Lost ? 0 : 0;
-}
-
-// --difficulty only ever governs --one-fight above; on the ordinary gauntlet path
-// nothing calls TryParseDifficulty at all, so a --difficulty passed here — valid or
-// not — used to be silently ignored rather than refused. Checked once, before the
-// gauntlet's own setup, the same way TryResolveGauntletLevel below decides whether
-// --level applies before doing anything else with it (a Codex finding on #605).
-if (!ConsoleArguments.TryResolveDifficulty(oneFight: false, args, out _, out var gauntletDifficultyError))
-{
-    Console.Error.WriteLine(gauntletDifficultyError);
-    return 1;
 }
 
 // The gauntlet is persistent: the run autosaves after every cleared fight, and defeat
 // means reload rather than reset — the file is deliberately left holding the state
 // after the last fight the party won.
-var savePath = SavePathFrom(args) ?? "srdcombat-save.json";
+var savePath = launch.SavePath;
 
 GauntletRun run;
-var isNewRun = !ContinueRequested(args);
+var isNewRun = launch.Mode != ConsoleLaunchMode.Continue;
 
-// --level only ever means one thing here: where a *new* run begins, --create's
-// party included — a resumed run has nothing for it to apply to (GauntletRun.Resume
-// re-resolves at the level the save's own experience has earned), and letting it
-// through silently there would be exactly the shape #488 closed on the Godot side,
-// just for --continue instead of a bad number. Decided once, before either branch
-// below, the same way PlayMode.TryResolveGauntletLevel decides it up front there.
-if (!ConsoleArguments.TryResolveGauntletLevel(ContinueRequested(args), args, out var startingLevel, out var startingLevelError))
-{
-    Console.Error.WriteLine(startingLevelError);
-    return 1;
-}
-
-if (ContinueRequested(args))
+if (launch.Mode == ConsoleLaunchMode.Continue)
 {
     // Falls back to the .bak automatically when the primary is missing or unreadable —
     // that is the point of keeping one.
@@ -171,7 +135,10 @@ if (ContinueRequested(args))
 }
 else
 {
-    if (args.Contains("--create"))
+    var seed = launch.Seed ?? Random.Shared.Next();
+    var startingLevel = launch.Level;
+
+    if (launch.Mode == ConsoleLaunchMode.Create)
     {
         // Creation runs before the run's dice: the drafts are choices, not rolls, and
         // the seed governs the fights they walk into. GauntletRun.Start's
@@ -448,20 +415,10 @@ FightResult PlayFight(Fight fight, IRandomSource dice)
     return fight.Encounter.WinningSide == PregeneratedParty.SideId ? FightResult.Won : FightResult.Lost;
 }
 
-static bool SingleFightRequested(string[] args) => args.Contains("--one-fight");
-
-// --level, --seed and --difficulty moved to ConsoleArguments (#489): each now refuses a
-// present-but-unusable value by name instead of returning null/a default for this
-// function's caller to silently fall back from.
-
-static bool ContinueRequested(string[] args) => args.Contains("--continue");
-
-static string? SavePathFrom(string[] args)
-{
-    var index = Array.FindIndex(args, argument => argument is "--save");
-
-    return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
-}
+// --level, --seed and --difficulty moved to ConsoleArguments (#489); --one-fight,
+// --continue, --create and --save's mode-and-value resolution moved to ConsoleLaunch
+// (#624): each now refuses a present-but-unusable value or an inapplicable flag by
+// name, rather than a bare boolean check here that could silently drop one.
 
 /// <summary>
 /// Arguments that are not options and not an option's value.

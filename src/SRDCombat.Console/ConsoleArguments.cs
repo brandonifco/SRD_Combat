@@ -20,6 +20,11 @@ namespace SRDCombat.Console;
 /// it only ever governed <c>--one-fight</c>, but <c>Program.cs</c> used to call
 /// <see cref="TryParseDifficulty"/> only inside that branch, so a <c>--difficulty</c>
 /// passed on the ordinary gauntlet path — valid or not — was never read at all.
+/// <see cref="TryResolveSeed"/> is the same question for <c>--seed</c> against
+/// <c>--continue</c> (#624). <see cref="SRDCombat.Console.ConsoleLaunch"/> is the seam one
+/// level up: which of these four modes a launch is in, and which flags that mode reads,
+/// used to be decided by <c>Program.cs</c>'s top-level statement order rather than by
+/// anything callable — the console twin of #490's Godot gap.
 /// </summary>
 internal static class ConsoleArguments
 {
@@ -93,6 +98,32 @@ internal static class ConsoleArguments
         }
 
         return TryParseLevel(args, out level, out error);
+    }
+
+    /// <summary>
+    /// Whether <c>--seed</c> applies at all (#624, the same "does this flag apply here"
+    /// question <see cref="TryResolveGauntletLevel"/> and <see cref="TryResolveDifficulty"/>
+    /// already ask). A resumed run has nothing for a CLI seed to govern —
+    /// <c>GauntletRun.Resume</c> reads the run's own saved seed, rolling a fresh one only
+    /// for a pre-#286 save that never recorded one, via <c>GauntletRun.AdoptSeed</c> — so
+    /// <c>--continue --seed</c> is refused rather than silently ignored. Before this, a
+    /// malformed <c>--seed</c> was still caught on the continue path (<see cref="TryParseSeed"/>
+    /// ran unconditionally before any mode was chosen), but a syntactically valid one was
+    /// parsed and then never read by anything, the same silent-drop shape as an unread
+    /// <c>--level</c> or <c>--difficulty</c>. Absent, a fresh run keeps its old behaviour of
+    /// rolling a random seed when the caller sees <c>null</c>.
+    /// </summary>
+    internal static bool TryResolveSeed(bool continuing, string[] args, out int? seed, out string? error)
+    {
+        if (continuing && args.Contains("--seed"))
+        {
+            seed = null;
+            error = "--seed refused: --continue resumes at the run's own saved seed; " +
+                "--seed does not apply here. Start a new run to choose one.";
+            return false;
+        }
+
+        return TryParseSeed(args, out seed, out error);
     }
 
     /// <summary>The run's seed. Absent is <c>null</c> — the caller rolls a fresh one.</summary>

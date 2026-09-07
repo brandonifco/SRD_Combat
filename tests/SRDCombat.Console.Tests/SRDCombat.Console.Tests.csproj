@@ -2,8 +2,11 @@
 
   <!--
     The console client's first test project (#317's gap, narrowed rather than closed):
-    this pins only ConsoleArguments, the pure argument-parsing seam #489 pulled out of
-    Program.cs's top-level statements so it is reachable from xUnit at all. CommandLoop,
+    this pins ConsoleArguments, the pure argument-parsing seam #489 pulled out of
+    Program.cs's top-level statements, and ConsoleLaunch, the launch-mode seam #624
+    pulled out alongside it (which of one-fight, continue, create or a fresh gauntlet a
+    launch resolves to, and which flags each mode reads) — both reachable from xUnit
+    only because they were pulled out of those top-level statements at all. CommandLoop,
     Display and PartyCreator — the interactive, Console.ReadLine-driven half of this
     client — are untouched and remain #317's open concern.
   -->
