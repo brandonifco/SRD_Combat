@@ -6,11 +6,14 @@ namespace SRDCombat.Core.Tests.Combat;
 
 /// <summary>
 /// A spell that forces a saving throw and has nothing to do on a failure is refused,
-/// rather than spending a slot to print a failed save and change nothing.
+/// rather than spending a slot to print a failed save and change nothing — and a save
+/// spell whose area this engine cannot resolve is refused the same way.
 /// </summary>
 /// <remarks>
-/// This is bug 1's shape at spell scale — the structured half (the save) hid the missing
-/// half (the effect) — and it was live for 66 of the book's 339 spells.
+/// The nothing-to-do shape is bug 1's shape at spell scale — the structured half (the
+/// save) hid the missing half (the effect) — and it was live for 66 of the book's 339
+/// spells. The Cylinder shape is unreachable in play today (no preparable spell prints
+/// one), so <see cref="ACylinderSaveSpellIsRefusedByName"/> constructs it directly.
 /// </remarks>
 public class SilentSpellTests
 {
@@ -34,6 +37,27 @@ public class SilentSpellTests
 
         Assert.Null(encounter.CastSpell("spell.test-bolt", target));
         Assert.Equal(1, caster.Features.SpellSlotsRemaining[1]);
+    }
+
+    [Fact]
+    public void ACylinderSaveSpellIsRefusedByName()
+    {
+        // #402: AreaTargeting.CanResolve refuses only Cylinder, and the entry-side
+        // twin (Encounter.Entries's "entry.area_not_modelled", pinned by
+        // EntryUsageTests' Steam Blast) has no Cylinder spell to reach it in play —
+        // no preparable spell prints one — so this constructs the case directly to
+        // reach the spell-side "spell.area_not_modelled" refusal.
+        var plain = SaveSpell("spell.test-cylinder", "Test Cylinder", damage: "2d6");
+        var spell = plain with { Save = plain.Save! with { Area = new EffectArea(AreaShape.Cylinder, 10) } };
+
+        var (encounter, caster, target) = Fight(spell);
+
+        var refusal = encounter.CastSpell("spell.test-cylinder", target);
+
+        Assert.Equal("spell.area_not_modelled", refusal?.Code);
+
+        // The slot is the point: a refusal must cost nothing.
+        Assert.Equal(2, caster.Features.SpellSlotsRemaining[1]);
     }
 
     [Fact]
