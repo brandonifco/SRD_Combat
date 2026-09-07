@@ -1,5 +1,22 @@
 version: 2
 updates:
+  # Five test projects each declare the same test packages independently, and
+  # Dependabot treats every .csproj under "/" as its own manifest. An *ungrouped*
+  # update therefore opens one PR per project per package: on 2026-08-30 two major
+  # bumps (Microsoft.NET.Test.Sdk 17->18, xunit.runner.visualstudio 3->4) produced
+  # **ten** pull requests, each firing a full three-job CI run.
+  #
+  # #556 deliberately left majors ungrouped so they would stay "individually
+  # visible" rather than buried inside a routine bump. That intent is kept — majors
+  # still arrive in their own PR, separate from minor/patch — but they are now
+  # grouped with each other so one major lands as one pull request instead of five.
+  # The trade is stated rather than hidden: visibility narrows from per-package to
+  # per-batch. Restoring per-package visibility *without* the duplication needs
+  # central package management (one Directory.Packages.props instead of five
+  # independent declarations), which is filed separately.
+  #
+  # Security updates are unaffected: `applies-to: version-updates` means neither
+  # group captures them, so they stay ungrouped and individually visible, per #556.
   - package-ecosystem: nuget
     directory: "/"
     schedule:
@@ -16,6 +33,12 @@ updates:
         update-types:
           - minor
           - patch
+      nuget-major:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
 
   - package-ecosystem: github-actions
     directory: "/"
