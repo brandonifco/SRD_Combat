@@ -16,9 +16,20 @@ public enum CunningActionKind
 /// The class feature actions a character can take on its turn.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Kept in their own file because they are a distinct concern from the universal
 /// actions every combatant has — and because the list will grow as more features become
 /// implemented, while Move/Attack/Dodge will not.
+/// </para>
+/// <para>
+/// These methods deliberately do <b>not</b> route their opening guard through
+/// <see cref="TryGetActingCombatant"/> (#320's shared preamble). Their second gate is
+/// feature-presence — <c>feature.absent</c> — in place of that helper's
+/// <see cref="Combatant.CanAct"/> check, so they genuinely differ from the universal
+/// preamble and keep their <c>encounter.complete</c> + <c>feature.absent</c> pair
+/// explicit. Unifying this second family behind its own guard is held for a later slice
+/// under one-concern-per-PR (see the helper's own remarks).
+/// </para>
 /// </remarks>
 public sealed partial class Encounter
 {

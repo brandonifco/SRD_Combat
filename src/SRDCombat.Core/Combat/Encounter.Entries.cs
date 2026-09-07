@@ -45,14 +45,9 @@ public sealed partial class Encounter
 
     private ActionRefusal? UseEntry(string entryName, GridPosition? point, Combatant? target)
     {
-        if (ActiveCombatant is not { } actor)
+        if (!TryGetActingCombatant(out var actor, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!actor.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{actor.Name} cannot act.");
+            return refusal;
         }
 
         var entry = actor.Stats.Entries.FirstOrDefault(candidate =>

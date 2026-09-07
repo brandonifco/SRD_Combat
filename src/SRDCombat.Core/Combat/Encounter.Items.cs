@@ -73,14 +73,9 @@ public sealed partial class Encounter
     /// </remarks>
     public ActionRefusal? DrinkPotion(HealingPotion potency, Combatant? target = null)
     {
-        if (ActiveCombatant is not { } actor)
+        if (!TryGetActingCombatant(out var actor, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!actor.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{actor.Name} cannot act.");
+            return refusal;
         }
 
         var drinker = target ?? actor;
@@ -188,14 +183,9 @@ public sealed partial class Encounter
         ArgumentNullException.ThrowIfNull(item);
         ArgumentNullException.ThrowIfNull(recipient);
 
-        if (ActiveCombatant is not { } actor)
+        if (!TryGetActingCombatant(out var actor, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!actor.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{actor.Name} cannot act.");
+            return refusal;
         }
 
         if (item is not CombatTradeItem.Potion potion)
