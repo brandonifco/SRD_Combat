@@ -11,7 +11,7 @@ namespace SRDCombat.Console;
 /// flag present with a value nothing here can use is refused by name, value and accepted
 /// set — never defaulted, never clamped. Absent, each keeps the default it always had.
 /// <see cref="TryResolveGauntletLevel"/> is this client's own
-/// <c>PlayMode.TryResolveGauntletLevel</c> twin (#602): whether <c>--level</c> applies at
+/// <c>SRDCombat.Game.GauntletStart.Resolve</c> twin (#602, #490b): whether <c>--level</c> applies at
 /// all — refused against <c>--continue</c>, forwarded into <c>--create</c>'s drafts the
 /// same as a pregenerated party — is a question <see cref="TryParseLevel"/> alone never
 /// answered, which is how #488's Godot bug (a silently dropped <c>--level</c> on a
@@ -70,7 +70,7 @@ internal static class ConsoleArguments
 
     /// <summary>
     /// The level a fresh gauntlet run begins at, deciding first whether <c>--level</c>
-    /// applies at all (#602, the console twin of <c>PlayMode.TryResolveGauntletLevel</c>
+    /// applies at all (#602, the console twin of <c>SRDCombat.Game.GauntletStart.Resolve</c>
     /// closing #488 on the Godot side). A resumed run has nothing for <c>--level</c> to
     /// apply to — <see cref="SRDCombat.Game.GauntletRun.Resume"/> re-resolves at the
     /// level the save's own experience has earned — so <c>--continue --level</c> is

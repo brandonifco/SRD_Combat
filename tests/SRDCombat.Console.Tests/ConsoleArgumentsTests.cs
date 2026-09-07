@@ -304,8 +304,8 @@ public class ConsoleArgumentsTests
     /// <summary>
     /// <c>--continue</c> resumes at the level the save's own experience earned —
     /// <c>--level</c> has nothing to apply to, so it is refused rather than silently
-    /// ignored, the same shape <c>PlayMode.TryResolveGauntletLevel</c> holds the Godot
-    /// client to.
+    /// ignored, the same shape <c>SRDCombat.Game.GauntletStart.Resolve</c> holds the
+    /// Godot client to.
     /// </summary>
     [Fact]
     public void ContinuingAGauntletRunWithALevelIsRefusedRatherThanSilentlyIgnored()
