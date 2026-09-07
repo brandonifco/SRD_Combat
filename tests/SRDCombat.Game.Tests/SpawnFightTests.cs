@@ -60,15 +60,87 @@ public class SpawnFightTests
         var fight = EncounterFactory.BuildChosen(party, roster, new SeededRandomSource(3));
         var battlefield = fight.Encounter.Battlefield;
 
-        Assert.All(fight.Encounter.Combatants, combatant =>
-        {
-            Assert.InRange(combatant.Position.X, 0, battlefield.Width - 1);
-            Assert.InRange(combatant.Position.Y, 0, battlefield.Height - 1);
-        });
+        // Every occupied square (not just the anchor) has to fit the board — with a
+        // real footprint, the far corner (anchor + span - 1) is the square that can
+        // hang off the edge.
+        Assert.All(
+            fight.Encounter.Combatants.SelectMany(combatant => combatant.Space.Squares()),
+            square =>
+            {
+                Assert.InRange(square.X, 0, battlefield.Width - 1);
+                Assert.InRange(square.Y, 0, battlefield.Height - 1);
+            });
 
-        Assert.Equal(
-            fight.Encounter.Combatants.Count,
-            fight.Encounter.Combatants.Select(combatant => combatant.Position).Distinct().Count());
+        // Bodies, not anchors: two combatants with distinct anchors can still overlap
+        // once a footprint spans more than one square (#429's final slice). Every
+        // Wolf here is SpaceSize.Medium today, so a space is exactly its anchor square
+        // and this is equivalent to the old anchor-distinctness assert — but it is
+        // now expressed over occupied squares, so it keeps meaning what it says once
+        // spans grow (#465).
+        var spaces = fight.Encounter.Combatants.Select(combatant => combatant.Space).ToArray();
+        for (var i = 0; i < spaces.Length; i++)
+        {
+            for (var j = i + 1; j < spaces.Length; j++)
+            {
+                Assert.False(
+                    spaces[i].Overlaps(spaces[j]),
+                    $"combatants {i} and {j} occupy overlapping squares: " +
+                    $"{string.Join(", ", spaces[i].Squares())} vs {string.Join(", ", spaces[j].Squares())}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A bare combatant with an explicit <see cref="CombatantStats.SpaceSize"/> — the
+    /// #429 scaffold field tests set to exercise footprint machinery that no fielded
+    /// roster reaches yet (every printed cast today resolves to Medium).
+    /// </summary>
+    private static Combatant CombatantAt(GridPosition anchor, CreatureSize spaceSize)
+    {
+        var abilities = Enum.GetValues<Ability>().ToDictionary(ability => ability, _ => new MonsterAbility(10, 0));
+
+        return new Combatant(
+            $"{spaceSize}@{anchor.X},{anchor.Y}",
+            spaceSize.ToString(),
+            "monsters",
+            new CombatantStats(
+                13, 11, 40, 2, abilities, 2, spaceSize,
+                new Dictionary<DamageType, DamageResponse>(), [],
+                [new CombatAttack("Slam", AttackKind.Melee, 4, 5, null, null,
+                    [new AttackDamage(DiceExpression.Parse("2d6 + 2"), DamageType.Bludgeoning, 9)])],
+                DiesAtZeroHitPoints: true)
+            {
+                SpaceSize = spaceSize,
+            },
+            anchor);
+    }
+
+    /// <summary>
+    /// Pins the body-square-overlap predicate <see cref="EveryBodyStandsOnTheBoard"/>
+    /// relies on, directly against a fabricated multi-square footprint — the fielded
+    /// cast stays Medium today (and even after #429's final slice, this suite's own
+    /// roster may never draw a Large monster), so nothing else in this file ever
+    /// exercises two footprints wide enough to actually overlap without sharing an
+    /// anchor. Without this test, the disjointness check could regress to
+    /// anchor-distinctness (or <c>Overlaps</c> itself could break) and every committed
+    /// test would keep passing (#465, qc finding on PR review).
+    /// </summary>
+    [Fact]
+    public void LargeFootprintsWithDistinctAnchorsCanStillOverlap()
+    {
+        // Large is a 2x2 block. Anchors (0,0) and (1,0) differ, but the blocks share
+        // squares (1,0) and (1,1) — exactly the shape a distinct-anchors check misses.
+        var first = CombatantAt(new GridPosition(0, 0), CreatureSize.Large);
+        var adjacent = CombatantAt(new GridPosition(1, 0), CreatureSize.Large);
+
+        Assert.NotEqual(first.Position, adjacent.Position);
+        Assert.True(first.Space.Overlaps(adjacent.Space));
+
+        // Placed clear of each other (a two-square gap between the 2x2 blocks), the
+        // same predicate must report no overlap — the check flags real collisions, not
+        // every pair of same-sized creatures.
+        var farEnough = CombatantAt(new GridPosition(4, 0), CreatureSize.Large);
+        Assert.False(first.Space.Overlaps(farEnough.Space));
     }
 
     [Fact]
