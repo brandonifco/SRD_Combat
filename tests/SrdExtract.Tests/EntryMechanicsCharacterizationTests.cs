@@ -452,6 +452,96 @@ public sealed class EntryMechanicsCharacterizationTests
 
     #endregion
 
+    #region Polarity guard (#407)
+
+    [Fact]
+    public void ImmunityToAConditionIsResidueNotARefusedApplication()
+    {
+        // Mindless Rage, verbatim. Before #407 this read "Immunity to the Charmed and
+        // Frightened conditions" as if Mindless Rage inflicted Charmed and Frightened
+        // on someone, recording both as a refused AppliedCondition — backwards, since
+        // the printed sentence grants immunity to them. Neither name reaches
+        // AppliedConditions at all now; both stay exactly where the rest of this
+        // Unmodelled trait's prose already lives.
+        var trait = EntryMechanicsParser.ClassifyTrait(
+            "Mindless Rage",
+            "You have Immunity to the Charmed and Frightened conditions while your Rage is " +
+            "active. If you're Charmed or Frightened when you enter your Rage, the condition " +
+            "ends on you.");
+
+        Assert.Equal(EntryMechanics.Unmodelled, trait.Mechanics);
+        Assert.Empty(trait.AppliedConditions);
+        Assert.Contains(
+            trait.UnmodelledClauses,
+            clause => clause.Contains(
+                "Immunity to the Charmed and Frightened conditions",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void NoLongerHasAConditionIsResidueNotARefusedApplication()
+    {
+        // The Purple Worm's Swallow carries this exact sentence, but in the full stat
+        // block Restrained is already recorded (refused for an unrelated reason) from
+        // an earlier clause in the same entry, and the existing-condition dedup a few
+        // lines above this guard hides the removal sentence regardless of polarity.
+        // Isolating just the removal sentence here proves the guard itself keeps it
+        // out, rather than the dedup that happens to also hide it in the real entry.
+        var entry = EntryMechanicsParser.Classify(
+            "Test Removal",
+            MonsterEntrySection.Trait,
+            "If the worm dies, any swallowed creature no longer has the Restrained " +
+            "condition and can escape from the corpse using 20 feet of movement, exiting " +
+            "Prone.");
+
+        Assert.Equal(EntryMechanics.Unmodelled, entry.Mechanics);
+        Assert.Empty(entry.AppliedConditions);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("no longer has the Restrained condition", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("You have Immunity to")]
+    [InlineData("It no longer has")]
+    [InlineData("Creatures can't gain")]
+    [InlineData("Creatures cannot gain")]
+    [InlineData("The target can't be")]
+    [InlineData("The target cannot be")]
+    public void EveryNegatedLeadInKeepsTheConditionOutOfAppliedConditions(string leadIn)
+    {
+        // Hallow's "can't gain the Frightened condition" is the corpus's own instance
+        // of the third phrase; "can't be" has no directly-adjacent printing today (see
+        // NegatedConditionLeadInPattern's own remarks) but is pinned here per #407's
+        // acceptance criteria, both contracted and spelled out.
+        var trait = EntryMechanicsParser.ClassifyTrait(
+            "Test Trait",
+            $"{leadIn} the Frightened condition while this effect lasts.");
+
+        Assert.Empty(trait.AppliedConditions);
+    }
+
+    [Fact]
+    public void AvoidOrEndLeadInIsUnaffectedAndStillRecordedAsARefusedApplication()
+    {
+        // Dwarven Resilience, verbatim. "Advantage on saving throws ... to avoid or
+        // end the Poisoned condition" is a different clause shape from #407's own
+        // three — it is not a claim that the bearer currently has, lacks, or is
+        // immune to the condition — and widening the guard to catch it is explicitly
+        // out of #407's scope. This still lands as a refused AppliedCondition,
+        // unchanged by this fix, as a trip-wire against the guard over-matching.
+        var trait = EntryMechanicsParser.ClassifyTrait(
+            "Dwarven Resilience",
+            "You have Resistance to Poison damage. You also have Advantage on saving " +
+            "throws you make to avoid or end the Poisoned condition.");
+
+        var rider = Assert.Single(trait.AppliedConditions);
+        Assert.Equal(ConditionType.Poisoned, rider.Condition);
+        Assert.False(rider.IsFullyModelled);
+    }
+
+    #endregion
+
     #region Durations
 
     [Fact]

@@ -589,16 +589,7 @@
           "name": "Mindless Rage",
           "text": "You have Immunity to the Charmed and Frightened conditions while your Rage is active. If you're Charmed or Frightened when you enter your Rage, the condition ends on you.",
           "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Charmed",
-              "unmodelledRequirement": "You have Immunity to the Charmed and Frightened conditions while your Rage is active"
-            },
-            {
-              "condition": "Frightened",
-              "unmodelledRequirement": "You have Immunity to the Charmed and Frightened conditions while your Rage is active"
-            }
-          ],
+          "appliedConditions": [],
           "unmodelledClauses": [
             "You have Immunity to the Charmed and Frightened conditions while your Rage is active",
             "If you're Charmed or Frightened when you enter your Rage, the condition ends on you."
@@ -4372,12 +4363,7 @@
           "name": "Aura of Courage",
           "text": "You and your allies have Immunity to the Frightened condition while in your Aura of Protection. If a Frightened ally enters the aura, that condition has no effect on that ally while there.",
           "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Frightened",
-              "unmodelledRequirement": "You and your allies have Immunity to the Frightened condition while in your Aura of Protection"
-            }
-          ],
+          "appliedConditions": [],
           "unmodelledClauses": [
             "You and your allies have Immunity to the Frightened condition while in your Aura of Protection",
             "If a Frightened ally enters the aura, that condition has no effect on that ally while there."
@@ -4466,12 +4452,7 @@
           "name": "Aura of Devotion",
           "text": "You and your allies have Immunity to the Charmed condition while in your Aura of Protection. If a Charmed ally enters the aura, that condition has no effect on that ally while there.",
           "mechanics": "Unmodelled",
-          "appliedConditions": [
-            {
-              "condition": "Charmed",
-              "unmodelledRequirement": "You and your allies have Immunity to the Charmed condition while in your Aura of Protection"
-            }
-          ],
+          "appliedConditions": [],
           "unmodelledClauses": [
             "You and your allies have Immunity to the Charmed condition while in your Aura of Protection",
             "If a Charmed ally enters the aura, that condition has no effect on that ally while there."
