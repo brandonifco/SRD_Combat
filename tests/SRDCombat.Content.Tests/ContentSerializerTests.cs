@@ -188,6 +188,51 @@ public class ContentSerializerTests
     }
 
     /// <summary>
+    /// The Chimera's Bite (#371): "Hit: 11 (2d6 + 4) Piercing damage, or 18 (4d6 + 4)
+    /// Piercing damage if the chimera had Advantage on the attack roll."
+    /// <see cref="MonsterAttack.Alternative"/> is the field that structures the "or…if"
+    /// tier, and like <c>EvilCasterDamageType</c> above, <c>UnmappedMemberHandling.Disallow</c>
+    /// only catches a miss on it once something actually asks the serializer to write and
+    /// read every one of its fields — the corpus round-trip test's whole-entry equality
+    /// check covers <c>Alternative</c> today only incidentally, never pinned on its own
+    /// (#410, filed off #371/#408's review).
+    /// </summary>
+    [Fact]
+    public void RoundTrip_PreservesAMonsterAttacksAlternativeDamage()
+    {
+        var original = new MonsterAttack(
+            AttackKind.Melee,
+            AttackBonus: 7,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("2d6 + 4"), DamageType.Piercing, 11)])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("4d6 + 4"),
+                DamageType.Piercing,
+                18,
+                AttackDamageCondition.AttackRollHadAdvantage),
+        };
+
+        var json = ContentSerializer.Serialize(original);
+
+        Assert.Contains("\"amount\": \"4d6 + 4\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"condition\": \"AttackRollHadAdvantage\"", json, StringComparison.Ordinal);
+
+        var restored = ContentSerializer.Deserialize<MonsterAttack>(json);
+
+        Assert.NotNull(restored.Alternative);
+        Assert.Equal(original.Alternative!.Amount, restored.Alternative!.Amount);
+        Assert.Equal(original.Alternative.Type, restored.Alternative.Type);
+        Assert.Equal(original.Alternative.PrintedAverage, restored.Alternative.PrintedAverage);
+        Assert.Equal(original.Alternative.Condition, restored.Alternative.Condition);
+
+        // The base component is untouched by the alternative round-tripping alongside it.
+        Assert.Equal(original.Damage, restored.Damage);
+    }
+
+    /// <summary>
     /// #386's engine half: <see cref="SaveEffect.RangeFeet"/> is the field an entry
     /// save's printed range will reach through once the extraction half structures it.
     /// Pins that a populated value round-trips — the same contract

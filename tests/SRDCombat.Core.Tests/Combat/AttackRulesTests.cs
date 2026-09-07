@@ -317,6 +317,52 @@ public class AttackRulesTests
     }
 
     [Fact]
+    public void AlternativeDamage_ACriticalHitDoublesTheAlternativesOwnDiceNotTheBaseComponents()
+    {
+        // #410: the same Chimera's Bite as above, but with a natural 20 among the
+        // Advantage pair, which is always a Critical Hit regardless of AC. The
+        // Critical Hit must double the ALTERNATIVE's own dice (4d6 + 4 becomes 8d6 +
+        // 4) — the base component (2d6 + 4) is never rolled at all once the
+        // alternative replaces it whole, so it has nothing to double.
+        var attack = new CombatAttack(
+            "Bite",
+            AttackKind.Melee,
+            7,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("2d6 + 4"), DamageType.Piercing, 11)])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("4d6 + 4"),
+                DamageType.Piercing,
+                18,
+                AttackDamageCondition.AttackRollHadAdvantage),
+        };
+
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+        target.AddCondition(ConditionType.Prone);
+
+        var critical = AttackRules.Resolve(new ScriptedRandomSource(20, 9), attacker, attack, target);
+        Assert.Equal(RollMode.Advantage, critical.Roll.Mode);
+        Assert.True(critical.Critical);
+
+        // Exactly eight scripted results — the alternative's 4d6 doubled to 8d6 by the
+        // Critical Hit, and nothing more. If the base component's 2d6 were rolled as
+        // well, or the doubling did not apply, either the scripted source would run dry
+        // (ScriptedRandomSource throws) or the returned component/dice count would not
+        // match what is asserted below.
+        var criticalDamage = AttackRules.RollDamage(
+            new ScriptedRandomSource(1, 2, 3, 4, 5, 6, 1, 2), attack, critical, attacker, target);
+
+        var criticalComponent = Assert.Single(criticalDamage);
+        Assert.Equal(18, criticalComponent.Component.PrintedAverage);
+        Assert.True(criticalComponent.Result.WasCritical);
+        Assert.Equal([1, 2, 3, 4, 5, 6, 1, 2], criticalComponent.Result.Dice);
+    }
+
+    [Fact]
     public void AlternativeDamage_AttackerIsBloodiedChecksTheAttackerNotTheTarget()
     {
         // A Swarm of Rats' Bites (#371): "Hit: 5 (2d4) Piercing damage, or 2 (1d4)
