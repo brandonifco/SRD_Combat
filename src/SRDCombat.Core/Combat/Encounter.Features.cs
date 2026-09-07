@@ -22,13 +22,14 @@ public enum CunningActionKind
 /// implemented, while Move/Attack/Dodge will not.
 /// </para>
 /// <para>
-/// These methods deliberately do <b>not</b> route their opening guard through
-/// <see cref="TryGetActingCombatant"/> (#320's shared preamble). Their second gate is
-/// feature-presence — <c>feature.absent</c> — in place of that helper's
-/// <see cref="Combatant.CanAct"/> check, so they genuinely differ from the universal
-/// preamble and keep their <c>encounter.complete</c> + <c>feature.absent</c> pair
-/// explicit. Unifying this second family behind its own guard is held for a later slice
-/// under one-concern-per-PR (see the helper's own remarks).
+/// These methods open their guard through <see cref="TryGetCombatantWithFeature"/>
+/// (#638), the sibling of <see cref="TryGetActingCombatant"/> (#320's universal
+/// preamble). Both share the present-first <c>encounter.complete</c> gate; this family's
+/// second gate is feature-presence — <c>feature.absent</c> — in place of the universal
+/// helper's <see cref="Combatant.CanAct"/> check, so it has its own helper parameterized
+/// by the <see cref="ClassFeature"/> and its printed display name. The per-feature
+/// resource leg that follows (a Rage use, a Bonus Action, an unspent Action, a
+/// per-feature state check) genuinely varies and stays explicit at each call site.
 /// </para>
 /// </remarks>
 public sealed partial class Encounter
@@ -39,14 +40,9 @@ public sealed partial class Encounter
     /// </summary>
     public ActionRefusal? Rage()
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.Rage, "Rage", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.Rage))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Rage.");
+            return refusal;
         }
 
         if (!combatant.Turn.HasBonusAction)
@@ -94,14 +90,9 @@ public sealed partial class Encounter
     /// <summary>Fighter Second Wind: a Bonus Action to regain 1d10 + level hit points.</summary>
     public ActionRefusal? SecondWind()
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.SecondWind, "Second Wind", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.SecondWind))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Second Wind.");
+            return refusal;
         }
 
         if (combatant.Features.SecondWindRemaining <= 0)
@@ -141,14 +132,9 @@ public sealed partial class Encounter
     /// </remarks>
     public ActionRefusal? SteadyAim()
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.SteadyAim, "Steady Aim", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.SteadyAim))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Steady Aim.");
+            return refusal;
         }
 
         if (combatant.Turn.HasMoved)
@@ -178,14 +164,9 @@ public sealed partial class Encounter
     /// <summary>Fighter Action Surge: one extra action on this turn.</summary>
     public ActionRefusal? ActionSurge()
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.ActionSurge, "Action Surge", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.ActionSurge))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Action Surge.");
+            return refusal;
         }
 
         if (combatant.Features.ActionSurgeRemaining <= 0)
@@ -213,14 +194,9 @@ public sealed partial class Encounter
     /// </summary>
     public ActionRefusal? RecklessAttack()
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.RecklessAttack, "Reckless Attack", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.RecklessAttack))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Reckless Attack.");
+            return refusal;
         }
 
         if (combatant.Features.IsRecklessThisTurn)
@@ -258,14 +234,9 @@ public sealed partial class Encounter
     /// </remarks>
     public ActionRefusal? CunningStrike(CunningStrikeEffect effect)
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.CunningStrike, "Cunning Strike", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.CunningStrike))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Cunning Strike.");
+            return refusal;
         }
 
         if (effect == CunningStrikeEffect.None)
@@ -417,14 +388,9 @@ public sealed partial class Encounter
     {
         ArgumentNullException.ThrowIfNull(target);
 
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.ChannelDivinity, "Channel Divinity", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.ChannelDivinity))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Channel Divinity.");
+            return refusal;
         }
 
         if (combatant.Features.ChannelDivinityRemaining <= 0)
@@ -615,14 +581,9 @@ public sealed partial class Encounter
     {
         ArgumentNullException.ThrowIfNull(targets);
 
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.ChannelDivinity, "Channel Divinity", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.ChannelDivinity))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Channel Divinity.");
+            return refusal;
         }
 
         if (combatant.Features.ChannelDivinityRemaining <= 0)
@@ -915,14 +876,9 @@ public sealed partial class Encounter
     /// <summary>Rogue Cunning Action: Dash or Disengage as a Bonus Action.</summary>
     public ActionRefusal? CunningAction(CunningActionKind kind)
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetCombatantWithFeature(ClassFeature.CunningAction, "Cunning Action", out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.Stats.Has(ClassFeature.CunningAction))
-        {
-            return new ActionRefusal("feature.absent", $"{combatant.Name} does not have Cunning Action.");
+            return refusal;
         }
 
         if (!combatant.Turn.HasBonusAction)

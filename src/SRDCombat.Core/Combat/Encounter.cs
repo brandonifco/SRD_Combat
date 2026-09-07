@@ -1012,12 +1012,12 @@ public sealed partial class Encounter
     /// It deliberately stops at those two. The "resource" leg of the preamble genuinely
     /// varies — the Action, the Bonus Action, movement feet, or a cost interleaved after
     /// a target check — so it stays explicit at each call site rather than being forced
-    /// through a parameter here. Two families also keep a different second gate and so do
-    /// not route through this helper: the class-feature actions
-    /// (<see cref="Rage"/> and the rest) check feature-presence — <c>feature.absent</c> —
-    /// in place of <see cref="Combatant.CanAct"/>, and <see cref="CastSpell(string, GridPosition, Combatant?, int?)"/>
-    /// checks <c>spell.not_a_caster</c>. Unifying those is the sibling concern the plan
-    /// holds for a later slice, kept out of this one under one-concern-per-PR.
+    /// through a parameter here. Two families keep a different second gate and so route
+    /// through their own guards: the class-feature actions (<see cref="Rage"/> and the
+    /// rest) check feature-presence — <c>feature.absent</c> — through
+    /// <see cref="TryGetCombatantWithFeature"/> (#638), and
+    /// <see cref="CastSpell(string, GridPosition, Combatant?, int?)"/> checks
+    /// <c>spell.not_a_caster</c>, still inline as the sole member of its family.
     /// </para>
     /// </remarks>
     private bool TryGetActingCombatant(
@@ -1035,6 +1035,58 @@ public sealed partial class Encounter
         if (!actor.CanAct)
         {
             refusal = new ActionRefusal("combatant.cannot_act", $"{actor.Name} cannot act.");
+            actor = null;
+            return false;
+        }
+
+        refusal = null;
+        return true;
+    }
+
+    /// <summary>
+    /// The guard the class-feature actions open with: there is a fight in progress with a
+    /// combatant whose turn it is — <c>encounter.complete</c> otherwise — and that
+    /// combatant has the named feature — <c>feature.absent</c> otherwise. Hands the
+    /// combatant back through <paramref name="actor"/> on success.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The sibling of <see cref="TryGetActingCombatant"/> for the nine class-feature
+    /// actions (Rage, SecondWind, SteadyAim, ActionSurge, RecklessAttack, CunningStrike,
+    /// DivineSpark, TurnUndead, CunningAction). They share the same present-first opener,
+    /// but their second gate is feature-presence rather than <see cref="Combatant.CanAct"/>,
+    /// so they route through this helper instead (#638). The second refusal is assembled
+    /// uniformly from <paramref name="feature"/> and <paramref name="featureName"/>: the
+    /// former is the exact <see cref="ClassFeature"/> each site checked, the latter its
+    /// printed display name (which is not the enum name — <c>SecondWind</c> prints as
+    /// "Second Wind"), so <c>feature.absent</c>'s wording stays byte-for-byte what each
+    /// site inlined before, in the same order (present-first, then feature-present).
+    /// </para>
+    /// <para>
+    /// Like its sibling it stops at those two gates. The "resource" leg each feature
+    /// adds after them — a Rage use, a Bonus Action, an unspent Action, a per-feature
+    /// state check — genuinely varies and stays explicit at each call site. DivineSpark
+    /// and TurnUndead both pass <see cref="ClassFeature.ChannelDivinity"/> with the same
+    /// "Channel Divinity" name, exactly as they both did inline.
+    /// </para>
+    /// </remarks>
+    private bool TryGetCombatantWithFeature(
+        ClassFeature feature,
+        string featureName,
+        [NotNullWhen(true)] out Combatant? actor,
+        [NotNullWhen(false)] out ActionRefusal? refusal)
+    {
+        actor = ActiveCombatant;
+
+        if (actor is null)
+        {
+            refusal = new ActionRefusal("encounter.complete", "The encounter is over.");
+            return false;
+        }
+
+        if (!actor.Stats.Has(feature))
+        {
+            refusal = new ActionRefusal("feature.absent", $"{actor.Name} does not have {featureName}.");
             actor = null;
             return false;
         }
