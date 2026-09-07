@@ -912,6 +912,79 @@ public sealed class EntryMechanicsCharacterizationTests
     }
 
     [Fact]
+    public void AnAlternativeCompositionFollowedByASecondSentenceIsNeitherDuplicatedNorSwallowed()
+    {
+        // #359 (qc's review of #356): AlternativeCompositionPattern's own match extends
+        // to end-of-string via ".*$" (Singleline) — but that extent is never read, only
+        // the match's Index, which truncates `text` to just the first branch. The
+        // discarded suffix (the alternative branch, here followed by a further
+        // sentence, one sentence past anything in the corpus today) is never claimed
+        // against any coverage, so it cannot be duplicated by a separate hand-back —
+        // there isn't one — and EntryCoverage.Residue() chunks it at sentence
+        // boundaries regardless of the regex's own reach, exactly the same structural
+        // guarantee #360 pinned for the (now-deleted) bundled-use scan. This test pins
+        // both properties directly: a regression in either would merge the two
+        // trailing sentences into one clause or drop one of them.
+        var entry = EntryMechanicsParser.Classify(
+            "Multiattack",
+            MonsterEntrySection.Action,
+            "The golem makes two Slam attacks, or it makes three Slam attacks if it used Hasten " +
+            "this turn. It can replace one attack with a use of Ground Slam if available.");
+
+        Assert.NotNull(entry.Multiattack);
+        Assert.Equal(2, entry.Multiattack!.AttackCount);
+        Assert.Equal(["Slam"], entry.Multiattack.AttackNames);
+
+        // Exactly two clauses — the alternative branch recorded once (not folded
+        // together with, or duplicated against, the second sentence).
+        Assert.Equal(
+            [
+                "or it makes three Slam attacks if it used Hasten this turn",
+                "It can replace one attack with a use of Ground Slam if available",
+            ],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ANamedSubjectAlternativeCompositionIsAStatedParserLimitCaughtByTheValidatorInstead()
+    {
+        // #359, tightened after qc's Medium on this PR's first attempt: widening
+        // AlternativeCompositionPattern's subject to any "the <word>" was both too
+        // broad (a hypothetical "or the target makes ... attacks" printed for an
+        // unrelated creature would have been sliced off as if it were this creature's
+        // own alternative, silently truncating what the composition reads as — a real
+        // extraction change, not just a flag) and too narrow (a multiword or hyphenated
+        // repeated name, "the clay golem", still would not have matched a bare \w+).
+        // The parser stays conservative — pronoun subjects only — on purpose: a false
+        // match here changes AttackCount, so the cost of a miss must fall on a human
+        // reviewer instead. This test pins the *current, honest* failure mode: a
+        // named-subject alternative is not recognised as a second composition at all,
+        // so its clause is summed into AttackCount (5, not the intended 2) and its
+        // residue is left fragmented rather than surviving as the one intact clause a
+        // recognised alternative leaves (contrast
+        // AnAlternativeCompositionFollowedByASecondSentenceIsNeitherDuplicatedNorSwallowed
+        // and the Clay Golem test above). That fragmentation — "makes three Slam
+        // attacks" itself fully absorbed, leaving only the subject and the trailing
+        // qualifier as separate scraps — is exactly the signal
+        // MonsterValidator.AlternativeCompositionMarker now checks for (ValidatorTests'
+        // ANamedSubjectAlternativeCompositionThatParserFragmentsUnclaimed_IsAnError):
+        // the validator's independent, broader "makes ... attacks" scan flags this
+        // shape because no single residue clause reproduces it intact, catching what
+        // the deliberately-conservative parser misses instead of the parser
+        // mis-truncating to catch it.
+        var entry = EntryMechanicsParser.Classify(
+            "Multiattack",
+            MonsterEntrySection.Action,
+            "The golem makes two Slam attacks, or the golem makes three Slam attacks if it used " +
+            "Hasten this turn.");
+
+        Assert.NotNull(entry.Multiattack);
+        Assert.Equal(5, entry.Multiattack!.AttackCount);
+        Assert.Equal(["Slam"], entry.Multiattack.AttackNames);
+        Assert.Equal(["or the golem", "if it used Hasten this turn"], entry.UnmodelledClauses);
+    }
+
+    [Fact]
     public void TheMummysBundledUseIsCountedAlongsideAFullyMatchedComposition()
     {
         var entry = EntryMechanicsParser.Classify(
