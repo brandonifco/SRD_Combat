@@ -1029,6 +1029,45 @@ public sealed class EntryMechanicsCharacterizationTests
             clause => clause.Contains("replace one attack", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void ABundledUseFollowedByASecondSentenceIsNeitherDuplicatedNorSwallowed()
+    {
+        // #360: the deleted (#382) BundledMultiattackUseClauses used to scan the whole
+        // entry text with a lazy capture ending at "the next composition clause or the
+        // sentence's end" — but "the sentence's end" was written as `\.\s*$|$`, an
+        // end-of-*string* anchor, not an end-of-*sentence* one. On a hypothetical
+        // multi-sentence entry folding a bundled use into its first sentence — the shape
+        // this test constructs, one sentence past what any of the fourteen corpus
+        // entries #341/#358 fixed actually prints — that old scan would have swallowed
+        // the second sentence into the bundled-use fragment, and (since every affected
+        // entry was one sentence when #341/#358 shipped) duplicated it against whatever
+        // else already recorded that second sentence as unmodelled.
+        //
+        // Coverage-by-consumption (#382) forecloses both failure modes structurally
+        // rather than by a sharper regex: nothing scans for a bundled-use clause at all
+        // any more, so there is no separate fragment to duplicate against residue), and
+        // `EntryCoverage.Residue()` chunks every surviving uncovered run at sentence
+        // boundaries (`ChunkAtSentenceBoundaries`) before it is ever reported, so a run
+        // spanning two sentences always yields two clauses, never one merged blob. This
+        // test pins both properties directly against a text shaped like #360's own
+        // hypothetical, so a regression in either guarantee turns it red.
+        var entry = EntryMechanicsParser.Classify(
+            "Multiattack",
+            MonsterEntrySection.Action,
+            "The lich makes two Chill Touch attacks and uses Life Drain. It can replace one " +
+            "attack with a use of Frost Bolt.");
+
+        Assert.NotNull(entry.Multiattack);
+        Assert.Equal(2, entry.Multiattack!.AttackCount);
+        Assert.Equal(["Chill Touch"], entry.Multiattack.AttackNames);
+
+        // Exactly two clauses — the bundled use recorded once (not folded together with,
+        // or duplicated against, the second sentence).
+        Assert.Equal(
+            ["and uses Life Drain", "It can replace one attack with a use of Frost Bolt"],
+            entry.UnmodelledClauses);
+    }
+
     #endregion
 
     #region Saves

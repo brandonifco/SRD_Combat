@@ -449,6 +449,18 @@ internal static partial class EntryMechanicsParser
     /// does not express the second branch"), so it falls out as residue by subtraction
     /// rather than through any hand-back this method used to make.
     /// </para>
+    /// <para>
+    /// A bundled use folded into the same sentence as the composition — the Mummy's
+    /// "makes two Rotting Fist attacks and uses Dreadful Glare" — is handled the same
+    /// way, and for the same reason (#341/#358, then superseded by #382): nothing here
+    /// claims the "and uses X" fragment, so it is never at risk of being scanned twice
+    /// (once via a dedicated bundled-use regex, once as part of a wider unclaimed run —
+    /// #360's hazard (a)) or of a lazy end-of-string anchor swallowing a later sentence
+    /// whole (#360's hazard (b)). <see cref="EntryCoverage.Residue"/> chunks every
+    /// surviving run at sentence boundaries before reporting it, so both failure modes
+    /// are foreclosed by the coverage model itself rather than by a sharper regex — see
+    /// <c>ABundledUseFollowedByASecondSentenceIsNeitherDuplicatedNorSwallowed</c>.
+    /// </para>
     /// </remarks>
     private static MultiattackEffect? ParseMultiattack(string text, EntryCoverage coverage)
     {
