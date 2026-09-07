@@ -47,6 +47,9 @@ This stops accidents, not evasion. A `$VAR` assigned outside the command, `eval`
 directory or a parse failure falls open (the command runs). If `$CLAUDE_PROJECT_DIR`
 is unset or python3 is missing the hook errors and Claude Code proceeds. An agent that
 routes around this is making a choice, and the choice is visible in the transcript.
+This is a decision (#589), not a gap: the evasion class stays out of scope, and this
+paragraph is its record. The accident class above has its own knockout table, committed
+at `.claude/skills/land-pr/scripts/hook-cases.sh` — run it after any change here.
 
 Escape hatch: SRD_COMBAT_ALLOW_PRIMARY_GIT=1 in the environment — under "env" in
 `.claude/settings.local.json` for a human-driven session. It is session-wide: every
