@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pins master_to_sprite.py's ship-status reporting (#514).
+"""Pins master_to_sprite.py's ship-status reporting (#514, #598).
 
 Standalone ``unittest``, wired into the gate (#599): ``scripts/validate.sh``
 runs this once — in `full`, and in the `ci Debug` leg only, not `ci Release`,
@@ -20,11 +20,33 @@ and the ``goblin_warrior`` and ``scout`` subtests of the whole-roster pin
 (``test_full_masters_directory_ship_status_matches_known_baseline``) — as both
 masters come back "unshipped", confirming these tests exercise the fixed code
 path rather than passing vacuously.
+
+#598 adds a trip-wire for the invariant `_shipped_folders_from_sprite_library`
+and `_shipped_folder_for` both silently depend on but never assert: that
+``client/SpriteLibrary.cs``'s two dictionaries (``ByClassName``,
+``ByMonsterName``) share no key, and that no two of their names collapse to
+the same key under `_normalize_for_match`. `_shipped_folders_from_sprite_library`
+runs one regex `findall` over the whole file and folds the result into a
+single `dict(entries)` -- an exact-duplicate name (whichever dictionary it's
+in) silently keeps whichever entry's line came last in the file, and
+`_shipped_folder_for` then silently returns the first *normalised* match,
+which is well-defined only because no two names normalise the same today.
+qc verified the invariant holds now (76 entries, 76 distinct names, 76
+distinct normalised keys); nothing enforced it. See #412 for the shape: a
+reading correct only because of a corpus invariant asserted nowhere.
+Knockout for this trip-wire performed by hand (not left in the suite, since
+it requires mutating the parsed entries after the fact): duplicating an
+existing ``client/SpriteLibrary.cs`` entry under a second, differently-cased
+copy of the same name turns ``test_no_raw_key_collisions_in_committed_sprite_library``
+red, naming the colliding key; separately forcing two distinct names to
+normalise alike turns ``test_no_normalised_key_collisions_in_committed_sprite_library``
+red, naming both names and the shared normalised key.
 """
 
 from __future__ import annotations
 
 import unittest
+from collections import Counter
 from pathlib import Path
 
 import master_to_sprite as mts
@@ -157,6 +179,82 @@ class RealSpriteLibraryRegressionTests(unittest.TestCase):
                     self.assertEqual(status, "unshipped")
                 else:
                     self.assertEqual(status, "shipped")
+
+
+class SpriteLibraryKeyCollisionTripWireTests(unittest.TestCase):
+    """#598: `_shipped_folders_from_sprite_library` folds a single regex
+    `findall` over both of SpriteLibrary.cs's dictionaries into one
+    `dict(entries)`, and `_shipped_folder_for` then matches on the first
+    *normalised* key it finds — both steps are correct only if the two
+    dictionaries never share a raw name and no two of their names collapse
+    to the same normalised key (the #412 pattern: a reading correct only
+    because of a corpus invariant asserted nowhere). These tests read the
+    raw `(name, folder)` pairs straight out of the committed file — the
+    same regex `_shipped_folders_from_sprite_library` itself uses — rather
+    than through the already-deduplicated dict it returns, precisely so a
+    collision is visible before `dict(entries)` erases it."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if not mts.SPRITE_LIBRARY_CS.exists():
+            raise unittest.SkipTest(f"no {mts.SPRITE_LIBRARY_CS} in this checkout")
+        text = mts.SPRITE_LIBRARY_CS.read_text()
+        cls.entries = mts._SPRITE_LIBRARY_ENTRY_RE.findall(text)
+        if len(cls.entries) < mts._MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES:
+            # A below-floor parse is a REGRESSION, not an environment gap: the file
+            # is present (checked above) but the entry regex under-matched, so the
+            # resolver is silently operating on a near-empty map — and a partial
+            # parse can still hide the raw/normalised collisions this class exists
+            # to catch. Fail rather than skip, so the gate cannot pass green on a
+            # broken parse (a skipped trip-wire verifies nothing).
+            raise AssertionError(
+                f"regex returned only {len(cls.entries)} entries from "
+                f"{mts.SPRITE_LIBRARY_CS} — below the "
+                f"{mts._MIN_EXPECTED_SPRITE_LIBRARY_ENTRIES} floor "
+                f"_shipped_folders_from_sprite_library itself warns about; "
+                f"the parse is broken and this trip-wire cannot verify the "
+                f"no-collision invariant against a near-empty map"
+            )
+
+    def test_no_raw_key_collisions_in_committed_sprite_library(self) -> None:
+        # `dict(entries)` silently keeps whichever entry's line came last if
+        # any name (from ByClassName or ByMonsterName — the regex doesn't
+        # distinguish) repeats verbatim. Assert the names are pairwise
+        # distinct, naming any that aren't.
+        names = [name for name, _folder in self.entries]
+        counts = Counter(names)
+        collisions = {name: count for name, count in counts.items() if count > 1}
+        self.assertEqual(
+            collisions,
+            {},
+            f"SpriteLibrary.cs has duplicate literal name key(s), silently "
+            f"resolved to whichever entry's line comes last: {sorted(collisions)}",
+        )
+
+    def test_no_normalised_key_collisions_in_committed_sprite_library(self) -> None:
+        # `_shipped_folder_for` matches on `_normalize_for_match(name)` and
+        # returns the first hit — well-defined only if every name's
+        # normalised form is unique. A raw-key collision (caught above)
+        # would also show up here, but this catches the wider case too: two
+        # *distinct* names, such as "Goblin warrior" and "Goblin Warrior",
+        # that normalise alike without ever colliding as raw strings.
+        names = [name for name, _folder in self.entries]
+        by_normalised: dict[str, list[str]] = {}
+        for name in names:
+            by_normalised.setdefault(mts._normalize_for_match(name), []).append(name)
+
+        collisions = {
+            key: sorted(set(variants))
+            for key, variants in by_normalised.items()
+            if len(set(variants)) > 1
+        }
+        self.assertEqual(
+            collisions,
+            {},
+            f"SpriteLibrary.cs has distinct name keys that normalise to the "
+            f"same match key, so _shipped_folder_for's first-match lookup is "
+            f"order-dependent: {collisions}",
+        )
 
 
 if __name__ == "__main__":
