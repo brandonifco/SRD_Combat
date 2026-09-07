@@ -383,19 +383,53 @@ public static partial class MonsterValidator
     }
 
     /// <summary>
-    /// Marks a Multiattack sentence printing a second whole composition — "or it/he/
-    /// she/they makes ..." — rather than a single one. Deliberately independent of
+    /// Marks a Multiattack sentence printing a second whole attack composition — "or
+    /// it/he/she/they makes ... attack(s)" or a repeated named subject, "or the golem
+    /// makes ... attack(s)" — rather than a single one. Deliberately independent of
     /// <c>EntryMechanicsParser.AlternativeCompositionPattern</c>: that regex is what the
     /// parser trusts to take the default branch and set the alternative aside, so
     /// checking against it again would only prove the parser agrees with itself, exactly
     /// the flaw #342 found in PR #340's own equivalence check. This asks the independent
     /// question print answers directly — does the sentence carry a second composition at
-    /// all — and requires that whenever it does, <see cref="MonsterEntry.UnmodelledClauses"/>
-    /// says so, catching a future entry (or a regression on today's three: the Barbed
-    /// Devil, the Clay Golem, the Medusa) whose alternative gets silently summed again.
+    /// all.
+    /// <para>
+    /// That "independent" claim is about not depending on the parser's own reading of
+    /// the text (its output, i.e. <c>Multiattack</c>/<c>UnmodelledClauses</c>) — it is
+    /// <em>not</em> independence from the parser's phrase grammar. Until #359, this
+    /// marker and <c>AlternativeCompositionPattern</c> both required a pronoun subject,
+    /// so a named-subject alternative ("or the golem makes ...") would have evaded both
+    /// together: nothing would have caught it. #359 (qc's review of #356, tightened
+    /// after a further Medium finding on this PR's own first attempt) widened only this
+    /// marker to accept a repeated named noun as well as a pronoun — the parser stays
+    /// pronoun-only on purpose (see <c>EntryMechanicsParser.ParseMultiattack</c>'s
+    /// remarks): a false match in the parser silently truncates real extraction, while a
+    /// false match here only flags an entry for a human to clear, so this marker can
+    /// afford to be broader precisely where the parser cannot.
+    /// </para>
+    /// <para>
+    /// Being broader means also being more specific about the shape, so widening does
+    /// not itself become a new source of false positives: the subject accepts a pronoun
+    /// or <c>the &lt;word&gt;</c> repeated up to three more times (covering multiword or
+    /// hyphenated repeated names — "the clay golem", "the fire-giant" — that a bare
+    /// pronoun-shaped check would miss), but the match is required to reach an
+    /// "attack(s)" clause within the same sentence — "or the target makes a saving
+    /// throw" does not match, only a second attack composition does. And the check below
+    /// no longer asks only whether <em>any</em> residue survived
+    /// (<see cref="MonsterEntry.UnmodelledClauses"/> non-empty): a named-subject
+    /// alternative this conservative parser fails to recognise is not left as clean
+    /// residue, it is fragmented — part of it absorbed into the summed
+    /// <c>AttackCount</c>, the rest scattered into disconnected scraps (see
+    /// <c>EntryMechanicsParser</c>'s
+    /// <c>ANamedSubjectAlternativeCompositionIsAStatedParserLimitCaughtByTheValidatorInstead</c>).
+    /// The check instead requires the matched clause to survive <em>intact</em> as a
+    /// single residue entry, which is exactly what a correctly recognised alternative
+    /// leaves (the Barbed Devil, the Clay Golem, the Medusa) and exactly what a silently
+    /// mis-summed one does not.
+    /// </para>
     /// </summary>
-    private static readonly Regex AlternativeCompositionMarker =
-        new(@"\bor\s+(?:it|he|she|they)\s+makes\b", RegexOptions.Compiled);
+    private static readonly Regex AlternativeCompositionMarker = new(
+        @"\bor\s+(?:it|he|she|they|the\s+[\w-]+(?:\s+[\w-]+){0,3})\s+makes\b[^.]*\battacks?\b[^.]*",
+        RegexOptions.Compiled);
 
     /// <summary>
     /// Marks a Multiattack sentence folding a second, unexecuted use inside the same
@@ -424,15 +458,17 @@ public static partial class MonsterValidator
             }
 
             if (entry.Mechanics == EntryMechanics.Multiattack
-                && AlternativeCompositionMarker.IsMatch(entry.Text)
-                && entry.UnmodelledClauses.Count == 0)
+                && AlternativeCompositionMarker.Match(entry.Text) is { Success: true } alternative
+                && !entry.UnmodelledClauses.Any(
+                    clause => clause.Contains(alternative.Value, StringComparison.Ordinal)))
             {
                 add(
                     ValidationSeverity.Error,
                     "monster.multiattack.alternative_composition_dropped",
-                    $"'{entry.Name}' prints a second composition (\"or it/he/she/they makes ...\") " +
-                    "that the recorded Multiattack does not account for — it may have been summed " +
-                    "into AttackCount instead of recorded as an alternative.");
+                    $"'{entry.Name}' prints a second attack composition (\"or it/he/she/they/the " +
+                    "<name> makes ... attacks ...\") that the recorded Multiattack does not carry as " +
+                    "a single intact residue clause — it may have been silently summed into " +
+                    "AttackCount instead of recorded as an alternative.");
             }
 
             if (entry.Mechanics == EntryMechanics.Multiattack

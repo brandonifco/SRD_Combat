@@ -461,6 +461,46 @@ internal static partial class EntryMechanicsParser
     /// are foreclosed by the coverage model itself rather than by a sharper regex — see
     /// <c>ABundledUseFollowedByASecondSentenceIsNeitherDuplicatedNorSwallowed</c>.
     /// </para>
+    /// <para>
+    /// #359 (qc's review of #356) checked this same alternative-composition shape for
+    /// two more hazards. First, <see cref="AlternativeCompositionPattern"/>'s own greedy
+    /// <c>.*$</c> only ever locates <em>where</em> the alternative branch starts —
+    /// <paramref name="text"/> is truncated at <c>alternative.Index</c>, and the
+    /// discarded suffix's characters are never claimed against any coverage, named or
+    /// otherwise, so — exactly as for the bundled-use case above — a hypothetical
+    /// alternative followed by a further sentence cannot be duplicated or swallowed: it
+    /// simply never enters a claim, and <see cref="EntryCoverage.Residue"/> chunks it at
+    /// sentence boundaries downstream regardless of how far this regex's own match
+    /// extends. See <c>AnAlternativeCompositionFollowedByASecondSentenceIsNeitherDuplicatedNorSwallowed</c>.
+    /// </para>
+    /// <para>
+    /// Second, the pattern requires a pronoun subject ("or it/he/she/they makes") and
+    /// has no named-subject branch ("or the golem makes") — a gap shared with
+    /// <c>MonsterValidator.AlternativeCompositionMarker</c>, so a future entry printing
+    /// that shape would evade the parser <em>and</em> the trip-wire meant to catch what
+    /// the parser misses. #359's first attempt widened both patterns' subject to any
+    /// <c>the &lt;word&gt;</c>; qc's review found that unsafe specifically <em>here</em>
+    /// (Medium): a false match in this parser truncates real extraction — a plausible
+    /// future "or the target makes two X attacks" printed about a different actor
+    /// entirely would have been sliced off as this creature's own alternative, and a
+    /// bare <c>\w+</c> still would not have covered a multiword or hyphenated repeated
+    /// name ("the clay golem", "the fire-giant"). This pattern is deliberately left
+    /// pronoun-only — a stated limit, pinned by
+    /// <c>ANamedSubjectAlternativeCompositionIsAStatedParserLimitCaughtByTheValidatorInstead</c>,
+    /// which shows the honest failure mode: a named-subject alternative gets summed into
+    /// <c>AttackCount</c> instead of recognised, and its residue is left fragmented
+    /// rather than surviving as one intact clause. The validator's own marker is safe to
+    /// widen broadly instead, because a false match there costs a flagged entry for a
+    /// human to clear rather than a silently wrong <c>AttackCount</c>: it now requires
+    /// the shape to actually describe an attack composition ("makes ... attack(s)"
+    /// within the same sentence, not any use of "makes" at all) and accepts a repeated
+    /// named noun of several words, then flags a match whose full text does not survive
+    /// intact as a single <see cref="MonsterEntry.UnmodelledClauses"/> entry — which is
+    /// exactly what fails to happen when this parser (correctly) does not recognise a
+    /// named-subject alternative. See
+    /// <c>MonsterValidator.AlternativeCompositionMarker</c> and its tests in
+    /// <c>ValidatorTests</c>.
+    /// </para>
     /// </remarks>
     private static MultiattackEffect? ParseMultiattack(string text, EntryCoverage coverage)
     {
@@ -1723,7 +1763,19 @@ internal static partial class EntryMechanicsParser
     // Hasten this turn." Two whole compositions joined by a repeated subject and verb —
     // as opposed to "using X or Y in any combination" or "Claw or Nightmare Ray attacks",
     // where "or" separates names within one composition — are a choice the model does not
-    // make, not attacks to be summed. See ParseMultiattack's remarks.
+    // make, not attacks to be summed. See ParseMultiattack's remarks. The subject is
+    // deliberately pronoun-only, not widened to a named noun ("or the golem makes") —
+    // #359's first attempt did widen it, but qc's review found that unsafe in a live
+    // parser: a false match here truncates real extraction (a hypothetical "or the
+    // target makes two X attacks" about a different actor would be sliced off as this
+    // creature's own alternative), and a bare \w+ still would not cover a multiword or
+    // hyphenated repeated name. The named-subject net lives in
+    // MonsterValidator.AlternativeCompositionMarker instead, which is safe to widen
+    // broadly because a false match there only flags an entry for review. See
+    // ParseMultiattack's remarks for the full account. The trailing ".*$" only ever
+    // locates where the branch starts (see ParseMultiattack's remarks) — its own reach
+    // past the current sentence is immaterial, since only the match's Index truncates
+    // text.
     [GeneratedRegex(@",?\s*or\s+(?:it|he|she|they)\s+makes\s+.*$", RegexOptions.Singleline)]
     private static partial Regex AlternativeCompositionPattern();
 

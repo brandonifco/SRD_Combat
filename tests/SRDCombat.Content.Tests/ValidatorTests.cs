@@ -92,6 +92,194 @@ public class ValidatorTests
     }
 
     [Fact]
+    public void AnAlternativeCompositionFoldedIntoAMultiattackCompositionWithNoResidue_IsAnError()
+    {
+        // #359 (qc's review of #356): every other MonsterValidator check has its own
+        // synthetic "..._IsAnError" pin — this trip-wire, added for the Barbed Devil,
+        // Clay Golem and Medusa (#342), was exercised only via corpus load until now.
+        // Mirrors the corpus shape ("the golem makes two Slam attacks, or it makes
+        // three Slam attacks...") with UnmodelledClauses forced empty, as if a future
+        // change silently summed the second branch into AttackCount instead of leaving
+        // it as residue.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The golem makes two Slam attacks, or it makes three Slam attacks if it used " +
+                    "Hasten this turn.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Slam"], false)),
+            ],
+        };
+
+        AssertHasCode(monster, "monster.multiattack.alternative_composition_dropped", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AnAlternativeCompositionFoldedIntoAMultiattackCompositionWithResidue_ProducesNothing()
+    {
+        // The healthy case: the alternative branch survived as residue, exactly as the
+        // parser records it today, so the trip-wire stays silent.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The golem makes two Slam attacks, or it makes three Slam attacks if it used " +
+                    "Hasten this turn.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Slam"], false),
+                    UnmodelledClauses: ["or it makes three Slam attacks if it used Hasten this turn"]),
+            ],
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster]).Issues);
+    }
+
+    [Fact]
+    public void ANamedSubjectAlternativeCompositionThatParserFragmentsUnclaimed_IsAnError()
+    {
+        // #359's second finding, tightened after qc's Medium on this PR's first
+        // attempt: AlternativeCompositionMarker required a pronoun subject ("or
+        // it/he/she/they makes"), so a named-subject alternative ("or the golem makes",
+        // repeating the same generic noun the composition sentence opens with) would
+        // have evaded this trip-wire and EntryMechanicsParser's
+        // AlternativeCompositionPattern together — nothing would have caught it.
+        // EntryMechanicsParser stays pronoun-only on purpose (a false match there would
+        // truncate real extraction), so this fixture is the parser's *actual, verified*
+        // output for this shape — not an idealised empty-residue stand-in — pinning that
+        // the validator catches the real failure mode: the second clause gets summed
+        // into AttackCount (5, not 2) and its residue is fragmented into disconnected
+        // scraps ("or the golem", "if it used Hasten this turn") rather than surviving
+        // as the single intact clause a recognised alternative leaves. See
+        // EntryMechanicsParser's
+        // ANamedSubjectAlternativeCompositionIsAStatedParserLimitCaughtByTheValidatorInstead
+        // for the parser side of this same pin. Corpus-clean today (confirmed against
+        // all 171 Multiattack entries containing "makes").
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The golem makes two Slam attacks, or the golem makes three Slam attacks if it " +
+                    "used Hasten this turn.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(5, ["Slam"], false),
+                    UnmodelledClauses: ["or the golem", "if it used Hasten this turn"]),
+            ],
+        };
+
+        AssertHasCode(monster, "monster.multiattack.alternative_composition_dropped", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AMultiwordNamedSubjectAlternativeCompositionWithNoResidue_IsAnError()
+    {
+        // The marker's subject accepts up to four words (and hyphens) after "the", not
+        // just a bare \w+ — a multiword or hyphenated repeated name ("the clay golem",
+        // "the fire-giant") is exactly the shape a single-word check would miss, per
+        // qc's Medium finding on this PR's first attempt.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The golem makes two Slam attacks, or the clay golem makes three Slam attacks " +
+                    "if it used Hasten this turn.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Slam"], false)),
+            ],
+        };
+
+        AssertHasCode(monster, "monster.multiattack.alternative_composition_dropped", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AHyphenatedNamedSubjectAlternativeCompositionWithNoResidue_IsAnError()
+    {
+        // Pins the marker's "-" specifically (its `[\w-]`, not a bare `\w`): a hyphenated
+        // repeated name ("the fire-giant") is a distinct case from the space-separated
+        // "the clay golem" above — reducing the subject class to `\w` would keep that test
+        // and today's corpus green while silently dropping this one, reopening an
+        // undetected named-subject summing case (qc's Medium on this PR's rework).
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The giant makes two Slam attacks, or the fire-giant makes three Slam attacks " +
+                    "if it used Hasten this turn.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Slam"], false)),
+            ],
+        };
+
+        AssertHasCode(monster, "monster.multiattack.alternative_composition_dropped", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AMakesClauseThatIsNotAnAttackComposition_IsNotFlaggedEvenWithNoResidue()
+    {
+        // Boundary case from qc's Medium: "or the target makes ..." must not be flagged
+        // merely for using "makes" — the marker requires the clause to actually reach
+        // an "attack(s)" word within the same sentence, so a saving throw (or any other
+        // non-attack use of "makes") does not match at all, regardless of residue.
+        // UnmodelledClauses is forced empty (as if some future change absorbed the
+        // clause entirely) specifically so this test cannot pass by accident: without
+        // the "attacks" requirement, the shorter "or the target makes" would match, and
+        // with no residue to contain it, the entry would be wrongly flagged as a
+        // dropped attack alternative when it is not an attack composition at all.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The golem makes two Slam attacks, or the target makes a saving throw against " +
+                    "poison.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Slam"], false)),
+            ],
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster]).Issues);
+    }
+
+    [Fact]
+    public void ANamedSubjectClauseThatIsNotAMakesClauseAtAll_IsNotFlagged()
+    {
+        // A second named-subject clause that never uses "makes" at all — "or the golem
+        // is Frightened" — is outside this marker's shape entirely, regardless of
+        // residue.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The golem makes two Slam attacks, or the golem is Frightened.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Slam"], false)),
+            ],
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster]).Issues);
+    }
+
+    [Fact]
     public void AProficiencyBonusDisagreeingWithChallengeRating_IsAnError()
     {
         var monster = Monster() with { ProficiencyBonus = 5 };
