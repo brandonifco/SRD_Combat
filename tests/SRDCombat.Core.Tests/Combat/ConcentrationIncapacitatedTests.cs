@@ -121,6 +121,88 @@ public class ConcentrationIncapacitatedTests
             step => step.Narration.Contains("caster loses Concentration on Ward", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void SweepConcentrationConditionsLiftsAHeldVictimWhenTheCasterIsParalyzed()
+    {
+        // #336: every test above casts Ward, which imposes no ongoing condition of its
+        // own, so SweepConcentrationConditions always ran over nothing — the sweep
+        // itself was unexercised. Here the caster concentrates on a Hold-shaped spell
+        // that Paralyzes victimB for the duration, tied to the caster's own
+        // Concentration (ConditionDuration.ConcentrationUpToOneMinuteWithRepeatSave,
+        // the same duration Hold Person prints). The caster is then Paralyzed in turn
+        // by a rider with no damage attached, breaking its own Concentration — and in
+        // that same UseEntry call, sweeping victimB's Paralyzed away too.
+        //
+        // Initiative ×3 in combatant order (caster, victimB, attacker) — the attacker
+        // outranks victimB so its turn comes second, before victimB's own turn could
+        // ever roll the held condition's repeat save and consume a stray die. Then
+        // Hold's save roll for victimB (DC 30, no d20 result plus Wisdom +0 reaches
+        // it) and Grip's save roll for the caster (DC 30, no roll plus Constitution +2
+        // reaches it either). Exactly five rolls: a stray save on top would throw.
+        var (encounter, caster, victimB, attacker) = HoldStage(new ScriptedRandomSource(15, 1, 1, 1, 10));
+
+        Assert.Null(encounter.CastSpell("spell.hold", victimB));
+        Assert.Equal("Hold", caster.Features.ConcentratingOn);
+        Assert.True(victimB.HasCondition(ConditionType.Paralyzed));
+
+        encounter.EndTurn(); // The caster's turn ends; the attacker's begins.
+
+        Assert.Null(encounter.UseEntry("Grip", caster));
+
+        Assert.True(caster.HasCondition(ConditionType.Paralyzed));
+        Assert.True(caster.HasCondition(ConditionType.Incapacitated));
+        Assert.Null(caster.Features.ConcentratingOn);
+
+        // The condition Hold tied to the caster's Concentration lifts off victimB in
+        // the very same step that Incapacitates the caster — the sweep actually
+        // running over something, unlike the Ward-based tests above.
+        Assert.False(victimB.HasCondition(ConditionType.Paralyzed));
+
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("caster loses Concentration on Hold", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains(
+                "victimB is no longer Paralyzed — the spell holding it has ended",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TurningAConcentratingUndeadBreaksItsConcentrationWithNoAssertionFiring()
+    {
+        // #335 review found an eighth narrate-then-break window this file's own tests
+        // never exercised: Turn Undead narrates its own standalone Incapacitated
+        // condition (TurnUndeadConditions' second entry) before the trailing
+        // BreakConcentrationOnIncapacitated call, with no SuspendConcentrationInvariant
+        // wrapper — so turning a concentrating Undead would have tripped the #335
+        // assertion as a false positive. An Undead spellcaster is an exotic shape, but
+        // exactly the one "a future condition-landing path" describes: this pins both
+        // that the assertion added for #335 does not misfire on Turn Undead's own
+        // narration, and that Turn Undead genuinely breaks the Undead's Concentration.
+        //
+        // Initiative ×2 (the undead first, the cleric second — set by initiative bonus
+        // rather than list order), Ward's spell attack roll for the undead's own turn
+        // (the cleric's AC is set past anything the roll can reach, so it always
+        // misses and never spends a damage die), then the undead's Wisdom saving
+        // throw against Turn Undead (DC 10, this file's own fallback arithmetic; a
+        // roll of 1 plus a +0 bonus fails). Exactly four rolls.
+        var (encounter, cleric, undead) = ConcentratingUndeadStage(new ScriptedRandomSource(1, 1, 10, 1));
+
+        Assert.Null(encounter.CastSpell("spell.ward", cleric));
+        Assert.Equal("Ward", undead.Features.ConcentratingOn);
+
+        encounter.EndTurn(); // The undead's turn ends; the cleric's begins.
+
+        Assert.Null(encounter.TurnUndead([undead]));
+
+        Assert.True(undead.HasCondition(ConditionType.Incapacitated));
+        Assert.Null(undead.Features.ConcentratingOn);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("undead loses Concentration on Ward", StringComparison.Ordinal));
+    }
+
     // ── The stage ───────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -290,4 +372,171 @@ public class ConcentrationIncapacitatedTests
                 Duration: ConditionDuration.UntilSavedOrEscalated,
                 EscalatesTo: ConditionType.Petrified),
         ]);
+
+    /// <summary>
+    /// A caster with a hand-built Hold Person-shaped spell ("Hold") that Paralyzes a
+    /// single target for the duration of the caster's own Concentration, one victim
+    /// ("victimB") to hold, and one enemy ("attacker") armed with the same
+    /// no-damage, unbeatable-DC "Grip" entry the other stage uses — here aimed back at
+    /// the caster instead of the other way around. Initiative order is caster,
+    /// attacker, victimB: the attacker's turn comes before victimB ever gets one, so
+    /// the sweep below runs before victimB's own held condition could roll its repeat
+    /// save and consume a die the tests do not script. Dice beyond initiative are
+    /// whatever each test's own turns consume.
+    /// </summary>
+    private static (Encounter Encounter, Combatant Caster, Combatant VictimB, Combatant Attacker) HoldStage(
+        ScriptedRandomSource random)
+    {
+        var casterStats = CombatTestData.Stats(
+            armorClass: 5,
+            maximumHitPoints: 20,
+            initiativeBonus: 20) with
+        {
+            Character = new CombatantFeatures(
+                [],
+                AttacksPerAction: 1,
+                SneakAttackDamage: null,
+                RageDamageBonus: 0,
+                RageUses: 0,
+                SecondWindUses: 0,
+                ActionSurgeUses: 0,
+                Level: 3,
+                Spells: [Hold()],
+                SpellSlots: new Dictionary<int, int> { [2] = 1 },
+                SpellcastingAbility: Ability.Intelligence,
+                SpellSaveDifficultyClass: 13,
+                SpellAttackBonus: 5),
+        };
+
+        var caster = new Combatant("caster", "caster", CombatTestData.Heroes, casterStats, new GridPosition(0, 5));
+
+        var victimB = CombatTestData.Combatant(
+            "victimB",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(initiativeBonus: -20),
+            x: 5,
+            y: 5);
+
+        var grip = new SaveEffect(
+            Ability.Constitution,
+            30, // No d20 result plus a +2 save bonus reaches this.
+            Area: null,
+            FailureDamage: [],
+            SuccessOutcome: SaveSuccessOutcome.NoEffect,
+            AppliedConditions:
+            [
+                new AppliedCondition(ConditionType.Paralyzed, Duration: ConditionDuration.RepeatSaveUpToOneMinute),
+            ]);
+
+        var attackerStats = CombatTestData.Stats(initiativeBonus: 0) with
+        {
+            Entries =
+            [
+                new MonsterEntry("Grip", MonsterEntrySection.Action, "Grip.",
+                    Mechanics: EntryMechanics.SavingThrow,
+                    Save: grip),
+            ],
+        };
+
+        var attacker = CombatTestData.Combatant(
+            "attacker", sideId: CombatTestData.Monsters, stats: attackerStats, x: 1, y: 5);
+
+        var encounter = Encounter.Start(new Battlefield(10, 10), [caster, victimB, attacker], random);
+
+        return (encounter, caster, victimB, attacker);
+    }
+
+    /// <summary>
+    /// Hold Person's own printed clock (SRD 5.2.1): a Wisdom save or Paralyzed "for the
+    /// duration" of Concentration, up to 1 minute, with a repeat save at the end of
+    /// each of the target's own turns. The DC is hardcoded past anything a roll can
+    /// meet, the same convention <see cref="GazeSave"/> and <c>Grip</c> use, so victimB's
+    /// failure never depends on the scripted roll's value.
+    /// </summary>
+    private static SpellDefinition Hold() => new()
+    {
+        Id = "spell.hold",
+        Name = "Hold",
+        Level = 2,
+        School = MagicSchool.Enchantment,
+        Classes = ["Wizard"],
+        CastingTime = SpellCastingTime.Action,
+        CastingTimeText = "Action",
+        Components = SpellComponents.Verbal,
+        DurationText = "Concentration, up to 1 minute",
+        RequiresConcentration = true,
+        Mechanics = EntryMechanics.SavingThrow,
+        SourcePage = 1,
+        RangeText = "60 feet",
+        RangeFeet = 60,
+        Text = "A test hold.",
+        Save = new SaveEffect(
+            Ability.Wisdom,
+            30, // No d20 result plus a +0 save bonus reaches this.
+            Area: null,
+            FailureDamage: [],
+            SuccessOutcome: SaveSuccessOutcome.NoEffect,
+            AppliedConditions:
+            [
+                new AppliedCondition(
+                    ConditionType.Paralyzed,
+                    Duration: ConditionDuration.ConcentrationUpToOneMinuteWithRepeatSave),
+            ]),
+    };
+
+    /// <summary>
+    /// A Cleric with Channel Divinity and one enemy ("undead") that is both a valid
+    /// Turn Undead target (<see cref="CreatureType.Undead"/>) and a spellcaster in its
+    /// own right, armed with the same "Ward" spell the other stage uses. The Cleric's
+    /// Wisdom is left at this file's default (10, no proficiency), so Turn Undead's DC
+    /// falls back to <c>SpellcastingRules.SaveDifficultyClass</c>'s 8 + 2 + 0 = 10, and
+    /// the undead's own Wisdom save bonus is the same default 0 — matching
+    /// <c>TurnUndeadTests</c>' own documented fallback arithmetic. The Cleric's AC is
+    /// set past anything Ward's spell attack can reach, so casting it at the Cleric
+    /// never spends a damage die. The undead goes first.
+    /// </summary>
+    private static (Encounter Encounter, Combatant Cleric, Combatant Undead) ConcentratingUndeadStage(
+        ScriptedRandomSource random)
+    {
+        var clericStats = CombatTestData.Stats(armorClass: 30, initiativeBonus: -10) with
+        {
+            Character = new CombatantFeatures(
+                [ClassFeature.ChannelDivinity],
+                AttacksPerAction: 1,
+                SneakAttackDamage: null,
+                RageDamageBonus: 0,
+                RageUses: 0,
+                SecondWindUses: 0,
+                ActionSurgeUses: 0,
+                Level: 3,
+                ChannelDivinityUses: 2),
+        };
+
+        var cleric = new Combatant("cleric", "cleric", CombatTestData.Heroes, clericStats, new GridPosition(0, 5));
+
+        var undeadStats = CombatTestData.Stats(initiativeBonus: 20) with
+        {
+            Type = CreatureType.Undead,
+            Character = new CombatantFeatures(
+                [],
+                AttacksPerAction: 1,
+                SneakAttackDamage: null,
+                RageDamageBonus: 0,
+                RageUses: 0,
+                SecondWindUses: 0,
+                ActionSurgeUses: 0,
+                Level: 3,
+                Spells: [Ward()],
+                SpellSlots: new Dictionary<int, int> { [1] = 1 },
+                SpellcastingAbility: Ability.Intelligence,
+                SpellSaveDifficultyClass: 13,
+                SpellAttackBonus: 5),
+        };
+
+        var undead = new Combatant("undead", "undead", CombatTestData.Monsters, undeadStats, new GridPosition(1, 5));
+
+        var encounter = Encounter.Start(new Battlefield(10, 10), [cleric, undead], random);
+
+        return (encounter, cleric, undead);
+    }
 }
