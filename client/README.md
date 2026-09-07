@@ -509,6 +509,15 @@ fight 2 — the merchant's stall (`run-10-shop`). Seed 1 clears fight 1 this way
 default seed loses it — both ends of `HandleFightEnd` have been watched. The one-fight
 run adds `play-9-spell-menu` and `play-9-slot-menu`.
 
+**An exception inside a probe step fails the run, loudly and non-zero.** `PlayMode.RunProbe`,
+`CreateMode.RunProbe` and `WatchMode.CaptureAndQuit` used to be `async void`, so a throw
+inside any of them vanished into Godot's own unhandled-exception logging — the probe
+either hung (nothing left to reach `GetTree().Quit()`) or, further along, exited 0 having
+silently stopped short. `ProbeFaults.FireAndObserve` (#322) now watches each one's task:
+a fault is printed (`probe: crashed — …`, with the exception) and the run exits `1` — the
+fire-and-forget call at the Godot lifecycle boundary stays, since `RunProbeIfAsked` and
+`OnReady` cannot themselves be `async`, but nothing thrown downstream disappears again.
+
 **A step the probe could not reach says so — it does not skip in silence.** Whether a
 character brought a feature, whether the second commanded turn is a caster's, whether
 fight 1 stays clear long enough to reach a Long Rest, and whether a caster's slots span

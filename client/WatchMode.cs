@@ -79,7 +79,7 @@ public partial class WatchMode : FightScreen
                 return;
             }
 
-            CaptureAndQuit(path);
+            this.FireAndObserve(CaptureAndQuit(path));
         }
     }
 
@@ -319,7 +319,7 @@ public partial class WatchMode : FightScreen
         DrawLog(_log, snapshot.LogCount, _snapshots[0].Tokens.Count);
     }
 
-    private async void CaptureAndQuit(string path)
+    private async Task CaptureAndQuit(string path)
     {
         await CaptureFrame(path);
         GD.Print($"turn {_index} of {_snapshots.Count - 1}");

@@ -1129,10 +1129,10 @@ public partial class CreateMode : Node2D
         }
 
         _probeStarted = true;
-        RunProbe(directory);
+        this.FireAndObserve(RunProbe(directory));
     }
 
-    private async void RunProbe(string directory)
+    private async Task RunProbe(string directory)
     {
         var spellCaptured = false;
 
