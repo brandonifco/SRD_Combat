@@ -1485,30 +1485,12 @@
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
-        "appliedConditions": [
-          {
-            "condition": "Charmed",
-            "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
-          },
-          {
-            "condition": "Frightened",
-            "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
-          }
-        ],
+        "appliedConditions": [],
         "coverIgnored": false,
         "constructsSaveAtDisadvantage": false
       },
       "damage": [],
-      "appliedConditions": [
-        {
-          "condition": "Charmed",
-          "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
-        },
-        {
-          "condition": "Frightened",
-          "unmodelledRequirement": "Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature): • The creature has Immunity to the Charmed and Frightened conditions until the spell ends"
-        }
-      ],
+      "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
       "unclassifiedClauses": [],
@@ -5548,12 +5530,7 @@
       "text": "A willing creature you touch shape-shifts, along with everything it's wearing and carrying, into a misty cloud for the duration. The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself. While in this form, the target's only method of movement is a Fly Speed of 10 feet, and it can hover. The target can enter and occupy the space of another creature. The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advantage on Strength, Dexterity, and Constitution saving throws. The target can pass through narrow openings, but it treats liquids as though they were solid surfaces. The target can't talk or manipulate objects, and any objects it was carrying or holding can't be dropped, used, or otherwise interacted with. Finally, the target can't attack or cast spells.",
       "mechanics": "Unmodelled",
       "damage": [],
-      "appliedConditions": [
-        {
-          "condition": "Prone",
-          "unmodelledRequirement": "The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advantage on Strength, Dexterity, and Constitution saving throws"
-        }
-      ],
+      "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
       "unclassifiedClauses": [
@@ -6171,7 +6148,7 @@
       "appliedConditions": [
         {
           "condition": "Frightened",
-          "unmodelledRequirement": "Creatures of any types you choose can't gain the Frightened condition while in the area"
+          "unmodelledRequirement": "Creatures of any types you choose have the Frightened condition while in the area"
         }
       ],
       "isSpellAttack": false,
@@ -6503,16 +6480,7 @@
       "text": "1,000+ GP, which the spell consumes) You conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you. The feast takes 1 hour to consume and disappears at the end of that time, and the beneficial effects don't set in until this hour is over. Up to twelve creatures can partake of the feast. A creature that partakes gains several benefits, which last for 24 hours. The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions. Its Hit Point maximum also increases by 2d10, and it gains the same number of Hit Points.",
       "mechanics": "Unmodelled",
       "damage": [],
-      "appliedConditions": [
-        {
-          "condition": "Frightened",
-          "unmodelledRequirement": "The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions"
-        },
-        {
-          "condition": "Poisoned",
-          "unmodelledRequirement": "The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions"
-        }
-      ],
+      "appliedConditions": [],
       "isSpellAttack": false,
       "grantsAdvantageAgainstTargetOnHit": false,
       "unclassifiedClauses": [
@@ -13455,10 +13423,6 @@
       "mechanics": "Unmodelled",
       "damage": [],
       "appliedConditions": [
-        {
-          "condition": "Prone",
-          "unmodelledRequirement": "While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage"
-        },
         {
           "condition": "Stunned",
           "unmodelledRequirement": "Reverting takes 1 minute, during which the target has the Stunned condition"

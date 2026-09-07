@@ -1209,6 +1209,21 @@ internal static partial class EntryMechanicsParser
 
                 foreach (Match match in ConditionPattern().Matches(clause))
                 {
+                    // #407: "Immunity to the Charmed condition" and "no longer has the
+                    // Restrained condition" print the condition's name while doing the
+                    // opposite of imposing it — granting immunity, or ending it. Reading
+                    // the name without reading this word directly in front of it recorded
+                    // an AppliedCondition exactly as if the entry inflicted the condition
+                    // it is naming to withhold or remove. This clause is not a refused
+                    // rider at all; it is prose the model has no shape for, and stays out
+                    // of `conditions` entirely so it falls to residue like any other
+                    // sentence nothing here claims — see NegatedConditionLeadInPattern's
+                    // own remarks for why the guard reads no further back than this.
+                    if (NegatedConditionLeadInPattern().IsMatch(clause[..match.Index]))
+                    {
+                        continue;
+                    }
+
                     if (!Enum.TryParse<ConditionType>(match.Groups["condition"].Value, ignoreCase: true, out var condition))
                     {
                         continue;
@@ -1246,6 +1261,16 @@ internal static partial class EntryMechanicsParser
                 // rider in this method.
                 foreach (Match match in PluralConditionPattern().Matches(clause))
                 {
+                    // #407, same guard as the singular loop above: "Immunity to the
+                    // Charmed and Frightened conditions" shares one lead-in for both
+                    // names, so the negation is judged once and skips the whole match —
+                    // neither name is an application here, and crediting one while
+                    // refusing the other would still be the wrong shape for the one kept.
+                    if (NegatedConditionLeadInPattern().IsMatch(clause[..match.Index]))
+                    {
+                        continue;
+                    }
+
                     int? escapeDc = match.Groups["escape"].Success
                         ? int.Parse(match.Groups["escape"].Value, CultureInfo.InvariantCulture)
                         : null;
@@ -1907,6 +1932,31 @@ internal static partial class EntryMechanicsParser
     // rider still carries its own subject for the lead-in check.
     [GeneratedRegex(@",\s+and\s+(?=(?:the\s+target|it)\s+has\s+the\s+)", RegexOptions.IgnoreCase)]
     private static partial Regex RiderClausePattern();
+
+    // #407: the four words the corpus actually prints directly in front of a condition
+    // name to mean the opposite of imposing it — "You have Immunity to the Charmed and
+    // Frightened conditions" (Mindless Rage), "no longer has the Restrained condition"
+    // (the Kraken/Purple Worm/Remorhaz/Tarrasque's Swallow), "can't gain the Frightened
+    // condition" (Hallow's Courage effect). "can't be" is included for the shape the
+    // acceptance criteria names even though no current printing trips it standalone
+    // (the corpus's one instance, "can't be possessed by or gain the Charmed or
+    // Frightened condition", already fails ConditionPattern/PluralConditionPattern on
+    // its "or" before either pattern reaches this guard) — kept for the synthetic test
+    // and the day a printing does read that way.
+    //
+    // Anchored to $ against the text immediately before the match (`clause[..match.Index]`
+    // — nothing after these words but whitespace before "the"), which is the one side
+    // this guard can bound: the condition name's own position is fixed by the pattern
+    // it is guarding, so only the near edge is free to check, and checking it tightly
+    // is what keeps this from swallowing an unrelated rider that merely shares a
+    // sentence with an immunity clause (design's "both-sides-bounded" ask, applied to
+    // the one side there is). Widening this to "avoid or end the X condition" (Dwarven
+    // Resilience, Contagion, Potion of Vitality) is a different, wider clause shape —
+    // "advantage against" and "removes an ongoing effect" are not what this guard reads
+    // — and stays out per #407's own scope; over-matching here is its own misattribution
+    // bug (CLAUDE.md's case law), not a smaller version of this one.
+    [GeneratedRegex(@"(?:Immunity\s+to|no\s+longer\s+has|can(?:'t|not)\s+gain|can(?:'t|not)\s+be)\s*$", RegexOptions.IgnoreCase)]
+    private static partial Regex NegatedConditionLeadInPattern();
 
     [GeneratedRegex(@"the\s+(?<condition>Blinded|Charmed|Deafened|Frightened|Grappled|Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)\s+condition(?:\s*\(escape\s+DC\s*(?<escape>\d+)\))?", RegexOptions.IgnoreCase)]
     private static partial Regex ConditionPattern();
