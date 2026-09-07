@@ -47,6 +47,51 @@ public class ValidatorTests
     }
 
     [Fact]
+    public void ABundledUseFoldedIntoAMultiattackCompositionWithNoResidue_IsAnError()
+    {
+        // Mirrors the corpus shape #341/#358 fixed (the Mummy's "makes two Rotting Fist
+        // attacks and uses Dreadful Glare") with UnmodelledClauses forced empty, as if a
+        // future change silently absorbed the bundled "uses" clause into the composition
+        // claim instead of leaving it as residue. See #360.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The bandit makes two Scimitar attacks and uses Dreadful Glare.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Scimitar"], false)),
+            ],
+        };
+
+        AssertHasCode(monster, "monster.multiattack.bundled_use_dropped", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void ABundledUseFoldedIntoAMultiattackCompositionWithResidue_ProducesNothing()
+    {
+        // The healthy case: the bundled "uses" clause survived as residue, exactly as
+        // #341/#358 fixed it, so the trip-wire stays silent.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Multiattack",
+                    MonsterEntrySection.Action,
+                    "The bandit makes two Scimitar attacks and uses Dreadful Glare.",
+                    Mechanics: EntryMechanics.Multiattack,
+                    Multiattack: new MultiattackEffect(2, ["Scimitar"], false),
+                    UnmodelledClauses: ["and uses Dreadful Glare"]),
+            ],
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster]).Issues);
+    }
+
+    [Fact]
     public void AProficiencyBonusDisagreeingWithChallengeRating_IsAnError()
     {
         var monster = Monster() with { ProficiencyBonus = 5 };

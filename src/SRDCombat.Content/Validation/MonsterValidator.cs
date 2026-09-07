@@ -397,6 +397,23 @@ public static partial class MonsterValidator
     private static readonly Regex AlternativeCompositionMarker =
         new(@"\bor\s+(?:it|he|she|they)\s+makes\b", RegexOptions.Compiled);
 
+    /// <summary>
+    /// Marks a Multiattack sentence folding a second, unexecuted use inside the same
+    /// sentence as its composition — "and uses Dreadful Glare", "or uses Holy Burst
+    /// twice", ", uses Reel," — the shape #341/#358 fixed for fourteen entries.
+    /// Deliberately independent of <c>EntryMechanicsParser</c>'s own claiming patterns,
+    /// the same reasoning as <see cref="AlternativeCompositionMarker"/> above: checking
+    /// against the parser's own view of the text would only prove it agrees with
+    /// itself. This asks the print directly — does the sentence carry a bundled "uses"/
+    /// "can use" clause at all — and requires that whenever it does,
+    /// <see cref="MonsterEntry.UnmodelledClauses"/> says so, catching a future entry (or
+    /// a regression on today's fourteen) whose bundled use is silently absorbed into the
+    /// composition claim instead of left as residue. Symmetric with
+    /// <c>monster.multiattack.alternative_composition_dropped</c> above (#360).
+    /// </summary>
+    private static readonly Regex BundledUseMarker =
+        new(@"(?:,|\band\b|\bor\b)\s+(?:it\s+|he\s+|she\s+|they\s+)?(?:uses|can use)\b", RegexOptions.Compiled);
+
     private static void ValidateEntries(MonsterDefinition monster, Action<ValidationSeverity, string, string> add)
     {
         foreach (var entry in monster.Entries)
@@ -416,6 +433,18 @@ public static partial class MonsterValidator
                     $"'{entry.Name}' prints a second composition (\"or it/he/she/they makes ...\") " +
                     "that the recorded Multiattack does not account for — it may have been summed " +
                     "into AttackCount instead of recorded as an alternative.");
+            }
+
+            if (entry.Mechanics == EntryMechanics.Multiattack
+                && BundledUseMarker.IsMatch(entry.Text)
+                && entry.UnmodelledClauses.Count == 0)
+            {
+                add(
+                    ValidationSeverity.Error,
+                    "monster.multiattack.bundled_use_dropped",
+                    $"'{entry.Name}' prints a bundled use (\"and/or [it/he/she/they] uses/can use ...\") " +
+                    "inside its composition sentence that the recorded Multiattack does not account " +
+                    "for — it may have been silently absorbed instead of left as residue.");
             }
 
             if (entry.Attack is not { } attack)
