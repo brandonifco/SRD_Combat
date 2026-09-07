@@ -435,6 +435,12 @@ instrument for the question "did that change make agents cheaper", the way
 - **Confirm a merge really happened** before branching from `main`
   (`gh pr view <n> --json state,mergedAt` — the 504s lie), or a stale base silently
   drops the previous slice.
+- **Never merge a PR with zero check runs** (#513). `mergeStateStatus` reads `CLEAN` for
+  a PR CI never touched exactly as for a green one, and since #485 the `pull_request`
+  event is a PR branch's only trigger, so a dropped event leaves it ungated for good — PR
+  #511 sat `CLEAN` with no run for nine minutes until a close-and-reopen re-fired it.
+  `land-pr`'s `pr-ready.sh` enforces this: zero runs is a hard `NOT READY`, and both
+  `build-and-test (Debug)` and `(Release)` must be present and `SUCCESS`.
 - **File found-but-deferred work as a GitHub issue**, not in this file and not in
   chat.
 - **Gate before merge**: focused tests, then `./scripts/validate.sh full` — full suite,
