@@ -302,9 +302,116 @@ internal static partial class StatBlockLineGrammar
         // non-"plus" continuation or ran out of DamagePattern matches entirely. An
         // alternative only makes sense relative to an established base, so this is
         // skipped when nothing was found above.
-        var alternative = damage.Count > 0 ? ReadAlternative(text, searchFrom, coverage) : null;
+        AlternativeAttackDamage? alternative = null;
+        if (damage.Count > 0)
+        {
+            // The em-dash "X—or Y if Z—plus W" chain (#409) is tried first, because it
+            // consumes more than #371's comma-"or": both an alternative that replaces
+            // the base component it follows and an unconditional "plus" component that
+            // survives that swap. Only the Mimic's Bite and the Swarm of Venomous
+            // Snakes' Bites print it. When it matches, the alternative is tagged with
+            // the index of the base component it replaces — the last base the loop read,
+            // which is index 0 in both corpus entries — and the "plus" is appended to the
+            // Damage list so AttackRules.RollDamage always rolls it.
+            var emDash = ReadEmDashAlternative(text, searchFrom, coverage);
+            if (emDash is { } combined)
+            {
+                alternative = combined.Alternative with { ReplacesComponentIndex = damage.Count - 1 };
+                damage.Add(combined.Plus);
+            }
+            else
+            {
+                alternative = ReadAlternative(text, searchFrom, coverage);
+            }
+        }
 
         return (damage, alternative);
+    }
+
+    /// <summary>
+    /// Reads the em-dash "X—or Y if Z—plus W" chain (#409) — the Mimic's Bite
+    /// ("…Piercing damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by
+    /// the mimic—plus 4 (1d8) Acid damage", SRD 5.2.1 p. 309) and the Swarm of Venomous
+    /// Snakes' Bites ("…Piercing damage—or 6 (1d4 + 4) Piercing damage if the swarm is
+    /// Bloodied—plus 10 (3d6) Poison damage", p. 363) — when it starts exactly at
+    /// <paramref name="start"/>, right after the base component.
+    /// </summary>
+    /// <remarks>
+    /// These are the corpus's only two em-dash instances (design §11.1), and the em dash
+    /// itself survives text extraction as an ASCII hyphen — <c>damage-or</c>,
+    /// <c>mimic-plus</c> — so the pattern joins on <c>[-–—]</c> rather than a comma, the
+    /// one shape #371's <see cref="AlternativeDamagePattern"/> deliberately does not
+    /// reach. Unlike that pattern, this one also reads the trailing "plus" component and
+    /// returns it, because the whole point of #409 is that the Acid/Poison is dealt
+    /// regardless of which Piercing tier applies. The condition is one of exactly the two
+    /// the corpus prints in this shape — the swarm's own Bloodied state and the target
+    /// being Grappled by the attacker — both checkable at the moment the attack hits;
+    /// nothing wider is attempted, so any other condition would simply fail to match and
+    /// fall to residue, per <see cref="ReadAlternative"/>'s own reasoning (design §4.3).
+    /// The grappler's bare-word name (<c>the mimic</c>) is claimed whole, bounded on both
+    /// sides by literal text and unable to swallow an adjacent clause, the same reading
+    /// <see cref="ReadAlternative"/> already states for the Advantage branch's creature
+    /// name.
+    /// </remarks>
+    private static (AlternativeAttackDamage Alternative, AttackDamage Plus)? ReadEmDashAlternative(
+        string text, int start, EntryCoverage coverage)
+    {
+        var match = EmDashAlternativeDamagePattern().Match(text, start);
+
+        if (!match.Success || match.Index != start)
+        {
+            return null;
+        }
+
+        if (!Enum.TryParse<DamageType>(match.Groups["altType"].Value, ignoreCase: true, out var altType)
+            || !Enum.TryParse<DamageType>(match.Groups["plusType"].Value, ignoreCase: true, out var plusType))
+        {
+            return null;
+        }
+
+        if (!TryReadAmount(match.Groups["altAverage"], match.Groups["altDice"], out var altDice, out var altAverage)
+            || !TryReadAmount(match.Groups["plusAverage"], match.Groups["plusDice"], out var plusDice, out var plusAverage))
+        {
+            return null;
+        }
+
+        var condition = match.Groups["bloodiedSelf"].Success
+            ? AttackDamageCondition.AttackerIsBloodied
+            : AttackDamageCondition.TargetIsGrappledByAttacker;
+
+        // The whole chain is claimed as one span — leading "-or", the "if…" condition
+        // (grappler name included, per this method's remarks), and the "-plus" tail — so
+        // both the alternative and the unconditional plus leave residue together.
+        coverage.Claim(EmDashAlternativeDamagePattern(), match, "attack.emdash_alternative_damage");
+
+        return (
+            new AlternativeAttackDamage(altDice, altType, altAverage, condition),
+            new AttackDamage(plusDice, plusType, plusAverage));
+    }
+
+    /// <summary>
+    /// Reads a damage amount from a matched average group and its optional dice group,
+    /// the shape shared by <see cref="DamagePattern"/> and its siblings: dice when
+    /// present, otherwise a flat amount equal to the printed average.
+    /// </summary>
+    private static bool TryReadAmount(Group averageGroup, Group diceGroup, out DiceExpression dice, out int average)
+    {
+        average = int.Parse(averageGroup.Value, CultureInfo.InvariantCulture);
+
+        // No parenthesised dice means a flat amount — "Hit: 1 Piercing damage".
+        dice = DiceExpression.Flat(average);
+
+        if (diceGroup.Success)
+        {
+            if (!DiceExpression.TryParse(diceGroup.Value, out var rolled))
+            {
+                return false;
+            }
+
+            dice = rolled;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -487,4 +594,28 @@ internal static partial class StatBlockLineGrammar
         @")",
         RegexOptions.IgnoreCase)]
     private static partial Regex AlternativeDamagePattern();
+
+    // The em-dash "X—or Y if Z—plus W" chain (#409): the Mimic's Bite and the Swarm of
+    // Venomous Snakes' Bites, the corpus's only two em-dash instances (design §11.1). The
+    // em dash survives PDF text extraction as an ASCII hyphen (damage-or, mimic-plus), so
+    // both joins accept [-–—] — hyphen, en dash or em dash — rather than the comma
+    // AlternativeDamagePattern requires; that comma-vs-dash difference is the whole reason
+    // #371 left these two as residue. The condition is one of exactly two branches — the
+    // swarm's own Bloodied state and the target being Grappled by the attacker, both
+    // checkable at hit time — and no wider; the grappler's name is a bare \w+, out of the
+    // wildcard convention's scope (design §2.3) and claimed anyway, the same reasoning
+    // AlternativeDamagePattern's own subject group states. The trailing "-plus W"
+    // component is read and returned because it is dealt regardless of which tier applies.
+    [GeneratedRegex(
+        @"[-–—]\s*or\s+(?<altAverage>\d+)\s*(?:\((?<altDice>\d+d\d+(?:\s*[+-]\s*\d+)?)\))?\s*" +
+        @"(?<altType>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)" +
+        @"\s+damage\s+if\s+(?:" +
+        @"(?<bloodiedSelf>the\s+swarm\s+is\s+Bloodied)" +
+        @"|the\s+target\s+is\s+Grappled\s+by\s+the\s+(?<grappler>\w+)" +
+        @")" +
+        @"[-–—]\s*plus\s+(?<plusAverage>\d+)\s*(?:\((?<plusDice>\d+d\d+(?:\s*[+-]\s*\d+)?)\))?\s*" +
+        @"(?<plusType>Acid|Bludgeoning|Cold|Fire|Force|Lightning|Necrotic|Piercing|Poison|Psychic|Radiant|Slashing|Thunder)" +
+        @"\s+damage",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex EmDashAlternativeDamagePattern();
 }

@@ -47,6 +47,85 @@ public class ValidatorTests
     }
 
     [Fact]
+    public void AnAlternativeReplacingAComponentIndexOutsideItsDamageList_IsAnError()
+    {
+        // #409: AttackRules.RollDamage indexes attack.Damage with ReplacesComponentIndex
+        // directly, so an index the extractor could never legitimately produce — here 1,
+        // on a single-component attack — would throw at damage resolution. A malformed
+        // but loadable content entry must be rejected at validation instead.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Bite",
+                    MonsterEntrySection.Action,
+                    "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage.",
+                    new MonsterAttack(
+                        AttackKind.Melee,
+                        6,
+                        5,
+                        null,
+                        null,
+                        [new AttackDamage(DiceExpression.Parse("1d8 + 4"), DamageType.Piercing, 8)])
+                    {
+                        Alternative = new AlternativeAttackDamage(
+                            DiceExpression.Parse("1d4 + 4"),
+                            DamageType.Piercing,
+                            6,
+                            AttackDamageCondition.AttackerIsBloodied)
+                        {
+                            ReplacesComponentIndex = 1,
+                        },
+                    }),
+            ],
+        };
+
+        AssertHasCode(monster, "monster.attack.alternative_index_out_of_range", ValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void AnAlternativeReplacingAComponentIndexInsideItsDamageList_ProducesNothing()
+    {
+        // The healthy #409 shape: the em-dash Swarm of Venomous Snakes' Bites, its
+        // alternative replacing the Piercing at index 0 of a two-component list (Piercing
+        // plus the unconditional Poison). In range, so the trip-wire stays silent.
+        var monster = Monster() with
+        {
+            Entries =
+            [
+                new MonsterEntry(
+                    "Bites",
+                    MonsterEntrySection.Action,
+                    "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage-or 6 (1d4 + 4) " +
+                    "Piercing damage if the swarm is Bloodied-plus 10 (3d6) Poison damage.",
+                    new MonsterAttack(
+                        AttackKind.Melee,
+                        6,
+                        5,
+                        null,
+                        null,
+                        [
+                            new AttackDamage(DiceExpression.Parse("1d8 + 4"), DamageType.Piercing, 8),
+                            new AttackDamage(DiceExpression.Parse("3d6"), DamageType.Poison, 10),
+                        ])
+                    {
+                        Alternative = new AlternativeAttackDamage(
+                            DiceExpression.Parse("1d4 + 4"),
+                            DamageType.Piercing,
+                            6,
+                            AttackDamageCondition.AttackerIsBloodied)
+                        {
+                            ReplacesComponentIndex = 0,
+                        },
+                    }),
+            ],
+        };
+
+        Assert.Empty(MonsterValidator.Validate([monster]).Issues);
+    }
+
+    [Fact]
     public void ABundledUseFoldedIntoAMultiattackCompositionWithNoResidue_IsAnError()
     {
         // Mirrors the corpus shape #341/#358 fixed (the Mummy's "makes two Rotting Fist

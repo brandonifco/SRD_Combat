@@ -303,11 +303,15 @@ public static class AttackRules
     /// as the SRD says on every ordinary swing.
     /// </para>
     /// <para>
-    /// <see cref="CombatAttack.Alternative"/> (#371) is checked first and, when its own
-    /// condition holds, <em>replaces</em> <paramref name="attack"/>'s whole
-    /// <see cref="CombatAttack.Damage"/> rather than joining it — the printed "or"
-    /// this models is the opposite grammar from "plus". A Bloodied swarm's bite deals
-    /// its lower alternative, never its base damage plus the alternative.
+    /// <see cref="CombatAttack.Alternative"/> is checked first and, when its own
+    /// condition holds, <em>replaces</em> rather than joins — the printed "or" this
+    /// models is the opposite grammar from "plus". It replaces either
+    /// <paramref name="attack"/>'s whole <see cref="CombatAttack.Damage"/> (#371, a
+    /// Bloodied swarm's bite deals its lower alternative, never its base plus the
+    /// alternative) or, when
+    /// <see cref="AlternativeAttackDamage.ReplacesComponentIndex"/> is set, only the one
+    /// named component — leaving an unconditional "plus" tail to be rolled alongside the
+    /// swapped-in tier (#409, the Mimic's Bite and the Swarm of Venomous Snakes' Bites).
     /// </para>
     /// </remarks>
     public static IReadOnlyList<(AttackDamage Component, DiceRollResult Result)> RollDamage(
@@ -323,10 +327,33 @@ public static class AttackRules
         ArgumentNullException.ThrowIfNull(attacker);
         ArgumentNullException.ThrowIfNull(target);
 
-        var damage = attack.Alternative is { } alternative
-            && Applies(alternative.Condition, roll, attacker, target)
-                ? [new AttackDamage(alternative.Amount, alternative.Type, alternative.PrintedAverage)]
-                : attack.Damage;
+        IReadOnlyList<AttackDamage> damage;
+        if (attack.Alternative is { } alternative
+            && Applies(alternative.Condition, roll, attacker, target))
+        {
+            var replacement = new AttackDamage(alternative.Amount, alternative.Type, alternative.PrintedAverage);
+            if (alternative.ReplacesComponentIndex is { } index)
+            {
+                // Per-component replacement (#409): the alternative stands in for one
+                // named component of Damage — the Piercing base of the Mimic's or Swarm
+                // of Venomous Snakes' Bites — leaving the unconditional "plus" tail
+                // (the Acid/Poison at the other index) to be rolled alongside it.
+                var swapped = attack.Damage.ToArray();
+                swapped[index] = replacement;
+                damage = swapped;
+            }
+            else
+            {
+                // Whole-list replacement (#371): the alternative stands in for every
+                // component of Damage — correct for the eight single-component entries
+                // #371 structures, and byte-identical to the code this replaced.
+                damage = [replacement];
+            }
+        }
+        else
+        {
+            damage = attack.Damage;
+        }
 
         return damage
             .Where(component => Applies(component.Condition, roll, attacker, target))
@@ -347,6 +374,11 @@ public static class AttackRules
             AttackDamageCondition.AttackRollHadAdvantage => roll.Roll.Mode == RollMode.Advantage,
             AttackDamageCondition.AttackerIsBloodied => attacker.IsBloodied,
             AttackDamageCondition.TargetIsBloodied => target.IsBloodied,
+            // "if the target is Grappled by the mimic" (#409): the source of the
+            // target's Grappled condition must be this attacker, not merely that it is
+            // Grappled by anyone. A target held by an ally does not trigger the tier.
+            AttackDamageCondition.TargetIsGrappledByAttacker =>
+                target.ConditionState(ConditionType.Grappled)?.SourceId == attacker.Id,
             _ => throw new NotSupportedException($"Unhandled damage condition '{condition}'."),
         };
     }

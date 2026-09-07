@@ -124,10 +124,12 @@ public sealed record MonsterAttack(
     public EmbeddedAttackSave? EmbeddedSave { get; init; }
 
     /// <summary>
-    /// A conditional damage tier that replaces <see cref="Damage"/> whole when its own
-    /// condition holds (#371) — the Chimera's Bite, the Blood Hawk's Beak, every
-    /// Bloodied-conditioned swarm's bite or sting. Null for the overwhelming majority
-    /// of attacks, which print no alternative tier. See
+    /// A conditional damage tier that replaces some of <see cref="Damage"/> when its own
+    /// condition holds — the whole list (#371, the Chimera's Bite, the Blood Hawk's Beak,
+    /// every Bloodied-conditioned swarm's bite or sting) or, for the em-dash "or…if…plus"
+    /// entries, only the one component it names (#409, its
+    /// <see cref="AlternativeAttackDamage.ReplacesComponentIndex"/>). Null for the
+    /// overwhelming majority of attacks, which print no alternative tier. See
     /// <see cref="AlternativeAttackDamage"/>'s own remarks for why this is not simply
     /// another <see cref="AttackDamage"/> in <see cref="Damage"/>.
     /// </summary>
@@ -183,6 +185,15 @@ public enum AttackDamageCondition
     /// damage if the target is Bloodied" (#371).
     /// </summary>
     TargetIsBloodied,
+
+    /// <summary>
+    /// The target being Grappled <em>by the attacker</em> — the Mimic's Bite: "or 12
+    /// (2d8 + 3) Piercing damage if the target is Grappled by the mimic" (#409). Checked
+    /// against the source of the target's Grappled condition, not merely whether it is
+    /// Grappled at all: a target held by someone else does not trigger the mimic's
+    /// heavier bite.
+    /// </summary>
+    TargetIsGrappledByAttacker,
 }
 
 /// <summary>
@@ -207,8 +218,8 @@ public sealed record AttackDamage(
     AttackDamageCondition? Condition = null);
 
 /// <summary>
-/// A damage tier that <em>replaces</em> an attack's whole <see cref="MonsterAttack.Damage"/>
-/// when <see cref="Condition"/> holds — "Hit: 11 (2d6 + 4) Piercing damage, or 18
+/// A damage tier that <em>replaces</em> one of an attack's damage components when
+/// <see cref="Condition"/> holds — "Hit: 11 (2d6 + 4) Piercing damage, or 18
 /// (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll" (#371).
 /// </summary>
 /// <remarks>
@@ -219,24 +230,30 @@ public sealed record AttackDamage(
 /// read as opposite grammar and this type keeps them opposite in the model: printed
 /// "or" replaces, printed "plus" adds.
 /// <para>
-/// <b>The corpus does print two entries combining both</b> — an em-dash-joined
-/// "or…if…plus" chain the design doc counts among its twelve or-tiers (not ten;
-/// docs/2026-08-24-span-accounting-design.md §11.1), and #371 leaves both as honest
-/// residue rather than structuring them: the Mimic's Bite ("7 (1d8 + 3) Piercing
-/// damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic—plus
-/// 4 (1d8) Acid damage") and Swarm of Venomous Snakes' Bites ("8 (1d8 + 4) Piercing
-/// damage—or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6)
-/// Poison damage"). Both read as: the Piercing component alone alternates on its own
-/// condition, and a second damage type is added unconditionally regardless of which
-/// Piercing tier applies — a Bloodied Swarm of Venomous Snakes deals 6 Piercing
-/// <em>plus</em> 10 Poison, not 6 Piercing alone. That is exactly where "replaces the
-/// whole list" and "replaces the one component it follows" diverge, and this type
-/// only supports the former: <see cref="AttackRules.RollDamage"/> replaces every
-/// component in <see cref="MonsterAttack.Damage"/>, which would silently drop the
-/// unconditional Acid/Poison component were this type pointed at either entry.
-/// Structuring them needs per-component replacement — which single base component
-/// the alternative stands in for, not the attack's damage as a whole — filed as #409
-/// rather than built speculatively here.
+/// <b>Which of the attack's components the alternative replaces</b> is
+/// <see cref="ReplacesComponentIndex"/>. Null — the shape #371 structures for its
+/// eight entries, each of which prints exactly one base component and nothing else —
+/// means the alternative replaces <see cref="MonsterAttack.Damage"/> whole. A non-null
+/// index means it replaces only that one component, leaving the attack's other
+/// components (an unconditional "plus" tail) untouched. For a single-component attack
+/// the two are identical, so #371's eight entries keep <see cref="ReplacesComponentIndex"/>
+/// null and their behaviour and serialization are byte-for-byte unchanged.
+/// </para>
+/// <para>
+/// <b>The corpus prints two entries that need the non-null form</b> (#409) — an
+/// em-dash-joined "or…if…plus" chain the design doc counts among its twelve or-tiers
+/// (not ten; docs/2026-08-24-span-accounting-design.md §11.1): the Mimic's Bite
+/// ("7 (1d8 + 3) Piercing damage—or 12 (2d8 + 3) Piercing damage if the target is
+/// Grappled by the mimic—plus 4 (1d8) Acid damage", SRD 5.2.1 p. 309) and Swarm of
+/// Venomous Snakes' Bites ("8 (1d8 + 4) Piercing damage—or 6 (1d4 + 4) Piercing damage
+/// if the swarm is Bloodied—plus 10 (3d6) Poison damage", p. 363). Both read as: the
+/// Piercing component alone alternates on its own condition, and a second damage type
+/// is added unconditionally regardless of which Piercing tier applies — a Bloodied
+/// Swarm of Venomous Snakes deals 6 Piercing <em>plus</em> 10 Poison, never 6 alone
+/// and never the Poison dropped. The Piercing base sits at index 0 of
+/// <see cref="MonsterAttack.Damage"/>, the unconditional Acid/Poison "plus" at index 1,
+/// and <see cref="ReplacesComponentIndex"/> is 0: <see cref="AttackRules.RollDamage"/>
+/// swaps the Piercing tier when the condition holds while always rolling the "plus".
 /// </para>
 /// </remarks>
 /// <param name="Amount">The alternative's damage dice.</param>
@@ -247,7 +264,18 @@ public sealed record AlternativeAttackDamage(
     DiceExpression Amount,
     DamageType Type,
     int PrintedAverage,
-    AttackDamageCondition Condition);
+    AttackDamageCondition Condition)
+{
+    /// <summary>
+    /// The index into <see cref="MonsterAttack.Damage"/> of the single component this
+    /// alternative replaces when its condition holds. Null — the common #371 case —
+    /// means it replaces the whole <see cref="MonsterAttack.Damage"/> list, which is
+    /// identical to replacing index 0 for the single-component attacks #371 structures.
+    /// Set to a concrete index only for the em-dash "or…if…plus" entries (#409), whose
+    /// unconditional "plus" component must survive the swap. See this type's own remarks.
+    /// </summary>
+    public int? ReplacesComponentIndex { get; init; }
+}
 
 /// <summary>A special sense and how far it reaches.</summary>
 public sealed record MonsterSense(SenseType Type, int RangeFeet);

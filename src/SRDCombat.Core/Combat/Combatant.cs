@@ -50,9 +50,10 @@ public sealed record CombatAttack(
     public EmbeddedAttackSave? EmbeddedSave { get; init; }
 
     /// <summary>
-    /// A conditional damage tier that replaces <see cref="Damage"/> whole when its own
-    /// condition holds, carried from the stat block — see
-    /// <see cref="AlternativeAttackDamage"/> (#371). Null for nearly every attack.
+    /// A conditional damage tier that replaces some of <see cref="Damage"/> when its own
+    /// condition holds, carried from the stat block — the whole list (#371) or the one
+    /// component it names (#409). See <see cref="AlternativeAttackDamage"/>. Null for
+    /// nearly every attack.
     /// </summary>
     public AlternativeAttackDamage? Alternative { get; init; }
 

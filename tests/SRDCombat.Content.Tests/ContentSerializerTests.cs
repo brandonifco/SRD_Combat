@@ -228,7 +228,62 @@ public class ContentSerializerTests
         Assert.Equal(original.Alternative.PrintedAverage, restored.Alternative.PrintedAverage);
         Assert.Equal(original.Alternative.Condition, restored.Alternative.Condition);
 
+        // The whole-list #371 shape leaves ReplacesComponentIndex null, and a null field
+        // is not written at all (JsonIgnoreCondition.WhenWritingNull) — which is what
+        // keeps #371's eight structured entries byte-for-byte unchanged by #409.
+        Assert.Null(original.Alternative.ReplacesComponentIndex);
+        Assert.DoesNotContain("replacesComponentIndex", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(restored.Alternative.ReplacesComponentIndex);
+
         // The base component is untouched by the alternative round-tripping alongside it.
+        Assert.Equal(original.Damage, restored.Damage);
+    }
+
+    /// <summary>
+    /// The Swarm of Venomous Snakes' Bites (#409): the em-dash "or…if…plus" chain whose
+    /// alternative replaces one named component (<see cref="AlternativeAttackDamage.ReplacesComponentIndex"/>)
+    /// rather than the whole <see cref="MonsterAttack.Damage"/> list, and whose
+    /// unconditional Poison "plus" is a second base component. Pins that both the index
+    /// and the multi-component Damage list survive the round trip — the shape
+    /// <c>UnmappedMemberHandling.Disallow</c> only guards once something writes and reads
+    /// every field.
+    /// </summary>
+    [Fact]
+    public void RoundTrip_PreservesAPerComponentAlternativeAndItsUnconditionalPlus()
+    {
+        var original = new MonsterAttack(
+            AttackKind.Melee,
+            AttackBonus: 6,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [
+                new AttackDamage(DiceExpression.Parse("1d8 + 4"), DamageType.Piercing, 8),
+                new AttackDamage(DiceExpression.Parse("3d6"), DamageType.Poison, 10),
+            ])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("1d4 + 4"),
+                DamageType.Piercing,
+                6,
+                AttackDamageCondition.AttackerIsBloodied)
+            {
+                ReplacesComponentIndex = 0,
+            },
+        };
+
+        var json = ContentSerializer.Serialize(original);
+
+        Assert.Contains("\"replacesComponentIndex\": 0", json, StringComparison.Ordinal);
+
+        var restored = ContentSerializer.Deserialize<MonsterAttack>(json);
+
+        Assert.NotNull(restored.Alternative);
+        Assert.Equal(0, restored.Alternative!.ReplacesComponentIndex);
+        Assert.Equal(AttackDamageCondition.AttackerIsBloodied, restored.Alternative.Condition);
+
+        // Both base components — the Piercing the alternative replaces and the always-on
+        // Poison "plus" — survive in printed order.
         Assert.Equal(original.Damage, restored.Damage);
     }
 

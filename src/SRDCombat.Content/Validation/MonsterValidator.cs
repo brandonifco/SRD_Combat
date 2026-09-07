@@ -519,6 +519,20 @@ public static partial class MonsterValidator
                         $"which averages {damage.Amount.Average}.");
                 }
             }
+
+            // A per-component alternative (#409) names the index of the Damage component
+            // it replaces; AttackRules.RollDamage indexes attack.Damage with it directly,
+            // so an out-of-range index would throw at damage resolution rather than
+            // silently misbehave. Null is the whole-list #371 shape and needs no index.
+            if (attack.Alternative is { ReplacesComponentIndex: { } index }
+                && (index < 0 || index >= attack.Damage.Count))
+            {
+                add(
+                    ValidationSeverity.Error,
+                    "monster.attack.alternative_index_out_of_range",
+                    $"'{entry.Name}' has an alternative replacing component {index}, " +
+                    $"outside its {attack.Damage.Count} damage component(s).");
+            }
         }
     }
 
