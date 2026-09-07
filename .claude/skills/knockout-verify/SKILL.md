@@ -52,6 +52,16 @@ asserts one says so out loud rather than letting a green suite imply it.**
    snapshot back, and refuses to continue unless every file is byte-identical to it.
    Each stub is applied alone; never stack them. Snapshot again after any real edit,
    or the restore would undo it.
+
+   The restore deliberately does **not** preserve the file's mtime (#612). During a
+   knockout the stubbed source is compiled into assemblies stamped "now"; if the
+   restore then stamped the source with its *original* (older) mtime — as `cp -p` did —
+   a later incremental `dotnet build`/`dotnet test` would see the source as "not newer
+   than the output" and serve the **stale, stubbed binary**, so a "confirm green on
+   restored source" step (or the next knockout in the batch) could silently pass on the
+   wrong code. If you run a knockout by hand with your own restore, stamp the restored
+   files with a current mtime (plain `cp` then `touch`, not `cp -p`), or force a clean
+   rebuild (`rm -rf bin obj`) before trusting a green run on restored source.
 4. **Read the verdicts.** They are not all good news, and the honest ones are the
    point:
    - **RED** — the claim holds. Record which tests went red; if a hundred did, your stub

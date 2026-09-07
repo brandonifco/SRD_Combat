@@ -12,6 +12,10 @@
 #       files FROM THE SNAPSHOT (not from HEAD — an earlier version restored with
 #       `git checkout --`, which would have discarded an uncommitted fix in the same
 #       file), and asserts each file is byte-identical to its snapshot afterwards.
+#       Restore stamps the files with a fresh mtime (NOT `cp -p`): the restored source
+#       must be newer than the assemblies built while the stub was in place, or a later
+#       incremental build serves the stale stubbed binary (#612). A guard fails the run
+#       if any restored file ends up older than the moment the stubbed build started.
 #
 # Refuses: to run in the primary checkout; to `run` without a snapshot of every named
 # file; to `run` when no named file differs from its snapshot (no stub applied — the
@@ -61,11 +65,30 @@ for f in "${files[@]}"; do cmp -s "$f" "$snap/$f" || changed=1; done
 
 here="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 args=("$proj"); [[ -n "$filter" ]] && args+=(--filter "$filter")
+# Fix the restore's mtime floor BEFORE the stubbed build runs: the test build below
+# writes assemblies stamped "now", so a restored source must end up NEWER than this
+# instant or an incremental build will serve the stale stubbed binary (#612).
+run_start=$(date +%s)
 verdict="$(bash "$here/focused-test.sh" "${args[@]}")"; rc=$?
 
-for f in "${files[@]}"; do cp -p "$snap/$f" "$f"; done
+# Restore content from the snapshot, but do NOT preserve its (older) mtime: `cp -p`
+# stamped the restored file with the original mtime, which can predate the assemblies
+# just built with the stub in place, so the next incremental build sees the source as
+# "not newer than the output" and serves the stale, stubbed binary (#612).
+# `sleep 1` before `touch` crosses a whole-second boundary, so the restored mtime is
+# *strictly* later than any assembly written during the run even on a filesystem with
+# 1-second timestamp resolution — MSBuild treats an equal mtime as up-to-date, so a
+# same-second restore would otherwise still serve the stale artifact.
+for f in "${files[@]}"; do cp "$snap/$f" "$f"; done
+sleep 1
+for f in "${files[@]}"; do touch "$f"; done
 for f in "${files[@]}"; do
     cmp -s "$f" "$snap/$f" || { echo "knockout.sh: '$f' did not restore to its snapshot — inspect before doing anything else" >&2; exit 1; }
+    # Regression guard: if a future edit reintroduces mtime-preservation on restore,
+    # the restored file will carry its pre-run (snapshot) mtime, older than run_start,
+    # and this fails loudly rather than letting a stale artifact be served silently.
+    mt=$(stat -c %Y "$f")
+    (( mt >= run_start )) || { echo "knockout.sh: '$f' restored with a stale mtime ($mt < run_start $run_start) — an incremental build could serve the stubbed binary; do not preserve mtime on restore (#612)" >&2; exit 1; }
 done
 
 first="$(printf '%s\n' "$verdict" | head -1)"
