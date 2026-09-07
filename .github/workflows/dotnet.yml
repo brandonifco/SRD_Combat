@@ -61,6 +61,16 @@ jobs:
         with:
           global-json-file: global.json
 
+      # #599: tools/asset_pipeline/test_master_to_sprite.py runs once, on the
+      # Debug leg (validate.sh's `ci` case gates it there — see that script).
+      # python3 is preinstalled on ubuntu-latest; only Pillow needs adding,
+      # pinned to the version tools/asset_pipeline/master_to_sprite.py records
+      # as VERIFIED_PILLOW_VERSION so CI runs the exact version the pipeline
+      # was verified against.
+      - name: Install Python test dependencies
+        if: matrix.configuration == 'Debug'
+        run: pip install Pillow==10.2.0
+
       - name: Validate (${{ matrix.configuration }})
         run: ./scripts/validate.sh ci ${{ matrix.configuration }}
 

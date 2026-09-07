@@ -389,12 +389,18 @@ the build and test invocation exists in one place instead of three that can drif
 ```
 
 That is: SDK pin, restore, build **and** test in Debug **and** Release at 0 warnings,
-then `git diff --check` — the same steps this file's "Gate before merge" convention has
+`tools/asset_pipeline/test_master_to_sprite.py`'s Python suite once, then
+`git diff --check` — the same steps this file's "Gate before merge" convention has
 always required, now executable. `fast` skips the tests for a quick pre-push check;
-`sdk-pin` runs the #428 drift check alone. `.github/workflows/dotnet.yml` runs
-`validate.sh ci Debug` / `ci Release`, one per matrix leg, and publishes what it
-validated to the run summary — read that with `gh run view <id>` rather than re-running
-the suite to find out whether a commit passed.
+`sdk-pin` runs the #428 drift check alone. **The Python step is guarded, not
+required** (#599): a machine without python3/Pillow still gates the dotnet suite —
+`./scripts/doctor.sh` reports that gap — but a real failure there fails the gate
+exactly like a dotnet test failure. `.github/workflows/dotnet.yml` runs
+`validate.sh ci Debug` / `ci Release`, one per matrix leg (the Python suite runs
+once, on the Debug leg, since it carries no Debug/Release dimension, and the
+workflow installs Pillow before that leg's `validate.sh` call), and publishes what
+it validated to the run summary — read that with `gh run view <id>` rather than
+re-running the suite to find out whether a commit passed.
 
 New machine: `mise install && ./scripts/doctor.sh` first (see Environment).
 
