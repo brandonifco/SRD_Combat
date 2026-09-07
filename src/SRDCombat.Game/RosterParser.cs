@@ -7,13 +7,27 @@ namespace SRDCombat.Game;
 /// into monster definitions for <see cref="EncounterFactory.BuildChosen"/> (#456).
 /// </summary>
 /// <remarks>
+/// <para>
 /// Entries are comma-separated; an entry is an optional leading count and a monster
 /// name, matched case-insensitively against the bestiary. Every entry that fails to
 /// parse is reported by name in <see cref="Roster.Errors"/> and nothing is silently
 /// dropped — a test aid that quietly thinned the cast it was asked for would be the
 /// keyword-filter bug (rule 2) rebuilt as a convenience. The count is capped at
-/// <see cref="MaximumCount"/> per entry so a typo cannot ask the engine for a
-/// two-hundred-monster board.
+/// <see cref="MaximumCount"/> per entry, guarding a typo's order of magnitude rather
+/// than the size of the board a roster line can ask for — ten entries of the cap still
+/// reach a two-hundred-monster board.
+/// </para>
+/// <para>
+/// <b>The grammar is unambiguous only because the bestiary holds a corpus invariant
+/// nothing here asserts</b> (#464, the #412 trip-wire pattern): no monster name
+/// contains a comma (or the comma split would sever a name), and none begins with a
+/// token <c>int.TryParse</c> accepts (or a leading count would eat the first word of
+/// the name — or worse, misparse into a different monster entirely).
+/// <c>RosterParserCorpusInvariantTests</c> in the test project pins both, plus
+/// case-insensitive uniqueness, which <see cref="Parse"/>'s <c>FirstOrDefault</c>
+/// match silently assumes. The first bestiary entry to violate either shape does not
+/// fail loudly here — it forces a grammar decision instead.
+/// </para>
 /// </remarks>
 public static class RosterParser
 {
@@ -40,13 +54,20 @@ public static class RosterParser
         {
             var words = entry.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var count = 1;
-            var name = entry;
+            var nameWords = words;
 
             if (words.Length > 1 && int.TryParse(words[0], out var parsed))
             {
                 count = parsed;
-                name = string.Join(' ', words[1..]);
+                nameWords = words[1..];
             }
+
+            // Joined from the split words rather than sliced out of `entry` on both
+            // branches, so internal whitespace runs collapse identically whether or
+            // not a count prefix is present — "2 Goblin  Warrior" and "Goblin  Warrior"
+            // both normalise to "Goblin Warrior" (#464; previously only the counted
+            // branch normalised, so the same doubled space refused without a count).
+            var name = string.Join(' ', nameWords);
 
             if (count < 1 || count > MaximumCount)
             {
