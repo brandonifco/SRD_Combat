@@ -719,30 +719,25 @@ public class TurnUndeadTests
     }
 
     [Fact]
-    public void CharacterizationTurnedThenSeparatelyStunned_CurrentlyLosesIncapacitatedWhenTheTurningBreaks()
+    public void TurnedThenSeparatelyStunned_StaysIncapacitatedWhenTheTurningBreaks()
     {
-        // T10's named risk (spec, #369): conditions are keyed one-per-type
-        // (Dictionary<ConditionType, ActiveCondition>). Turn Undead imposes a
-        // *standalone* Incapacitated; a second, independent Incapacitated-bringer
-        // (Stunned) landing on the same bearer cannot get its own slot — AddCondition's
-        // TryAdd no-ops because Turn Undead's entry already occupies it — so the
-        // dictionary has no record that Stunned wants Incapacitated held too. This is
-        // CONFIRMED BROKEN by running this test (not a hypothetical): when the turning
-        // ends on damage, BreakTurnEffectOnDamage removes the shared Incapacitated
-        // entry, and the creature reads as no longer Incapacitated even though it is
-        // still Stunned.
+        // #614's repro: Turn Undead imposes a *standalone* Incapacitated; a second,
+        // independent Incapacitated-bringer (Stunned) landing on the same bearer used
+        // to be unable to get its own slot — AddCondition's TryAdd no-op'd because Turn
+        // Undead's own entry already occupied the one Incapacitated key — so when the
+        // turning ended on damage, BreakTurnEffectOnDamage removed the shared entry and
+        // the creature read as no longer Incapacitated even though it was still Stunned.
         //
-        // Unreachable in current play: nothing in the pregen roster or the extant
-        // monster pool Stuns (or Paralyzes/Petrifies) an Undead — the collision needs
-        // two independent Incapacitated-bringers on the same creature, and Turn Undead
-        // is the only standalone source that exists today. So this is characterized
-        // rather than fixed here: the correct behaviour (the bearer stays Incapacitated
-        // as long as *any* source holds it) is written down below, and the actual
-        // (wrong) behaviour is what the assertions pin, so a future stun-capable party
-        // or monster surfaces this loudly — a test that goes red the moment it becomes
-        // reachable — rather than silently mistracking Incapacitated. Per #369's spec,
-        // this is NOT patched with ad hoc reference counting; the real fix (a
-        // multi-source Incapacitated model) is filed and routed to architect: #614.
+        // #614 fixed this by no longer materializing the brought Incapacitated at all:
+        // Combatant.EffectiveIncapacitation() derives Incapacitated's presence from
+        // "a standalone entry exists OR any BringsIncapacitated condition is present",
+        // so Stunned alone keeps it true once Turn Undead's own standalone entry is
+        // gone. This test now pins the CORRECT behaviour rather than the broken one.
+        //
+        // Unreachable in the current pregen roster or monster pool (nothing Stuns,
+        // Paralyzes or Petrifies an Undead today), but the fix is general rather than
+        // point-patched, so this stands as the pin for whenever a stun-capable source
+        // and an Undead meet in a real fight.
         //
         // Stunned grants Advantage on attack rolls against the bearer, so the ally's
         // attack rolls two d20s (taking the higher) once it lands.
@@ -763,13 +758,10 @@ public class TurnUndeadTests
         Assert.False(undead.HasCondition(ConditionType.Frightened));
         Assert.True(undead.HasCondition(ConditionType.Stunned));
 
-        // The CURRENT (wrong) behaviour: Stunned alone should keep this creature
-        // Incapacitated per print, but the shared dictionary slot went with Turn
-        // Undead's own entry. Correct behaviour is `Assert.True` here; #614 tracks
-        // fixing that. Pinned as `False` so this test passes today and turns red the
-        // moment #614 lands (or the moment this collision becomes reachable in a real
-        // fight and mistracks Incapacitated silently, whichever comes first).
-        Assert.False(undead.HasCondition(ConditionType.Incapacitated));
+        // Stunned alone still holds Incapacitated per print, even though Turn Undead's
+        // own standalone entry is gone — and the creature cannot act.
+        Assert.True(undead.HasCondition(ConditionType.Incapacitated));
+        Assert.False(undead.CanAct);
     }
 
     // --- Test data -----------------------------------------------------------------

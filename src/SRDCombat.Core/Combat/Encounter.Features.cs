@@ -699,13 +699,14 @@ public sealed partial class Encounter
             // The IsActive refusal immediately above is CanAct's own definition, one of
             // whose clauses is "!HasCondition(Incapacitated)" — so reaching this line
             // already proves target.HasCondition(ConditionType.Incapacitated) is false.
-            // HasCondition and ConditionState read the same backing dictionary
-            // (Combatant.cs), so ConditionState(Incapacitated) is provably null here too:
-            // an Incapacitated condition flagged by a *different* source can never
-            // coexist with a live IsActive, so checking it in this guard would be dead
-            // code carried for no reason. Confirmed empirically as well as by proof: qc
-            // patched this predicate to Frightened-only during PR #617's third review
-            // pass and got identical results across the whole suite.
+            // HasCondition and ConditionState both derive Incapacitated through
+            // Combatant.EffectiveIncapacitation() (#614), so ConditionState(Incapacitated)
+            // is provably null here too: an Incapacitated condition flagged by a
+            // *different* source can never coexist with a live IsActive, so checking it
+            // in this guard would be dead code carried for no reason. Confirmed
+            // empirically as well as by proof: qc patched this predicate to
+            // Frightened-only during PR #617's third review pass and got identical
+            // results across the whole suite.
             if (target.ConditionState(ConditionType.Frightened) is
                     { EndsEarlyOnDamageOrSourceDown: true, SourceId: { } turnedBy }
                 && !string.Equals(turnedBy, combatant.Id, StringComparison.Ordinal))

@@ -1147,8 +1147,9 @@ public sealed class Combatant
 {
     /// <summary>
     /// Conditions whose printed text includes "You have the Incapacitated condition".
-    /// Adding one brings Incapacitated with it; removing the last of them takes the
-    /// Incapacitated it brought back out.
+    /// Having any one of these makes Incapacitated true, derived on every read by
+    /// <see cref="EffectiveIncapacitation"/> rather than stored — see that method's
+    /// remarks for why.
     /// </summary>
     private static readonly ConditionType[] BringsIncapacitated =
     [
@@ -1324,10 +1325,26 @@ public sealed class Combatant
     /// </summary>
     public bool HasTrait(Rules.MonsterTrait trait) => _traits.Contains(trait);
 
-    public IReadOnlyCollection<ConditionType> Conditions => _conditions.Keys;
+    /// <summary>
+    /// Every condition type the creature has. Includes a synthesized Incapacitated —
+    /// see <see cref="EffectiveIncapacitation"/> — when the dictionary itself holds
+    /// none but a <see cref="BringsIncapacitated"/> condition brings it along.
+    /// </summary>
+    public IReadOnlyCollection<ConditionType> Conditions =>
+        EffectiveIncapacitation() is not null && !_conditions.ContainsKey(ConditionType.Incapacitated)
+            ? (IReadOnlyCollection<ConditionType>)[.. _conditions.Keys, ConditionType.Incapacitated]
+            : _conditions.Keys;
 
-    /// <summary>Every condition the creature has, with its source and expiry.</summary>
-    public IReadOnlyCollection<ActiveCondition> ActiveConditions => _conditions.Values;
+    /// <summary>
+    /// Every condition the creature has, with its source and expiry. Includes a
+    /// synthesized Incapacitated — see <see cref="EffectiveIncapacitation"/> — when
+    /// the dictionary itself holds none but a <see cref="BringsIncapacitated"/>
+    /// condition brings it along.
+    /// </summary>
+    public IReadOnlyCollection<ActiveCondition> ActiveConditions =>
+        EffectiveIncapacitation() is { } incapacitated && !_conditions.ContainsKey(ConditionType.Incapacitated)
+            ? (IReadOnlyCollection<ActiveCondition>)[.. _conditions.Values, incapacitated]
+            : _conditions.Values;
 
     /// <summary>
     /// How many turns this creature has begun. The clock every condition duration is
@@ -1369,11 +1386,16 @@ public sealed class Combatant
     /// <summary>True when the creature is still a threat — alive, conscious and able to act.</summary>
     public bool IsActive => CanAct;
 
-    public bool HasCondition(ConditionType condition) => _conditions.ContainsKey(condition);
+    public bool HasCondition(ConditionType condition) =>
+        condition == ConditionType.Incapacitated
+            ? EffectiveIncapacitation() is not null
+            : _conditions.ContainsKey(condition);
 
     /// <summary>The condition with its source and expiry, or null if the creature has not got it.</summary>
     public ActiveCondition? ConditionState(ConditionType condition) =>
-        _conditions.TryGetValue(condition, out var active) ? active : null;
+        condition == ConditionType.Incapacitated
+            ? EffectiveIncapacitation()
+            : _conditions.TryGetValue(condition, out var active) ? active : null;
 
     /// <summary>
     /// Adds a condition unless the creature is immune to it.
@@ -1418,33 +1440,27 @@ public sealed class Combatant
             // before it existed this branch could never disagree). Neither side may
             // silently take over the other's SourceId, Expiry or flag: the occupant
             // simply keeps the slot, and the new application is refused rather than
-            // partially merged into something neither effect actually is. This is
-            // what stops an unrelated Frightened from inheriting Turn Undead's
-            // "ends on damage" flag (over-removal) just as much as it stops Turn
-            // Undead's own rider from being silently corrupted by a later,
-            // unrelated re-application. Both unflagged (every condition this engine
-            // imposed before Turn Undead existed) falls through unchanged,
+            // partially merged into something neither effect actually is. This still
+            // matters for Frightened — it stops an unrelated Frightened from
+            // inheriting Turn Undead's "ends on damage" flag (over-removal) — and it
+            // still guards the Incapacitated slot itself: a *second*, differently
+            // sourced standalone Incapacitated (a second Cleric's Turn Undead landing
+            // on an already-turned target) is refused here rather than silently
+            // overwriting the first one's flag, source or expiry. In practice a
+            // second Turn Undead never reaches this branch — it is refused one layer
+            // up, at the action itself (Encounter.TurnUndead's
+            // "feature.turn_undead.already_turned") — but the guard stays as the
+            // slot's own defence in depth. Both unflagged (every condition this
+            // engine imposed before Turn Undead existed) falls through unchanged,
             // refreshing exactly as always. Both flagged only ever reaches here for
-            // the *same* Cleric re-turning its own target — a second, different
-            // Cleric's Turn Undead landing on an already-turned target is refused
-            // one layer up, at the action itself (Encounter.TurnUndead's
-            // "feature.turn_undead.already_turned"), because only that caller can
-            // ever produce two different-sourced flagged conditions to begin with.
+            // the *same* Cleric re-turning its own target.
             //
-            // Every other AddCondition caller was swept for the same risk (second
-            // qc pass on #369) and cannot reach a flagged Turn Undead condition at
-            // all, given the party's actual executable kit: Encounter.Escalate's
-            // two-tier-gaze rider always deepens into Petrified, never Frightened
-            // or Incapacitated, and none of its three callers (Basilisk, Gorgon,
-            // Medusa) is ever Undead; Encounter.ImposeConditions is the same
-            // general rider path already exhaustively checked for #369's own
-            // reachability question — no preparable spell, class feature or weapon
-            // mastery a level 1-5 party can use imposes Frightened or Incapacitated
-            // on anything; the Unconscious-brings-Incapacitated link in the
-            // fresh-add branch below uses TryAdd, which never overwrites an
-            // existing entry, so it cannot corrupt a flagged one even in principle;
-            // and DamageRules' two AddCondition(Unconscious) call sites only ever
-            // target characters, which Turn Undead never imposes anything on.
+            // Supporting a second, differently-sourced standalone Incapacitated at
+            // the same time (two Clerics turning two different undead, each read
+            // through the same Combatant) would need this slot to become a keyed
+            // collection rather than a single dictionary entry — out of scope today,
+            // since only Turn Undead produces a standalone Incapacitated and a second
+            // Cleric's is refused upstream before it ever reaches here.
             if (existing.EndsEarlyOnDamageOrSourceDown != active.EndsEarlyOnDamageOrSourceDown)
             {
                 return false;
@@ -1465,16 +1481,23 @@ public sealed class Combatant
         var sourceId = active.SourceId;
         var expiry = active.Expiry;
 
-        // Paralyzed, Stunned and Unconscious bring Incapacitated with them, and
-        // Unconscious brings Prone too, per each condition's own definition. Modelling
-        // that here means nothing else has to remember it. The brought conditions
-        // inherit the source and expiry, so a Stunned that wears off does not leave its
-        // Incapacitated behind — and TryAdd never displaces one imposed in its own right.
-        if (BringsIncapacitated.Contains(condition))
-        {
-            _conditions.TryAdd(ConditionType.Incapacitated, new ActiveCondition(ConditionType.Incapacitated, sourceId, expiry));
-        }
-
+        // Unconscious brings Prone with it, per its own definition. Modelling that
+        // here means nothing else has to remember it. Prone inherits the source and
+        // expiry; TryAdd never displaces a Prone imposed in its own right.
+        //
+        // Paralyzed, Stunned and Unconscious also bring Incapacitated with them, per
+        // each condition's own definition — but that brought Incapacitated is
+        // deliberately never materialized into the dictionary. The Incapacitated key
+        // is reserved for a *standalone* Incapacitated (Turn Undead's rider, the only
+        // one this engine executes); a brought one is instead derived on every read
+        // by EffectiveIncapacitation(), below. This is what #614 fixed: materializing
+        // a brought Incapacitated into the one Incapacitated slot meant a standalone
+        // Incapacitated landing afterwards (or already there) no-op'd via TryAdd, so
+        // removing whichever one got the slot first freed a creature the other should
+        // still hold. Deriving presence instead of storing it makes the invariant
+        // "Incapacitated present ⇔ a standalone entry exists OR any
+        // BringsIncapacitated condition is present" true by construction — there is
+        // nothing to reconcile on removal, because there is nothing brought to remove.
         if (condition == ConditionType.Unconscious)
         {
             _conditions.TryAdd(ConditionType.Prone, new ActiveCondition(ConditionType.Prone, sourceId, expiry));
@@ -1483,29 +1506,29 @@ public sealed class Combatant
         return true;
     }
 
-    public bool RemoveCondition(ConditionType condition)
-    {
-        if (!_conditions.Remove(condition, out var removed))
-        {
-            return false;
-        }
+    /// <summary>
+    /// The Incapacitated condition as this creature currently has it, or null if it
+    /// does not — the single source of truth <see cref="HasCondition"/>,
+    /// <see cref="ConditionState"/>, <see cref="Conditions"/> and
+    /// <see cref="ActiveConditions"/> all read through for
+    /// <see cref="ConditionType.Incapacitated"/>.
+    /// </summary>
+    /// <remarks>
+    /// A standalone Incapacitated (Turn Undead's rider) is the dictionary entry
+    /// itself and wins outright. Otherwise, if any <see cref="BringsIncapacitated"/>
+    /// condition is present, Incapacitated is synthesized on the fly: no source, no
+    /// expiry, <c>EndsEarlyOnDamageOrSourceDown = false</c>, so nothing that walks
+    /// <c>_conditions.Values</c> to remove or expire a source-tied effect can ever
+    /// pick a synthesized entry up. <see cref="ExpireConditions"/> deliberately does
+    /// not call this — a brought Incapacitated has no clock of its own and must never
+    /// appear in the expiry sweep.
+    /// </remarks>
+    private ActiveCondition? EffectiveIncapacitation() =>
+        _conditions.TryGetValue(ConditionType.Incapacitated, out var standalone) ? standalone
+        : BringsIncapacitated.Any(_conditions.ContainsKey) ? new ActiveCondition(ConditionType.Incapacitated)
+        : null;
 
-        // Removing the last Incapacitated-bringer takes the Incapacitated it brought
-        // back out — recognised by the source and expiry it inherited, so an
-        // Incapacitated imposed in its own right (a Ghast's Claw, with its own clock)
-        // survives its bearer being knocked out and healed. Prone is deliberately left
-        // behind: "When this condition ends, you remain Prone."
-        if (BringsIncapacitated.Contains(condition)
-            && !BringsIncapacitated.Any(HasCondition)
-            && _conditions.TryGetValue(ConditionType.Incapacitated, out var incapacitated)
-            && string.Equals(incapacitated.SourceId, removed.SourceId, StringComparison.Ordinal)
-            && Equals(incapacitated.Expiry, removed.Expiry))
-        {
-            _conditions.Remove(ConditionType.Incapacitated);
-        }
-
-        return true;
-    }
+    public bool RemoveCondition(ConditionType condition) => _conditions.Remove(condition, out _);
 
     /// <summary>
     /// Ends every condition due to expire at this boundary of the owner's turn, and says
