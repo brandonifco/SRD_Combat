@@ -163,6 +163,42 @@ public class OriginContentTests
     }
 
     [Fact]
+    public void AnImplementedTraitNameCarriesOnePrintedTextAcrossEverySpecies()
+    {
+        // #346: SpeciesTraitRegistry keys on the bare printed name, so once any name
+        // is registered as implemented, *every* species instance of that name
+        // resolves to the same SpeciesTrait -- even a variant with genuinely
+        // different printed rules. Darkvision is the concrete case: 60 feet for four
+        // species, 120 feet for the Dwarf and Orc. This is a trip-wire, not a
+        // feature test: it is vacuously true today (nothing is implemented, so the
+        // Where below drops every group), and it must start failing the day
+        // "Darkvision" -- or any other name whose printed texts differ -- is
+        // registered without every variant sharing identical text. See
+        // SpeciesTraitRegistry's remarks for the contract this enforces.
+        //
+        // Darkvision is the concrete case: 60 feet for four species (Dragonborn,
+        // Elf, Gnome, Tiefling) and 120 feet for two (Dwarf, Orc). Grouping is
+        // case-insensitive to match the registry's OrdinalIgnoreCase lookup, so a
+        // case-only name variant with differing text cannot resolve to one entry
+        // while slipping past this guard.
+        var traits = Content.Species.SelectMany(species => species.Traits).ToList();
+
+        var implementedGroups = traits
+            .GroupBy(trait => trait.Name, StringComparer.OrdinalIgnoreCase)
+            .Where(group => SpeciesTraitRegistry.Implements(group.Key));
+
+        Assert.All(implementedGroups, group =>
+        {
+            var distinctTexts = group.Select(trait => trait.Text).Distinct(StringComparer.Ordinal).ToList();
+            Assert.True(
+                distinctTexts.Count == 1,
+                $"'{group.Key}' is registered as implemented but carries {distinctTexts.Count} " +
+                "different printed texts across species -- a variant would silently execute " +
+                "under the wrong rule. See #346.");
+        });
+    }
+
+    [Fact]
     public void ABackgroundMissingAnAbilityScoreIsRejected()
     {
         var broken = Content.BackgroundsById["background.soldier"] with
