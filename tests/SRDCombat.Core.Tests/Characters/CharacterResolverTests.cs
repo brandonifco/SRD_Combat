@@ -354,6 +354,36 @@ public class CharacterResolverTests
                 CharacterTestData.Draft(weaponIds: ["weapon.not-a-thing"]),
                 CharacterTestData.Content()));
     [Fact]
+    public void AMasteryTheEngineDoesNotExecuteIsRefusedEvenOnAHandBuiltDraft()
+    {
+        // #402: only the character-creation menu (CharacterCreation.MasteryOptions)
+        // and the allowlist (WeaponMasteryRules.SixOfTheEightPropertiesAreExecuted)
+        // were pinned — nothing exercised the resolver's own guard directly, so a
+        // hand-built draft or a tampered save naming Push or Nick had no test proving
+        // the last line of defence actually refuses it rather than granting a feature
+        // that silently does nothing.
+        var pushWeapon = CharacterTestData.Weapon(id: "weapon.push-test", name: "Push Test Axe")
+            with
+        {
+            Mastery = WeaponMastery.Push,
+        };
+
+        var content = CharacterTestData.Content(
+            classDefinition: CharacterTestData.Class(
+                featuresByLevel: new Dictionary<int, string[]> { [1] = ["Weapon Mastery"] }),
+            weapons: [pushWeapon]);
+
+        var draft = CharacterTestData.Draft(weaponIds: ["weapon.push-test"]) with
+        {
+            WeaponMasteryIds = ["weapon.push-test"],
+        };
+
+        var refusal = Assert.Throws<ArgumentException>(() => CharacterResolver.Resolve(draft, content));
+
+        Assert.Contains("Push", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AShieldAndATwoHandedWeaponDoNotShareEnoughHands()
     {
         // "Two-Handed: This weapon requires two hands when you attack with it," and a
