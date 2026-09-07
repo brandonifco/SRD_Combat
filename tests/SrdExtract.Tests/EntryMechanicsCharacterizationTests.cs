@@ -314,6 +314,91 @@ public sealed class EntryMechanicsCharacterizationTests
     }
 
     [Fact]
+    public void TheSwarmOfVenomousSnakesEmDashOrPlusChainStructuresBothTiersAndTheUnconditionalPoison()
+    {
+        // Swarm of Venomous Snakes' Bites, verbatim as extracted (#409, SRD 5.2.1
+        // p. 363). The printed em dashes survive extraction as ASCII hyphens
+        // (damage-or, Bloodied-plus). The Piercing base alternates on the swarm's own
+        // Bloodied state, and the Poison is added unconditionally regardless of tier —
+        // AttackRulesTests pins the combined runtime roll. This is one of the corpus's
+        // only two em-dash instances, and #371 left it as residue.
+        var entry = EntryMechanicsParser.Classify(
+            "Bites",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage-or 6 (1d4 + 4) " +
+            "Piercing damage if the swarm is Bloodied-plus 10 (3d6) Poison damage.");
+
+        // Two unconditional base components in printed order: the Piercing base and the
+        // always-on Poison "plus". Neither carries a Condition — the condition lives on
+        // the Alternative, which stands in for only the Piercing.
+        Assert.Collection(
+            entry.Attack!.Damage,
+            piercing =>
+            {
+                Assert.Equal(DamageType.Piercing, piercing.Type);
+                Assert.Equal(8, piercing.PrintedAverage);
+                Assert.Null(piercing.Condition);
+            },
+            poison =>
+            {
+                Assert.Equal(DamageType.Poison, poison.Type);
+                Assert.Equal(10, poison.PrintedAverage);
+                Assert.Null(poison.Condition);
+            });
+
+        Assert.NotNull(entry.Attack.Alternative);
+        Assert.Equal(6, entry.Attack.Alternative!.PrintedAverage);
+        Assert.Equal(DamageType.Piercing, entry.Attack.Alternative.Type);
+        Assert.Equal(AttackDamageCondition.AttackerIsBloodied, entry.Attack.Alternative.Condition);
+        // The alternative replaces only the Piercing base (index 0), leaving the Poison.
+        Assert.Equal(0, entry.Attack.Alternative.ReplacesComponentIndex);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheMimicEmDashOrPlusChainStructuresTheDamageButLeavesTheHeaderParentheticalAsResidue()
+    {
+        // Mimic's Bite, verbatim as extracted (#409, SRD 5.2.1 p. 309). The Piercing
+        // base alternates on the target being Grappled by the mimic (the attacker), and
+        // the Acid is added unconditionally. The attack header carries a separate
+        // "(with Advantage if the target is Grappled by the mimic)" parenthetical that
+        // is nobody's structured field — it sits in AttackHeaderPattern's unread filler
+        // and stays honest residue, exactly as it did before #409 touched the damage.
+        var entry = EntryMechanicsParser.Classify(
+            "Bite",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the mimic), reach 5 ft. " +
+            "Hit: 7 (1d8 + 3) Piercing damage-or 12 (2d8 + 3) Piercing damage if the target is Grappled " +
+            "by the mimic-plus 4 (1d8) Acid damage.");
+
+        Assert.Collection(
+            entry.Attack!.Damage,
+            piercing =>
+            {
+                Assert.Equal(DamageType.Piercing, piercing.Type);
+                Assert.Equal(7, piercing.PrintedAverage);
+                Assert.Null(piercing.Condition);
+            },
+            acid =>
+            {
+                Assert.Equal(DamageType.Acid, acid.Type);
+                Assert.Equal(4, acid.PrintedAverage);
+                Assert.Null(acid.Condition);
+            });
+
+        Assert.NotNull(entry.Attack.Alternative);
+        Assert.Equal(12, entry.Attack.Alternative!.PrintedAverage);
+        Assert.Equal(DamageType.Piercing, entry.Attack.Alternative.Type);
+        Assert.Equal(AttackDamageCondition.TargetIsGrappledByAttacker, entry.Attack.Alternative.Condition);
+        Assert.Equal(0, entry.Attack.Alternative.ReplacesComponentIndex);
+
+        // The damage clause is claimed; only the header parenthetical remains residue.
+        Assert.Equal(
+            ["(with Advantage if the target is Grappled by the mimic)"],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
     public void AnOrIfAlternativeConditionedOnAChargeIsNotAMatchedShapeAndFallsToResidue()
     {
         // Goat's Ram, verbatim (#371's own issue text). The engine tracks no movement

@@ -23396,14 +23396,25 @@
                 "amount": "1d8 + 3",
                 "type": "Piercing",
                 "printedAverage": 7
+              },
+              {
+                "amount": "1d8",
+                "type": "Acid",
+                "printedAverage": 4
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "2d8 + 3",
+              "type": "Piercing",
+              "printedAverage": 12,
+              "condition": "TargetIsGrappledByAttacker",
+              "replacesComponentIndex": 0
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
           "unmodelledClauses": [
-            "(with Advantage if the target is Grappled by the mimic)",
-            "-or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic-plus 4 (1d8) Acid damage"
+            "(with Advantage if the target is Grappled by the mimic)"
           ]
         },
         {
@@ -47756,14 +47767,24 @@
                 "amount": "1d8 + 4",
                 "type": "Piercing",
                 "printedAverage": 8
+              },
+              {
+                "amount": "3d6",
+                "type": "Poison",
+                "printedAverage": 10
               }
-            ]
+            ],
+            "alternative": {
+              "amount": "1d4 + 4",
+              "type": "Piercing",
+              "printedAverage": 6,
+              "condition": "AttackerIsBloodied",
+              "replacesComponentIndex": 0
+            }
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "-or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied-plus 10 (3d6) Poison damage"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 362

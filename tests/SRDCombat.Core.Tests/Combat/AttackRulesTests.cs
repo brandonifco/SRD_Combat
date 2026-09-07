@@ -464,6 +464,225 @@ public class AttackRulesTests
         Assert.Equal(6, Assert.Single(bigger).Component.PrintedAverage);
     }
 
+    // A Swarm of Venomous Snakes' Bites (#409): "8 (1d8 + 4) Piercing damage—or 6
+    // (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6) Poison damage."
+    // The Piercing base sits at index 0, the unconditional Poison "plus" at index 1, and
+    // the alternative replaces only the Piercing (ReplacesComponentIndex: 0).
+    private static CombatAttack VenomousSnakesBites() =>
+        new(
+            "Bites",
+            AttackKind.Melee,
+            6,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [
+                new AttackDamage(DiceExpression.Parse("1d8 + 4"), DamageType.Piercing, 8),
+                new AttackDamage(DiceExpression.Parse("3d6"), DamageType.Poison, 10),
+            ])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("1d4 + 4"),
+                DamageType.Piercing,
+                6,
+                AttackDamageCondition.AttackerIsBloodied)
+            {
+                ReplacesComponentIndex = 0,
+            },
+        };
+
+    [Fact]
+    public void EmDashAlternative_BloodiedSwarmDealsTheLowerPiercingTierPlusTheUnconditionalPoison()
+    {
+        // The exact scenario #409 names: a Bloodied Swarm of Venomous Snakes deals its
+        // lower Piercing tier (6, not 8) AND its full Poison (10) — never 6 Piercing
+        // alone, never 8+6 both Piercing tiers, never the Poison dropped. The Poison is
+        // unconditional and survives the tier swap.
+        var attack = VenomousSnakesBites();
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        // Not yet Bloodied: the base Piercing tier (8) plus the Poison (10).
+        Assert.False(attacker.IsBloodied);
+        var full = AttackRules.RollDamage(
+            new ScriptedRandomSource(4, 5, 5, 5),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target),
+            attacker,
+            target);
+        Assert.Collection(
+            full,
+            piercing =>
+            {
+                Assert.Equal(DamageType.Piercing, piercing.Component.Type);
+                Assert.Equal(8, piercing.Component.PrintedAverage);
+                Assert.Equal(8, piercing.Result.Total); // 1d8=4, +4
+            },
+            poison =>
+            {
+                Assert.Equal(DamageType.Poison, poison.Component.Type);
+                Assert.Equal(10, poison.Component.PrintedAverage);
+                Assert.Equal(15, poison.Result.Total); // 3d6 = 5+5+5
+            });
+
+        // Wound the swarm below half its own maximum, then bite again.
+        DamageRules.Apply(
+            attacker,
+            attacker.Stats.MaximumHitPoints - attacker.Stats.MaximumHitPoints / 2,
+            DamageType.Bludgeoning);
+        Assert.True(attacker.IsBloodied);
+
+        var bloodied = AttackRules.RollDamage(
+            new ScriptedRandomSource(2, 5, 5, 5),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), attacker, attack, target),
+            attacker,
+            target);
+
+        // Exactly two components: the LOWER Piercing tier and the SAME Poison. Two
+        // components — not one (Poison dropped) and not three (both Piercing tiers).
+        Assert.Collection(
+            bloodied,
+            piercing =>
+            {
+                Assert.Equal(DamageType.Piercing, piercing.Component.Type);
+                Assert.Equal(6, piercing.Component.PrintedAverage); // the 1d4+4 tier, not 1d8+4
+                Assert.Equal(6, piercing.Result.Total); // 1d4=2, +4
+            },
+            poison =>
+            {
+                Assert.Equal(DamageType.Poison, poison.Component.Type);
+                Assert.Equal(10, poison.Component.PrintedAverage);
+                Assert.Equal(15, poison.Result.Total);
+            });
+    }
+
+    [Fact]
+    public void EmDashAlternative_MimicHeavierBiteRequiresTheGrappleBeItsOwnAndAlwaysAddsTheAcid()
+    {
+        // The Mimic's Bite (#409): "7 (1d8 + 3) Piercing damage—or 12 (2d8 + 3) Piercing
+        // damage if the target is Grappled by the mimic—plus 4 (1d8) Acid damage." The
+        // heavier Piercing tier lands only when the target is Grappled BY THE MIMIC
+        // (the attacker); a target held by someone else gets the base tier. The Acid is
+        // always dealt.
+        var attack = new CombatAttack(
+            "Bite",
+            AttackKind.Melee,
+            5,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [
+                new AttackDamage(DiceExpression.Parse("1d8 + 3"), DamageType.Piercing, 7),
+                new AttackDamage(DiceExpression.Parse("1d8"), DamageType.Acid, 4),
+            ])
+        {
+            Alternative = new AlternativeAttackDamage(
+                DiceExpression.Parse("2d8 + 3"),
+                DamageType.Piercing,
+                12,
+                AttackDamageCondition.TargetIsGrappledByAttacker)
+            {
+                ReplacesComponentIndex = 0,
+            },
+        };
+
+        var mimic = CombatTestData.Combatant("mimic", stats: CombatTestData.Stats(attacks: [attack]));
+        var ally = CombatTestData.Combatant("ally");
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        // Not Grappled at all: base Piercing (7) plus Acid (4).
+        var loose = AttackRules.RollDamage(
+            new ScriptedRandomSource(4, 4),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), mimic, attack, target),
+            mimic,
+            target);
+        Assert.Collection(
+            loose,
+            p => { Assert.Equal(DamageType.Piercing, p.Component.Type); Assert.Equal(7, p.Component.PrintedAverage); },
+            a => { Assert.Equal(DamageType.Acid, a.Component.Type); Assert.Equal(4, a.Component.PrintedAverage); });
+
+        // Grappled by an ALLY, not the mimic: still the base tier — the source matters.
+        target.AddCondition(ConditionType.Grappled, ally.Id);
+        var grappledByOther = AttackRules.RollDamage(
+            new ScriptedRandomSource(4, 4),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), mimic, attack, target),
+            mimic,
+            target);
+        Assert.Equal(7, grappledByOther[0].Component.PrintedAverage);
+
+        // Grappled by the mimic itself: the heavier Piercing tier (12), still plus Acid.
+        target.RemoveCondition(ConditionType.Grappled);
+        target.AddCondition(ConditionType.Grappled, mimic.Id);
+        var grappledByMimic = AttackRules.RollDamage(
+            new ScriptedRandomSource(4, 4, 4),
+            attack,
+            AttackRules.Resolve(new ScriptedRandomSource(15), mimic, attack, target),
+            mimic,
+            target);
+        Assert.Collection(
+            grappledByMimic,
+            p =>
+            {
+                Assert.Equal(DamageType.Piercing, p.Component.Type);
+                Assert.Equal(12, p.Component.PrintedAverage);
+                Assert.Equal(11, p.Result.Total); // 2d8 = 4+4, +3
+            },
+            a =>
+            {
+                Assert.Equal(DamageType.Acid, a.Component.Type);
+                Assert.Equal(4, a.Component.PrintedAverage);
+                Assert.Equal(4, a.Result.Total); // 1d8 = 4
+            });
+    }
+
+    [Fact]
+    public void EmDashAlternative_ACriticalHitDoublesBothTheAlternativeTierAndTheUnconditionalPlus()
+    {
+        // #410's concern applied to #409: a Critical Hit doubles the dice of EVERY
+        // component rolled — both the swapped-in alternative Piercing tier (1d4 becomes
+        // 2d4) and the unconditional Poison "plus" (3d6 becomes 6d6). The flat modifiers
+        // (+4) are never doubled.
+        var attack = VenomousSnakesBites();
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        DamageRules.Apply(
+            attacker,
+            attacker.Stats.MaximumHitPoints - attacker.Stats.MaximumHitPoints / 2,
+            DamageType.Bludgeoning);
+        Assert.True(attacker.IsBloodied);
+
+        var critical = AttackRules.Resolve(new ScriptedRandomSource(20), attacker, attack, target);
+        Assert.True(critical.Critical);
+
+        // 2 dice for the doubled 1d4 tier, then 6 for the doubled 3d6 Poison — eight in
+        // all. If either component failed to double, the scripted source would run dry or
+        // the asserted dice counts would not match.
+        var rolled = AttackRules.RollDamage(
+            new ScriptedRandomSource(1, 2, 1, 1, 1, 1, 1, 1), attack, critical, attacker, target);
+
+        Assert.Collection(
+            rolled,
+            piercing =>
+            {
+                Assert.Equal(DamageType.Piercing, piercing.Component.Type);
+                Assert.Equal(6, piercing.Component.PrintedAverage);
+                Assert.True(piercing.Result.WasCritical);
+                Assert.Equal([1, 2], piercing.Result.Dice); // 1d4 doubled to 2d4
+                Assert.Equal(7, piercing.Result.Total); // (1+2) + 4
+            },
+            poison =>
+            {
+                Assert.Equal(DamageType.Poison, poison.Component.Type);
+                Assert.True(poison.Result.WasCritical);
+                Assert.Equal([1, 1, 1, 1, 1, 1], poison.Result.Dice); // 3d6 doubled to 6d6
+                Assert.Equal(6, poison.Result.Total);
+            });
+    }
+
     [Fact]
     public void ADualModeAttackUsedInMelee_IsNotAtLongRange()
     {

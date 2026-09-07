@@ -99,6 +99,67 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void TheRealSwarmOfVenomousSnakesFieldsItsEmDashTierAndUnconditionalPoison()
+    {
+        // #409: the em-dash "8 (1d8 + 4) Piercing damage—or 6 (1d4 + 4) Piercing damage
+        // if the swarm is Bloodied—plus 10 (3d6) Poison damage" chain, end to end from
+        // the real stat block. The whole route matters: the alternative and the
+        // unconditional Poison have to survive extraction and reach the combatant, and
+        // the newly pool-eligible swarm (CR 2, re-admitted to the theme map) has to fight
+        // to a conclusion without stalling or throwing.
+        var swarm = CombatantStats.FromMonster(Content.MonstersById["monster.swarm-of-venomous-snakes"]);
+        var bites = swarm.Attacks.Single(attack => attack.Name == "Bites");
+
+        // Two unconditional components — the Piercing base and the always-on Poison —
+        // plus the Bloodied alternative that replaces only the Piercing (index 0).
+        Assert.Collection(
+            bites.Damage,
+            piercing => Assert.Equal(DamageType.Piercing, piercing.Type),
+            poison => Assert.Equal(DamageType.Poison, poison.Type));
+        Assert.NotNull(bites.Alternative);
+        Assert.Equal(0, bites.Alternative!.ReplacesComponentIndex);
+        Assert.Equal(AttackDamageCondition.AttackerIsBloodied, bites.Alternative.Condition);
+
+        // A single bite deals its Piercing AND its unconditional Poison — the component
+        // #371 dropped, now dealt. Driven deterministically: the swarm wins initiative
+        // (rolls 20 to the bandit's 1), then lands a scripted hit whose base Piercing
+        // (1d8+4) and Poison (3d6) each render their own Damage step.
+        var scripted = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(Content.MonstersById["monster.swarm-of-venomous-snakes"], "swarm", "vermin", new GridPosition(0, 5)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(1, 5)),
+            ],
+            new ScriptedRandomSource(20, 1, 15, 4, 5, 5, 5));
+
+        var bandit = scripted.Combatants.Single(combatant => combatant.Id == "bandit");
+        Assert.Null(scripted.Attack("Bites", bandit));
+
+        Assert.Contains(
+            scripted.Log,
+            step => step.Kind == CombatStepKind.Damage
+                && step.Narration.Contains("Piercing damage", StringComparison.Ordinal));
+        Assert.Contains(
+            scripted.Log,
+            step => step.Kind == CombatStepKind.Damage
+                && step.Narration.Contains("Poison damage", StringComparison.Ordinal));
+
+        // The severe-risk pin: a whole seeded fight fielding the swarm resolves — no
+        // stall, no exception — to a decided conclusion.
+        var seeded = Encounter.Start(
+            new Battlefield(14, 14),
+            [
+                Spawn(Content.MonstersById["monster.swarm-of-venomous-snakes"], "swarm", "vermin", new GridPosition(1, 7)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(11, 7)),
+            ],
+            new SeededRandomSource(409));
+
+        SimpleTacticsPolicy.RunToCompletion(seeded);
+        Assert.True(seeded.IsComplete);
+        Assert.NotNull(seeded.WinningSide);
+    }
+
+    [Fact]
     public void RealMultiattacksGrantRealExtraSwings()
     {
         // "The bandit makes two attacks, using Scimitar and Pistol in any combination."

@@ -975,6 +975,16 @@ check the run against, not predictions):
     shape twelve times — the extra two are the Mimic's Bite and the Swarm of Venomous
     Snakes' Bites, which join with a dash (`damage—or`) rather than a comma, plus the
     Swarm of Crawling Claws. #371's issue text names ten; the census bar is 12.
+
+    > **Update (2026-09-07):** #409 closed the last two. The Mimic's Bite and the Swarm
+    > of Venomous Snakes' Bites — the corpus's only two em-dash `damage—or…—plus`
+    > instances — now structure as an `AlternativeAttackDamage` that replaces one named
+    > component (`ReplacesComponentIndex`) rather than the whole `Damage` list, so the
+    > alternating Piercing tier and the unconditional Acid/Poison "plus" both execute.
+    > Exactly those two em-dash clauses left residue (2 vanished, 0 appeared); the
+    > Mimic keeps its header parenthetical as honest residue, and the Swarm of Venomous
+    > Snakes reached zero residue and re-entered the tier-one pool (re-mapped in
+    > `EncounterThemes`). No other entry moved.
   - **13 entries printing plural `conditions`** (#372).
   - #373's death-and-heal riders, push and Speed clauses.
   - **15 bundled Multiattack uses** (#341).

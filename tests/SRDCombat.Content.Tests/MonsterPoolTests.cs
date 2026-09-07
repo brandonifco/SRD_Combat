@@ -46,14 +46,15 @@ public class MonsterPoolTests
         // re-entered on the Bloodied alternative-damage tier now structuring and
         // executing — the ratchet #390's own acceptance criteria requires, so a
         // floor that never rises again as more of #390's ledger lands has stopped
-        // doing its job. Two of #390's seven shape-1 names stay out: Swarm of
-        // Piranhas (blocked separately by an attack-header Advantage parenthetical)
-        // and Swarm of Venomous Snakes (an em-dash "or…plus" combination #371 leaves
-        // as residue rather than mis-structuring — #409).
+        // doing its job. It rose 73 -> 74 on 2026-09-07 (#409): the Swarm of Venomous
+        // Snakes re-entered once its em-dash "or…if…plus" combination structured and
+        // executed (the per-component alternative and its unconditional Poison). One of
+        // #390's seven shape-1 names now stays out: the Swarm of Piranhas, blocked
+        // separately by an attack-header Advantage parenthetical.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 73,
+            pool.Count >= 74,
             $"The tier-1 pool has fallen to {pool.Count} monsters; it was 75 before the 2026-08-24 " +
             "span-accounting regeneration (#382), 68 before #371's alternative-damage restorations " +
             "(2026-08-25, PR #408), 81 when the genre cut landed (2026-08-20, TraditionalFoes), 116 " +

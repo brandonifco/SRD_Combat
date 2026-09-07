@@ -80,8 +80,12 @@ public enum EncounterTheme
 /// 2026-08-24: Blood Hawk, Swarm of Bats, Swarm of Crawling Claws, Swarm of Insects
 /// and Swarm of Rats all structure and execute their printed "or…if" alternative
 /// damage tier now (#371 — a Bloodied swarm's bite, the Blood Hawk's bigger hit
-/// against a Bloodied target), which was each one's whole remaining gap. The other
-/// seven of the twelve stay out until their own gaps close.
+/// against a Bloodied target), which was each one's whole remaining gap. A sixth
+/// returned on 2026-09-07: the Swarm of Venomous Snakes, whose only remaining gap was
+/// the em-dash "or…if…plus" chain #371 left as residue and #409 now structures and
+/// executes (the Bloodied-tier Piercing swap plus its always-on Poison) — themed with
+/// the two other snakes in the pool, the Giant Venomous Snake and the Flying Snake.
+/// The other six of the twelve stay out until their own gaps close.
 /// </para>
 /// </remarks>
 public static class EncounterThemes
@@ -159,6 +163,7 @@ public static class EncounterThemes
             ["Ochre Jelly"] = [EncounterTheme.DungeonVermin],
             ["Ogre"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.SavageHunters],
             ["Ogre Zombie"] = [EncounterTheme.Undead],
+            ["Swarm of Venomous Snakes"] = [EncounterTheme.DungeonVermin, EncounterTheme.CultAndFiends],
             ["White Dragon Wyrmling"] = [EncounterTheme.Draconic],
             ["Will-o'-Wisp"] = [EncounterTheme.Undead],
 
