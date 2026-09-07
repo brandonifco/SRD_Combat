@@ -54,6 +54,7 @@ board. File found-but-deferred work as an issue.
 | Godot client | `client/` | `tests/SRDCombat.Viewer.Tests` |
 | PDF extractor | `tools/SrdExtract` | `tests/SrdExtract.Tests` |
 | Pacing instrument | `tools/PacingMeasure` | — |
+| Shared test support — repo-root and corpus-path finding (`RepositoryPaths`, #318) | `tests/SRDCombat.TestSupport` (referenced by the test projects above; project-specific paths stay local as `Core`/`Game`/`ViewerRepositoryPaths`) | *n/a — support library, no xUnit* |
 
 ### Background, when you need the reasoning
 

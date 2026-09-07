@@ -38,7 +38,7 @@ public class ScenarioLibraryTests
         {
             var data = new TheoryData<string>();
 
-            foreach (var path in Directory.EnumerateFiles(RepositoryPaths.ScenarioDirectory, "*.json"))
+            foreach (var path in Directory.EnumerateFiles(GameRepositoryPaths.ScenarioDirectory, "*.json"))
             {
                 data.Add(Path.GetFileName(path));
             }
@@ -98,5 +98,5 @@ public class ScenarioLibraryTests
     private static ScenarioLoad Load(string file) => ScenarioFile.FromJson(Read(file));
 
     private static string Read(string file) =>
-        File.ReadAllText(Path.Combine(RepositoryPaths.ScenarioDirectory, file)).ReplaceLineEndings("\n");
+        File.ReadAllText(Path.Combine(GameRepositoryPaths.ScenarioDirectory, file)).ReplaceLineEndings("\n");
 }

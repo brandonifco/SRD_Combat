@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SRDCombat.Core\SRDCombat.Core.csproj" />
+    <ProjectReference Include="..\SRDCombat.TestSupport\SRDCombat.TestSupport.csproj" />
   </ItemGroup>
 
 </Project>

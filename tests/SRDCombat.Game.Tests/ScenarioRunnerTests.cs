@@ -367,7 +367,7 @@ public class ScenarioRunnerTests
     [MemberData(nameof(ScenarioLibraryTests.Files), MemberType = typeof(ScenarioLibraryTests))]
     public void EveryCommittedScenarioBuildsAndPlaysOut(string file)
     {
-        var json = File.ReadAllText(Path.Combine(RepositoryPaths.ScenarioDirectory, file));
+        var json = File.ReadAllText(Path.Combine(GameRepositoryPaths.ScenarioDirectory, file));
         var scenario = ScenarioFile.FromJson(json).Scenario!;
 
         var fight = ScenarioRunner.Build(Content, scenario, seed: 31);
