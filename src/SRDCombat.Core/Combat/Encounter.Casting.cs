@@ -48,6 +48,9 @@ public sealed partial class Encounter
         Combatant? target = null,
         int? slotLevel = null)
     {
+        // Not routed through TryGetActingCombatant (#320's shared preamble): a cast's
+        // second gate is spell.not_a_caster, not that helper's CanAct check, so this
+        // preamble genuinely differs and stays explicit.
         if (ActiveCombatant is not { } caster)
         {
             return new ActionRefusal("encounter.complete", "The encounter is over.");

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
@@ -139,14 +140,9 @@ public sealed partial class Encounter
     /// </remarks>
     public ActionRefusal? Move(GridPosition destination, MovementInterrupt? interrupt = null)
     {
-        if (ActiveCombatant is not { } mover)
+        if (!TryGetActingCombatant(out var mover, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!mover.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{mover.Name} cannot act.");
+            return refusal;
         }
 
         if (mover.HasCondition(ConditionType.Prone))
@@ -213,14 +209,9 @@ public sealed partial class Encounter
     {
         ArgumentNullException.ThrowIfNull(target);
 
-        if (ActiveCombatant is not { } attacker)
+        if (!TryGetActingCombatant(out var attacker, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!attacker.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{attacker.Name} cannot act.");
+            return refusal;
         }
 
         // Extra Attack and Multiattack are both modelled as one action buying several
@@ -368,16 +359,12 @@ public sealed partial class Encounter
     /// <summary>Stands up from Prone, spending half the creature's Speed.</summary>
     public ActionRefusal? StandUp()
     {
-        if (ActiveCombatant is not { } combatant)
+        // The shared guard's CanAct leg is load-bearing here in particular: without it a
+        // Prone creature that is Paralyzed — Incapacitated, but carrying its own movement
+        // — could stand up while unable to act.
+        if (!TryGetActingCombatant(out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        // Without this a Prone creature that is Paralyzed — Incapacitated, but carrying
-        // its own movement — could stand up while unable to act.
-        if (!combatant.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{combatant.Name} cannot act.");
+            return refusal;
         }
 
         if (!combatant.HasCondition(ConditionType.Prone))
@@ -422,14 +409,9 @@ public sealed partial class Encounter
     /// </remarks>
     public ActionRefusal? Escape()
     {
-        if (ActiveCombatant is not { } combatant)
+        if (!TryGetActingCombatant(out var combatant, out var refusal))
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
-        }
-
-        if (!combatant.CanAct)
-        {
-            return new ActionRefusal("combatant.cannot_act", $"{combatant.Name} cannot act.");
+            return refusal;
         }
 
         if (combatant.ConditionState(ConditionType.Grappled) is not { } grapple)
@@ -1011,16 +993,61 @@ public sealed partial class Encounter
             victim);
     }
 
-    private ActionRefusal? SpendActionOn(Action<Combatant> apply)
+    /// <summary>
+    /// The guard every universal turn action opens with: there is a fight in progress
+    /// with a combatant whose turn it is — <c>encounter.complete</c> otherwise — and that
+    /// combatant is able to act — <c>combatant.cannot_act</c> otherwise. Hands the
+    /// combatant back through <paramref name="actor"/> on success.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The single source of the two refusals the universal actions — Move, Attack, the
+    /// Action-economy actions (via <see cref="SpendActionOn"/>), StandUp, Escape,
+    /// UseEntry and the item actions — all begin with, so their code and wording cannot
+    /// drift between copies (#320). The refusals it returns are byte-for-byte the ones
+    /// each site inlined before, in the same order (present-first, then able-to-act), so
+    /// the frozen transcript and the refusal tests do not move.
+    /// </para>
+    /// <para>
+    /// It deliberately stops at those two. The "resource" leg of the preamble genuinely
+    /// varies — the Action, the Bonus Action, movement feet, or a cost interleaved after
+    /// a target check — so it stays explicit at each call site rather than being forced
+    /// through a parameter here. Two families also keep a different second gate and so do
+    /// not route through this helper: the class-feature actions
+    /// (<see cref="Rage"/> and the rest) check feature-presence — <c>feature.absent</c> —
+    /// in place of <see cref="Combatant.CanAct"/>, and <see cref="CastSpell(string, GridPosition, Combatant?, int?)"/>
+    /// checks <c>spell.not_a_caster</c>. Unifying those is the sibling concern the plan
+    /// holds for a later slice, kept out of this one under one-concern-per-PR.
+    /// </para>
+    /// </remarks>
+    private bool TryGetActingCombatant(
+        [NotNullWhen(true)] out Combatant? actor,
+        [NotNullWhen(false)] out ActionRefusal? refusal)
     {
-        if (ActiveCombatant is not { } combatant)
+        actor = ActiveCombatant;
+
+        if (actor is null)
         {
-            return new ActionRefusal("encounter.complete", "The encounter is over.");
+            refusal = new ActionRefusal("encounter.complete", "The encounter is over.");
+            return false;
         }
 
-        if (!combatant.CanAct)
+        if (!actor.CanAct)
         {
-            return new ActionRefusal("combatant.cannot_act", $"{combatant.Name} cannot act.");
+            refusal = new ActionRefusal("combatant.cannot_act", $"{actor.Name} cannot act.");
+            actor = null;
+            return false;
+        }
+
+        refusal = null;
+        return true;
+    }
+
+    private ActionRefusal? SpendActionOn(Action<Combatant> apply)
+    {
+        if (!TryGetActingCombatant(out var combatant, out var refusal))
+        {
+            return refusal;
         }
 
         if (!combatant.Turn.HasAction)
