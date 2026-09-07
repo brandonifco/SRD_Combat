@@ -211,6 +211,38 @@ One thing the baseline shows that the audit did not anticipate: cumulative
 paid once — it is re-read every turn. A reduction in it compounds across a session's
 length rather than being a single saving.
 
+### Re-measured 2026-09-07: the floor did not fall
+
+The post-split reading now exists (#565, the analyst's comment of 2026-09-07), and it is
+a **null result**. The instrument was run as `agent-tokens.sh --all --since 2026-08-30`,
+with every session re-classified by its own start date, because `--since` filters by file
+mtime and a resumed old session leaks in:
+
+| Session kind | n | Floor range | Median |
+| --- | --- | --- | --- |
+| Subagents, full tier (floor ≥ 35k), post-split | 28 | 41k–57k | 50.1k |
+| Subagents, full tier, pre-split, same method | 30 | 41k–53k | 45.8k |
+| Main interactive, post-split | 2 | 58.3k, 60.0k | not a reading |
+
+CLAUDE.md was ~8.9k tokens at that measurement (490 lines / 34.9 KB — it has grown back
+from the 29.9 KB the split left), down from ~12k: an expected saving of about 3k tokens.
+The subagent median moved the other way, up ~4k, and the main-interactive tier has two
+clean sessions against the five #565 required, so it is not a reading at all. The
+confound the paragraph above warned about is the whole story: subagent floors are
+**bimodal** — a second cluster of 13 post-split sessions sits at ~20–27k, where a much
+smaller tool set was connected — so the between-session swing from harness prompt, tool
+schemas and MCP loadout is ~30k, which the analyst put at roughly seven times the ~3k
+signal being looked for. The split may have removed the ~3k it was expected to; this
+instrument cannot see it.
+
+What the null result changes: the "16–23%" figure above stands as the pre-split share,
+but the split's benefit is **unverified, not verified**, and that is recorded as plainly
+as the measured 9-hits-to-1 was rather than rounded up to "probably helped". Until the
+floor is decomposed, `agent-tokens.sh`'s headline number answers "what did agents pay"
+but not "did a project-side change make them pay less" — the question #565's acceptance
+criteria asked for in that case, *what is the floor made of and which parts are ours*, is
+filed as #650.
+
 ## Open work, filed
 
 Everything this audit deferred is in the issue queue, because that is this project's only
@@ -218,7 +250,8 @@ work queue — nothing here is tracked in prose alone:
 
 | Issue | What it holds |
 | --- | --- |
-| [#565](https://github.com/brandonifco/SRD_Combat/issues/565) | Re-measure the context floor now that CLAUDE.md is split. The pre-split baseline is above; **the post-split reading does not exist yet**, so the split's benefit is a prediction until this closes — including if the answer is "it did not move" |
+| [#565](https://github.com/brandonifco/SRD_Combat/issues/565) | Re-measure the context floor now that CLAUDE.md is split. **Answered 2026-09-07: the floor did not move** — the reading is under "Re-measured" above, and the split's benefit is recorded as unverified |
+| [#650](https://github.com/brandonifco/SRD_Combat/issues/650) | What the floor is made of, and which components this project controls. #565's null result showed the total is dominated by harness prompt, tool schemas and MCP loadout; until the controllable part is measured on its own, "did X make agents cheaper" cannot be answered by this instrument |
 | [#566](https://github.com/brandonifco/SRD_Combat/issues/566) | Decide CodeQL: enable it, or record the refusal in "Considered and rejected". It is currently undecided-by-default, which is the state that gets re-proposed forever |
 | [#567](https://github.com/brandonifco/SRD_Combat/issues/567) | The ~5 GB of scratchpad worktrees *outside* the repository. Deliberately not swept up with the in-repo ones: those were an agent-token problem, these are only disk |
 
