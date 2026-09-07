@@ -629,7 +629,7 @@ public sealed class TurnResources
     public bool HasTradeInteraction { get; private set; } = true;
 
     /// <summary>Begins a new turn, restoring everything except an already-spent Reaction's history.</summary>
-    public void BeginTurn(int speedFeet)
+    internal void BeginTurn(int speedFeet)
     {
         HasAction = true;
         HasBonusAction = true;
@@ -642,19 +642,19 @@ public sealed class TurnResources
         HasTradeInteraction = true;
     }
 
-    public void SpendAction() => HasAction = false;
+    internal void SpendAction() => HasAction = false;
 
     /// <summary>Gives the action back — what Action Surge buys.</summary>
-    public void RestoreAction() => HasAction = true;
+    internal void RestoreAction() => HasAction = true;
 
-    public void SpendBonusAction() => HasBonusAction = false;
+    internal void SpendBonusAction() => HasBonusAction = false;
 
-    public void SpendReaction() => HasReaction = false;
+    internal void SpendReaction() => HasReaction = false;
 
     /// <summary>Spends this turn's one free trade. See <see cref="HasTradeInteraction"/>.</summary>
-    public void SpendTradeInteraction() => HasTradeInteraction = false;
+    internal void SpendTradeInteraction() => HasTradeInteraction = false;
 
-    public void SpendMovement(int feet)
+    internal void SpendMovement(int feet)
     {
         MovementFeet = Math.Max(0, MovementFeet - feet);
         HasMoved = HasMoved || feet > 0;
@@ -665,7 +665,7 @@ public sealed class TurnResources
     /// Buys nothing after Steady Aim — "your Speed is 0 for the rest of the turn", and
     /// a Dash adds to a Speed of 0.
     /// </remarks>
-    public void AddMovement(int feet)
+    internal void AddMovement(int feet)
     {
         if (!_movementForfeited)
         {
@@ -674,15 +674,15 @@ public sealed class TurnResources
     }
 
     /// <summary>Steady Aim's price: no movement for the rest of the turn.</summary>
-    public void ForfeitMovement()
+    internal void ForfeitMovement()
     {
         MovementFeet = 0;
         _movementForfeited = true;
     }
 
-    public void StartDodging() => IsDodging = true;
+    internal void StartDodging() => IsDodging = true;
 
-    public void Disengage() => HasDisengaged = true;
+    internal void Disengage() => HasDisengaged = true;
 }
 
 /// <summary>
