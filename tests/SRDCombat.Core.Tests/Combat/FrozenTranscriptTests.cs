@@ -27,7 +27,7 @@ public class FrozenTranscriptTests
     [Fact]
     public void AWholeFight_MatchesTheFrozenTranscript()
     {
-        var path = Path.Combine(RepositoryPaths.FixtureDirectory, FixtureName);
+        var path = Path.Combine(CoreRepositoryPaths.FixtureDirectory, FixtureName);
 
         Assert.True(File.Exists(path), $"Missing fixture '{path}'. Regenerate it with TranscriptWriter.");
 
@@ -134,10 +134,10 @@ public class TranscriptWriter
     [Fact(Skip = "Writes the committed fixture. Un-skip, run, re-skip, and review the diff.")]
     public void WriteSkirmishTranscript()
     {
-        Directory.CreateDirectory(RepositoryPaths.FixtureDirectory);
+        Directory.CreateDirectory(CoreRepositoryPaths.FixtureDirectory);
 
         File.WriteAllText(
-            Path.Combine(RepositoryPaths.FixtureDirectory, FrozenTranscriptTests.FixtureName),
+            Path.Combine(CoreRepositoryPaths.FixtureDirectory, FrozenTranscriptTests.FixtureName),
             FrozenTranscriptTests.Render(FrozenTranscriptTests.RunSkirmish()));
     }
 }

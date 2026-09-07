@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Shared test-support library (#318). A plain class library, deliberately NOT a test
+    project: it references neither xUnit nor any product assembly, so nothing here can
+    depend on the engine and every test project can depend on it without cycles.
+
+    Its one job today is to locate the repository root once — the trick every test
+    project used to copy verbatim as its own `RepositoryPaths.FindRoot()`. `SrdContentDirectory`
+    (the `data/srd` corpus) lives here too, as the one path more than one project needs.
+
+    Paths that point at a single project's own fixtures, or that need a product type to
+    name themselves, stay in that project (see `CoreRepositoryPaths`, `GameRepositoryPaths`,
+    `ViewerRepositoryPaths`): this library holds only what is genuinely shared and
+    reference-free.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
