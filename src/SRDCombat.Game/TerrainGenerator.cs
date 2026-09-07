@@ -19,7 +19,14 @@ namespace SRDCombat.Game;
 /// </remarks>
 public enum TerrainDensity
 {
-    /// <summary>Today's dial, kept as the floor of the range: ~3.6% coverage, always.</summary>
+    /// <summary>
+    /// Today's attempt counts, unchanged (1× multiplier) — not today's board: the
+    /// whole-board eligibility rule, the 3×3 spawn clearance and the contested-ground
+    /// bias all moved where terrain lands since this was the only dial. Measured mean
+    /// coverage under that new eligibility is ~3.9%, inside the 3–6% band the class
+    /// remarks and <c>TerrainDensityCoverageTests</c> state — see those remarks for the
+    /// band's own semantics; this is the dial, not the outcome.
+    /// </summary>
     Sparse,
 
     /// <summary>The new midpoint: noticeably more populated without reading as clutter.</summary>
@@ -96,15 +103,17 @@ public enum TerrainDensity
 /// includes the plain, sparingly.
 /// </item>
 /// <item>
-/// <b>Every fight stays winnable on foot, by every body in it.</b> An obstacle square —
-/// wall or low, both being impassable — whose placement would cut any reserved square
-/// off from any other is discarded rather than placed, so the guarantee holds whatever
-/// the dice drew. Both sides field melee-only creatures, and a fight the sides cannot
-/// reach each other in is not a fight. The question is asked for the <em>largest body on
-/// the field</em> rather than for a single square (see <see cref="GridConnectivity"/>): a
-/// corridor two squares wide connects a battlefield for every character in this game and
-/// wedges the Ogre following them through it, which is a stall the single-square check
-/// could not see — there is no squeezing rule in this SRD (design §8.1).
+/// <b>Every fight stays winnable on foot, by every body in it.</b> An obstacle — wall or
+/// low, both being impassable — is admitted as a whole footprint, never square by
+/// square: one <see cref="GridConnectivity.StaysConnected"/> check per footprint decides
+/// whether the <em>entire</em> block would cut any reserved square off from any other,
+/// and a footprint that fails is discarded whole rather than placed, so the guarantee
+/// holds whatever the dice drew. Both sides field melee-only creatures, and a fight the
+/// sides cannot reach each other in is not a fight. The question is asked for the
+/// <em>largest body on the field</em> rather than for a single square: a corridor two
+/// squares wide connects a battlefield for every character in this game and wedges the
+/// Ogre following them through it, which is a stall a single-square check could not see
+/// — there is no squeezing rule in this SRD (design §8.1).
 /// </item>
 /// </list>
 /// <para>
