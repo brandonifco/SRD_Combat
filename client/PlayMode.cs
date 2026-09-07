@@ -233,33 +233,26 @@ public partial class PlayMode : FightScreen
         }
 
         // The gauntlet loop below never calls ResolveFight — it draws its own roster
-        // every fight — so --spawn here would silently do nothing (#463). Refuse it
-        // the same way a bad roster refuses, rather than starting a run that quietly
-        // ignored what was asked for. HasArgument("spawn") is the same presence
-        // predicate ResolveFight's own spawn branch keys on (FightScreen.cs) — a bare
-        // --spawn or the console's space form counts as "given" in both places, so
-        // this gate and that branch never disagree about whether the flag was passed
-        // (#470, M2 — they used to: this gate on HasArgument, that branch on
-        // ArgumentValue, which let a valueless --spawn slip past both silently).
-        if (HasArgument("spawn") && !HasArgument("one-fight"))
-        {
-            _phase = Phase.RunOver;
-            _interlude.Add(
-                "--spawn refused: the gauntlet does not read it — it draws its own roster " +
-                "every fight. Pass --one-fight (or run with --watch) to field a chosen cast.");
-            _subtitle = $"seed {_seed}";
-            return;
-        }
+        // every fight — so --spawn/--scenario here would silently do nothing (#463,
+        // #476), and --continue together with --level, or a bad --level, has nothing
+        // honest to fall back to either (#488). All four gates are one decision now,
+        // computed once before either branch below needs it: GauntletStart.Resolve
+        // (#490b) folds the spawn/scenario-without-one-fight refusals, the
+        // continue/level interaction and the level parse into the single result used
+        // below, the same HasArgument("spawn") presence predicate ResolveFight's own
+        // spawn branch keys on (FightScreen.cs) so this gate and that branch never
+        // disagree about whether a flag was passed (#470, M2).
+        var gauntletStart = GauntletStart.Resolve(
+            spawn: HasArgument("spawn") ? FlagValue.Of(ArgumentValue("spawn")) : FlagValue.Absent,
+            scenario: HasArgument("scenario") ? FlagValue.Of(ArgumentValue("scenario")) : FlagValue.Absent,
+            oneFight: HasArgument("one-fight"),
+            continuing: HasArgument("continue"),
+            level: HasArgument("level") ? FlagValue.Of(ArgumentValue("level")) : FlagValue.Absent);
 
-        // --scenario is the same shape one flag over (#476): the gauntlet loop below
-        // never calls ResolveFight either, so a scenario named here would be silently
-        // unplayed rather than refused — exactly the hole #463 closed for --spawn.
-        if (HasArgument("scenario") && !HasArgument("one-fight"))
+        if (gauntletStart.Refusal is not null)
         {
             _phase = Phase.RunOver;
-            _interlude.Add(
-                "--scenario refused: the gauntlet does not read it — it draws its own roster " +
-                "every fight. Pass --one-fight (or run with --watch) to play it.");
+            _interlude.Add(gauntletStart.Refusal);
             _subtitle = $"seed {_seed}";
             return;
         }
@@ -319,19 +312,13 @@ public partial class PlayMode : FightScreen
         // call would be wiped before the first frame ever showed it.
         var startupNotices = new List<string>();
 
-        // --level only ever means one thing here: where a *new* run begins. Decided once,
-        // before either branch below, because a resumed run has nothing for it to apply
-        // to (GauntletRun.Resume re-resolves at the level the save's own experience has
-        // earned) and letting it through silently there would be exactly the shape #488
-        // exists to close, just for --continue instead of a bad number.
-        if (!TryResolveGauntletLevel(
-                HasArgument("continue"), HasArgument("level"), ArgumentValue("level"), out var level, out var levelError))
-        {
-            _phase = Phase.RunOver;
-            _interlude.Add(levelError!);
-            _subtitle = $"seed {_seed}";
-            return;
-        }
+        // --level only ever means one thing here: where a *new* run begins. Resolved
+        // once above, before either branch below, because a resumed run has nothing
+        // for it to apply to (GauntletRun.Resume re-resolves at the level the save's
+        // own experience has earned) and letting it through silently there would be
+        // exactly the shape #488 exists to close, just for --continue instead of a bad
+        // number.
+        var level = gauntletStart.Level;
 
         if (HasArgument("continue"))
         {
@@ -426,61 +413,6 @@ public partial class PlayMode : FightScreen
         startupNotices.AddRange(_run.LevelUps.Select(notice => notice + "!"));
 
         EnterInterlude(startupNotices);
-    }
-
-    /// <summary>
-    /// The pure half of the gauntlet-start <c>--level</c> (#488): given whether
-    /// <c>--continue</c> and <c>--level</c> were passed and the latter's value, decides
-    /// the level a fresh run begins at, or refuses. Split out of <see cref="OnReady"/> the
-    /// same way <see cref="SRDCombat.Game.ScenarioComposition.Compose"/> is split from
-    /// reading <c>--scenario</c> (#476, #490a) — <c>HasArgument</c>/<c>ArgumentValue</c> reach into
-    /// Godot's <c>OS</c> singleton and cannot run under a plain xUnit test, while
-    /// everything below this line is ordinary rules over plain values, closing part of
-    /// #490's stated gap that nothing pins this screen's argv wiring.
-    /// </summary>
-    /// <remarks>
-    /// <paramref name="levelGiven"/> and <paramref name="continuing"/> together decide
-    /// three cases. Both true: <c>--level</c> has nothing to apply to on a resumed
-    /// run — <see cref="GauntletRun.Resume"/> re-resolves at the level the save's
-    /// own experience earned — so this refuses rather than silently dropping the flag,
-    /// the same shape #463 closed for <c>--spawn</c> against the gauntlet loop.
-    /// <paramref name="continuing"/> true and <paramref name="levelGiven"/> false: the
-    /// caller ignores the returned level entirely, so it is set to the harmless default
-    /// below rather than left undefined. Neither: a fresh run keeps its old default of
-    /// level 1 when <c>--level</c> is absent — not <see cref="ScenarioArguments"/>'s own
-    /// default of 3, which is spawn mode's own budgeted-fight concern (its remarks say
-    /// so) — and reuses <see cref="ScenarioArguments.TryParseLevel"/> for the actual
-    /// parse and range check by forcing <c>present: true</c>, so this method's own
-    /// absent-means-1 case never touches that helper's absent-means-3 branch.
-    /// </remarks>
-    internal static bool TryResolveGauntletLevel(
-        bool continuing, bool levelGiven, string? levelText, out int level, out string? error)
-    {
-        if (continuing && levelGiven)
-        {
-            level = default;
-            error = "--level refused: --continue resumes at the level the save's own " +
-                "experience has earned; --level does not apply here. Start a new run to choose one.";
-            return false;
-        }
-
-        if (!levelGiven)
-        {
-            level = 1;
-            error = null;
-            return true;
-        }
-
-        if (!ScenarioArguments.TryParseLevel(levelText, present: true, out var parsed, out var levelError))
-        {
-            level = default;
-            error = $"--level refused: {levelError}";
-            return false;
-        }
-
-        level = parsed;
-        error = null;
-        return true;
     }
 
     public override void _Process(double delta)

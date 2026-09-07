@@ -3,12 +3,12 @@ using SRDCombat.Game;
 namespace SRDCombat.Viewer.Tests;
 
 /// <summary>
-/// The client's whole flag-surface sweep (#489, #488, #602): <c>FightScreen.TryParseSeed</c>
-/// / <c>TryResolveSeed</c>, <c>WatchMode.TryParseAt</c> / <c>TryResolveAt</c> and
-/// <c>PlayMode.TryResolveGauntletLevel</c> are each the pure half of a flag whose
-/// Godot-reading half (<c>ArgumentValue</c>/<c>HasArgument</c>) cannot run under a plain
-/// xUnit test — split the same way <c>SRDCombat.Game.ScenarioComposition.Compose</c> is
-/// split from reading <c>--scenario</c> (#476, #490a; see
+/// The client's whole flag-surface sweep (#489, #602): <c>FightScreen.TryParseSeed</c>
+/// / <c>TryResolveSeed</c> and <c>WatchMode.TryParseAt</c> / <c>TryResolveAt</c> are
+/// each the pure half of a flag whose Godot-reading half
+/// (<c>ArgumentValue</c>/<c>HasArgument</c>) cannot run under a plain xUnit test —
+/// split the same way <c>SRDCombat.Game.ScenarioComposition.Compose</c> is split from
+/// reading <c>--scenario</c> (#476, #490a; see
 /// <c>SRDCombat.Game.Tests.ScenarioCompositionTests</c>'s own remarks for why). Each one
 /// used to fall through to a silent default or a silent clamp on a bad
 /// value; each now refuses, naming the flag, the value and the accepted set. The
@@ -16,8 +16,10 @@ namespace SRDCombat.Viewer.Tests;
 /// independent review found in #489's own sweep: <c>TryParseSeed</c>/<c>TryParseAt</c>
 /// only ever saw an already-read value, so a *bare* flag (<c>-- --seed</c>,
 /// <c>--capture=out.png --at</c>) reached them as the same <c>null</c> an absent flag
-/// would — the two are now told apart the same way <c>PlayMode.TryResolveGauntletLevel</c>
-/// already told a bare <c>--level</c> from an absent one.
+/// would — the two are now told apart explicitly via a <c>given</c> parameter.
+/// The gauntlet-start gates (<c>--spawn</c>/<c>--scenario</c>-without-<c>--one-fight</c>
+/// and <c>--continue</c>/<c>--level</c>) moved off <c>PlayMode</c> entirely by #490b —
+/// see <c>SRDCombat.Game.Tests.GauntletStartTests</c> for those.
 /// </summary>
 /// <remarks>
 /// This is also the first test to construct anything from <c>PlayMode</c> or
@@ -195,90 +197,10 @@ public class FlagRefusalTests
         Assert.Contains("0-9", error);
     }
 
-    // ---- PlayMode.TryResolveGauntletLevel (#488) ----
-
-    [Fact]
-    public void AFreshRunWithNoLevelDefaultsToOne()
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: false, levelGiven: false, levelText: null, out var level, out var error);
-
-        Assert.True(ok);
-        Assert.Equal(1, level);
-        Assert.Null(error);
-    }
-
-    [Theory]
-    [InlineData("1")]
-    [InlineData("5")]
-    public void AFreshRunWithAnInRangeLevelParsesIt(string text)
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: false, levelGiven: true, levelText: text, out var level, out var error);
-
-        Assert.True(ok);
-        Assert.Equal(int.Parse(text), level);
-        Assert.Null(error);
-    }
-
-    [Fact]
-    public void AFreshRunWithANonNumericLevelIsRefusedRatherThanDefaulted()
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: false, levelGiven: true, levelText: "x", out _, out var error);
-
-        Assert.False(ok);
-        Assert.Contains("--level refused", error);
-        Assert.Contains("1-5", error);
-    }
-
-    [Fact]
-    public void AFreshRunWithAnOutOfRangeLevelIsRefusedRatherThanClamped()
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: false, levelGiven: true, levelText: "9", out _, out var error);
-
-        Assert.False(ok);
-        Assert.Contains("--level refused", error);
-        Assert.Contains("1-5", error);
-    }
-
-    [Fact]
-    public void APresentButValuelessLevelOnAFreshRunIsRefused()
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: false, levelGiven: true, levelText: null, out _, out var error);
-
-        Assert.False(ok);
-        Assert.Contains("--level refused", error);
-        Assert.Contains("no value given", error);
-    }
-
-    [Fact]
-    public void ContinuingWithNoLevelSucceedsAndTheLevelIsUnused()
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: true, levelGiven: false, levelText: null, out _, out var error);
-
-        Assert.True(ok);
-        Assert.Null(error);
-    }
-
-    [Fact]
-    public void ContinuingWithALevelIsRefusedRatherThanSilentlyIgnored()
-    {
-        var ok = PlayMode.TryResolveGauntletLevel(
-            continuing: true, levelGiven: true, levelText: "4", out _, out var error);
-
-        Assert.False(ok);
-        Assert.Contains("--level refused", error);
-        Assert.Contains("--continue", error);
-    }
-
     // ---- PlayMode's --create --level forwarding (#488, #602) ----
 
     /// <summary>
-    /// <see cref="TryResolveGauntletLevel"/> above pins the flag being parsed into the
+    /// <c>SRDCombat.Game.Tests.GauntletStartTests</c> pins the flag being parsed into the
     /// right <c>level</c> value; nothing pinned that value actually reaching
     /// <c>GauntletRun.Start</c>'s <c>startingLevel</c> parameter on the
     /// <c>CreatedDrafts</c> branch — <c>--create --level=4</c> used to start at 1 with

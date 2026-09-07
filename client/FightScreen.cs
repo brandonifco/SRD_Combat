@@ -843,7 +843,7 @@ public abstract partial class FightScreen : Node2D
     /// caller picks its own default; given and valid, so that value wins; or given but
     /// unusable (bare or non-numeric), which refuses rather than falling through to the
     /// same default an absent flag would use. Split out the same way
-    /// <see cref="PlayMode.TryResolveGauntletLevel"/> is split from <c>--level</c>:
+    /// <see cref="SRDCombat.Game.GauntletStart.Resolve"/> is split from <c>--level</c>:
     /// <c>HasArgument</c>/<c>ArgumentValue</c> reach into Godot's <c>OS</c> singleton and
     /// cannot run under a plain xUnit test, while this and <see cref="TryParseSeed"/>
     /// below are ordinary values and range checks.
