@@ -7,9 +7,10 @@ namespace SRDCombat.Viewer.Tests;
 /// / <c>TryResolveSeed</c>, <c>WatchMode.TryParseAt</c> / <c>TryResolveAt</c> and
 /// <c>PlayMode.TryResolveGauntletLevel</c> are each the pure half of a flag whose
 /// Godot-reading half (<c>ArgumentValue</c>/<c>HasArgument</c>) cannot run under a plain
-/// xUnit test — split the same way <c>FightScreen.ScenarioFromFile</c> is split from
-/// reading <c>--scenario</c> (#476; see <c>ScenarioFromFileTests</c>'s own remarks for
-/// why). Each one used to fall through to a silent default or a silent clamp on a bad
+/// xUnit test — split the same way <c>SRDCombat.Game.ScenarioComposition.Compose</c> is
+/// split from reading <c>--scenario</c> (#476, #490a; see
+/// <c>SRDCombat.Game.Tests.ScenarioCompositionTests</c>'s own remarks for why). Each one
+/// used to fall through to a silent default or a silent clamp on a bad
 /// value; each now refuses, naming the flag, the value and the accepted set. The
 /// <c>TryResolveSeed</c>/<c>TryResolveAt</c> pair added by #602 closes a narrower gap an
 /// independent review found in #489's own sweep: <c>TryParseSeed</c>/<c>TryParseAt</c>

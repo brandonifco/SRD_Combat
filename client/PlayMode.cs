@@ -432,8 +432,8 @@ public partial class PlayMode : FightScreen
     /// The pure half of the gauntlet-start <c>--level</c> (#488): given whether
     /// <c>--continue</c> and <c>--level</c> were passed and the latter's value, decides
     /// the level a fresh run begins at, or refuses. Split out of <see cref="OnReady"/> the
-    /// same way <see cref="FightScreen.ScenarioFromFile"/> is split from reading
-    /// <c>--scenario</c> (#476) — <c>HasArgument</c>/<c>ArgumentValue</c> reach into
+    /// same way <see cref="SRDCombat.Game.ScenarioComposition.Compose"/> is split from
+    /// reading <c>--scenario</c> (#476, #490a) — <c>HasArgument</c>/<c>ArgumentValue</c> reach into
     /// Godot's <c>OS</c> singleton and cannot run under a plain xUnit test, while
     /// everything below this line is ordinary rules over plain values, closing part of
     /// #490's stated gap that nothing pins this screen's argv wiring.
