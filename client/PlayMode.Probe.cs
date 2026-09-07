@@ -29,10 +29,10 @@ public partial class PlayMode : FightScreen
         }
 
         _probeStarted = true;
-        RunProbe(directory);
+        this.FireAndObserve(RunProbe(directory));
     }
 
-    private async void RunProbe(string directory)
+    private async Task RunProbe(string directory)
     {
         // --one-fight fixes the party at level 3 (FightScreen.ResolveFight), which a
         // fresh gauntlet does not reach for many fights — and the Slot menu needs a
