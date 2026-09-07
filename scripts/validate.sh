@@ -59,6 +59,45 @@ test_suite() {
   dotnet test "$SLN" --configuration "$1" --no-build "${args[@]}"
 }
 
+# #599: tools/asset_pipeline/test_master_to_sprite.py is a real unittest suite
+# that nothing ran automatically — a green CI said nothing about the Python
+# pipeline tests. It has no Debug/Release dimension, so this runs once, not
+# once per configuration (see the `ci` case below).
+#
+# Guarded rather than required: a machine without python3/Pillow still gates
+# the dotnet suite, per #599's acceptance criteria — `./scripts/doctor.sh`
+# reports the same gap as an optional-tooling warning. CI always has both (the
+# workflow installs Pillow before calling this), so there the guard never
+# trips and a real test failure always fails the gate.
+python_tests() {
+  local test_file=tools/asset_pipeline/test_master_to_sprite.py
+
+  echo; echo "== tools/ Python tests ($test_file) =="
+
+  # The test file is tracked and always expected. A missing one is a repo
+  # regression (renamed/deleted), not an environment gap, so it fails the gate
+  # even where python3/Pillow are absent — otherwise the step could pass
+  # vacuously, gating nothing (#599).
+  if [[ ! -f "$test_file" ]]; then
+    echo "ERROR: $test_file is missing (renamed or deleted?) — the gate cannot verify the pipeline (#599)." >&2
+    return 1
+  fi
+
+  # python3/Pillow absent IS an environment gap: a machine without them still
+  # gates the dotnet suite (./scripts/doctor.sh reports the gap). CI installs
+  # Pillow, so there this never trips and a real test failure fails the gate.
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "skipped: python3 not found (see ./scripts/doctor.sh)"
+    return 0
+  fi
+  if ! python3 -c 'import PIL' >/dev/null 2>&1; then
+    echo "skipped: Pillow not installed (see ./scripts/doctor.sh)"
+    return 0
+  fi
+
+  python3 "$test_file"
+}
+
 case "${1:-}" in
   sdk-pin) sdk_pin ;;
   fast)
@@ -68,12 +107,23 @@ case "${1:-}" in
     sdk_pin; dotnet restore "$SLN"
     build Debug; test_suite Debug
     build Release; test_suite Release
+    python_tests
     git diff --check; docs_grep ;;
   ci)
     case "${2:-}" in
       Debug|Release)
         sdk_pin; dotnet restore "$SLN"
-        build "$2"; test_suite "$2" ;;
+        build "$2"; test_suite "$2"
+        # Run once across the two-leg matrix, not once per leg — see
+        # python_tests' comment. Debug is the leg that carries it. Use a full
+        # `if` rather than `[[ … ]] && python_tests`: as the branch's trailing
+        # statement, the `&&` form returns the failed `[[ ]]`'s exit 1 on the
+        # Release leg (condition false, short-circuited), failing an otherwise-
+        # green `ci Release` — which `validate.sh full` never exercises.
+        if [[ "$2" == "Debug" ]]; then
+          python_tests
+        fi
+        ;;
       *) usage ;;
     esac ;;
   *) usage ;;

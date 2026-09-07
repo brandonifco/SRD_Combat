@@ -226,15 +226,22 @@ fi
 # The asset pipeline (tools/asset_pipeline/master_to_sprite.py, #294) is the
 # only thing in the repo that needs Pillow, and needs nothing else — no
 # numpy, no scikit-learn, deliberately, so this is the whole dependency.
+# Since #599, `scripts/validate.sh` also runs test_master_to_sprite.py as part
+# of the gate when both are present — guarded, so their absence here only
+# means that suite is skipped (`full`/`ci` still gate the dotnet build and
+# tests), never a build/test failure.
 if command -v python3 >/dev/null 2>&1; then
     if python3 -c 'import PIL' >/dev/null 2>&1; then
-        pass "python3 with Pillow present (needed for tools/asset_pipeline)"
+        pass "python3 with Pillow present (needed for tools/asset_pipeline, and for validate.sh's Python test step)"
     else
         warn 'python3 found but Pillow is not installed.'
-        note 'Needed only for tools/asset_pipeline/master_to_sprite.py: `pip install Pillow`.'
+        note 'Needed for tools/asset_pipeline/master_to_sprite.py, and for validate.sh to run its'
+        note "test suite (skipped without it): \`pip install Pillow\`."
     fi
 else
-    warn 'python3 not installed. Needed only for tools/asset_pipeline (the sprite pipeline).'
+    warn 'python3 not installed.'
+    note 'Needed for tools/asset_pipeline (the sprite pipeline), and for validate.sh to run its'
+    note 'Python test suite (skipped without it).'
 fi
 
 # ---------------------------------------------------------------------------

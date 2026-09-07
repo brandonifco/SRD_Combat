@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Pins master_to_sprite.py's ship-status reporting (#514).
 
-Standalone ``unittest`` — this project's gate (``scripts/validate.sh``) is
-dotnet-only and does not run Python, so this is not wired into CI. Run it by
-hand after touching ``_shipped_folder_for``/``_shipped_folders_from_sprite_library``/
+Standalone ``unittest``, wired into the gate (#599): ``scripts/validate.sh``
+runs this once — in `full`, and in the `ci Debug` leg only, not `ci Release`,
+since this suite carries no Debug/Release dimension — guarded so a machine
+without python3/Pillow still gates the dotnet suite (``./scripts/doctor.sh``
+reports that gap as an optional-tooling warning). CI always has both: the
+workflow installs Pillow before calling ``validate.sh``. Run it by hand after
+touching ``_shipped_folder_for``/``_shipped_folders_from_sprite_library``/
 ``_ship_status``:
 
     python3 tools/asset_pipeline/test_master_to_sprite.py
