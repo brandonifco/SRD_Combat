@@ -780,21 +780,30 @@ public sealed partial class Encounter
                 // Concentration, and can down or kill the target, same as any other
                 // damage application. The Channel Divinity use and each save above
                 // stay Feature steps; only the applied hit-point loss is Damage.
-                Add(
-                    CombatStepKind.Damage,
-                    $"{target.Name} takes {applied.Effective} Radiant damage from Sear Undead " +
-                    $"[{sear}] — {DescribeHealth(target)}.",
-                    combatant,
-                    target,
-                    damage: applied.Effective);
+                //
+                // DescribeHealth reads the target's post-damage state, so a hit that
+                // downs a concentrating target is narrated before CheckConcentration
+                // below has had a chance to clear ConcentratingOn — the same #335
+                // window as ImposeConditions and Escalate; see
+                // SuspendConcentrationInvariant.
+                using (SuspendConcentrationInvariant())
+                {
+                    Add(
+                        CombatStepKind.Damage,
+                        $"{target.Name} takes {applied.Effective} Radiant damage from Sear Undead " +
+                        $"[{sear}] — {DescribeHealth(target)}.",
+                        combatant,
+                        target,
+                        damage: applied.Effective);
 
-                // The ordinary damage path applies in full — Concentration included —
-                // right down to the early-out sweep for a *pre-existing* turned state
-                // from an earlier use. What it cannot yet touch is the turn effect this
-                // very use is about to impose, below: that has not landed yet, so there
-                // is nothing for the sweep to break, which is the whole of "this damage
-                // doesn't end the turn effect".
-                CheckConcentration(target, applied.Effective);
+                    // The ordinary damage path applies in full — Concentration included —
+                    // right down to the early-out sweep for a *pre-existing* turned state
+                    // from an earlier use. What it cannot yet touch is the turn effect this
+                    // very use is about to impose, below: that has not landed yet, so there
+                    // is nothing for the sweep to break, which is the whole of "this damage
+                    // doesn't end the turn effect".
+                    CheckConcentration(target, applied.Effective);
+                }
 
                 if (applied.Effective > 0)
                 {
@@ -833,29 +842,44 @@ public sealed partial class Encounter
             var duration = ConditionDuration.ForMinutes(1);
             var expiry = ConditionRules.ExpiryFor(duration, combatant, target);
 
-            foreach (var conditionType in TurnUndeadConditions)
+            // TurnUndeadConditions prints Incapacitated itself, standalone, as the
+            // second of the two conditions imposed — so narrating it (below) can bring
+            // a concentrating target's own Incapacitated before the trailing
+            // BreakConcentrationOnIncapacitated has run to clear its ConcentratingOn.
+            // The same #335 window as ImposeConditions and Escalate; see
+            // SuspendConcentrationInvariant.
+            // TurnUndeadConditions prints Incapacitated itself, standalone, as the
+            // second of the two conditions imposed — so narrating it (below) can bring
+            // a concentrating target's own Incapacitated before the trailing
+            // BreakConcentrationOnIncapacitated has run to clear its ConcentratingOn.
+            // The same #335 window as ImposeConditions and Escalate; see
+            // SuspendConcentrationInvariant.
+            using (SuspendConcentrationInvariant())
             {
-                var imposed = new ActiveCondition(
-                    conditionType,
-                    combatant.Id,
-                    expiry,
-                    EndsEarlyOnDamageOrSourceDown: true,
-                    UnmodelledBehaviour: UnmodelledFleeBehaviour);
-
-                if (target.AddCondition(imposed))
+                foreach (var conditionType in TurnUndeadConditions)
                 {
-                    Add(
-                        CombatStepKind.Condition,
-                        $"{target.Name} has the {conditionType} condition{DescribeDuration(duration, combatant, target)}.",
-                        combatant,
-                        target);
-                }
-            }
+                    var imposed = new ActiveCondition(
+                        conditionType,
+                        combatant.Id,
+                        expiry,
+                        EndsEarlyOnDamageOrSourceDown: true,
+                        UnmodelledBehaviour: UnmodelledFleeBehaviour);
 
-            // A rider can bring Incapacitated with no damage attached at all, exactly
-            // as ImposeConditions notes — glossary p.186 ends Concentration the instant
-            // Incapacitated lands, not on a save.
-            BreakConcentrationOnIncapacitated(target);
+                    if (target.AddCondition(imposed))
+                    {
+                        Add(
+                            CombatStepKind.Condition,
+                            $"{target.Name} has the {conditionType} condition{DescribeDuration(duration, combatant, target)}.",
+                            combatant,
+                            target);
+                    }
+                }
+
+                // A rider can bring Incapacitated with no damage attached at all,
+                // exactly as ImposeConditions notes — glossary p.186 ends
+                // Concentration the instant Incapacitated lands, not on a save.
+                BreakConcentrationOnIncapacitated(target);
+            }
         }
 
         CheckForCompletion();

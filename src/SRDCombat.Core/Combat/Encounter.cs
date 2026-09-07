@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Definitions;
@@ -693,15 +694,21 @@ public sealed partial class Encounter
 
         bearer.AddCondition(new ActiveCondition(deeper, condition.SourceId));
 
-        Add(
-            CombatStepKind.Condition,
-            $"{bearer.Name} has the {deeper} condition instead of {condition.Condition}.",
-            bearer);
+        // Same narrate-then-break window as ImposeConditions, and the same #335 guard
+        // around it: the escalation can be the first thing to bring Incapacitated with
+        // it (Restrained escalating to Petrified), and the narration below prints
+        // before BreakConcentrationOnIncapacitated clears ConcentratingOn.
+        using (SuspendConcentrationInvariant())
+        {
+            Add(
+                CombatStepKind.Condition,
+                $"{bearer.Name} has the {deeper} condition instead of {condition.Condition}.",
+                bearer);
 
-        // The deeper condition can be the first thing to bring Incapacitated with it
-        // (Restrained escalating to Petrified) — glossary p.186 ends Concentration the
-        // instant that lands, not on a save.
-        BreakConcentrationOnIncapacitated(bearer);
+            // Glossary p.186 ends Concentration the instant Incapacitated lands, not on
+            // a save.
+            BreakConcentrationOnIncapacitated(bearer);
+        }
     }
 
     /// <summary>
@@ -1464,15 +1471,23 @@ public sealed partial class Encounter
         // trigger Concentration, and can down or kill the target, same as any other
         // damage application (#584). The preceding Attack step already recorded the
         // miss (Hit: false); this step needs no hit-or-miss answer of its own.
-        Add(
-            CombatStepKind.Damage,
-            $"{attack.Name}'s Graze deals {applied.Effective} {attack.Damage[0].Type} damage anyway — " +
-            $"{DescribeHealth(target)}.",
-            attacker,
-            target,
-            damage: applied.Effective);
+        //
+        // DescribeHealth reads the target's post-damage state, so a hit that downs a
+        // concentrating target is narrated before CheckConcentration below has had a
+        // chance to clear ConcentratingOn — the same #335 window as ImposeConditions
+        // and Escalate; see SuspendConcentrationInvariant.
+        using (SuspendConcentrationInvariant())
+        {
+            Add(
+                CombatStepKind.Damage,
+                $"{attack.Name}'s Graze deals {applied.Effective} {attack.Damage[0].Type} damage anyway — " +
+                $"{DescribeHealth(target)}.",
+                attacker,
+                target,
+                damage: applied.Effective);
 
-        CheckConcentration(target, applied.Effective);
+            CheckConcentration(target, applied.Effective);
+        }
 
         if (applied.Effective > 0)
         {
@@ -1777,15 +1792,21 @@ public sealed partial class Encounter
                 _ => RageResists(target, component.Type) ? " (halved by Rage)" : string.Empty,
             };
 
-            Add(
-                CombatStepKind.Damage,
-                $"{target.Name} takes {applied.Effective} {component.Type} damage{responseNote} " +
-                $"[{roll}] — {DescribeHealth(target)}.",
-                attacker,
-                target,
-                damage: applied.Effective);
+            // DescribeHealth reads the target's post-damage state, so a hit that downs
+            // a concentrating target is narrated before CheckConcentration below has
+            // had a chance to clear ConcentratingOn — see SuspendConcentrationInvariant.
+            using (SuspendConcentrationInvariant())
+            {
+                Add(
+                    CombatStepKind.Damage,
+                    $"{target.Name} takes {applied.Effective} {component.Type} damage{responseNote} " +
+                    $"[{roll}] — {DescribeHealth(target)}.",
+                    attacker,
+                    target,
+                    damage: applied.Effective);
 
-            CheckConcentration(target, applied.Effective);
+                CheckConcentration(target, applied.Effective);
+            }
 
             if (applied.Effective > 0)
             {
@@ -1967,14 +1988,20 @@ public sealed partial class Encounter
         var rolled = DiceRoller.Roll(_random, amount, result.Critical);
         var applied = DamageRules.Apply(second, rolled.Total, first.Type, result.Critical);
 
-        Add(
-            CombatStepKind.Damage,
-            $"{second.Name} takes {applied.Effective} {first.Type} damage [{rolled}] — {DescribeHealth(second)}.",
-            attacker,
-            second,
-            damage: applied.Effective);
+        // DescribeHealth reads the target's post-damage state, so a hit that downs a
+        // concentrating target is narrated before CheckConcentration below has had a
+        // chance to clear ConcentratingOn — see SuspendConcentrationInvariant.
+        using (SuspendConcentrationInvariant())
+        {
+            Add(
+                CombatStepKind.Damage,
+                $"{second.Name} takes {applied.Effective} {first.Type} damage [{rolled}] — {DescribeHealth(second)}.",
+                attacker,
+                second,
+                damage: applied.Effective);
 
-        CheckConcentration(second, applied.Effective);
+            CheckConcentration(second, applied.Effective);
+        }
 
         if (applied.Effective > 0)
         {
@@ -2086,18 +2113,30 @@ public sealed partial class Encounter
 
             var escape = rider.EscapeDifficultyClass is { } dc ? $" (escape DC {dc})" : string.Empty;
 
-            Add(
-                CombatStepKind.Condition,
-                $"{target.Name} has the {rider.Condition} condition{escape}" +
-                $"{DescribeDuration(rider.Duration, source, target)}.",
-                source,
-                target);
+            // The narration below prints cause before effect — the condition landing,
+            // then (immediately after) Concentration breaking because of it — so between
+            // the two calls a concentrating target can be legitimately mid-resolution:
+            // AddCondition just above has already made it Incapacitated, but
+            // BreakConcentrationOnIncapacitated has not yet run to clear
+            // ConcentratingOn. #335's invariant is suspended for exactly that window; see
+            // <see cref="SuspendConcentrationInvariant"/> for why a scoped suspend rather
+            // than a narrower one, and why this does not weaken the guard against a
+            // future condition-landing path that simply forgets to call it.
+            using (SuspendConcentrationInvariant())
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{target.Name} has the {rider.Condition} condition{escape}" +
+                    $"{DescribeDuration(rider.Duration, source, target)}.",
+                    source,
+                    target);
 
-            // A rider can bring Incapacitated with no damage attached at all — Hold
-            // Person's Paralyzed, say — so nothing on the damage path would ever see
-            // it. Glossary p.186 ends Concentration the instant Incapacitated lands,
-            // not on a save.
-            BreakConcentrationOnIncapacitated(target);
+                // A rider can bring Incapacitated with no damage attached at all — Hold
+                // Person's Paralyzed, say — so nothing on the damage path would ever see
+                // it. Glossary p.186 ends Concentration the instant Incapacitated lands,
+                // not on a save.
+                BreakConcentrationOnIncapacitated(target);
+            }
         }
     }
 
@@ -2269,16 +2308,23 @@ public sealed partial class Encounter
                     fromCriticalHit: false,
                     halvings + rageHalving);
 
-                Add(
-                    CombatStepKind.Damage,
-                    $"{victim.Name} takes {applied.Effective} {component.Type} damage" +
-                    (halvings > 0 ? " (halved by a successful save)" : string.Empty) +
-                    $" [{rolled}] — {DescribeHealth(victim)}.",
-                    source,
-                    victim,
-                    damage: applied.Effective);
+                // DescribeHealth reads the victim's post-damage state, so a hit that
+                // downs a concentrating victim is narrated before CheckConcentration
+                // below has had a chance to clear ConcentratingOn — see
+                // SuspendConcentrationInvariant.
+                using (SuspendConcentrationInvariant())
+                {
+                    Add(
+                        CombatStepKind.Damage,
+                        $"{victim.Name} takes {applied.Effective} {component.Type} damage" +
+                        (halvings > 0 ? " (halved by a successful save)" : string.Empty) +
+                        $" [{rolled}] — {DescribeHealth(victim)}.",
+                        source,
+                        victim,
+                        damage: applied.Effective);
 
-                CheckConcentration(victim, applied.Effective);
+                    CheckConcentration(victim, applied.Effective);
+                }
 
                 if (applied.Effective > 0)
                 {
@@ -2441,6 +2487,122 @@ public sealed partial class Encounter
         RangedAttackKind ranged = RangedAttackKind.None,
         string? attackName = null,
         bool? hit = null,
-        int? damage = null) =>
+        int? damage = null)
+    {
         _log.Add(new CombatStep(kind, narration, actor?.Id, target?.Id, path, ranged, attackName, hit, damage));
+
+        AssertConcentrationIncapacitatedInvariant();
+    }
+
+    /// <summary>
+    /// #335: glossary p.186 ends Concentration the instant Incapacitated lands, however
+    /// it lands — a save-imposed rider, an escalation, or damage dropping the
+    /// concentrator to 0 — so no combatant should ever be found concentrating while
+    /// unable to act once a step has finished recording. Checked here rather than at a
+    /// turn boundary because <see cref="Add"/> is the one place every action, rider and
+    /// sweep passes through on its way into <see cref="_log"/>, so a future
+    /// condition-landing path that forgets to call
+    /// <see cref="BreakConcentrationOnIncapacitated"/> or route through
+    /// <see cref="CheckConcentration"/> fails loudly here instead of silently
+    /// reintroducing the divergence #289 fixed and #334 hardened. Debug-only
+    /// (<see cref="ConditionalAttribute"/> strips both the call and its loop from a
+    /// Release build) — the invariant is cheap, but a full combatant scan after every
+    /// one of a fight's many steps is not a cost a shipped build should pay to catch a
+    /// bug that Debug test runs already would.
+    /// </summary>
+    /// <remarks>
+    /// Skipped while <see cref="_concentrationInvariantSuspendDepth"/> is nonzero — see
+    /// <see cref="SuspendConcentrationInvariant"/> for the eight call sites that need
+    /// it and why. Every other narration in this file calls <see cref="Add"/> outside
+    /// that window, so this remains a check of the whole log, not of any one caller's
+    /// own bookkeeping. Also called from
+    /// <see cref="ConcentrationInvariantSuspension.Dispose"/> once a suspended window
+    /// closes, so a genuine violation created *inside* the window is still caught at
+    /// its end rather than only on whatever <see cref="Add"/> happens to come next (or
+    /// never, if none does).
+    /// </remarks>
+    [Conditional("DEBUG")]
+    private void AssertConcentrationIncapacitatedInvariant()
+    {
+        if (_concentrationInvariantSuspendDepth > 0)
+        {
+            return;
+        }
+
+        foreach (var combatant in _combatants)
+        {
+            Debug.Assert(
+                combatant.Features.ConcentratingOn is null || combatant.CanAct,
+                $"{combatant.Name} is concentrating while unable to act — a "
+                    + "condition-landing path is missing its concentration break (#335).");
+        }
+    }
+
+    private int _concentrationInvariantSuspendDepth;
+
+    /// <summary>
+    /// The one documented exception to #335's invariant, taken at exactly the sites
+    /// that need it and nowhere else: a rider, an escalation, or a Turn Undead
+    /// imposition that brings Incapacitated is narrated
+    /// (<see cref="ImposeConditions"/>'s rider loop, <see cref="Escalate"/>,
+    /// <see cref="TurnUndead"/>'s own condition loop — the last narrating Incapacitated
+    /// itself, standalone, as one of the two conditions it prints) before a later line
+    /// calls <see cref="BreakConcentrationOnIncapacitated"/>, and every damage
+    /// application that can down a concentrator narrates <c>DescribeHealth</c>'s
+    /// post-damage state before the very next line calls
+    /// <see cref="CheckConcentration"/> — the five sites
+    /// <see cref="BreakTurnEffectOnDamage"/>'s own remarks enumerate (the ordinary
+    /// attack loop, <c>ApplyGraze</c>, <c>TryCleave</c>, <c>ResolveSaveEffect</c>, and
+    /// Sear Undead's own roll). Cause is printed before effect at all eight, matching
+    /// every other "loses Concentration" narration in this file, which always follows
+    /// what caused it rather than pre-empting it.
+    /// <see cref="AssertConcentrationIncapacitatedInvariant"/> would otherwise trip on
+    /// the narration line itself, a false positive rather than the omission #335
+    /// exists to catch. The suspend is scoped with <c>using</c> around exactly that
+    /// span at each site — so a future condition-landing or damage-applying path that
+    /// narrates and then simply forgets to call the break is still caught: it is not
+    /// wrapped in this suspend, so its own narration trips the assert immediately (and
+    /// even a real bug wrapped in this suspend by mistake is caught the instant its
+    /// window closes — see <see cref="ConcentrationInvariantSuspension.Dispose"/>). A
+    /// depth counter rather than a bool guards against the (currently theoretical)
+    /// case of one of these sites nesting inside another.
+    ///
+    /// This set is exhaustive by construction, not by luck: every caller of
+    /// <see cref="BreakConcentrationOnIncapacitated"/>, <see cref="CheckConcentration"/>
+    /// and every <c>AddCondition</c> call site in this file was audited when Turn
+    /// Undead — the eighth — was found missing its wrap (#335 review). There is no
+    /// ninth: <c>Combatant.AddCondition</c> is called from exactly three places
+    /// (<see cref="Escalate"/>, <see cref="ImposeConditions"/>,
+    /// <see cref="TurnUndead"/>), all wrapped, and every remaining
+    /// <see cref="SweepConcentrationConditions"/>/<see cref="EndConcentration"/> call
+    /// site clears <c>ConcentratingOn</c> before it narrates rather than after, so none
+    /// of them needs one.
+    /// </summary>
+    private ConcentrationInvariantSuspension SuspendConcentrationInvariant() => new(this);
+
+    private readonly struct ConcentrationInvariantSuspension : IDisposable
+    {
+        private readonly Encounter _encounter;
+
+        public ConcentrationInvariantSuspension(Encounter encounter)
+        {
+            _encounter = encounter;
+            _encounter._concentrationInvariantSuspendDepth++;
+        }
+
+        public void Dispose()
+        {
+            _encounter._concentrationInvariantSuspendDepth--;
+
+            // Checked at close, not left unchecked until whatever Add() happens to
+            // come next: a genuine missing or failed break *inside* this window would
+            // otherwise survive the one Add() call the window suppressed and go
+            // unnoticed if no further step is ever logged (the exact shape of a test
+            // that calls one action and asserts, then returns). The depth guard inside
+            // AssertConcentrationIncapacitatedInvariant makes this a no-op for every
+            // Dispose but the outermost one, so nested suspensions still check exactly
+            // once, at the true end of the window.
+            _encounter.AssertConcentrationIncapacitatedInvariant();
+        }
+    }
 }
