@@ -1,4 +1,5 @@
 using SRDCombat.Content;
+using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Game.Tests;
 
@@ -76,8 +77,9 @@ public sealed class ScenarioCompositionTests : IDisposable
         FlagValue spawn = default,
         FlagValue scenario = default,
         FlagValue level = default,
+        FlagValue difficulty = default,
         SrdContent? content = null) =>
-        ScenarioComposition.Compose(spawn, scenario, level, content ?? EmptyContent);
+        ScenarioComposition.Compose(spawn, scenario, level, difficulty, content ?? EmptyContent);
 
     // ---- the mutual exclusion ----
 
@@ -105,7 +107,135 @@ public sealed class ScenarioCompositionTests : IDisposable
         Assert.Equal(ScenarioComposition.BudgetedFightLevel, result.Scenario.Party.PregeneratedLevel);
         Assert.NotNull(result.Scenario.Enemies.Budget);
         Assert.Equal(ScenarioComposition.BudgetedFightLevel, result.Scenario.Enemies.Budget!.Level);
+        Assert.Equal(ScenarioComposition.BudgetedFightDifficulty, result.Scenario.Enemies.Budget!.Difficulty);
         Assert.Empty(result.Notices);
+    }
+
+    // ---- #443: --level and --difficulty on the flagless budgeted path ----
+
+    [Fact]
+    public void ABudgetedLevelIsHonoured()
+    {
+        var result = Compose(level: FlagValue.Of("1"));
+
+        Assert.Null(result.Refusal);
+        Assert.NotNull(result.Scenario);
+        Assert.Equal(1, result.Scenario!.Party.PregeneratedLevel);
+        Assert.Equal(1, result.Scenario.Enemies.Budget!.Level);
+        // The budget's difficulty stays the default when only --level is given.
+        Assert.Equal(ScenarioComposition.BudgetedFightDifficulty, result.Scenario.Enemies.Budget!.Difficulty);
+    }
+
+    [Fact]
+    public void ABudgetedDifficultyIsHonoured()
+    {
+        var result = Compose(difficulty: FlagValue.Of("high"));
+
+        Assert.Null(result.Refusal);
+        Assert.NotNull(result.Scenario);
+        Assert.Equal(EncounterDifficulty.High, result.Scenario!.Enemies.Budget!.Difficulty);
+        // The level stays the default when only --difficulty is given.
+        Assert.Equal(ScenarioComposition.BudgetedFightLevel, result.Scenario.Party.PregeneratedLevel);
+    }
+
+    [Fact]
+    public void ABadBudgetedLevelIsRefusedByName()
+    {
+        var result = Compose(level: FlagValue.Of("9"));
+
+        Assert.Null(result.Scenario);
+        Assert.Contains("--level=9", result.Refusal, StringComparison.Ordinal);
+        Assert.Contains("out of range", result.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ABadBudgetedDifficultyIsRefusedByName()
+    {
+        var result = Compose(difficulty: FlagValue.Of("extreme"));
+
+        Assert.Null(result.Scenario);
+        Assert.Contains("--difficulty=\"extreme\"", result.Refusal, StringComparison.Ordinal);
+        Assert.Contains("not one of low, moderate, high", result.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ABareBudgetedDifficultyIsRefusedRatherThanDefaulted()
+    {
+        var result = Compose(difficulty: FlagValue.Bare());
+
+        Assert.Null(result.Scenario);
+        Assert.Contains("--difficulty", result.Refusal, StringComparison.Ordinal);
+        Assert.Contains("no value given", result.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ABadLevelAndABadDifficultyAreBothNamedInOneRefusal()
+    {
+        var result = Compose(level: FlagValue.Of("9"), difficulty: FlagValue.Of("extreme"));
+
+        Assert.Null(result.Scenario);
+        Assert.Contains("out of range", result.Refusal, StringComparison.Ordinal);
+        Assert.Contains("not one of low, moderate, high", result.Refusal, StringComparison.Ordinal);
+        Assert.Contains("; ", result.Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DifficultyWithSpawnIsRefused()
+    {
+        var result = Compose(spawn: FlagValue.Of("Ogre"), difficulty: FlagValue.Of("high"));
+
+        Assert.Null(result.Scenario);
+        Assert.StartsWith("--difficulty refused: ", result.Refusal);
+    }
+
+    [Fact]
+    public void DifficultyWithScenarioIsRefused()
+    {
+        var path = Write("a.scenario.json", ScenarioJson());
+
+        var result = Compose(scenario: FlagValue.Of(path), difficulty: FlagValue.Of("high"));
+
+        Assert.Null(result.Scenario);
+        Assert.StartsWith("--difficulty refused: ", result.Refusal);
+    }
+
+    // ---- ScenarioComposition.TryParseDifficulty directly ----
+
+    [Fact]
+    public void AbsentDifficultyDefaultsToModerate()
+    {
+        var ok = ScenarioComposition.TryParseDifficulty(null, present: false, out var difficulty, out var error);
+
+        Assert.True(ok);
+        Assert.Equal(EncounterDifficulty.Moderate, difficulty);
+        Assert.Null(error);
+    }
+
+    [Theory]
+    [InlineData("low", EncounterDifficulty.Low)]
+    [InlineData("Moderate", EncounterDifficulty.Moderate)]
+    [InlineData("HIGH", EncounterDifficulty.High)]
+    public void EveryDeclaredDifficultyNameParsesCaseInsensitively(string text, EncounterDifficulty expected)
+    {
+        var ok = ScenarioComposition.TryParseDifficulty(text, present: true, out var difficulty, out var error);
+
+        Assert.True(ok);
+        Assert.Equal(expected, difficulty);
+        Assert.Null(error);
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("low,high")]
+    [InlineData("extreme")]
+    [InlineData("")]
+    public void AnUndeclaredDifficultyIsRefusedRatherThanDefaulted(string text)
+    {
+        var ok = ScenarioComposition.TryParseDifficulty(text, present: true, out _, out var error);
+
+        Assert.False(ok);
+        Assert.Contains($"--difficulty=\"{text}\"", error);
+        Assert.Contains("not one of low, moderate, high", error);
     }
 
     // ---- --spawn ----

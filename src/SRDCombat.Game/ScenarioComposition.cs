@@ -35,8 +35,8 @@ public readonly record struct FlagValue(bool Present, string? Value)
 
 /// <summary>
 /// Decides what a one-fight authoring flag set (<c>--spawn</c> / <c>--scenario</c> /
-/// <c>--level</c>) means, and assembles the client-facing refusal text when it means
-/// nothing runnable (#490).
+/// <c>--level</c> / <c>--difficulty</c>) means, and assembles the client-facing refusal
+/// text when it means nothing runnable (#490, #443).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -84,11 +84,39 @@ public static class ScenarioComposition
     }
 
     /// <summary>
-    /// Composes a one-fight scenario from this client's <c>--spawn</c>/<c>--scenario</c>/
-    /// <c>--level</c> flags, refusing exactly what <c>FightScreen.ScenarioFromArguments</c>
-    /// refused before it moved here — same checks, same order, same message.
+    /// The difficulty the flagless one-fight path has always run at — Moderate, the same
+    /// constant-by-agreement reasoning as <see cref="BudgetedFightLevel"/>: nothing forced
+    /// it into a variable until #443 gave <c>--difficulty</c> something to override.
     /// </summary>
-    public static Result Compose(FlagValue spawn, FlagValue scenario, FlagValue level, SrdContent content)
+    public const EncounterDifficulty BudgetedFightDifficulty = EncounterDifficulty.Moderate;
+
+    /// <summary>
+    /// Composes a one-fight scenario from this client's <c>--spawn</c>/<c>--scenario</c>/
+    /// <c>--level</c>/<c>--difficulty</c> flags, refusing exactly what
+    /// <c>FightScreen.ScenarioFromArguments</c> refused before it moved here — same
+    /// checks, same order, same message.
+    /// </summary>
+    /// <remarks>
+    /// <b>#443:</b> before this, the flagless budgeted branch below never looked at
+    /// <paramref name="level"/> or <paramref name="difficulty"/> at all — it built
+    /// <see cref="BudgetedFightLevel"/>/<see cref="BudgetedFightDifficulty"/> unconditionally,
+    /// so a <c>--one-fight --level=1 --difficulty=high</c> silently played the level 3
+    /// Moderate default instead, the same silent-ignore shape rule 2 exists to close for
+    /// a roster rather than a number. <c>--level</c> already had somewhere to land — the
+    /// same <see cref="ScenarioArguments.TryParseLevel"/> the <c>--spawn</c> branch below
+    /// calls, whose own remarks named this branch as the untouched half — so the fix
+    /// reuses it rather than adding a second level parser. <c>--difficulty</c> had nowhere
+    /// to land at all (no <c>--spawn</c>-mode difficulty exists, since an explicit roster
+    /// has no budget to size by difficulty), so <see cref="TryParseDifficulty"/> is new,
+    /// but follows the identical policy: a present value refuses by name rather than
+    /// falling back or clamping. Because a difficulty budget only ever describes *this*
+    /// branch, <c>--difficulty</c> given alongside <c>--spawn</c> or <c>--scenario</c> is
+    /// refused rather than silently dropped — the same "does this flag even apply here"
+    /// question <c>ConsoleArguments.TryResolveDifficulty</c> already answers for the
+    /// console client, one flag pair over.
+    /// </remarks>
+    public static Result Compose(
+        FlagValue spawn, FlagValue scenario, FlagValue level, FlagValue difficulty, SrdContent content)
     {
         // Named once, refused before either flag's own parsing runs: a file and a typed
         // roster are two different answers to "what does this fight fight", and picking
@@ -102,6 +130,16 @@ public static class ScenarioComposition
                 Notices: []);
         }
 
+        if (difficulty.Present && (scenario.Present || spawn.Present))
+        {
+            return new Result(
+                Scenario: null,
+                Refusal: "--difficulty refused: it only shapes the budgeted default fight; " +
+                    "--spawn and --scenario each name their own cast, with nothing to size " +
+                    "by difficulty. Drop --spawn/--scenario, or drop --difficulty.",
+                Notices: []);
+        }
+
         if (scenario.Present)
         {
             return ComposeFromFile(scenario.Value, content);
@@ -109,19 +147,42 @@ public static class ScenarioComposition
 
         if (!spawn.Present)
         {
+            var budgetErrors = new List<string>();
+
+            var budgetedLevelOk = ScenarioArguments.TryParseLevel(
+                level.Value, level.Present, out var budgetedLevel, out var budgetedLevelError);
+
+            if (!budgetedLevelOk)
+            {
+                budgetErrors.Add(budgetedLevelError!);
+            }
+
+            var budgetedDifficultyOk = TryParseDifficulty(
+                difficulty.Value, difficulty.Present, out var budgetedDifficulty, out var budgetedDifficultyError);
+
+            if (!budgetedDifficultyOk)
+            {
+                budgetErrors.Add(budgetedDifficultyError!);
+            }
+
+            if (budgetErrors.Count > 0)
+            {
+                return new Result(Scenario: null, Refusal: string.Join("; ", budgetErrors), Notices: []);
+            }
+
             return new Result(
                 Scenario: new BattleScenario
                 {
                     FormatVersion = ScenarioFile.CurrentFormatVersion,
                     Name = "one fight",
                     Notes = string.Empty,
-                    Party = new ScenarioParty { PregeneratedLevel = BudgetedFightLevel },
+                    Party = new ScenarioParty { PregeneratedLevel = budgetedLevel },
                     Enemies = new ScenarioEnemies
                     {
                         Budget = new ScenarioBudget
                         {
-                            Difficulty = EncounterDifficulty.Moderate,
-                            Level = BudgetedFightLevel,
+                            Difficulty = budgetedDifficulty,
+                            Level = budgetedLevel,
                         },
                     },
                 },
@@ -212,5 +273,60 @@ public static class ScenarioComposition
         }
 
         return new Result(scenario, null, check.Notices);
+    }
+
+    /// <summary>
+    /// Parses <c>--difficulty</c>'s value for the flagless budgeted fight (#443). Not
+    /// present succeeds with <see cref="BudgetedFightDifficulty"/>. Present with no value,
+    /// or with text that is not exactly one of the three declared
+    /// <see cref="EncounterDifficulty"/> names, is refused rather than defaulted — the
+    /// same policy <see cref="ScenarioArguments.TryParseLevel"/> holds <c>--level</c> to.
+    /// </summary>
+    /// <remarks>
+    /// <c>Enum.TryParse</c> is deliberately not used, mirroring
+    /// <c>ConsoleArguments.TryParseDifficulty</c>'s own reasoning: it accepts numeric text
+    /// ("1" silently becomes <see cref="EncounterDifficulty.Moderate"/>, the enum's ordinal
+    /// 1) and comma-joined names read as a bitwise-OR combination, neither of which is a
+    /// tester typing a single declared name. Matching the trimmed text directly against
+    /// each declared name is the only way to accept exactly one of them and refuse
+    /// everything else.
+    /// </remarks>
+    public static bool TryParseDifficulty(string? text, bool present, out EncounterDifficulty difficulty, out string? error)
+    {
+        if (!present)
+        {
+            difficulty = BudgetedFightDifficulty;
+            error = null;
+            return true;
+        }
+
+        if (text is null)
+        {
+            difficulty = default;
+            error = "--difficulty: no value given (use --difficulty=low|moderate|high)";
+            return false;
+        }
+
+        EncounterDifficulty? match = null;
+
+        foreach (var value in Enum.GetValues<EncounterDifficulty>())
+        {
+            if (string.Equals(value.ToString(), text.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                match = value;
+                break;
+            }
+        }
+
+        if (match is not { } parsed)
+        {
+            difficulty = default;
+            error = $"--difficulty=\"{text}\": not one of low, moderate, high";
+            return false;
+        }
+
+        difficulty = parsed;
+        error = null;
+        return true;
     }
 }

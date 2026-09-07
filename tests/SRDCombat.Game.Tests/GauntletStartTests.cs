@@ -76,6 +76,51 @@ public class GauntletStartTests
         Assert.Null(result.Refusal);
     }
 
+    // ---- --difficulty without --one-fight (#443's own follow-up, a Codex finding) ----
+
+    [Fact]
+    public void DifficultyWithoutOneFightIsRefused()
+    {
+        var result = GauntletStart.Resolve(
+            spawn: FlagValue.Absent,
+            scenario: FlagValue.Absent,
+            oneFight: false,
+            continuing: false,
+            level: FlagValue.Absent,
+            difficulty: FlagValue.Of("high"));
+
+        Assert.Contains("--difficulty refused", result.Refusal);
+        Assert.Contains("the gauntlet does not read it", result.Refusal);
+    }
+
+    [Fact]
+    public void DifficultyWithOneFightIsNotRefusedByThisGate()
+    {
+        var result = GauntletStart.Resolve(
+            spawn: FlagValue.Absent,
+            scenario: FlagValue.Absent,
+            oneFight: true,
+            continuing: false,
+            level: FlagValue.Absent,
+            difficulty: FlagValue.Of("high"));
+
+        Assert.Null(result.Refusal);
+    }
+
+    [Fact]
+    public void AGauntletLaunchWithNoDifficultyIsUnaffected()
+    {
+        var result = GauntletStart.Resolve(
+            spawn: FlagValue.Absent,
+            scenario: FlagValue.Absent,
+            oneFight: false,
+            continuing: false,
+            level: FlagValue.Absent);
+
+        Assert.Null(result.Refusal);
+        Assert.Equal(1, result.Level);
+    }
+
     // ---- --level / --continue (#488) ----
 
     [Fact]

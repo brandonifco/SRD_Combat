@@ -736,10 +736,11 @@ public abstract partial class FightScreen : Node2D
     /// Builds the same fight the console client would, from the same content — or, with
     /// <c>--spawn="Ogre, 2 Goblin Warrior"</c>, exactly the cast asked for (#456), or,
     /// with <c>--scenario=&lt;path&gt;</c>, the fight that file names (#476). In spawn
-    /// mode <c>--level=1..5</c> sets the party's level (default 3); the budgeted path
-    /// keeps its fixed level 3 Moderate, which is #443's own concern; a scenario states
-    /// its own party and level, so <c>--level</c> reaches nothing there, exactly as it
-    /// already reaches nothing in the flagless budgeted path. Presence is judged by
+    /// mode <c>--level=1..5</c> sets the party's level (default 3); the flagless budgeted
+    /// path reads both <c>--level</c> and <c>--difficulty=low|moderate|high</c> too
+    /// (#443) — default level 3 Moderate, unchanged from before #443 whenever neither
+    /// flag is given — while a scenario states its own party and level, so neither flag
+    /// reaches anything there. Presence is judged by
     /// <see cref="HasArgument"/> alone — the same predicate the caller's spawn/gauntlet
     /// gate uses (<c>PlayMode.OnReady</c>) — so a bare <c>--spawn</c>/<c>--scenario</c> or
     /// the console's space form (<c>--spawn value</c>, which this client does not
@@ -747,8 +748,12 @@ public abstract partial class FightScreen : Node2D
     /// there, rather than silently falling through to the budgeted pool fight the way
     /// it did before #470's fix landed. A roster that cannot be parsed, a <c>--spawn</c>
     /// given without a value, a <c>--level</c> that is not a whole number 1–5 (see
-    /// <see cref="ScenarioArguments.TryParseLevel"/>), or a <c>--scenario</c> file this
-    /// build cannot run (see <see cref="ScenarioComposition.Compose"/>), throws
+    /// <see cref="ScenarioArguments.TryParseLevel"/>), a <c>--difficulty</c> that is not
+    /// one of the three declared names (see
+    /// <see cref="ScenarioComposition.TryParseDifficulty"/>), <c>--difficulty</c> given
+    /// alongside <c>--spawn</c>/<c>--scenario</c> (neither has a budget to size by
+    /// difficulty), or a <c>--scenario</c> file this build cannot run (see
+    /// <see cref="ScenarioComposition.Compose"/>), throws
     /// <see cref="ScenarioRefusedException"/> naming every failure — no fallback, no
     /// clamp, and the caller decides how to show it (#463, #476). <paramref
     /// name="notices"/> carries anything worth telling the player that refuses nothing —
@@ -797,8 +802,9 @@ public abstract partial class FightScreen : Node2D
         var spawn = HasArgument("spawn") ? FlagValue.Of(ArgumentValue("spawn")) : FlagValue.Absent;
         var scenario = HasArgument("scenario") ? FlagValue.Of(ArgumentValue("scenario")) : FlagValue.Absent;
         var level = HasArgument("level") ? FlagValue.Of(ArgumentValue("level")) : FlagValue.Absent;
+        var difficulty = HasArgument("difficulty") ? FlagValue.Of(ArgumentValue("difficulty")) : FlagValue.Absent;
 
-        var result = ScenarioComposition.Compose(spawn, scenario, level, content);
+        var result = ScenarioComposition.Compose(spawn, scenario, level, difficulty, content);
 
         if (result.Refusal is not null)
         {

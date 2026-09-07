@@ -25,7 +25,12 @@ shell word — the console client's separate `--flag value` form is not accepted
 and a `--spawn` or `--level` given without an `=value` (bare, or that unsupported space
 form) is refused by name rather than silently read as if the flag were never passed
 (#470). `--spawn` without `--one-fight` or `--watch` is refused too, since the gauntlet
-loop draws its own roster every fight and would otherwise ignore the flag.
+loop draws its own roster every fight and would otherwise ignore the flag. The flagless
+budgeted fight — no `--spawn`, no `--scenario` — reads `--level=1..5` and
+`--difficulty=low|moderate|high` the same way, defaulting to level 3 Moderate when
+neither is given (#443; before this the budgeted fight always ran level 3 Moderate
+regardless of either flag). `--difficulty` alongside `--spawn` or `--scenario` is
+refused rather than silently dropped, since a named cast has no budget for it to size.
 
 `--scenario=<path>` plays one authored `.scenario.json` file instead — the battle
 builder's third way in (#476), after `--spawn` and the flagless budgeted fight, and the

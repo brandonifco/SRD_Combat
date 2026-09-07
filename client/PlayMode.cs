@@ -234,20 +234,23 @@ public partial class PlayMode : FightScreen
 
         // The gauntlet loop below never calls ResolveFight — it draws its own roster
         // every fight — so --spawn/--scenario here would silently do nothing (#463,
-        // #476), and --continue together with --level, or a bad --level, has nothing
-        // honest to fall back to either (#488). All four gates are one decision now,
-        // computed once before either branch below needs it: GauntletStart.Resolve
-        // (#490b) folds the spawn/scenario-without-one-fight refusals, the
-        // continue/level interaction and the level parse into the single result used
-        // below, the same HasArgument("spawn") presence predicate ResolveFight's own
-        // spawn branch keys on (FightScreen.cs) so this gate and that branch never
+        // #476), --continue together with --level, or a bad --level, has nothing
+        // honest to fall back to either (#488), and --difficulty has nothing to shape
+        // either (the ladder escalates its own difficulty per rung — #443). All five
+        // gates are one decision now, computed once before either branch below needs
+        // it: GauntletStart.Resolve (#490b, extended for --difficulty by #443's own
+        // follow-up) folds the spawn/scenario/difficulty-without-one-fight refusals,
+        // the continue/level interaction and the level parse into the single result
+        // used below, the same HasArgument("spawn") presence predicate ResolveFight's
+        // own spawn branch keys on (FightScreen.cs) so this gate and that branch never
         // disagree about whether a flag was passed (#470, M2).
         var gauntletStart = GauntletStart.Resolve(
             spawn: HasArgument("spawn") ? FlagValue.Of(ArgumentValue("spawn")) : FlagValue.Absent,
             scenario: HasArgument("scenario") ? FlagValue.Of(ArgumentValue("scenario")) : FlagValue.Absent,
             oneFight: HasArgument("one-fight"),
             continuing: HasArgument("continue"),
-            level: HasArgument("level") ? FlagValue.Of(ArgumentValue("level")) : FlagValue.Absent);
+            level: HasArgument("level") ? FlagValue.Of(ArgumentValue("level")) : FlagValue.Absent,
+            difficulty: HasArgument("difficulty") ? FlagValue.Of(ArgumentValue("difficulty")) : FlagValue.Absent);
 
         if (gauntletStart.Refusal is not null)
         {
