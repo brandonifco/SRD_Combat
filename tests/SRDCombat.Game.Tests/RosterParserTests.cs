@@ -35,6 +35,28 @@ public class RosterParserTests
         Assert.Equal(["Ogre"], roster.Monsters.Select(monster => monster.Name).ToArray());
     }
 
+    /// <summary>
+    /// #464: with a leading count, internal whitespace runs in the name were already
+    /// collapsed (<c>string.Join(' ', words[1..])</c>); without one, the raw entry text
+    /// was kept as-is and a doubled space refused a name the bestiary does hold. Both
+    /// branches now build the name from the same split-and-rejoin, so the same doubled
+    /// space parses identically whether or not a count prefix is present.
+    /// </summary>
+    [Fact]
+    public void DoubledInternalWhitespaceNormalisesTheSameWithAndWithoutACount()
+    {
+        var withoutCount = RosterParser.Parse("Goblin  Warrior", Content.Monsters);
+        var withCount = RosterParser.Parse("2 Goblin  Warrior", Content.Monsters);
+
+        Assert.Empty(withoutCount.Errors);
+        Assert.Equal(["Goblin Warrior"], withoutCount.Monsters.Select(monster => monster.Name).ToArray());
+
+        Assert.Empty(withCount.Errors);
+        Assert.Equal(
+            ["Goblin Warrior", "Goblin Warrior"],
+            withCount.Monsters.Select(monster => monster.Name).ToArray());
+    }
+
     [Theory]
     [InlineData("0 Wolf")]
     [InlineData("21 Wolf")]
