@@ -1,3 +1,4 @@
+using SRDCombat.Content;
 using SRDCombat.Core.Definitions;
 using SrdExtract.Parsing;
 
@@ -17,6 +18,12 @@ namespace SrdExtract.Tests;
 /// </remarks>
 public sealed class EntryMechanicsCharacterizationTests
 {
+    // #600: loaded once for the corpus-driven agreement test below, same pattern as
+    // CorpusRoundTripTests's own field — the committed corpus is the fixture set, no
+    // PDF needed.
+    private static readonly IReadOnlyList<MonsterDefinition> Monsters =
+        ContentLoader.Load(RepositoryPaths.SrdContentDirectory).Monsters;
+
     #region Usage limits
 
     [Fact]
@@ -1331,7 +1338,11 @@ public sealed class EntryMechanicsCharacterizationTests
             "Failure or Success: The dragon can't take this action again until the start of its " +
             "next turn.");
 
-        Assert.Equal(AreaShape.Sphere, entry.Save!.Area!.Shape);
+        // #600: asserted before the dereference below, not after, so a future
+        // regression that leaves Area null reports what broke instead of an
+        // unmessaged NullReferenceException.
+        Assert.NotNull(entry.Save!.Area);
+        Assert.Equal(AreaShape.Sphere, entry.Save.Area!.Shape);
         Assert.Equal(20, entry.Save.Area.SizeFeet);
         Assert.Null(entry.Save.Area.WidthFeet);
         Assert.Equal(90, entry.Save.RangeFeet);
@@ -1417,7 +1428,10 @@ public sealed class EntryMechanicsCharacterizationTests
             "Failure: 24 (7d6) Bludgeoning damage. If the target is a Large or smaller " +
             "creature, it has the Prone condition. Success: Half damage only.");
 
-        Assert.Equal(AreaShape.Sphere, entry.Save!.Area!.Shape);
+        // #600: asserted before the dereference below, not after — see the same
+        // note on APointAimedSpheresPrintedRangeStructuresOntoRangeFeet above.
+        Assert.NotNull(entry.Save!.Area);
+        Assert.Equal(AreaShape.Sphere, entry.Save.Area!.Shape);
         Assert.Equal(5, entry.Save.Area.SizeFeet);
         Assert.Equal(90, entry.Save.RangeFeet);
         Assert.Equal(
@@ -1464,6 +1478,122 @@ public sealed class EntryMechanicsCharacterizationTests
                 "and the target is pushed 5 feet straight away from the bulette",
             ],
             entry.UnmodelledClauses);
+    }
+
+    #endregion
+
+    #region Target-clause / area agreement (#600)
+
+    [Fact]
+    public void EveryCorpusSaveEntryClaimingAnAreaShapeAgreesWithAreaPattern()
+    {
+        // #600, tightened after adversarial review of this PR's first draft: that
+        // version's "all four shapes agree" fixture used a hand-typed Emanation
+        // string opening "any creature that starts its turn in a" — which does
+        // not match SaveTargetClausePattern's Emanation branch at all (it requires
+        // "each creature in a"), so the `areaShape` group never fired for that
+        // case and the test's Assert.NotNull(entry.Save?.Area) passed anyway
+        // (ParseArea searches the whole text unbounded, so it still found the
+        // Emanation regardless of whether the target-clause branch matched it).
+        // Removing or misnaming the `areaShape` named group entirely would have
+        // left every one of that draft's assertions green.
+        //
+        // This drives the same claim off the real corpus instead: for every
+        // SavingThrow entry whose text SaveTargetClausePattern matches with the
+        // `areaShape` group firing, the captured shape word must equal the Shape
+        // Classify's own pipeline (ParseArea, via Save.Area) structured for that
+        // same text — proving the capture actually reaches real printed syntax,
+        // not just a fixture that happens to satisfy a downstream check by a
+        // different path. The corpus corroborates each shape directly (verified
+        // 2026-09): the aboleth/balor/cloaker/dretch/kraken/solar/vrock family for
+        // Emanation, the basilisk/ghoul family for Cone, the black-dragon-acid
+        // family for Line, the six chromatic/metallic dragons' breath weapons for
+        // the "-radius" Sphere branch #420 added.
+        var saveEntries = Monsters
+            .SelectMany(monster => monster.Entries)
+            .Where(entry => entry.Mechanics == EntryMechanics.SavingThrow)
+            .ToList();
+
+        // Guards against a vacuous pass (design's own standing convention, see
+        // EveryAttackMechanicsEntryIsActionOrBonusActionSectioned above): if a
+        // future extraction change stopped grading anything as SavingThrow, the
+        // loop below would silently check nothing.
+        Assert.True(saveEntries.Count > 0, "no SavingThrow entries found in the corpus — this test would pass vacuously (#600).");
+
+        var shapesSeen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var entry in saveEntries)
+        {
+            var target = EntryMechanicsParser.SaveTargetClausePattern().Match(entry.Text);
+            if (!target.Success || !target.Groups["areaShape"].Success)
+            {
+                continue;
+            }
+
+            var claimedShape = target.Groups["areaShape"].Value;
+            shapesSeen.Add(claimedShape);
+
+            var classified = EntryMechanicsParser.Classify(entry.Name, entry.Section, entry.Text);
+
+            Assert.True(
+                classified.Save?.Area is not null,
+                $"'{entry.Name}' — SaveTargetClausePattern's areaShape group captured " +
+                $"'{claimedShape}' but Classify's own Save.Area is null (#600 misattribution): " +
+                $"\"{entry.Text}\"");
+
+            Assert.Equal(claimedShape, classified.Save!.Area!.Shape.ToString(), StringComparer.Ordinal);
+        }
+
+        // Guards against a vacuous pass on a narrower axis than the count check
+        // above: the count check only proves SavingThrow entries exist, not that
+        // any of them actually exercise the areaShape capture. Pinning the exact
+        // shape set means a regression that stopped the group firing for one
+        // shape (a typo in the alternation, a corpus entry losing its wording)
+        // shows up here rather than the loop above silently checking three
+        // shapes instead of four.
+        Assert.Equal(
+            new[] { "Cone", "Emanation", "Line", "Sphere" },
+            shapesSeen.OrderBy(shape => shape, StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
+    public void AnAreaShapeClaimedByTheTargetClauseButNotStructuredByAreaPatternThrows()
+    {
+        // #600's synthetic pin. The two regexes cannot actually disagree for any
+        // text reachable through Classify (see AssertAreaAgreesWithTargetClause's
+        // own remarks: whatever SaveTargetClausePattern's area alternatives
+        // require as a literal substring is, by construction, always a match for
+        // AreaPattern's more permissive superset pattern too) — so this calls the
+        // extracted guard directly with the one combination that must never
+        // reach here honestly: a claimed shape name with no structured Area.
+        // Knockout-verify: stubbing this method's body to a no-op turns this test
+        // red, proving it actually exercises the throw rather than passing
+        // vacuously.
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            EntryMechanicsParser.AssertAreaAgreesWithTargetClause(
+                "Sphere",
+                area: null,
+                "each creature in a 20-foot-radius Sphere centered on a point"));
+
+        Assert.Contains("Sphere", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("#600", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASingleTargetClauseWithNoAreaNeverTripsTheAgreementGuard()
+    {
+        // The single-target branch names no shape at all — `claimedAreaShape` is
+        // null exactly when the target clause matched "one creature" rather than
+        // an area alternative — so a single target with no structured Area (the
+        // overwhelmingly common case; most saves have neither) is not a
+        // disagreement and must not throw.
+        var exception = Record.Exception(() =>
+            EntryMechanicsParser.AssertAreaAgreesWithTargetClause(
+                claimedAreaShape: null,
+                area: null,
+                "one creature"));
+
+        Assert.Null(exception);
     }
 
     #endregion
