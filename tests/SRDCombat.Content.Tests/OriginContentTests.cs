@@ -123,6 +123,26 @@ public class OriginContentTests
     }
 
     [Fact]
+    public void NoSpeciesTraitReachesNarrativeExceptFromACuratedList()
+    {
+        // Mirrors the spells' invariant (#357). EntryMechanicsParser.KnownInertEntries
+        // is curated about stat block and species/class trait text, so — unlike
+        // spells — a species trait consulting it is the intended reading, not a
+        // collision (ClassifyTrait's consultInertList defaults to true for exactly
+        // this shape). But the list holds bestiary names today (Amphibious, Water
+        // Breathing, Illumination), never a species/class one, so nothing here has
+        // actually been judged inert for this shape yet. "Brave" is a real Halfling
+        // rule that shares nothing with the bestiary list today — but the guard
+        // should exist before a future name collision smuggles a species rule into
+        // Narrative unexamined (#377). Assert zero until this project curates a
+        // species/class-specific list; if this ever needs to allow a name, it should
+        // do so through a named, reasoned exception, not by going silent.
+        var traits = Content.Species.SelectMany(species => species.Traits).ToList();
+
+        Assert.DoesNotContain(traits, trait => trait.Mechanics == EntryMechanics.Narrative);
+    }
+
+    [Fact]
     public void EverySpeciesTraitMapsToExactlyOneClassification()
     {
         // #291's curated-list invariant: SpeciesTraitRegistry.Resolve and .Implements

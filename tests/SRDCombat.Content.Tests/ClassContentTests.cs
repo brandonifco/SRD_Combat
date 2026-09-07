@@ -180,7 +180,11 @@ public class ClassContentTests
     public void EveryClassFeatureIsClassified()
     {
         // Same rule as everything else: a feature may be Unmodelled, never unexamined.
-        var features = Content.Classes.SelectMany(definition => definition.Features).ToList();
+        // Subclass features are included (#377) — the sweep used to skip them, which
+        // meant an unexamined subclass feature could hide behind this check passing.
+        var features = Content.Classes
+            .SelectMany(definition => definition.Features.Concat(definition.SubclassFeatures))
+            .ToList();
 
         Assert.NotEmpty(features);
         Assert.All(features, feature => Assert.True(Enum.IsDefined(feature.Mechanics)));
@@ -188,6 +192,24 @@ public class ClassContentTests
         Assert.All(
             features.Where(feature => feature.Mechanics == EntryMechanics.Unmodelled),
             feature => Assert.NotEmpty(feature.UnmodelledClauses));
+    }
+
+    [Fact]
+    public void NoClassOrSubclassFeatureReachesNarrativeExceptFromACuratedList()
+    {
+        // Mirrors OriginContentTests' species guard and the spells' invariant (#357):
+        // a class or subclass feature consulting EntryMechanicsParser.KnownInertEntries
+        // is the intended reading for this shape (ClassifyTrait's consultInertList
+        // defaults to true for species/class trait text), but that list holds only
+        // bestiary names today, never a class or subclass one — so nothing has
+        // actually been judged inert here yet. The guard exists before a silent name
+        // collision can smuggle a class rule into Narrative unexamined (#377). Assert
+        // zero until this project curates a class/subclass-specific list.
+        var features = Content.Classes
+            .SelectMany(definition => definition.Features.Concat(definition.SubclassFeatures))
+            .ToList();
+
+        Assert.DoesNotContain(features, feature => feature.Mechanics == EntryMechanics.Narrative);
     }
 
     [Fact]
