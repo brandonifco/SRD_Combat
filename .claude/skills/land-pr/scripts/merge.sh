@@ -12,6 +12,14 @@
 # is reported but never trusted on its own.
 #
 # Exit 0 when MERGED and present in origin/main; 1 otherwise.
+#
+# Strict branch protection ("require branches to be up to date before merging") is OFF
+# today, by decision (#589, deferred from the 2026-08-29 audit to Brandon's #611
+# repo-policy call): a BEHIND PR still merges via `gh pr merge --merge`, and this script
+# adds no `gh pr update-branch` retry loop. If strict protection is ever turned on,
+# `gh pr merge` will start failing on BEHIND PRs and this script will correctly report
+# "did NOT merge" rather than silently retrying — that failure is the signal to revisit
+# this decision, not a bug to patch around pre-emptively.
 set -uo pipefail
 
 pr="${1:-}"; [[ -n "$pr" ]] || { echo "usage: merge.sh <pr-number>" >&2; exit 2; }
