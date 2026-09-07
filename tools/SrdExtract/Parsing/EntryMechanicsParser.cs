@@ -678,7 +678,8 @@ internal static partial class EntryMechanicsParser
         // — every one of those qualifiers is a rule this engine does not enforce and
         // is left to residue.
         var target = SaveTargetClausePattern().Match(text, header.Index + header.Length);
-        if (target.Success && target.Index == header.Index + header.Length)
+        var targetClaimed = target.Success && target.Index == header.Index + header.Length;
+        if (targetClaimed)
         {
             coverage.Claim(SaveTargetClausePattern(), target, "save.target_clause");
         }
@@ -691,6 +692,15 @@ internal static partial class EntryMechanicsParser
         // span or (worse) silently rely on EntryCoverage tolerating that — computed
         // once instead.
         var area = ParseArea(text, coverage);
+
+        // #600's trip-wire — see AssertAreaAgreesWithTargetClause's own remarks for
+        // why this check exists and why it throws. Passing null when the target
+        // clause did not claim an area shape (rather than skipping the call) keeps
+        // the one invariant in one place, checked unconditionally.
+        AssertAreaAgreesWithTargetClause(
+            targetClaimed && target.Groups["areaShape"].Success ? target.Groups["areaShape"].Value : null,
+            area,
+            text);
 
         // #386's extraction half: the printed "within N feet" a single target or a
         // point-aimed area (a Sphere's own point of origin) may be used at — read
@@ -765,6 +775,63 @@ internal static partial class EntryMechanicsParser
             success,
             conditions,
             RangeFeet: rangeFeet);
+    }
+
+    /// <summary>
+    /// #600's trip-wire: <see cref="SaveTargetClausePattern"/> and <see
+    /// cref="AreaPattern"/> are two independent regexes over the same text that
+    /// must agree on every area-shaped entry, and nothing enforced that until now.
+    /// #420/#421 found a live instance — every printed "N-foot-radius Sphere" was
+    /// claimed under <c>save.target_clause</c> while <c>AreaPattern</c>'s own
+    /// "-radius" branch didn't exist yet, so the target-clause claim asserted the
+    /// model expressed a Sphere while <c>ParseArea</c> returned null and
+    /// <c>UseSaveEntry</c> ran the entry as a single target instead — a claim that
+    /// led the code rather than followed it. #420 closed that specific gap by
+    /// teaching <c>AreaPattern</c> the "-radius" shape, but closed it at the
+    /// instance, not the mechanism: nothing stopped the next area shape the
+    /// target-clause alternation learns (a printed Cube or Cylinder target
+    /// clause, say) from shipping ahead of the matching <c>AreaPattern</c> branch
+    /// the same way.
+    /// </summary>
+    /// <param name="claimedAreaShape">
+    /// The literal shape word (<c>"Cone"</c>, <c>"Line"</c>, <c>"Emanation"</c> or
+    /// <c>"Sphere"</c> today) captured by <c>SaveTargetClausePattern</c>'s
+    /// <c>areaShape</c> named group when its match claimed an area alternative, or
+    /// null when the target clause matched something else (a single target, or
+    /// nothing at all). Every area alternative in that pattern tags itself with
+    /// this group — see the pattern's own remarks — so any future branch (Cube,
+    /// Cylinder) stays covered by this same check without this method changing.
+    /// </param>
+    /// <param name="area">
+    /// What <c>ParseArea</c> independently structured for the same entry text.
+    /// </param>
+    /// <param name="entryText">The entry's full text, for the exception message only.</param>
+    /// <remarks>
+    /// This throws rather than refusing the claim into residue. A refusal reads as
+    /// "this entry prints a rule we chose not to model" — the honest outcome for a
+    /// printed qualifier this engine doesn't enforce (design §7.6) — but this is
+    /// not that: it is two regexes disagreeing about a shape one of them
+    /// structures and the other doesn't yet, which should never happen once they
+    /// agree (and #420 makes them agree for every shape printed in the current
+    /// corpus — this method never throws for any entry in <c>data/srd</c> today).
+    /// A should-never-happen invariant is louder failing the extraction run
+    /// outright than sitting quietly in an <c>UnmodelledClauses</c> census waiting
+    /// to be noticed — the same reasoning <see cref="EntryCoverage.Claim(TextSpan, string)"/>
+    /// already applies to its own invariants. Extracted as its own method, taking
+    /// plain values rather than the raw <see cref="Match"/>, so this condition is
+    /// directly unit-testable — the two regexes are constructed so that, for any
+    /// text reachable through <c>Classify</c>, they cannot actually disagree (see
+    /// above), so a test exercising this guard through real corpus-shaped text
+    /// alone could never turn it red.
+    /// </remarks>
+    internal static void AssertAreaAgreesWithTargetClause(string? claimedAreaShape, EffectArea? area, string entryText)
+    {
+        if (claimedAreaShape is not null && area is null)
+        {
+            throw new InvalidOperationException(
+                $"SaveTargetClausePattern claimed an area shape ('{claimedAreaShape}') " +
+                $"that AreaPattern did not structure (#600). Entry text: \"{entryText}\"");
+        }
     }
 
     /// <summary>
@@ -1697,16 +1764,28 @@ internal static partial class EntryMechanicsParser
     // optional "within N feet" ahead of "that" or "Grappled"); a bare sight/distance
     // qualifier with nothing else after it still leaves the lookahead unmatched, so
     // "one creature" still claims there.
+    // The area alternatives below all tag the shape word with the same `areaShape`
+    // named group (#600) — .NET permits a named group to repeat across mutually
+    // exclusive alternation branches, and since exactly one branch fires per match,
+    // `areaShape` reads back whichever shape actually matched (or is unset for the
+    // "one creature" single-target branch, which names no shape at all). ParseSave
+    // uses that group as its half of the #600 agreement check against ParseArea's
+    // own AreaPattern match on the same text — see ParseSave's own remarks. Any
+    // future branch for a printed Cube or Cylinder target clause must tag its shape
+    // word the same way to stay covered by that check.
     [GeneratedRegex(
         @",\s*(?:" +
-        @"each\s+creature\s+in\s+a\s+\d+-foot\s+Cone" +
-        @"|each\s+creature\s+in\s+a\s+\d+-foot-long,?\s*\d+-foot-?\s?wide\s+Line" +
-        @"|each\s+creature\s+in\s+a\s+\d+-foot\s+Emanation\s+originating\s+from\s+the\s+" +
+        @"each\s+creature\s+in\s+a\s+\d+-foot\s+(?<areaShape>Cone)" +
+        @"|each\s+creature\s+in\s+a\s+\d+-foot-long,?\s*\d+-foot-?\s?wide\s+(?<areaShape>Line)" +
+        @"|each\s+creature\s+in\s+a\s+\d+-foot\s+(?<areaShape>Emanation)\s+originating\s+from\s+the\s+" +
             @"(?<origin>[\w']+(?:\s+(?!(?:that|who|which|within|can)\b)[\w']+)*)" +
-        @"|each\s+creature\s+in\s+a\s+\d+-foot-radius\s+Sphere\s+centered\s+on\s+a\s+point\b" +
+        @"|each\s+creature\s+in\s+a\s+\d+-foot-radius\s+(?<areaShape>Sphere)\s+centered\s+on\s+a\s+point\b" +
         @"|one\s+creature\b(?!\s+(?:within\s+\d+\s+feet\s+)?(?:that\b|Grappled\b))" +
         @")")]
-    private static partial Regex SaveTargetClausePattern();
+    // internal rather than private (#600): SrdExtract.Tests calls this directly to
+    // prove the `areaShape` named group actually fires against real corpus text —
+    // see EntryMechanicsCharacterizationTests's corpus-driven agreement test.
+    internal static partial Regex SaveTargetClausePattern();
 
     // "within 60 feet" — the literal substring ReadRange claims (#386), wherever it
     // sits in a single-target or point-aimed-Sphere clause. Fully literal but for the
