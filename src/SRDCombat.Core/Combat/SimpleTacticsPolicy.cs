@@ -815,8 +815,7 @@ public static class SimpleTacticsPolicy
         Combatant target,
         SpellDefinition spell)
     {
-        var damage = spell.Damage.Sum(component => component.Amount.Average)
-            + (spell.Save?.FailureDamage.Sum(component => component.Amount.Average) ?? 0);
+        var damage = SpellcastingRules.AverageDamage(spell);
 
         if (damage <= 0)
         {

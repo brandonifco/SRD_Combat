@@ -260,8 +260,7 @@ public static class PartyDoctrine
         var cantrip = combatant.Stats.Character?.Spells
             .Where(spell => spell.IsCantrip)
             .Where(spell => (spell.TargetRangeFeet ?? 0) > Battlefield.FeetPerSquare)
-            .Select(spell => spell.Damage.Sum(damage => damage.Amount.Average)
-                + (spell.Save?.FailureDamage.Sum(damage => damage.Amount.Average) ?? 0))
+            .Select(SpellcastingRules.AverageDamage)
             .DefaultIfEmpty(0)
             .Max() ?? 0;
 

@@ -84,4 +84,57 @@ public static class SpellcastingRules
                     || spell.AppliedConditions.Any(ConditionRules.CanBeImposed)
                     || save.AppliedConditions.Any(ConditionRules.CanBeImposed)));
     }
+
+    /// <summary>
+    /// The spell's damage, averaged, counted once — following whichever field the
+    /// resolver would actually roll.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="SpellDefinition.Damage"/>'s own doc comment states the trap: "a save
+    /// spell's damage is also on <c>Save</c>" — the extractor carries a save spell's
+    /// dice on both fields because <c>Encounter.Casting</c>'s scaling has to grow both
+    /// (see its <c>Grown</c> remarks), but only one of them is ever rolled. Summing
+    /// both, as two independent valuation call sites once did (#376), double-counts the
+    /// same dice and roughly doubles a save spell's priced value against a weapon or an
+    /// attack-roll cantrip.
+    /// </para>
+    /// <para>
+    /// <b>Which field is rolled depends on the branch <c>Encounter.CastSpell</c>
+    /// takes, not on whether <c>Save</c> is merely present.</b> That branch checks
+    /// <c>IsSpellAttack</c> <em>first</em>: when true, <c>ResolveSpellAttack</c> runs
+    /// and rolls <c>Damage</c>, even if a <c>Save</c> is also attached (Ice Knife's
+    /// ranged spell attack for 1d10 plus an unconditional 2d6 Cold save-or-half, Arcane
+    /// Hand's Clenched Fist reading a melee spell attack alongside the option's shared
+    /// <c>Save</c> shape). Only when <c>IsSpellAttack</c> is false does
+    /// <c>ResolveSpellSave</c> run, and only then is <c>Save.FailureDamage</c> what
+    /// gets rolled. So the precedence here mirrors the resolver's own: attack first,
+    /// then save, then plain damage — never "any non-null <c>Save</c> wins", which
+    /// prices an attack-plus-save spell from the field the resolver never touches for
+    /// it. (It went unnoticed against today's corpus only because Ice Knife's and
+    /// Arcane Hand's extraction duplicates every damage component into both fields
+    /// identically; a corrected extraction that split the attack dice from the save
+    /// dice would make the old precedence price from the wrong number.)
+    /// </para>
+    /// <para>
+    /// A non-attack save spell whose <c>Save.FailureDamage</c> comes back empty falls
+    /// through to <c>Damage</c> rather than pricing at zero. No spell in the corpus
+    /// takes this shape today (a save spell's <c>Damage</c> and <c>FailureDamage</c>
+    /// are always either both populated or both empty), but the fallthrough keeps the
+    /// estimate from silently zeroing a spell that has real damage recorded somewhere.
+    /// </para>
+    /// </remarks>
+    public static double AverageDamage(SpellDefinition spell)
+    {
+        ArgumentNullException.ThrowIfNull(spell);
+
+        if (spell.IsSpellAttack)
+        {
+            return spell.Damage.Sum(component => component.Amount.Average);
+        }
+
+        var failureDamage = spell.Save?.FailureDamage.Sum(component => component.Amount.Average) ?? 0;
+
+        return failureDamage > 0 ? failureDamage : spell.Damage.Sum(component => component.Amount.Average);
+    }
 }
