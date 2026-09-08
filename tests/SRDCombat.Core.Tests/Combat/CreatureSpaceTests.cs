@@ -141,6 +141,7 @@ public class CreatureSpaceTests
     [Fact]
     public void LargeCreature_ThreatensTheRingAroundItsWholeSpace()
     {
+        var field = new Battlefield(12, 12);
         var ogre = CombatTestData.Combatant(
             "ogre",
             sideId: CombatTestData.Monsters,
@@ -153,6 +154,7 @@ public class CreatureSpaceTests
         // leaves its reach. Anchored at (5,5), (7,7) would have been out of reach
         // already and nothing would have fired.
         var provoked = MovementRules.FindOpportunityAttackers(
+            field,
             hero,
             new GridPosition(7, 7),
             new GridPosition(8, 8),
@@ -163,6 +165,7 @@ public class CreatureSpaceTests
         // Sliding along the far side of the same ring stays in reach and provokes
         // nothing.
         Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
             hero,
             new GridPosition(7, 7),
             new GridPosition(7, 6),
@@ -176,6 +179,7 @@ public class CreatureSpaceTests
     [Fact]
     public void LargeMover_ProvokesOnlyOnceItsWholeBodyLeavesTheReach()
     {
+        var field = new Battlefield(12, 12);
         var goblin = CombatTestData.Combatant("goblin", sideId: CombatTestData.Monsters, x: 4, y: 4);
         var ogre = CombatTestData.Combatant(
             "ogre",
@@ -188,6 +192,7 @@ public class CreatureSpaceTests
         // north-west corner is still beside the goblin: no Opportunity Attack, because
         // the creature has not left the reach.
         Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
             ogre,
             new GridPosition(5, 5),
             new GridPosition(5, 4),
@@ -198,6 +203,7 @@ public class CreatureSpaceTests
         Assert.Equal(
             new[] { "goblin" },
             MovementRules.FindOpportunityAttackers(
+                field,
                 ogre,
                 new GridPosition(5, 5),
                 new GridPosition(6, 5),

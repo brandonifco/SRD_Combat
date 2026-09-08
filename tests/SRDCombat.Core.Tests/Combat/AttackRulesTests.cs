@@ -138,6 +138,43 @@ public class AttackRulesTests
         Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
     }
 
+    [Fact]
+    public void ADodgingBlindedTarget_WithABattlefieldOffered_StillGrantsNoBenefit()
+    {
+        // The same case, with a battlefield supplied (#672) so this actually consults
+        // VisionRules.CanSee(dodger, attacker) rather than falling back to "not
+        // Blinded" — proving the two readings agree rather than merely assuming it.
+        var field = new Battlefield(8, 8);
+        var attacker = CombatTestData.Combatant("a");
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+        target.Turn.BeginTurn(30);
+        target.Turn.StartDodging();
+        target.AddCondition(ConditionType.Blinded);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], target, [attacker, target], field);
+
+        Assert.False(circumstances.TargetIsDodging);
+    }
+
+    [Fact]
+    public void ADodgingTarget_WithNoLineOfSightToTheAttacker_GetsNoBenefitEither()
+    {
+        // Dodge's "if you can see the attacker" reading rests on line of sight, not
+        // merely "not Blinded" — a wall between the dodger and the attacker denies the
+        // benefit the same way Blindness does, even with open eyes.
+        var field = new Battlefield(6, 6, blocked: [new(2, 0), new(2, 1), new(2, 2)]);
+        var attacker = CombatTestData.Combatant("a", x: 0, y: 1);
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        target.Turn.BeginTurn(30);
+        target.Turn.StartDodging();
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], target, [attacker, target], field);
+
+        Assert.False(circumstances.TargetIsDodging);
+    }
+
     [Theory]
     // Prone gives the attacker Advantage up close and Disadvantage from further away.
     [InlineData(5, RollMode.Advantage)]

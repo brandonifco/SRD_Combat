@@ -1556,7 +1556,8 @@ public static class SimpleTacticsPolicy
 
         foreach (var step in path.Steps)
         {
-            foreach (var enemy in MovementRules.FindOpportunityAttackers(actor, from, step, encounter.Combatants))
+            foreach (var enemy in MovementRules.FindOpportunityAttackers(
+                encounter.Battlefield, actor, from, step, encounter.Combatants))
             {
                 if (provoked.Add(enemy.Id))
                 {

@@ -123,6 +123,7 @@ public class MovementRulesTests
     [Fact]
     public void FindOpportunityAttackers_FiresOnlyWhenReachIsActuallyLeft()
     {
+        var field = new Battlefield(8, 8);
         var mover = CombatTestData.Combatant("m", x: 1, y: 0);
         var enemy = CombatTestData.Combatant("e", sideId: CombatTestData.Monsters, x: 0, y: 0);
         mover.Turn.BeginTurn(30);
@@ -130,6 +131,7 @@ public class MovementRulesTests
 
         // Stepping from adjacent to two squares away leaves reach.
         Assert.Single(MovementRules.FindOpportunityAttackers(
+            field,
             mover,
             new GridPosition(1, 0),
             new GridPosition(2, 0),
@@ -137,6 +139,7 @@ public class MovementRulesTests
 
         // Sidestepping while staying adjacent does not.
         Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
             mover,
             new GridPosition(1, 0),
             new GridPosition(1, 1),
@@ -144,6 +147,7 @@ public class MovementRulesTests
 
         // Moving between two squares that were both already out of reach does not.
         Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
             mover,
             new GridPosition(5, 0),
             new GridPosition(6, 0),
@@ -153,6 +157,7 @@ public class MovementRulesTests
     [Fact]
     public void FindOpportunityAttackers_IsAvoidedByDisengaging()
     {
+        var field = new Battlefield(8, 8);
         var mover = CombatTestData.Combatant("m", x: 1, y: 0);
         var enemy = CombatTestData.Combatant("e", sideId: CombatTestData.Monsters, x: 0, y: 0);
         mover.Turn.BeginTurn(30);
@@ -160,6 +165,7 @@ public class MovementRulesTests
         mover.Turn.Disengage();
 
         Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
             mover,
             new GridPosition(1, 0),
             new GridPosition(2, 0),
@@ -169,6 +175,7 @@ public class MovementRulesTests
     [Fact]
     public void FindOpportunityAttackers_NeedsAnAvailableReaction()
     {
+        var field = new Battlefield(8, 8);
         var mover = CombatTestData.Combatant("m", x: 1, y: 0);
         var enemy = CombatTestData.Combatant("e", sideId: CombatTestData.Monsters, x: 0, y: 0);
         mover.Turn.BeginTurn(30);
@@ -176,10 +183,79 @@ public class MovementRulesTests
         enemy.Turn.SpendReaction();
 
         Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
             mover,
             new GridPosition(1, 0),
             new GridPosition(2, 0),
             [mover, enemy]));
+    }
+
+    [Fact]
+    public void FindOpportunityAttackers_ABlindedEnemyMakesNone()
+    {
+        // #672: "a creature that you can see leaves your reach" — a Blinded enemy has
+        // no line of sight to the mover's square, so it gets no Opportunity Attack even
+        // though nothing else about the geometry changed.
+        var field = new Battlefield(8, 8);
+        var mover = CombatTestData.Combatant("m", x: 1, y: 0);
+        var enemy = CombatTestData.Combatant("e", sideId: CombatTestData.Monsters, x: 0, y: 0);
+        mover.Turn.BeginTurn(30);
+        enemy.Turn.BeginTurn(30);
+        enemy.AddCondition(ConditionType.Blinded);
+
+        Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
+            mover,
+            new GridPosition(1, 0),
+            new GridPosition(2, 0),
+            [mover, enemy]));
+
+        enemy.RemoveCondition(ConditionType.Blinded);
+
+        Assert.Single(MovementRules.FindOpportunityAttackers(
+            field,
+            mover,
+            new GridPosition(1, 0),
+            new GridPosition(2, 0),
+            [mover, enemy]));
+    }
+
+    [Fact]
+    public void FindOpportunityAttackers_AWallBlockingSightMakesNone()
+    {
+        // The same trigger, gated by geometry rather than a condition: reach alone
+        // (T1's invariant means an adjacent square can never be walled off, so this
+        // needs a 10-foot reach to leave room for a wall in between) would fire here,
+        // but a wall directly between the reacher and the square the mover is leaving
+        // denies it sight of that square.
+        var field = new Battlefield(8, 8, blocked: [new(1, 0)]);
+        var reacher = CombatTestData.Combatant(
+            "e",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(attacks: [CombatTestData.MeleeAttack("Halberd", reachFeet: 10)]),
+            x: 0,
+            y: 0);
+        var mover = CombatTestData.Combatant("m", x: 2, y: 0);
+        mover.Turn.BeginTurn(30);
+        reacher.Turn.BeginTurn(30);
+
+        Assert.Empty(MovementRules.FindOpportunityAttackers(
+            field,
+            mover,
+            new GridPosition(2, 0),
+            new GridPosition(3, 0),
+            [mover, reacher]));
+
+        // Unblock the wall and the same step provokes — isolating the wall, not the
+        // reach or distance, as what made the difference.
+        var openField = new Battlefield(8, 8);
+
+        Assert.Single(MovementRules.FindOpportunityAttackers(
+            openField,
+            mover,
+            new GridPosition(2, 0),
+            new GridPosition(3, 0),
+            [mover, reacher]));
     }
 
     [Fact]

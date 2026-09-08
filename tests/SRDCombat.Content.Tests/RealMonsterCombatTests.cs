@@ -659,6 +659,13 @@ public class RealMonsterCombatTests
         Assert.Null(encounter.UseEntry(scare.Name, bandit));
         Assert.True(bandit.HasCondition(ConditionType.Frightened));
 
+        // T3 (#672): every Frightened the engine imposes carries a SourceId — the
+        // rider-application path (Encounter's condition-imposition code) always passes
+        // the imposer's own id, which is what lets AttackerIsFrightened/
+        // FrightenedSourceInSight resolve a source to ask VisionRules about rather than
+        // falling back to "no source recorded".
+        Assert.Equal("quasit", bandit.ConditionState(ConditionType.Frightened)!.SourceId);
+
         // The quasit's turn ends; the bandit's own turn comes and goes, and the
         // repeat save at its end rolls the scripted 11 against the printed DC 10.
         encounter.EndTurn();
@@ -668,6 +675,116 @@ public class RealMonsterCombatTests
         Assert.Contains(
             encounter.Log,
             step => step.Narration.Contains("repeats the Wisdom saving throw", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheOnisNightmareRayFrightensThroughTheAttackHitPathToo()
+    {
+        // T3's second shape (#672, Codex round 1): Nightmare Ray is Attack-mechanics,
+        // not a save — its Frightened rider lives on the entry's own
+        // AppliedConditions and is imposed by ImposeRiders/ImposeConditions on a hit,
+        // the other of the two routes into the shared, always-sourced
+        // rider-application code (the Quasit's Scare above exercises the
+        // save-failure route). Both must agree on SourceId, or the T3 census below
+        // would be vouching for a path this suite never actually ran.
+        var oni = Content.MonstersById["monster.oni"];
+        var rayEntry = oni.Entries.Single(entry => entry.Name == "Nightmare Ray");
+        var rider = Assert.Single(rayEntry.AppliedConditions);
+
+        Assert.Equal(ConditionType.Frightened, rider.Condition);
+        Assert.True(ConditionRules.CanBeImposed(rider));
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(oni, "oni", "fiends", new GridPosition(0, 4)),
+                // Five squares off (25 ft, within the printed 60-foot range) — clear
+                // of Ranged Attacks in Close Combat, whose own Disadvantage would
+                // otherwise consume the extra die a plain hit does not need here.
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(5, 4)),
+            ],
+            // Initiatives (oni first); a 15 + 5 attack bonus beats the bandit's AC 12
+            // without a natural 20 (whose crit would double the damage dice); 2d6 damage.
+            new ScriptedRandomSource(20, 1, 15, 3, 4));
+
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.Attack("Nightmare Ray", bandit));
+        Assert.True(bandit.HasCondition(ConditionType.Frightened));
+        Assert.Equal("oni", bandit.ConditionState(ConditionType.Frightened)!.SourceId);
+    }
+
+    [Fact]
+    public void T3_EveryExecutableCorpusFrightenedRiderIsImposedThroughTheSourcedPath()
+    {
+        // T3 (#672): the designer's own census — eleven executable Frightened riders
+        // across the corpus, each one of exactly two shapes, and both are proven
+        // (by the two tests directly above) to land through the shared,
+        // always-sourced rider-application code — ImposeConditions, called either
+        // from UseSaveEntry (a SavingThrow-mechanics entry's failed save; the
+        // Quasit's Scare) or from ImposeRiders (an Attack-mechanics entry's hit; the
+        // Oni's Nightmare Ray). Asserting the shape here, not just the count, is
+        // what rules out a THIRD, unsourced rider-imposition path answering for any
+        // of the other nine (Codex round 1, #672) — a rider of neither shape would
+        // be a mechanism this test does not vouch for and would need its own executed
+        // pin before joining the count below.
+        var withExecutableFrightened = Content.MonstersById.Values
+            .SelectMany(monster => monster.Entries.Select(entry => (monster.Id, entry)))
+            .Where(pair => pair.entry.AppliedConditions
+                .Concat(pair.entry.Save?.AppliedConditions ?? [])
+                .Any(rider => rider.Condition == ConditionType.Frightened && ConditionRules.CanBeImposed(rider)))
+            .ToArray();
+
+        foreach (var (id, entry) in withExecutableFrightened)
+        {
+            Assert.True(
+                entry.Mechanics is EntryMechanics.SavingThrow or EntryMechanics.Attack,
+                $"{id} | {entry.Name} carries an executable Frightened rider through an unproven shape: {entry.Mechanics}.");
+        }
+
+        Assert.Equal(
+            new[]
+            {
+                "monster.cloaker",
+                "monster.doppelganger",
+                "monster.ghost",
+                "monster.lion",
+                "monster.mummy",
+                "monster.oni",
+                "monster.pit-fiend",
+                "monster.quasit",
+                "monster.rakshasa",
+                "monster.sea-hag",
+                "monster.tarrasque",
+            },
+            withExecutableFrightened.Select(pair => pair.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
+    public void T4_ABlindedCombatantBuiltFromABlindsightMonsterStillDoesNotQualify()
+    {
+        // T4 (#672), against a real corpus monster rather than an unattached
+        // condition (Codex round 1: a prior version of this test built an ordinary
+        // combatant and never actually attached Blindsight to anything). The Animated
+        // Armor prints Blindsight 60 ft (SRD 5.2.1's own "you can see anything that
+        // isn't behind Total Cover even if you have the Blinded condition", p. 177) —
+        // and CombatantStats.FromMonster never reads MonsterDefinition.Senses at all,
+        // so the resulting combatant carries no trace of it. VisionRules.HasOpenEyes
+        // therefore still disqualifies it once Blinded, print's exception
+        // notwithstanding. Stated as a decision, not an oversight: when #673 carries
+        // senses into combat, this test is meant to go red — the planned decision
+        // point, not a regression — and should be retired alongside the new senses
+        // tests that replace it.
+        var armor = Content.MonstersById["monster.animated-armor"];
+        Assert.Contains(armor.Senses, sense => sense.Type == SenseType.Blindsight);
+
+        var viewer = new Combatant(
+            "armor", armor.Name, "constructs", CombatantStats.FromMonster(armor), new GridPosition(0, 0));
+        viewer.AddCondition(ConditionType.Blinded);
+
+        var field = new Battlefield(6, 6);
+
+        Assert.False(VisionRules.CanSee(field, viewer, new GridPosition(1, 0)));
     }
 
     [Fact]

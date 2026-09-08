@@ -12,10 +12,11 @@ namespace SRDCombat.Core.Tests.Combat;
 /// condition."
 /// </summary>
 /// <remarks>
-/// Sight is unmodelled, so "who can see you" is read as any enemy without the Blinded
-/// condition — the same shape of reading Frightened records. The rule was missing until
-/// the Godot client's probe walked an archer adjacent to its target and shot with a flat
-/// roll (#96).
+/// "Who can see you" consults <c>VisionRules.CanSee</c> (#672) when a battlefield is
+/// offered; the tests below pass only <c>combatants</c>, so it falls back to the
+/// pre-#672 reading — any enemy without the Blinded condition. The rule was missing
+/// until the Godot client's probe walked an archer adjacent to its target and shot with
+/// a flat roll (#96).
 /// </remarks>
 public class RangedAttacksInCloseCombatTests
 {
@@ -66,6 +67,21 @@ public class RangedAttacksInCloseCombatTests
         // The Blinded target still grants Advantage against, so the roll swings the
         // other way rather than merely back to normal.
         Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void ABlindedNeighbour_WithABattlefieldOffered_StillImposesNothing()
+    {
+        // The Blinded case again, but with a battlefield supplied (#672) so this
+        // actually consults VisionRules.CanSee rather than falling back to "not
+        // Blinded" — proving the two readings agree rather than merely assuming it.
+        var field = new Battlefield(8, 8);
+        var (archer, bow, target) = Archery(targetDistanceSquares: 1);
+        target.AddCondition(ConditionType.Blinded);
+
+        var circumstances = AttackRules.DescribeCircumstances(archer, bow, target, [archer, target], field);
+
+        Assert.False(circumstances.RangedAttackInCloseCombat);
     }
 
     [Fact]

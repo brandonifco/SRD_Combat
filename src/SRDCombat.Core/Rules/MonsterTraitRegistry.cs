@@ -60,10 +60,20 @@ public enum MonsterTrait
 /// <para>
 /// Deliberately absent, and why: <b>Spider Climb</b> and <b>Incorporeal Movement</b>
 /// need verticality and wall-passing the grid does not model; <b>Swarm</b> needs
-/// space-sharing and hit-point-gated damage halving; <b>Sunlight Sensitivity</b> needs
-/// a light model; <b>Undead Fortitude</b> needs a hook at the moment damage would drop
-/// the creature, and is likely the best next addition. None of them may be added as a
-/// name alone.
+/// space-sharing and hit-point-gated damage halving; <b>Undead Fortitude</b> needs a
+/// hook at the moment damage would drop the creature, and is likely the best next
+/// addition. None of them may be added as a name alone.
+/// </para>
+/// <para>
+/// <b>Sunlight Sensitivity, Light Sensitivity and Sunlight Weakness need a
+/// <em>light</em> model, and #672's line-of-sight predicate is not one</b> — a
+/// designer reading confirmed for #672 (SRD 5.2.1 p. 281, 2026-09-08): every one of
+/// these keys on an illumination category (sunlight, Bright Light) the battlefield does
+/// not track, never on line of sight, so none becomes expressible now that
+/// <c>VisionRules</c> exists. The corollary is written down alongside it: this engine's
+/// battlefield is read as uniformly Bright Light, which is why Darkvision (201 of 330
+/// monsters) is inert rather than absent, and Illumination (the Azer's own light
+/// source) is on the <c>Narrative</c> list rather than executed.
 /// </para>
 /// <para>
 /// The extractor still classifies these entries <c>Unmodelled</c>. Implementing any of

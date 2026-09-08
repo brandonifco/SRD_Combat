@@ -364,8 +364,10 @@ public sealed partial class Encounter
     /// <para>
     /// The readings, in printed order: a Magic action spends the Action; "another
     /// creature" refuses the Cleric itself; "that you can see" is the Total Cover
-    /// refusal, sight being unmodelled — the same reading every targeted spell makes;
-    /// the DC "equals the spell save DC from this class's Spellcasting feature", which
+    /// refusal — the same reading every targeted spell makes, and unchanged by #672
+    /// (the wider "seeing a creature" question, not #671/#672's line of sight, is
+    /// #673's to wire); the DC "equals the spell save DC from this class's Spellcasting
+    /// feature", which
     /// a resolved Cleric already carries, and a Channel Divinity bearer without
     /// resolved spellcasting falls back to the same Wisdom-based arithmetic that DC is
     /// made of. The dice step at Cleric levels 7, 13 and 18 is written from the printed
@@ -989,8 +991,13 @@ public sealed partial class Encounter
     /// <item>The target has an executable HitByMeleeAttack reaction (#677's signal), its
     /// Reaction is unspent, and it can act — a downed or Incapacitated creature takes no
     /// Reaction (<see cref="Combatant.CanAct"/>).</item>
-    /// <item>It sees the attacker — read as not Blinded, the same sight reading Ranged
-    /// Attacks in Close Combat and Frightened record, sight being otherwise unmodelled.</item>
+    /// <item>It sees the attacker — read as not Blinded, the pre-#672 reading Ranged
+    /// Attacks in Close Combat and Dodge carried before consulting <c>VisionRules</c>.
+    /// Parry was not in #672's named ledger (#672 re-derived Frightened, Ranged Attacks
+    /// in Close Combat, Dodge and Opportunity Attacks only) and stays on this reading
+    /// deliberately rather than by oversight; wiring it to <c>VisionRules.CanSee</c> is
+    /// the same shape of change and is noted on #677 (Parry's own issue) rather than
+    /// folded in here.</item>
     /// <item>It is holding a weapon — read as having a melee weapon attack it could make.
     /// Every corpus Parry-bearer (#678: Bandit Captain, Knight, Warrior Veteran, Noble,
     /// Gladiator, Erinyes, Marilith) fights with a named weapon attack and none prints a

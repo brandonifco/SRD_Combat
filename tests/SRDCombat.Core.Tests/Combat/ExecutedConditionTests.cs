@@ -28,8 +28,9 @@ namespace SRDCombat.Core.Tests.Combat;
 /// </item>
 /// <item>
 /// Frightened is Disadvantage on ability checks and attack rolls "while the source of
-/// fear is within line of sight" — read as always, sight being unmodelled — and "You
-/// can't willingly move closer to the source of fear."
+/// fear is within line of sight" — consulting <c>VisionRules.CanSee</c> since #672,
+/// with no battlefield offered here so the source reads as in sight, the fixtures'
+/// existing behaviour — and "You can't willingly move closer to the source of fear."
 /// </item>
 /// </list>
 /// </remarks>
@@ -266,6 +267,98 @@ public class ExecutedConditionTests
         Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
     }
 
+    // ── A1 (#672): Frightened's Disadvantage now switches off out of line of sight ──
+
+    [Fact]
+    public void AFrightenedCreatureThatCannotSeeItsSourceAttacksNormally()
+    {
+        // The same wall shape VisionRulesTests.AWallBlocksTheLine uses: a column at
+        // x=2 between the attacker at (0,1) and the source at (4,1).
+        var field = new Battlefield(6, 6, blocked: [new(2, 0), new(2, 1), new(2, 2)]);
+        var attacker = CombatTestData.Combatant("attacker", x: 0, y: 1);
+        var source = CombatTestData.Combatant("source", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        attacker.AddCondition(ConditionType.Frightened, source.Id);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], source, [attacker, source], field);
+
+        Assert.False(circumstances.AttackerIsFrightened);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 20));
+    }
+
+    [Fact]
+    public void TheSameFrightenedCreatureAttacksWithDisadvantageOnceTheWallIsGone()
+    {
+        // Identical to the wall test above but on an open field: isolates the wall,
+        // not the field or the positions, as what made the difference.
+        var field = new Battlefield(6, 6);
+        var attacker = CombatTestData.Combatant("attacker", x: 0, y: 1);
+        var source = CombatTestData.Combatant("source", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        attacker.AddCondition(ConditionType.Frightened, source.Id);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], source, [attacker, source], field);
+
+        Assert.True(circumstances.AttackerIsFrightened);
+        Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 20));
+    }
+
+    [Fact]
+    public void ABlindedFrightenedAttackerHasNoSourceInSightButIsStillAtDisadvantageFromBlindness()
+    {
+        // Blinded closes the attacker's own eyes (VisionRules.HasOpenEyes), so it has
+        // no source in sight either — but the roll is still at Disadvantage, from
+        // Blinded alone, not from Frightened. The two must not stack into something
+        // print does not describe (Advantage and Disadvantage never stack anyway, but
+        // AttackerIsFrightened itself must read false, not merely "moot").
+        var field = new Battlefield(6, 6);
+        var attacker = CombatTestData.Combatant("attacker", x: 0, y: 1);
+        var source = CombatTestData.Combatant("source", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        attacker.AddCondition(ConditionType.Frightened, source.Id);
+        attacker.AddCondition(ConditionType.Blinded);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], source, [attacker, source], field);
+
+        Assert.False(circumstances.AttackerIsFrightened);
+        Assert.True(circumstances.AttackerIsBlinded);
+        Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 20));
+    }
+
+    [Fact]
+    public void AFrightenedConditionWithNoRecordedSourceReadsAsInSight()
+    {
+        // No SourceId at all — not even an id that fails to resolve. The hampering
+        // default applies regardless of the battlefield offered.
+        var field = new Battlefield(6, 6, blocked: [new(2, 0), new(2, 1), new(2, 2)]);
+        var attacker = CombatTestData.Combatant("attacker", x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        attacker.AddCondition(ConditionType.Frightened);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], target, [attacker, target], field);
+
+        Assert.True(circumstances.AttackerIsFrightened);
+    }
+
+    [Fact]
+    public void AFrightenedCreatureStillSeesItsDeadSource()
+    {
+        // "Dead or alive" survives #672: the predicate qualifies the viewer, not the
+        // target, and a corpse is seen like any other occupied square.
+        var field = new Battlefield(6, 6);
+        var attacker = CombatTestData.Combatant("attacker", x: 0, y: 1);
+        var source = CombatTestData.Combatant("source", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        DamageRules.Apply(source, 1_000, DamageType.Slashing);
+        Assert.True(source.IsDead);
+        attacker.AddCondition(ConditionType.Frightened, source.Id);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], source, [attacker, source], field);
+
+        Assert.True(circumstances.AttackerIsFrightened);
+    }
+
     [Fact]
     public void AFrightenedCreatureCannotWillinglyMoveCloserToTheSource()
     {
@@ -300,6 +393,30 @@ public class ExecutedConditionTests
         Assert.Null(encounter.Escape());
 
         Assert.True(victim.HasCondition(ConditionType.Grappled));
+    }
+
+    [Fact]
+    public void AFrightenedCreatureThatCannotSeeItsSourceEscapesNormally()
+    {
+        // The Escape variant of A1's wall pair: ConditionRules.AbilityCheckMode drops
+        // Frightened's Disadvantage the same way DescribeCircumstances does. Only one
+        // die is scripted for the escape roll — if the mode were still Disadvantage,
+        // the second d20 it needs would find the scripted source exhausted and throw,
+        // failing the test loudly rather than silently passing at the wrong mode.
+        var encounter = CharmFight(
+            new ScriptedRandomSource(20, 5, 1, 18), blocked: [new GridPosition(2, 0)]);
+        var (victim, brute, _) = CharmParties(encounter);
+
+        victim.AddCondition(new ActiveCondition(
+            ConditionType.Grappled,
+            brute.Id,
+            EscapeDifficultyClass: 13));
+        victim.AddCondition(ConditionType.Frightened, brute.Id);
+
+        Assert.Same(victim, encounter.ActiveCombatant);
+        Assert.Null(encounter.Escape());
+
+        Assert.False(victim.HasCondition(ConditionType.Grappled));
     }
 
     [Fact]
@@ -393,15 +510,18 @@ public class ExecutedConditionTests
 
     /// <summary>
     /// A hero at (0,0) and two enemies, a brute and a bystander, wherever the test
-    /// needs them — initiative bonuses put them in scripted-die order.
+    /// needs them — initiative bonuses put them in scripted-die order. <paramref
+    /// name="blocked"/> is empty by default (open field); the Frightened line-of-sight
+    /// tests (#672) populate it to put a wall between the victim and its fear source.
     /// </summary>
     private static Encounter CharmFight(
         IRandomSource random,
         int bruteX = 5,
         int bystanderX = 1,
-        int bystanderY = 0) =>
+        int bystanderY = 0,
+        IEnumerable<GridPosition>? blocked = null) =>
         Encounter.Start(
-            new Battlefield(12, 12),
+            new Battlefield(12, 12, blocked: blocked),
             [
                 CombatTestData.Combatant("victim", sideId: CombatTestData.Heroes),
                 CombatTestData.Combatant(
