@@ -509,7 +509,9 @@ public enum ReactionTrigger
 {
     /// <summary>
     /// "Trigger: the creature is hit by a melee attack roll while holding a weapon."
-    /// Parry (#677) — Bandit Captain, Knight, Warrior Veteran, Noble.
+    /// Parry (#677/#678) — every corpus creature printing that exact reaction shape:
+    /// Bandit Captain, Knight, Warrior Veteran, Noble (AC bonus 2), Gladiator (3),
+    /// Erinyes (4), Marilith (5).
     /// </summary>
     HitByMeleeAttack,
 }
@@ -526,8 +528,11 @@ public enum ReactionTrigger
 /// reaction whose response is <em>not</em> "raise AC by N" (a retarget, a split, a
 /// blinding gaze) is its own shape and does not reuse this record: it gets its own
 /// structured signal alongside the code that executes it, per the no-speculative-
-/// abstraction rule. Until #413-D teaches the extractor to fill this from content, it is
-/// set only by hand-authored fixtures.
+/// abstraction rule. #678 taught the extractor to fill this from content — see
+/// <c>EntryMechanicsParser.ParseParryReaction</c> for the recognised shape and the
+/// misattribution risk (Riposte, Whirlwind of Sand) it is gated against — and
+/// hand-authored fixtures remain the engine-level tests' own source, unaffected by
+/// content regeneration.
 /// </remarks>
 /// <param name="Trigger">The event that fires the reaction.</param>
 /// <param name="ArmorClassBonus">

@@ -993,9 +993,10 @@ public sealed partial class Encounter
     /// <item>It sees the attacker — read as not Blinded, the same sight reading Ranged
     /// Attacks in Close Combat and Frightened record, sight being otherwise unmodelled.</item>
     /// <item>It is holding a weapon — read as having a melee weapon attack it could make.
-    /// The corpus's four Parry-bearers (Bandit Captain, Knight, Warrior Veteran, Noble)
-    /// are all armed humanoids with no natural weapons, and the engine models no disarm,
-    /// so "has a melee attack" is a faithful stand-in for "holding a weapon" rather than
+    /// Every corpus Parry-bearer (#678: Bandit Captain, Knight, Warrior Veteran, Noble,
+    /// Gladiator, Erinyes, Marilith) fights with a named weapon attack and none prints a
+    /// natural-weapon melee attack alongside it, and the engine models no disarm, so
+    /// "has a melee attack" is a faithful stand-in for "holding a weapon" rather than
     /// a literal grip model — noted so the approximation is not mistaken for the rule.</item>
     /// <item>The bonus flips the result: the roll beat the current AC by less than the
     /// bonus. Only then is the Reaction worth spending; a hit the bonus cannot undo is

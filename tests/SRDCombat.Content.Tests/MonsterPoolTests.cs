@@ -286,4 +286,32 @@ public class MonsterPoolTests
             Content.Monsters,
             monster => Assert.Contains(MonsterPool.CoverageOf(monster), Enum.GetValues<MonsterCoverage>()));
     }
+
+    [Fact]
+    public void ParryClosesTheFourAlreadyPlayableCarriersToComplete()
+    {
+        // #678: the extractor now classifies Parry's Response into
+        // ReactionEffect.Executable, so its two clauses move from residue to claimed.
+        // These four were already MonsterCoverage.Playable (admitted on their Action
+        // entries alone, per the issue) — clearing the Reaction entry's own residue is
+        // Complete-ward movement, not a change to admission. Erinyes, Gladiator and
+        // Marilith carry the identical printed Parry shape (verified against SRD 5.2.1
+        // p. 283/289/306) and are classified the same way — see ParseParryReaction's
+        // remarks for why this is not creature-name-gated — but stay Diminished on an
+        // unrelated Multiattack/Constrict gap (see
+        // ABundledUseInsideTheCompositionSentenceDropsTheGrade above for Marilith), so
+        // their admission is unaffected too.
+        foreach (var id in new[] { "monster.bandit-captain", "monster.knight", "monster.warrior-veteran", "monster.noble" })
+        {
+            var monster = Content.MonstersById[id];
+            Assert.Equal(MonsterCoverage.Complete, MonsterPool.CoverageOf(monster));
+            Assert.True(MonsterPool.Admits(monster));
+        }
+
+        foreach (var id in new[] { "monster.erinyes", "monster.gladiator", "monster.marilith" })
+        {
+            var monster = Content.MonstersById[id];
+            Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(monster));
+        }
+    }
 }

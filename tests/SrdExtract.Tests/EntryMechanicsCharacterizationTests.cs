@@ -2191,6 +2191,111 @@ public sealed class EntryMechanicsCharacterizationTests
 
     #endregion
 
+    #region Reactions — Parry (#678)
+
+    [Fact]
+    public void ParryClassifiesIntoAnExecutableHitByMeleeAttackReaction()
+    {
+        // Bandit Captain's Parry, verbatim (data/srd/monsters.json).
+        var entry = EntryMechanicsParser.Classify(
+            "Parry",
+            MonsterEntrySection.Reaction,
+            "Trigger: The bandit is hit by a melee attack roll while holding a weapon. " +
+            "Response: The bandit adds 2 to its AC against that attack, possibly causing it to miss.");
+
+        Assert.Equal(EntryMechanics.Reaction, entry.Mechanics);
+        Assert.NotNull(entry.Reaction?.Executable);
+        var executable = entry.Reaction!.Executable!;
+        Assert.Equal(ReactionTrigger.HitByMeleeAttack, executable.Trigger);
+        Assert.Equal(2, executable.ArmorClassBonus);
+
+        // Both clauses are claimed — no residue left over once the shape is recognised.
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Theory]
+    [InlineData("erinyes", 4)]
+    [InlineData("gladiator", 3)]
+    [InlineData("marilith", 5)]
+    public void ParryReadsEachCreaturesOwnPrintedBonusRatherThanAConstant(string creature, int printedBonus)
+    {
+        // The bonus is not hardcoded to Bandit Captain's 2 — Erinyes/Gladiator/Marilith
+        // print the identical Parry shape with their own higher bonus (verified against
+        // SRD 5.2.1 p. 283/289/306) and are classified the same way.
+        var entry = EntryMechanicsParser.Classify(
+            "Parry",
+            MonsterEntrySection.Reaction,
+            $"Trigger: The {creature} is hit by a melee attack roll while holding a weapon. " +
+            $"Response: The {creature} adds {printedBonus} to its AC against that attack, possibly causing it to miss.");
+
+        Assert.NotNull(entry.Reaction?.Executable);
+        var executable = entry.Reaction!.Executable!;
+        Assert.Equal(printedBonus, executable.ArmorClassBonus);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void RiposteIsNotMisreadAsParryDespiteSharingItsOpeningSentence()
+    {
+        // Trip-wire (#678's own acceptance criterion): the Pirate Captain's Riposte
+        // prints Parry's identical trigger and opening response sentence, then adds a
+        // whole extra rule this record cannot carry — "On a miss, the pirate makes one
+        // Rapier attack against the triggering creature if within range." (SRD 5.2.1 p.
+        // 314). If this ever matched Parry's shape, Riposte would silently execute only
+        // the AC bump and drop the counter-attack — a misattribution, not an omission.
+        var entry = EntryMechanicsParser.Classify(
+            "Riposte",
+            MonsterEntrySection.Reaction,
+            "Trigger: The pirate is hit by a melee attack roll while holding a weapon. " +
+            "Response: The pirate adds 3 to its AC against that attack, possibly causing it to miss. " +
+            "On a miss, the pirate makes one Rapier attack against the triggering creature if within range.");
+
+        Assert.Equal(EntryMechanics.Reaction, entry.Mechanics);
+        Assert.Null(entry.Reaction?.Executable);
+
+        // Both the trigger and the whole response — counter-attack clause included —
+        // stay in residue exactly as before this slice.
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("hit by a melee attack roll", StringComparison.Ordinal));
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("makes one Rapier attack", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void WhirlwindOfSandIsNotMisreadAsParryDespiteSharingItsAcBonusSentence()
+    {
+        // Trip-wire: the Mummy Lord's Whirlwind of Sand (SRD 5.2.1 p. 310, verbatim from
+        // data/srd/monsters.json) prints a broader trigger — "hit by an attack roll",
+        // not melee-only — and a response that paraphrases Parry's AC bonus ("against
+        // the attack, possibly causing the attack to miss", not "against that attack,
+        // possibly causing it to miss") before adding a teleport and a separate Blinded
+        // clause. All three differences must keep it out of Parry's shape: the trigger
+        // fails ParryTriggerPattern's "melee attack roll" anchor, and even if it hadn't,
+        // the response's own wording and its trailing clauses both fail
+        // ParryResponsePattern's full-match anchor.
+        var entry = EntryMechanicsParser.Classify(
+            "Whirlwind of Sand",
+            MonsterEntrySection.Reaction,
+            "Trigger: The mummy is hit by an attack roll. " +
+            "Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, " +
+            "and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its " +
+            "choice that it can see within 5 feet of its destination space has the Blinded condition until " +
+            "the end of the mummy's next turn.");
+
+        Assert.Equal(EntryMechanics.Reaction, entry.Mechanics);
+        Assert.Null(entry.Reaction?.Executable);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("teleports up to 60 feet", StringComparison.Ordinal));
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("Blinded condition", StringComparison.Ordinal));
+    }
+
+    #endregion
+
     #region ClassifyTrait
 
     [Fact]

@@ -729,6 +729,61 @@ public class RealMonsterCombatTests
         Assert.False(zombie.HasCondition(ConditionType.Paralyzed));
     }
 
+    [Theory]
+    [InlineData("monster.bandit-captain", 15, 13)]
+    [InlineData("monster.knight", 18, 16)]
+    [InlineData("monster.warrior-veteran", 17, 15)]
+    [InlineData("monster.noble", 15, 13)]
+    public void TheRealParryBearersFlipAWouldHitMeleeAttackIntoAMiss(
+        string monsterId,
+        int armorClass,
+        int naturalRollThatWouldHitByOne)
+    {
+        // #678: the extractor now populates ReactionEffect.Executable from the printed
+        // "Parry" Response ("adds 2 to its AC against that attack") for these four —
+        // already-Playable pool residents (#677's own acceptance) whose signature
+        // defence was, until this slice, inert. The attacker is a real Bandit
+        // (Scimitar, +3 to hit, verified against data/srd) so this exercises the whole
+        // pipeline against two real stat blocks, not a hand-authored fixture. The
+        // scripted natural roll totals exactly one over the defender's own printed AC —
+        // a hit Parry's +2 flips to a miss — and no damage die is scripted, so a Parry
+        // that failed to fire (and so needed a damage roll the script doesn't supply)
+        // would throw rather than silently pass.
+        Assert.Equal(armorClass + 1, naturalRollThatWouldHitByOne + 3);
+
+        var attackerMonster = Content.MonstersById["monster.bandit"];
+        var defenderMonster = Content.MonstersById[monsterId];
+
+        // Guards the InlineData's own printed AC against drift from a future
+        // regeneration — if the stat block's AC ever changes, this fails loudly
+        // instead of the scripted roll silently testing the wrong margin.
+        Assert.Equal(armorClass, defenderMonster.ArmorClass);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(attackerMonster, "attacker", "bandits", new GridPosition(0, 4)),
+                Spawn(defenderMonster, "defender", "guards", new GridPosition(1, 4)),
+            ],
+            // Initiatives (attacker first), then the one attack roll — no damage die,
+            // since a real Parry must fire and turn this hit into a miss.
+            new ScriptedRandomSource(20, 1, naturalRollThatWouldHitByOne));
+
+        var defender = encounter.Combatants.Single(combatant => combatant.Id == "defender");
+
+        Assert.Null(encounter.Attack("Scimitar", defender));
+
+        Assert.False(defender.Turn.HasReaction);
+        Assert.Equal(defender.Stats.MaximumHitPoints, defender.CurrentHitPoints);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Feature
+                && step.Narration.Contains("Parries", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Attack && step.Hit == false);
+    }
+
     private static Combatant Spawn(MonsterDefinition monster, string id, string side, GridPosition position) =>
         new(id, monster.Name, side, CombatantStats.FromMonster(monster), position);
 }

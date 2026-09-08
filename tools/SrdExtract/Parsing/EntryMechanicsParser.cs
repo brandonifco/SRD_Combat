@@ -209,7 +209,7 @@ internal static partial class EntryMechanicsParser
                 attack: attack);
         }
 
-        if (ParseReaction(text, coverage) is { } reaction)
+        if (ParseReaction(text, coverage, bareName) is { } reaction)
         {
             return Build(bareName, section, text, EntryMechanics.Reaction, usage, conditions, coverage, reaction: reaction);
         }
@@ -429,7 +429,13 @@ internal static partial class EntryMechanicsParser
     private static string StripUsage(string name) => UsageSuffix().Replace(name, string.Empty).Trim();
 
     /// <summary>Parses "Trigger: ... Response: ...".</summary>
-    private static ReactionEffect? ParseReaction(string text, EntryCoverage coverage)
+    /// <param name="bareName">
+    /// The entry's printed name with any usage suffix stripped — gates the Parry
+    /// classification below on the printed name "Parry", not merely on the trigger and
+    /// response reading a certain way. See <see cref="ParseParryReaction"/>'s own
+    /// remarks for why the name gate matters.
+    /// </param>
+    private static ReactionEffect? ParseReaction(string text, EntryCoverage coverage, string bareName)
     {
         var match = ReactionPattern().Match(text);
         if (!match.Success)
@@ -437,13 +443,13 @@ internal static partial class EntryMechanicsParser
             return null;
         }
 
-        // Only the two literal labels are claimed. The trigger and response prose is
-        // stored verbatim on ReactionEffect for narration. The engine now resolves one
-        // reaction — Parry (#677), keyed on ReactionEffect.Executable — but this parser
-        // does not yet populate that structured signal (#413-D is the slice that will),
-        // so what is stored here is still only prose: storing prose is not expressing it
-        // (design §2.2), and it is left as residue until the response is actually
-        // classified into Executable.
+        // Only the two literal labels are claimed by default. The trigger and response
+        // prose is stored verbatim on ReactionEffect for narration regardless. The
+        // engine now resolves one reaction — Parry (#677), keyed on
+        // ReactionEffect.Executable — and this parser populates that structured signal
+        // for the one shape it recognises (#413-D, below); every other reaction is
+        // still only prose: storing prose is not expressing it (design §2.2), and its
+        // trigger/response clauses are left as residue.
         coverage.Claim(new TextSpan(match.Index, "Trigger:".Length), "reaction.trigger_label");
 
         var responseIndex = text.IndexOf("Response:", match.Index, StringComparison.Ordinal);
@@ -453,7 +459,93 @@ internal static partial class EntryMechanicsParser
             coverage.Claim(new TextSpan(responseIndex, "Response:".Length), "reaction.response_label");
         }
 
-        return new ReactionEffect(match.Groups["trigger"].Value.Trim(), match.Groups["response"].Value.Trim());
+        var triggerGroup = match.Groups["trigger"];
+        var responseGroup = match.Groups["response"];
+        var trigger = triggerGroup.Value.Trim();
+        var response = responseGroup.Value.Trim();
+
+        var executable = ParseParryReaction(bareName, trigger, response) is { } bonus
+            ? new ExecutableReaction(ReactionTrigger.HitByMeleeAttack, bonus)
+            : null;
+
+        if (executable is not null)
+        {
+            // The whole trigger and response clauses are claimed now that the model
+            // actually expresses them via Encounter.TryParry (#677) — not just the two
+            // literal labels claimed above regardless of shape. Claimed by the
+            // group's own span (not re-derived from the trimmed strings) so this claim
+            // exactly covers what the regex consumed, whitespace included.
+            coverage.Claim(new TextSpan(triggerGroup.Index, triggerGroup.Length), "reaction.parry_trigger");
+            coverage.Claim(new TextSpan(responseGroup.Index, responseGroup.Length), "reaction.parry_response");
+        }
+
+        return new ReactionEffect(trigger, response) { Executable = executable };
+    }
+
+    /// <summary>
+    /// Recognises Parry's printed shape and reads its AC bonus — the one Reaction the
+    /// engine executes today (#677, <c>Encounter.TryParry</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Gated on the printed name "Parry", not only on the wording.</b> The SRD prints
+    /// Parry's exact trigger and response sentence — "The &lt;creature&gt; adds N to
+    /// its AC against that attack, possibly causing it to miss." — under seven entries
+    /// all literally named <c>Parry</c>: Bandit Captain/Knight/Warrior Veteran/Noble
+    /// (bonus 2), Gladiator (3), Erinyes (4), Marilith (5) — one Reaction with no
+    /// further effect. Two more Reaction-section entries share Parry's identical
+    /// trigger sentence but not its response, and are close enough in wording to be a
+    /// live misattribution risk rather than an obviously different shape: the Pirate
+    /// Captain's <c>Riposte</c> (SRD 5.2.1 p. 314) opens with Parry's exact response
+    /// sentence, then appends "On a miss, the pirate makes one Rapier attack against
+    /// the triggering creature if within range." — a whole extra rule this record
+    /// cannot carry — and the Mummy Lord's <c>Whirlwind of Sand</c> (p. 310) carries a
+    /// broader "hit by an attack roll" trigger (not melee-only) and a response that
+    /// only paraphrases Parry's wording ("against the attack, possibly causing the
+    /// attack to miss") before adding a teleport and a separate Blinded clause. The
+    /// full-match anchors on <see cref="ParryTriggerPattern"/>/<see
+    /// cref="ParryResponsePattern"/> already reject both on wording alone (Riposte's
+    /// trailing counter-attack clause and Whirlwind of Sand's own paraphrase and
+    /// trailing clauses both run past what the response pattern matches, and Whirlwind
+    /// of Sand's trigger separately fails the trigger pattern's "melee" requirement),
+    /// but the name gate is kept as the primary, human-legible signal —
+    /// <c>bareName == "Parry"</c> reads as "this is the printed ability called Parry"
+    /// rather than "this happens to satisfy a regex today", and it is what the
+    /// trip-wire tests below are written against. This is the misattribution risk
+    /// #678's issue named directly: without both guards, a future entry sharing
+    /// Parry's AC-bonus sentence but carrying a second effect (Riposte's counter-attack
+    /// today, whatever prints next) would silently execute only its first clause and
+    /// drop the rest — a claim that consumed text under the wrong reading.
+    /// </para>
+    /// <para>
+    /// <b>The bonus is read from print, per creature, never hardcoded.</b> Verified
+    /// against SRD 5.2.1: Bandit Captain/Knight/Warrior Veteran/Noble print "adds 2 to
+    /// its AC" (p. 262, 302, 337, 312), Gladiator prints "adds 3" (p. 289), Erinyes
+    /// prints "adds 4" (p. 283), Marilith prints "adds 5" (p. 306) — the bonus tracks
+    /// each creature's own numbers rather than being a fixed constant, so this reads
+    /// whatever digits print rather than assuming 2. #678 scoped the four lowest-CR
+    /// carriers (all already Playable); the other three carry the identical printed
+    /// shape and are classified the same way rather than name-excluded, since nothing
+    /// about the reading changes for them.
+    /// </para>
+    /// </remarks>
+    /// <returns>The printed Armor Class bonus, or null when this is not Parry's shape.</returns>
+    private static int? ParseParryReaction(string bareName, string trigger, string response)
+    {
+        if (!string.Equals(bareName, "Parry", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (!ParryTriggerPattern().IsMatch(trigger))
+        {
+            return null;
+        }
+
+        var responseMatch = ParryResponsePattern().Match(response);
+        return responseMatch.Success
+            ? int.Parse(responseMatch.Groups["bonus"].Value, CultureInfo.InvariantCulture)
+            : null;
     }
 
     /// <summary>
@@ -1805,6 +1897,27 @@ internal static partial class EntryMechanicsParser
 
     [GeneratedRegex(@"Trigger:\s*(?<trigger>.+?)\s*Response:\s*(?<response>.+)$", RegexOptions.Singleline)]
     private static partial Regex ReactionPattern();
+
+    // Full-match anchored (design §2.3): every printed Parry trigger is exactly "The
+    // <creature> is hit by a melee attack roll while holding a weapon." with nothing
+    // before or after. The Pirate Captain's Riposte prints this identical sentence; the
+    // Mummy Lord's Whirlwind of Sand (p. 310) prints a broader "is hit by an attack
+    // roll" (not melee-only) and fails this pattern for that reason alone, ahead of the
+    // name gate in ParseParryReaction.
+    [GeneratedRegex(@"^The [a-z][a-z' -]* is hit by a melee attack roll while holding a weapon\.$")]
+    private static partial Regex ParryTriggerPattern();
+
+    // Full-match anchored for the same reason as ParryTriggerPattern: the Pirate
+    // Captain's Riposte opens with this identical sentence and then prints a further
+    // clause of its own (a counter-attack) that this pattern's trailing `$` refuses to
+    // match past. The Mummy Lord's Whirlwind of Sand fails even the opening words — its
+    // response paraphrases Parry's wording ("against the attack, possibly causing the
+    // attack to miss", not "against that attack, possibly causing it to miss") before
+    // its own trailing teleport and Blinded clauses — so it never reaches this pattern
+    // at all once ParryTriggerPattern above has already excluded it. See
+    // ParseParryReaction's remarks for why the name gate is kept as well.
+    [GeneratedRegex(@"^The [a-z][a-z' -]* adds (?<bonus>\d+) to its AC against that attack, possibly causing it to miss\.$")]
+    private static partial Regex ParryResponsePattern();
 
     // Deliberately does not require "makes" on each clause: the Bearded Devil "makes one
     // Beard attack and one Infernal Glaive attack", and the second clause has no verb of
