@@ -1,0 +1,13 @@
+{
+  "Source": "Synthetic (no PDF). Hand-authored to pin the FullWidth branch: a table row whose cells span the whole page width (x=63, x=400, x=500). Under FullWidth they must stay on ONE line; a regression that split columns on a full-width page (the #116 / #381 hazard, inverted) would break the row in two. Golden reasoned by hand.",
+  "Page": 1,
+  "Layout": "FullWidth",
+  "Words": [
+    { "Text": "1d8", "Font": "GillSans", "Left": 400, "Right": 420, "Height": 6, "Baseline": 200.0 },
+    { "Text": "Longsword", "Font": "GillSans", "Left": 63, "Right": 110, "Height": 6, "Baseline": 200.0 },
+    { "Text": "Slashing", "Font": "GillSans", "Left": 500, "Right": 540, "Height": 6, "Baseline": 200.0 }
+  ],
+  "ExpectedLines": [
+    { "Column": 0, "Baseline": 200.0, "Font": "GillSans", "Text": "Longsword 1d8 Slashing" }
+  ]
+}

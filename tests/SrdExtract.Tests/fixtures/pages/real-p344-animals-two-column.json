@@ -1,0 +1,371 @@
+{
+  "Source": "SRD 5.2.1 p344 (Animals: Allosaurus / Ape), baseline band 258-300; a two-column band whose two columns hold near-shared baselines (a cross-column collision). This text already ships parsed in data/srd (CC-BY-4.0, see NOTICE.md).",
+  "Page": 344,
+  "Layout": "TwoColumn",
+  "Words": [
+    {
+      "Text": "AC",
+      "Font": "Optima-Bold",
+      "Left": 63,
+      "Right": 74.78,
+      "Height": 6.28,
+      "Baseline": 295.99
+    },
+    {
+      "Text": "13",
+      "Font": "Optima-Regular",
+      "Left": 77.28,
+      "Right": 86.62,
+      "Height": 6.17,
+      "Baseline": 295.99
+    },
+    {
+      "Text": "Initiative",
+      "Font": "Optima-Bold",
+      "Left": 166.5,
+      "Right": 201.66,
+      "Height": 6.72,
+      "Baseline": 295.99
+    },
+    {
+      "Text": "\u002B1",
+      "Font": "Optima-Regular",
+      "Left": 204.16,
+      "Right": 213.85,
+      "Height": 6.17,
+      "Baseline": 295.99
+    },
+    {
+      "Text": "(11)",
+      "Font": "Optima-Regular",
+      "Left": 216.35,
+      "Right": 229.49,
+      "Height": 6.28,
+      "Baseline": 295.99
+    },
+    {
+      "Text": "Actions",
+      "Font": "GillSans",
+      "Left": 313.5,
+      "Right": 350.79,
+      "Height": 8.3,
+      "Baseline": 294.37
+    },
+    {
+      "Text": "HP",
+      "Font": "Optima-Bold",
+      "Left": 63,
+      "Right": 75.06,
+      "Height": 6.17,
+      "Baseline": 283.99
+    },
+    {
+      "Text": "51",
+      "Font": "Optima-Regular",
+      "Left": 77.56,
+      "Right": 87.17,
+      "Height": 6.17,
+      "Baseline": 283.99
+    },
+    {
+      "Text": "(6d10",
+      "Font": "Optima-Regular",
+      "Left": 89.67,
+      "Right": 111.3,
+      "Height": 6.77,
+      "Baseline": 283.99
+    },
+    {
+      "Text": "\u002B",
+      "Font": "Optima-Regular",
+      "Left": 113.8,
+      "Right": 119.26,
+      "Height": 4.55,
+      "Baseline": 283.99
+    },
+    {
+      "Text": "18)",
+      "Font": "Optima-Regular",
+      "Left": 121.76,
+      "Right": 133.51,
+      "Height": 6.28,
+      "Baseline": 283.99
+    },
+    {
+      "Text": "Multiattack.",
+      "Font": "Optima-BoldItalic",
+      "Left": 313.5,
+      "Right": 363.43,
+      "Height": 7.13,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "The",
+      "Font": "Optima-Regular",
+      "Left": 366.07,
+      "Right": 381.37,
+      "Height": 7.14,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "ape",
+      "Font": "Optima-Regular",
+      "Left": 384.01,
+      "Right": 398.84,
+      "Height": 4.59,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "makes",
+      "Font": "Optima-Regular",
+      "Left": 401.48,
+      "Right": 427,
+      "Height": 7.14,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "two",
+      "Font": "Optima-Regular",
+      "Left": 429.64,
+      "Right": 445.09,
+      "Height": 5.77,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "Fist",
+      "Font": "Optima-Regular",
+      "Left": 447.73,
+      "Right": 461.21,
+      "Height": 6.63,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "attacks.",
+      "Font": "Optima-Regular",
+      "Left": 463.85,
+      "Right": 494.59,
+      "Height": 7.14,
+      "Baseline": 278.77
+    },
+    {
+      "Text": "Speed",
+      "Font": "Optima-Bold",
+      "Left": 63,
+      "Right": 86.96,
+      "Height": 6.77,
+      "Baseline": 271.99
+    },
+    {
+      "Text": "60",
+      "Font": "Optima-Regular",
+      "Left": 89.46,
+      "Right": 99.52,
+      "Height": 6.06,
+      "Baseline": 271.99
+    },
+    {
+      "Text": "ft.",
+      "Font": "Optima-Regular",
+      "Left": 102.03,
+      "Right": 109.91,
+      "Height": 6.8,
+      "Baseline": 271.99
+    },
+    {
+      "Text": "Fist.",
+      "Font": "Optima-BoldItalic",
+      "Left": 313.5,
+      "Right": 330.38,
+      "Height": 7,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "Melee",
+      "Font": "Optima-Italic",
+      "Left": 333.02,
+      "Right": 358.06,
+      "Height": 7.07,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "Attack",
+      "Font": "Optima-Italic",
+      "Left": 360.7,
+      "Right": 386.84,
+      "Height": 7.07,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "Roll:",
+      "Font": "Optima-Italic",
+      "Left": 389.48,
+      "Right": 407.71,
+      "Height": 7.07,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "\u002B5,",
+      "Font": "Optima-Regular",
+      "Left": 410.35,
+      "Right": 423.25,
+      "Height": 6.38,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "reach",
+      "Font": "Optima-Regular",
+      "Left": 425.89,
+      "Right": 448.33,
+      "Height": 7.14,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "5",
+      "Font": "Optima-Regular",
+      "Left": 450.97,
+      "Right": 456.25,
+      "Height": 6.38,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "ft.",
+      "Font": "Optima-Regular",
+      "Left": 458.89,
+      "Right": 467.18,
+      "Height": 7.17,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "Hit:",
+      "Font": "Optima-Italic",
+      "Left": 469.82,
+      "Right": 485.4,
+      "Height": 6.47,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "5",
+      "Font": "Optima-Regular",
+      "Left": 488.05,
+      "Right": 493.33,
+      "Height": 6.38,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "(1d4",
+      "Font": "Optima-Regular",
+      "Left": 495.97,
+      "Right": 513.52,
+      "Height": 7.14,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "\u002B",
+      "Font": "Optima-Regular",
+      "Left": 516.16,
+      "Right": 521.92,
+      "Height": 4.81,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "3)",
+      "Font": "Optima-Regular",
+      "Left": 524.56,
+      "Right": 532.05,
+      "Height": 6.63,
+      "Baseline": 262.27
+    },
+    {
+      "Text": "MOD",
+      "Font": "GillSans",
+      "Left": 101.88,
+      "Right": 116.12,
+      "Height": 4.15,
+      "Baseline": 260.1
+    },
+    {
+      "Text": "SAVE",
+      "Font": "GillSans",
+      "Left": 120.24,
+      "Right": 133.31,
+      "Height": 4.15,
+      "Baseline": 260.1
+    },
+    {
+      "Text": "MOD",
+      "Font": "GillSans",
+      "Left": 178.92,
+      "Right": 193.16,
+      "Height": 4.15,
+      "Baseline": 260.1
+    },
+    {
+      "Text": "SAVE",
+      "Font": "GillSans",
+      "Left": 197.28,
+      "Right": 210.35,
+      "Height": 4.15,
+      "Baseline": 260.1
+    },
+    {
+      "Text": "MOD",
+      "Font": "GillSans",
+      "Left": 255.95,
+      "Right": 270.19,
+      "Height": 4.15,
+      "Baseline": 260.1
+    },
+    {
+      "Text": "SAVE",
+      "Font": "GillSans",
+      "Left": 274.31,
+      "Right": 287.38,
+      "Height": 4.15,
+      "Baseline": 260.1
+    }
+  ],
+  "ExpectedLines": [
+    {
+      "Column": 0,
+      "Baseline": 295.99,
+      "Font": "Optima-Bold",
+      "Text": "AC 13 Initiative \u002B1 (11)"
+    },
+    {
+      "Column": 0,
+      "Baseline": 283.99,
+      "Font": "Optima-Bold",
+      "Text": "HP 51 (6d10 \u002B 18)"
+    },
+    {
+      "Column": 0,
+      "Baseline": 271.99,
+      "Font": "Optima-Bold",
+      "Text": "Speed 60 ft."
+    },
+    {
+      "Column": 0,
+      "Baseline": 260.1,
+      "Font": "GillSans",
+      "Text": "MOD SAVE MOD SAVE MOD SAVE"
+    },
+    {
+      "Column": 1,
+      "Baseline": 294.37,
+      "Font": "GillSans",
+      "Text": "Actions"
+    },
+    {
+      "Column": 1,
+      "Baseline": 278.77,
+      "Font": "Optima-BoldItalic",
+      "Text": "Multiattack. The ape makes two Fist attacks."
+    },
+    {
+      "Column": 1,
+      "Baseline": 262.27,
+      "Font": "Optima-BoldItalic",
+      "Text": "Fist. Melee Attack Roll: \u002B5, reach 5 ft. Hit: 5 (1d4 \u002B 3)"
+    }
+  ]
+}

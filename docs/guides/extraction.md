@@ -86,3 +86,52 @@ against the book:
 
 **The general lesson: write the validator that asserts the shape of what should have
 been found.**
+
+
+## The two test layers, and where the PDF is not needed
+
+Two things get parsed here, and each has its own no-PDF harness.
+
+- **The parsers** (`EntryMechanicsParser`, `SpellEffectParser`, `ClassParser`, …) take
+  *text* — feed a known string, assert the parse. That is the characterization slice
+  (`EntryMechanicsCharacterizationTests` and its neighbours) plus the whole-corpus
+  round-trip (`CorpusRoundTripTests`, which re-parses every stored entry). No PDF: the
+  corpus *is* the fixture set.
+- **The geometry front end** — `PageTextReader`, which turns a PDF page into ordered,
+  font-tagged lines (column split, baseline grouping, footer drop, left-to-right
+  ordering) — is pinned by the **page-fixture harness** (`PageFixtureHarnessTests`, #189).
+  This is the layer beneath the parsers, and its bugs are the ones in the list above:
+  the two-column table leak, a wrapped table, columns sliced into the wrong entry.
+
+### Adding a page fixture
+
+A page fixture is a committed JSON file in `tests/SrdExtract.Tests/fixtures/pages/`
+carrying the words `PageTextReader.ConvertPageWords` produced for a page beside the lines
+`PageTextReader.LayoutPage` made of them. The harness replays the words through
+`LayoutPage` and asserts the same lines come back, so a wrong column boundary, baseline
+tolerance, footer ceiling or word order turns a fixture red — no PDF at test time.
+
+Two kinds, both in the same format (`PageFixture`):
+
+- **Captured** — real page geometry, ground-truth coordinates. Generate one from the PDF:
+
+  ```bash
+  dotnet run --project tools/SrdExtract -- \
+      --capture-fixture tests/SrdExtract.Tests/fixtures/pages/real-pNNN-<name>.json \
+      --page NNN --layout two|full --source "SRD 5.2.1 pNNN (<what>)" [--ymin N --ymax M]
+  ```
+
+  Crop with `--ymin/--ymax` (baselines, measured up from the page bottom) so the committed
+  fixture stays **minimal** — a band with content in both columns is enough to pin the
+  split. Keep the captured text within the CC-BY boundary the project already ships:
+  content that is already in `data/srd`. The golden is whatever the front end produced at
+  capture time, so **do not regenerate a captured fixture to chase a diff** — read the
+  diff, the same discipline the frozen transcript rests on.
+- **Synthetic** — hand-authored coordinates placed right on a boundary (the column gutter,
+  the 2.5pt baseline tolerance, the footer ceiling), with the golden reasoned out by hand
+  so it encodes intent rather than the code's current output. These carry no SRD text at
+  all. See `synth-*.json` for the pattern.
+
+Prove a new fixture bites: break the front-end rule it targets (e.g. widen
+`BaselineTolerance`) and confirm it goes red before committing — an all-green knockout is
+the "instrument nobody verifies" smell (#528).

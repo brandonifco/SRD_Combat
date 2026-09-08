@@ -56,30 +56,72 @@ public static partial class PageTextReader
 
         for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
         {
-            lines.AddRange(ReadPage(document.GetPage(pageNumber), layout));
+            var page = document.GetPage(pageNumber);
+            lines.AddRange(LayoutPage(ConvertPageWords(page), page.Number, layout));
         }
 
         return lines;
     }
 
-    private static IEnumerable<SourceLine> ReadPage(Page page, PageLayout layout)
+    /// <summary>
+    /// Opens the PDF and returns one page's raw converted words — the input a page fixture
+    /// captures. Used only by <c>SrdExtract --capture-fixture</c> at fixture-authoring time;
+    /// the harness itself never calls this and never touches the PDF.
+    /// </summary>
+    internal static IReadOnlyList<SourceWord> ReadPageWords(string pdfPath, int pageNumber)
     {
-        var words = page.GetWords()
-            .Where(word => word.BoundingBox.Bottom > FooterCeiling)
+        ArgumentException.ThrowIfNullOrWhiteSpace(pdfPath);
+
+        using var document = PdfDocument.Open(pdfPath);
+        return ConvertPageWords(document.GetPage(pageNumber));
+    }
+
+    /// <summary>
+    /// Converts every word on a page into a positioned, font-tagged <see cref="SourceWord"/>,
+    /// with nothing dropped and nothing grouped. This is the boundary between PdfPig and the
+    /// geometry: it is the only part that needs the PDF, so a captured list of the words it
+    /// returns is exactly what <see cref="LayoutPage"/> — the geometry under test — consumes.
+    /// The page-fixture harness (<c>tests/SrdExtract.Tests</c>, #189) pins that geometry by
+    /// replaying committed word lists through <see cref="LayoutPage"/> with no PDF present.
+    /// </summary>
+    internal static IReadOnlyList<SourceWord> ConvertPageWords(Page page) =>
+        page.GetWords().Select(Convert).ToList();
+
+    /// <summary>
+    /// The geometry front end, pure and PDF-free: drop the running footer and blank words,
+    /// split the two columns (or not, when the page is a full-width table), and group the
+    /// survivors into baseline-ordered lines. Every rule downstream reads these lines, so a
+    /// wrong column boundary or baseline tolerance corrupts the whole extraction silently —
+    /// which is why this is the layer the page fixtures exercise directly.
+    /// </summary>
+    /// <remarks>
+    /// The footer and blank-word drops were once applied to the raw PdfPig word before
+    /// conversion; they moved here, onto the converted word, so the fixture harness pins them
+    /// too. This is behaviour-preserving: <see cref="SourceWord.Baseline"/> is the raw word's
+    /// <c>BoundingBox.Bottom</c> unchanged, and a word is blank after normalisation exactly
+    /// when it was blank before it (normalisation only swaps punctuation for ASCII and trims).
+    /// </remarks>
+    internal static IReadOnlyList<SourceLine> LayoutPage(
+        IReadOnlyList<SourceWord> pageWords,
+        int pageNumber,
+        PageLayout layout)
+    {
+        var words = pageWords
+            .Where(word => word.Baseline > FooterCeiling)
             .Where(word => !string.IsNullOrWhiteSpace(word.Text))
-            .Select(Convert)
             .ToList();
 
         if (layout == PageLayout.FullWidth)
         {
-            return GroupIntoLines(words, page.Number, column: 0);
+            return GroupIntoLines(words, pageNumber, column: 0);
         }
 
         var left = words.Where(word => word.Left < ColumnBoundary).ToList();
         var right = words.Where(word => word.Left >= ColumnBoundary).ToList();
 
-        return GroupIntoLines(left, page.Number, column: 0)
-            .Concat(GroupIntoLines(right, page.Number, column: 1));
+        return GroupIntoLines(left, pageNumber, column: 0)
+            .Concat(GroupIntoLines(right, pageNumber, column: 1))
+            .ToList();
     }
 
     private static List<SourceLine> GroupIntoLines(List<SourceWord> words, int pageNumber, int column)

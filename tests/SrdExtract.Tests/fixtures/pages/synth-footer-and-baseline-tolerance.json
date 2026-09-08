@@ -1,0 +1,18 @@
+{
+  "Source": "Synthetic (no PDF). Hand-authored to sit on two boundaries at once: the 40pt footer ceiling and the 2.5pt baseline tolerance. 'world'/'hello' are 2.4pt apart (join one line), 'alpha'/'beta' are 2.6pt apart (split), the blank word is dropped as whitespace, and the footer word at baseline 30 is dropped below the ceiling. The golden is reasoned by hand, not captured.",
+  "Page": 1,
+  "Layout": "TwoColumn",
+  "Words": [
+    { "Text": "world", "Font": "Optima-Bold", "Left": 120, "Right": 150, "Height": 6, "Baseline": 100.0 },
+    { "Text": "   ", "Font": "Optima-Regular", "Left": 200, "Right": 210, "Height": 6, "Baseline": 100.0 },
+    { "Text": "hello", "Font": "Optima-Bold", "Left": 63, "Right": 100, "Height": 6, "Baseline": 97.6 },
+    { "Text": "alpha", "Font": "Optima-Regular", "Left": 63, "Right": 100, "Height": 6, "Baseline": 94.9 },
+    { "Text": "beta", "Font": "Optima-Italic", "Left": 63, "Right": 100, "Height": 6, "Baseline": 92.3 },
+    { "Text": "344", "Font": "Optima-Regular", "Left": 290, "Right": 300, "Height": 6, "Baseline": 30.0 }
+  ],
+  "ExpectedLines": [
+    { "Column": 0, "Baseline": 100.0, "Font": "Optima-Bold", "Text": "hello world" },
+    { "Column": 0, "Baseline": 94.9, "Font": "Optima-Regular", "Text": "alpha" },
+    { "Column": 0, "Baseline": 92.3, "Font": "Optima-Italic", "Text": "beta" }
+  ]
+}
