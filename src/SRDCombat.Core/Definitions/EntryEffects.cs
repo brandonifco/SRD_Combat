@@ -648,6 +648,75 @@ public enum AuraClock
 /// <param name="Clock">Which turn boundary fires the aura's save.</param>
 public sealed record AuraEffect(int EmanationRadiusFeet, AuraClock Clock);
 
+/// <summary>
+/// The structured signal that a stat block entry is a <b>death burst</b>: an on-death area
+/// save, resolved through the entry's own <see cref="MonsterEntry.Save"/> exactly as any
+/// other stat-block saving-throw entry would be, but fired once — automatically, when its
+/// carrier dies — rather than spent as an action. The four mephits' and the Magmin's
+/// "Death Burst" trait (#679, SRD 5.2.1 pp. 300, 320-321).
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>The reading, written down (following the <see cref="SRDCombat.Core.Combat.AreaTargeting"/>
+/// model).</b> Print (Magma Mephit): "Death Burst. The mephit explodes when it dies.
+/// Dexterity Saving Throw: DC 11, each creature in a 5-foot Emanation originating from the
+/// mephit. Failure: 7 (2d6) Fire damage. Success: Half damage." Every carrier's save is
+/// already fully structured — DC, ability, area, failure damage and success outcome are all
+/// present on <see cref="MonsterEntry.Save"/> — so this marker claims exactly one clause,
+/// "explodes when it dies": the trigger, not the effect. No radius or clock lives on this
+/// type the way <see cref="AuraEffect"/> carries its own, because a death burst is a
+/// one-shot area catch rather than a per-victim recurring check — <c>Encounter.FireDeathBurst</c>
+/// wants the ordinary area-geometry machinery (<c>SaveVictims</c>/<c>AreaTargeting</c>) that
+/// answers "who is in the area right now", which is exactly the question a one-shot burst
+/// asks and exactly the question <see cref="AuraEffect"/>'s own remarks say an aura must
+/// <em>not</em> ask. <see cref="MonsterEntry.Save"/>'s own <c>Area</c> already carries the
+/// Emanation and its size, so re-stating the radius here would be a second copy to drift.
+/// </para>
+/// <list type="bullet">
+/// <item><b>When it fires.</b> The instant the carrier's own death is recorded — see
+/// <c>Encounter.MarkDied</c>, the one place across the engine's several death-producing
+/// paths (a lethal hit, massive damage, a third failed death save, another creature's own
+/// area save) that narrates <c>CombatStepKind.Died</c> and is now also where
+/// <c>FireDeathBurst</c> is called. Firing there rather than at removal means the burst
+/// resolves before <c>Encounter.EndTurnEffectsWhoseSourceIsDown</c>/<c>EndBrokenGrapples</c>
+/// tidy up anything the carrier's own death would otherwise leave dangling, and before the
+/// carrier is dropped from initiative — though nothing here currently depends on either
+/// order, since the burst neither reads nor is read by the carrier's own ended effects.
+/// </item>
+/// <item><b>Who it excludes.</b> By the time <c>MarkDied</c> calls <c>FireDeathBurst</c>,
+/// the carrier's own <c>IsDead</c> is already true — every death-producing path sets it
+/// before narrating the death — so the ordinary area-geometry catch
+/// (<c>Encounter.CreaturesIn</c>, gated on <c>Combatant.IsActive</c>) excludes the carrier
+/// from its own blast automatically, with no special-casing needed: a dead creature is
+/// never <c>IsActive</c>. This happens to match the printed default that an Emanation's
+/// origin isn't included in its own area (SRD 5.2.1 p. 181) — the mephit is not there to
+/// be caught by its own explosion, being what exploded.
+/// </item>
+/// <item><b>The cascade — does a burst-killed carrier's own burst fire?</b> <b>Yes.</b>
+/// The print reads "the mephit explodes when it dies", with no exception carved out for
+/// what killed it; a mephit killed by a second mephit's Death Burst has died exactly as
+/// much as one killed by a sword, and nothing in the entry's wording is conditioned on the
+/// cause. <c>Encounter.MarkDied</c> is the recursive hook that makes this work for free: a
+/// victim of one burst that itself dies is marked dead — and so bursts — through the exact
+/// same method, nested inside the outer burst's own victim loop, before that loop resolves
+/// its next victim. This is finite by construction and needs no depth limit: a creature's
+/// death is recorded exactly once (<c>MarkDied</c> is reached once per creature per fight —
+/// nothing revives and re-kills inside a single resolution), so the recursion strictly
+/// consumes distinct, still-living combatants and cannot revisit one. <c>FireDeathBurst</c>
+/// additionally guards itself with a fire-once set keyed on the carrier's id, defence in
+/// depth against a future change to the death paths reintroducing a double call for the
+/// same creature.
+/// </item>
+/// </list>
+/// <para>
+/// Null for every entry the extractor has not classified this way — set by #679's own
+/// regeneration for the five "Death Burst" traits (Magmin, Dust/Ice/Magma/Steam Mephit)
+/// and, since the pattern reads printed grammar rather than a creature's name, the
+/// identically-shaped Balor's "Death Throes" for free (six entries, one clause each).
+/// </para>
+/// </remarks>
+public sealed record DeathBurstEffect;
+
 /// <summary>Helpers over a damage list, shared by attacks and saving-throw effects.</summary>
 public static class DamageComponents
 {

@@ -234,6 +234,18 @@ internal static partial class EntryMechanicsParser
                 ? ParseAura(bareName, text, coverage)
                 : null;
 
+            // #679: a Trait-section save may equally be a death burst — an on-death
+            // area save the creature triggers automatically rather than spending an
+            // action, resolved by Encounter.FireDeathBurst reading MonsterEntry.Save
+            // directly the moment the carrier's own death is recorded. Unlike an aura,
+            // a death burst needs no cross-checked second signal: the printed shape is
+            // one self-contained leading sentence ("The <creature> explodes when it
+            // dies.") with nothing else in the corpus that could be mistaken for it —
+            // see ParseDeathBurst's own remarks.
+            var deathBurst = section == MonsterEntrySection.Trait
+                ? ParseDeathBurst(text, coverage)
+                : null;
+
             // The entry's mechanics is SavingThrow — the other of the two the engine
             // imposes riders from (design §2.5) — but only when something actually
             // fires it: either UseEntry (Action/BonusAction), or, now, FireAuras for a
@@ -266,7 +278,17 @@ internal static partial class EntryMechanicsParser
                 }
             }
 
-            return Build(bareName, section, text, EntryMechanics.SavingThrow, usage, conditions, coverage, save: save, aura: aura);
+            return Build(
+                bareName,
+                section,
+                text,
+                EntryMechanics.SavingThrow,
+                usage,
+                conditions,
+                coverage,
+                save: save,
+                aura: aura,
+                deathBurst: deathBurst);
         }
 
         if (section == MonsterEntrySection.Trait && MonsterTraitRegistry.Implements(bareName))
@@ -319,7 +341,8 @@ internal static partial class EntryMechanicsParser
         SaveEffect? save = null,
         MultiattackEffect? multiattack = null,
         ReactionEffect? reaction = null,
-        AuraEffect? aura = null) =>
+        AuraEffect? aura = null,
+        DeathBurstEffect? deathBurst = null) =>
         new(
             name,
             section,
@@ -332,7 +355,8 @@ internal static partial class EntryMechanicsParser
             usage,
             conditions,
             coverage.Residue(),
-            aura);
+            aura,
+            deathBurst);
 
     /// <summary>
     /// Every sentence of an entry the model could not classify at all — used only for
@@ -1085,6 +1109,56 @@ internal static partial class EntryMechanicsParser
         var radius = int.Parse(target.Groups["radius"].Value, CultureInfo.InvariantCulture);
 
         return new AuraEffect(radius, AuraClock.StartOfVictimTurn);
+    }
+
+    /// <summary>
+    /// Recognises a death burst: an on-death area save, printed as one self-contained
+    /// leading sentence — "The mephit explodes when it dies." — ahead of the save's own
+    /// header (#679, the four mephits' and the Magmin's "Death Burst" trait, and the
+    /// Balor's identically-shaped "Death Throes"). <see cref="DeathBurstTriggerPattern"/>
+    /// is anchored to the start of the entry's text: the trigger is always the entry's
+    /// first sentence in every corpus instance, and anchoring means a save that merely
+    /// mentions dying somewhere in its body (there is none in the CR≤4 pool this
+    /// targets, and none found corpus-wide either) cannot match by accident.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Unlike <see cref="ParseAura"/>, this needs no second, cross-checked signal: the
+    /// aura shape has two corpus creatures (the Hezrou, the Pit Fiend) that print a
+    /// deceptively similar target clause but a genuinely different rule, so a lone
+    /// signal would misattribute. Nothing in the corpus prints "explodes when it dies"
+    /// for any reason other than an on-death area save — the sentence itself already is
+    /// the trigger, with no separate rider or clock to get wrong — so one pattern is the
+    /// whole gate. If a future SRD printing ever reuses this exact sentence for a
+    /// differently-shaped rule, that misattribution would need its own trip-wire then,
+    /// the same way #412's case law expects.
+    /// </para>
+    /// <para>
+    /// Only the trigger sentence is claimed. Everything else the entry prints — the
+    /// save header, target clause, damage and success outcome — is already claimed by
+    /// <see cref="ParseSave"/> exactly as for any other <see
+    /// cref="EntryMechanics.SavingThrow"/> entry; a death burst adds no rider and needs
+    /// no <see cref="AppliedCondition"/> claim-gate widening the way #676's aura rider
+    /// did, because none of its six corpus instances impose a condition at all. The
+    /// Balor's Death Throes prints a second, unrelated sentence after its own save
+    /// ("Failure or Success: If the balor dies outside the Abyss, it gains a new body
+    /// instantly...") — a revival mechanic with no relationship to the burst, out of
+    /// scope for #679, and deliberately left as residue: this pattern's trailing period
+    /// stops at the first sentence and never reaches it.
+    /// </para>
+    /// </remarks>
+    private static DeathBurstEffect? ParseDeathBurst(string text, EntryCoverage coverage)
+    {
+        var trigger = DeathBurstTriggerPattern().Match(text);
+
+        if (!trigger.Success)
+        {
+            return null;
+        }
+
+        coverage.Claim(new TextSpan(trigger.Index, trigger.Length), "deathburst.trigger");
+
+        return new DeathBurstEffect();
     }
 
     /// <summary>
@@ -2060,6 +2134,12 @@ internal static partial class EntryMechanicsParser
     // guessing.
     [GeneratedRegex(@"Success:\s*The target is immune to this (?<creature>[a-z][a-z'-]*)'s (?<trait>[A-Z][\w' -]*?) for 24 hours\.")]
     private static partial Regex AuraImmunityPattern();
+
+    // ParseDeathBurst's whole gate: the entry's very first sentence naming the printed
+    // on-death trigger. Anchored with ^ so it can only ever match a leading sentence,
+    // never one buried mid-entry.
+    [GeneratedRegex(@"^The (?<creature>[a-z][a-z' -]*) explodes when it dies\.")]
+    private static partial Regex DeathBurstTriggerPattern();
 
     // Deliberately does not require "makes" on each clause: the Bearded Devil "makes one
     // Beard attack and one Infernal Glaive attack", and the second clause has no verb of

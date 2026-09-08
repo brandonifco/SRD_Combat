@@ -2458,6 +2458,120 @@ public sealed class EntryMechanicsCharacterizationTests
 
     #endregion
 
+    #region Death bursts (#679)
+
+    [Fact]
+    public void DeathBurstClassifiesWithNoResidueLeftOver()
+    {
+        // The Magma Mephit's Death Burst, verbatim (data/srd/monsters.json).
+        var entry = EntryMechanicsParser.Classify(
+            "Death Burst",
+            MonsterEntrySection.Trait,
+            "The mephit explodes when it dies. Dexterity Saving Throw: DC 11, each creature " +
+            "in a 5-foot Emanation originating from the mephit. Failure: 7 (2d6) Fire damage. " +
+            "Success: Half damage.");
+
+        Assert.Equal(EntryMechanics.SavingThrow, entry.Mechanics);
+        Assert.NotNull(entry.DeathBurst);
+        Assert.NotNull(entry.Save);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheBalorsDeathThroesClassifiesTheBurstAndLeavesTheUnrelatedRevivalSentenceAsResidue()
+    {
+        // The Balor's Death Throes (SRD 5.2.1, CR 19 — outside the CR<=4 pool #679
+        // targets, included regardless since the pattern reads printed grammar, not
+        // creature name), verbatim. It prints the identical on-death-burst opening
+        // sentence, so DeathBurstTriggerPattern claims it exactly as for a mephit —
+        // but a second, wholly unrelated sentence follows the save ("Failure or
+        // Success: If the balor dies outside the Abyss, it gains a new body
+        // instantly..."), a revival mechanic #679 does not build and must not
+        // silently absorb. The anchored pattern's own trailing period stops at the
+        // first sentence, so that second sentence stays exactly as unmodelled as
+        // before this slice.
+        var entry = EntryMechanicsParser.Classify(
+            "Death Throes",
+            MonsterEntrySection.Trait,
+            "The balor explodes when it dies. Dexterity Saving Throw: DC 20, each creature " +
+            "in a 30-foot Emanation originating from the balor. Failure: 31 (9d6) Fire damage " +
+            "plus 31 (9d6) Force damage. Success: Half damage. Failure or Success: If the " +
+            "balor dies outside the Abyss, it gains a new body instantly, reviving with all " +
+            "its Hit Points somewhere in the Abyss.");
+
+        Assert.NotNull(entry.DeathBurst);
+        Assert.NotNull(entry.Save);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("gains a new body instantly", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("explodes when it dies", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ADeathTriggerSentenceNotAtTheStartOfTheEntryIsNotMisreadAsADeathBurst()
+    {
+        // Trip-wire for the anchor: DeathBurstTriggerPattern is anchored to the very
+        // start of the entry's text (^) because every real corpus instance prints the
+        // trigger as its opening sentence. A hand-shaped entry that instead leads
+        // with something else and mentions the identical sentence afterward must not
+        // classify — proving the anchor is load-bearing rather than a pattern that
+        // would have matched unanchored just as well.
+        var entry = EntryMechanicsParser.Classify(
+            "Delayed Burst",
+            MonsterEntrySection.Trait,
+            "First, the creature's flesh begins to smoulder. The mephit explodes when it " +
+            "dies. Dexterity Saving Throw: DC 10, each creature in a 5-foot Emanation " +
+            "originating from the mephit. Failure: 5 (2d4) Fire damage. Success: Half " +
+            "damage.");
+
+        Assert.Null(entry.DeathBurst);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("explodes when it dies", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ADifferentlyWordedDeathTriggerIsNotMisreadAsADeathBurst()
+    {
+        // Trip-wire for the literal wording: "disintegrates" is not "explodes", so
+        // this must not classify despite printing the same save shape and the same
+        // "when it dies" tail — the pattern reads the corpus's actual words rather
+        // than any death-triggered area save in general.
+        var entry = EntryMechanicsParser.Classify(
+            "Death Burst",
+            MonsterEntrySection.Trait,
+            "The creature disintegrates when it dies. Dexterity Saving Throw: DC 10, each " +
+            "creature in a 5-foot Emanation originating from the creature. Failure: 5 (2d4) " +
+            "Fire damage. Success: Half damage.");
+
+        Assert.Null(entry.DeathBurst);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("disintegrates when it dies", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ADeathBurstShapedSaveOutsideTheTraitSectionIsNotClassified()
+    {
+        // The gate mirrors #676's own aura gate: only a Trait-section entry is ever
+        // read for this signal, because Encounter.FireDeathBurst is the only caller
+        // and it reads MonsterEntry.DeathBurst directly rather than going through
+        // UseEntry's section dispatch. Nothing in the corpus prints this shape under
+        // Action, but the gate is asserted directly rather than left implicit.
+        var entry = EntryMechanicsParser.Classify(
+            "Death Burst",
+            MonsterEntrySection.Action,
+            "The mephit explodes when it dies. Dexterity Saving Throw: DC 10, each creature " +
+            "in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Fire damage. " +
+            "Success: Half damage.");
+
+        Assert.Null(entry.DeathBurst);
+    }
+
+    #endregion
+
     #region ClassifyTrait
 
     [Fact]

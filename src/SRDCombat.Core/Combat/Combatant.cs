@@ -397,6 +397,21 @@ public sealed record CombatantStats(
             .Select(entry => (entry, entry.Aura!));
 
     /// <summary>
+    /// The entries this creature fires as an on-death area save — the four mephits', the
+    /// Magmin's and the Balor's "explodes when it dies" trait (#679) — each paired with
+    /// its <see cref="DeathBurstEffect"/>. Empty for every creature the extractor has not
+    /// classified a death burst for, which is every creature but those six as of #679's
+    /// own regeneration. A death-burst entry with no <see cref="MonsterEntry.Save"/> is
+    /// excluded here — there is nothing to resolve — so <c>Encounter.FireDeathBurst</c>
+    /// can read the save without re-checking. Read once, the instant this creature's own
+    /// death is recorded.
+    /// </summary>
+    public IEnumerable<(MonsterEntry Entry, DeathBurstEffect Burst)> DeathBurstEntries =>
+        Entries
+            .Where(entry => entry.DeathBurst is not null && entry.Save is not null)
+            .Select(entry => (entry, entry.DeathBurst!));
+
+    /// <summary>
     /// How many attacks one Attack action buys.
     /// </summary>
     /// <remarks>

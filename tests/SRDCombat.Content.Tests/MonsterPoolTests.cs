@@ -239,6 +239,42 @@ public class MonsterPoolTests
     }
 
     [Fact]
+    public void TheMagmaMephitReclassifiesToCompleteOnceItsDeathBurstIsRecognised()
+    {
+        // #679: the extractor now recognises Death Burst's printed leading sentence
+        // ("The mephit explodes when it dies") and populates
+        // MonsterEntry.DeathBurst, so that one residue clause moves from unmodelled
+        // to claimed. The Magma Mephit was already MonsterCoverage.Playable (#679's
+        // own issue names it the sole admitted Death Burst carrier, on its Claw and
+        // Fire Breath alone) and had no other residue anywhere in its block —
+        // clearing the Trait entry's one clause is what pushes it over the line to
+        // Complete, not a change to admission: the pool floor does not move.
+        var mephit = Content.MonstersById["monster.magma-mephit"];
+        var deathBurst = mephit.Entries.Single(entry => entry.Name == "Death Burst");
+
+        Assert.NotNull(deathBurst.DeathBurst);
+        Assert.Empty(deathBurst.UnmodelledClauses);
+        Assert.True(deathBurst.IsFullyModelled);
+
+        Assert.Equal(MonsterCoverage.Complete, MonsterPool.CoverageOf(mephit));
+        Assert.True(MonsterPool.Admits(mephit));
+
+        // The other four Death Burst carriers stay Diminished for the unrelated
+        // reasons #679's issue named (a spellcasting action, or another Trait's own
+        // residue) — Death Burst's own entry is clean on every one of them too, so
+        // the grade ceiling is genuinely elsewhere, not a missed classification here.
+        foreach (var id in new[] { "monster.dust-mephit", "monster.ice-mephit", "monster.steam-mephit", "monster.magmin" })
+        {
+            var carrier = Content.MonstersById[id];
+            var burst = carrier.Entries.Single(entry => entry.Name == "Death Burst");
+
+            Assert.NotNull(burst.DeathBurst);
+            Assert.True(burst.IsFullyModelled);
+            Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(carrier));
+        }
+    }
+
+    [Fact]
     public void AMultiattackReplaceClauseDropsTheGrade()
     {
         // The canary from #290: before the replace-clause accounting fix, the Lion's

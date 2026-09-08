@@ -67,6 +67,15 @@ public enum MonsterEntrySection
 /// <see cref="Save"/> supplies the DC, ability and rider; this signal says the save fires
 /// on the aura's clock rather than as a spent action.
 /// </param>
+/// <param name="DeathBurst">
+/// The death-burst signal, when this entry is an on-death area save the creature triggers
+/// automatically when it dies — the four mephits' and the Magmin's "Death Burst" trait,
+/// and the Balor's identically-shaped "Death Throes" (#679). Null for every ordinary
+/// entry. See <see cref="DeathBurstEffect"/> for the
+/// reading. The entry's <see cref="Save"/> supplies the DC, ability, area and damage in
+/// full already; this signal claims only the printed trigger clause ("explodes when it
+/// dies") and says the save fires once, on death, rather than as a spent action.
+/// </param>
 public sealed record MonsterEntry(
     string Name,
     MonsterEntrySection Section,
@@ -79,7 +88,8 @@ public sealed record MonsterEntry(
     UsageLimit? Usage = null,
     IReadOnlyList<AppliedCondition>? AppliedConditions = null,
     IReadOnlyList<string>? UnmodelledClauses = null,
-    AuraEffect? Aura = null)
+    AuraEffect? Aura = null,
+    DeathBurstEffect? DeathBurst = null)
 {
     /// <summary>Conditions this entry imposes. Never null.</summary>
     public IReadOnlyList<AppliedCondition> AppliedConditions { get; init; } = AppliedConditions ?? [];

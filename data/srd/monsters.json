@@ -1526,9 +1526,9 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "deathBurst": {},
           "appliedConditions": [],
           "unmodelledClauses": [
-            "The balor explodes when it dies",
             "Failure or Success: If the balor dies outside the Abyss, it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss"
           ]
         },
@@ -21972,10 +21972,9 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "deathBurst": {},
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The magmin explodes when it dies"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Touch",
@@ -22687,10 +22686,9 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "deathBurst": {},
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The mephit explodes when it dies"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -22878,10 +22876,9 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "deathBurst": {},
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The mephit explodes when it dies"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -23053,10 +23050,9 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "deathBurst": {},
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The mephit explodes when it dies"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",
@@ -23228,10 +23224,9 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "deathBurst": {},
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The mephit explodes when it dies"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Claw",

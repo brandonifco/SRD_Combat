@@ -719,6 +719,86 @@ public class TurnUndeadTests
     }
 
     [Fact]
+    public void SearUndeadKillingADeathBurstCarrierFiresItsBurstToo()
+    {
+        // #679's own audit: Encounter.MarkDied is meant to be the single choke point
+        // every lethal path narrates death through, so that a Death Burst carrier
+        // (#679) bursts however it dies — and this Sear Undead site recorded death
+        // directly, bypassing it, until this same slice fixed it. No corpus Undead
+        // carries Death Burst today (the print is the mephits and the Magmin, none
+        // Undead), so this is a hand-authored proof that the choke point genuinely
+        // holds for every lethal path the engine has, not only the ones a real stat
+        // block happens to reach yet.
+        //
+        // The Cleric stands 10 ft. from the undead — outside its own burst's 5-foot
+        // Emanation, deliberately: Death Burst prints no "enemies only" restriction
+        // and would otherwise catch the Cleric too (it is well within Turn Undead's
+        // own 30-foot range regardless), which would make the scripted die model two
+        // burst victims instead of the one this test means to isolate.
+        var cleric = ClericCombatant(wisdom: 14, uses: 2, x: -1, searUndead: true);
+
+        var deathBurstSave = new SaveEffect(
+            Ability.Dexterity,
+            10,
+            new EffectArea(AreaShape.Emanation, 5),
+            [new AttackDamage(DiceExpression.Parse("1d4"), DamageType.Necrotic, 2)],
+            SaveSuccessOutcome.HalfDamage,
+            []);
+
+        var burstingUndead = CombatTestData.Combatant(
+            "undead",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(maximumHitPoints: 5, initiativeBonus: -10) with
+            {
+                Abilities = new Dictionary<Ability, MonsterAbility>
+                {
+                    [Ability.Strength] = new(10, 0),
+                    [Ability.Dexterity] = new(10, 0),
+                    [Ability.Constitution] = new(10, 0),
+                    [Ability.Intelligence] = new(10, 0),
+                    [Ability.Wisdom] = new(10, 0),
+                    [Ability.Charisma] = new(10, 0),
+                },
+                Type = CreatureType.Undead,
+                Entries =
+                [
+                    new MonsterEntry(
+                        "Death Burst",
+                        MonsterEntrySection.Trait,
+                        "Death Burst.",
+                        Mechanics: EntryMechanics.SavingThrow,
+                        Save: deathBurstSave,
+                        DeathBurst: new DeathBurstEffect()),
+                ],
+            },
+            x: 1);
+
+        var victim = CombatTestData.Combatant(
+            "victim",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(maximumHitPoints: 40, initiativeBonus: -10, attacks: []),
+            x: 2);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 8),
+            [cleric, burstingUndead, victim],
+            // Initiative x3, Turn Undead's save (fails, 1), the shared Sear Undead
+            // 2d8 (5 and 3 = 8 — more than the undead's 5 hit points, so it dies
+            // outright) — then the undead's own Death Burst fires: the victim's
+            // Dexterity save (5 + 2 = 7) fails DC 10, and its 1d4 (rolled 3) Necrotic
+            // damage lands.
+            new ScriptedRandomSource(20, 1, 1, 1, 5, 3, 5, 3));
+
+        Assert.Null(encounter.TurnUndead([burstingUndead]));
+
+        Assert.True(burstingUndead.IsDead);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("bursts outward", StringComparison.Ordinal));
+        Assert.Equal(37, victim.CurrentHitPoints);
+    }
+
+    [Fact]
     public void TurnedThenSeparatelyStunned_StaysIncapacitatedWhenTheTurningBreaks()
     {
         // #614's repro: Turn Undead imposes a *standalone* Incapacitated; a second,
