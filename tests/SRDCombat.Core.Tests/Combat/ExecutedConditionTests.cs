@@ -359,6 +359,189 @@ public class ExecutedConditionTests
         Assert.True(circumstances.AttackerIsFrightened);
     }
 
+    // ── #681: the Nalfeshnee's sight-keyed ending (a duration shape, not the
+    // Disadvantage gate above) ──
+
+    [Fact]
+    public void AFrightenedWithTheNalfeshneesShapeEndsAtTurnEndOnceTheSourceIsOutOfSight()
+    {
+        // The wall shape the A1 pair above uses: a single blocked square at (2,0)
+        // between the victim at (0,0) and the source (brute) at (5,0).
+        var encounter = CharmFight(new ScriptedRandomSource(20, 5, 1), blocked: [new GridPosition(2, 0)]);
+        var (victim, brute, _) = CharmParties(encounter);
+
+        var duration = ConditionDuration.ForMinutesUntilDamageOrSourceOutOfSight(1);
+        victim.AddCondition(new ActiveCondition(
+            ConditionType.Frightened,
+            brute.Id,
+            ConditionRules.ExpiryFor(duration, brute, victim),
+            EndsEarlyOnDamage: duration.EndsEarlyOnDamage,
+            EndsWhenBearerCannotSeeSource: duration.EndsWhenBearerCannotSeeSource));
+
+        Assert.Same(victim, encounter.ActiveCombatant);
+
+        // The victim's own turn ends with the wall standing — the source is out of
+        // its line of sight — so the printed clause ends the condition right here,
+        // long before the 1-minute cap or a hit would.
+        encounter.EndTurn();
+
+        Assert.False(victim.HasCondition(ConditionType.Frightened));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("out of line of sight", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheSameShapeSurvivesTurnEndWhileTheSourceIsStillInSight()
+    {
+        // Identical to the test above but on an open field: isolates the wall, not the
+        // field or the positions, as what made the difference — "not before" the
+        // condition the reading names, the same pairing A1's wall tests use.
+        var encounter = CharmFight(new ScriptedRandomSource(20, 5, 1));
+        var (victim, brute, _) = CharmParties(encounter);
+
+        var duration = ConditionDuration.ForMinutesUntilDamageOrSourceOutOfSight(1);
+        victim.AddCondition(new ActiveCondition(
+            ConditionType.Frightened,
+            brute.Id,
+            ConditionRules.ExpiryFor(duration, brute, victim),
+            EndsEarlyOnDamage: duration.EndsEarlyOnDamage,
+            EndsWhenBearerCannotSeeSource: duration.EndsWhenBearerCannotSeeSource));
+
+        Assert.Same(victim, encounter.ActiveCombatant);
+        encounter.EndTurn();
+
+        Assert.True(victim.HasCondition(ConditionType.Frightened));
+    }
+
+    [Fact]
+    public void AnOrdinaryFrightenedWithoutTheSightKeyedFlagSurvivesTurnEndEvenBehindAWall()
+    {
+        // The no-op proof: every other printed Frightened (Turn Undead's own compound,
+        // the eleven corpus riders #672 counted) carries a plain
+        // ConditionDuration.ForMinutes-shaped expiry with EndsWhenBearerCannotSeeSource
+        // false, and #681's new turn-end check must leave it alone — a wall between
+        // bearer and source ends nothing for it, on this same field where the test
+        // above ends the Nalfeshnee-shaped one outright.
+        var encounter = CharmFight(new ScriptedRandomSource(20, 5, 1), blocked: [new GridPosition(2, 0)]);
+        var (victim, brute, _) = CharmParties(encounter);
+
+        victim.AddCondition(new ActiveCondition(
+            ConditionType.Frightened,
+            brute.Id,
+            ConditionRules.ExpiryFor(ConditionDuration.ForMinutes(1), brute, victim)));
+
+        Assert.Same(victim, encounter.ActiveCombatant);
+        encounter.EndTurn();
+
+        Assert.True(victim.HasCondition(ConditionType.Frightened));
+    }
+
+    [Fact]
+    public void ASightKeyedConditionWithNoRecordedSourceReadsAsInSightAndSurvivesTurnEnd()
+    {
+        // #412 trip-wire: production never actually imposes this shape without a
+        // SourceId — ImposeConditions always passes the imposer's own id, exactly
+        // as T3 (#672) established for Frightened generally — but the turn-end
+        // check must not misread an absent source as "out of sight" if that
+        // invariant is ever broken. It reads as in sight, the same hampering
+        // default FrightenedSourceInSight already takes.
+        var encounter = CharmFight(new ScriptedRandomSource(20, 5, 1), blocked: [new GridPosition(2, 0)]);
+        var (victim, _, _) = CharmParties(encounter);
+
+        victim.AddCondition(new ActiveCondition(
+            ConditionType.Frightened,
+            SourceId: null,
+            EndsEarlyOnDamage: true,
+            EndsWhenBearerCannotSeeSource: true));
+
+        Assert.Same(victim, encounter.ActiveCombatant);
+        encounter.EndTurn();
+
+        Assert.True(victim.HasCondition(ConditionType.Frightened));
+    }
+
+    [Fact]
+    public void AFrightenedWithTheNalfeshneesShapeEndsOnDamageEvenWhileTheSourceIsInSight()
+    {
+        // Isolates EndsEarlyOnDamage from EndsWhenBearerCannotSeeSource: an open
+        // field, so the source stays in sight throughout, and the only way out
+        // exercised here is the hit landing — the printed clause's other early-out
+        // ("until it takes damage") "still applies alongside" the sight-keyed one.
+        var attacker = CombatTestData.Combatant("attacker", sideId: CombatTestData.Monsters, x: 1);
+        var bearer = CombatTestData.Combatant("bearer", x: 0);
+        var encounter = Encounter.Start(
+            new Battlefield(6, 6),
+            [attacker, bearer],
+            // Initiatives (attacker first); an attack roll of 15 (+4 to hit AC 13);
+            // a damage die of 4 (+2 modifier, non-zero, so the blow really "takes
+            // damage").
+            new ScriptedRandomSource(20, 5, 15, 4));
+
+        var duration = ConditionDuration.ForMinutesUntilDamageOrSourceOutOfSight(1);
+        bearer.AddCondition(new ActiveCondition(
+            ConditionType.Frightened,
+            attacker.Id,
+            ConditionRules.ExpiryFor(duration, attacker, bearer),
+            EndsEarlyOnDamage: duration.EndsEarlyOnDamage,
+            EndsWhenBearerCannotSeeSource: duration.EndsWhenBearerCannotSeeSource));
+
+        Assert.Same(attacker, encounter.ActiveCombatant);
+        Assert.Null(encounter.Attack(attacker.Stats.Attacks[0].Name, bearer));
+
+        Assert.False(bearer.HasCondition(ConditionType.Frightened));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("the damage breaks it", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AnOrdinaryFrightenedIsRefusedOverANalfeshneeShapedOneAndTheOccupantIsUntouched()
+    {
+        // Codex review of #681: the collision guard in Combatant.AddCondition must
+        // widen to the two new flags, or an ordinary Frightened landing on top of
+        // the Nalfeshnee's shape would silently merge into a condition carrying the
+        // wrong SourceId under the right flags (or the right SourceId under no
+        // flags at all — stored but never executed).
+        var bearer = CombatTestData.Combatant("bearer");
+        var nalfeshneeShaped = new ActiveCondition(
+            ConditionType.Frightened,
+            "nalfeshnee",
+            EndsEarlyOnDamage: true,
+            EndsWhenBearerCannotSeeSource: true);
+        Assert.True(bearer.AddCondition(nalfeshneeShaped));
+
+        var ordinary = new ActiveCondition(ConditionType.Frightened, "someone-else");
+        Assert.False(bearer.AddCondition(ordinary));
+
+        var occupant = bearer.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal("nalfeshnee", occupant.SourceId);
+        Assert.True(occupant.EndsEarlyOnDamage);
+        Assert.True(occupant.EndsWhenBearerCannotSeeSource);
+    }
+
+    [Fact]
+    public void ANalfeshneeShapedFrightenedIsRefusedOverAnOrdinaryOneAndTheOccupantIsUntouched()
+    {
+        // The reverse order of the test above: the incumbent ordinary Frightened
+        // must not inherit the Nalfeshnee's damage/sight endings either.
+        var bearer = CombatTestData.Combatant("bearer");
+        var ordinary = new ActiveCondition(ConditionType.Frightened, "someone-else");
+        Assert.True(bearer.AddCondition(ordinary));
+
+        var nalfeshneeShaped = new ActiveCondition(
+            ConditionType.Frightened,
+            "nalfeshnee",
+            EndsEarlyOnDamage: true,
+            EndsWhenBearerCannotSeeSource: true);
+        Assert.False(bearer.AddCondition(nalfeshneeShaped));
+
+        var occupant = bearer.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal("someone-else", occupant.SourceId);
+        Assert.False(occupant.EndsEarlyOnDamage);
+        Assert.False(occupant.EndsWhenBearerCannotSeeSource);
+    }
+
     [Fact]
     public void AFrightenedCreatureCannotWillinglyMoveCloserToTheSource()
     {

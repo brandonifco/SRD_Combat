@@ -756,10 +756,13 @@ public sealed partial class Encounter
     }
 
     /// <summary>
-    /// Turn Undead's bearer-side early-out: "This effect ends early on the creature if
-    /// it takes any damage" (SRD 5.2.1 p. 37). Removes every condition on
-    /// <paramref name="bearer"/> flagged
-    /// <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>.
+    /// Every printed rider's bearer-side "until it takes damage" early-out: Turn
+    /// Undead's own composite (SRD 5.2.1 p. 37, <see cref="ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>)
+    /// and, since #681, the general <see cref="ActiveCondition.EndsEarlyOnDamage"/> any
+    /// extracted duration can carry — first exercised by the Nalfeshnee's Horror
+    /// Nimbus (p. 310). The two are read separately, each with its own narration,
+    /// because they are never both true on one condition — see
+    /// <see cref="Definitions.ConditionDuration"/>'s remarks for why they stay apart.
     /// </summary>
     /// <remarks>
     /// A no-op when the bearer carries no such condition, so it is safe alongside every
@@ -778,12 +781,23 @@ public sealed partial class Encounter
     {
         foreach (var type in bearer.Conditions.ToArray())
         {
-            if (bearer.ConditionState(type) is { EndsEarlyOnDamageOrSourceDown: true }
-                && bearer.RemoveCondition(type))
+            var state = bearer.ConditionState(type);
+
+            if (state is { EndsEarlyOnDamageOrSourceDown: true } && bearer.RemoveCondition(type))
             {
                 Add(
                     CombatStepKind.Condition,
                     $"{bearer.Name} is no longer {type} — the turning breaks on the blow.",
+                    bearer);
+
+                continue;
+            }
+
+            if (state is { EndsEarlyOnDamage: true } && bearer.RemoveCondition(type))
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} is no longer {type} — the damage breaks it.",
                     bearer);
             }
         }

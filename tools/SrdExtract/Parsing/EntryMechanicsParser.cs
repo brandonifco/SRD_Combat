@@ -1959,7 +1959,9 @@ internal static partial class EntryMechanicsParser
 
     /// <summary>
     /// Parses "until the start of its next turn", "until the end of the devil's next
-    /// turn", "for 1 minute" and "for 1 hour".
+    /// turn", "for 1 minute", "for 1 hour", and (#681) the Nalfeshnee's compound
+    /// "for 1 minute, until it takes damage, or until it ends its turn with [the
+    /// source] out of line of sight".
     /// </summary>
     /// <remarks>
     /// <para>
@@ -1972,7 +1974,12 @@ internal static partial class EntryMechanicsParser
     /// A timed duration must be the whole of the trailing text, exactly like a
     /// turn-boundary one: "for 1 minute, until it takes damage, or ..." carries an early
     /// out the model cannot express, and the anchored pattern refuses it rather than
-    /// matching the part that looks familiar.
+    /// matching the part that looks familiar — <b>except</b> the one compound shape
+    /// <see cref="DamageOrLostSightDurationPattern"/> matches whole: a plain "for 1
+    /// minute, until it takes damage, or until a creature ... wakes it" (the Incubus's
+    /// Unconscious) still carries a third out this engine cannot express and still
+    /// falls through to <c>null</c>, because that pattern's own final clause does not
+    /// match "out of line of sight".
     /// </para>
     /// </remarks>
     private static ConditionDuration? ParseDuration(string trailing)
@@ -1990,6 +1997,15 @@ internal static partial class EntryMechanicsParser
                 : ConditionDurationOwner.Source;
 
             return new ConditionDuration(clock, owner);
+        }
+
+        var damageOrLostSight = DamageOrLostSightDurationPattern().Match(trailing);
+
+        if (damageOrLostSight.Success)
+        {
+            var minutes = int.Parse(damageOrLostSight.Groups["count"].Value, CultureInfo.InvariantCulture);
+
+            return ConditionDuration.ForMinutesUntilDamageOrSourceOutOfSight(minutes);
         }
 
         var timed = TimedDurationPattern().Match(trailing);
@@ -2312,6 +2328,18 @@ internal static partial class EntryMechanicsParser
     // is an early out the model cannot express, and must not match on the timer alone.
     [GeneratedRegex(@"^for\s+(?<count>\d+)\s+(?<unit>minutes?|hours?|days?)$", RegexOptions.IgnoreCase)]
     private static partial Regex TimedDurationPattern();
+
+    // #681: the Nalfeshnee's Horror Nimbus (SRD 5.2.1 p. 310), the one corpus printing
+    // of this compound shape today — matched by shape, not by creature name, so a
+    // future stat block naming a different source still matches. Anchored at both
+    // ends like every duration pattern here: the Incubus's superficially similar
+    // "for 1 hour, until it takes damage, or until a creature ... wakes it" ends in a
+    // clause this does not spell, so it falls through and stays refused.
+    [GeneratedRegex(
+        @"^for\s+(?<count>\d+)\s+minutes?,\s+until\s+it\s+takes\s+damage,\s+or\s+until\s+it\s+ends\s+its\s+turn\s+" +
+        @"with\s+the\s+.+?\s+out\s+of\s+line\s+of\s+sight$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex DamageOrLostSightDurationPattern();
 
     // "Second Failure:" and its kin — a save outcome tier the save model does not
     // express, so a rider printed behind one must not ride the plain failure.

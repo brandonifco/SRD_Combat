@@ -268,14 +268,17 @@ public enum ConditionDurationOwner
 /// its caster's Concentration. Still unmodelled and staying in
 /// <see cref="AppliedCondition.UnmodelledRequirement"/>: "until the grapple ends"
 /// outside its sibling grapple, and "until the web is destroyed" (which needs an
-/// object with hit points). "Until it takes damage" now has a hook, but a narrow
-/// one rather than a general duration shape: Turn Undead's rider is the one printed
-/// effect that ends early on damage, on its source's Incapacitated condition, or on
-/// its source's death, and none of those is a clock, a repeat save or a
-/// Concentration tie — so <see cref="Combat.ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>
-/// is a closed-set flag beside this record rather than a fourth shape here. A rider
-/// printing "until it takes damage" with no further tie to Turn Undead's own wording
-/// still has nothing on <see cref="ConditionDuration"/> to reach for.
+/// object with hit points). "Until it takes damage" split in two with #681:
+/// <see cref="Combat.ActiveCondition.EndsEarlyOnDamageOrSourceDown"/> stays Turn
+/// Undead's own closed-set composite — damage, or its source's own Incapacitated
+/// condition, or its source's death, none of which is a clock, a repeat save or a
+/// Concentration tie — while <see cref="EndsEarlyOnDamage"/> below is the general
+/// half any duration can now carry, first exercised by the Nalfeshnee's Horror
+/// Nimbus, which prints damage as a way out with no tie to its own state at all.
+/// The two flags are read by the same call site (<c>Encounter.BreakTurnEffectOnDamage</c>)
+/// and are never both true on one condition — merging them into one flag would end
+/// the Nalfeshnee's Frightened the moment the nalfeshnee itself went down or was
+/// Incapacitated, a way out that entry does not print.
 /// </para>
 /// </remarks>
 /// <param name="Clock">Which boundary of the owner's turn it ends on.</param>
@@ -294,6 +297,22 @@ public enum ConditionDurationOwner
 /// <c>Encounter.EndGrapple</c> takes it away with the grapple, however the grapple
 /// ended — escape, incapacity or distance.
 /// </param>
+/// <param name="EndsEarlyOnDamage">
+/// True for "until it takes damage" printed as a way out alongside the clock above,
+/// with no tie to the source's own state — the Nalfeshnee's Horror Nimbus (SRD 5.2.1
+/// p. 310, #681). Distinct from
+/// <see cref="Combat.ActiveCondition.EndsEarlyOnDamageOrSourceDown"/>; see this
+/// record's own remarks for why the two stay apart rather than merging.
+/// </param>
+/// <param name="EndsWhenBearerCannotSeeSource">
+/// True for "until it ends its turn with [the source] out of line of sight" — the
+/// same Horror Nimbus rider. Checked at the end of the <em>bearer's own</em> turn
+/// regardless of whose turn <see cref="Clock"/>/<see cref="Owner"/> above measure the
+/// fixed cap against, against the #671 sight predicate asked from the bearer toward
+/// the condition's own recorded source (<c>ConditionRules.SourceInSight</c>). Fear's
+/// analogous ending (p. 130) is a save-to-end rather than an unconditional one and is
+/// out of #681's scope, so this flag is not set from that spell.
+/// </param>
 public sealed record ConditionDuration(
     ConditionClock Clock,
     ConditionDurationOwner Owner,
@@ -301,11 +320,29 @@ public sealed record ConditionDuration(
     bool OutlastsFight = false,
     bool WhileGrappleHolds = false,
     bool WhileConcentrating = false,
-    bool RepeatSaveAtTurnEnd = false)
+    bool RepeatSaveAtTurnEnd = false,
+    bool EndsEarlyOnDamage = false,
+    bool EndsWhenBearerCannotSeeSource = false)
 {
     /// <summary>"for N minutes": ten of the bearer's turns per minute, ending at the end of a turn.</summary>
     public static ConditionDuration ForMinutes(int minutes) =>
         new(ConditionClock.EndOfTurn, ConditionDurationOwner.Bearer, minutes * 10);
+
+    /// <summary>
+    /// The Nalfeshnee's own compound clock (#681, SRD 5.2.1 p. 310, Horror Nimbus):
+    /// "for 1 minute, until it takes damage, or until it ends its turn with [the
+    /// nalfeshnee] out of line of sight." Three ways out, whichever comes first —
+    /// the minute cap <see cref="ForMinutes"/> already reads, <see cref="EndsEarlyOnDamage"/>,
+    /// or <see cref="EndsWhenBearerCannotSeeSource"/> (the #671/#672 sight predicate,
+    /// checked at the end of the bearer's own turn).
+    /// </summary>
+    public static ConditionDuration ForMinutesUntilDamageOrSourceOutOfSight(int minutes) =>
+        new(
+            ConditionClock.EndOfTurn,
+            ConditionDurationOwner.Bearer,
+            minutes * 10,
+            EndsEarlyOnDamage: true,
+            EndsWhenBearerCannotSeeSource: true);
 
     /// <summary>
     /// Hold Person's whole printed clock: "for the duration" on a Concentration spell

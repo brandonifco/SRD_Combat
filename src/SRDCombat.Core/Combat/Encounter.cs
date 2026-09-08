@@ -652,6 +652,59 @@ public sealed partial class Encounter
                     bearer);
             }
         }
+
+        // The Nalfeshnee's sight-keyed ending (#681) is always the bearer's own turn
+        // boundary — unlike the swept expiries above, which can be measured against
+        // any owner's turn — so it is judged once, against the one combatant whose
+        // turn is actually ending, rather than against every bearer on the field.
+        if (clock == ConditionClock.EndOfTurn)
+        {
+            EndSightKeyedConditions(owner);
+        }
+    }
+
+    /// <summary>
+    /// Ends any condition on <paramref name="bearer"/> printed "until it ends its turn
+    /// with [the source] out of line of sight" — the Nalfeshnee's Horror Nimbus (SRD
+    /// 5.2.1 p. 310, #681) — now that the bearer's own turn has ended, if the source
+    /// is out of its line of sight.
+    /// </summary>
+    /// <remarks>
+    /// Called from every one of <see cref="ExpireConditions"/>'s end-of-turn
+    /// boundaries, including the three places a turn "begins and ends in the same
+    /// instant" (a dead combatant's skipped turn, a downed combatant that failed its
+    /// Death Saving Throw, a combatant that cannot act) — the printed clause names no
+    /// exception for a bearer that could not act on the turn that just ended, so
+    /// nothing here re-checks <c>CanAct</c>. Reads
+    /// <see cref="ActiveCondition.EndsWhenBearerCannotSeeSource"/> and
+    /// <see cref="ConditionRules.SourceInSight"/> — the same predicate Frightened's
+    /// own Disadvantage gate is built on (#672), asked from the bearer toward the
+    /// condition's own recorded source rather than toward Frightened specifically, so
+    /// a future condition extracted with this flag is covered without a second call
+    /// site.
+    /// </remarks>
+    private void EndSightKeyedConditions(Combatant bearer)
+    {
+        foreach (var type in bearer.Conditions.ToArray())
+        {
+            if (bearer.ConditionState(type) is not { EndsWhenBearerCannotSeeSource: true } state)
+            {
+                continue;
+            }
+
+            if (ConditionRules.SourceInSight(bearer, state.SourceId, Battlefield, _combatants))
+            {
+                continue;
+            }
+
+            if (bearer.RemoveCondition(type))
+            {
+                Add(
+                    CombatStepKind.Condition,
+                    $"{bearer.Name} is no longer {type} — the source is out of line of sight.",
+                    bearer);
+            }
+        }
     }
 
     /// <summary>
@@ -2455,7 +2508,9 @@ public sealed partial class Encounter
                 rider.Duration is { RepeatSaveAtTurnEnd: true } ? repeatSave!.Value.Ability : null,
                 rider.Duration is { RepeatSaveAtTurnEnd: true } ? repeatSave!.Value.DifficultyClass : null,
                 TiedToConcentration: rider.Duration is { WhileConcentrating: true },
-                EscalatesTo: rider.EscalatesTo);
+                EscalatesTo: rider.EscalatesTo,
+                EndsEarlyOnDamage: rider.Duration is { EndsEarlyOnDamage: true },
+                EndsWhenBearerCannotSeeSource: rider.Duration is { EndsWhenBearerCannotSeeSource: true });
 
             if (!target.AddCondition(imposed))
             {
@@ -2761,6 +2816,13 @@ public sealed partial class Encounter
             { OutlastsFight: true, RepeatSaveAtTurnEnd: true } => " until a repeated save ends it — or worsens it",
             { OutlastsFight: true } => " for the rest of the fight",
             { WhileGrappleHolds: true } => " until the grapple ends",
+            // The Nalfeshnee's own compound clock (#681): named ahead of the plain
+            // multi-turn branch below so its two extra ways out are not swallowed by
+            // "for 1 minute" alone.
+            { EndsEarlyOnDamage: true, EndsWhenBearerCannotSeeSource: true } =>
+                $" for {duration.TurnsAhead / 10} minute" +
+                $"{(duration.TurnsAhead / 10 == 1 ? "" : "s")}, until it takes damage, or until it ends " +
+                $"its turn with {source.Name} out of line of sight",
             { TurnsAhead: 1 } =>
                 $" until the {(duration.Clock == ConditionClock.StartOfTurn ? "start" : "end")} of " +
                 $"{(duration.Owner == ConditionDurationOwner.Bearer ? bearer.Name : source.Name)}'s next turn",

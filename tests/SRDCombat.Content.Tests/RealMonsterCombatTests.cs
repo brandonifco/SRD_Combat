@@ -715,19 +715,96 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void TheNalfeshneesHorrorNimbusEndsAtTheBearersTurnEndOutOfSightNotTheNalfeshneesOwnTurn()
+    {
+        // P3 (Codex adversarial review, #681): proves the real corpus rider reaches
+        // execution end to end — a failed save against the genuine Horror Nimbus
+        // entry, not a hand-built ActiveCondition — and pins the two ordering claims
+        // the unit tests cannot: ending the NALFESHNEE's own turn does nothing (the
+        // clause is the bearer's clock, not the source's), while ending the
+        // BEARER's turn out of sight does.
+        var nalfeshnee = Content.MonstersById["monster.nalfeshnee"];
+        var horrorNimbus = nalfeshnee.Entries.Single(entry => entry.Name == "Horror Nimbus");
+        var rider = Assert.Single(horrorNimbus.Save!.AppliedConditions);
+        Assert.Equal(ConditionType.Frightened, rider.Condition);
+        Assert.True(rider.IsFullyModelled);
+        Assert.True(ConditionRules.CanBeImposed(rider));
+
+        // Two blocked squares at (2,0) and (2,1). The bandit starts at (0,3) —
+        // three squares from the nalfeshnee, at the very edge of the 15-foot
+        // Emanation and already outside Rend's 10-foot reach, so walking further
+        // away never leaves reach and never provokes an Opportunity Attack. The
+        // walk to (4,2) stays at y ≥ 2 the whole way — the wall only occupies
+        // y = 0 and y = 1, so it is no obstacle to movement at all — but the line
+        // from the nalfeshnee's square to that final square threads exactly
+        // through (2,1).
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10, blocked: [new GridPosition(2, 0), new GridPosition(2, 1)]),
+            [
+                Spawn(nalfeshnee, "nalfeshnee", "fiends", new GridPosition(0, 0)),
+                Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(0, 3)),
+            ],
+            // Initiatives (nalfeshnee first); the bandit's failed Wisdom save
+            // (2 + 0 vs DC 15); 8d6 damage rolled at its minimum (8, leaving the
+            // bandit's 11 Hit Points at 3) so the blow frightens rather than kills —
+            // the printed rider must still land on a creature very much still
+            // standing; a natural 1 for the Opportunity Attack the nalfeshnee's own
+            // 10-foot Rend gets when the bandit's chosen path threads back within
+            // reach before continuing on (an automatic miss, so it deals no damage
+            // and cannot itself trigger EndsEarlyOnDamage ahead of the sight check
+            // this test is pinning); and a trailing Recharge roll for Horror Nimbus
+            // itself, rolled once more at the top of the nalfeshnee's second turn.
+            new ScriptedRandomSource(20, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1));
+
+        var nalfeshneeCombatant = encounter.Combatants.Single(combatant => combatant.Id == "nalfeshnee");
+        var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.UseEntry("Horror Nimbus", nalfeshneeCombatant.Position));
+        Assert.Equal(3, bandit.CurrentHitPoints);
+        Assert.True(bandit.HasCondition(ConditionType.Frightened));
+
+        var landed = bandit.ConditionState(ConditionType.Frightened)!;
+        Assert.Equal("nalfeshnee", landed.SourceId);
+        Assert.True(landed.EndsEarlyOnDamage);
+        Assert.True(landed.EndsWhenBearerCannotSeeSource);
+
+        // The nalfeshnee's own turn ends — the clause is the bearer's clock, not
+        // the source's, so this does nothing to the bandit's Frightened.
+        encounter.EndTurn();
+        Assert.True(bandit.HasCondition(ConditionType.Frightened));
+
+        // The bandit's own turn: it walks straight away along the row the wall
+        // does not occupy (farther from the nalfeshnee than where it started, so
+        // "Can't Approach" does not refuse it), ending where the wall now sits
+        // squarely on the line back to the nalfeshnee.
+        Assert.Same(bandit, encounter.ActiveCombatant);
+        Assert.Null(encounter.Move(new GridPosition(4, 2)));
+
+        // Ending the bandit's own turn, out of sight, ends the rider right here —
+        // long before the printed 1-minute cap or a second hit would.
+        encounter.EndTurn();
+        Assert.False(bandit.HasCondition(ConditionType.Frightened));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("out of line of sight", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void T3_EveryExecutableCorpusFrightenedRiderIsImposedThroughTheSourcedPath()
     {
-        // T3 (#672): the designer's own census — eleven executable Frightened riders
-        // across the corpus, each one of exactly two shapes, and both are proven
-        // (by the two tests directly above) to land through the shared,
-        // always-sourced rider-application code — ImposeConditions, called either
-        // from UseSaveEntry (a SavingThrow-mechanics entry's failed save; the
-        // Quasit's Scare) or from ImposeRiders (an Attack-mechanics entry's hit; the
-        // Oni's Nightmare Ray). Asserting the shape here, not just the count, is
-        // what rules out a THIRD, unsourced rider-imposition path answering for any
-        // of the other nine (Codex round 1, #672) — a rider of neither shape would
-        // be a mechanism this test does not vouch for and would need its own executed
-        // pin before joining the count below.
+        // T3 (#672, extended by #681): the designer's own census — eleven executable
+        // Frightened riders across the corpus, plus the Nalfeshnee's Horror Nimbus
+        // once #681's sight-keyed duration shape moved it out of residue — each one
+        // of exactly two shapes, and both are proven (by the two tests directly
+        // above) to land through the shared, always-sourced rider-application code —
+        // ImposeConditions, called either from UseSaveEntry (a SavingThrow-mechanics
+        // entry's failed save; the Quasit's Scare, and now the Nalfeshnee's Horror
+        // Nimbus) or from ImposeRiders (an Attack-mechanics entry's hit; the Oni's
+        // Nightmare Ray). Asserting the shape here, not just the count, is what
+        // rules out a THIRD, unsourced rider-imposition path answering for any of
+        // the rest (Codex round 1, #672) — a rider of neither shape would be a
+        // mechanism this test does not vouch for and would need its own executed pin
+        // before joining the count below.
         var withExecutableFrightened = Content.MonstersById.Values
             .SelectMany(monster => monster.Entries.Select(entry => (monster.Id, entry)))
             .Where(pair => pair.entry.AppliedConditions
@@ -750,6 +827,7 @@ public class RealMonsterCombatTests
                 "monster.ghost",
                 "monster.lion",
                 "monster.mummy",
+                "monster.nalfeshnee",
                 "monster.oni",
                 "monster.pit-fiend",
                 "monster.quasit",

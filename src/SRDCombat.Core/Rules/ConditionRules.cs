@@ -93,7 +93,12 @@ namespace SRDCombat.Core.Rules;
 /// as in sight — the hampering default, and the direction the engine took wholesale
 /// before this predicate existed. "Closer" is judged at the destination:
 /// <c>Encounter.Move</c> refuses a destination nearer the source than the square the
-/// creature stands in, and does not judge the path between them.
+/// creature stands in, and does not judge the path between them. A second, separate
+/// consumer of the same predicate landed with #681: some printings of Frightened (the
+/// Nalfeshnee's Horror Nimbus) end the condition outright — rather than merely
+/// hampering it — at the end of the bearer's own turn if the source is out of sight,
+/// via <see cref="Combat.ActiveCondition.EndsWhenBearerCannotSeeSource"/> and the same
+/// <see cref="SourceInSight"/> the Disadvantage gate is built on.
 /// </item>
 /// <item>
 /// <b>Paralyzed</b> — brings Incapacitated, Speed 0, auto-fails Strength and Dexterity
@@ -235,20 +240,9 @@ public static class ConditionRules
     /// Whether a Frightened bearer's source of fear is within its line of sight — the
     /// gate on both of Frightened's Disadvantage clauses (#672). Callers only reach this
     /// once they already know the bearer has Frightened; it answers "is the source in
-    /// sight", not "is the bearer Frightened".
+    /// sight", not "is the bearer Frightened". A thin wrapper over
+    /// <see cref="SourceInSight"/>, reading Frightened's own recorded <c>SourceId</c>.
     /// </summary>
-    /// <remarks>
-    /// Three cases all read as in sight, the hampering default, because each is a way
-    /// of not knowing otherwise rather than a way of knowing the source is out of sight:
-    /// a Frightened with no recorded <c>SourceId</c>; a <c>SourceId</c> that does not
-    /// resolve to anyone in <paramref name="combatants"/> (left the field, or never
-    /// matched); and a caller offering no <paramref name="battlefield"/> or no
-    /// <paramref name="combatants"/> at all — the two-creature unit tests, which read
-    /// exactly as they did before this predicate existed. A dead source still resolves
-    /// and is still seen: <see cref="VisionRules.CanSee(Combat.Battlefield,
-    /// Combat.Combatant, Combat.Combatant)"/> qualifies the viewer (the bearer), not the
-    /// target, and print does not end Frightened on the source's death.
-    /// </remarks>
     public static bool FrightenedSourceInSight(
         Combatant bearer,
         Battlefield? battlefield,
@@ -256,12 +250,42 @@ public static class ConditionRules
     {
         ArgumentNullException.ThrowIfNull(bearer);
 
-        if (bearer.ConditionState(ConditionType.Frightened) is not { SourceId: { } sourceId })
-        {
-            return true;
-        }
+        return SourceInSight(
+            bearer,
+            bearer.ConditionState(ConditionType.Frightened)?.SourceId,
+            battlefield,
+            combatants);
+    }
 
-        if (battlefield is null || combatants is null)
+    /// <summary>
+    /// Whether <paramref name="sourceId"/> is within <paramref name="bearer"/>'s line of
+    /// sight — the shared predicate behind <see cref="FrightenedSourceInSight"/> (a
+    /// hampering gate) and <see cref="Combat.ActiveCondition.EndsWhenBearerCannotSeeSource"/>
+    /// (an ending gate, #681), so the two consumers of "within line of sight" can never
+    /// disagree about what the phrase means.
+    /// </summary>
+    /// <remarks>
+    /// Three cases all read as in sight, the hampering default, because each is a way
+    /// of not knowing otherwise rather than a way of knowing the source is out of sight:
+    /// a null <paramref name="sourceId"/>; a <paramref name="sourceId"/> that does not
+    /// resolve to anyone in <paramref name="combatants"/> (left the field, or never
+    /// matched); and a caller offering no <paramref name="battlefield"/> or no
+    /// <paramref name="combatants"/> at all — the two-creature unit tests, which read
+    /// exactly as they did before this predicate existed. A dead source still resolves
+    /// and is still seen: <see cref="VisionRules.CanSee(Combat.Battlefield,
+    /// Combat.Combatant, Combat.Combatant)"/> qualifies the viewer (the bearer), not the
+    /// target, and neither Frightened's Disadvantage clause nor the Nalfeshnee's ending
+    /// clause ends on the source's death.
+    /// </remarks>
+    public static bool SourceInSight(
+        Combatant bearer,
+        string? sourceId,
+        Battlefield? battlefield,
+        IReadOnlyCollection<Combatant>? combatants)
+    {
+        ArgumentNullException.ThrowIfNull(bearer);
+
+        if (sourceId is null || battlefield is null || combatants is null)
         {
             return true;
         }
