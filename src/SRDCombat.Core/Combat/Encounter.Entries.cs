@@ -61,8 +61,11 @@ public sealed partial class Encounter
         // An Action entry spends the Action, a Bonus Action entry the Bonus Action —
         // the Basilisk's Petrifying Gaze is printed under Bonus Actions, and for as
         // long as this gate stopped at Action, no monster could use its signature
-        // ability at all (#230). Reactions, Legendary Actions and Traits stay refused:
-        // each needs a trigger or an economy the engine does not model.
+        // ability at all (#230). Reactions, Legendary Actions and Traits stay refused
+        // here: none is a voluntary action a turn spends. A reaction the engine does
+        // model fires reflexively from its own trigger point instead — Parry (#677) is
+        // recomputed inside ResolveAttack when a melee attack hits, never taken through
+        // this dispatch — so refusing it here is correct, not a gap.
         if (entry.Section is not (MonsterEntrySection.Action or MonsterEntrySection.BonusAction))
         {
             return new ActionRefusal(

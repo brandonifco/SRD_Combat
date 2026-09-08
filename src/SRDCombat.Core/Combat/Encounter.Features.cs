@@ -949,6 +949,98 @@ public sealed partial class Encounter
     }
 
     /// <summary>
+    /// Parry (#677): a Reaction that raises the reacting creature's Armor Class against
+    /// one melee attack that just hit it, "possibly causing it to miss." Returns the
+    /// attack recomputed against the raised AC when the creature parries, or null when it
+    /// does not — leaving the caller's original result untouched.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Deterministic — no dice.</b> Parry adds a fixed bonus to an
+    /// <em>already-rolled</em> attack and recomputes hit/miss, so it never touches
+    /// <see cref="Dice.IRandomSource"/> and cannot move the dice stream. It fires only
+    /// when it changes the outcome (the flip gate below), so an attack it cannot turn
+    /// into a miss spends nothing, narrates nothing, and leaves the transcript
+    /// byte-flat — which is why a fight whose cast carries no Parry entry is untouched.
+    /// </para>
+    /// <para>
+    /// <b>Taken automatically, not offered as a choice</b> — the same reading Uncanny
+    /// Dodge records (<see cref="TryUncannyDodge"/>): a creature with a spare Reaction
+    /// always wants to turn a hit into a miss, so there is no decision worth routing
+    /// through the tactics policy, and the reacting creature is not the active one in any
+    /// case. Revisit only if a competing off-turn Reaction ever lands on these same
+    /// creatures.
+    /// </para>
+    /// <para>
+    /// The gates, each a printed clause of the trigger "the creature is hit by a melee
+    /// attack roll while holding a weapon", plus the two the response's "possibly causing
+    /// it to miss" implies:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>The attack is a melee attack roll — <see cref="AttackKind.Melee"/> and,
+    /// for a dual-mode "Melee or Ranged" attack (which the extractor stores as
+    /// <see cref="AttackKind.Melee"/>, its modality carried by the distance fields), not
+    /// being used at range: <see cref="CombatAttack.IsRangedAttackRoll"/> at the
+    /// attacker→target distance decides it, the same predicate the attack narration
+    /// already reads. A pure ranged attack, and a thrown weapon used beyond its reach,
+    /// are ranged attack rolls and are never parried; a spell is only parried when it is
+    /// itself a melee attack roll.</item>
+    /// <item>The attack hit, and not on a natural 20 — a miss triggers nothing, and no
+    /// raised AC stops a 20 (it auto-hits), so neither leaves anything to react to.</item>
+    /// <item>The target has an executable HitByMeleeAttack reaction (#677's signal), its
+    /// Reaction is unspent, and it can act — a downed or Incapacitated creature takes no
+    /// Reaction (<see cref="Combatant.CanAct"/>).</item>
+    /// <item>It sees the attacker — read as not Blinded, the same sight reading Ranged
+    /// Attacks in Close Combat and Frightened record, sight being otherwise unmodelled.</item>
+    /// <item>It is holding a weapon — read as having a melee weapon attack it could make.
+    /// The corpus's four Parry-bearers (Bandit Captain, Knight, Warrior Veteran, Noble)
+    /// are all armed humanoids with no natural weapons, and the engine models no disarm,
+    /// so "has a melee attack" is a faithful stand-in for "holding a weapon" rather than
+    /// a literal grip model — noted so the approximation is not mistaken for the rule.</item>
+    /// <item>The bonus flips the result: the roll beat the current AC by less than the
+    /// bonus. Only then is the Reaction worth spending; a hit the bonus cannot undo is
+    /// left alone, Reaction intact.</item>
+    /// </list>
+    /// </remarks>
+    private AttackRoll? TryParry(Combatant attacker, CombatAttack attack, Combatant target, AttackRoll result)
+    {
+        if (attack.Kind != AttackKind.Melee
+            || attack.IsRangedAttackRoll(attacker.DistanceFeetTo(target))
+            || !result.Hit
+            || result.Roll.IsNatural20
+            || target.Stats.MeleeHitReaction is not { } reaction
+            || !target.Turn.HasReaction
+            || !target.CanAct
+            || target.HasCondition(ConditionType.Blinded)
+            || !target.Stats.Attacks.Any(weapon => weapon.Kind == AttackKind.Melee))
+        {
+            return null;
+        }
+
+        var raisedArmorClass = result.TargetArmorClass + reaction.ArmorClassBonus;
+
+        // The flip gate: result.Hit true and not a natural 20 means the roll already met
+        // the current AC, so the only question is whether the raised AC now beats it.
+        if (result.Roll.Total >= raisedArmorClass)
+        {
+            return null;
+        }
+
+        target.Turn.SpendReaction();
+
+        Add(
+            CombatStepKind.Feature,
+            $"{target.Name} Parries {attacker.Name}'s {attack.Name}, raising its AC by {reaction.ArmorClassBonus}.",
+            target,
+            attacker);
+
+        // Deterministic recompute: the same roll against the raised AC, now a miss.
+        // Critical falls away with the hit (a miss is never a Critical Hit); Graze and
+        // the rest of the miss path read this recomputed result.
+        return result with { Hit = false, Critical = false, TargetArmorClass = raisedArmorClass };
+    }
+
+    /// <summary>
     /// Rogue Uncanny Dodge: a Reaction to halve one attack's damage.
     /// </summary>
     /// <remarks>

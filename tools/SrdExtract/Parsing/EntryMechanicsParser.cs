@@ -438,9 +438,12 @@ internal static partial class EntryMechanicsParser
         }
 
         // Only the two literal labels are claimed. The trigger and response prose is
-        // stored verbatim on ReactionEffect for narration, but no resolver executes a
-        // reaction (Encounter has none), so storing it is not expressing it (design
-        // §2.2) and it is left as residue.
+        // stored verbatim on ReactionEffect for narration. The engine now resolves one
+        // reaction — Parry (#677), keyed on ReactionEffect.Executable — but this parser
+        // does not yet populate that structured signal (#413-D is the slice that will),
+        // so what is stored here is still only prose: storing prose is not expressing it
+        // (design §2.2), and it is left as residue until the response is actually
+        // classified into Executable.
         coverage.Claim(new TextSpan(match.Index, "Trigger:".Length), "reaction.trigger_label");
 
         var responseIndex = text.IndexOf("Response:", match.Index, StringComparison.Ordinal);

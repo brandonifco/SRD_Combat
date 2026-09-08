@@ -364,6 +364,24 @@ public sealed record CombatantStats(
     public IReadOnlyList<MonsterEntry> Entries { get; init; } = [];
 
     /// <summary>
+    /// The creature's executable reaction to being hit by a melee attack — Parry's
+    /// structured signal (#677) — or null when it has none, which is every creature the
+    /// extractor has not classified a Parry for and every creature that simply has no
+    /// such reaction (all characters included: a character's <see cref="Entries"/> is
+    /// empty). Read by <c>Encounter.TryParry</c> at the instant a melee attack hits.
+    /// </summary>
+    /// <remarks>
+    /// The first such reaction across the Reaction-section entries wins; the corpus's
+    /// four Parry-bearers each print exactly one, so "first" is unambiguous today. A
+    /// second executable reaction of the same trigger on one creature is a case that does
+    /// not exist yet and is not modelled ahead of it.
+    /// </remarks>
+    public ExecutableReaction? MeleeHitReaction =>
+        Entries
+            .Select(entry => entry.Reaction?.Executable)
+            .FirstOrDefault(reaction => reaction is { Trigger: ReactionTrigger.HitByMeleeAttack });
+
+    /// <summary>
     /// How many attacks one Attack action buys.
     /// </summary>
     /// <remarks>

@@ -493,10 +493,64 @@ public enum UsageLimitKind
 /// <param name="UsesPerDay">Uses per day. Only set for <see cref="UsageLimitKind.PerDay"/>.</param>
 public sealed record UsageLimit(UsageLimitKind Kind, int? RechargeMinimum = null, int? UsesPerDay = null);
 
+/// <summary>
+/// The event that fires a reaction — the structured half of a Reaction-section entry's
+/// printed Trigger clause.
+/// </summary>
+/// <remarks>
+/// One member today: the trigger Parry keys on (#677). This enum is not populated ahead
+/// of the code that reads it — #413 names the other in-pool reactions (Goblin Boss's
+/// Redirect Attack, Ochre Jelly / Black Pudding Split, Octopus Ink Cloud, Rust Monster's
+/// Reflexive Antennae, Sphinx of Wonder's Burst of Ingenuity), and each fires on a
+/// different event and does a different thing. A member is added only when the slice that
+/// executes that reaction lands, never speculatively.
+/// </remarks>
+public enum ReactionTrigger
+{
+    /// <summary>
+    /// "Trigger: the creature is hit by a melee attack roll while holding a weapon."
+    /// Parry (#677) — Bandit Captain, Knight, Warrior Veteran, Noble.
+    /// </summary>
+    HitByMeleeAttack,
+}
+
+/// <summary>
+/// The structured, engine-executable form of a reaction: its trigger and, for the only
+/// response shape modelled today, the Armor Class bonus it adds against the attack that
+/// triggered it.
+/// </summary>
+/// <remarks>
+/// This carries Parry's whole mechanic (#677): a deterministic recompute of an
+/// already-rolled melee attack against the raised AC, spending no dice — see
+/// <c>Encounter.TryParry</c> for where it resolves and the reading it rests on. A
+/// reaction whose response is <em>not</em> "raise AC by N" (a retarget, a split, a
+/// blinding gaze) is its own shape and does not reuse this record: it gets its own
+/// structured signal alongside the code that executes it, per the no-speculative-
+/// abstraction rule. Until #413-D teaches the extractor to fill this from content, it is
+/// set only by hand-authored fixtures.
+/// </remarks>
+/// <param name="Trigger">The event that fires the reaction.</param>
+/// <param name="ArmorClassBonus">
+/// The bonus the response adds to the reacting creature's Armor Class against the
+/// triggering attack — the "adds 2 to its AC" of Parry.
+/// </param>
+public sealed record ExecutableReaction(ReactionTrigger Trigger, int ArmorClassBonus);
+
 /// <summary>A reaction's trigger and what it does in response.</summary>
-/// <param name="Trigger">The printed Trigger clause.</param>
-/// <param name="Response">The printed Response clause.</param>
-public sealed record ReactionEffect(string Trigger, string Response);
+/// <param name="Trigger">The printed Trigger clause, verbatim, for narration.</param>
+/// <param name="Response">The printed Response clause, verbatim, for narration.</param>
+public sealed record ReactionEffect(string Trigger, string Response)
+{
+    /// <summary>
+    /// The structured, engine-executable form of this reaction, when the model can
+    /// resolve it — null for every reaction still carried only as the verbatim
+    /// <see cref="Trigger"/>/<see cref="Response"/> prose (design §2.2: storing prose is
+    /// not executing it, so an unmodelled reaction leaves its clause in residue). Set
+    /// for Parry (#677); see <see cref="ExecutableReaction"/> for what it carries and why
+    /// nothing more general lives here yet.
+    /// </summary>
+    public ExecutableReaction? Executable { get; init; }
+}
 
 /// <summary>Helpers over a damage list, shared by attacks and saving-throw effects.</summary>
 public static class DamageComponents

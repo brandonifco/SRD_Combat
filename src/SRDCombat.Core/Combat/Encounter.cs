@@ -1748,6 +1748,18 @@ public sealed partial class Encounter
             attacker.Features.SustainedRageThisTurn = true;
         }
 
+        // Parry (#677): a Reaction the target may take on being hit by this melee attack,
+        // raising its AC and turning a hit that only just landed into a miss. A no-op for
+        // every creature without an executable Parry entry — the overwhelming majority,
+        // the frozen skirmish cast included — so the rest of this method is unchanged for
+        // them. When it fires it swaps in the recomputed miss result, and the existing
+        // miss path below narrates and applies Graze off it. Deterministic: no dice.
+        // See TryParry for the reading each gate rests on.
+        if (TryParry(attacker, attack, target, result) is { } parried)
+        {
+            result = parried;
+        }
+
         var modeNote = result.Roll.Mode switch
         {
             RollMode.Advantage => " with Advantage",
