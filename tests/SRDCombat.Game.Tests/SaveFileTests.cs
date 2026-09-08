@@ -180,15 +180,19 @@ public sealed class SaveFileTests : IDisposable
     }
 
     /// <summary>
-    /// The acceptance test for #287's full flow, the way both clients actually run
+    /// The acceptance test for #355's full flow, the way both clients actually run
     /// it: <see cref="SaveFile.LoadRun"/> only validates the file's own structure, so
-    /// a save written against one content build loads there without complaint —
-    /// content-dependent checks are <see cref="GauntletRun.Resume"/>'s, where the save
-    /// actually meets the (different) loaded content, and it refuses there rather
-    /// than crashing or silently proceeding.
+    /// a save written against one content build loads there without complaint, and
+    /// since #355 <see cref="GauntletRun.Resume"/> — where the save actually meets the
+    /// (different) loaded content — no longer refuses on the fingerprint alone
+    /// either. A build that only <em>added</em> a monster (F4's whole business) still
+    /// resolves every id the party's drafts name, so the run loads, and the mismatch
+    /// surfaces as a notice rather than an exception. This reverses #287's original
+    /// policy — <see cref="RunSaveTests.ResumingRefusesADraftNamingAClassThisContentDoesNotHave"/>
+    /// is #287's backstop half, unchanged: an id actually gone still refuses by name.
     /// </summary>
     [Fact]
-    public void ResumingASaveLoadedAgainstDifferentContentRefusesRatherThanCrashing()
+    public void ResumingASaveLoadedAgainstDifferentContentNoticesRatherThanRefusing()
     {
         Write(SomeSaveJson());
 
@@ -200,7 +204,9 @@ public sealed class SaveFileTests : IDisposable
 
         // A real second content build, not the same one with a field poked — fewer
         // monsters is enough to change ContentFingerprint, since it hashes the whole
-        // id roster.
+        // id roster. Every id the pregenerated party's drafts actually name (species,
+        // class, background, weapons) is untouched, exactly like an F4 pool addition
+        // that only grows the monster roster.
         var differentContent = new SrdContent(
             [.. Content.Monsters.Skip(1)],
             Content.Weapons,
@@ -211,10 +217,16 @@ public sealed class SaveFileTests : IDisposable
             Content.Spells,
             Content.MagicItems);
 
-        var failure = Assert.Throws<InvalidDataException>(
-            () => GauntletRun.Resume(differentContent, loaded.Saved!));
+        var run = GauntletRun.Resume(differentContent, loaded.Saved!);
 
-        Assert.Contains("different content", failure.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+        Assert.Contains(
+            run.LevelUps, notice => notice.Contains("different content", StringComparison.OrdinalIgnoreCase));
+
+        // The fingerprint is still stamped regardless — provenance for a bug report,
+        // never a gate — so the very next autosave carries the currently loaded
+        // content's value.
+        Assert.Equal(differentContent.ContentFingerprint, run.ToSave().ContentVersion);
     }
 
     [Fact]

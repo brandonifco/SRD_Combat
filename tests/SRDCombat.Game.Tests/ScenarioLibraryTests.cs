@@ -10,13 +10,14 @@ namespace SRDCombat.Game.Tests;
 /// <para>
 /// <b>This is the drift guard, and it is deliberately better than a save's rather than a
 /// copy of it.</b> A save lives on a player's disk and can never be re-checked when the
-/// corpus changes, which is why #287 stamps a content version and
-/// <see cref="GauntletRun.Resume"/> refuses a mismatch. A committed scenario has the
-/// opposite property: CI runs on every change to <c>data/srd</c> with the scenario right
-/// there. So a regeneration that invalidates a committed scenario fails <b>in the pull
-/// request that caused it</b>, instead of being discovered months later by somebody
-/// opening the file. <see cref="BattleScenario.ContentVersion"/> stays provenance and is
-/// deliberately not asserted here — a stamp going stale is not a scenario going wrong.
+/// corpus changes, which is why #287 stamps a content version — provenance for a bug
+/// report, not a gate; per-id resolution is <see cref="GauntletRun.Resume"/>'s actual gate
+/// too, since #355. A committed scenario has the opposite property from either: CI runs on
+/// every change to <c>data/srd</c> with the scenario right there. So a regeneration that
+/// invalidates a committed scenario fails <b>in the pull request that caused it</b>,
+/// instead of being discovered months later by somebody opening the file.
+/// <see cref="BattleScenario.ContentVersion"/> stays provenance and is deliberately not
+/// asserted here — a stamp going stale is not a scenario going wrong.
 /// </para>
 /// <para>
 /// This is the project's standing lesson — <em>write the validator that asserts the shape

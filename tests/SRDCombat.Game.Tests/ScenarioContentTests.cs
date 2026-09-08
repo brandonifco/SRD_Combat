@@ -111,10 +111,10 @@ public class ScenarioContentTests
     }
 
     /// <summary>
-    /// The stated divergence from <see cref="GauntletRun.Resume"/>, which refuses a
-    /// fingerprint mismatch outright: a scenario is a question asked of the current build,
-    /// and refusing the whole library after every extractor regeneration would make the
-    /// surface useless inside a week. The per-id checks are what actually refuse.
+    /// The same reading <see cref="GauntletRun.Resume"/> reaches since #355: a scenario
+    /// is a question asked of the current build, and refusing the whole library after
+    /// every extractor regeneration would make the surface useless inside a week. The
+    /// per-id checks are what actually refuse.
     /// </summary>
     [Fact]
     public void AContentVersionMismatchIsANoticeAndRefusesNothing()

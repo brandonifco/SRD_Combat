@@ -99,20 +99,24 @@ public sealed record SavedRun
     /// Checked in <see cref="GauntletRun.Resume"/>, not here — <see cref="RunSave.FromJson"/>
     /// validates the file's own structure and nothing content-dependent, the same
     /// division <see cref="Seed"/>'s remarks describe. A <em>present</em> value that
-    /// disagrees with the loaded content's fingerprint is refused there: two builds'
-    /// content can differ in ways a single id lookup would never catch (an id
-    /// survives, a number behind it changed), so a whole-roster mismatch is refused
-    /// outright rather than guessed at.
+    /// disagrees with the loaded content's fingerprint is <b>not</b> refused (#355,
+    /// reversing #287's original policy ahead of F4's first pool addition): a growing
+    /// content build moves the whole-roster fingerprint on every addition, and a save
+    /// whose ids all still resolve must not be orphaned by that alone. It surfaces as a
+    /// notice instead — both fingerprints, folded into <see cref="GauntletRun.LevelUps"/>
+    /// for a client to print — and per-id resolution is the real gate: <c>ContentDrift.Require</c>
+    /// and <c>CharacterResolver</c>'s own weapon/armor/magic-item/spell checks refuse by
+    /// name the moment an id a draft names has actually gone missing.
     /// </para>
     /// <para>
-    /// A <em>missing</em> value — a save written before #287 — is not refused. There
-    /// is no coarse comparison to make without one, so <c>Resume</c> falls through to
-    /// resolving every character normally; <c>ContentDrift.Require</c>'s per-id
-    /// checks are what actually catch drift for a save in this state, the same
-    /// backstop that also covers the rarer same-version edge case. Every
-    /// <see cref="GauntletRun.ToSave"/> call stamps the <em>currently loaded</em>
-    /// content's fingerprint regardless of what a resumed save had, so a run in this
-    /// state carries a real value again after its very next autosave.
+    /// A <em>missing</em> value — a save written before #287 — takes the same path:
+    /// there is no coarse comparison to make without one, so <c>Resume</c> falls
+    /// through to resolving every character normally, caught by the same per-id
+    /// backstop. Every <see cref="GauntletRun.ToSave"/> call stamps the
+    /// <em>currently loaded</em> content's fingerprint regardless of what a resumed
+    /// save had, so a run in either state carries a real, current value again after
+    /// its very next autosave — the fingerprint is provenance for a bug report, never
+    /// a gate in its own right.
     /// </para>
     /// </remarks>
     public string? ContentVersion { get; init; }

@@ -240,9 +240,9 @@ public static class ScenarioComposition
     /// member or a structurally broken scenario, and whatever
     /// <see cref="ScenarioContent.CheckAgainst"/> reports for an id this build's content
     /// no longer has. A content-fingerprint mismatch is <see cref="ScenarioCheck"/>'s
-    /// <c>Notices</c>, not an error — S1's stated divergence from a save's refusal
-    /// (<see cref="BattleScenario.ContentVersion"/>'s remarks) — so it comes back through
-    /// <see cref="Result.Notices"/> rather than as a refusal.
+    /// <c>Notices</c>, not an error — the same reading a resumed save's own fingerprint
+    /// gets since #355 (<see cref="BattleScenario.ContentVersion"/>'s remarks) — so it
+    /// comes back through <see cref="Result.Notices"/> rather than as a refusal.
     /// </summary>
     /// <param name="path"><c>--scenario</c>'s value, or null for a bare flag.</param>
     private static Result ComposeFromFile(string? path, SrdContent content)

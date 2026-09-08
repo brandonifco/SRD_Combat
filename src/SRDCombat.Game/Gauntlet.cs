@@ -357,11 +357,15 @@ public sealed class GauntletRun
     /// </para>
     /// <para>
     /// A <em>present</em> <see cref="SavedRun.ContentVersion"/> that disagrees with
-    /// <paramref name="content"/>'s own fingerprint refuses outright, before anything
-    /// is resolved — two content builds can differ in ways no single id lookup would
-    /// catch. A <em>missing</em> one is not refused (see its own remarks); every
-    /// character resolved below still runs through <c>ContentDrift.Require</c>, which
-    /// is what actually catches drift for a save in that state.
+    /// <paramref name="content"/>'s own fingerprint is <b>not</b> refused (#355) — per-id
+    /// resolution is the gate, and a content build growing (F4's whole business: new
+    /// species, classes, items) must not orphan every save whose ids still resolve just
+    /// because the whole-roster fingerprint moved. It lands as a notice in
+    /// <see cref="LevelUps"/> instead, naming both fingerprints, and every character
+    /// resolved below still runs through <c>ContentDrift.Require</c> (and
+    /// <c>CharacterResolver</c>'s own weapon/armor/magic-item/spell checks) — the
+    /// backstop that refuses by name when an id has actually gone missing, present
+    /// version, missing version or same-version edge case alike.
     /// </para>
     /// </remarks>
     public static GauntletRun Resume(SrdContent content, SavedRun saved)
@@ -369,14 +373,12 @@ public sealed class GauntletRun
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(saved);
 
-        if (saved.ContentVersion is { } version
-            && !string.Equals(version, content.ContentFingerprint, StringComparison.Ordinal))
-        {
-            throw new InvalidDataException(
-                $"the save was written against different content (save {ContentDrift.Truncate(version)}, " +
-                $"loaded {ContentDrift.Truncate(content.ContentFingerprint)}). The file is untouched — " +
-                "the build that wrote it can still play it, or start a new run.");
-        }
+        var versionNotice = saved.ContentVersion is { } version
+            && !string.Equals(version, content.ContentFingerprint, StringComparison.Ordinal)
+                ? $"this save was written against different content (save {ContentDrift.Truncate(version)}, " +
+                  $"loaded {ContentDrift.Truncate(content.ContentFingerprint)}); every id it names is " +
+                  "checked individually rather than refusing on the fingerprint alone"
+                : null;
 
         var resolved = saved.Members
             .Select((member, index) =>
@@ -395,6 +397,12 @@ public sealed class GauntletRun
         };
 
         run._casualties.AddRange(saved.Casualties);
+
+        if (versionNotice is not null)
+        {
+            run._levelUps.Add(versionNotice);
+        }
+
         run._levelUps.AddRange(resolved.Select(pair => pair.AsiDefaultNotice).OfType<string>());
 
         if (saved.Cleared >= saved.Ladder.Count)
@@ -880,7 +888,12 @@ public sealed class GauntletRun
             $"{draft.Name}'s save had no Ability Score Improvement plan on file — defaulted to +2 {primary}");
     }
 
-    /// <summary>Level-ups in the order they happened, for a client to narrate.</summary>
+    /// <summary>
+    /// Level-ups in the order they happened, for a client to narrate — plus, on a
+    /// resumed save, any ASI-default notice <see cref="ResolveMember"/> returned and a
+    /// content-version notice (#355) if <see cref="SavedRun.ContentVersion"/> disagreed
+    /// with the loaded content's fingerprint.
+    /// </summary>
     public IReadOnlyList<string> LevelUps => _levelUps;
 
     /// <summary>Fallen characters rejoining the party, in the order they came back.</summary>

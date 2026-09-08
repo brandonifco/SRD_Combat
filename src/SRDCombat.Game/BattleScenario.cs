@@ -108,24 +108,28 @@ public sealed record BattleScenario
     /// </summary>
     /// <remarks>
     /// <para>
-    /// A deliberate, stated divergence from <see cref="GauntletRun.Resume"/>, which
-    /// refuses a fingerprint mismatch outright. A run in progress whose numbers shift
-    /// underneath it is a corrupted game, so refusing is right there. A scenario is a
-    /// <em>question asked of the current build</em>, and refusing the whole library
+    /// The same reading <see cref="GauntletRun.Resume"/> arrived at from the run's own
+    /// direction (#355): a fingerprint mismatch on its own refuses nothing. A scenario is
+    /// a <em>question asked of the current build</em>, and refusing the whole library
     /// after every extractor regeneration would make the surface useless inside a week
     /// — so a mismatch is reported as a notice by
-    /// <see cref="ScenarioContent.CheckAgainst"/> and nothing more.
+    /// <see cref="ScenarioContent.CheckAgainst"/> and nothing more. (Before #355, a run's
+    /// own present-but-mismatched fingerprint refused outright — a stated divergence at
+    /// the time, since narrowed to nothing: a growing content build moves the
+    /// whole-roster fingerprint on every addition, and neither a scenario nor a save
+    /// should be orphaned by that alone.)
     /// </para>
     /// <para>
     /// What actually refuses is the per-id checking in the same method: a scenario
-    /// naming a monster or a weapon this build does not have fails loudly, by name. And
-    /// for a scenario <em>inside</em> the repo there is a better guard than either,
-    /// because a committed scenario sits next to the content it names: a regeneration
-    /// that invalidates one fails CI in the pull request that caused it
-    /// (<c>ScenarioLibraryTests</c>), rather than being discovered months later by
-    /// somebody opening the file. A save on a player's disk can never be re-checked
-    /// that way, which is the whole reason #287 stamps a version and <c>Resume</c>
-    /// refuses.
+    /// naming a monster or a weapon this build does not have fails loudly, by name —
+    /// exactly the backstop <c>ContentDrift.Require</c> and <c>CharacterResolver</c>'s own
+    /// checks are for a resumed save. And for a scenario <em>inside</em> the repo there is
+    /// a better guard than either, because a committed scenario sits next to the content
+    /// it names: a regeneration that invalidates one fails CI in the pull request that
+    /// caused it (<c>ScenarioLibraryTests</c>), rather than being discovered months later
+    /// by somebody opening the file. A save on a player's disk can never be re-checked
+    /// that way, which is the whole reason #287 stamps a version in the first place — as
+    /// provenance for a bug report, per-id resolution being the real gate on both sides.
     /// </para>
     /// <para>
     /// Nullable because a scenario is allowed not to say. Absent means "no provenance

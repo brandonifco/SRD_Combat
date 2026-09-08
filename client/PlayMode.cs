@@ -355,13 +355,16 @@ public partial class PlayMode : FightScreen
                     "against the loaded content piece by piece instead.");
             }
 
-            // GauntletRun.Resume refuses drift three ways: a present content version
-            // that disagrees with what is loaded and ContentDrift.Require's per-id
-            // checks both throw InvalidDataException; CharacterResolver's own weapon,
-            // armor and magic item checks throw ArgumentException instead — a
-            // Core-level convention this Game-level catch has to know about too, or
-            // exactly this drift crashes instead of refusing. Either way this is a
-            // printed message, never a crash, and the file itself is never touched.
+            // A present content version that disagrees with what is loaded is no
+            // longer refused here (#355) — GauntletRun.Resume folds it into LevelUps
+            // as a notice instead and resolves anyway, so an F4 content addition does
+            // not orphan every save whose ids still resolve. What still refuses drift
+            // is per-id resolution: ContentDrift.Require's checks throw
+            // InvalidDataException; CharacterResolver's own weapon, armor and magic
+            // item checks throw ArgumentException instead — a Core-level convention
+            // this Game-level catch has to know about too, or exactly this drift
+            // crashes instead of refusing. Either way this is a printed message,
+            // never a crash, and the file itself is never touched.
             try
             {
                 _run = GauntletRun.Resume(content, loaded.Saved);
@@ -411,8 +414,9 @@ public partial class PlayMode : FightScreen
         // A save written before creation asked for a level-4 Ability Score Improvement
         // plan can arrive here already past level 4; GauntletRun.Resume defaults it
         // rather than forfeiting it, and this is where that default first becomes
-        // visible — LevelUps is empty on a fresh Start, so this only adds anything on
-        // a resumed save.
+        // visible — alongside a content-version notice (#355) if this save's
+        // fingerprint disagreed with what just loaded. LevelUps is empty on a fresh
+        // Start, so this only adds anything on a resumed save.
         startupNotices.AddRange(_run.LevelUps.Select(notice => notice + "!"));
 
         EnterInterlude(startupNotices);
