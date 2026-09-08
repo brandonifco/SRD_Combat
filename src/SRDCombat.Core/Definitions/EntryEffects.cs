@@ -148,6 +148,22 @@ public enum SaveSuccessOutcome
 /// the caster) has no target range to enforce in the first place and must keep
 /// resolving exactly as it does today.
 /// </param>
+/// <param name="TargetSpeedDecreaseFeet">
+/// The Speed reduction a failed save prints — the Steam Mephit's Steam Breath: "the
+/// target's Speed decreases by 10 feet until the end of the mephit's next turn"
+/// (SRD 5.2.1 p. 308). Null for the overwhelming majority of saves, which print no
+/// such rider. Unlike the Slow Weapon Mastery property (p. 90, "until the <em>start</em>
+/// of your next turn"), the printed boundary here is the <em>end</em> of the named
+/// imposer's next turn — the imposer is explicitly named ("the mephit's"), unlike the
+/// Ettin's Disadvantage rider (<see cref="MonsterAttack.ImposesDisadvantageOnTargetsNextAttack"/>),
+/// so this is unambiguously the <b>source's</b> clock (<see cref="ConditionDurationOwner.Source"/>)
+/// rather than the bearer's, and the boundary does not match the Slow mastery
+/// property either — reusing that mechanism verbatim would release the target half a
+/// round early. Only ever populated for the named-imposer phrasing; an unnamed "its
+/// next turn" variant of this same rider (seen elsewhere in the corpus on plain
+/// Attack entries, out of #665's scope) is not structured here. Reading by designer,
+/// #665.
+/// </param>
 public sealed record SaveEffect(
     Ability Ability,
     int? DifficultyClass,
@@ -157,7 +173,8 @@ public sealed record SaveEffect(
     IReadOnlyList<AppliedCondition> AppliedConditions,
     bool CoverIgnored = false,
     bool ConstructsSaveAtDisadvantage = false,
-    int? RangeFeet = null);
+    int? RangeFeet = null,
+    int? TargetSpeedDecreaseFeet = null);
 
 /// <summary>
 /// An effect that restores hit points: "regains a number of Hit Points equal to 2d8 plus

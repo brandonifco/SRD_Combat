@@ -546,6 +546,26 @@ public sealed partial class Encounter
             victim.Features.GuidedBy = null;
         }
 
+        // The Ettin's Morningstar rider runs on the bearer's own clock, unlike Sap —
+        // see FeatureState.NextAttackDisadvantaged's doc comment. Same off-by-one
+        // guard as Vex, but the bearer is judging its own end-of-turn boundary rather
+        // than an attacker's.
+        if (combatant.Features.NextAttackDisadvantaged
+            && combatant.TurnsBegun > combatant.Features.NextAttackDisadvantageEarnedOnTurn)
+        {
+            combatant.Features.NextAttackDisadvantaged = false;
+        }
+
+        // The Steam Mephit's Speed-decrease rider is measured against its own
+        // imposer's clock, same stamped shape as Guiding Bolt's — see
+        // FeatureState.SpeedDecreasedBy's doc comment.
+        foreach (var victim in _combatants.Where(c =>
+            c.Features.SpeedDecreasedBy.TryGetValue(combatant.Id, out var earnedOnTurn)
+            && combatant.TurnsBegun > earnedOnTurn))
+        {
+            victim.Features.SpeedDecreasedBy.Remove(combatant.Id);
+        }
+
         EndBrokenGrapples();
         EndTurnEffectsWhoseSourceIsDown();
         ClearSharedSquares();
@@ -1508,12 +1528,20 @@ public sealed partial class Encounter
     /// not damage when the modifier is not positive.
     /// </remarks>
     /// <summary>
-    /// The creature's Speed with any Slow mastery applied: down 10 feet while anybody's
-    /// Slow is on it, and exactly 10 however many are — "the Speed reduction doesn't
-    /// exceed 10 feet".
+    /// The creature's Speed with any Slow mastery or Steam Mephit-shaped rider applied:
+    /// down 10 feet while anybody's Slow (<see cref="FeatureState.SlowedBy"/>) or
+    /// printed Speed-decrease rider (<see cref="FeatureState.SpeedDecreasedBy"/>) is on
+    /// it, and exactly 10 however many are or however the two combine — "the Speed
+    /// reduction doesn't exceed 10 feet" is the mastery property's own printed cap, and
+    /// nothing in the corpus prints a *steeper* stack for the two shapes together, so
+    /// this engine reads both as one non-stacking 10-foot reduction rather than
+    /// inventing a cumulative rule neither entry states.
     /// </summary>
     private static int EffectiveSpeedFeet(Combatant combatant) =>
-        Math.Max(0, combatant.Stats.SpeedFeet - (combatant.Features.SlowedBy.Count > 0 ? 10 : 0));
+        Math.Max(
+            0,
+            combatant.Stats.SpeedFeet
+                - (combatant.Features.SlowedBy.Count > 0 || combatant.Features.SpeedDecreasedBy.Count > 0 ? 10 : 0));
 
     /// <summary>
     /// Clears the Saps this creature inflicted: "Disadvantage on its next attack roll
@@ -1690,6 +1718,13 @@ public sealed partial class Encounter
         var sapped = attacker.Features.SappedBy is not null;
         attacker.Features.SappedBy = null;
 
+        // The Ettin's Morningstar rider: "Disadvantage on the next attack roll it
+        // makes" — the bearer's own next attack roll, and this is that roll, spent
+        // however it lands (the same "however it lands" reading Sap's own rider
+        // takes, just on the bearer's clock rather than the attacker's).
+        var nextAttackDisadvantaged = attacker.Features.NextAttackDisadvantaged;
+        attacker.Features.NextAttackDisadvantaged = false;
+
         // Guiding Bolt's light: "the next attack roll made against it ... has
         // Advantage" — anyone's roll, spent on this one however it lands.
         var guided = target.Features.GuidedBy is not null;
@@ -1701,7 +1736,7 @@ public sealed partial class Encounter
             attack,
             target,
             extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed || guided,
-            extraDisadvantage: sapped,
+            extraDisadvantage: sapped || nextAttackDisadvantaged,
             combatants: _combatants,
             cover: cover);
 
@@ -1770,6 +1805,23 @@ public sealed partial class Encounter
         // Sap and Topple both read "if you hit a creature with this weapon", so they
         // land on the hit itself rather than on damage being dealt.
         ApplySapAndTopple(attacker, attack, target);
+
+        // The Ettin's Morningstar (and the Fire Giant's rock): "Hit: ... damage, and
+        // the target has Disadvantage on the next attack roll it makes before the end
+        // of its next turn." Same "lands on the hit itself" shape as Sap, but stamped
+        // on the bearer's own clock rather than the attacker's — see
+        // FeatureState.NextAttackDisadvantaged's doc comment.
+        if (attack.ImposesDisadvantageOnTargetsNextAttack)
+        {
+            target.Features.NextAttackDisadvantaged = true;
+            target.Features.NextAttackDisadvantageEarnedOnTurn = target.TurnsBegun;
+
+            Add(
+                CombatStepKind.Feature,
+                $"{attack.Name} leaves {target.Name} with Disadvantage on its next attack roll.",
+                attacker,
+                target);
+        }
 
         // Guiding Bolt's rider is "On a hit" too — the light lands here, before the
         // damage, and unlike Vex it does not care whether the damage gets through.
@@ -2424,6 +2476,22 @@ public sealed partial class Encounter
             if (!succeeded || save.SuccessOutcome == SaveSuccessOutcome.SameAsFailure)
             {
                 ImposeConditions(source, riders, victim, grappleRangeFeet: null, (save.Ability, difficultyClass));
+
+                // The Steam Mephit's Steam Breath: "the target's Speed decreases by 10
+                // feet until the end of the mephit's next turn" — the source's own
+                // clock, not the victim's; see SaveEffect.TargetSpeedDecreaseFeet's
+                // doc comment and FeatureState.SpeedDecreasedBy's.
+                if (save.TargetSpeedDecreaseFeet is not null && victim.IsActive)
+                {
+                    victim.Features.SpeedDecreasedBy[source.Id] = source.TurnsBegun;
+
+                    Add(
+                        CombatStepKind.Feature,
+                        $"{effectName} leaves {victim.Name}'s Speed reduced by " +
+                        $"{save.TargetSpeedDecreaseFeet} feet.",
+                        source,
+                        victim);
+                }
             }
         }
 

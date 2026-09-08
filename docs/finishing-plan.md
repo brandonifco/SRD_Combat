@@ -157,8 +157,9 @@ longer carry actually happens (see Standing conventions).
 **F4 — Depth and variety.** Spellcasting enemies enter the pool (all ten CR ≤ 4
 casters are currently filtered out — thirty fights contain no enemy magic); the
 `Playable` grade reads all sections, not just Actions (#231); CR-band fill-ins (#267
-— the boss band holds two, Guard Captain and Red Dragon Wyrmling, since the census
-demoted Ettin); retune `ClassicMonsterWeight` (it now double-penalises the 14 surviving
+— the boss band held two, Guard Captain and Red Dragon Wyrmling, while the census
+demoted Ettin; #665 restored it on 2026-09-08, so the band now holds three);
+retune `ClassicMonsterWeight` (it now double-penalises the 14 surviving
 genre-appropriate Beasts); fog slice 2 (**#545** — #244 was slice 1, shipped as
 `PartyVision` and closed 2026-08-27; slice 2 is Stealth, Hide and Surprise, and it is
 the slice that moves the visibility predicate from a display judgement into a `Core`

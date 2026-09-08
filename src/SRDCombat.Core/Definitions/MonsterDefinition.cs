@@ -134,6 +134,24 @@ public sealed record MonsterAttack(
     /// another <see cref="AttackDamage"/> in <see cref="Damage"/>.
     /// </summary>
     public AlternativeAttackDamage? Alternative { get; init; }
+
+    /// <summary>
+    /// True when a hit leaves the target with Disadvantage on its own next attack
+    /// roll — the Ettin's Morningstar and the Fire Giant's rock: "the target has
+    /// Disadvantage on the next attack roll it makes before the end of its next turn"
+    /// (SRD 5.2.1 p. 284). This is a printed rider distinct from the Sap Weapon
+    /// Mastery property (p. 90, "before the start of <em>your</em> next turn"): the
+    /// wording here names no imposer, every pronoun in the clause is third person, and
+    /// the boundary is the <em>end</em> of a turn rather than the start — the same
+    /// clause appears verbatim on Vicious Mockery (p. 172), confirming it is the
+    /// SRD's standard bearer-clock debuff phrasing rather than a paraphrase of Sap.
+    /// "Its next turn" is therefore the <b>bearer's</b> own clock (see
+    /// <see cref="ConditionDurationOwner.Bearer"/>'s doc comment for the same reading
+    /// applied to conditions) — the target's own Disadvantage expires at the end of
+    /// its own next turn, not the ettin's. Reading by designer, #665. False for every
+    /// attack that prints no such rider.
+    /// </summary>
+    public bool ImposesDisadvantageOnTargetsNextAttack { get; init; }
 }
 
 /// <summary>

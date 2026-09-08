@@ -90,8 +90,9 @@ internal static partial class EntryMechanicsParser
         var bareName = StripUsage(name);
         coverage = new EntryCoverage(text);
         var (conditions, claimableRiders) = ParseAppliedConditionsWithClaims(text);
+        var speedDecreaseRider = ParseSaveSpeedDecreaseRider(text);
 
-        if (ParseSave(text, conditions, coverage) is { } save)
+        if (ParseSave(text, conditions, coverage, speedDecreaseRider?.Feet) is { } save)
         {
             // The entry's mechanics is SavingThrow — one of the two the engine
             // imposes riders from (design §2.5) — so every fully-modelled rider's
@@ -100,6 +101,11 @@ internal static partial class EntryMechanicsParser
             foreach (var (_, span, note) in claimableRiders)
             {
                 coverage.Claim(span, note);
+            }
+
+            if (speedDecreaseRider is { } rider)
+            {
+                coverage.Claim(rider.Span, "save.speed_decrease_rider");
             }
 
             return new TraitEntry(
@@ -165,6 +171,17 @@ internal static partial class EntryMechanicsParser
             riderMask.Claim(embedded.MatchedSpan, "attack.embedded_save");
         }
 
+        // The Ettin's Morningstar (and the Fire Giant's rock) — see
+        // MonsterAttack.ImposesDisadvantageOnTargetsNextAttack's doc comment for the
+        // printed wording and the bearer-clock reading (#665). Masked the same way as
+        // the embedded save above so the general rider pass never re-reads its text.
+        if (attack is not null && ParsePostHitDisadvantageRider(text) is { } disadvantageSpan)
+        {
+            attack = attack with { ImposesDisadvantageOnTargetsNextAttack = true };
+            coverage.Claim(disadvantageSpan, "attack.posthit_disadvantage");
+            riderMask.Claim(disadvantageSpan, "attack.posthit_disadvantage");
+        }
+
         var riderText = riderMask.Masked;
         var (conditions, claimableRiders) = ParseAppliedConditionsWithClaims(
             riderText,
@@ -202,7 +219,9 @@ internal static partial class EntryMechanicsParser
             return Build(bareName, section, text, EntryMechanics.Multiattack, usage, conditions, coverage, multiattack: multiattack);
         }
 
-        if (ParseSave(text, conditions, coverage) is { } save)
+        var speedDecreaseRider = ParseSaveSpeedDecreaseRider(text);
+
+        if (ParseSave(text, conditions, coverage, speedDecreaseRider?.Feet) is { } save)
         {
             // The entry's mechanics is SavingThrow — the other of the two the engine
             // imposes riders from (design §2.5) — but only when Encounter.UseEntry can
@@ -216,11 +235,19 @@ internal static partial class EntryMechanicsParser
             // the save's own header, target clause and damage are still claimed the
             // same as any other SavingThrow entry — the model does express that shape,
             // whichever section prints it — only the condition it would impose is not.
+            // The Speed-decrease rider (#665) is the same shape as a condition here —
+            // an actual imposed game effect, not descriptive structure — so it is
+            // gated identically.
             if (section is MonsterEntrySection.Action or MonsterEntrySection.BonusAction)
             {
                 foreach (var (_, span, note) in claimableRiders)
                 {
                     coverage.Claim(span, note);
+                }
+
+                if (speedDecreaseRider is { } rider)
+                {
+                    coverage.Claim(rider.Span, "save.speed_decrease_rider");
                 }
             }
 
@@ -705,7 +732,11 @@ internal static partial class EntryMechanicsParser
     /// Parses "Dexterity Saving Throw: DC 12, each creature in a 30-foot Cone.
     /// Failure: 14 (4d6) Acid damage. Success: Half damage."
     /// </summary>
-    private static SaveEffect? ParseSave(string text, IReadOnlyList<AppliedCondition> conditions, EntryCoverage coverage)
+    private static SaveEffect? ParseSave(
+        string text,
+        IReadOnlyList<AppliedCondition> conditions,
+        EntryCoverage coverage,
+        int? speedDecreaseFeet = null)
     {
         var header = SaveHeaderPattern().Match(text);
         if (!header.Success)
@@ -839,7 +870,8 @@ internal static partial class EntryMechanicsParser
             failureDamage,
             success,
             conditions,
-            RangeFeet: rangeFeet);
+            RangeFeet: rangeFeet,
+            TargetSpeedDecreaseFeet: speedDecreaseFeet);
     }
 
     /// <summary>
@@ -2060,6 +2092,58 @@ internal static partial class EntryMechanicsParser
         @"(?<ability>[A-Z][a-z]+) Saving Throw: DC (?<dc>\d+)\. " +
         @"Failure: The target has the (?<condition>[A-Z][a-z]+) condition until the end of its next turn\.$")]
     private static partial Regex EmbeddedSavePattern();
+
+    /// <summary>
+    /// The Ettin's Morningstar and the Fire Giant's rock, whichever way the sentence
+    /// leads into it — "the target has Disadvantage on the next attack roll it makes
+    /// before the end of its next turn." (#665, shape 3 of the #390 ledger). Anchored
+    /// at the entry's own end, matching every printing in the corpus, both of which
+    /// close their entry with this clause; a future printing with more text after it
+    /// simply does not match and stays counted as residue rather than being read
+    /// approximately. See <see cref="MonsterAttack.ImposesDisadvantageOnTargetsNextAttack"/>
+    /// for why this is the bearer's clock rather than Sap's attacker clock.
+    /// </summary>
+    private static TextSpan? ParsePostHitDisadvantageRider(string text)
+    {
+        var match = PostHitDisadvantagePattern().Match(text);
+
+        return match.Success ? new TextSpan(match.Index, match.Length) : null;
+    }
+
+    [GeneratedRegex(
+        @"(?:,\s*)?(?:and\s+)?(?:the target\s+)?" +
+        @"has Disadvantage on the next attack roll it makes before the end of its next turn\.$")]
+    private static partial Regex PostHitDisadvantagePattern();
+
+    /// <summary>
+    /// The Steam Mephit's Steam Breath: "the target's Speed decreases by 10 feet
+    /// until the end of the mephit's next turn." (#665, shape 3 of the #390 ledger).
+    /// Deliberately requires a <em>named</em> imposer ("the &lt;word&gt;'s next
+    /// turn") — the source's own clock, per <see cref="SaveEffect.TargetSpeedDecreaseFeet"/>'s
+    /// doc comment. An unnamed "its next turn" printing of this same rider (seen
+    /// elsewhere in the corpus, always on a plain Attack entry rather than a save) is
+    /// the bearer's clock instead and is a different shape, out of #665's scope —
+    /// this pattern does not match it, so it stays counted as residue rather than
+    /// being read under the wrong clock.
+    /// </summary>
+    private static (int Feet, TextSpan Span)? ParseSaveSpeedDecreaseRider(string text)
+    {
+        var match = SaveSpeedDecreaseRiderPattern().Match(text);
+
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var feet = int.Parse(match.Groups["feet"].Value, CultureInfo.InvariantCulture);
+
+        return (feet, new TextSpan(match.Index, match.Length));
+    }
+
+    [GeneratedRegex(
+        @"(?:,\s*)?and the target's Speed decreases by (?<feet>\d+) feet " +
+        @"until the end of the [a-z][-a-z' ]*?'s next turn\.")]
+    private static partial Regex SaveSpeedDecreaseRiderPattern();
 
     /// <summary>
     /// The printed cap on a repeated save, exactly as the stat blocks phrase it. Its

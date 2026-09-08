@@ -954,6 +954,85 @@ public sealed class EntryMechanicsCharacterizationTests
 
     #endregion
 
+    #region Post-hit debuff riders (#665, shape 3 of the #390 ledger)
+
+    [Fact]
+    public void TheEttinsMorningstarStructuresTheBearerClockDisadvantageRider()
+    {
+        var entry = EntryMechanicsParser.Classify(
+            "Morningstar",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage, and the " +
+            "target has Disadvantage on the next attack roll it makes before the end of its " +
+            "next turn.");
+
+        Assert.Equal(EntryMechanics.Attack, entry.Mechanics);
+        Assert.True(entry.Attack!.ImposesDisadvantageOnTargetsNextAttack);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheFireGiantsRockClaimsOnlyTheDisadvantageClauseLeavingThePushAsResidue()
+    {
+        // Verbatim shape from the corpus: the same Disadvantage clause trails a
+        // second, unrelated printed effect (a forced push) this engine does not
+        // execute (WeaponMasteryRules' own Push reasoning applies here too). The
+        // parser must claim only the Disadvantage clause and leave the push
+        // unclaimed — not swallow the whole sentence, and not refuse the whole
+        // sentence either.
+        var entry = EntryMechanicsParser.Classify(
+            "Hammer Throw",
+            MonsterEntrySection.Action,
+            "Ranged Attack Roll: +9, range 150/600 ft. Hit: 23 (3d10 + 7) Bludgeoning damage " +
+            "plus 4 (1d8) Fire damage, and the target is pushed up to 15 feet straight away " +
+            "from the giant and has Disadvantage on the next attack roll it makes before the " +
+            "end of its next turn.");
+
+        Assert.True(entry.Attack!.ImposesDisadvantageOnTargetsNextAttack);
+        Assert.Equal(
+            ["and the target is pushed up to 15 feet straight away from the giant"],
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void AnUnnamedNextTurnOnASavingThrowIsNotClaimedAsTheSourcesClock()
+    {
+        // The trip-wire the shape-3 reading rests on (#665): only a *named* imposer
+        // ("the mephit's next turn") reads as the source's clock. An unnamed "its
+        // next turn" printing of the same Speed-decrease rider — seen elsewhere in
+        // the corpus, always on a plain Attack entry rather than a save — is the
+        // bearer's clock instead, a different shape this parser does not attempt to
+        // read as the source's; if a future save-based entry ever prints this
+        // unnamed form, it must fall to residue rather than being silently claimed
+        // under the wrong clock.
+        var entry = EntryMechanicsParser.Classify(
+            "Test Breath",
+            MonsterEntrySection.Action,
+            "Constitution Saving Throw: DC 10, one creature. Failure: 5 (2d4) Fire damage, " +
+            "and the target's Speed decreases by 10 feet until the end of its next turn.");
+
+        Assert.Null(entry.Save!.TargetSpeedDecreaseFeet);
+        Assert.Contains(
+            "and the target's Speed decreases by 10 feet until the end of its next turn",
+            entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheSteamMephitsSteamBreathStructuresTheNamedSourceClockSpeedDecrease()
+    {
+        var entry = EntryMechanicsParser.Classify(
+            "Steam Breath",
+            MonsterEntrySection.Action,
+            "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 " +
+            "(2d4) Fire damage, and the target's Speed decreases by 10 feet until the end of " +
+            "the mephit's next turn. Success: Half damage only.");
+
+        Assert.Equal(10, entry.Save!.TargetSpeedDecreaseFeet);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    #endregion
+
     #region Head clauses
 
     [Fact]
@@ -1426,8 +1505,9 @@ public sealed class EntryMechanicsCharacterizationTests
         // about Resistance, not a restatement of the Failure damage, so it must not
         // override the printed "Success: Half damage only." into SameAsFailure — a
         // successful save halves the 2d4 Fire damage, exactly as printed, rather than
-        // taking it in full. The rider ("Speed decreases by 10 feet") and the side
-        // clause itself are unexecuted mechanics and land in residue.
+        // taking it in full. The side clause itself is unexecuted mechanics (out of
+        // #665's scope — a Resistance carve-out unrelated to the Speed rider) and
+        // lands in residue.
         //
         // The trailing "only" used to strand as its own residue line here (filed as
         // #397): `save.success_half` claimed exactly the literal "Success: Half
@@ -1435,6 +1515,11 @@ public sealed class EntryMechanicsCharacterizationTests
         // the engine already has — `Encounter.cs`'s rider application skips every
         // rider on a `HalfDamage` success regardless of whether "only" was read.
         // #397 widened the claim to cover it; it is absent from residue here now.
+        //
+        // The rider ("Speed decreases by 10 feet ... the mephit's next turn") used to
+        // strand as residue too, until #665 (shape 3 of the #390 ledger) structured
+        // it: the imposer is named, so it is the source's own clock, and it now
+        // executes through `SaveEffect.TargetSpeedDecreaseFeet`.
         var entry = EntryMechanicsParser.Classify(
             "Steam Breath",
             MonsterEntrySection.Action,
@@ -1444,9 +1529,9 @@ public sealed class EntryMechanicsCharacterizationTests
             "underwater doesn't grant Resistance to this Fire damage.");
 
         Assert.Equal(SaveSuccessOutcome.HalfDamage, entry.Save!.SuccessOutcome);
+        Assert.Equal(10, entry.Save!.TargetSpeedDecreaseFeet);
         Assert.Equal(
             [
-                "and the target's Speed decreases by 10 feet until the end of the mephit's next turn",
                 "Failure or Success: Being underwater doesn't grant Resistance to this Fire damage",
             ],
             entry.UnmodelledClauses);
