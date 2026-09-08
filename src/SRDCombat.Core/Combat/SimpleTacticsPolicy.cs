@@ -607,7 +607,7 @@ public static class SimpleTacticsPolicy
         }
 
         var distance = actor.DistanceFeetTo(target);
-        var swing = WeaponValue(actor, distance);
+        var swing = WeaponValue(actor, target, distance);
 
         // A healer's slots have another job. Burning them on damage while somebody is
         // down is how a party loses a run it was winning, and it is a measured effect
@@ -776,14 +776,25 @@ public static class SimpleTacticsPolicy
         return PartyDoctrine.ThreatPerRound(target) * HeldRounds * failChance;
     }
 
-    /// <summary>Expected damage from this creature's best reaching attack, for one action.</summary>
-    private static double WeaponValue(Combatant actor, int distance)
+    /// <summary>
+    /// Expected damage from this creature's best reaching attack, for one action —
+    /// priced against <paramref name="target"/>'s own damage responses and the
+    /// long-range discount, via <see cref="ValueAt"/> (#339).
+    /// </summary>
+    /// <remarks>
+    /// Before this, a caster whose only weapon shared a damage type the target was
+    /// Immune to still valued that weapon at its raw average here, so a working spell
+    /// worth less on paper than the blind swing never cleared <see cref="IsWorthCasting"/>
+    /// — the #224 stall wearing a spellbook, one call site downstream of the fix that
+    /// closed it for a bare Attack action.
+    /// </remarks>
+    private static double WeaponValue(Combatant actor, Combatant target, int distance)
     {
         var best = actor.Stats.Attacks
             .Where(attack => attack.CanReach(distance))
             .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
             .Where(attack => actor.Uses.IsAvailable(attack.Name))
-            .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+            .Select(attack => ValueAt(attack, distance, target))
             .DefaultIfEmpty(0)
             .Max();
 
@@ -808,6 +819,17 @@ public static class SimpleTacticsPolicy
     /// deliberate simplification and it is the crude part of this judgement: a real
     /// player weighs the Cleric's own hit points differently from a goblin's.
     /// </para>
+    /// <para>
+    /// <b>Priced against the aimed <paramref name="target"/> alone (#339)</b>, via the
+    /// same <see cref="ValueAgainst"/> a weapon swing is ranked with — zeroed by an
+    /// Immunity, halved by a Resistance, doubled by a Vulnerability. For an area spell
+    /// this is the same altitude as the friend/enemy count already is: every creature
+    /// the area catches is counted the same regardless of its own responses, and only
+    /// the point-of-aim's responses scale the per-hit figure. A mixed-response clump —
+    /// some caught enemies immune, others not — is priced as if all of them answered
+    /// like the one the caster aimed at, the same crudeness the ally-weighting note
+    /// above already accepts.
+    /// </para>
     /// </remarks>
     private static double SpellValue(
         Encounter encounter,
@@ -815,7 +837,7 @@ public static class SimpleTacticsPolicy
         Combatant target,
         SpellDefinition spell)
     {
-        var damage = SpellcastingRules.AverageDamage(spell);
+        var damage = ValueAgainst(SpellcastingRules.DamageComponents(spell), target);
 
         if (damage <= 0)
         {
@@ -1032,7 +1054,18 @@ public static class SimpleTacticsPolicy
     /// petrified character with an owned Vulnerability would need it added here too.
     /// </remarks>
     private static double ValueAgainst(CombatAttack attack, Combatant target) =>
-        attack.Damage.Sum(damage => damage.Amount.Average * ResponseFactor(target, damage.Type));
+        ValueAgainst(attack.Damage, target);
+
+    /// <summary>
+    /// The general form of <see cref="ValueAgainst(CombatAttack, Combatant)"/>: any list
+    /// of printed damage components, priced against a target the same way — the one
+    /// helper spell damage (<see cref="SpellValue"/>), a limited entry's failure damage
+    /// and a weapon attack's own damage all share, so a target's Immunity, Resistance or
+    /// Vulnerability is read off <see cref="CombatantStats.DamageResponses"/> in exactly
+    /// one place (#339).
+    /// </summary>
+    private static double ValueAgainst(IReadOnlyList<AttackDamage> damage, Combatant target) =>
+        damage.Sum(component => component.Amount.Average * ResponseFactor(target, component.Type));
 
     private static double ResponseFactor(Combatant target, DamageType type) =>
         target.Stats.DamageResponses.TryGetValue(type, out var response)
@@ -1143,6 +1176,12 @@ public static class SimpleTacticsPolicy
     /// engine resolves covers its own user, and Emanation entries became choosable when
     /// that reading was verified.
     /// </para>
+    /// <para>
+    /// Ranked by <see cref="EntryValueAgainst"/> since #339, the same target-aware figure
+    /// <see cref="TryAttack"/> sorts on — before that fix a Basilisk with two limited
+    /// entries always reached for the printed-harder one even when it was the target's
+    /// own Immunity, the #224 shape one call site downstream of the ordinary Attack action.
+    /// </para>
     /// </remarks>
     private static bool TryUseLimitedEntry(Encounter encounter, Combatant actor, Combatant target)
     {
@@ -1160,17 +1199,7 @@ public static class SimpleTacticsPolicy
             .Select(candidate => new
             {
                 candidate.Name,
-                Damage = candidate.Mechanics switch
-                {
-                    EntryMechanics.Attack => AttackFor(actor, candidate.Name) is { } attack
-                        && attack.CanReach(distance)
-                            ? attack.Damage.Sum(damage => damage.Amount.Average)
-                            : (int?)null,
-                    EntryMechanics.SavingThrow => SaveReaches(encounter, actor, target, candidate.Save, distance)
-                        ? candidate.Save!.FailureDamage.Sum(damage => damage.Amount.Average)
-                        : null,
-                    _ => null,
-                },
+                Damage = EntryValueAgainst(encounter, actor, target, candidate, distance),
             })
             .Where(candidate => candidate.Damage is not null)
             .OrderByDescending(candidate => candidate.Damage)
@@ -1179,6 +1208,33 @@ public static class SimpleTacticsPolicy
 
         return entry is not null && encounter.UseEntry(entry.Name, target) is null;
     }
+
+    /// <summary>
+    /// What using this stat-block entry against the target is worth: an attack entry's
+    /// damage, or a saving-throw entry's failure damage when the attempt would actually
+    /// land — both priced against the target's own damage responses via
+    /// <see cref="ValueAgainst(CombatAttack, Combatant)"/>, the same figure
+    /// <see cref="TryAttack"/> ranks a weapon swing with (#339). Shared by
+    /// <see cref="TryUseLimitedEntry"/> and <see cref="TryUseBonusEntry"/>, which choose
+    /// from the same two entry shapes at different points in the turn.
+    /// </summary>
+    private static double? EntryValueAgainst(
+        Encounter encounter,
+        Combatant actor,
+        Combatant target,
+        MonsterEntry candidate,
+        int distance) =>
+        candidate.Mechanics switch
+        {
+            EntryMechanics.Attack => AttackFor(actor, candidate.Name) is { } attack
+                && attack.CanReach(distance)
+                    ? ValueAgainst(attack, target)
+                    : null,
+            EntryMechanics.SavingThrow => SaveReaches(encounter, actor, target, candidate.Save, distance)
+                ? ValueAgainst(candidate.Save!.FailureDamage, target)
+                : null,
+            _ => null,
+        };
 
     /// <summary>
     /// Spends the Bonus Action on a stat-block entry when one reaches the target — the
@@ -1218,17 +1274,7 @@ public static class SimpleTacticsPolicy
             .Select(candidate => new
             {
                 candidate.Name,
-                Damage = candidate.Mechanics switch
-                {
-                    EntryMechanics.Attack => AttackFor(actor, candidate.Name) is { } attack
-                        && attack.CanReach(distance)
-                            ? attack.Damage.Sum(damage => damage.Amount.Average)
-                            : (int?)null,
-                    EntryMechanics.SavingThrow => SaveReaches(encounter, actor, target, candidate.Save, distance)
-                        ? candidate.Save!.FailureDamage.Sum(damage => damage.Amount.Average)
-                        : null,
-                    _ => null,
-                },
+                Damage = EntryValueAgainst(encounter, actor, target, candidate, distance),
             })
             .Where(candidate => candidate.Damage is not null)
             .OrderByDescending(candidate => candidate.Damage)
@@ -1343,7 +1389,7 @@ public static class SimpleTacticsPolicy
     /// </remarks>
     private static bool MoveTowards(Encounter encounter, Combatant actor, Combatant target)
     {
-        var reach = ReachOf(actor);
+        var reach = ReachOf(actor, target);
         var others = OthersThan(encounter, actor);
 
         var currentDistance = actor.DistanceFeetTo(target);
@@ -1387,7 +1433,7 @@ public static class SimpleTacticsPolicy
     /// </remarks>
     private static void ImproveFiringPosition(Encounter encounter, Combatant actor, Combatant target)
     {
-        var reach = ReachOf(actor);
+        var reach = ReachOf(actor, target);
         var others = OthersThan(encounter, actor);
 
         var currentCover = CoverRules.AgainstSpace(
@@ -1485,17 +1531,22 @@ public static class SimpleTacticsPolicy
     /// <summary>
     /// The Opportunity-Attack damage a walk along this path can expect: each distinct
     /// enemy whose reach the path leaves, once — a Reaction is one per round — costed at
-    /// its hardest melee attack's average.
+    /// its hardest melee attack's average, priced against the <em>mover's own</em>
+    /// damage responses since the mover is who takes the hit.
     /// </summary>
     /// <remarks>
-    /// Two stated simplifications. The path judged is the pathfinder's own cheapest one
-    /// for the destination — an equally-cheap safer path to the same square would go
-    /// unnoticed, and making <c>FindPath</c> itself provocation-aware is a further slice
-    /// if the difference ever shows. And the cost is the raw damage average rather than
-    /// hit-chance-weighted — the same simplification the attack chooser makes, and
-    /// enough to order squares by. What it fixes is real and was watched happening: a
-    /// caster walking out of two enemies' reach to improve a shot, eating both swings,
-    /// because nothing in the scoring knew the swings existed.
+    /// Two stated simplifications, both unchanged by #339. The path judged is the
+    /// pathfinder's own cheapest one for the destination — an equally-cheap safer path
+    /// to the same square would go unnoticed, and making <c>FindPath</c> itself
+    /// provocation-aware is a further slice if the difference ever shows. And the cost
+    /// is the raw damage average rather than hit-chance-weighted — the same
+    /// simplification the attack chooser makes, and enough to order squares by. What it
+    /// fixes is real and was watched happening: a caster walking out of two enemies'
+    /// reach to improve a shot, eating both swings, because nothing in the scoring knew
+    /// the swings existed. #339 closed the immunity-blind half of that: before it, a
+    /// mover Immune or Resistant to every attacker in the way still paid the raw average
+    /// here, so a free sidestep priced as if it cost a real swing and lost to a worse
+    /// square that provoked nothing.
     /// </remarks>
     private static double ProvokedDamageAlong(Encounter encounter, Combatant actor, MovementPath path)
     {
@@ -1511,7 +1562,7 @@ public static class SimpleTacticsPolicy
                 {
                     total += enemy.Stats.Attacks
                         .Where(attack => attack.Kind == AttackKind.Melee)
-                        .Select(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+                        .Select(attack => ValueAgainst(attack, actor))
                         .DefaultIfEmpty(0)
                         .Max();
                 }
@@ -1529,7 +1580,19 @@ public static class SimpleTacticsPolicy
     /// spent plans like the melee creature it now is rather than standing off at a
     /// range it can no longer use.
     /// </summary>
-    private static int ReachOf(Combatant actor)
+    /// <remarks>
+    /// Ordered by <see cref="ValueAgainst(CombatAttack, Combatant)"/> against
+    /// <paramref name="target"/> rather than raw average since #339 — plain long-range
+    /// halving is deliberately left out, unlike <see cref="ValueAt"/>: this is choosing
+    /// which attack the creature is walking to use at all, before any particular
+    /// distance is settled, and long range is a property of the distance a square ends
+    /// up at, not of the attack itself. Before this fix, a target Immune to a
+    /// harder-hitting ranged attack's damage type could still make that attack look like
+    /// "the" reach to plan around, so the creature planned its stopping distance for a
+    /// weapon it could never land a real hit with instead of the weaker one that
+    /// actually worked.
+    /// </remarks>
+    private static int ReachOf(Combatant actor, Combatant target)
     {
         var usable = actor.Stats.Attacks
             .Where(attack => actor.Uses.IsAvailable(attack.Name))
@@ -1553,7 +1616,7 @@ public static class SimpleTacticsPolicy
         // shoot.
         return usable.Length > 0
             ? usable
-                .OrderByDescending(attack => attack.Damage.Sum(damage => damage.Amount.Average))
+                .OrderByDescending(attack => ValueAgainst(attack, target))
                 .ThenByDescending(attack => attack.MaximumRangeFeet)
                 .First()
                 .MaximumRangeFeet
