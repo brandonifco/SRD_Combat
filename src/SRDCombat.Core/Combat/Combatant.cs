@@ -383,6 +383,20 @@ public sealed record CombatantStats(
             .FirstOrDefault(reaction => reaction is { Trigger: ReactionTrigger.HitByMeleeAttack });
 
     /// <summary>
+    /// The entries this creature emits as auras — passive per-turn area effects, the
+    /// Ghast's Stench (#670) — each paired with its <see cref="AuraEffect"/>. Empty for
+    /// every creature the extractor has not classified an aura for (all characters
+    /// included, whose <see cref="Entries"/> is empty), which is every creature today: the
+    /// content reclassification is #676. An aura entry with no <see cref="MonsterEntry.Save"/>
+    /// is excluded here — there is nothing to resolve — so <c>Encounter.FireAuras</c> can
+    /// read the save without re-checking. Read at the start of each combatant's turn.
+    /// </summary>
+    public IEnumerable<(MonsterEntry Entry, AuraEffect Aura)> AuraEntries =>
+        Entries
+            .Where(entry => entry.Aura is not null && entry.Save is not null)
+            .Select(entry => (entry, entry.Aura!));
+
+    /// <summary>
     /// How many attacks one Attack action buys.
     /// </summary>
     /// <remarks>

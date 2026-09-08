@@ -557,6 +557,95 @@ public sealed record ReactionEffect(string Trigger, string Response)
     public ExecutableReaction? Executable { get; init; }
 }
 
+/// <summary>Which turn boundary an aura's recurring save fires on.</summary>
+/// <remarks>
+/// One member today. An aura is a passive area effect a creature emits on its own clock,
+/// and the clock is part of the signal because the SRD prints more than one: the Ghast's
+/// Stench fires at the <em>victim's</em> turn start ("any creature that <b>starts its
+/// turn</b> in a 5-foot Emanation", SRD 5.2.1 p. 287), while the Azer's Fire Aura fires at
+/// the <em>emitter's</em> turn end ("At the end of each of its turns"). Only the first is
+/// modelled here (#670); the second is out of scope and would add its own member alongside
+/// the code that fires it, never speculatively — the same discipline
+/// <see cref="ReactionTrigger"/> keeps.
+/// </remarks>
+public enum AuraClock
+{
+    /// <summary>
+    /// "any creature that starts its turn in [range]" — the save is forced at the start
+    /// of each potential victim's turn, against every emitter of such an aura within
+    /// range. The Ghast's Stench.
+    /// </summary>
+    StartOfVictimTurn,
+}
+
+/// <summary>
+/// The structured signal that a stat block entry is an <b>aura</b>: a passive per-turn
+/// area effect a creature emits, resolved through the entry's own <see cref="SaveEffect"/>
+/// but on the aura's clock rather than as a spent action. The Ghast's Stench (#670,
+/// SRD 5.2.1 p. 287) is the one in-pool case this executes.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>The reading, written down (following the <see cref="SRDCombat.Core.Combat.AreaTargeting"/>
+/// model).</b> Print: "Stench. Constitution Saving Throw: DC 10, any creature that starts
+/// its turn in a 5-foot Emanation originating from the ghast. Failure: The target has the
+/// Poisoned condition until the start of its next turn. Success: The target is immune to
+/// this ghast's Stench for 24 hours."
+/// </para>
+/// <list type="bullet">
+/// <item><b>When it fires.</b> At the start of a potential victim's turn (see
+/// <see cref="Clock"/>), the engine forces the save against that one victim for each
+/// emitter within range — <em>not</em> as an area sweep catching everyone at once. Stench
+/// only touches a creature on the turn <em>that creature</em> starts in range, which is
+/// what makes it a per-turn recurrence rather than a one-shot blast. See
+/// <c>Encounter.FireAuras</c>.</item>
+/// <item><b>Who it fires for.</b> "any creature ... friend or foe" — the emitter's own
+/// side is not spared. The emitter itself is excluded: an Emanation's origin "isn't
+/// included in the area of effect unless its creator decides otherwise" (SRD 5.2.1 p. 181),
+/// and Stench decides nothing otherwise. It fires for every <em>living</em> victim that
+/// starts its turn in range, an Incapacitated or dying one included: the printed trigger is
+/// "any creature that starts its turn", and a creature has started its turn the moment its
+/// turn clock ticks, whether or not it can act. The save is worth rolling even for a downed
+/// victim because a success banks the immunity below — a consequence independent of whether
+/// the Poisoned rider lands. The rider itself still does not land on such a victim:
+/// <c>Encounter.ImposeConditions</c> takes nothing further on an Incapacitated or dying
+/// creature, so the save can grant it immunity without ever Poisoning it while it is
+/// down.</item>
+/// <item><b>Emitter state.</b> The emanation exists as long as its origin does. A living
+/// emitter emits even while Incapacitated: Stench prints no off-switch, and the contrast is
+/// deliberate in the book — Aura of Protection explicitly reads "inactive while you have
+/// the Incapacitated condition" (SRD 5.2.1 p. 55), a clause Stench does not carry. A
+/// <b>dead</b> emitter emits nothing: no origin, no emanation.</item>
+/// <item><b>The 24-hour immunity.</b> "immune to this ghast's Stench for 24 hours" — no
+/// fight reaches 24 hours, so a creature that <b>succeeds</b> is immune for the rest of the
+/// encounter and never rolls against that emitter's aura again. A creature that
+/// <b>fails</b> gains no immunity and re-rolls at the start of each of its turns, the
+/// condition re-applying until it eventually saves. The immunity is keyed per
+/// (victim, emitter, aura), so saving against one ghast does not grant immunity to another.
+/// This set is what keeps the dice stream honest across turns: without it a saver would
+/// re-roll every turn and consume dice it should not.</item>
+/// </list>
+/// <para>
+/// <b>Deliberately minimal.</b> This carries only what Stench needs. The radius lives here
+/// as a plain number so the per-victim range check reads one field and does not route
+/// through the area-geometry machinery (which answers "who is in the area now", the wrong
+/// question for an aura). Stench deals no damage; a future <em>damaging</em> aura firing at
+/// turn start could down a victim before its turn resolves, which <c>Encounter.FireAuras</c>
+/// would then have to account for — out of scope here, and noted rather than built ahead of
+/// a case that exists. Content does not populate this field yet: the extractor
+/// reclassification of the Stench trait is the paired follow-up (#676), the same
+/// engine-then-extractor split #386/#421 used; engine tests author the aura by hand.
+/// </para>
+/// </remarks>
+/// <param name="EmanationRadiusFeet">
+/// The radius of the emanation, in feet — 5 for the Ghast. A victim within this distance of
+/// the emitter (nearest-space, SRD 5.2.1 p. 13) is in range. Equals the emitter entry's
+/// <see cref="SaveEffect.Area"/> size where one is present, but read here directly so the
+/// range gate does not depend on the save carrying an area shape.
+/// </param>
+/// <param name="Clock">Which turn boundary fires the aura's save.</param>
+public sealed record AuraEffect(int EmanationRadiusFeet, AuraClock Clock);
+
 /// <summary>Helpers over a damage list, shared by attacks and saving-throw effects.</summary>
 public static class DamageComponents
 {

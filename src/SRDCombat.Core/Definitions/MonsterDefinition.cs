@@ -58,6 +58,15 @@ public enum MonsterEntrySection
 /// The sentences whose mechanics were recognised as real but could not be expressed.
 /// Empty for anything fully modelled. This is what makes the gap countable.
 /// </param>
+/// <param name="Aura">
+/// The aura signal, when this entry is a passive per-turn area effect the creature emits —
+/// the Ghast's Stench (#670). Null for every ordinary entry, which is every entry the
+/// extractor produces today: content does not populate this field yet (#676 is the paired
+/// reclassification slice), so it is set only by the hand-authored fixtures the engine's
+/// own aura tests build. See <see cref="AuraEffect"/> for the reading. The entry's
+/// <see cref="Save"/> supplies the DC, ability and rider; this signal says the save fires
+/// on the aura's clock rather than as a spent action.
+/// </param>
 public sealed record MonsterEntry(
     string Name,
     MonsterEntrySection Section,
@@ -69,7 +78,8 @@ public sealed record MonsterEntry(
     ReactionEffect? Reaction = null,
     UsageLimit? Usage = null,
     IReadOnlyList<AppliedCondition>? AppliedConditions = null,
-    IReadOnlyList<string>? UnmodelledClauses = null)
+    IReadOnlyList<string>? UnmodelledClauses = null,
+    AuraEffect? Aura = null)
 {
     /// <summary>Conditions this entry imposes. Never null.</summary>
     public IReadOnlyList<AppliedCondition> AppliedConditions { get; init; } = AppliedConditions ?? [];

@@ -37,6 +37,18 @@ public sealed partial class Encounter
     private List<Combatant> _order = [];
     private int _turnIndex;
 
+    /// <summary>
+    /// Which (victim, emitter, aura) triples have already saved against an aura this
+    /// encounter, and so are immune to it for the rest of the fight — the Ghast Stench's
+    /// "immune ... for 24 hours" (#670). Encounter-scoped, cleared with the fight, which is
+    /// exactly what "24 hours" means when no fight reaches it. Membership decides whether a
+    /// creature re-rolls an aura's save at the start of its turn, so it is what keeps the
+    /// dice stream deterministic across turns. Keyed on the emitter's and entry's identity,
+    /// not the emitter reference, so two ghasts grant immunity independently. See
+    /// <see cref="AuraEffect"/> for the reading and <see cref="FireAuras"/> for the use.
+    /// </summary>
+    private readonly HashSet<(string VictimId, string SourceId, string AuraName)> _auraImmunities = [];
+
     private Encounter(Battlefield battlefield, IEnumerable<Combatant> combatants, IRandomSource random)
     {
         Battlefield = battlefield;
@@ -1210,6 +1222,21 @@ public sealed partial class Encounter
                 continue;
             }
 
+            // Auras that fire "at the start of its turn" resolve now — the Ghast's Stench
+            // (#670) — for this living combatant as the victim, against every emitter in
+            // range. Placed before the death-save and cannot-act branches on purpose: the
+            // printed trigger is "any creature that starts its turn" in range, and this
+            // combatant has started its turn the moment its clock ticked above, whether or
+            // not it can act. The save is worth rolling even for a downed victim, because a
+            // success banks the 24-hour immunity independently of whether the Poisoned rider
+            // lands (ImposeConditions still takes nothing further on an Incapacitated or
+            // dying creature — the rider is refused there, the immunity is not). A dead
+            // combatant, handled just above, has no turn and no emanation to stand in, so it
+            // is past this point already. No aura in the pool deals damage, so firing here
+            // cannot down the combatant before the branches below read its state; a future
+            // damaging aura would have to re-check.
+            FireAuras(combatant);
+
             if (DeathSaveRules.MustRoll(combatant))
             {
                 Add(CombatStepKind.TurnStarted, $"{combatant.Name}'s turn begins, at 0 hit points.", combatant);
@@ -1263,6 +1290,81 @@ public sealed partial class Encounter
             combatant.Features.BeginTurn();
             Add(CombatStepKind.TurnStarted, $"{combatant.Name}'s turn begins.", combatant);
             return;
+        }
+    }
+
+    /// <summary>
+    /// Forces every in-range aura's save against <paramref name="victim"/> at the start of
+    /// its turn — the Ghast's Stench and any future start-of-turn emanation (#670). The
+    /// reading (who emits, who is spared, the 24-hour immunity) is written on
+    /// <see cref="AuraEffect"/>; this is where it runs.
+    /// </summary>
+    /// <remarks>
+    /// A no-op for the overwhelmingly common case — a fight whose combatants emit no auras
+    /// — which is every combatant the extractor produces today (#676 is the content half)
+    /// and the whole hand-authored skirmish cast, so the frozen transcript stays byte-flat.
+    /// Emitters are visited in initiative order so a victim caught by two emitters rolls
+    /// against them in a fixed sequence, keeping the dice stream reproducible.
+    /// </remarks>
+    private void FireAuras(Combatant victim)
+    {
+        foreach (var source in _order)
+        {
+            // An Emanation's origin isn't in its own area (SRD 5.2.1 p. 181), and a dead
+            // emitter has no emanation. A living emitter emits even while Incapacitated —
+            // Stench, unlike Aura of Protection, prints no clause turning it off.
+            if (ReferenceEquals(source, victim) || source.IsDead)
+            {
+                continue;
+            }
+
+            foreach (var (entry, aura) in source.Stats.AuraEntries)
+            {
+                if (aura.Clock != AuraClock.StartOfVictimTurn
+                    || entry.Save is not { DifficultyClass: { } difficultyClass } save
+                    || victim.DistanceFeetTo(source) > aura.EmanationRadiusFeet)
+                {
+                    continue;
+                }
+
+                var immunity = (victim.Id, source.Id, entry.Name);
+
+                // A creature that has already saved is immune for the rest of the fight and
+                // does not re-roll — the line that keeps a saver's dice out of the stream.
+                if (_auraImmunities.Contains(immunity))
+                {
+                    continue;
+                }
+
+                Add(
+                    CombatStepKind.Entry,
+                    $"{source.Name}'s {entry.Name} washes over {victim.Name}.",
+                    source,
+                    victim);
+
+                // Resolve against this one victim, not the emanation's whole area: Stench
+                // touches only creatures that start their turn in range, one at a time on
+                // their own turns. The de-aread save routes through the same roll, halving
+                // and rider machinery every other save uses; the success set tells us
+                // whether to record immunity.
+                var saved = new HashSet<Combatant>();
+                ResolveSaveEffect(
+                    source,
+                    entry.Name,
+                    save with { Area = null },
+                    difficultyClass,
+                    source.Position,
+                    victim,
+                    CombatStepKind.Entry,
+                    save.AppliedConditions,
+                    magicalEffect: false,
+                    recordSuccessesInto: saved);
+
+                if (saved.Contains(victim))
+                {
+                    _auraImmunities.Add(immunity);
+                }
+            }
         }
     }
 
@@ -2307,6 +2409,12 @@ public sealed partial class Encounter
     /// either way when the printed outcome is "Failure or Success" — and carries no
     /// grapple range, because a save effect prints no reach to measure a grapple against.
     /// </para>
+    /// <para>
+    /// <paramref name="recordSuccessesInto"/> is the one aura caller's window onto the
+    /// outcome (#670): when non-null it collects every victim that saved, so
+    /// <see cref="FireAuras"/> can grant the Ghast Stench's 24-hour immunity. Null for the
+    /// spell, action and embedded-save callers, for whom this method is unchanged.
+    /// </para>
     /// </remarks>
     private void ResolveSaveEffect(
         Combatant source,
@@ -2317,7 +2425,8 @@ public sealed partial class Encounter
         Combatant? target,
         CombatStepKind kind,
         IReadOnlyList<AppliedCondition> riders,
-        bool? magicalEffect = null)
+        bool? magicalEffect = null,
+        ISet<Combatant>? recordSuccessesInto = null)
     {
         var affected = SaveVictims(save, source, point, target);
 
@@ -2425,6 +2534,14 @@ public sealed partial class Encounter
                     (succeeded ? "success." : "failure."),
                     source,
                     victim);
+            }
+
+            // An aura caller records which victims saved, to grant them the 24-hour
+            // immunity that stops them re-rolling next turn (#670). Null for every other
+            // caller, so nothing changes for a spell's or an action's save.
+            if (succeeded)
+            {
+                recordSuccessesInto?.Add(victim);
             }
 
             if (succeeded && save.SuccessOutcome == SaveSuccessOutcome.NoEffect)
