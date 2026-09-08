@@ -10,6 +10,9 @@ public enum CunningActionKind
 {
     Dash,
     Disengage,
+
+    /// <summary>Hide as a Bonus Action (#673) — the same action, spending the Bonus Action instead.</summary>
+    Hide,
 }
 
 /// <summary>
@@ -363,11 +366,11 @@ public sealed partial class Encounter
     /// <remarks>
     /// <para>
     /// The readings, in printed order: a Magic action spends the Action; "another
-    /// creature" refuses the Cleric itself; "that you can see" is the Total Cover
-    /// refusal — the same reading every targeted spell makes, and unchanged by #672
-    /// (the wider "seeing a creature" question, not #671/#672's line of sight, is
-    /// #673's to wire); the DC "equals the spell save DC from this class's Spellcasting
-    /// feature", which
+    /// creature" refuses the Cleric itself; "that you can see" is both the Total Cover
+    /// refusal every targeted spell makes <em>and</em>, since #673, the wider "seeing a
+    /// creature" question — <c>target.unseen</c>, defeated only by the Cleric somehow
+    /// seeing an Invisible target (Blindsight or Truesight in range); the DC "equals
+    /// the spell save DC from this class's Spellcasting feature", which
     /// a resolved Cleric already carries, and a Channel Divinity bearer without
     /// resolved spellcasting falls back to the same Wisdom-based arithmetic that DC is
     /// made of. The dice step at Cleric levels 7, 13 and 18 is written from the printed
@@ -433,6 +436,19 @@ public sealed partial class Encounter
             return new ActionRefusal(
                 "feature.total_cover",
                 $"{target.Name} has Total Cover from {combatant.Name} and can't be targeted.");
+        }
+
+        // Concealed's one hard-coded consumer (#673): "another creature you can see" is
+        // no longer the Total Cover refusal alone once Invisible exists — an Invisible
+        // ally with a clear line still cannot be Divine Sparked unless the Cleric
+        // somehow sees them (VisionRules.CanSee's Blindsight/Truesight clause). The
+        // remaining 4 spells and 79 stat-block entries that print the same "can see"
+        // targeting are #691's content slice, not this one.
+        if (!VisionRules.CanSee(Battlefield, combatant, target))
+        {
+            return new ActionRefusal(
+                "target.unseen",
+                $"{target.Name} cannot be seen by {combatant.Name}.");
         }
 
         if (use == DivineSparkUse.Harm
@@ -874,7 +890,13 @@ public sealed partial class Encounter
         "flees maximally on its turns — SRD 5.2.1 p.37; engine cannot grant an " +
         "Incapacitated-but-mobile turn yet (#615)";
 
-    /// <summary>Rogue Cunning Action: Dash or Disengage as a Bonus Action.</summary>
+    /// <summary>Rogue Cunning Action: Dash, Disengage or Hide as a Bonus Action.</summary>
+    /// <remarks>
+    /// Hide's own two refusals (<c>hide.already_hidden</c>, <c>hide.in_sight</c>, see
+    /// <c>Encounter.Hiding.cs</c>) are checked before the Bonus Action is spent, exactly
+    /// as the Action form checks them before the Action is — sharing
+    /// <c>CheckHidePrerequisites</c> so the two forms cannot drift.
+    /// </remarks>
     public ActionRefusal? CunningAction(CunningActionKind kind)
     {
         if (!TryGetCombatantWithFeature(ClassFeature.CunningAction, "Cunning Action", out var combatant, out var refusal))
@@ -887,20 +909,34 @@ public sealed partial class Encounter
             return new ActionRefusal("bonus_action.spent", $"{combatant.Name} has used its Bonus Action.");
         }
 
+        if (kind == CunningActionKind.Hide && CheckHidePrerequisites(combatant) is { } hideRefusal)
+        {
+            return hideRefusal;
+        }
+
         combatant.Turn.SpendBonusAction();
 
-        if (kind == CunningActionKind.Dash)
+        switch (kind)
         {
-            combatant.Turn.AddMovement(combatant.Stats.SpeedFeet);
-            Add(
-                CombatStepKind.Feature,
-                $"{combatant.Name} uses Cunning Action to Dash, gaining {combatant.Stats.SpeedFeet} ft.",
-                combatant);
-        }
-        else
-        {
-            combatant.Turn.Disengage();
-            Add(CombatStepKind.Feature, $"{combatant.Name} uses Cunning Action to Disengage.", combatant);
+            case CunningActionKind.Dash:
+                combatant.Turn.AddMovement(combatant.Stats.SpeedFeet);
+                Add(
+                    CombatStepKind.Feature,
+                    $"{combatant.Name} uses Cunning Action to Dash, gaining {combatant.Stats.SpeedFeet} ft.",
+                    combatant);
+                break;
+
+            case CunningActionKind.Disengage:
+                combatant.Turn.Disengage();
+                Add(CombatStepKind.Feature, $"{combatant.Name} uses Cunning Action to Disengage.", combatant);
+                break;
+
+            case CunningActionKind.Hide:
+                PerformHide(combatant);
+                break;
+
+            default:
+                throw new NotSupportedException($"Unhandled Cunning Action kind '{kind}'.");
         }
 
         return null;

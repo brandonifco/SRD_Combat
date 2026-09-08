@@ -195,13 +195,15 @@ public sealed partial class Encounter
     /// (see <c>EntryMechanicsParser.ReadRange</c>'s own remarks for the full
     /// reasoning).
     /// A printed sight qualifier — "a creature the mummy can see" — is a different
-    /// question, and one #672 leaves unenforced here on purpose: it is the wider
-    /// "seeing a creature" sense of sight (line of sight <em>and</em> not Heavily
-    /// Obscured, <em>and</em> not Invisible), not the line-of-sight predicate #671/#672
-    /// give the engine, and wiring it belongs with the targeting-gate rewire #673 does
-    /// once Invisible exists. The area-shape gate above (<see cref="AreaTargeting"/>)
-    /// still decides who an area save reaches; the range check only governs how far the
-    /// save itself may be aimed.
+    /// question. Sight itself is modelled now (<see cref="VisionRules"/>, #671-#673) and
+    /// its mechanism exists (<c>target.unseen</c>, Divine Spark its one hard-coded
+    /// consumer, #673) — what stays unstructured is this <em>entry's own</em> "can see"
+    /// clause: extraction has not yet claimed it onto <see cref="SaveEffect"/> for the
+    /// 79 corpus entries that print it, so nothing here can ask
+    /// <c>SaveEffect.TargetRequiresSight</c> because it does not exist. That is #691's
+    /// content slice, not an engine gap. The area-shape gate above
+    /// (<see cref="AreaTargeting"/>) still decides who an area save reaches; the range
+    /// check only governs how far the save itself may be aimed.
     /// </para>
     /// </remarks>
     private ActionRefusal? UseSaveEntry(Combatant actor, MonsterEntry entry, GridPosition? point, Combatant? target)
@@ -253,9 +255,9 @@ public sealed partial class Encounter
         // counts, the same rule regardless of area; only a bare point aim with no
         // creature reference (necessarily an area effect — a single-target save
         // already refused above without one) falls to the second check. Sight ("a
-        // creature the mummy can see") stays unenforced here — that is the wider
-        // "seeing a creature" sense #673 wires, not #671/#672's line of sight — this
-        // checks distance alone.
+        // creature the mummy can see") stays unenforced here — not for want of a sight
+        // model (#673 supplies one) but because this entry's own clause is not yet
+        // structured onto SaveEffect (#691) — this checks distance alone.
         if (target is not null && save.RangeFeet is { } range)
         {
             var rangeDistance = actor.DistanceFeetTo(target);

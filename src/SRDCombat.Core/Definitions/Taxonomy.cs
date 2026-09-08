@@ -76,12 +76,14 @@ public enum MovementMode
 /// Special senses. Ordinary sight is <c>SRDCombat.Core.Rules.VisionRules</c>'s
 /// line-of-sight predicate (#671/#672), which every creature has and none of these
 /// names govern; these are the senses that see <em>past</em> ordinary sight's limits
-/// (through Blinded, in Darkness, past Invisible), and they are not yet carried into
-/// combat — a monster's <see cref="MonsterDefinition.Senses"/> never reaches a
-/// <c>Combatant</c> or its <c>CombatantStats</c> today. <c>VisionRules.HasOpenEyes</c>
-/// states this as its own reading: a Blinded viewer with Blindsight still fails there,
-/// because nothing here is consulted. Wiring one is #673's decision, when Invisible
-/// gives Blindsight and Truesight something to matter for.
+/// (through Blinded, in Darkness, past Invisible). Two of the four are carried into
+/// combat as of #673 — <see cref="Combat.CombatantStats.BlindsightFeet"/> and
+/// <see cref="Combat.CombatantStats.TruesightFeet"/>, read by <c>VisionRules</c> to let
+/// a Blindsighted viewer see past Blinded and to let either sense see past Invisible —
+/// because Invisible is the first thing in this engine either sense has something to
+/// matter for. Darkvision and Tremorsense stay uncarried: darkness is not modelled at
+/// all (every battlefield is Bright Light), and nothing yet keys off "can't be seen"
+/// for a reason Tremorsense would answer.
 /// </summary>
 public enum SenseType
 {

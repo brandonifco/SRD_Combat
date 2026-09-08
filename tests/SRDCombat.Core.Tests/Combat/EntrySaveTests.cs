@@ -46,6 +46,23 @@ public class EntrySaveTests
     }
 
     [Fact]
+    public void AnAreaSaveStillCatchesAnInvisibleCreatureInsideIt()
+    {
+        // #673's designer reading, "Not Concealed": an area effect aimed at a point
+        // targets the point, not a creature, so an Invisible creature standing inside a
+        // Fireball-shaped burst still burns — Concealed guards targeting a creature, not
+        // area geometry.
+        var hero = Hero("a", x: 2);
+        hero.AddCondition(ConditionType.Invisible);
+
+        var encounter = Fight(new ScriptedRandomSource(20, 1, 1, 1, 1), Breather("Fire Breath", ConeSave()), hero);
+
+        Assert.Null(encounter.UseEntry("Fire Breath", new GridPosition(3, 5)));
+
+        Assert.Contains(encounter.Log, step => step.Narration.Contains("a takes", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void TheBreathersOwnSquareIsOutsideItsLine()
     {
         // A Line extends from its user: only the hero in front of the breather rolls,

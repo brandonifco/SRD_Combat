@@ -291,12 +291,11 @@ a mechanism. Read this before touching a parser:**
 the model express it?* — anything printed with the condition that the model lacks a
 shape for goes to `AppliedCondition.UnmodelledRequirement` and refuses the rider
 rather than approximating it. *Does the engine execute it?* —
-`ConditionRules.Executable` is a curated allowlist (twelve conditions today,
-Petrified included whole; Deafened deliberately absent for want of a hearing model,
-Invisible absent for want of the wider "seeing a creature" model — line of sight
-(`VisionRules`, #671/#672) exists, but Invisible needs the Heavily Obscured and
-not-Invisible half on top of it, which is #673's). **Add a condition only alongside the
-code that gives it
+`ConditionRules.Executable` is a curated allowlist (thirteen conditions today,
+Petrified included whole; Deafened deliberately absent for want of a hearing model.
+Invisible entered in #673, on `VisionRules`'s Blindsight/Truesight-defeat clause —
+Attacks Affected and Concealed's mechanism, with Divine Spark its one hard-coded
+consumer). **Add a condition only alongside the code that gives it
 effects.** The Failure-tier extraction case law — repeat-save joins, embedded attack
 saves, tier rules, escalating gazes, head-clause accounting, grapple-tied riders —
 is detailed in the archive and in `EntryMechanicsParser`'s and `ConditionRules`'

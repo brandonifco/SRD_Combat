@@ -99,9 +99,13 @@ public sealed partial class Encounter
                 $"That square is beyond {spell.Name}'s {pointRange} ft. range.");
         }
 
-        // "Choose a Humanoid that you can see within range": the printed target-type
-        // gate, refused before anything is spent. A point-aimed cast has no creature
-        // to check; the spells that print the gate all name a single target.
+        // "Choose a Humanoid that you can see within range": this checks the creature
+        // TYPE half of that sentence only. The SIGHT half — "that you can see" — is
+        // Concealed's own refusal (target.unseen, VisionRules.CanSee, #673) and is not
+        // checked here; it is structured onto individual spells' targeting by #691,
+        // still open for the four spells that print it. A point-aimed cast has no
+        // creature to check; the spells that print the type gate all name a single
+        // target.
         if (spell.TargetCreatureType is { } requiredType
             && target is not null
             && target.Stats.Type != requiredType)
@@ -198,6 +202,14 @@ public sealed partial class Encounter
             $"{caster.Name} casts {spell.Name}" +
             (spell.IsCantrip ? " (cantrip)." : $" (level {slotUsed} slot)."),
             caster);
+
+        // "You stop being hidden immediately after ... you cast a spell with a Verbal
+        // component" (p.183, #673) — a Somatic-only cast (Mind Spike) keeps the caster
+        // hidden. A no-op for a caster that is not (Hide-)hidden.
+        if (spell.Components.HasFlag(SpellComponents.Verbal) && EndHiding(caster))
+        {
+            Add(CombatStepKind.Condition, $"{caster.Name} is no longer hidden.", caster);
+        }
 
         if (spell.RequiresConcentration)
         {
