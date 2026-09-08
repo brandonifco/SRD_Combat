@@ -503,10 +503,13 @@ public class GauntletTests
         // level 3 within the budget. Seed 5 replaced that, then #666 (the tier-1 pool
         // gaining Ankheg, Bugbear Stalker and Bugbear Warrior, 75 -> 78) shifted the
         // encounter draw enough that seed 5's party was defeated at level 3 within the
-        // budget too — reselected once more for a seed that still reaches level 4
-        // comfortably inside the budget; the accounting under test does not care which
-        // seed gets it there.
-        var random = new SeededRandomSource(1);
+        // budget too — reselected once more, to seed 1. #679 (Death Burst execution)
+        // shifted the stream again: a Magma Mephit that dies mid-fight now actually
+        // fires its on-death area save, consuming dice nothing consumed before, and
+        // seed 1's party was defeated at level 3 within the budget under the new
+        // stream. Seed 3 replaces it, reaching level 4 comfortably inside the budget;
+        // the accounting under test does not care which seed gets it there.
+        var random = new SeededRandomSource(3);
 
         while (run.States[0].Level < 4 && run.Outcome == RunOutcome.InProgress && run.Next is not null)
         {

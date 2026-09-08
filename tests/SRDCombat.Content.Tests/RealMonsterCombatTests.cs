@@ -807,6 +807,56 @@ public class RealMonsterCombatTests
             encounter.Log.Count(step => step.Narration.Contains("washes over", StringComparison.Ordinal)));
     }
 
+    [Fact]
+    public void TheRealMagmaMephitBurstsOnDeathAndCatchesAnAdjacentVictim()
+    {
+        // #679: the extractor now recognises Death Burst's printed leading sentence
+        // ("The mephit explodes when it dies") and populates MonsterEntry.DeathBurst,
+        // so the real Magma Mephit actually explodes — Encounter.FireDeathBurst,
+        // exercised against the real stat block rather than DeathBurstTests's
+        // hand-authored fixture. Two Bandits (Light Crossbow, 1d8+1) at range finish
+        // the mephit's 18 hit points exactly (9 + 9 = 18) so neither attacker stands
+        // anywhere near the blast; a third Bandit stands in the printed 5-foot
+        // Emanation to take it. Both bandits' attack rolls (13 vs AC 11) and the
+        // victim's save (6 vs DC 11) are ordinary, unforced numbers — nothing here
+        // depends on a critical hit or a natural 20.
+        var mephit = Content.MonstersById["monster.magma-mephit"];
+        var bandit = Content.MonstersById["monster.bandit"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 10),
+            [
+                Spawn(bandit, "bandit1", "bandits", new GridPosition(0, 5)),
+                Spawn(bandit, "bandit2", "bandits", new GridPosition(1, 5)),
+                Spawn(mephit, "mephit", "elementals", new GridPosition(5, 5)),
+                Spawn(bandit, "victim", "bandits", new GridPosition(6, 5)),
+            ],
+            // Initiatives (bandit1 and bandit2 first, by roll); bandit1's Crossbow
+            // hits (10 + 3 = 13 vs AC 11) for 8 + 1 = 9; bandit2's identical hit for
+            // another 9 — 18 total, exactly the mephit's hit points, so it dies at
+            // exactly 0 rather than by overkill. The mephit's own Death Burst then
+            // fires: the victim's Dexterity save (5 + 1 = 6) fails DC 11, and its 2d6
+            // Fire (3 + 4 = 7 — the printed average) lands in full.
+            new ScriptedRandomSource(15, 14, 1, 1, 10, 8, 10, 8, 5, 3, 4));
+
+        var mephitCombatant = encounter.Combatants.Single(combatant => combatant.Id == "mephit");
+        var victim = encounter.Combatants.Single(combatant => combatant.Id == "victim");
+
+        encounter.Attack("Light Crossbow", mephitCombatant);
+        encounter.EndTurn(); // bandit1's turn ends; bandit2 acts next
+        encounter.Attack("Light Crossbow", mephitCombatant);
+
+        Assert.True(mephitCombatant.IsDead);
+        Assert.Equal(4, victim.CurrentHitPoints);
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("Death Burst bursts outward as it dies", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Damage
+                && step.Narration.Contains("takes 7 Fire damage", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("monster.bandit-captain", 15, 13)]
     [InlineData("monster.knight", 18, 16)]

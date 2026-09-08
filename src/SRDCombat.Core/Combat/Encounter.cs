@@ -49,6 +49,21 @@ public sealed partial class Encounter
     /// </summary>
     private readonly HashSet<(string VictimId, string SourceId, string AuraName)> _auraImmunities = [];
 
+    /// <summary>
+    /// Combatant ids whose Death Burst has already fired for their <em>current</em> death
+    /// (#679). A fire-once-per-life guard on top of <see cref="MarkDied"/>'s own
+    /// once-per-death call pattern — defence in depth against a future change to a
+    /// death-producing path calling <see cref="MarkDied"/> twice for the same death, which
+    /// would otherwise double the burst's damage or roll its dice twice. Per-life rather
+    /// than permanent: a carrier Revivify returns to life is removed from this set the
+    /// instant it revives (<c>Encounter.Casting.cs</c>'s <c>CastSpell</c>), because "the
+    /// mephit explodes when it dies" is a rule about a death, and a revived carrier that
+    /// dies again has died again — the print carries no "only once, ever" clause, and
+    /// nothing here should invent one. See <see cref="DeathBurstEffect"/> for the cascade
+    /// reading and <see cref="FireDeathBurst"/> for the use.
+    /// </summary>
+    private readonly HashSet<string> _deathBurstsFired = [];
+
     private Encounter(Battlefield battlefield, IEnumerable<Combatant> combatants, IRandomSource random)
     {
         Battlefield = battlefield;
@@ -1407,6 +1422,75 @@ public sealed partial class Encounter
         return true;
     }
 
+    /// <summary>
+    /// The one place a combatant's death is recorded and narrated (#679) — every path that
+    /// can produce a lethal <c>DamageResult</c>/<c>DeathSaveResult</c> (a hit, massive
+    /// damage, a third failed death save, a stat-block entry's or spell's own area save)
+    /// calls this instead of stamping <see cref="Combatant.RecordDeathRound"/> and adding
+    /// <see cref="CombatStepKind.Died"/> itself, so there is exactly one choke point for
+    /// anything that must happen the instant a creature dies — today, that is
+    /// <see cref="FireDeathBurst"/>. <paramref name="combatant"/>'s own
+    /// <see cref="Combatant.IsDead"/> is already true by the time this runs: every caller
+    /// reaches it only after the damage or death-save rules already called
+    /// <c>Combatant.MarkDead</c>, this method's job being the narration and the hook, not
+    /// the transition itself.
+    /// </summary>
+    private void MarkDied(Combatant combatant)
+    {
+        combatant.RecordDeathRound(Round);
+        Add(CombatStepKind.Died, $"{combatant.Name} is dead.", combatant);
+        FireDeathBurst(combatant);
+    }
+
+    /// <summary>
+    /// Fires every Death Burst <paramref name="source"/> carries — the four mephits', the
+    /// Magmin's and the Balor's on-death area save (#679) — the instant its own death is
+    /// recorded by <see cref="MarkDied"/>. The reading (why here, who it excludes, the
+    /// cascade) is written on <see cref="DeathBurstEffect"/>; this is where it runs.
+    /// </summary>
+    /// <remarks>
+    /// A no-op for the overwhelmingly common case — a combatant with no Death Burst entry,
+    /// which is every combatant but those six real stat blocks and the whole hand-authored
+    /// skirmish cast, so the frozen transcript stays byte-flat. The
+    /// <see cref="_deathBurstsFired"/> guard means this can never fire twice for the same
+    /// combatant even if a future change to the death-producing paths called
+    /// <see cref="MarkDied"/> on it more than once; it does not guard against anything
+    /// today's paths actually do; those each mark a creature dead exactly once. Reuses
+    /// <see cref="ResolveSaveEffect"/> exactly as a stat-block entry's own save action
+    /// would — the DC, area, damage and halving are unchanged from the ordinary path — so a
+    /// death burst is not a second area-save implementation to drift from the first.
+    /// </remarks>
+    private void FireDeathBurst(Combatant source)
+    {
+        if (!_deathBurstsFired.Add(source.Id))
+        {
+            return;
+        }
+
+        foreach (var (entry, _) in source.Stats.DeathBurstEntries)
+        {
+            if (entry.Save is not { DifficultyClass: { } difficultyClass } save)
+            {
+                continue;
+            }
+
+            Add(
+                CombatStepKind.Entry,
+                $"{source.Name}'s {entry.Name} bursts outward as it dies.",
+                source);
+
+            ResolveSaveEffect(
+                source,
+                entry.Name,
+                save,
+                difficultyClass,
+                source.Position,
+                target: null,
+                CombatStepKind.Entry,
+                save.AppliedConditions);
+        }
+    }
+
     private void RollDeathSave(Combatant combatant)
     {
         var result = DeathSaveRules.Roll(_random, combatant);
@@ -1433,8 +1517,7 @@ public sealed partial class Encounter
 
         if (result.Died)
         {
-            combatant.RecordDeathRound(Round);
-            Add(CombatStepKind.Died, $"{combatant.Name} is dead.", combatant);
+            MarkDied(combatant);
         }
     }
 
@@ -1705,8 +1788,7 @@ public sealed partial class Encounter
 
         if (applied.Died)
         {
-            target.RecordDeathRound(Round);
-            Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
+            MarkDied(target);
         }
         else if (applied.Downed)
         {
@@ -2070,8 +2152,7 @@ public sealed partial class Encounter
 
             if (applied.Died)
             {
-                target.RecordDeathRound(Round);
-                Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
+                MarkDied(target);
                 break;
             }
 
@@ -2255,8 +2336,7 @@ public sealed partial class Encounter
 
         if (applied.Died)
         {
-            second.RecordDeathRound(Round);
-            Add(CombatStepKind.Died, $"{second.Name} is dead.", second);
+            MarkDied(second);
         }
         else if (applied.Downed)
         {
@@ -2449,6 +2529,21 @@ public sealed partial class Encounter
 
         foreach (var victim in affected)
         {
+            // affected is a snapshot taken before this loop starts, so an earlier
+            // victim's own resolution can still change a later one's state before its
+            // turn comes round — the one way that happens today is a Death Burst
+            // (#679) cascading through MarkDied mid-loop: source's burst catches both
+            // this victim and an earlier one, and the earlier one's own death burst
+            // (fired from inside MarkDied, before this loop resumes) kills this victim
+            // first. A dead victim rolls no further saves and takes no further damage
+            // from this effect — there is nothing left to hit, and doing so anyway
+            // would roll dice nothing should consume and hand MarkDied a second,
+            // false "died" transition for a creature already recorded dead.
+            if (victim.IsDead)
+            {
+                continue;
+            }
+
             bool succeeded;
 
             // Paralyzed, Stunned and Unconscious print "You automatically fail Strength
@@ -2591,8 +2686,7 @@ public sealed partial class Encounter
 
                 if (applied.Died)
                 {
-                    victim.RecordDeathRound(Round);
-                    Add(CombatStepKind.Died, $"{victim.Name} is dead.", victim);
+                    MarkDied(victim);
                     break;
                 }
 

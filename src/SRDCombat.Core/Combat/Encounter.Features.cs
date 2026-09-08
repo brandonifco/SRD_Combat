@@ -796,8 +796,7 @@ public sealed partial class Encounter
 
                 if (applied.Died)
                 {
-                    target.RecordDeathRound(Round);
-                    Add(CombatStepKind.Died, $"{target.Name} is dead.", target);
+                    MarkDied(target);
                     continue;
                 }
 

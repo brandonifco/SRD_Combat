@@ -212,6 +212,16 @@ public sealed partial class Encounter
         {
             target.ReturnToLife(revival.HitPoints);
 
+            // #679: "the mephit explodes when it dies" is a rule about a death, not
+            // about a creature — a revived Death Burst carrier that dies again has
+            // died again, and must be able to burst again. The fire-once guard is
+            // keyed on the combatant's id alone (never on which of its deaths), so
+            // clearing this id here is what turns it back into a per-life guard: it
+            // still stops one death from bursting twice (nothing here revives
+            // between the death and the burst, which always run back to back), but
+            // no longer permanently suppresses every death after the first.
+            _deathBurstsFired.Remove(target.Id);
+
             Add(
                 CombatStepKind.Spell,
                 $"{target.Name} revives with {revival.HitPoints} hit point" +
