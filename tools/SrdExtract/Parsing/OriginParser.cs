@@ -28,6 +28,15 @@ public sealed record OriginParseResult(
 /// is buffered until the next label rather than read one line at a time — the same
 /// approach the stat block parser uses for its Senses line.
 /// </para>
+/// <para>
+/// Three species pages also carry a full-width sub-table — Draconic Ancestors, Elven
+/// Lineages, Fiendish Legacies (#381) — so <see cref="Parse"/> reads the species pages
+/// twice, the same shape <c>ClassParser</c> uses for its Features table: once as the
+/// ordinary two columns, once as the full page width. Which pass captures which table
+/// is not uniform, and is written down where each is read — see
+/// <see cref="SpeciesBuilder"/>'s remarks for Draconic Ancestors and
+/// <see cref="ParseFullWidthTables"/> for the other two.
+/// </para>
 /// </remarks>
 public static partial class OriginParser
 {
@@ -44,21 +53,39 @@ public static partial class OriginParser
     private const double MinimumHeadingHeight = 7.8;
     private const double MaximumHeadingHeight = 9.0;
 
-    public static OriginParseResult Parse(IReadOnlyList<SourceLine> lines)
+    /// <summary>
+    /// Owning species for the two full-width tables that genuinely span the page
+    /// (<see cref="ParseFullWidthTables"/>) — read from the printed cross-reference
+    /// each trait makes to its own table by name ("Choose a lineage from the Elven
+    /// Lineages table."). Draconic Ancestors is not here: unlike these two, it sits
+    /// entirely inside the left text column (see <see cref="SpeciesBuilder"/>'s
+    /// remarks), so it is captured from the ordinary two-column pass instead.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> FullWidthTableOwner =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Elven Lineages"] = "Elf",
+            ["Fiendish Legacies"] = "Tiefling",
+        };
+
+    public static OriginParseResult Parse(IReadOnlyList<SourceLine> lines, IReadOnlyList<SourceLine> fullWidthLines)
     {
         ArgumentNullException.ThrowIfNull(lines);
+        ArgumentNullException.ThrowIfNull(fullWidthLines);
 
         var diagnostics = new List<ParseDiagnostic>();
+        var fullWidthTables = ParseFullWidthTables(fullWidthLines, diagnostics);
 
         return new OriginParseResult(
-            ParseSpecies(lines, diagnostics),
+            ParseSpecies(lines, diagnostics, fullWidthTables),
             ParseBackgrounds(lines, diagnostics),
             diagnostics);
     }
 
     private static List<SpeciesDefinition> ParseSpecies(
         IReadOnlyList<SourceLine> lines,
-        List<ParseDiagnostic> diagnostics)
+        List<ParseDiagnostic> diagnostics,
+        IReadOnlyDictionary<string, OriginTable> fullWidthTables)
     {
         var species = new List<SpeciesDefinition>();
         SpeciesBuilder? current = null;
@@ -72,6 +99,11 @@ public static partial class OriginParser
 
             if (current.TryBuild(out var built, out var reason))
             {
+                if (fullWidthTables.TryGetValue(built.Name, out var table))
+                {
+                    built = built with { Tables = [.. built.Tables, table] };
+                }
+
                 species.Add(built);
             }
             else
@@ -177,6 +209,194 @@ public static partial class OriginParser
         return false;
     }
 
+    /// <summary>
+    /// Reads the Elven Lineages and Fiendish Legacies tables from the full-width pass
+    /// — the same "read the page twice" split <c>ClassParser</c> uses for its Features
+    /// table, because both genuinely span the full page width. The two-column pass
+    /// would slice each row at the column boundary: the Lineage/Legacy name and the
+    /// Level 1 cell land in the left-column stream, but Level 3 and Level 5 land in
+    /// the right-column stream — arriving, in the overall line order, near whatever
+    /// species is being built on that side of the page rather than the one the table
+    /// belongs to (#374's cross-column leak). Reading full width keeps every row
+    /// whole, at the cost of the ordinary body prose around it interleaving — which is
+    /// fine here, since nothing outside the table's own lines is read.
+    /// </summary>
+    private static Dictionary<string, OriginTable> ParseFullWidthTables(
+        IReadOnlyList<SourceLine> lines,
+        List<ParseDiagnostic> diagnostics)
+    {
+        var tables = new Dictionary<string, OriginTable>(StringComparer.Ordinal);
+
+        for (var index = 0; index < lines.Count; index++)
+        {
+            var line = lines[index];
+
+            if (line.Font != HeadingFont || !FullWidthTableOwner.TryGetValue(line.Text.Trim(), out var owner))
+            {
+                continue;
+            }
+
+            var table = ReadFullWidthTable(lines, ref index);
+
+            if (table is null)
+            {
+                diagnostics.Add(new ParseDiagnostic(owner, $"the {line.Text.Trim()} table could not be read."));
+                continue;
+            }
+
+            tables[owner] = table;
+        }
+
+        return tables;
+    }
+
+    /// <summary>
+    /// Reads one table starting at its heading line. Advances <paramref name="index"/>
+    /// to the last line consumed, so the caller's loop resumes just after the table.
+    /// </summary>
+    private static OriginTable? ReadFullWidthTable(IReadOnlyList<SourceLine> lines, ref int index)
+    {
+        var name = lines[index].Text.Trim();
+        var headerIndex = index + 1;
+
+        if (headerIndex >= lines.Count)
+        {
+            return null;
+        }
+
+        var columns = ReadTableHeader(lines[headerIndex]);
+
+        if (columns.Count < 2)
+        {
+            return null;
+        }
+
+        var rows = new List<StringBuilder[]>();
+        var cursor = headerIndex + 1;
+
+        // Every line belonging to the table — its own header row's typeface included —
+        // is set in the GillSans family (SemiBold for headers, plain for a row's own
+        // text, italic for the Level 3/5 spell names). The first line outside that
+        // family is the chapter's ordinary Cambria prose resuming once the table ends.
+        while (cursor < lines.Count && lines[cursor].Font.StartsWith("GillSans", StringComparison.Ordinal))
+        {
+            var byColumn = SplitByColumn(lines[cursor], columns);
+
+            // A new row always names its lineage/legacy in the first column; a wrapped
+            // continuation of the Level 1 cell never reaches that far left.
+            if (byColumn.ContainsKey(0))
+            {
+                var cells = new StringBuilder[columns.Count];
+
+                for (var column = 0; column < cells.Length; column++)
+                {
+                    cells[column] = new StringBuilder();
+                }
+
+                foreach (var (column, text) in byColumn)
+                {
+                    AppendWrapped(cells[column], text);
+                }
+
+                rows.Add(cells);
+            }
+            else if (rows.Count > 0)
+            {
+                foreach (var (column, text) in byColumn)
+                {
+                    AppendWrapped(rows[^1][column], text);
+                }
+            }
+
+            cursor++;
+        }
+
+        index = cursor - 1;
+
+        return new OriginTable(
+            name,
+            columns.Select(column => column.Name).ToArray(),
+            rows.Select(row => (IReadOnlyList<string>)row.Select(cell => cell.ToString().Trim()).ToArray()).ToArray());
+    }
+
+    /// <summary>
+    /// Splits the header row into columns. A two-word header like "Level 1" is printed
+    /// side by side rather than stacked, so adjacent words merge into one column
+    /// whenever their gap is inside a single column's own word spacing — the same
+    /// 12pt-or-more-between-columns, 2-5pt-within-a-column rule <c>ClassParser</c>
+    /// documents for the Classes chapter's tables.
+    /// </summary>
+    private static IReadOnlyList<TableColumn> ReadTableHeader(SourceLine header)
+    {
+        var columns = new List<TableColumn>();
+        var pending = new List<SourceWord>();
+
+        void Commit()
+        {
+            if (pending.Count == 0)
+            {
+                return;
+            }
+
+            columns.Add(new TableColumn(
+                string.Join(' ', pending.Select(word => word.Text)),
+                pending[0].Left));
+            pending.Clear();
+        }
+
+        foreach (var word in header.Words)
+        {
+            if (pending.Count > 0 && word.Left - pending[^1].Right >= HeaderColumnGapPoints)
+            {
+                Commit();
+            }
+
+            pending.Add(word);
+        }
+
+        Commit();
+        return columns;
+    }
+
+    /// <summary>
+    /// Buckets a line's words by column, keyed by column index, joining each column's
+    /// words with a single space. A word belongs to the last column whose left edge it
+    /// has reached, with the same small tolerance <c>ClassParser</c> uses for the
+    /// Classes chapter's tables.
+    /// </summary>
+    private static Dictionary<int, string> SplitByColumn(SourceLine line, IReadOnlyList<TableColumn> columns)
+    {
+        var byColumn = new Dictionary<int, List<string>>();
+
+        foreach (var word in line.Words)
+        {
+            var column = 0;
+
+            for (var candidate = 1; candidate < columns.Count; candidate++)
+            {
+                if (word.Left >= columns[candidate].Left - ColumnAssignmentTolerance)
+                {
+                    column = candidate;
+                }
+            }
+
+            if (!byColumn.TryGetValue(column, out var words))
+            {
+                words = [];
+                byColumn[column] = words;
+            }
+
+            words.Add(word.Text);
+        }
+
+        return byColumn.ToDictionary(pair => pair.Key, pair => string.Join(' ', pair.Value));
+    }
+
+    private const double HeaderColumnGapPoints = 10.0;
+    private const double ColumnAssignmentTolerance = 8.0;
+
+    private sealed record TableColumn(string Name, double Left);
+
     /// <summary>Turns a printed name into a stable slug.</summary>
     internal static string MakeId(string prefix, string name)
     {
@@ -201,12 +421,31 @@ public static partial class OriginParser
     }
 
     /// <summary>Accumulates one species as its lines arrive.</summary>
+    /// <remarks>
+    /// Draconic Ancestors is captured here, from the ordinary two-column pass, rather
+    /// than alongside Elven Lineages and Fiendish Legacies in
+    /// <see cref="ParseFullWidthTables"/>. Its printed table is only two columns wide,
+    /// duplicated side by side to fill the page — every word of it sits left of x≈285,
+    /// entirely inside where the two-column split already puts the left column (the
+    /// boundary is x=300 — see <c>PageTextReader.ColumnBoundary</c>) — so the
+    /// two-column pass hands it over already clean, on its own lines, arriving right
+    /// after the Draconic Ancestry trait while Dragonborn is still the open species.
+    /// Reading it from the full-width pass instead would work too, but would then have
+    /// to filter out the *other* column's prose landing on the same baseline (verified
+    /// against the PDF: "Draconic Ancestors ... Stonecunning. As a Bonus Action ..." —
+    /// the Dwarf's own trait, sharing the row purely by page position) — a problem the
+    /// two-column split has already solved for free.
+    /// </remarks>
     private sealed class SpeciesBuilder(string name, int page)
     {
+        private const string DraconicAncestorsHeading = "Draconic Ancestors";
+
         private readonly List<(string Name, StringBuilder Text)> _traits = [];
+        private readonly List<(string Dragon, string DamageType)> _draconicAncestors = [];
         private CreatureType? _creatureType;
         private IReadOnlyList<CreatureSize> _sizes = [];
         private int? _speedFeet;
+        private bool _readingDraconicAncestors;
 
         public string Name { get; } = name;
 
@@ -236,6 +475,24 @@ public static partial class OriginParser
                 return;
             }
 
+            if (_readingDraconicAncestors)
+            {
+                if (TryAcceptDraconicAncestorsLine(line))
+                {
+                    return;
+                }
+
+                // The table's last row was the line before this one; fall through and
+                // let this line — the next trait heading — be read normally below.
+                _readingDraconicAncestors = false;
+            }
+
+            if (text == DraconicAncestorsHeading && line.Font == HeadingFont)
+            {
+                _readingDraconicAncestors = true;
+                return;
+            }
+
             // A trait opens with its name in bold italic, exactly as a stat block entry does.
             if (line.Font.EndsWith(TraitNameFontSuffix, StringComparison.Ordinal))
             {
@@ -253,18 +510,24 @@ public static partial class OriginParser
 
             // Three species (Dragonborn, Elf, Tiefling) carry a full-width sub-table —
             // Draconic Ancestors, Elven Lineages, Fiendish Legacies — that spans both
-            // text columns. The two-column pass slices it at the column boundary and
-            // interleaves the fragments with whichever trait was open when the
-            // table's region arrived — the same #116 shape ClassParser's Features
-            // table produces, and just as capable of reaching the *next* species: the
-            // Elven Lineages table's wide first column crosses into the right column
-            // and lands mid-sentence in Gnome's Gnomish Lineage, and Fiendish
-            // Legacies' left column lands in Human's Versatile — five affected traits
-            // in total (#374). Trait prose in this chapter is Cambria (the wrapping
-            // and italic variants included, which is why the family is matched);
-            // everything GillSans here is a table's, so only Cambria lines may
-            // continue a trait — the table's own content is absent from the trait
-            // text and honest, exactly as a class feature's printed sub-table is.
+            // text columns. Draconic Ancestors was already read above, from its own
+            // heading, and never reaches here. Elven Lineages and Fiendish Legacies
+            // still arrive as two-column fragments at this point — their Lineage/Legacy
+            // name and Level 1 text sit left of the column boundary, same as Draconic
+            // Ancestors, but their Level 3 and Level 5 cells cross it, landing on the
+            // *other* side (#381's ParseFullWidthTables reads the whole row from the
+            // full-width pass instead, so nothing is lost). Left unfiltered, the
+            // fragment left behind here would interleave with whichever trait was open
+            // when it arrived — the same #116 shape ClassParser's Features table
+            // produces, and just as capable of reaching the *next* species: the Elven
+            // Lineages fragment's wide first column crosses into the right column and
+            // lands mid-sentence in Gnome's Gnomish Lineage, and the Fiendish Legacies
+            // fragment lands in Human's Versatile — five affected traits in total
+            // (#374). Trait prose in this chapter is Cambria (the wrapping and italic
+            // variants included, which is why the family is matched); everything
+            // GillSans here is a table fragment's, so only Cambria lines may continue a
+            // trait — the fragment is absent from the trait text and honest, exactly as
+            // a class feature's printed sub-table is.
             if (_traits.Count > 0 && text.Length > 0 && line.Font.StartsWith("Cambria", StringComparison.Ordinal))
             {
                 AppendWrapped(_traits[^1].Text, text);
@@ -281,6 +544,18 @@ public static partial class OriginParser
                 return false;
             }
 
+            var tables = new List<OriginTable>();
+
+            if (_draconicAncestors.Count > 0)
+            {
+                tables.Add(new OriginTable(
+                    DraconicAncestorsHeading,
+                    ["Dragon", "Damage Type"],
+                    _draconicAncestors
+                        .Select(row => (IReadOnlyList<string>)new[] { row.Dragon, row.DamageType })
+                        .ToArray()));
+            }
+
             species = new SpeciesDefinition
             {
                 Id = MakeId("species", Name),
@@ -291,11 +566,37 @@ public static partial class OriginParser
                 Traits = _traits
                     .Select(trait => EntryMechanicsParser.ClassifyTrait(trait.Name, trait.Text.ToString().Trim()))
                     .ToArray(),
+                Tables = tables,
                 SourcePage = page,
             };
 
             reason = string.Empty;
             return true;
+        }
+
+        /// <summary>
+        /// Reads one line of the Draconic Ancestors table, or reports it does not
+        /// belong to the table so the caller can close it and re-read the line
+        /// normally. The header row ("Dragon Damage Type Dragon Damage Type") carries
+        /// no data — its shape is fixed and known — so it is consumed and ignored;
+        /// each data row prints two (Dragon, Damage Type) pairs side by side, always
+        /// as four single words in that left-to-right order.
+        /// </summary>
+        private bool TryAcceptDraconicAncestorsLine(SourceLine line)
+        {
+            if (line.Font == HeadingFont)
+            {
+                return true;
+            }
+
+            if (line.Font == ContinuationFont && line.Words.Count == 4)
+            {
+                _draconicAncestors.Add((line.Words[0].Text, line.Words[1].Text));
+                _draconicAncestors.Add((line.Words[2].Text, line.Words[3].Text));
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>Reads "Medium (about 4-5 feet tall)" and "Small or Medium".</summary>

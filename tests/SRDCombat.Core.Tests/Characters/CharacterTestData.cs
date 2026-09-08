@@ -25,6 +25,7 @@ internal static class CharacterTestData
         Sizes = [size],
         SpeedFeet = speedFeet,
         Traits = traits ?? [],
+        Tables = [],
         SourcePage = 1,
     };
 
