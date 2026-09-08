@@ -6,7 +6,9 @@ namespace SRDCombat.Core.Combat;
 
 /// <summary>
 /// The Hide action, its shared prerequisite and roll (also reached through Cunning
-/// Action, in <c>Encounter.Features.cs</c>), and the reveal that ends it.
+/// Action, in <c>Encounter.Features.cs</c>); the reveal that ends it; and the Search
+/// action (#674) that is the counterplay — the one caller of <see cref="RevealHidden"/>
+/// this slice adds.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -74,12 +76,12 @@ namespace SRDCombat.Core.Combat;
 /// <b>The four ending triggers, and where each one lives:</b> "a sound louder than a
 /// whisper" is inert — nothing in this engine produces a sound — and is named rather
 /// than silently missing, because print names it and no rule the engine executes makes
-/// one; "an enemy finds you" is #674's Search, and <see cref="RevealHidden"/> is the
-/// removal it will call; "you make an attack roll" is hooked in
-/// <c>Encounter.ResolveAttack</c>, after the roll resolves rather than before — p.14:
-/// "you give away your location when the attack hits or misses" — so a first swing of a
-/// pair keeps its Advantage and a second rolls normally; "you cast a spell with a
-/// Verbal component" is hooked in <c>Encounter.CastSpell</c>, gated on
+/// one; "an enemy finds you" is <see cref="Search"/>'s successful Wisdom (Perception)
+/// check, which calls <see cref="RevealHidden"/> below; "you make an attack roll" is
+/// hooked in <c>Encounter.ResolveAttack</c>, after the roll resolves rather than
+/// before — p.14: "you give away your location when the attack hits or misses" — so a
+/// first swing of a pair keeps its Advantage and a second rolls normally; "you cast a
+/// spell with a Verbal component" is hooked in <c>Encounter.CastSpell</c>, gated on
 /// <see cref="SpellComponents.Verbal"/>. Moving into the open does not end hidden — the
 /// list above is exhaustive, and staying hidden while you move is the entire point of
 /// the action.
@@ -205,9 +207,10 @@ public sealed partial class Encounter
 
     /// <summary>
     /// Ends a hidden creature's Invisible instance because <paramref name="by"/> found
-    /// it — Hide's third printed trigger, "an enemy finds you" (p.183). No caller ships
-    /// in this slice; #674's Search action is the first. Returns false, narrating
-    /// nothing, when <paramref name="target"/> was not (Hide-)hidden to begin with.
+    /// it — Hide's third printed trigger, "an enemy finds you" (p.183). Called by
+    /// <see cref="Search"/> on a successful Wisdom (Perception) check. Returns false,
+    /// narrating nothing, when <paramref name="target"/> was not (Hide-)hidden to begin
+    /// with.
     /// </summary>
     public bool RevealHidden(Combatant target, Combatant by)
     {
@@ -221,6 +224,116 @@ public sealed partial class Encounter
 
         Add(CombatStepKind.Condition, $"{by.Name} finds {target.Name} — no longer hidden.", target, by);
         return true;
+    }
+
+    /// <summary>
+    /// The Search action, aimed at one creature suspected to be hidden: a Wisdom
+    /// (Perception) check against that creature's recorded
+    /// <see cref="ActiveCondition.FindDifficultyClass"/>, revealing it on success.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>SRD 5.2.1 p.187, Search [Action]:</b> "When you take the Search action, you
+    /// make a Wisdom check to discern something that isn't obvious. The Search table
+    /// suggests which skills are applicable" — the table's row for "Concealed creature
+    /// or object" names Perception, and Hide (p.183) gives the found creature's DC as
+    /// "the DC for a creature to find you with a Wisdom (Perception) check."
+    /// </para>
+    /// <para>
+    /// <b>Search takes an explicit target, the same reading #673 already settled for
+    /// Attack.</b> Print's Search is a general "look for something"; this engine's
+    /// actions are all targeted (<see cref="Attack"/>, <c>CastSpell</c>,
+    /// <c>DivineSpark</c>), and #673's own reading of "Attacks Affected" already treats
+    /// an attack aimed at an Invisible creature as legal — "the attacker is read as
+    /// knowing where the target is and pays Disadvantage." Search follows the same
+    /// shape: <paramref name="target"/> names who the searcher is trying to find, and
+    /// the roll (not knowledge of the target's square) decides whether that guess pays
+    /// off. A target the caller cannot actually see is a client/AI honesty question
+    /// (#673-AI, #314), not an engine refusal — the engine's job, as with Attack, is the
+    /// check and its refusals, not omniscience policing.
+    /// </para>
+    /// <para>
+    /// <b>Passive Perception does NOT auto-find — the settled #673 reading.</b> Print
+    /// gives the find to "a Wisdom (Perception) check", and Passive Perception (p.22) is
+    /// the score used "when you're not actively looking for something"; in a fight the
+    /// searcher <em>is</em> looking, and the active look is this action. So a hidden
+    /// creature never loses Invisible from a bystander's standing Perception score, no
+    /// matter how high — only a spent Search action can find it. This action computes no
+    /// passive score and nothing else in the engine reads one against
+    /// <see cref="ActiveCondition.FindDifficultyClass"/>.
+    /// </para>
+    /// <para>
+    /// <b>Only an enemy may Search someone hidden</b> — print's third ending trigger is
+    /// specifically "<em>an enemy</em> finds you" (p.183), not any creature, so an ally
+    /// (or the hider itself) Searching does nothing to end Hide. Refused with
+    /// <c>search.not_enemy</c>, checked before <c>search.not_hidden</c> so a same-side
+    /// target gets the honest reason even while genuinely hidden.
+    /// </para>
+    /// <para>
+    /// Refused with <c>search.not_hidden</c> when <paramref name="target"/> carries no
+    /// Hide-conferred Invisible (never spent, already found, or a spell's Invisible,
+    /// which carries no find-DC and is untouched here — same scope as
+    /// <see cref="EndHiding"/>) — this is "there is no hidden creature to find" for a
+    /// name search names. Poisoned and Frightened hamper the check through the same
+    /// <see cref="ConditionRules.AbilityCheckMode"/> Hide and Escape use, and a failed
+    /// check still offers Tactical Mind, the same as both.
+    /// </para>
+    /// </remarks>
+    public ActionRefusal? Search(Combatant target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+
+        if (!TryGetActingCombatant(out var searcher, out var refusal))
+        {
+            return refusal;
+        }
+
+        if (searcher.SideId == target.SideId)
+        {
+            return new ActionRefusal(
+                "search.not_enemy",
+                $"{target.Name} is not an enemy of {searcher.Name}, and only an enemy finding you ends Hide.");
+        }
+
+        if (target.ConditionState(ConditionType.Invisible) is not { FindDifficultyClass: { } difficultyClass })
+        {
+            return new ActionRefusal(
+                "search.not_hidden",
+                $"{target.Name} is not hidden, so there is nothing to find.");
+        }
+
+        if (!searcher.Turn.HasAction)
+        {
+            return new ActionRefusal("action.spent", $"{searcher.Name} has already used its action.");
+        }
+
+        searcher.Turn.SpendAction();
+
+        var perception = SkillRules.BonusFor(searcher, "Perception");
+        var mode = ConditionRules.AbilityCheckMode(searcher, Battlefield, _combatants);
+        var roll = D20Test.Roll(_random, perception, mode);
+        var found = roll.Total >= difficultyClass;
+
+        Add(
+            CombatStepKind.Condition,
+            $"{searcher.Name} searches for {target.Name}: {roll} vs DC {difficultyClass} — " +
+            (found ? "found!" : "not found."),
+            searcher,
+            target);
+
+        // Tactical Mind turns a failed ability check around — the same seam Escape's
+        // grapple check and Hide's Stealth check use, and this is the third call site.
+        if (!found)
+        {
+            found = TryTacticalMind(searcher, roll.Total, difficultyClass);
+        }
+
+        if (found)
+        {
+            RevealHidden(target, searcher);
+        }
+
+        return null;
     }
 
     /// <summary>
