@@ -110,6 +110,23 @@ public class DivineSparkTests
     }
 
     [Fact]
+    public void AnInvisibleAllyTheClericCannotSeeIsRefused()
+    {
+        // Concealed's one hard-coded consumer (#673): "another creature you can see" is
+        // more than the Total Cover refusal once Invisible exists, and the ally is
+        // adjacent with a perfectly clear line — target.unseen is the only thing that
+        // can be refusing this.
+        var (encounter, cleric, ally, _) = Fight(new SeededSequence(10, 5, 1));
+        ally.AddCondition(new ActiveCondition(ConditionType.Invisible, SourceId: ally.Id, FindDifficultyClass: 17));
+
+        var refusal = encounter.DivineSpark(ally, DivineSparkUse.Heal);
+
+        Assert.Equal("target.unseen", refusal?.Code);
+        Assert.True(cleric.Turn.HasAction);
+        Assert.Equal(2, cleric.Features.ChannelDivinityRemaining);
+    }
+
+    [Fact]
     public void TheDeadAreRefused()
     {
         var (encounter, cleric, ally, _) = Fight(new SeededSequence(10, 5, 1));

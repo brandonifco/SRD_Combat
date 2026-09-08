@@ -17,7 +17,7 @@ namespace SRDCombat.Core.Rules;
 /// failure, and the one this project is built to avoid.
 /// </para>
 /// <para>
-/// Twelve conditions are on it today.
+/// Thirteen conditions are on it today.
 /// </para>
 /// <list type="bullet">
 /// <item>
@@ -62,11 +62,14 @@ namespace SRDCombat.Core.Rules;
 /// <item>
 /// <b>Blinded</b> — Advantage on attack rolls against it, Disadvantage on its own, in
 /// <c>AttackRules</c>; both printed unconditionally on the condition and untouched by
-/// #672. Its "automatically fail any ability check that requires sight" is complete by
-/// vacancy today: the only check the engine rolls in a fight is the grapple Escape,
-/// which does not require sight — <see cref="AbilityCheckMode"/> does not gate on
-/// Blinded at all. Hide's Dexterity (Stealth) check (#673) will be the first check that
-/// does require sight, and is where this vacancy closes.
+/// #672. Its "automatically fail any ability check that requires sight" stays complete
+/// by vacancy even after #673 added a second in-combat ability check: Hide's Dexterity
+/// (Stealth) check does not require sight either — hiding is done by feel and
+/// stillness, not by watching anything, so a Blinded creature hides exactly as well as
+/// a sighted one — and <see cref="AbilityCheckMode"/> does not gate on Blinded for
+/// either check. (An earlier version of this note predicted Hide's check would be the
+/// one to close the vacancy; the designer's own #673 reading corrected that once the
+/// print was actually read.)
 /// </item>
 /// <item>
 /// <b>Charmed</b> — cannot attack the charmer or target it with a damaging effect. The
@@ -113,14 +116,27 @@ namespace SRDCombat.Core.Rules;
 /// printed end, so it lasts <c>BeyondTheFight</c>: the encounter's end is the rescue,
 /// which is the same reading every outlasting duration already gets.
 /// </item>
+/// <item>
+/// <b>Invisible</b> (#673) — Concealed and Attacks Affected, both gated through
+/// <c>VisionRules.CanSee</c>'s Invisible-defeat clause (Blindsight/Truesight in range)
+/// rather than a fresh reading of their own: <c>AttackCircumstances.AttackerIsUnseenByTarget</c>
+/// / <c>TargetIsUnseenByAttacker</c> give the Attacks Affected pair (folded together
+/// with p.14's Unseen Attackers and Targets, which has nothing else left to gate once
+/// Invisible exists), and <c>Encounter.Hide</c>'s <c>target.unseen</c> refusal is
+/// Concealed's one hard-coded consumer (Divine Spark), reached wherever a definition
+/// says its target must be seen. The Surprise clause is #675's. Every printed exception
+/// — "if a creature can somehow see you" — is the same Blindsight/Truesight clause in
+/// every case, never a special case per consumer. Hide (#673) is this condition's one
+/// producer today: <c>ActiveCondition.FindDifficultyClass</c> marks the instance Hide
+/// created, and only that instance ends on Hide's four printed triggers — a spell's
+/// Invisible (Invisibility, Greater Invisibility) carries none and ends however that
+/// spell says.
+/// </item>
 /// </list>
 /// <para>
-/// Everything else is deliberately absent, and the absences are the point. Deafened
-/// needs a hearing model that does not exist. Invisible needs more than #672's line of
-/// sight gives it — the "seeing a creature" half of sight (Heavily Obscured, and the
-/// target not Invisible), not the "line of sight" half this engine now models — and
-/// waits on #673. Until each has its model the rider is reported as not modelled
-/// rather than imposed as scenery.
+/// Everything else is deliberately absent, and the absence is the point. Deafened needs
+/// a hearing model that does not exist, and nothing here executes it; the rider is
+/// reported as not modelled rather than imposed as scenery.
 /// </para>
 /// </remarks>
 public static class ConditionRules
@@ -132,6 +148,7 @@ public static class ConditionRules
         ConditionType.Frightened,
         ConditionType.Grappled,
         ConditionType.Incapacitated,
+        ConditionType.Invisible,
         ConditionType.Paralyzed,
         ConditionType.Petrified,
         ConditionType.Poisoned,

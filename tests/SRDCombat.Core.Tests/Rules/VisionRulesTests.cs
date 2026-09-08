@@ -175,4 +175,158 @@ public class VisionRulesTests
 
         Assert.False(VisionRules.CanSee(field, viewer, target));
     }
+
+    // ── Blindsight's printed exception (#673): open eyes despite Blinded, in range ──
+
+    [Fact]
+    public void ABlindedViewerWithBlindsightInRangeStillSeesASquare()
+    {
+        var field = new Battlefield(6, 6);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { BlindsightFeet = 30 }, x: 0, y: 1);
+        viewer.AddCondition(ConditionType.Blinded);
+
+        // 20 ft away — within the printed 30-foot Blindsight range.
+        Assert.True(VisionRules.CanSee(field, viewer, new GridPosition(4, 1)));
+    }
+
+    [Fact]
+    public void ABlindedViewerWithBlindsightOutOfRangeStillSeesNothing()
+    {
+        var field = new Battlefield(10, 6);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { BlindsightFeet = 10 }, x: 0, y: 1);
+        viewer.AddCondition(ConditionType.Blinded);
+
+        // 20 ft away — beyond the printed 10-foot Blindsight range.
+        Assert.False(VisionRules.CanSee(field, viewer, new GridPosition(4, 1)));
+    }
+
+    [Fact]
+    public void BlindsightStillRespectsTotalCover()
+    {
+        // "You can see anything that isn't behind Total Cover" (p.177) — the exception
+        // is to Blinded, not to geometry.
+        var field = new Battlefield(6, 6, blocked: [new(2, 0), new(2, 1), new(2, 2)]);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { BlindsightFeet = 60 }, x: 0, y: 1);
+        viewer.AddCondition(ConditionType.Blinded);
+
+        Assert.False(VisionRules.CanSee(field, viewer, new GridPosition(4, 1)));
+    }
+
+    [Fact]
+    public void TruesightGrantsNoBlindedException()
+    {
+        // Only Blindsight's own printed sentence mentions Blinded (p.177); Truesight's
+        // (p.190) does not.
+        var field = new Battlefield(6, 6);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { TruesightFeet = 60 }, x: 0, y: 1);
+        viewer.AddCondition(ConditionType.Blinded);
+
+        Assert.False(VisionRules.CanSee(field, viewer, new GridPosition(4, 1)));
+    }
+
+    // ── The Invisible-defeat clause (#673) ───────────────────────────────────────
+
+    [Fact]
+    public void AnInvisibleCreatureIsNotSeenByAnOrdinaryViewer()
+    {
+        var field = new Battlefield(6, 6);
+        var viewer = CombatTestData.Combatant("viewer", x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        Assert.False(VisionRules.CanSee(field, viewer, target));
+    }
+
+    [Fact]
+    public void BlindsightInRangeSeesAnInvisibleCreature()
+    {
+        var field = new Battlefield(6, 6);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { BlindsightFeet = 30 }, x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        Assert.True(VisionRules.CanSee(field, viewer, target));
+    }
+
+    [Fact]
+    public void TruesightInRangeSeesAnInvisibleCreature()
+    {
+        var field = new Battlefield(6, 6);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { TruesightFeet = 30 }, x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        Assert.True(VisionRules.CanSee(field, viewer, target));
+    }
+
+    [Fact]
+    public void BlindsightOutOfRangeDoesNotSeeAnInvisibleCreature()
+    {
+        var field = new Battlefield(10, 6);
+        var viewer = CombatTestData.Combatant(
+            "viewer", stats: CombatTestData.Stats() with { BlindsightFeet = 10 }, x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        Assert.False(VisionRules.CanSee(field, viewer, target));
+    }
+
+    [Fact]
+    public void AnOrdinaryTargetIsUnaffectedByTheInvisibleClause()
+    {
+        // The clause only ever narrows the answer for an Invisible target — an ordinary
+        // one is seen exactly as ACreatureInTheOpenIsSeen already pins, which this test
+        // guards against a regression to "always defeated" or similar.
+        var field = new Battlefield(6, 6);
+        var viewer = CombatTestData.Combatant("viewer", x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+
+        Assert.True(VisionRules.CanSee(field, viewer, target));
+    }
+
+    // ── SideCanSee: the side-neutral aggregate ───────────────────────────────────
+
+    [Fact]
+    public void SideCanSee_TrueWhenAnyoneOnTheSideSeesTheTarget()
+    {
+        // The blind viewer proves this is an Any, not an All: an erroneous
+        // All(...) implementation would report false here, since blindFarViewer alone
+        // cannot see the target.
+        var field = new Battlefield(6, 6);
+        var blindFarViewer = CombatTestData.Combatant("far", x: 0, y: 5);
+        blindFarViewer.AddCondition(ConditionType.Blinded);
+        var nearViewer = CombatTestData.Combatant("near", x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+
+        Assert.False(VisionRules.CanSee(field, blindFarViewer, target));
+        Assert.True(VisionRules.SideCanSee(field, CombatTestData.Heroes, target, [blindFarViewer, nearViewer, target]));
+    }
+
+    [Fact]
+    public void SideCanSee_FalseWhenNoQualifyingViewerSeesTheTarget()
+    {
+        var field = new Battlefield(6, 6, blocked: [new(2, 0), new(2, 1), new(2, 2)]);
+        var viewer = CombatTestData.Combatant("viewer", x: 0, y: 1);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+
+        Assert.False(VisionRules.SideCanSee(field, CombatTestData.Heroes, target, [viewer, target]));
+    }
+
+    [Fact]
+    public void SideCanSee_AnInvisibleTargetDefeatsEveryOrdinaryViewerOnTheSide()
+    {
+        var field = new Battlefield(6, 6);
+        var viewerA = CombatTestData.Combatant("a", x: 0, y: 0);
+        var viewerB = CombatTestData.Combatant("b", x: 0, y: 5);
+        var target = CombatTestData.Combatant("target", sideId: CombatTestData.Monsters, x: 4, y: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        Assert.False(VisionRules.SideCanSee(field, CombatTestData.Heroes, target, [viewerA, viewerB, target]));
+    }
 }

@@ -175,6 +175,70 @@ public class AttackRulesTests
         Assert.False(circumstances.TargetIsDodging);
     }
 
+    // ── Unseen Attackers and Targets (p.14), via the Invisible condition (#673) ─────
+
+    [Fact]
+    public void AnInvisibleAttacker_GetsAdvantageAgainstATargetThatCannotSeeIt()
+    {
+        var attacker = CombatTestData.Combatant("a");
+        attacker.AddCondition(ConditionType.Invisible);
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attacker.Stats.Attacks[0], target);
+
+        Assert.True(circumstances.AttackerIsUnseenByTarget);
+        Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AnInvisibleTarget_ImposesDisadvantageOnTheAttacker()
+    {
+        var attacker = CombatTestData.Combatant("a");
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attacker.Stats.Attacks[0], target);
+
+        Assert.True(circumstances.TargetIsUnseenByAttacker);
+        Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void ABlindedAttackerVersusAnInvisibleTarget_StillOnlyOneDisadvantage()
+    {
+        // TargetIsUnseenByAttacker is gated on the attacker not already being Blinded
+        // (AttackerIsBlinded's own job) so the two circumstances never conflate two
+        // different printed causes under one name — but Advantage/Disadvantage never
+        // stack anyway, so the roll mode is the same either way: one Disadvantage, not
+        // a double one.
+        var attacker = CombatTestData.Combatant("a");
+        attacker.AddCondition(ConditionType.Blinded);
+        var target = CombatTestData.Combatant("b", sideId: CombatTestData.Monsters, x: 1);
+        target.AddCondition(ConditionType.Invisible);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attacker.Stats.Attacks[0], target);
+
+        Assert.True(circumstances.AttackerIsBlinded);
+        Assert.False(circumstances.TargetIsUnseenByAttacker);
+        Assert.Equal(RollMode.Disadvantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void BlindsightInRangeDefeatsTheInvisibleAttackersAdvantage()
+    {
+        var field = new Battlefield(8, 8);
+        var attacker = CombatTestData.Combatant("a", x: 0, y: 0);
+        attacker.AddCondition(ConditionType.Invisible);
+        var target = CombatTestData.Combatant(
+            "b", sideId: CombatTestData.Monsters, stats: CombatTestData.Stats() with { BlindsightFeet = 30 }, x: 1, y: 0);
+
+        var circumstances = AttackRules.DescribeCircumstances(
+            attacker, attacker.Stats.Attacks[0], target, [attacker, target], field);
+
+        Assert.False(circumstances.AttackerIsUnseenByTarget);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
     [Theory]
     // Prone gives the attacker Advantage up close and Disadvantage from further away.
     [InlineData(5, RollMode.Advantage)]

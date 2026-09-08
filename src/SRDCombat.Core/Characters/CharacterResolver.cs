@@ -120,6 +120,9 @@ public static class CharacterResolver
             SpellAttackItemBonus = magicItems.Sum(item => item.Powers.SpellAttackBonus),
             IgnoresHalfCoverOnSpellAttacks = magicItems.Any(item => item.Powers.IgnoresHalfCoverOnSpellAttacks),
             CriticalHitsAgainstBecomeNormal = magicItems.Any(item => item.Powers.CriticalHitsAgainstBecomeNormal),
+            StealthDisadvantage = draft.ArmorId is { } wornArmorId
+                && content.Armor.TryGetValue(wornArmorId, out var wornArmor)
+                && wornArmor.StealthDisadvantage,
         };
     }
 

@@ -61,6 +61,25 @@ namespace SRDCombat.Core.Rules;
 /// stored and nothing expires, because the printed rule is about the state of the
 /// roll, not a condition imposed on anyone.
 /// </param>
+/// <param name="AttackerIsUnseenByTarget">
+/// Unseen Attackers and Targets, p.14: "When a creature can't see you, you have
+/// Advantage on attack rolls against it" — folded together with the Invisible
+/// condition's own "your attack rolls have Advantage" (p.184), since under this engine
+/// the only printed way to fail to see an attacker you may still be attacked by is that
+/// attacker being Invisible (#673) — a wall-blocked attacker is refused by Total Cover
+/// before a roll ever happens. True when the attacker has Invisible and the target does
+/// not somehow see it (<see cref="VisionRules"/>'s Blindsight/Truesight clause).
+/// </param>
+/// <param name="TargetIsUnseenByAttacker">
+/// Unseen Attackers and Targets, p.14: "When you make an attack roll against a target
+/// you can't see, you have Disadvantage on the roll" — folded together with the
+/// Invisible condition's own "Attack rolls against you have Disadvantage" (p.184), for
+/// the same reason <see cref="AttackerIsUnseenByTarget"/> is. True when the attacker is
+/// not itself Blinded (<see cref="AttackerIsBlinded"/> already covers that attacker's
+/// own Disadvantage, and doubling it here would conflate two different printed causes
+/// under one name) and the target has Invisible and the attacker does not somehow see
+/// it.
+/// </param>
 /// <remarks>
 /// Every one defaults to false, because false is "nothing unusual is true" for all of
 /// them. That keeps a caller naming only the circumstance it cares about, and means the
@@ -83,7 +102,9 @@ public sealed record AttackCircumstances(
     bool TargetIsStunned = false,
     bool RangedAttackInCloseCombat = false,
     bool TargetIsPetrified = false,
-    bool AttacksOwnAdvantageConditionHolds = false);
+    bool AttacksOwnAdvantageConditionHolds = false,
+    bool AttackerIsUnseenByTarget = false,
+    bool TargetIsUnseenByAttacker = false);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
 /// <param name="Roll">The d20 roll.</param>
@@ -158,7 +179,13 @@ public static class AttackRules
             TargetIsPetrified: target.HasCondition(ConditionType.Petrified),
             RangedAttackInCloseCombat:
                 combatants is not null && InCloseCombat(attacker, attack, distance, combatants, battlefield),
-            AttacksOwnAdvantageConditionHolds: MeetsAdvantageCondition(attack, attacker, target));
+            AttacksOwnAdvantageConditionHolds: MeetsAdvantageCondition(attack, attacker, target),
+            AttackerIsUnseenByTarget:
+                attacker.HasCondition(ConditionType.Invisible) && !Sees(battlefield, target, attacker),
+            TargetIsUnseenByAttacker:
+                !attacker.HasCondition(ConditionType.Blinded)
+                && target.HasCondition(ConditionType.Invisible)
+                && !Sees(battlefield, attacker, target));
     }
 
     /// <summary>
@@ -166,16 +193,17 @@ public static class AttackRules
     /// #672 fallback every sight-gated attack circumstance uses. Consults
     /// <see cref="VisionRules.CanSee(Battlefield, Combatant,
     /// Combatant)"/> when a battlefield is offered; otherwise falls back to the
-    /// pre-#672 reading — not Blinded — so a caller with no field (the two-creature unit
-    /// tests) sees exactly what it always did. <c>VisionRules.HasOpenEyes</c> already
-    /// tests "not Blinded" as part of its own qualifying-viewer check, so the two
+    /// pre-#672 reading — not Blinded — extended by #673 to also read an Invisible
+    /// <paramref name="other"/> as unseen, since a caller with no field has no distance
+    /// to judge Blindsight/Truesight against either. <c>VisionRules.HasOpenEyes</c>
+    /// already tests "not Blinded" as part of its own qualifying-viewer check, so the two
     /// readings agree whenever <paramref name="viewer"/> carries no other disqualifying
     /// state; a battlefield only ever narrows the answer further, with line of sight.
     /// </summary>
     private static bool Sees(Battlefield? battlefield, Combatant viewer, Combatant other) =>
         battlefield is not null
             ? VisionRules.CanSee(battlefield, viewer, other)
-            : !viewer.HasCondition(ConditionType.Blinded);
+            : !viewer.HasCondition(ConditionType.Blinded) && !other.HasCondition(ConditionType.Invisible);
 
     /// <summary>
     /// Whether this attack's own printed Advantage circumstance (#666) holds right now.
@@ -267,6 +295,7 @@ public static class AttackRules
             || circumstances.TargetIsStunned
             || circumstances.TargetIsPetrified
             || circumstances.AttacksOwnAdvantageConditionHolds
+            || circumstances.AttackerIsUnseenByTarget
             || (circumstances.TargetIsProne && withinFiveFeet);
 
         var disadvantage =
@@ -279,6 +308,7 @@ public static class AttackRules
             || circumstances.AttackerIsBlinded
             || circumstances.AttackerIsFrightened
             || circumstances.RangedAttackInCloseCombat
+            || circumstances.TargetIsUnseenByAttacker
             || (circumstances.TargetIsProne && !withinFiveFeet);
 
         return D20Test.Combine(advantage, disadvantage);

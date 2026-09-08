@@ -761,30 +761,141 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
-    public void T4_ABlindedCombatantBuiltFromABlindsightMonsterStillDoesNotQualify()
+    public void ABlindedCombatantBuiltFromABlindsightMonsterNowQualifiesInRange()
     {
-        // T4 (#672), against a real corpus monster rather than an unattached
-        // condition (Codex round 1: a prior version of this test built an ordinary
-        // combatant and never actually attached Blindsight to anything). The Animated
-        // Armor prints Blindsight 60 ft (SRD 5.2.1's own "you can see anything that
-        // isn't behind Total Cover even if you have the Blinded condition", p. 177) —
-        // and CombatantStats.FromMonster never reads MonsterDefinition.Senses at all,
-        // so the resulting combatant carries no trace of it. VisionRules.HasOpenEyes
-        // therefore still disqualifies it once Blinded, print's exception
-        // notwithstanding. Stated as a decision, not an oversight: when #673 carries
-        // senses into combat, this test is meant to go red — the planned decision
-        // point, not a regression — and should be retired alongside the new senses
-        // tests that replace it.
+        // #672's T4 is retired here, in the PR that carries senses onto
+        // CombatantStats: it asserted the pre-#673 vacancy ("the predicate ignores
+        // special senses") and was always meant to go red the moment that closed —
+        // named in T4's own doc comment and in #672's addendum as the planned handover,
+        // not a regression. This is that handover's replacement: the Animated Armor
+        // prints Blindsight 60 ft (p.177's "you can see anything that isn't behind
+        // Total Cover even if you have the Blinded condition"), and a Blinded
+        // combatant built from it now qualifies as a viewer within that range.
         var armor = Content.MonstersById["monster.animated-armor"];
         Assert.Contains(armor.Senses, sense => sense.Type == SenseType.Blindsight);
 
-        var viewer = new Combatant(
-            "armor", armor.Name, "constructs", CombatantStats.FromMonster(armor), new GridPosition(0, 0));
+        var stats = CombatantStats.FromMonster(armor);
+        Assert.Equal(60, stats.BlindsightFeet);
+
+        var viewer = new Combatant("armor", armor.Name, "constructs", stats, new GridPosition(0, 0));
         viewer.AddCondition(ConditionType.Blinded);
 
-        var field = new Battlefield(6, 6);
+        var field = new Battlefield(20, 20);
 
-        Assert.False(VisionRules.CanSee(field, viewer, new GridPosition(1, 0)));
+        // 60 ft (12 squares) away: within Blindsight's range.
+        Assert.True(VisionRules.CanSee(field, viewer, new GridPosition(12, 0)));
+
+        // 65 ft away: one square beyond it.
+        Assert.False(VisionRules.CanSee(field, viewer, new GridPosition(13, 0)));
+    }
+
+    [Fact]
+    public void EveryPoolMonstersCombatantStatsSensesEqualItsPrintedSenses()
+    {
+        // The trip-wire #673's designer reading asked for: an extractor change that
+        // drops or duplicates a Blindsight/Truesight line makes this red rather than
+        // making a Blindsighted creature quietly blind to a hidden Rogue.
+        foreach (var monster in Content.MonstersById.Values)
+        {
+            var stats = CombatantStats.FromMonster(monster);
+
+            var printedBlindsight = monster.Senses
+                .Where(sense => sense.Type == SenseType.Blindsight)
+                .Select(sense => (int?)sense.RangeFeet)
+                .FirstOrDefault();
+            var printedTruesight = monster.Senses
+                .Where(sense => sense.Type == SenseType.Truesight)
+                .Select(sense => (int?)sense.RangeFeet)
+                .FirstOrDefault();
+
+            Assert.True(
+                monster.Senses.Count(sense => sense.Type == SenseType.Blindsight) <= 1,
+                $"{monster.Id} prints Blindsight more than once.");
+            Assert.True(
+                monster.Senses.Count(sense => sense.Type == SenseType.Truesight) <= 1,
+                $"{monster.Id} prints Truesight more than once.");
+
+            Assert.True(
+                stats.BlindsightFeet == printedBlindsight,
+                $"{monster.Id}: CombatantStats.BlindsightFeet ({stats.BlindsightFeet}) does not match the printed sense ({printedBlindsight}).");
+            Assert.True(
+                stats.TruesightFeet == printedTruesight,
+                $"{monster.Id}: CombatantStats.TruesightFeet ({stats.TruesightFeet}) does not match the printed sense ({printedTruesight}).");
+        }
+
+        // The counts #673's designer reading cited from the same census.
+        Assert.Equal(80, Content.MonstersById.Values.Count(m => m.Senses.Any(s => s.Type == SenseType.Blindsight)));
+        Assert.Equal(16, Content.MonstersById.Values.Count(m => m.Senses.Any(s => s.Type == SenseType.Truesight)));
+    }
+
+    /// <summary>
+    /// #673's regeneration trip-wire: adding Invisible to <c>ConditionRules.Executable</c>
+    /// changes what a rider <em>may</em> claim, and every corpus Invisible rider must
+    /// still carry an <c>UnmodelledRequirement</c> so none of them silently becomes
+    /// imposable. Named so the first parser change that "fully models" one of these
+    /// spells must decide the #407 polarity question rather than make the target
+    /// Invisible by accident.
+    /// </summary>
+    [Fact]
+    public void EveryInvisibleRiderInTheCorpusStaysNonImposableNowThatInvisibleIsExecutable()
+    {
+        Assert.True(ConditionRules.IsExecutable(ConditionType.Invisible));
+
+        var spellRiders = Content.SpellsById.Values
+            .SelectMany(spell => spell.AppliedConditions
+                .Concat(spell.Save?.AppliedConditions ?? [])
+                .Select(rider => (spell.Id, rider)))
+            .Where(pair => pair.rider.Condition == ConditionType.Invisible)
+            .ToArray();
+
+        var monsterRiders = Content.MonstersById.Values
+            .SelectMany(monster => monster.Entries.Select(entry => (monster.Id, entry)))
+            .SelectMany(pair => pair.entry.AppliedConditions
+                .Concat(pair.entry.Save?.AppliedConditions ?? [])
+                .Select(rider => (pair.Id, rider)))
+            .Where(pair => pair.rider.Condition == ConditionType.Invisible)
+            .ToArray();
+
+        foreach (var (id, rider) in spellRiders)
+        {
+            Assert.False(
+                ConditionRules.CanBeImposed(rider),
+                $"{id} carries an Invisible rider that became imposable once Invisible joined Executable.");
+        }
+
+        foreach (var (id, rider) in monsterRiders)
+        {
+            Assert.False(
+                ConditionRules.CanBeImposed(rider),
+                $"{id} carries an Invisible rider that became imposable once Invisible joined Executable.");
+        }
+
+        // The designer's own census (#673): nine spells, five of them the #407
+        // polarity class (Invisible printed as something negated — "can't benefit
+        // from", "gains no benefit against you") recorded as an imposition.
+        Assert.Equal(
+            new[]
+            {
+                "spell.faerie-fire",
+                "spell.greater-invisibility",
+                "spell.invisibility",
+                "spell.mind-spike",
+                "spell.mislead",
+                "spell.see-invisibility",
+                "spell.sequester",
+                "spell.shining-smite",
+                "spell.starry-wisp",
+            },
+            spellRiders.Select(pair => pair.Id).Distinct().OrderBy(id => id, StringComparer.Ordinal).ToArray());
+
+        // Mind Spike is the one PreparableSpells entry among the nine — it executes
+        // for its damage only, never the Invisible rider, which stays unimposable
+        // above regardless of the allowlist.
+        Assert.Contains("spell.mind-spike", spellRiders.Select(pair => pair.Id));
+
+        Assert.Equal(
+            new[] { "monster.invisible-stalker", "monster.will-o-wisp" },
+            monsterRiders.Select(pair => pair.Id).Distinct().OrderBy(id => id, StringComparer.Ordinal).ToArray());
     }
 
     [Fact]

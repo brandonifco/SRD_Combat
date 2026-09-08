@@ -443,7 +443,9 @@ public static class MovementRules
     /// Blinded enemy therefore makes no Opportunity Attacks, closing a gap #671 flagged:
     /// cover already refused one through a wall (<c>Encounter.MakeOpportunityAttack</c>),
     /// but nothing before this stopped a Blinded reactor swinging on a mover it could not
-    /// see.
+    /// see. Since #673, "that you can see" also composes with the mover being Invisible
+    /// (Hide's hidden Rogue provokes no Opportunity Attack by walking away) — the same
+    /// Blindsight/Truesight-defeat clause every other sight-gated reading now shares.
     /// </para>
     /// </remarks>
     public static IReadOnlyList<Combatant> FindOpportunityAttackers(
@@ -473,7 +475,7 @@ public static class MovementRules
         return combatants
             .Where(enemy => enemy.SideId != mover.SideId)
             .Where(enemy => enemy.IsActive && enemy.Turn.HasReaction)
-            .Where(enemy => VisionRules.CanSee(field, enemy, mover.SpaceAt(from)))
+            .Where(enemy => VisionRules.CanSee(field, enemy, mover, mover.SpaceAt(from)))
             .Where(enemy =>
             {
                 var reach = MeleeReachFeet(enemy);

@@ -316,6 +316,35 @@ public sealed record CombatantStats(
     public bool IgnoresHalfCoverOnSpellAttacks { get; init; }
 
     /// <summary>
+    /// Blindsight's range in feet, or null when the creature has none. Carried from
+    /// <see cref="Definitions.MonsterDefinition.Senses"/> (#673) — the sense that "can see
+    /// anything that isn't behind Total Cover even if you have the Blinded condition ...
+    /// [and] can see something that has the Invisible condition" within range (p.177),
+    /// read by <see cref="Rules.VisionRules"/>. Null for every character at levels 1-5 —
+    /// a plain fact, not a gap.
+    /// </summary>
+    public int? BlindsightFeet { get; init; }
+
+    /// <summary>
+    /// Truesight's range in feet, or null when the creature has none. Carried from
+    /// <see cref="Definitions.MonsterDefinition.Senses"/> (#673) — "you see creatures and
+    /// objects that have the Invisible condition" within range (p.190). Unlike
+    /// Blindsight, Truesight carries no printed exception for Blinded: only
+    /// <see cref="Rules.VisionRules.HasOpenEyes(Combatant, int?)"/>'s Blindsight clause
+    /// opens closed eyes; Truesight only ever matters once eyes are already open.
+    /// </summary>
+    public int? TruesightFeet { get; init; }
+
+    /// <summary>
+    /// Whether the creature's worn armour imposes Disadvantage on Dexterity (Stealth)
+    /// checks — <see cref="Definitions.ArmorDefinition.StealthDisadvantage"/> (p.92),
+    /// carried onto the creature that actually rolls the check (#673's Hide). False for a
+    /// monster: a stat block's Stealth bonus is already printed whole, with whatever
+    /// armour the creature is described wearing baked in, so nothing here doubles it.
+    /// </summary>
+    public bool StealthDisadvantageFromArmor { get; init; }
+
+    /// <summary>
     /// The creature's printed type. Humanoid for every character — the 2024 rules print
     /// every species as Humanoid — and the stat block's own line for a monster. Added
     /// for the one printed rule that reads it in a fight: Shatter's "A Construct has
@@ -509,6 +538,7 @@ public sealed record CombatantStats(
         {
             CriticalHitsAgainstBecomeNormal = sheet.CriticalHitsAgainstBecomeNormal,
             IgnoresHalfCoverOnSpellAttacks = sheet.IgnoresHalfCoverOnSpellAttacks,
+            StealthDisadvantageFromArmor = sheet.StealthDisadvantage,
             CriticalHitThreshold = sheet.Has(ClassFeature.ImprovedCritical) ? 19 : 20,
 
             SkillBonuses = sheet.Skills.ToDictionary(
@@ -593,6 +623,19 @@ public sealed record CombatantStats(
             Multiattack = UsableMultiattack(monster, attacks),
 
             Entries = monster.Entries,
+
+            // #673: whichever of Blindsight/Truesight the stat block prints, carried by
+            // range. A stat block prints at most one of each (RealMonsterCombatTests'
+            // corpus test asserts this holds for all 330), so First rather than Max is
+            // exactly as correct and reads more plainly.
+            BlindsightFeet = monster.Senses
+                .Where(sense => sense.Type == SenseType.Blindsight)
+                .Select(sense => (int?)sense.RangeFeet)
+                .FirstOrDefault(),
+            TruesightFeet = monster.Senses
+                .Where(sense => sense.Type == SenseType.Truesight)
+                .Select(sense => (int?)sense.RangeFeet)
+                .FirstOrDefault(),
 
             SkillBonuses = monster.Skills.ToDictionary(
                 skill => skill.Key,
@@ -1139,6 +1182,15 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// own "cannot act" gate makes unexpressable today (#615), so the gap is recorded on
 /// the condition itself rather than only in a doc comment nobody at runtime reads.
 /// </param>
+/// <param name="FindDifficultyClass">
+/// The DC a Wisdom (Perception) check must beat to find this creature — Hide's own
+/// check total, "which is the DC for a creature to find you" (p.183). Non-null exactly
+/// when this Invisible instance came from Hide rather than a spell: "Hidden" <em>is</em>
+/// "Invisible with a find-DC" (#673), and the four printed triggers that end being
+/// hidden (an attack roll, a Verbal cast, a sound, being found) end only the instance
+/// that carries this field — a spell's Invisible (Invisibility, Greater Invisibility)
+/// carries none and has its own ending inside the spell instead.
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
@@ -1150,7 +1202,8 @@ public sealed record ActiveCondition(
     bool TiedToConcentration = false,
     ConditionType? EscalatesTo = null,
     bool EndsEarlyOnDamageOrSourceDown = false,
-    string? UnmodelledBehaviour = null);
+    string? UnmodelledBehaviour = null,
+    int? FindDifficultyClass = null);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.

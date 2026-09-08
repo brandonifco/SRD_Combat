@@ -509,21 +509,33 @@ public sealed partial class Encounter
     /// <para>
     /// Taken automatically rather than offered, like Uncanny Dodge: a failed escape with
     /// a spare Second Wind is never a case where a player would decline, and the use
-    /// costs nothing when it does not work. Narrow by construction — the engine rolls
-    /// exactly one ability check in combat, and this hooks it. Any future check should
-    /// call this too.
+    /// costs nothing when it does not work. Two ability checks call this today — the
+    /// grapple Escape here, and Hide's Stealth check (#673, <c>Encounter.Hiding.cs</c>)
+    /// — and any future one should too.
     /// </para>
     /// </remarks>
-    private bool TryTacticalMind(Combatant combatant, int checkTotal, int difficultyClass)
+    private bool TryTacticalMind(Combatant combatant, int checkTotal, int difficultyClass) =>
+        TryTacticalMind(combatant, checkTotal, difficultyClass, out _);
+
+    /// <inheritdoc cref="TryTacticalMind(Combatant, int, int)"/>
+    /// <param name="finalTotal">
+    /// The check's total after Tactical Mind's die, when it was rolled — unchanged from
+    /// <paramref name="checkTotal"/> if the feature does not apply. Escape has no use for
+    /// this (it only asks pass or fail); Hide's find-DC is exactly this number, so it
+    /// needs the total a plain <c>bool</c> would throw away.
+    /// </param>
+    private bool TryTacticalMind(Combatant combatant, int checkTotal, int difficultyClass, out int finalTotal)
     {
+        finalTotal = checkTotal;
+
         if (!combatant.Stats.Has(ClassFeature.TacticalMind) || combatant.Features.SecondWindRemaining <= 0)
         {
             return false;
         }
 
         var boost = DiceRoller.Roll(_random, new DiceExpression(1, 10, 0));
-        var total = checkTotal + boost.Total;
-        var succeeded = total >= difficultyClass;
+        finalTotal = checkTotal + boost.Total;
+        var succeeded = finalTotal >= difficultyClass;
 
         if (succeeded)
         {
@@ -532,7 +544,7 @@ public sealed partial class Encounter
 
         Add(
             CombatStepKind.Feature,
-            $"{combatant.Name} uses Tactical Mind: {boost} takes the check to {total} vs DC " +
+            $"{combatant.Name} uses Tactical Mind: {boost} takes the check to {finalTotal} vs DC " +
             $"{difficultyClass} — " +
             (succeeded
                 ? $"success ({combatant.Features.SecondWindRemaining} Second Wind use(s) left)."
@@ -1924,6 +1936,13 @@ public sealed partial class Encounter
             combatants: _combatants,
             cover: cover,
             battlefield: Battlefield);
+
+        // "You stop being hidden immediately after ... you make an attack roll" (p.183),
+        // and only after: "you give away your location when the attack hits or misses"
+        // (p.14) — so this sits after the roll resolves, not before it, and a hidden
+        // attacker's first swing of a pair keeps its Advantage while the second rolls
+        // normally. A no-op for an attacker that is not (Hide-)hidden.
+        RevealAfterOwnAttackRoll(attacker);
 
         // "Make an attack roll against an enemy" — the first printed way to extend a
         // Rage, and it is the roll rather than the hit, so it is recorded here before

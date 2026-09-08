@@ -117,6 +117,13 @@ public sealed record CharacterSheet
     /// <summary>"Any Critical Hit against you becomes a normal hit" — Adamantine Armor.</summary>
     public bool CriticalHitsAgainstBecomeNormal { get; init; }
 
+    /// <summary>
+    /// Whether worn armour gives Disadvantage on Dexterity (Stealth) checks (p.92) —
+    /// resolved from the equipped armour's own <see cref="Definitions.ArmorDefinition.StealthDisadvantage"/>
+    /// (#673's Hide). False when nothing is worn.
+    /// </summary>
+    public bool StealthDisadvantage { get; init; }
+
     /// <summary>The ability modifier for an ability score.</summary>
     public int Modifier(Ability ability) => AbilityRules.ModifierFor(AbilityScores[ability]);
 
