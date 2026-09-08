@@ -371,10 +371,11 @@ public sealed record CombatantStats(
     /// empty). Read by <c>Encounter.TryParry</c> at the instant a melee attack hits.
     /// </summary>
     /// <remarks>
-    /// The first such reaction across the Reaction-section entries wins; the corpus's
-    /// four Parry-bearers each print exactly one, so "first" is unambiguous today. A
-    /// second executable reaction of the same trigger on one creature is a case that does
-    /// not exist yet and is not modelled ahead of it.
+    /// The first such reaction across the Reaction-section entries wins; every corpus
+    /// Parry-bearer (#678: Bandit Captain, Knight, Warrior Veteran, Noble, Gladiator,
+    /// Erinyes, Marilith) prints exactly one, so "first" is unambiguous today. A second
+    /// executable reaction of the same trigger on one creature is a case that does not
+    /// exist yet and is not modelled ahead of it.
     /// </remarks>
     public ExecutableReaction? MeleeHitReaction =>
         Entries

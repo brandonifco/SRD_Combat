@@ -1901,13 +1901,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The bandit is hit by a melee attack roll while holding a weapon.",
-            "response": "The bandit adds 2 to its AC against that attack, possibly causing it to miss."
+            "response": "The bandit adds 2 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 2
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The bandit is hit by a melee attack roll while holding a weapon",
-            "The bandit adds 2 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 261
@@ -12017,13 +12018,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The erinyes is hit by a melee attack roll while holding a weapon.",
-            "response": "The erinyes adds 4 to its AC against that attack, possibly causing it to miss."
+            "response": "The erinyes adds 4 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 4
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The erinyes is hit by a melee attack roll while holding a weapon",
-            "The erinyes adds 4 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 283
@@ -14549,13 +14551,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The gladiator is hit by a melee attack roll while holding a weapon.",
-            "response": "The gladiator adds 3 to its AC against that attack, possibly causing it to miss."
+            "response": "The gladiator adds 3 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 3
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The gladiator is hit by a melee attack roll while holding a weapon",
-            "The gladiator adds 3 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 289
@@ -20585,13 +20588,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The knight is hit by a melee attack roll while holding a weapon.",
-            "response": "The knight adds 2 to its AC against that attack, possibly causing it to miss."
+            "response": "The knight adds 2 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 2
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The knight is hit by a melee attack roll while holding a weapon",
-            "The knight adds 2 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 302
@@ -22358,13 +22362,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The marilith is hit by a melee attack roll while holding a weapon.",
-            "response": "The marilith adds 5 to its AC against that attack, possibly causing it to miss."
+            "response": "The marilith adds 5 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 5
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The marilith is hit by a melee attack roll while holding a weapon",
-            "The marilith adds 5 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 306
@@ -24897,13 +24902,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The noble is hit by a melee attack roll while holding a weapon.",
-            "response": "The noble adds 2 to its AC against that attack, possibly causing it to miss."
+            "response": "The noble adds 2 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 2
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The noble is hit by a melee attack roll while holding a weapon",
-            "The noble adds 2 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 312
@@ -36177,13 +36183,14 @@
           "mechanics": "Reaction",
           "reaction": {
             "trigger": "The warrior is hit by a melee attack roll while holding a weapon.",
-            "response": "The warrior adds 2 to its AC against that attack, possibly causing it to miss."
+            "response": "The warrior adds 2 to its AC against that attack, possibly causing it to miss.",
+            "executable": {
+              "trigger": "HitByMeleeAttack",
+              "armorClassBonus": 2
+            }
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "The warrior is hit by a melee attack roll while holding a weapon",
-            "The warrior adds 2 to its AC against that attack, possibly causing it to miss"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 337
