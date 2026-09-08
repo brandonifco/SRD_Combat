@@ -66,6 +66,48 @@ public sealed record TraitEntry(
         Mechanics != EntryMechanics.Unmodelled && UnmodelledClauses.Count == 0;
 }
 
+/// <summary>
+/// One full-width sub-table from the origins chapter — Draconic Ancestors, Elven
+/// Lineages, Fiendish Legacies (#374, #381). These three interrupt the chapter's
+/// normal two-column body to span the page, and the trait naming each one
+/// (Draconic Ancestry, Elven Lineage, Fiendish Legacy) does not execute — so this is
+/// capture only: cell text is verbatim and no semantics are assigned ahead of the
+/// reading execution would need. A damage-type column and a spellcasting-ability
+/// column are structured identically here.
+/// </summary>
+/// <remarks>
+/// Elven Lineages and Fiendish Legacies keep their printed grid exactly: one row per
+/// lineage/legacy, one column per printed header. Draconic Ancestors does not — the
+/// SRD prints it as five rows of two side-by-side (Dragon, Damage Type) pairs purely
+/// to use the column width, not as a four-column table with two unrelated pairs per
+/// row. Reading it as ten rows of the one (Dragon, Damage Type) relation the trait
+/// text actually refers to ("Choose the kind of dragon from the Draconic Ancestors
+/// table") is the semantic table, and is what
+/// <see cref="SRDCombat.Core.Definitions"/>'s callers and the acceptance criteria of
+/// #381 both expect — a table one queries by dragon name expects one row per dragon,
+/// not two. This is a written reading, not raw page geometry: "verbatim" above means
+/// cell text, not the printed page layout.
+/// </remarks>
+/// <param name="Name">The table's own printed heading — "Draconic Ancestors".</param>
+/// <param name="Columns">
+/// Column headers, left to right, matching the printed table for Elven Lineages and
+/// Fiendish Legacies. Draconic Ancestors' two columns ("Dragon", "Damage Type") name
+/// the one relation both printed side-by-side pairs share, per this record's remarks
+/// — not the page's four column headings.
+/// </param>
+/// <param name="Rows">
+/// Each row's cells, in <see cref="Columns"/> order. One row per lineage/legacy for
+/// Elven Lineages and Fiendish Legacies, in printed order; one row per dragon for
+/// Draconic Ancestors — ten, not the five physical print rows, per this record's
+/// remarks. Every row has exactly <see cref="Columns"/>.Count cells;
+/// <c>OriginValidator</c> checks that shape, the exact column headers, and the row
+/// count fixed for each table by name.
+/// </param>
+public sealed record OriginTable(
+    string Name,
+    IReadOnlyList<string> Columns,
+    IReadOnlyList<IReadOnlyList<string>> Rows);
+
 /// <summary>A playable species, from the SRD's Character Species section.</summary>
 public sealed record SpeciesDefinition
 {
@@ -87,6 +129,13 @@ public sealed record SpeciesDefinition
 
     /// <summary>The special traits the species grants.</summary>
     public required IReadOnlyList<TraitEntry> Traits { get; init; }
+
+    /// <summary>
+    /// Full-width sub-tables belonging to this species — Draconic Ancestors for the
+    /// Dragonborn, Elven Lineages for the Elf, Fiendish Legacies for the Tiefling.
+    /// Empty for the other six species. See <see cref="OriginTable"/>.
+    /// </summary>
+    public required IReadOnlyList<OriginTable> Tables { get; init; }
 
     /// <summary>The printed page in SRD 5.2.1 this was extracted from.</summary>
     public required int SourcePage { get; init; }

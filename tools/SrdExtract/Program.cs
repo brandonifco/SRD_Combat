@@ -53,6 +53,14 @@ var originLines = PageTextReader.Read(
     SrdPages.OriginsLastPage,
     PageLayout.TwoColumn);
 
+// The origins chapter mixes layouts too: Elven Lineages and Fiendish Legacies span
+// the full page width, same as a class page's Features table (#381).
+var originTableLines = PageTextReader.Read(
+    options.PdfPath,
+    SrdPages.OriginsFirstPage,
+    SrdPages.OriginsLastPage,
+    PageLayout.FullWidth);
+
 var classColumnLines = PageTextReader.Read(
     options.PdfPath,
     SrdPages.ClassesFirstPage,
@@ -68,7 +76,7 @@ var classTableLines = PageTextReader.Read(
     PageLayout.FullWidth);
 
 var monsterResult = MonsterParser.Parse(monsterLines);
-var originResult = OriginParser.Parse(originLines);
+var originResult = OriginParser.Parse(originLines, originTableLines);
 var classResult = ClassParser.Parse(classColumnLines, classTableLines);
 
 var spellResult = SpellParser.Parse(PageTextReader.Read(

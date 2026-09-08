@@ -288,6 +288,223 @@ public class OriginContentTests
     }
 
     [Fact]
+    public void DraconicAncestorsIsCapturedAsTenRows()
+    {
+        // #381: the table Draconic Ancestry names, captured rather than dropped.
+        // Verified against SRD 5.2.1 p. 84 — five printed rows of two side-by-side
+        // (Dragon, Damage Type) pairs, read here as ten rows of one pair each.
+        var table = Assert.Single(Content.SpeciesById["species.dragonborn"].Tables);
+
+        Assert.Equal("Draconic Ancestors", table.Name);
+        Assert.Equal(["Dragon", "Damage Type"], table.Columns);
+        Assert.Equal(
+            [
+                ["Black", "Acid"],
+                ["Gold", "Fire"],
+                ["Blue", "Lightning"],
+                ["Green", "Poison"],
+                ["Brass", "Fire"],
+                ["Red", "Fire"],
+                ["Bronze", "Lightning"],
+                ["Silver", "Cold"],
+                ["Copper", "Acid"],
+                ["White", "Cold"],
+            ],
+            table.Rows);
+    }
+
+    [Fact]
+    public void ElvenLineagesIsCapturedWithAllThreeColumns()
+    {
+        // #381. Verified against SRD 5.2.1 p. 85 — the table Elven Lineage names,
+        // whose Level 3 and Level 5 columns are the ones the two-column pass alone
+        // cannot keep with the row (#374): they sit past the column boundary.
+        var table = Assert.Single(Content.SpeciesById["species.elf"].Tables);
+
+        Assert.Equal("Elven Lineages", table.Name);
+        Assert.Equal(["Lineage", "Level 1", "Level 3", "Level 5"], table.Columns);
+        Assert.Equal(3, table.Rows.Count);
+
+        Assert.Equal(
+            [
+                "Drow",
+                "The range of your Darkvision increases to 120 feet. You also know " +
+                "the Dancing Lights cantrip.",
+                "Faerie Fire",
+                "Darkness",
+            ],
+            table.Rows[0]);
+
+        Assert.Equal(
+            [
+                "High Elf",
+                "You know the Prestidigitation cantrip. Whenever you finish a Long " +
+                "Rest, you can replace that cantrip with a different cantrip from " +
+                "the Wizard spell list.",
+                "Detect Magic",
+                "Misty Step",
+            ],
+            table.Rows[1]);
+
+        Assert.Equal(
+            [
+                "Wood Elf",
+                "Your Speed increases to 35 feet. You also know the Druidcraft cantrip.",
+                "Longstrider",
+                "Pass without Trace",
+            ],
+            table.Rows[2]);
+    }
+
+    [Fact]
+    public void FiendishLegaciesIsCapturedWithAllThreeColumns()
+    {
+        // #381. Verified against SRD 5.2.1 p. 86 — the table Fiendish Legacy names.
+        var table = Assert.Single(Content.SpeciesById["species.tiefling"].Tables);
+
+        Assert.Equal("Fiendish Legacies", table.Name);
+        Assert.Equal(["Legacy", "Level 1", "Level 3", "Level 5"], table.Columns);
+
+        Assert.Equal(
+            [
+                "Abyssal",
+                "You have Resistance to Poison damage. You also know the Poison " +
+                "Spray cantrip.",
+                "Ray of Sickness",
+                "Hold Person",
+            ],
+            table.Rows[0]);
+
+        Assert.Equal(
+            [
+                "Chthonic",
+                "You have Resistance to Necrotic damage. You also know the Chill " +
+                "Touch cantrip.",
+                "False Life",
+                "Ray of Enfeeblement",
+            ],
+            table.Rows[1]);
+
+        Assert.Equal(
+            [
+                "Infernal",
+                "You have Resistance to Fire damage. You also know the Fire Bolt cantrip.",
+                "Hellish Rebuke",
+                "Darkness",
+            ],
+            table.Rows[2]);
+    }
+
+    [Fact]
+    public void OnlyTheThreeNamedSpeciesCarryATable()
+    {
+        // The positive counterpart to the three tests above: the other six species —
+        // whose pages carry no full-width table — extract with none.
+        var withTables = Content.Species.Where(species => species.Tables.Count > 0)
+            .Select(species => species.Name)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(["Dragonborn", "Elf", "Tiefling"], withTables);
+    }
+
+    [Fact]
+    public void EveryOriginTableFollowsTheSrdsOwnRowAndColumnCounts()
+    {
+        // The general lesson (docs/guides/extraction.md): assert the shape of what
+        // should have been found. Every row also has exactly as many cells as the
+        // table has columns, and no cell is blank.
+        var result = OriginValidator.ValidateSpecies(Content.Species);
+
+        Assert.DoesNotContain(result.Issues, issue => issue.Code.StartsWith("species.table.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AMissingTableIsRejected()
+    {
+        var dragonborn = Content.SpeciesById["species.dragonborn"];
+        var broken = dragonborn with { Tables = [] };
+
+        var result = OriginValidator.ValidateSpecies(
+            Content.Species.Where(species => species.Id != dragonborn.Id).Append(broken).ToArray());
+
+        Assert.Contains(result.Errors, issue => issue.Code == "species.table.missing" && issue.Subject == "Draconic Ancestors");
+    }
+
+    [Fact]
+    public void ATableWithTheWrongRowCountIsRejected()
+    {
+        var elf = Content.SpeciesById["species.elf"];
+        var table = elf.Tables.Single();
+        var broken = elf with { Tables = [table with { Rows = table.Rows.Take(2).ToArray() }] };
+
+        var result = OriginValidator.ValidateSpecies([broken]);
+
+        Assert.Contains(result.Errors, issue => issue.Code == "species.table.row_count");
+    }
+
+    [Fact]
+    public void ATableRowWithTheWrongCellCountIsRejected()
+    {
+        var tiefling = Content.SpeciesById["species.tiefling"];
+        var table = tiefling.Tables.Single();
+        var polluted = table.Rows.Select((row, index) => index == 0 ? (IReadOnlyList<string>)[.. row, "extra"] : row).ToArray();
+        var broken = tiefling with { Tables = [table with { Rows = polluted }] };
+
+        var result = OriginValidator.ValidateSpecies([broken]);
+
+        Assert.Contains(result.Errors, issue => issue.Code == "species.table.row_shape");
+    }
+
+    [Fact]
+    public void ATableWithABlankCellIsRejected()
+    {
+        var dragonborn = Content.SpeciesById["species.dragonborn"];
+        var table = dragonborn.Tables.Single();
+        var polluted = table.Rows.Select((row, index) => index == 0 ? (IReadOnlyList<string>)[row[0], " "] : row).ToArray();
+        var broken = dragonborn with { Tables = [table with { Rows = polluted }] };
+
+        var result = OriginValidator.ValidateSpecies([broken]);
+
+        Assert.Contains(result.Errors, issue => issue.Code == "species.table.cell_empty");
+    }
+
+    [Fact]
+    public void ATableWithMergedColumnsIsRejected()
+    {
+        // The shape a boundary miscount would actually produce: Level 3 and Level 5
+        // silently merge into one column, so both the row count and each row's own
+        // cell count still agree with the (now three-column) table — a row-shape
+        // check alone cannot see this. Only comparing the printed column list can.
+        var elf = Content.SpeciesById["species.elf"];
+        var table = elf.Tables.Single();
+        var merged = table with
+        {
+            Columns = ["Lineage", "Level 1", "Level 3/5"],
+            Rows = table.Rows
+                .Select(row => (IReadOnlyList<string>)[row[0], row[1], $"{row[2]} / {row[3]}"])
+                .ToArray(),
+        };
+        var broken = elf with { Tables = [merged] };
+
+        var result = OriginValidator.ValidateSpecies([broken]);
+
+        Assert.Contains(result.Errors, issue => issue.Code == "species.table.columns_mismatch");
+    }
+
+    [Fact]
+    public void AnUnknownTableNameIsRejected()
+    {
+        var dragonborn = Content.SpeciesById["species.dragonborn"];
+        var table = dragonborn.Tables.Single();
+        var broken = dragonborn with { Tables = [table with { Name = "Draconic Ancestors Extended" }] };
+
+        var result = OriginValidator.ValidateSpecies(
+            Content.Species.Where(species => species.Id != dragonborn.Id).Append(broken).ToArray());
+
+        Assert.Contains(result.Errors, issue => issue.Code == "species.table.unknown");
+    }
+
+    [Fact]
     public void NoSpeciesTraitCarriesTableNoise()
     {
         // The positive counterpart to the theory above: assert it holds for every

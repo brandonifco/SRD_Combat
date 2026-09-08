@@ -14,12 +14,43 @@ namespace SRDCombat.Content.Validation;
 /// </remarks>
 public static partial class OriginValidator
 {
+    /// <summary>The row count and column headers the SRD fixes for one full-width origins table.</summary>
+    private sealed record ExpectedTableShape(int Rows, IReadOnlyList<string> Columns);
+
+    /// <summary>
+    /// The three full-width tables the origins chapter prints, and the row count and
+    /// column headers fixed by the source for each (#381) — the general lesson this
+    /// project keeps relearning (<c>docs/guides/extraction.md</c>): write the
+    /// validator that asserts the shape of what should have been found, not just what
+    /// was. The column list matters as much as the count: two columns silently merged
+    /// at a boundary (Level 3 and Level 5 read as one, say) would still pass a row
+    /// count and per-row cell count check, so both are asserted here.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, ExpectedTableShape> ExpectedTableShapes =
+        new Dictionary<string, ExpectedTableShape>(StringComparer.Ordinal)
+        {
+            ["Draconic Ancestors"] = new(10, ["Dragon", "Damage Type"]),
+            ["Elven Lineages"] = new(3, ["Lineage", "Level 1", "Level 3", "Level 5"]),
+            ["Fiendish Legacies"] = new(3, ["Legacy", "Level 1", "Level 3", "Level 5"]),
+        };
+
     public static ValidationResult ValidateSpecies(IReadOnlyList<SpeciesDefinition> species)
     {
         ArgumentNullException.ThrowIfNull(species);
 
         var issues = new List<ValidationIssue>();
         AddDuplicateIdIssues(species.Select(entry => entry.Id), "species", issues);
+
+        var foundTableNames = species.SelectMany(entry => entry.Tables.Select(table => table.Name)).ToHashSet(StringComparer.Ordinal);
+
+        foreach (var expectedTable in ExpectedTableShapes.Keys.Where(name => !foundTableNames.Contains(name)))
+        {
+            issues.Add(new ValidationIssue(
+                ValidationSeverity.Error,
+                "species.table.missing",
+                expectedTable,
+                $"the {expectedTable} table was not found anywhere in the chapter."));
+        }
 
         foreach (var entry in species)
         {
@@ -77,6 +108,62 @@ public static partial class OriginValidator
                         ValidationSeverity.Error,
                         "species.trait.table_noise",
                         $"{trait.Name}: trait text carries a run of table-style capitalized words — a table leaked into it.");
+                }
+            }
+
+            foreach (var table in entry.Tables)
+            {
+                if (ExpectedTableShapes.TryGetValue(table.Name, out var expected))
+                {
+                    if (table.Rows.Count != expected.Rows)
+                    {
+                        Add(
+                            ValidationSeverity.Error,
+                            "species.table.row_count",
+                            $"{table.Name}: found {table.Rows.Count} row(s); expected {expected.Rows} " +
+                            "(the model's own row count, not necessarily the page's physical row count — " +
+                            "see OriginTable's remarks for Draconic Ancestors).");
+                    }
+
+                    // Guards against two columns silently merging at a boundary — Level
+                    // 3 and Level 5 read as one, say — which a row-count check alone
+                    // cannot see: the row and per-row cell counts both still agree.
+                    if (!table.Columns.SequenceEqual(expected.Columns, StringComparer.Ordinal))
+                    {
+                        Add(
+                            ValidationSeverity.Error,
+                            "species.table.columns_mismatch",
+                            $"{table.Name}: columns [{string.Join(", ", table.Columns)}]; " +
+                            $"expected [{string.Join(", ", expected.Columns)}].");
+                    }
+                }
+                else
+                {
+                    Add(
+                        ValidationSeverity.Error,
+                        "species.table.unknown",
+                        $"'{table.Name}' is not one of the three full-width tables this chapter prints.");
+                }
+
+                if (table.Columns.Count == 0)
+                {
+                    Add(ValidationSeverity.Error, "species.table.columns_missing", $"{table.Name}: no columns were read.");
+                }
+
+                foreach (var row in table.Rows)
+                {
+                    if (row.Count != table.Columns.Count)
+                    {
+                        Add(
+                            ValidationSeverity.Error,
+                            "species.table.row_shape",
+                            $"{table.Name}: a row has {row.Count} cell(s); the table has {table.Columns.Count} column(s).");
+                    }
+
+                    if (row.Any(string.IsNullOrWhiteSpace))
+                    {
+                        Add(ValidationSeverity.Error, "species.table.cell_empty", $"{table.Name}: a row has a blank cell.");
+                    }
                 }
             }
         }

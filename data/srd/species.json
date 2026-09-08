@@ -74,6 +74,57 @@
           ]
         }
       ],
+      "tables": [
+        {
+          "name": "Draconic Ancestors",
+          "columns": [
+            "Dragon",
+            "Damage Type"
+          ],
+          "rows": [
+            [
+              "Black",
+              "Acid"
+            ],
+            [
+              "Gold",
+              "Fire"
+            ],
+            [
+              "Blue",
+              "Lightning"
+            ],
+            [
+              "Green",
+              "Poison"
+            ],
+            [
+              "Brass",
+              "Fire"
+            ],
+            [
+              "Red",
+              "Fire"
+            ],
+            [
+              "Bronze",
+              "Lightning"
+            ],
+            [
+              "Silver",
+              "Cold"
+            ],
+            [
+              "Copper",
+              "Acid"
+            ],
+            [
+              "White",
+              "Cold"
+            ]
+          ]
+        }
+      ],
       "sourcePage": 84
     },
     {
@@ -131,6 +182,7 @@
           ]
         }
       ],
+      "tables": [],
       "sourcePage": 84
     },
     {
@@ -201,6 +253,37 @@
           ]
         }
       ],
+      "tables": [
+        {
+          "name": "Elven Lineages",
+          "columns": [
+            "Lineage",
+            "Level 1",
+            "Level 3",
+            "Level 5"
+          ],
+          "rows": [
+            [
+              "Drow",
+              "The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip.",
+              "Faerie Fire",
+              "Darkness"
+            ],
+            [
+              "High Elf",
+              "You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.",
+              "Detect Magic",
+              "Misty Step"
+            ],
+            [
+              "Wood Elf",
+              "Your Speed increases to 35 feet. You also know the Druidcraft cantrip.",
+              "Longstrider",
+              "Pass without Trace"
+            ]
+          ]
+        }
+      ],
       "sourcePage": 84
     },
     {
@@ -252,6 +335,7 @@
           ]
         }
       ],
+      "tables": [],
       "sourcePage": 85
     },
     {
@@ -318,6 +402,7 @@
           ]
         }
       ],
+      "tables": [],
       "sourcePage": 85
     },
     {
@@ -371,6 +456,7 @@
           ]
         }
       ],
+      "tables": [],
       "sourcePage": 86
     },
     {
@@ -412,6 +498,7 @@
           ]
         }
       ],
+      "tables": [],
       "sourcePage": 86
     },
     {
@@ -454,6 +541,7 @@
           ]
         }
       ],
+      "tables": [],
       "sourcePage": 86
     },
     {
@@ -499,6 +587,37 @@
           "unmodelledClauses": [
             "You know the Thaumaturgy cantrip",
             "When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait."
+          ]
+        }
+      ],
+      "tables": [
+        {
+          "name": "Fiendish Legacies",
+          "columns": [
+            "Legacy",
+            "Level 1",
+            "Level 3",
+            "Level 5"
+          ],
+          "rows": [
+            [
+              "Abyssal",
+              "You have Resistance to Poison damage. You also know the Poison Spray cantrip.",
+              "Ray of Sickness",
+              "Hold Person"
+            ],
+            [
+              "Chthonic",
+              "You have Resistance to Necrotic damage. You also know the Chill Touch cantrip.",
+              "False Life",
+              "Ray of Enfeeblement"
+            ],
+            [
+              "Infernal",
+              "You have Resistance to Fire damage. You also know the Fire Bolt cantrip.",
+              "Hellish Rebuke",
+              "Darkness"
+            ]
           ]
         }
       ],

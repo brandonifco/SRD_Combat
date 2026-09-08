@@ -69,7 +69,16 @@ against the book:
   `ClassParser`. The Elven Lineages table's first column is wide enough to cross the
   column boundary outright, landing its fragments in the *next* species entirely:
   Gnome's Gnomish Lineage carried Elf's table, and Human's Versatile carried
-  Tiefling's Fiendish Legacies. Validator: `species.trait.table_noise`.
+  Tiefling's Fiendish Legacies. Validator: `species.trait.table_noise`. #381 gave the
+  three tables an actual home instead of just excluding their fragments from trait
+  text: `OriginParser` reads the species pages a second time, full width, the same
+  two-read shape as the Classes chapter — except which pass captures which table is
+  not uniform here. Draconic Ancestors sits entirely inside the left text column (a
+  narrower table, duplicated side by side to fill the page) so the ordinary
+  two-column pass already hands it over clean; Elven Lineages and Fiendish Legacies
+  genuinely span the full width, so only the full-width pass keeps a row's Level
+  1/3/5 cells together. See `OriginParser.SpeciesBuilder`'s and
+  `ParseFullWidthTables`'s remarks. Validator: `species.table.*`.
 - **A wrapped class list dropped 39 of 339 spells for months** while a `>= 300`
   floor test stayed green. Two lessons: *a number the pipeline prints about itself
   is not a check*, and *a floor is the wrong shape for a count fixed by the source*
