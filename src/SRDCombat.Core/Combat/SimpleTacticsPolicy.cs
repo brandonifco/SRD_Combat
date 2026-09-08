@@ -1582,46 +1582,64 @@ public static class SimpleTacticsPolicy
     /// range it can no longer use.
     /// </summary>
     /// <remarks>
-    /// Ordered by <see cref="ValueAgainst(CombatAttack, Combatant)"/> against
-    /// <paramref name="target"/> rather than raw average since #339 — plain long-range
-    /// halving is deliberately left out, unlike <see cref="ValueAt"/>: this is choosing
-    /// which attack the creature is walking to use at all, before any particular
-    /// distance is settled, and long range is a property of the distance a square ends
-    /// up at, not of the attack itself. Before this fix, a target Immune to a
-    /// harder-hitting ranged attack's damage type could still make that attack look like
-    /// "the" reach to plan around, so the creature planned its stopping distance for a
-    /// weapon it could never land a real hit with instead of the weaker one that
-    /// actually worked.
+    /// The reach of the attack this creature would actually *make* — the
+    /// <see cref="PlanningAttack"/> the walk arrives to use — not the longest one it
+    /// owns, falling back to bare melee reach when nothing is usable. Taking the maximum
+    /// instead was a latent bug for as long as no melee character carried a thrown
+    /// weapon, and it surfaced the moment the pregens were equipped from the printed
+    /// starting kits (a Fighter's Javelins, a Barbarian's Handaxes). A Javelin reaches
+    /// 120 feet at long range and the sides start 30 apart, so every front-liner counted
+    /// itself "already in reach" from its spawn square, never closed, and spent the
+    /// fight lobbing 1d6+3 at Disadvantage instead of walking in behind a Greataxe.
+    /// Measured: full clears fell from 38 of 120 to 2.
     /// </remarks>
-    private static int ReachOf(Combatant actor, Combatant target)
+    private static int ReachOf(Combatant actor, Combatant target) =>
+        PlanningAttack(actor, target)?.MaximumRangeFeet
+            ?? MovementRules.MeleeReachFeet(actor);
+
+    /// <summary>
+    /// The attack this creature plans its approach around: among the attacks it could
+    /// actually swing — available, and allowed in its Multiattack — the hardest-hitting
+    /// against <paramref name="target"/>'s own damage responses
+    /// (<see cref="ValueAgainst(CombatAttack, Combatant)"/> — zeroed by an Immunity,
+    /// halved by a Resistance, doubled by a Vulnerability), rather than raw average since
+    /// #339. This shares only the target-aware valuation with <see cref="TryAttack"/>,
+    /// not its whole ordering: <see cref="TryAttack"/> ranks a specific swing at a
+    /// specific distance — long-range-discounted (<see cref="ValueAt"/>), per-swing-cap
+    /// aware, ties broken by name — whereas this chooses which attack the creature is
+    /// walking to use at all, before any distance is settled, so it leaves the long-range
+    /// halving out and breaks ties toward the longer reach instead. That reach tie-break
+    /// keeps a genuine archer at range — the Rogue's Shortsword and Shortbow average the
+    /// same, and she should still shoot. Null when nothing is usable and
+    /// <see cref="ReachOf"/> falls back to bare melee reach.
+    /// </summary>
+    /// <remarks>
+    /// <b>Extracted from <see cref="ReachOf"/> as the seam #661 asked for, and behaviour
+    /// is unchanged: <see cref="ReachOf"/> is exactly this attack's
+    /// <see cref="CombatAttack.MaximumRangeFeet"/>.</b> The target-aware ordering #339
+    /// introduced here feeds that reach into a full 2D pathfinding search
+    /// (<see cref="ScoreSquares"/>) whose multi-key tie-break chain swamps any one
+    /// square's dependence on the exact reach, so the ordering could not be pinned
+    /// through a constructed board — bug and fix converged on the same square. Pulling
+    /// the pure choice out lets it be asserted directly: before #339 this ordered by raw
+    /// average, so a target Immune to a harder-hitting, longer-range attack's damage type
+    /// made that attack look like "the" reach to plan around, and the creature planned
+    /// its stopping distance for a weapon it could never land a real hit with instead of
+    /// the weaker one that actually worked (<c>PlanningAttackOrderingTests</c>).
+    /// </remarks>
+    internal static CombatAttack? PlanningAttack(Combatant actor, Combatant target)
     {
         var usable = actor.Stats.Attacks
             .Where(attack => actor.Uses.IsAvailable(attack.Name))
             .Where(attack => actor.Stats.AllowsInMultiattack(attack.Name))
             .ToArray();
 
-        // The reach of the attack this creature would actually *make*, not the longest
-        // one it owns — ordered exactly as TryAttack orders them, hardest-hitting first,
-        // so the walk plans to arrive where the swing it intends can land.
-        //
-        // Taking the maximum instead was a latent bug for as long as no melee character
-        // carried a thrown weapon, and it surfaced the moment the pregens were equipped
-        // from the printed starting kits (a Fighter's Javelins, a Barbarian's Handaxes).
-        // A Javelin reaches 120 feet at long range and the sides start 30 apart, so
-        // every front-liner counted itself "already in reach" from its spawn square,
-        // never closed, and spent the fight lobbing 1d6+3 at Disadvantage instead of
-        // walking in behind a Greataxe. Measured: full clears fell from 38 of 120 to 2.
-        //
-        // Ties break toward the longer reach, which keeps a genuine archer at range —
-        // the Rogue's Shortsword and Shortbow average the same, and she should still
-        // shoot.
         return usable.Length > 0
             ? usable
                 .OrderByDescending(attack => ValueAgainst(attack, target))
                 .ThenByDescending(attack => attack.MaximumRangeFeet)
                 .First()
-                .MaximumRangeFeet
-            : MovementRules.MeleeReachFeet(actor);
+            : null;
     }
 
     /// <summary>
