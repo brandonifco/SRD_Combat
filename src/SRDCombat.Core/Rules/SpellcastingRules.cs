@@ -124,17 +124,33 @@ public static class SpellcastingRules
     /// estimate from silently zeroing a spell that has real damage recorded somewhere.
     /// </para>
     /// </remarks>
-    public static double AverageDamage(SpellDefinition spell)
+    public static double AverageDamage(SpellDefinition spell) =>
+        DamageComponents(spell).Sum(component => component.Amount.Average);
+
+    /// <summary>
+    /// The damage components <see cref="AverageDamage"/> sums, exposed on their own so a
+    /// target-aware caller (#339) can weigh each component by the target's own damage
+    /// responses without re-deriving which field the resolver would actually roll.
+    /// </summary>
+    /// <remarks>
+    /// This is the whole of <see cref="AverageDamage"/>'s remarks about precedence and
+    /// the #376 double-count, factored out rather than duplicated: attack damage first,
+    /// then a save's failure damage, then plain damage as the fallback for a shape no
+    /// spell in the corpus takes today. A caller that weights components before summing
+    /// must still select from this same field, never mix fields, or the #376 bug returns
+    /// in a new shape.
+    /// </remarks>
+    public static IReadOnlyList<AttackDamage> DamageComponents(SpellDefinition spell)
     {
         ArgumentNullException.ThrowIfNull(spell);
 
         if (spell.IsSpellAttack)
         {
-            return spell.Damage.Sum(component => component.Amount.Average);
+            return spell.Damage;
         }
 
-        var failureDamage = spell.Save?.FailureDamage.Sum(component => component.Amount.Average) ?? 0;
+        var failureDamage = spell.Save?.FailureDamage ?? [];
 
-        return failureDamage > 0 ? failureDamage : spell.Damage.Sum(component => component.Amount.Average);
+        return failureDamage.Sum(component => component.Amount.Average) > 0 ? failureDamage : spell.Damage;
     }
 }
