@@ -232,54 +232,42 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        // Resolved once, before any mode branch below, so a bare --save (present with
-        // no value) is refused the same way regardless of which of the four launch
-        // modes reaches it — the same reasoning SeedArgument's own doc comment gives
-        // for --seed. SavePathArgument.TryResolve (#654) replaces the old
-        // `ArgumentValue("save") ?? "srdcombat-save.json"` fallback below, which read
-        // "the flag was passed with nothing after it" as "the flag was never passed"
-        // and silently wrote autosaves to the default path instead of naming the typo
-        // — and which used to run only after the --one-fight branch below had already
-        // returned, so a bare --save --one-fight was never even inspected.
-        if (!SavePathArgument.TryResolve(
-                HasArgument("save") ? FlagValue.Of(ArgumentValue("save")) : FlagValue.Absent,
-                out var savePath, out var saveError))
+        // The whole post-seed launch decision, resolved once before any mode branch
+        // below: the save path (a bare --save, present with no value, refused rather
+        // than silently defaulting — #654), the gauntlet-start gates
+        // (--spawn/--scenario/--difficulty without --one-fight all do nothing the
+        // gauntlet loop reads, and --continue with --level or a bad --level has nothing
+        // honest to fall back to — #463, #476, #488, #443), and which of the three
+        // launch modes this is. PlayModeLaunch.TryResolve (#491) folds
+        // SavePathArgument.TryResolve and GauntletStart.Resolve — in that order, so a
+        // bad --save wins over a bad gauntlet flag exactly as it did when the two ran as
+        // separate blocks here — plus the one-fight/continue/fresh mode selection into
+        // one result, so the composition of those decisions is pinned by a plain xUnit
+        // test (SRDCombat.Game.Tests.PlayModeLaunchTests) rather than re-expressed in
+        // this live node. The seed above stays this node's own first step: its default
+        // roll is ambient and probe/capture-aware, so it cannot move into a pure Game
+        // function (PlayModeLaunch's own remarks say why), which is why a seed refusal
+        // reads "seed refused" with no number and every refusal below reads
+        // $"seed {_seed}". The same HasArgument presence predicates ResolveFight's own
+        // spawn/scenario branch keys on (FightScreen.cs) feed this, so this gate and
+        // that branch never disagree about whether a flag was passed (#470, M2).
+        if (!PlayModeLaunch.TryResolve(
+                save: HasArgument("save") ? FlagValue.Of(ArgumentValue("save")) : FlagValue.Absent,
+                spawn: HasArgument("spawn") ? FlagValue.Of(ArgumentValue("spawn")) : FlagValue.Absent,
+                scenario: HasArgument("scenario") ? FlagValue.Of(ArgumentValue("scenario")) : FlagValue.Absent,
+                oneFight: HasArgument("one-fight"),
+                continuing: HasArgument("continue"),
+                level: HasArgument("level") ? FlagValue.Of(ArgumentValue("level")) : FlagValue.Absent,
+                difficulty: HasArgument("difficulty") ? FlagValue.Of(ArgumentValue("difficulty")) : FlagValue.Absent,
+                out var launch, out var launchError))
         {
             _phase = Phase.RunOver;
-            _interlude.Add(saveError!);
+            _interlude.Add(launchError!);
             _subtitle = $"seed {_seed}";
             return;
         }
 
-        _savePath = savePath;
-
-        // The gauntlet loop below never calls ResolveFight — it draws its own roster
-        // every fight — so --spawn/--scenario here would silently do nothing (#463,
-        // #476), --continue together with --level, or a bad --level, has nothing
-        // honest to fall back to either (#488), and --difficulty has nothing to shape
-        // either (the ladder escalates its own difficulty per rung — #443). All five
-        // gates are one decision now, computed once before either branch below needs
-        // it: GauntletStart.Resolve (#490b, extended for --difficulty by #443's own
-        // follow-up) folds the spawn/scenario/difficulty-without-one-fight refusals,
-        // the continue/level interaction and the level parse into the single result
-        // used below, the same HasArgument("spawn") presence predicate ResolveFight's
-        // own spawn branch keys on (FightScreen.cs) so this gate and that branch never
-        // disagree about whether a flag was passed (#470, M2).
-        var gauntletStart = GauntletStart.Resolve(
-            spawn: HasArgument("spawn") ? FlagValue.Of(ArgumentValue("spawn")) : FlagValue.Absent,
-            scenario: HasArgument("scenario") ? FlagValue.Of(ArgumentValue("scenario")) : FlagValue.Absent,
-            oneFight: HasArgument("one-fight"),
-            continuing: HasArgument("continue"),
-            level: HasArgument("level") ? FlagValue.Of(ArgumentValue("level")) : FlagValue.Absent,
-            difficulty: HasArgument("difficulty") ? FlagValue.Of(ArgumentValue("difficulty")) : FlagValue.Absent);
-
-        if (gauntletStart.Refusal is not null)
-        {
-            _phase = Phase.RunOver;
-            _interlude.Add(gauntletStart.Refusal);
-            _subtitle = $"seed {_seed}";
-            return;
-        }
+        _savePath = launch.SavePath;
 
         // A probe run drives the screen through its own input path — synthesized clicks
         // through the viewport — and captures what each one produced. Monsters hurry so
@@ -290,7 +278,7 @@ public partial class PlayMode : FightScreen
             _animateWalks = false;
         }
 
-        if (HasArgument("one-fight"))
+        if (launch.Mode == PlayModeLaunchMode.OneFight)
         {
             Fight fight;
             IReadOnlyList<string> notices;
@@ -337,14 +325,14 @@ public partial class PlayMode : FightScreen
         var startupNotices = new List<string>();
 
         // --level only ever means one thing here: where a *new* run begins. Resolved
-        // once above, before either branch below, because a resumed run has nothing
-        // for it to apply to (GauntletRun.Resume re-resolves at the level the save's
-        // own experience has earned) and letting it through silently there would be
-        // exactly the shape #488 exists to close, just for --continue instead of a bad
-        // number.
-        var level = gauntletStart.Level;
+        // once above by PlayModeLaunch.TryResolve, before either branch below, because a
+        // resumed run has nothing for it to apply to (GauntletRun.Resume re-resolves at
+        // the level the save's own experience has earned) and letting it through
+        // silently there would be exactly the shape #488 exists to close, just for
+        // --continue instead of a bad number.
+        var level = launch.Level;
 
-        if (HasArgument("continue"))
+        if (launch.Mode == PlayModeLaunchMode.Continue)
         {
             // Falls back to the .bak automatically when the primary is missing or
             // unreadable — silently beginning a fresh run here would overwrite the file
