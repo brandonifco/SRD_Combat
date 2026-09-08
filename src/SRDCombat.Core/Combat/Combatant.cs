@@ -58,6 +58,14 @@ public sealed record CombatAttack(
     public AlternativeAttackDamage? Alternative { get; init; }
 
     /// <summary>
+    /// A circumstance of this attack's own roll that grants Advantage, carried from
+    /// <see cref="MonsterAttack.AdvantageCondition"/> — see that property and
+    /// <see cref="AttackRollAdvantageCondition"/> for the printed wording and the
+    /// per-roll, nothing-stored reading. Null for nearly every attack.
+    /// </summary>
+    public AttackRollAdvantageCondition? AdvantageCondition { get; init; }
+
+    /// <summary>
     /// True when a hit marks the target so that the next attack roll against it has
     /// Advantage — Guiding Bolt's rider, carried from the spell onto the attack the
     /// cast builds. False for every weapon and every stat-block attack.
@@ -510,6 +518,7 @@ public sealed record CombatantStats(
             {
                 EmbeddedSave = entry.Attack.EmbeddedSave,
                 Alternative = entry.Attack.Alternative,
+                AdvantageCondition = entry.Attack.AdvantageCondition,
                 ImposesDisadvantageOnTargetsNextAttack = entry.Attack.ImposesDisadvantageOnTargetsNextAttack,
             })
             .ToArray();
@@ -1431,6 +1440,16 @@ public sealed class Combatant
     /// odd maximum — 21 max Hit Points Bloodies at 10, not 10.5.
     /// </summary>
     public bool IsBloodied => CurrentHitPoints <= Stats.MaximumHitPoints / 2;
+
+    /// <summary>
+    /// "Doesn't have all its Hit Points" (#666) — any shortfall at all, strictly wider
+    /// than <see cref="IsBloodied"/>. Checked against <see cref="CurrentHitPoints"/>
+    /// alone: <see cref="TemporaryHitPoints"/> are glossary p. 190's "buffer against
+    /// losing real Hit Points", not Hit Points themselves, so they never enter this
+    /// either way. See <see cref="AttackRollAdvantageCondition.TargetIsMissingHitPoints"/>,
+    /// which reads this.
+    /// </summary>
+    public bool IsMissingHitPoints => CurrentHitPoints < Stats.MaximumHitPoints;
 
     /// <summary>
     /// True when the creature can still act. Dead, dying and Incapacitated creatures

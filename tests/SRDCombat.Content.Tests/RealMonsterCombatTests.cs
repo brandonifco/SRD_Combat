@@ -344,6 +344,70 @@ public class RealMonsterCombatTests
     }
 
     [Fact]
+    public void TheRealAnkhegsSecondBiteRollsWithAdvantageOnceItsGrappleLands()
+    {
+        // #666, end to end against the real stat block. The Ankheg's first Bite finds
+        // an ungrappled target and rolls Normal; the hit's own printed rider grapples
+        // the target (escape DC 13); the Ankheg's SECOND Bite — a full turn later,
+        // nothing retroactive within the first — reads the live Grappled state and
+        // rolls with Advantage. Driven turn by turn rather than through the tactics
+        // policy so the sequence is exact rather than incidental.
+        var ankheg = Content.MonstersById["monster.ankheg"];
+        var bandit = Content.MonstersById["monster.bandit"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [
+                Spawn(ankheg, "ankheg", "vermin", new GridPosition(0, 5)),
+                Spawn(bandit, "bandit", "bandits", new GridPosition(1, 5)),
+            ],
+            new ScriptedRandomSource(
+                20, 1,      // initiative: the ankheg (bonus +0) beats the bandit (bonus +1)
+                15,         // first Bite: Normal mode, one d20, +5 vs AC 12 hits
+                1, 1, 1,    // 2d6 Slashing (1+1+3=5) + 1d6 Acid (1) — 6 total, the 11-HP bandit survives
+                10, 15,     // second Bite: Advantage, two d20s, the higher (15) is kept
+                1, 1, 1));  // the same damage dice shape
+
+        var attacker = encounter.Combatants.Single(combatant => combatant.Id == "ankheg");
+        var target = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
+
+        Assert.Null(encounter.Attack("Bite", target));
+
+        // The rider landed: the printed "If the target is a Large or smaller
+        // creature, it has the Grappled condition (escape DC 13)."
+        var grapple = target.ConditionState(ConditionType.Grappled);
+        Assert.NotNull(grapple);
+        Assert.Equal(attacker.Id, grapple!.SourceId);
+
+        var firstSwing = Assert.Single(encounter.Log, step => step.Kind == CombatStepKind.Attack);
+        Assert.DoesNotContain("with Advantage", firstSwing.Narration, StringComparison.Ordinal);
+
+        // The bandit's own turn passes without escaping — the grapple, and therefore
+        // the circumstance, is still live for the ankheg's next Bite.
+        encounter.EndTurn();
+        encounter.EndTurn();
+
+        Assert.Null(encounter.Attack("Bite", target));
+
+        var secondSwing = encounter.Log.Last(step => step.Kind == CombatStepKind.Attack);
+        Assert.Contains("with Advantage", secondSwing.Narration, StringComparison.Ordinal);
+
+        // The severe-risk pin: a whole seeded fight fielding the newly re-admitted
+        // Ankheg resolves — no stall, no exception — to a decided conclusion.
+        var seeded = Encounter.Start(
+            new Battlefield(14, 14),
+            [
+                Spawn(ankheg, "ankheg", "vermin", new GridPosition(1, 7)),
+                Spawn(bandit, "bandit", "bandits", new GridPosition(11, 7)),
+            ],
+            new SeededRandomSource(666));
+
+        SimpleTacticsPolicy.RunToCompletion(seeded);
+        Assert.True(seeded.IsComplete);
+        Assert.NotNull(seeded.WinningSide);
+    }
+
+    [Fact]
     public void TheRealGladiatorShieldBashKnocksProneOnAFailedSave()
     {
         // "Strength Saving Throw: DC 15, one creature within 5 feet ... Failure: 9

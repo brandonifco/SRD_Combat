@@ -754,18 +754,21 @@ public class EntryMechanicsTests
         Assert.Equal(CreatureSize.Large, grappled.MaximumTargetSize);
         Assert.True(ConditionRules.CanBeImposed(grappled));
 
-        // The rider itself is fully modelled — the point this test exists to make —
-        // but the entry as a whole is not, since the 2026-08-24 span-accounting
-        // regeneration (#382). The Ankheg's Bite also prints "(with Advantage if the
-        // target is Grappled by the ankheg)" inside its attack header, which
-        // `AttackHeaderPattern`'s permissive `[^.]*?` filler used to swallow whole;
-        // it is design §2.3's own worked example of the goblin-bug shape the new
-        // `unread`-group convention exists to end, and it now shows up as its own
-        // residue line rather than vanishing.
-        Assert.False(bite.IsFullyModelled);
+        // The entry as a whole was NOT fully modelled between the 2026-08-24
+        // span-accounting regeneration (#382) and #666: the Ankheg's Bite also prints
+        // "(with Advantage if the target is Grappled by the ankheg)" inside its attack
+        // header, which `AttackHeaderPattern`'s permissive `[^.]*?` filler used to
+        // swallow whole — design §2.3's own worked example of the goblin-bug shape the
+        // `unread`-group convention exists to end — and for those months it showed up
+        // as its own residue line rather than vanishing. #666 gave that parenthetical
+        // a structured field (`MonsterAttack.AdvantageCondition`,
+        // `AttackRollAdvantageCondition.TargetIsGrappledByAttacker`), so the header is
+        // claimed too and the Bite is fully modelled again.
+        Assert.True(bite.IsFullyModelled);
+        Assert.Empty(bite.UnmodelledClauses);
         Assert.Equal(
-            ["(with Advantage if the target is Grappled by the ankheg)"],
-            bite.UnmodelledClauses);
+            AttackRollAdvantageCondition.TargetIsGrappledByAttacker,
+            bite.Attack!.AdvantageCondition);
     }
 
     [Fact]
