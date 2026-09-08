@@ -807,6 +807,40 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.NotNull(rider.UnmodelledRequirement);
     }
 
+    [Fact]
+    public void ADamageOrLostSightDurationIsRecognisedAsTheNalfeshneesCompoundClock()
+    {
+        // #681, SRD 5.2.1 p. 310, Horror Nimbus — the exact printed wording, with the
+        // stand-in condition name Charmed swapped for the real Frightened.
+        var entry = EntryMechanicsParser.ClassifyTrait(
+            "Test Trait",
+            "Wisdom Saving Throw: DC 10, one creature. Failure: The target has the Frightened " +
+            "condition for 1 minute, until it takes damage, or until it ends its turn with the " +
+            "nalfeshnee out of line of sight.");
+
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Equal(ConditionDuration.ForMinutesUntilDamageOrSourceOutOfSight(1), rider.Duration);
+        Assert.True(rider.IsFullyModelled);
+    }
+
+    [Fact]
+    public void ASimilarButDifferentThirdOutStaysResidueRatherThanMatchingOnShapeAlone()
+    {
+        // The Incubus's own printing (data/srd/monsters.json): "for 1 hour, until it
+        // takes damage, or until a creature within 5 feet of it takes an action to
+        // wake it" — a genuinely different third clause the new pattern must not
+        // mistake for the sight-keyed one just because both open the same way.
+        var entry = EntryMechanicsParser.ClassifyTrait(
+            "Test Trait",
+            "Wisdom Saving Throw: DC 10, one creature. Failure: The target has the Unconscious " +
+            "condition for 1 hour, until it takes damage, or until a creature within 5 feet of " +
+            "it takes an action to wake it.");
+
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Null(rider.Duration);
+        Assert.False(rider.IsFullyModelled);
+    }
+
     #endregion
 
     #region Repeat saves

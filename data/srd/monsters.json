@@ -1022,7 +1022,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -2227,7 +2229,9 @@
                   "outlastsFight": true,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": true
+                  "repeatSaveAtTurnEnd": true,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 },
                 "escalatesTo": "Petrified"
               }
@@ -2249,7 +2253,9 @@
                 "outlastsFight": true,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": true
+                "repeatSaveAtTurnEnd": true,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               },
               "escalatesTo": "Petrified"
             }
@@ -2392,7 +2398,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -2562,7 +2570,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": true,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -2584,7 +2594,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": true,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -4685,7 +4697,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -6241,7 +6255,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -6259,7 +6275,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -6537,7 +6555,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -6555,7 +6575,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -7765,7 +7787,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": true
+                  "repeatSaveAtTurnEnd": true,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               },
               {
@@ -7786,7 +7810,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": true
+                "repeatSaveAtTurnEnd": true,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             },
             {
@@ -8159,7 +8185,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -8176,7 +8204,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -8333,7 +8363,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -9491,7 +9523,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -9527,7 +9561,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": true,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -9549,7 +9585,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": true,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -10657,7 +10695,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": true
+                  "repeatSaveAtTurnEnd": true,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -10678,7 +10718,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": true
+                "repeatSaveAtTurnEnd": true,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -10996,7 +11038,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -11017,7 +11061,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -12172,7 +12218,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -13545,7 +13593,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -13566,7 +13616,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -13629,7 +13681,9 @@
                       "outlastsFight": false,
                       "whileGrappleHolds": false,
                       "whileConcentrating": false,
-                      "repeatSaveAtTurnEnd": false
+                      "repeatSaveAtTurnEnd": false,
+                      "endsEarlyOnDamage": false,
+                      "endsWhenBearerCannotSeeSource": false
                     }
                   }
                 ],
@@ -13827,7 +13881,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -13844,7 +13900,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -14198,7 +14256,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -14220,7 +14280,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -16106,7 +16168,9 @@
                   "outlastsFight": true,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": true
+                  "repeatSaveAtTurnEnd": true,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 },
                 "escalatesTo": "Petrified"
               }
@@ -16128,7 +16192,9 @@
                 "outlastsFight": true,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": true
+                "repeatSaveAtTurnEnd": true,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               },
               "escalatesTo": "Petrified"
             }
@@ -17741,7 +17807,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -17759,7 +17827,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -18545,7 +18615,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -18562,7 +18634,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -18754,7 +18828,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -21009,7 +21085,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               },
               {
@@ -21021,7 +21099,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -21038,7 +21118,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             },
             {
@@ -21050,7 +21132,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -21511,7 +21595,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -22309,7 +22395,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": true,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -22331,7 +22419,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": true,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -22557,7 +22647,9 @@
                   "outlastsFight": true,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": true
+                  "repeatSaveAtTurnEnd": true,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 },
                 "escalatesTo": "Petrified"
               }
@@ -22579,7 +22671,9 @@
                 "outlastsFight": true,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": true
+                "repeatSaveAtTurnEnd": true,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               },
               "escalatesTo": "Petrified"
             }
@@ -22736,7 +22830,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -22757,7 +22853,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -23506,7 +23604,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -23986,7 +24086,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -24004,7 +24106,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -24211,7 +24315,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -24229,7 +24335,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -24467,7 +24575,17 @@
             "appliedConditions": [
               {
                 "condition": "Frightened",
-                "unmodelledRequirement": "Failure: 28 (8d6) Psychic damage, and the target has the Frightened condition for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight"
+                "duration": {
+                  "clock": "EndOfTurn",
+                  "owner": "Bearer",
+                  "turnsAhead": 10,
+                  "outlastsFight": false,
+                  "whileGrappleHolds": false,
+                  "whileConcentrating": false,
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": true,
+                  "endsWhenBearerCannotSeeSource": true
+                }
               }
             ],
             "coverIgnored": false,
@@ -24480,11 +24598,20 @@
           "appliedConditions": [
             {
               "condition": "Frightened",
-              "unmodelledRequirement": "Failure: 28 (8d6) Psychic damage, and the target has the Frightened condition for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight"
+              "duration": {
+                "clock": "EndOfTurn",
+                "owner": "Bearer",
+                "turnsAhead": 10,
+                "outlastsFight": false,
+                "whileGrappleHolds": false,
+                "whileConcentrating": false,
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": true,
+                "endsWhenBearerCannotSeeSource": true
+              }
             }
           ],
           "unmodelledClauses": [
-            "and the target has the Frightened condition for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight",
             "Success: The target is immune to this nalfeshnee's Horror Nimbus for 24 hours"
           ]
         },
@@ -25300,7 +25427,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -25513,7 +25642,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -25530,7 +25661,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -26007,7 +26140,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -26025,7 +26160,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -26179,7 +26316,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -26197,7 +26336,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -26330,7 +26471,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -26351,7 +26494,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -27142,7 +27287,9 @@
                   "outlastsFight": true,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               },
               {
@@ -27164,7 +27311,9 @@
                 "outlastsFight": true,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             },
             {
@@ -27312,7 +27461,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": true,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -27511,7 +27662,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -27547,7 +27700,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": true
+                  "repeatSaveAtTurnEnd": true,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -27569,7 +27724,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": true
+                "repeatSaveAtTurnEnd": true,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -27754,7 +27911,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               },
               {
@@ -27766,7 +27925,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -27787,7 +27948,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             },
             {
@@ -27799,7 +27962,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -28641,7 +28806,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": true,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -29466,7 +29633,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": true,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -29488,7 +29657,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": true,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -29849,7 +30020,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -29866,7 +30039,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -31892,7 +32067,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -31910,7 +32087,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -32372,7 +32551,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -32393,7 +32574,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -32923,7 +33106,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -33658,7 +33843,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             },
             {
@@ -33670,7 +33857,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -34128,7 +34317,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               },
               {
@@ -34140,7 +34331,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -34161,7 +34354,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             },
             {
@@ -34173,7 +34368,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -35923,7 +36120,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -35944,7 +36143,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -38880,7 +39081,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -42157,7 +42360,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -44435,7 +44640,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -45503,7 +45710,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -45521,7 +45730,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],
@@ -48143,7 +48354,9 @@
                   "outlastsFight": false,
                   "whileGrappleHolds": false,
                   "whileConcentrating": false,
-                  "repeatSaveAtTurnEnd": false
+                  "repeatSaveAtTurnEnd": false,
+                  "endsEarlyOnDamage": false,
+                  "endsWhenBearerCannotSeeSource": false
                 }
               }
             ],
@@ -48164,7 +48377,9 @@
                 "outlastsFight": false,
                 "whileGrappleHolds": false,
                 "whileConcentrating": false,
-                "repeatSaveAtTurnEnd": false
+                "repeatSaveAtTurnEnd": false,
+                "endsEarlyOnDamage": false,
+                "endsWhenBearerCannotSeeSource": false
               }
             }
           ],

@@ -6674,7 +6674,9 @@
               "outlastsFight": false,
               "whileGrappleHolds": false,
               "whileConcentrating": true,
-              "repeatSaveAtTurnEnd": true
+              "repeatSaveAtTurnEnd": true,
+              "endsEarlyOnDamage": false,
+              "endsWhenBearerCannotSeeSource": false
             }
           }
         ],
@@ -6733,7 +6735,9 @@
               "outlastsFight": false,
               "whileGrappleHolds": false,
               "whileConcentrating": true,
-              "repeatSaveAtTurnEnd": true
+              "repeatSaveAtTurnEnd": true,
+              "endsEarlyOnDamage": false,
+              "endsWhenBearerCannotSeeSource": false
             }
           }
         ],
@@ -10187,7 +10191,9 @@
             "outlastsFight": false,
             "whileGrappleHolds": false,
             "whileConcentrating": false,
-            "repeatSaveAtTurnEnd": false
+            "repeatSaveAtTurnEnd": false,
+            "endsEarlyOnDamage": false,
+            "endsWhenBearerCannotSeeSource": false
           }
         }
       ],

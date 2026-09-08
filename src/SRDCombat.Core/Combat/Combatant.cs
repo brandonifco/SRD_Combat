@@ -1191,6 +1191,28 @@ public sealed record ConditionExpiry(string OwnerId, ConditionClock Clock, int O
 /// that carries this field — a spell's Invisible (Invisibility, Greater Invisibility)
 /// carries none and has its own ending inside the spell instead.
 /// </param>
+/// <param name="EndsEarlyOnDamage">
+/// True for a condition whose printed text ends early on the bearer taking damage,
+/// with no tie to the source's own state — the Nalfeshnee's Horror Nimbus Frightened
+/// (SRD 5.2.1 p. 310, #681), from <see cref="Definitions.ConditionDuration.EndsEarlyOnDamage"/>.
+/// Read by the same <c>Encounter.BreakTurnEffectOnDamage</c> call site as
+/// <see cref="EndsEarlyOnDamageOrSourceDown"/>, which stays Turn Undead's own
+/// three-part composite rather than absorbing this flag — see
+/// <see cref="Definitions.ConditionDuration"/>'s remarks for why the two stay apart.
+/// False for every condition this was not extracted onto.
+/// </param>
+/// <param name="EndsWhenBearerCannotSeeSource">
+/// True for a condition whose printed text ends "at the end of [the bearer's] turn"
+/// if the bearer cannot see the source — the same Horror Nimbus rider, from
+/// <see cref="Definitions.ConditionDuration.EndsWhenBearerCannotSeeSource"/>. Checked
+/// once per <c>Encounter.EndTurn</c>, only against the one combatant whose turn is
+/// actually ending — the printed clause is always the bearer's own clock, regardless
+/// of whose turn <see cref="Expiry"/>'s fixed cap is measured against — against the
+/// #671/#672 sight predicate (<c>ConditionRules.SourceInSight</c>) asked from the
+/// bearer toward <see cref="SourceId"/>. A null or unresolvable source reads as in
+/// sight, the same hampering default Frightened's own Disadvantage gate takes
+/// (#672).
+/// </param>
 public sealed record ActiveCondition(
     ConditionType Condition,
     string? SourceId = null,
@@ -1203,7 +1225,9 @@ public sealed record ActiveCondition(
     ConditionType? EscalatesTo = null,
     bool EndsEarlyOnDamageOrSourceDown = false,
     string? UnmodelledBehaviour = null,
-    int? FindDifficultyClass = null);
+    int? FindDifficultyClass = null,
+    bool EndsEarlyOnDamage = false,
+    bool EndsWhenBearerCannotSeeSource = false);
 
 /// <summary>
 /// What a creature brings into a fight from an earlier one.
@@ -1636,7 +1660,18 @@ public sealed class Combatant
             // collection rather than a single dictionary entry — out of scope today,
             // since only Turn Undead produces a standalone Incapacitated and a second
             // Cleric's is refused upstream before it ever reaches here.
-            if (existing.EndsEarlyOnDamageOrSourceDown != active.EndsEarlyOnDamageOrSourceDown)
+            //
+            // #681 widens the same guard to its own two flags, for the identical
+            // reason: an ordinary Frightened landing on top of the Nalfeshnee's
+            // Horror Nimbus rider (or the reverse order) must not silently merge into
+            // a condition that is stored with one rider's flags and the other's
+            // SourceId/Expiry — a Codex review of #681 caught exactly this gap before
+            // it shipped. Since only Turn Undead's own compound and the Nalfeshnee's
+            // shape ever set any of these three flags today, "both unflagged" still
+            // covers every ordinary Frightened-on-Frightened refresh unchanged.
+            if (existing.EndsEarlyOnDamageOrSourceDown != active.EndsEarlyOnDamageOrSourceDown
+                || existing.EndsEarlyOnDamage != active.EndsEarlyOnDamage
+                || existing.EndsWhenBearerCannotSeeSource != active.EndsWhenBearerCannotSeeSource)
             {
                 return false;
             }
