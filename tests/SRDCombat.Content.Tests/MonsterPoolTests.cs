@@ -181,28 +181,29 @@ public class MonsterPoolTests
     [Fact]
     public void APlayableMonsterIsAdmittedThoughSomethingOutsideItsActionsIsNot()
     {
-        // The Ghast's Bite and Claw are the whole of its turn and both are fully
-        // modelled; its Stench trait is not (a Trait-section SavingThrow entry
-        // UseEntry never reaches at all — design §2.5's own named example — so its
-        // rider claims nothing and the Emanation's own qualifiers are residue too).
-        // That is the line Playable draws — the turn is right, something outside it
-        // is not.
+        // The Zombie's Slam is the whole of its turn and fully modelled; its Undead
+        // Fortitude trait is not — "makes a Constitution saving throw ... unless the
+        // damage is Radiant or from a Critical Hit ... drops to 1 Hit Point instead"
+        // has no shape here at all, so the entry classifies Unmodelled outright. That
+        // is the line Playable draws — the turn is right, something outside it is not.
         //
-        // This used to be the Ankheg's Bite and Acid Spray, but the 2026-08-24
-        // span-accounting regeneration (#382) gave the Ankheg's Bite honest residue of
-        // its own — the Advantage parenthetical in its attack header, design §2.3's
-        // own worked example ("(with Advantage if the target is Grappled by the
-        // ankheg)") — which dropped the Ankheg to Diminished and made it the wrong
-        // example for this test between 2026-08-24 and 2026-09-08. #666 gave that
-        // parenthetical a structured field (AttackRollAdvantageCondition), so the
-        // Ankheg's Bite is fully modelled again and it could stand in for the Ghast
-        // here once more — the Ghast stays the chosen example because its Stench
-        // trait's dispatch gap (design §2.5) is the more instructive one.
-        var ghast = Content.MonstersById["monster.ghast"];
+        // This used to be the Ghast's Bite/Claw against its own Stench trait, but
+        // #676 taught the extractor Stench's printed shape (a start-of-turn
+        // Emanation feeding #670's Encounter.FireAuras) and its residue cleared to
+        // nothing, so the Ghast now grades Complete — see
+        // TheGhastReclassifiesToCompleteOnceItsStenchIsRecognised below, which pins
+        // that move directly. Before the Ghast, this was the Ankheg's Bite and Acid
+        // Spray, until the 2026-08-24 span-accounting regeneration (#382) gave the
+        // Ankheg's Bite honest residue of its own (the Advantage parenthetical,
+        // design §2.3's own worked example) and dropped it to Diminished; #666 later
+        // restored it, but the Zombie's Undead Fortitude is a plainer, more durable
+        // example — a whole entry with no modelled shape at all, rather than a save
+        // whose dispatch happens to be gated by section.
+        var zombie = Content.MonstersById["monster.zombie"];
 
-        Assert.Equal(MonsterCoverage.Playable, MonsterPool.CoverageOf(ghast));
-        Assert.True(MonsterPool.Admits(ghast));
-        Assert.Contains(ghast.Entries, entry => !entry.IsFullyModelled);
+        Assert.Equal(MonsterCoverage.Playable, MonsterPool.CoverageOf(zombie));
+        Assert.True(MonsterPool.Admits(zombie));
+        Assert.Contains(zombie.Entries, entry => !entry.IsFullyModelled);
 
         // And the near miss that shows the grade is about position, not count: the
         // Specter's Life Drain is its only action and loses "its Hit Point maximum
@@ -211,6 +212,30 @@ public class MonsterPoolTests
 
         Assert.Equal(MonsterCoverage.Diminished, MonsterPool.CoverageOf(specter));
         Assert.False(MonsterPool.Admits(specter));
+    }
+
+    [Fact]
+    public void TheGhastReclassifiesToCompleteOnceItsStenchIsRecognised()
+    {
+        // #676: the extractor now recognises Stench's printed start-of-turn Emanation
+        // shape and populates MonsterEntry.Aura, so its own four residue clauses
+        // ("any creature that starts its turn in a", "originating from the ghast",
+        // the Poisoned rider, and the 24-hour immunity) all move from residue to
+        // claimed. The Ghast was already MonsterCoverage.Playable (admitted on its
+        // Bite and Claw alone, per #670's own scoping) — clearing the Trait entry's
+        // residue is Complete-ward movement, not a change to admission: the pool
+        // floor does not move.
+        var ghast = Content.MonstersById["monster.ghast"];
+        var stench = ghast.Entries.Single(entry => entry.Name == "Stench");
+
+        Assert.NotNull(stench.Aura);
+        Assert.Equal(5, stench.Aura!.EmanationRadiusFeet);
+        Assert.Equal(AuraClock.StartOfVictimTurn, stench.Aura.Clock);
+        Assert.Empty(stench.UnmodelledClauses);
+        Assert.True(stench.IsFullyModelled);
+
+        Assert.Equal(MonsterCoverage.Complete, MonsterPool.CoverageOf(ghast));
+        Assert.True(MonsterPool.Admits(ghast));
     }
 
     [Fact]

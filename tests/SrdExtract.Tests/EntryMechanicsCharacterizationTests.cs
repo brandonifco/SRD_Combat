@@ -1,5 +1,6 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Rules;
 using SrdExtract.Parsing;
 
 namespace SrdExtract.Tests;
@@ -2292,6 +2293,167 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Contains(
             entry.UnmodelledClauses,
             clause => clause.Contains("Blinded condition", StringComparison.Ordinal));
+    }
+
+    #endregion
+
+    #region Trait auras — Stench (#676)
+
+    [Fact]
+    public void StenchClassifiesIntoAnAuraWithNoResidueLeftOver()
+    {
+        // The Ghast's Stench, verbatim (data/srd/monsters.json).
+        var entry = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Trait,
+            "Constitution Saving Throw: DC 10, any creature that starts its turn in a 5-foot " +
+            "Emanation originating from the ghast. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn. Success: The target is immune to " +
+            "this ghast's Stench for 24 hours.");
+
+        Assert.Equal(EntryMechanics.SavingThrow, entry.Mechanics);
+        Assert.NotNull(entry.Aura);
+        Assert.Equal(5, entry.Aura!.EmanationRadiusFeet);
+        Assert.Equal(AuraClock.StartOfVictimTurn, entry.Aura.Clock);
+
+        var rider = Assert.Single(entry.AppliedConditions);
+        Assert.Equal(ConditionType.Poisoned, rider.Condition);
+        Assert.True(ConditionRules.CanBeImposed(rider));
+
+        // All four clauses #676's issue named as residue — the trigger, the origin,
+        // the Poisoned rider and the 24-hour immunity — are now claimed.
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheHezrousStenchIsNotMisreadAsAnAuraForWantOfTheImmunityClause()
+    {
+        // Trip-wire: the Hezrou (SRD 5.2.1 p. 293, CR 8, out of the CR<=4 pool this
+        // slice targets regardless) prints the identical target-clause shape — "any
+        // creature that starts its turn in a 10-foot Emanation originating from the
+        // hezrou" — so AuraTriggerPattern alone would match it. It prints no Success
+        // line at all, so a victim can never become immune to it; ParseAura's second,
+        // independent signal (AuraImmunityPattern) finds nothing, and this stays
+        // exactly as unmodelled as before this slice rather than inventing an
+        // immunity rule the print never states.
+        var entry = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Trait,
+            "Constitution Saving Throw: DC 16, any creature that starts its turn in a 10-foot " +
+            "Emanation originating from the hezrou. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn.");
+
+        Assert.Null(entry.Aura);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("starts its turn in a", StringComparison.Ordinal));
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("originating from the hezrou", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ThePitFiendsFearAuraIsNotMisreadDespiteSharingStartsItsTurnIn()
+    {
+        // Trip-wire: the Pit Fiend's Fear Aura (SRD 5.2.1 p. 312) prints "any
+        // enemy that starts its turn in the aura" — "enemy", not "creature", and a
+        // back-reference to an aura named in an earlier sentence rather than a fresh
+        // "N-foot Emanation originating from" clause — so AuraTriggerPattern's own
+        // literal wording excludes it before the immunity signal is ever consulted.
+        // It also turns itself off while its emitter is Incapacitated ("while it
+        // doesn't have the Incapacitated condition"), the opposite of the Ghast's
+        // reading (AuraEffect's own remarks) — a real rule difference this record
+        // cannot carry, so leaving it unmatched is correct on two independent
+        // grounds. A damaging or Frightened-imposing aura misclassified this way
+        // would fire on the wrong population (allies as well as enemies) with the
+        // wrong on/off behaviour, so this is a live misattribution risk, not a
+        // theoretical one.
+        var entry = EntryMechanicsParser.Classify(
+            "Fear Aura",
+            MonsterEntrySection.Trait,
+            "The pit fiend emanates an aura in a 20foot Emanation while it doesn't have the " +
+            "Incapacitated condition. Wisdom Saving Throw: DC 21, any enemy that starts its " +
+            "turn in the aura. Failure: The target has the Frightened condition until the " +
+            "start of its next turn. Success: The target is immune to this pit fiend's aura " +
+            "for 24 hours.");
+
+        Assert.Null(entry.Aura);
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("any enemy that starts its turn in the aura", StringComparison.Ordinal));
+        Assert.Contains(
+            entry.UnmodelledClauses,
+            clause => clause.Contains("immune to this pit fiend's aura", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AnEmanationSaveNamingAnEnemyRatherThanACreatureIsNotMisreadAsAnAura()
+    {
+        // Isolates the "creature" (not "enemy") requirement from the Pit Fiend's other
+        // difference above (its back-referenced "the aura" rather than a fresh
+        // Emanation clause): a hand-shaped text carrying Stench's exact shape but for
+        // "any enemy" in place of "any creature" must still fail to classify, proving
+        // the word gate does real work of its own rather than merely riding along
+        // with the shape gate that also happens to exclude the real Pit Fiend print.
+        var entry = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Trait,
+            "Constitution Saving Throw: DC 10, any enemy that starts its turn in a 5-foot " +
+            "Emanation originating from the ghast. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn. Success: The target is immune to " +
+            "this ghast's Stench for 24 hours.");
+
+        Assert.Null(entry.Aura);
+    }
+
+    [Fact]
+    public void AnEmanationSaveBackReferencingAnEarlierSentenceIsNotMisreadAsAnAura()
+    {
+        // Isolates the fresh-Emanation-clause requirement from the Pit Fiend's other
+        // difference above ("enemy" instead of "creature"): a hand-shaped text using
+        // "any creature" but back-referencing "the aura" the way the Pit Fiend does,
+        // rather than printing a fresh "a N-foot Emanation originating from" clause,
+        // must still fail to classify.
+        var entry = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Trait,
+            "The ghast emanates an aura in a 5-foot Emanation. Constitution Saving Throw: " +
+            "DC 10, any creature that starts its turn in the aura. Failure: The target has " +
+            "the Poisoned condition until the start of its next turn. Success: The target " +
+            "is immune to this ghast's Stench for 24 hours.");
+
+        Assert.Null(entry.Aura);
+    }
+
+    [Fact]
+    public void AnAuraOnlyClaimsWhenTheImmunityNamesTheSameCreatureAndTraitAsTheTriggerClause()
+    {
+        // Knockout for the cross-check in ParseAura: the immunity sentence names a
+        // different creature than the one the trigger clause says the Emanation
+        // originates from. A hand-shaped counter-example rather than a printed one
+        // (the corpus carries no such disagreement today), proving the guard is load
+        // -bearing rather than vacuously true.
+        var mismatchedCreature = EntryMechanicsParser.Classify(
+            "Stench",
+            MonsterEntrySection.Trait,
+            "Constitution Saving Throw: DC 10, any creature that starts its turn in a 5-foot " +
+            "Emanation originating from the ghoul. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn. Success: The target is immune to " +
+            "this ghast's Stench for 24 hours.");
+
+        Assert.Null(mismatchedCreature.Aura);
+
+        // And the trait name: the immunity claims freedom from a differently-named
+        // ability than the one this entry actually is.
+        var mismatchedTrait = EntryMechanicsParser.Classify(
+            "Reek",
+            MonsterEntrySection.Trait,
+            "Constitution Saving Throw: DC 10, any creature that starts its turn in a 5-foot " +
+            "Emanation originating from the ghast. Failure: The target has the Poisoned " +
+            "condition until the start of its next turn. Success: The target is immune to " +
+            "this ghast's Stench for 24 hours.");
+
+        Assert.Null(mismatchedTrait.Aura);
     }
 
     #endregion

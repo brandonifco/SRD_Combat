@@ -17,12 +17,13 @@ namespace SRDCombat.Core.Tests.Combat;
 /// emits, who is spared, the rest-of-fight immunity, the emitter-incapacity semantics —
 /// is written on <see cref="AuraEffect"/> and executed in <c>Encounter.FireAuras</c>.
 /// <para>
-/// Every combatant here is hand-authored, not loaded from content: the extractor does not
-/// classify the Stench aura yet (#676 is the paired slice), and an engine test should fail
-/// when the engine changes, not when the bestiary is re-extracted. The scripted die is
-/// load-bearing throughout — it throws on any unscripted roll, so a test that passes also
-/// proves nobody rolled a save it should not have: an out-of-range victim, a dead emitter,
-/// or a creature already immune.
+/// Every combatant here is hand-authored, not loaded from content: an engine test should
+/// fail when the engine changes, not when the bestiary is re-extracted — even now that
+/// #676 has taught the extractor to classify the real Ghast's Stench, which
+/// <c>RealMonsterCombatTests</c> exercises against the committed bestiary instead. The
+/// scripted die is load-bearing throughout — it throws on any unscripted roll, so a test
+/// that passes also proves nobody rolled a save it should not have: an out-of-range
+/// victim, a dead emitter, or a creature already immune.
 /// </para>
 /// </remarks>
 public class TraitAuraTests
@@ -277,8 +278,9 @@ public class TraitAuraTests
     /// <summary>
     /// A Stench save: DC 10 Constitution, no damage, a Poisoned rider lasting until the
     /// start of the victim's next turn. The area is the printed 5-foot Emanation — carried
-    /// so the fixture mirrors what #676 will extract, though <c>FireAuras</c> resolves it
-    /// per-victim rather than as an area sweep.
+    /// so the fixture mirrors what #676's extractor reclassification now produces from the
+    /// real stat block, though <c>FireAuras</c> resolves it per-victim rather than as an
+    /// area sweep.
     /// </summary>
     private static SaveEffect StenchSave() => new(
         Ability.Constitution,

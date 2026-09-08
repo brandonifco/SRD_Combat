@@ -632,9 +632,11 @@ public enum AuraClock
 /// question for an aura). Stench deals no damage; a future <em>damaging</em> aura firing at
 /// turn start could down a victim before its turn resolves, which <c>Encounter.FireAuras</c>
 /// would then have to account for — out of scope here, and noted rather than built ahead of
-/// a case that exists. Content does not populate this field yet: the extractor
-/// reclassification of the Stench trait is the paired follow-up (#676), the same
-/// engine-then-extractor split #386/#421 used; engine tests author the aura by hand.
+/// a case that exists. The extractor now populates this field for the Ghast's Stench
+/// (#676, the paired reclassification that followed this seam, the same
+/// engine-then-extractor split #386/#421 used) — every other entry still leaves it null,
+/// and engine tests continue to author a hand-built aura for shapes the extractor does not
+/// classify.
 /// </para>
 /// </remarks>
 /// <param name="EmanationRadiusFeet">
