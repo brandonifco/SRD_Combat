@@ -16,6 +16,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "powdered rhubarb leaf",
       "durationText": "Instantaneous",
@@ -55,6 +56,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -77,7 +79,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -111,6 +114,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a strip of white cloth",
       "durationText": "8 hours",
@@ -142,6 +146,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bell and silver wire",
       "durationText": "8 hours",
@@ -178,6 +183,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -221,6 +227,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a morsel of food",
       "durationText": "24 hours",
@@ -238,7 +245,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -268,6 +276,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a morsel of food",
       "durationText": "24 hours",
@@ -280,7 +289,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -303,6 +313,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "24 hours",
       "requiresConcentration": false,
@@ -340,6 +351,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -378,6 +390,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -413,6 +426,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -443,6 +457,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "iron filings",
       "durationText": "Concentration, up to 1 hour",
@@ -480,6 +495,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a mix of vinegar and honey",
       "durationText": "10 days",
@@ -501,7 +517,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -532,6 +549,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of bat fur",
       "durationText": "Concentration, up to 1 hour",
@@ -565,6 +583,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "an eggshell and a glove",
       "durationText": "Concentration, up to 1 minute",
@@ -588,7 +607,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -621,6 +641,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -652,6 +673,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -676,6 +698,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a small square of silk",
       "durationText": "24 hours",
@@ -715,6 +738,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -759,6 +783,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -789,6 +814,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -818,6 +844,7 @@
       "castingTimeText": "8 hours",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -857,6 +884,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a drop of blood",
       "durationText": "Concentration, up to 1 minute",
@@ -869,7 +897,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -896,6 +925,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pentacle",
       "durationText": "Concentration, up to 1 minute",
@@ -913,7 +943,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -941,6 +972,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Touch Component: V, S, M (a handful of bark)",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -969,6 +1001,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -1000,6 +1033,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a key ring with no keys",
       "durationText": "Instantaneous",
@@ -1018,7 +1052,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -1047,6 +1082,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -1064,7 +1100,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1093,6 +1130,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a tentacle",
       "durationText": "Concentration, up to 1 minute",
@@ -1116,7 +1154,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1149,6 +1188,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -1166,7 +1206,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1195,6 +1236,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a Holy Symbol worth 5+ GP",
       "durationText": "Concentration, up to 1 minute",
@@ -1228,6 +1270,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -1245,7 +1288,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -1278,6 +1322,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -1289,7 +1334,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [],
@@ -1312,6 +1358,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -1345,6 +1392,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -1374,6 +1422,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -1396,7 +1445,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1426,6 +1476,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -1443,7 +1494,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1474,6 +1526,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -1490,7 +1543,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -1513,6 +1567,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "three silver pins",
       "durationText": "Instantaneous",
@@ -1531,7 +1586,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -1564,6 +1620,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -1580,7 +1637,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -1612,6 +1670,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -1628,7 +1687,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -1657,6 +1717,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -1691,6 +1752,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a diamond worth 50+ GP",
       "durationText": "Instantaneous",
@@ -1720,6 +1782,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -1742,7 +1805,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1775,6 +1839,7 @@
       "isRitual": false,
       "rangeText": "1 mile",
       "rangeFeet": 5280,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -1806,6 +1871,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -1839,6 +1905,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -1861,7 +1928,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -1892,6 +1960,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of colorful sand",
       "durationText": "Instantaneous",
@@ -1914,7 +1983,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -1943,6 +2013,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -1959,7 +2030,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -1986,6 +2058,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "incense",
       "durationText": "1 minute",
@@ -2019,6 +2092,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -2052,6 +2126,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of soot and salt",
       "durationText": "1 hour",
@@ -2083,6 +2158,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -2099,7 +2175,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -2127,6 +2204,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a small crystal or glass cone",
       "durationText": "Instantaneous",
@@ -2150,7 +2228,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -2183,6 +2262,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "three nut shells",
       "durationText": "Concentration, up to 1 minute",
@@ -2200,7 +2280,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -2224,6 +2305,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -2241,7 +2323,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -2271,6 +2354,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -2288,7 +2372,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -2318,6 +2403,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -2334,7 +2420,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -2362,6 +2449,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -2393,6 +2481,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -2424,6 +2513,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -2446,7 +2536,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -2476,6 +2567,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -2498,7 +2590,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -2531,6 +2624,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch Component: V, S",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "7 days",
       "requiresConcentration": false,
@@ -2553,7 +2647,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -2585,6 +2680,7 @@
       "castingTimeText": "10 minutes",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 days",
       "requiresConcentration": false,
@@ -2622,6 +2718,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -2654,6 +2751,7 @@
       "isRitual": false,
       "rangeText": "300 feet",
       "rangeFeet": 300,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a mixture of water and dust",
       "durationText": "Concentration, up to 10 minutes",
@@ -2672,7 +2770,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -2701,6 +2800,7 @@
       "castingTimeText": "10 minutes",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "burning incense",
       "durationText": "Concentration, up to 8 hours",
@@ -2740,6 +2840,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -2751,7 +2852,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -2774,6 +2876,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -2804,6 +2907,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a mix of water and sand",
       "durationText": "Instantaneous",
@@ -2840,6 +2944,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -2878,6 +2983,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a paintbrush",
       "durationText": "Special",
@@ -2916,6 +3022,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -2949,6 +3056,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of phosphorus",
       "durationText": "Concentration, up to 1 minute",
@@ -2983,6 +3091,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Material",
       "materialComponent": "bat fur and a piece of coal",
       "durationText": "Concentration, up to 10 minutes",
@@ -3017,6 +3126,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a dried carrot",
       "durationText": "8 hours",
@@ -3049,6 +3159,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -3080,6 +3191,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "8 hours",
       "requiresConcentration": false,
@@ -3110,6 +3222,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a ball of bat guano and sulfur",
       "durationText": "Concentration, up to 1 minute",
@@ -3127,7 +3240,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3152,6 +3266,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -3189,6 +3304,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -3224,6 +3340,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -3255,6 +3372,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a yew leaf",
       "durationText": "Concentration, up to 10 minutes",
@@ -3286,6 +3404,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "1 Copper Piece",
       "durationText": "Concentration, up to 1 minute",
@@ -3298,7 +3417,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [],
@@ -3323,6 +3443,7 @@
       "isRitual": false,
       "rangeText": "500 feet",
       "rangeFeet": 500,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3361,6 +3482,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -3395,6 +3517,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a lodestone and dust",
       "durationText": "Instantaneous",
@@ -3407,7 +3530,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [],
@@ -3430,6 +3554,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "powdered silver and iron",
       "durationText": "Concentration, up to 1 minute",
@@ -3442,7 +3567,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [],
@@ -3471,6 +3597,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3502,6 +3629,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3519,7 +3647,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -3550,6 +3679,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3580,6 +3710,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -3612,6 +3743,7 @@
       "castingTimeText": "Bonus Action, which you take immedi-",
       "isRitual": false,
       "rangeText": "Self Component: V",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3648,6 +3780,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3668,7 +3801,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -3701,6 +3835,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -3717,7 +3852,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -3748,6 +3884,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -3764,7 +3901,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -3794,6 +3932,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -3810,7 +3949,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -3838,6 +3978,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a hot pepper",
       "durationText": "Concentration, up to 1 minute",
@@ -3855,7 +3996,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -3879,6 +4021,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Special",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a handful of sand",
       "durationText": "8 hours",
@@ -3897,7 +4040,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -3925,6 +4069,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -3965,6 +4110,7 @@
       "isRitual": false,
       "rangeText": "500 feet",
       "rangeFeet": 500,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a fractured rock",
       "durationText": "Concentration, up to 1 minute",
@@ -3988,7 +4134,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -4021,6 +4168,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4055,6 +4203,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4100,6 +4249,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "fur or a feather",
       "durationText": "Concentration, up to 1 hour",
@@ -4133,6 +4283,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of powdered iron",
       "durationText": "Concentration, up to 1 minute",
@@ -4145,7 +4296,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -4166,6 +4318,7 @@
       "castingTimeText": "Bonus Action, which you take immedi-",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -4188,7 +4341,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -4224,6 +4378,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -4240,7 +4395,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4268,6 +4424,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -4279,7 +4436,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -4304,6 +4462,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Up to 8 hours",
       "requiresConcentration": false,
@@ -4342,6 +4501,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -4371,6 +4531,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -4395,7 +4556,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4427,6 +4589,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4462,6 +4625,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -4483,7 +4647,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4510,6 +4675,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a silver whistle",
       "durationText": "8 hours",
@@ -4528,7 +4694,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -4556,6 +4723,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a drop of alcohol",
       "durationText": "Instantaneous",
@@ -4587,6 +4755,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a white feather",
       "durationText": "Concentration, up to 1 minute",
@@ -4609,7 +4778,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -4638,6 +4808,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Material",
       "materialComponent": "a small feather or piece of down",
       "durationText": "1 minute",
@@ -4668,6 +4839,7 @@
       "isRitual": true,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4716,6 +4888,7 @@
       "isRitual": false,
       "rangeText": "30 feet Component: V, S",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4762,6 +4935,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 day",
       "requiresConcentration": true,
@@ -4794,6 +4968,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4827,6 +5002,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4838,7 +5014,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [],
@@ -4861,6 +5038,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a ball of bat guano and sulfur",
       "durationText": "Instantaneous",
@@ -4884,7 +5062,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -4915,6 +5094,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -4949,6 +5129,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of phosphorus or a firefly",
       "durationText": "10 minutes",
@@ -4994,6 +5175,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -5016,7 +5198,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -5044,6 +5227,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a sumac leaf",
       "durationText": "Concentration, up to 10 minutes",
@@ -5071,6 +5255,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of sulfur",
       "durationText": "Instantaneous",
@@ -5094,7 +5279,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -5130,6 +5316,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a ball of wax",
       "durationText": "Concentration, up to 1 minute",
@@ -5148,7 +5335,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -5180,6 +5368,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a cockatrice feather",
       "durationText": "Concentration, up to 1 minute",
@@ -5201,7 +5390,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -5232,6 +5422,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a drop of mercury",
       "durationText": "1 hour",
@@ -5268,6 +5459,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a feather",
       "durationText": "Concentration, up to 10 minutes",
@@ -5302,6 +5494,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -5331,6 +5524,7 @@
       "castingTimeText": "10 minutes or Ritual",
       "isRitual": true,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "ruby dust worth 1,000+ GP",
       "durationText": "1 day",
@@ -5370,6 +5564,7 @@
       "isRitual": false,
       "rangeText": "100 feet",
       "rangeFeet": 100,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -5381,7 +5576,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -5405,6 +5601,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a hummingbird feather",
       "durationText": "8 hours",
@@ -5437,6 +5634,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a leather strap",
       "durationText": "1 hour",
@@ -5475,6 +5673,7 @@
       "isRitual": false,
       "rangeText": "300 feet",
       "rangeFeet": 300,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a miniature crystal sphere",
       "durationText": "Instantaneous",
@@ -5503,7 +5702,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -5539,6 +5739,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of gauze",
       "durationText": "Concentration, up to 1 hour",
@@ -5578,6 +5779,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a diamond worth 5,000+ GP",
       "durationText": "Concentration, up to 1 minute",
@@ -5621,6 +5823,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "30 days",
       "requiresConcentration": false,
@@ -5643,7 +5846,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -5678,6 +5882,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 days",
       "requiresConcentration": false,
@@ -5707,6 +5912,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -5742,6 +5948,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -5770,6 +5977,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a glass bead",
       "durationText": "Concentration, up to 1 minute",
@@ -5803,6 +6011,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled or triggered",
       "requiresConcentration": false,
@@ -5819,7 +6028,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -5842,6 +6052,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a sprig of mistletoe",
       "durationText": "24 hours",
@@ -5874,6 +6085,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of pork rind or butter",
       "durationText": "1 minute",
@@ -5891,7 +6103,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -5919,6 +6132,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -5954,6 +6168,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -5981,6 +6196,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "8 hours",
       "requiresConcentration": false,
@@ -5992,7 +6208,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -6014,6 +6231,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a silver rod worth 10+ GP",
       "durationText": "24 hours",
@@ -6060,6 +6278,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch Component: V, S",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -6088,6 +6307,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 round",
       "requiresConcentration": false,
@@ -6123,6 +6343,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a legume seed",
       "durationText": "Concentration, up to 1 minute",
@@ -6135,7 +6356,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -6156,6 +6378,7 @@
       "castingTimeText": "24 hours",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -6219,6 +6442,7 @@
       "isRitual": false,
       "rangeText": "300 feet",
       "rangeFeet": 300,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a mushroom",
       "durationText": "24 hours",
@@ -6253,6 +6477,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -6270,7 +6495,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -6299,6 +6525,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a shaving of licorice root",
       "durationText": "Concentration, up to 1 minute",
@@ -6331,6 +6558,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -6363,6 +6591,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -6395,6 +6624,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a piece of iron and a flame",
       "durationText": "Concentration, up to 1 minute",
@@ -6413,7 +6643,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -6443,6 +6674,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -6460,7 +6692,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -6491,6 +6724,7 @@
       "castingTimeText": "10 minutes",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -6523,6 +6757,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -6557,6 +6792,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "the petrified eye of a newt",
       "durationText": "Concentration, up to 1 hour",
@@ -6598,6 +6834,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a tart and a feather",
       "durationText": "Concentration, up to 1 minute",
@@ -6619,7 +6856,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -6654,6 +6892,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a straight piece of iron",
       "durationText": "Concentration, up to 1 minute",
@@ -6681,7 +6920,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -6715,6 +6955,7 @@
       "rangeText": "60 feet",
       "rangeFeet": 60,
       "targetCreatureType": "Humanoid",
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a straight piece of iron",
       "durationText": "Concentration, up to 1 minute",
@@ -6742,7 +6983,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -6769,6 +7011,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a reliquary worth 1,000+ GP",
       "durationText": "Concentration, up to 1 minute",
@@ -6791,7 +7034,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6818,6 +7062,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -6858,6 +7103,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Somatic, Material",
       "materialComponent": "a pinch of confetti",
       "durationText": "Concentration, up to 1 minute",
@@ -6884,7 +7130,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -6917,6 +7164,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Somatic, Material",
       "materialComponent": "a drop of water or a piece of ice",
       "durationText": "Instantaneous",
@@ -6940,7 +7188,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -6976,6 +7225,7 @@
       "isRitual": false,
       "rangeText": "300 feet",
       "rangeFeet": 300,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a mitten",
       "durationText": "Instantaneous",
@@ -6999,7 +7249,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -7033,6 +7284,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pearl worth 100+ GP",
       "durationText": "Instantaneous",
@@ -7066,6 +7318,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Somatic",
       "durationText": "10 days",
       "requiresConcentration": false,
@@ -7099,6 +7352,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -7119,7 +7373,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -7152,6 +7407,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -7174,7 +7430,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -7201,6 +7458,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -7218,7 +7476,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -7250,6 +7509,7 @@
       "isRitual": false,
       "rangeText": "300 feet",
       "rangeFeet": 300,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a locust",
       "durationText": "Concentration, up to 10 minutes",
@@ -7273,7 +7533,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -7302,6 +7563,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a sapphire worth 1,000+ GP",
       "durationText": "Until dispelled",
@@ -7336,6 +7598,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -7352,7 +7615,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -7381,6 +7645,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "an eyelash in gum arabic",
       "durationText": "Concentration, up to 1 hour",
@@ -7418,6 +7683,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Touch Component: V, S, M (a grasshopper's hind leg)",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -7449,6 +7715,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -7482,6 +7749,7 @@
       "castingTimeText": "10 minutes",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -7517,6 +7785,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -7545,6 +7814,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a metal spring",
       "durationText": "Concentration, up to 10 minutes",
@@ -7557,7 +7827,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -7581,6 +7852,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Material",
       "materialComponent": "a firefly or phosphorescent moss",
       "durationText": "1 hour",
@@ -7613,6 +7885,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of fur and a crystal rod",
       "durationText": "Instantaneous",
@@ -7637,7 +7910,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -7668,6 +7942,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "fur from a bloodhound",
       "durationText": "Instantaneous",
@@ -7701,6 +7976,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "fur from a bloodhound",
       "durationText": "Concentration, up to 1 hour",
@@ -7738,6 +8014,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a forked twig",
       "durationText": "Concentration, up to 10 minutes",
@@ -7773,6 +8050,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of dirt",
       "durationText": "1 hour",
@@ -7803,6 +8081,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a piece of cured leather",
       "durationText": "8 hours",
@@ -7836,6 +8115,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -7872,6 +8152,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -7883,7 +8164,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -7905,6 +8187,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -7916,7 +8199,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -7939,6 +8223,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -7971,6 +8256,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -8008,6 +8294,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -8039,6 +8326,7 @@
       "isRitual": false,
       "rangeText": "300 feet",
       "rangeFeet": 300,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a miniature door worth 15+ GP",
       "durationText": "24 hours",
@@ -8087,6 +8375,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of fleece",
       "durationText": "Concentration, up to 10 minutes",
@@ -8127,6 +8416,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -8157,6 +8447,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -8187,6 +8478,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -8217,6 +8509,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Material",
       "materialComponent": "a snake's tongue",
       "durationText": "24 hours",
@@ -8234,7 +8527,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -8262,6 +8556,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -8295,6 +8590,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "8 hours",
       "requiresConcentration": false,
@@ -8345,6 +8641,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "two lodestones",
       "durationText": "Instantaneous",
@@ -8378,6 +8675,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Somatic, Material",
       "materialComponent": "a copper wire",
       "durationText": "1 round",
@@ -8410,6 +8708,7 @@
       "isRitual": false,
       "rangeText": "1 mile",
       "rangeFeet": 5280,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -8437,7 +8736,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -8470,6 +8770,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "24 hours",
       "requiresConcentration": false,
@@ -8505,6 +8806,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": true,
       "components": "Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -8527,7 +8829,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -8565,6 +8868,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Somatic, Material",
       "materialComponent": "a bit of fleece",
       "durationText": "1 minute",
@@ -8606,6 +8910,7 @@
       "castingTimeText": "10 minutes",
       "isRitual": false,
       "rangeText": "Sight",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 days",
       "requiresConcentration": false,
@@ -8642,6 +8947,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -8681,6 +8987,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -8718,6 +9025,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -8746,6 +9054,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -8766,7 +9075,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -8798,6 +9108,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a moonseed leaf",
       "durationText": "Concentration, up to 1 minute",
@@ -8816,7 +9127,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -8848,6 +9160,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a miniature shovel",
       "durationText": "Concentration, up to 2 hours",
@@ -8889,6 +9202,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "8 hours",
       "requiresConcentration": false,
@@ -8918,6 +9232,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of sesame seeds",
       "durationText": "1 hour",
@@ -8949,6 +9264,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "ashes from burned mistletoe",
       "durationText": "Concentration, up to 1 hour",
@@ -8980,6 +9296,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of fleece",
       "durationText": "Concentration, up to 1 minute",
@@ -9003,7 +9320,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -9032,6 +9350,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -9049,7 +9368,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -9079,6 +9399,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -9112,6 +9433,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9162,6 +9484,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "24 hours",
       "requiresConcentration": false,
@@ -9173,7 +9496,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -9199,6 +9523,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9231,6 +9556,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9271,6 +9597,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9307,6 +9634,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a caterpillar cocoon",
       "durationText": "Concentration, up to 1 hour",
@@ -9319,7 +9647,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [],
@@ -9342,6 +9671,7 @@
       "isRitual": false,
       "rangeText": "60 feet Component: V",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "None",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9380,6 +9710,7 @@
       "isRitual": false,
       "rangeText": "60 feet Component: V",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "None",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9418,6 +9749,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9434,7 +9766,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -9462,6 +9795,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9494,6 +9828,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Up to 1 hour",
       "requiresConcentration": false,
@@ -9538,6 +9873,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -9593,7 +9929,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -9655,6 +9992,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 minutes",
       "requiresConcentration": false,
@@ -9705,7 +10043,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -9766,6 +10105,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a thin sheet of lead",
       "durationText": "24 hours",
@@ -9798,6 +10138,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 minutes",
       "requiresConcentration": false,
@@ -9832,6 +10173,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "jade dust worth 25+ GP",
       "durationText": "Until dispelled",
@@ -9871,6 +10213,7 @@
       "isRitual": false,
       "rangeText": "500 miles",
       "rangeFeet": 2640000,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 day",
       "requiresConcentration": true,
@@ -9910,6 +10253,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -9940,6 +10284,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration up to 10 minutes",
       "requiresConcentration": true,
@@ -9973,6 +10318,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -10008,6 +10354,7 @@
       "isRitual": true,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10036,6 +10383,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10071,6 +10419,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -10082,7 +10431,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10105,6 +10455,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10139,6 +10490,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a prayer wheel",
       "durationText": "1 hour",
@@ -10169,6 +10521,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10216,6 +10569,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10250,6 +10604,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10278,6 +10633,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a glass sphere",
       "durationText": "Concentration, up to 1 minute",
@@ -10290,7 +10646,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10312,6 +10669,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch Component: V, S",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -10341,6 +10699,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10378,6 +10737,7 @@
       "isRitual": false,
       "rangeText": "100 feet",
       "rangeFeet": 100,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a lodestone and iron filings",
       "durationText": "Concentration, up to 1 minute",
@@ -10390,7 +10750,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10414,6 +10775,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10441,6 +10803,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a segment of rope",
       "durationText": "1 hour",
@@ -10475,6 +10838,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": true,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10492,7 +10856,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": true,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [
         {
@@ -10522,6 +10887,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a shard of glass from a mirror",
       "durationText": "1 minute",
@@ -10534,7 +10900,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10557,6 +10924,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -10592,6 +10960,7 @@
       "castingTimeText": "10 minutes",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -10603,7 +10972,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10624,6 +10994,7 @@
       "castingTimeText": "Bonus Action, which you take immedi-",
       "isRitual": false,
       "rangeText": "Self Component: V",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -10641,7 +11012,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -10669,6 +11041,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -10705,6 +11078,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of talc",
       "durationText": "1 hour",
@@ -10741,6 +11115,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "8 hours",
       "requiresConcentration": false,
@@ -10752,7 +11127,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -10775,6 +11151,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Unlimited",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a copper wire",
       "durationText": "Instantaneous",
@@ -10808,6 +11185,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -10849,6 +11227,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a jade circlet worth 1,500+ GP",
       "durationText": "Concentration, up to 1 hour",
@@ -10886,6 +11265,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a chip of mica",
       "durationText": "Instantaneous",
@@ -10909,7 +11289,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": true
+        "constructsSaveAtDisadvantage": true,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -10939,6 +11320,7 @@
       "castingTimeText": "Reaction, which you take when you are",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 round",
       "requiresConcentration": false,
@@ -10968,6 +11350,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a prayer scroll",
       "durationText": "Concentration, up to 10 minutes",
@@ -10995,6 +11378,7 @@
       "castingTimeText": "Bonus Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "mistletoe",
       "durationText": "1 minute",
@@ -11026,6 +11410,7 @@
       "castingTimeText": "Bonus Action, which you take immedi-",
       "isRitual": false,
       "rangeText": "Self Component: V",
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -11067,6 +11452,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -11102,6 +11488,7 @@
       "isRitual": true,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -11138,6 +11525,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of fleece",
       "durationText": "Concentration, up to 10 minutes",
@@ -11173,6 +11561,7 @@
       "castingTimeText": "12 hours",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled",
       "requiresConcentration": false,
@@ -11211,6 +11600,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a pinch of sand or rose petals",
       "durationText": "Concentration, up to 1 minute",
@@ -11237,7 +11627,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -11270,6 +11661,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a miniature umbrella",
       "durationText": "Concentration, up to 1 minute",
@@ -11292,7 +11684,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -11321,6 +11714,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a drop of molasses",
       "durationText": "Concentration, up to 1 minute",
@@ -11338,7 +11732,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -11360,6 +11755,7 @@
       "isRitual": false,
       "rangeText": "120 feet Component: V, S",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "None",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -11387,6 +11783,7 @@
       "isRitual": false,
       "rangeText": "15 feet",
       "rangeFeet": 15,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -11418,6 +11815,7 @@
       "castingTimeText": "Action or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 minutes",
       "requiresConcentration": false,
@@ -11448,6 +11846,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "burning incense",
       "durationText": "10 minutes",
@@ -11484,6 +11883,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 minutes",
       "requiresConcentration": false,
@@ -11517,6 +11917,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a drop of bitumen and a spider",
       "durationText": "Concentration, up to 1 hour",
@@ -11548,6 +11949,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "seven thorns",
       "durationText": "Concentration, up to 10 minutes",
@@ -11585,6 +11987,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a prayer scroll",
       "durationText": "Concentration, up to 10 minutes",
@@ -11608,7 +12011,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -11639,6 +12043,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -11666,6 +12071,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -11706,6 +12112,7 @@
       "isRitual": false,
       "rangeText": "90 feet",
       "rangeFeet": 90,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a rotten egg",
       "durationText": "Concentration, up to 1 minute",
@@ -11728,7 +12135,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -11756,6 +12164,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "soft clay",
       "durationText": "Instantaneous",
@@ -11789,6 +12198,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -11816,6 +12226,7 @@
       "isRitual": false,
       "rangeText": "1 mile",
       "rangeFeet": 5280,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -11858,7 +12269,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -11914,6 +12326,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": true,
       "components": "Verbal, Material",
       "materialComponent": "a drop of honey",
       "durationText": "Concentration, up to 8 hours",
@@ -11931,7 +12344,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": true
       },
       "damage": [],
       "appliedConditions": [
@@ -11958,6 +12372,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -11994,6 +12409,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a magnifying glass",
       "durationText": "Concentration, up to 1 minute",
@@ -12017,7 +12433,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12053,6 +12470,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a piece of sunstone",
       "durationText": "Instantaneous",
@@ -12081,7 +12499,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12116,6 +12535,7 @@
       "castingTimeText": "1 minute",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Until dispelled or triggered",
       "requiresConcentration": false,
@@ -12155,7 +12575,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12201,6 +12622,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 10 minutes",
       "requiresConcentration": true,
@@ -12217,7 +12639,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [
@@ -12245,6 +12668,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "two eggs",
       "durationText": "1 hour",
@@ -12278,6 +12702,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -12333,6 +12758,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "1 round",
       "requiresConcentration": false,
@@ -12368,6 +12794,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Up to 1 minute",
       "requiresConcentration": false,
@@ -12412,6 +12839,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -12434,7 +12862,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12464,6 +12893,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -12494,6 +12924,7 @@
       "castingTimeText": "1 minute or Ritual",
       "isRitual": true,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a crystal bead",
       "durationText": "8 hours",
@@ -12533,6 +12964,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Material",
       "materialComponent": "a miniature ziggurat",
       "durationText": "1 hour",
@@ -12562,6 +12994,7 @@
       "isRitual": false,
       "rangeText": "10 feet",
       "rangeFeet": 10,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 minute",
       "requiresConcentration": false,
@@ -12591,6 +13024,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -12627,6 +13061,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 hour",
       "requiresConcentration": true,
@@ -12638,7 +13073,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -12660,6 +13096,7 @@
       "castingTimeText": "1 hour",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -12696,6 +13133,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -12725,6 +13163,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Somatic",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -12755,6 +13194,7 @@
       "isRitual": false,
       "rangeText": "1 mile",
       "rangeFeet": 5280,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 6 rounds",
       "requiresConcentration": true,
@@ -12777,7 +13217,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12812,6 +13253,7 @@
       "isRitual": true,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of string and of wood",
       "durationText": "1 hour",
@@ -12848,6 +13290,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -12881,6 +13324,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -12898,7 +13342,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12929,6 +13374,7 @@
       "isRitual": false,
       "rangeText": "150 feet",
       "rangeFeet": 150,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a drop of bile",
       "durationText": "Instantaneous",
@@ -12957,7 +13403,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -12993,6 +13440,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a piece of charcoal",
       "durationText": "Concentration, up to 1 minute",
@@ -13011,7 +13459,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -13041,6 +13490,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a shard of glass",
       "durationText": "Concentration, up to 10 minutes",
@@ -13079,6 +13529,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a piece of quartz",
       "durationText": "Concentration, up to 10 minutes",
@@ -13102,7 +13553,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -13138,6 +13590,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a cube of granite",
       "durationText": "Concentration, up to 10 minutes",
@@ -13150,7 +13603,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],
@@ -13172,6 +13626,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a handful of thorns",
       "durationText": "Concentration, up to 10 minutes",
@@ -13195,7 +13650,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -13229,6 +13685,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Touch",
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "1 hour",
       "requiresConcentration": false,
@@ -13263,6 +13720,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a short reed",
       "durationText": "24 hours",
@@ -13295,6 +13753,7 @@
       "isRitual": true,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a piece of cork",
       "durationText": "1 hour",
@@ -13326,6 +13785,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a bit of spiderweb",
       "durationText": "Concentration, up to 1 hour",
@@ -13354,7 +13814,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -13388,6 +13849,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "Concentration, up to 1 minute",
       "requiresConcentration": true,
@@ -13420,7 +13882,8 @@
           }
         ],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -13458,6 +13921,7 @@
       "isRitual": false,
       "rangeText": "30 feet",
       "rangeFeet": 30,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a candle",
       "durationText": "8 hours",
@@ -13498,6 +13962,7 @@
       "isRitual": false,
       "rangeText": "120 feet",
       "rangeFeet": 120,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic, Material",
       "materialComponent": "a fan and a feather",
       "durationText": "Concentration, up to 1 minute",
@@ -13516,7 +13981,8 @@
         "successOutcome": "HalfDamage",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [
         {
@@ -13544,6 +14010,7 @@
       "castingTimeText": "Action",
       "isRitual": false,
       "rangeText": "Self",
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -13616,6 +14083,7 @@
       "isRitual": false,
       "rangeText": "5 feet",
       "rangeFeet": 5,
+      "targetRequiresSight": false,
       "components": "Verbal",
       "durationText": "Instantaneous",
       "requiresConcentration": false,
@@ -13648,6 +14116,7 @@
       "isRitual": false,
       "rangeText": "60 feet",
       "rangeFeet": 60,
+      "targetRequiresSight": false,
       "components": "Verbal, Somatic",
       "durationText": "10 minutes",
       "requiresConcentration": false,
@@ -13664,7 +14133,8 @@
         "successOutcome": "NoEffect",
         "appliedConditions": [],
         "coverIgnored": false,
-        "constructsSaveAtDisadvantage": false
+        "constructsSaveAtDisadvantage": false,
+        "targetRequiresSight": false
       },
       "damage": [],
       "appliedConditions": [],

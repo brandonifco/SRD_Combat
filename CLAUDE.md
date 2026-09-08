@@ -294,8 +294,10 @@ rather than approximating it. *Does the engine execute it?* —
 `ConditionRules.Executable` is a curated allowlist (thirteen conditions today,
 Petrified included whole; Deafened deliberately absent for want of a hearing model.
 Invisible entered in #673, on `VisionRules`'s Blindsight/Truesight-defeat clause —
-Attacks Affected and Concealed's mechanism, with Divine Spark its one hard-coded
-consumer). **Add a condition only alongside the code that gives it
+Attacks Affected and Concealed's mechanism, Divine Spark its first hard-coded
+consumer and, since #691, every extracted spell and stat-block entry whose printed
+"you can see" targeting clause structures onto `TargetRequiresSight`). **Add a
+condition only alongside the code that gives it
 effects.** The Failure-tier extraction case law — repeat-save joins, embedded attack
 saves, tier rules, escalating gazes, head-clause accounting, grapple-tied riders —
 is detailed in the archive and in `EntryMechanicsParser`'s and `ConditionRules`'

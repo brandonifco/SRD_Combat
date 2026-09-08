@@ -77,6 +77,27 @@ public sealed record SpellDefinition
     public CreatureType? TargetCreatureType { get; init; }
 
     /// <summary>
+    /// True when the printed targeting requires the caster to see the target — "a
+    /// creature you can see", read the same way across every shape a spell can resolve
+    /// as (an attack, a heal, a revival, or a single-target save), which is why this
+    /// lives on the spell itself rather than only on <see cref="Save"/> (#691,
+    /// completing Concealed's mechanism from #673-E, whose one hard-coded consumer was
+    /// the Divine Spark class feature). <c>Encounter.CastSpell</c> refuses
+    /// <c>target.unseen</c> (<see cref="Rules.VisionRules.CanSee"/>) when this is set,
+    /// the same call site and the same condition that already gates the Total Cover
+    /// refusal — a Self spell or a point-aimed area is never checked, because neither
+    /// targets a creature directly. Extraction sets this from the same reading applied
+    /// to <see cref="SaveEffect.TargetRequiresSight"/> (a <see cref="Save"/>, when the
+    /// spell has one, carries the identical value), and additionally covers the shapes
+    /// with no <see cref="SaveEffect"/> to hang the flag on — Healing Word's "a
+    /// creature of your choice that you can see" is a <see cref="Heal"/>, not a save.
+    /// Defaults false, including for a disjunctive "you can see or hear" (Vicious
+    /// Mockery) — hearing is not <see cref="Rules.VisionRules.CanSee"/>'s question, so
+    /// claiming this field there would refuse a target the print still allows.
+    /// </summary>
+    public bool TargetRequiresSight { get; init; }
+
+    /// <summary>
     /// The distance a target may be at, reading the two printed bands that carry no
     /// number.
     /// </summary>

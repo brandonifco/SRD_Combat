@@ -438,17 +438,18 @@ public sealed partial class Encounter
                 $"{target.Name} has Total Cover from {combatant.Name} and can't be targeted.");
         }
 
-        // Concealed's one hard-coded consumer (#673): "another creature you can see" is
-        // no longer the Total Cover refusal alone once Invisible exists — an Invisible
-        // ally with a clear line still cannot be Divine Sparked unless the Cleric
-        // somehow sees them (VisionRules.CanSee's Blindsight/Truesight clause). The
-        // remaining 4 spells and 79 stat-block entries that print the same "can see"
-        // targeting are #691's content slice, not this one.
-        if (!VisionRules.CanSee(Battlefield, combatant, target))
+        // Concealed's mechanism (#673): "another creature you can see" is no longer the
+        // Total Cover refusal alone once Invisible exists — an Invisible ally with a
+        // clear line still cannot be Divine Sparked unless the Cleric somehow sees them
+        // (VisionRules.CanSee's Blindsight/Truesight clause). Divine Spark was this
+        // mechanism's one hard-coded consumer; #691 generalized the check into the
+        // shared UnseenTargetRefusal and extracted the same "you can see" clause onto
+        // spells and stat-block entries, which now call it too. Divine Spark keeps
+        // calling it unconditionally — its own sight clause is a hand-authored class
+        // feature, not extracted corpus text — so this one call site is unchanged.
+        if (UnseenTargetRefusal(combatant, target) is { } unseen)
         {
-            return new ActionRefusal(
-                "target.unseen",
-                $"{target.Name} cannot be seen by {combatant.Name}.");
+            return unseen;
         }
 
         if (use == DivineSparkUse.Harm

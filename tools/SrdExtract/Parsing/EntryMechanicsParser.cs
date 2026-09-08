@@ -942,8 +942,10 @@ internal static partial class EntryMechanicsParser
         // lookahead and claims nothing there, but it still prints a real, enforceable
         // range that UseSaveEntry's #403 check should see regardless of whether the
         // gate itself is ever modelled. See ReadRange's own remarks for the shapes
-        // this does and does not populate.
-        var rangeFeet = ReadRange(text, header.Index, header.Index + header.Length, coverage, area);
+        // this does and does not populate — including, since #691, the sibling "the
+        // X can see" sight claim it now reads for the same single-target shape.
+        var (rangeFeet, targetRequiresSight) =
+            ReadRange(text, header.Index, header.Index + header.Length, coverage, area);
 
         var failureIndex = text.IndexOf("Failure", StringComparison.Ordinal);
         IReadOnlyList<AttackDamage> failureDamage;
@@ -1007,7 +1009,8 @@ internal static partial class EntryMechanicsParser
             success,
             conditions,
             RangeFeet: rangeFeet,
-            TargetSpeedDecreaseFeet: speedDecreaseFeet);
+            TargetSpeedDecreaseFeet: speedDecreaseFeet,
+            TargetRequiresSight: targetRequiresSight);
     }
 
     /// <summary>
@@ -1302,8 +1305,34 @@ internal static partial class EntryMechanicsParser
     /// <c>UseSaveEntry</c> would then enforce against a target the printed rule
     /// never measured that way — exactly the false claim design §2.2 forbids.
     /// </para>
+    /// <para>
+    /// <b>Since #691, this method also claims the sibling sight qualifier</b> — "the
+    /// mummy can see" — onto <see cref="SaveEffect.TargetRequiresSight"/>, gated on
+    /// <c>isSingleTarget</c> alone, never on the point-aimed-Sphere or
+    /// back-referenced-point branches: a point-aimed area's own "the dragon can see"
+    /// (Adult Green Dragon's Noxious Miasma, Planetar's Holy Burst) describes the
+    /// <em>point's</em> visibility to the actor, not a creature target's, and design673's
+    /// reading is that Concealed does not gate an effect merely aimed at a point (the
+    /// "Not Concealed" list). Two shapes that print "can see" are deliberately never
+    /// claimed even within a single-target clause, because the claim would be the
+    /// wrong reading rather than an incomplete one (#407's misattribution class, not
+    /// the omission class): a disjunctive "can see <em>or hear</em>" (Frost Giant's War
+    /// Cry, excluded by <see cref="SaveSightPattern"/>'s own negative lookahead — not
+    /// that War Cry ever reaches here, since it prints no save header at all, but the
+    /// guard stays as a trip-wire against a future corpus entry that does), and a
+    /// clause naming who can see <em>the entry's own creature</em> rather than the
+    /// other way around (the Doppelganger's Unsettling Visage — "originating from the
+    /// doppelganger <em>that</em> can see the doppelganger" — and the Ghost's Horrific
+    /// Visage, Sea Hag's Vile Appearance and Chain Devil's Unnerving Gaze, all
+    /// area/reaction shapes that never reach the single-target branch regardless).
+    /// The claimed substring optionally swallows a leading "that " (Gladiator's Shield
+    /// Bash: "one creature within 5 feet <em>that</em> the gladiator can see") so the
+    /// word is not left as its own one-word residue chunk once the sight clause after
+    /// it is claimed.
+    /// </para>
     /// </remarks>
-    private static int? ReadRange(string text, int headerStart, int start, EntryCoverage coverage, EffectArea? area)
+    private static (int? RangeFeet, bool TargetRequiresSight) ReadRange(
+        string text, int headerStart, int start, EntryCoverage coverage, EffectArea? area)
     {
         var clauseEnd = text.IndexOf('.', start);
         var clause = clauseEnd < 0 ? text[start..] : text[start..clauseEnd];
@@ -1324,9 +1353,29 @@ internal static partial class EntryMechanicsParser
         // preamble scan, is the gate.
         var isBackReferencedPoint = clause.Contains("Sphere centered on that point", StringComparison.Ordinal);
 
+        // #691: claimed before the shape gate below returns early, since a
+        // single-target clause with no printed range (none exist in the corpus today,
+        // but nothing here should assume that stays true) still honestly prints the
+        // sight qualifier. See this method's own remarks for why the gate is
+        // isSingleTarget alone.
+        var targetRequiresSight = false;
+
+        if (isSingleTarget)
+        {
+            var sightMatch = SaveSightPattern().Match(clause);
+
+            if (sightMatch.Success)
+            {
+                coverage.Claim(
+                    new TextSpan(clauseStart + sightMatch.Index, sightMatch.Length),
+                    "save.target_requires_sight");
+                targetRequiresSight = true;
+            }
+        }
+
         if (!isSingleTarget && !isPointAimedSphere && !isBackReferencedPoint)
         {
-            return null;
+            return (null, targetRequiresSight);
         }
 
         // See this method's own remarks: a point-aimed area's range is only honest to
@@ -1338,7 +1387,7 @@ internal static partial class EntryMechanicsParser
         // shape.
         if ((isPointAimedSphere || isBackReferencedPoint) && area is null)
         {
-            return null;
+            return (null, targetRequiresSight);
         }
 
         // A back-referenced point's own "within N feet" sits in the preamble, ahead
@@ -1356,14 +1405,14 @@ internal static partial class EntryMechanicsParser
 
         if (!match.Success)
         {
-            return null;
+            return (null, targetRequiresSight);
         }
 
         var claimOffset = isBackReferencedPoint ? 0 : clauseStart;
 
         coverage.Claim(new TextSpan(claimOffset + match.Index, match.Length), "save.range");
 
-        return int.Parse(match.Groups["range"].Value, CultureInfo.InvariantCulture);
+        return (int.Parse(match.Groups["range"].Value, CultureInfo.InvariantCulture), targetRequiresSight);
     }
 
     /// <summary>
@@ -2293,6 +2342,28 @@ internal static partial class EntryMechanicsParser
     // digits, which are read into structure; nothing permissive to exclude.
     [GeneratedRegex(@"\bwithin\s+(?<range>\d+)\s+feet\b")]
     private static partial Regex SaveRangePattern();
+
+    // "the mummy can see" (#691) — ReadRange's own sibling claim, searched over the
+    // same single-target clause SaveRangePattern runs over, wherever it sits relative
+    // to "within N feet" (both printed word orders — sight-before-distance, the
+    // Mummy's Dreadful Glare, and distance-before-sight, the Will-o'-Wisp's Consume
+    // Life — are found by this same literal-substring search). The optional leading
+    // "that " absorbs Gladiator's Shield Bash's own wording ("one creature within 5
+    // feet that the gladiator can see") so the word is claimed with the qualifier
+    // rather than left dangling alone. The trailing negative lookahead is a trip-wire
+    // against a disjunctive "can see or hear" (the Frost Giant's War Cry prints this
+    // exact phrase, though it never reaches ReadRange at all — War Cry has no
+    // "Saving Throw: DC" header to structure a SaveEffect from in the first place):
+    // hearing is not what VisionRules.CanSee answers, so claiming this pattern there
+    // would assert the model enforces a stricter gate than the sentence actually
+    // prints. A clause naming who can see the entry's own creature rather than the
+    // reverse (the Doppelganger's "the doppelganger that <em>can see the
+    // doppelganger</em>") never matches this pattern's word order — "the X can see" is
+    // the actor doing the seeing, not the object of it — and separately never reaches
+    // an isSingleTarget clause regardless, since every such printing in the corpus is
+    // an Emanation or Cone area, not a single target.
+    [GeneratedRegex(@"\b(?:that\s+)?the\s+(?<subject>[a-z][a-z'-]*)\s+can\s+see\b(?!\s+or\s+hear)")]
+    private static partial Regex SaveSightPattern();
 
     // "30-foot Cone", "30-foot-long, 5-foot-wide Line", "5-foot Emanation",
     // "10-foot-radius Sphere" (#420) — the optional "-radius" token mirrors

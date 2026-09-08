@@ -106,6 +106,41 @@ internal static partial class SpellEffectParser
     }
 
     /// <summary>
+    /// True when the spell prints "a/one creature (of your choice) (that) you can see"
+    /// — the singular-creature-target sight clause <see
+    /// cref="SpellDefinition.TargetRequiresSight"/> and, when the spell resolves
+    /// through a save, <see cref="SaveEffect.TargetRequiresSight"/> both carry (#691).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Scanned once against the spell's raw text rather than against any one resolved
+    /// shape, because the same reading has to reach Healing Word (a <see
+    /// cref="SpellHeal"/>, with no <see cref="SaveEffect"/> to hang a claim on) exactly
+    /// as it reaches Hold Person, Mind Spike and Sacred Flame (each a save). Deliberately
+    /// narrow: the determiner (a/one/the) must sit directly against a singular noun
+    /// (creature/Humanoid/target), which a plural target ("up to three creatures of
+    /// your choice that you can see", Bane) fails on the "s" alone, and a non-creature
+    /// target — a point, a space, an object ("a spot you can see", "an unoccupied
+    /// space that you can see") — fails because none of those nouns are in the
+    /// alternation at all. The trailing negative lookahead is a trip-wire against
+    /// Vicious Mockery's disjunctive "one creature you can see <em>or hear</em>":
+    /// hearing is not <c>VisionRules.CanSee</c>'s question, and claiming this pattern
+    /// there would refuse a target the print still allows to be merely heard. Verified
+    /// corpus-wide (data/srd/spells.json): the four executing spells this issue names
+    /// are the only matches among the seventeen <c>PreparableSpells</c> ids; the other
+    /// ~40 corpus matches are all spells this engine does not execute today, so
+    /// extraction still claims their printed clause honestly without any of them
+    /// reaching a targeting call.
+    /// </para>
+    /// </remarks>
+    public static bool ParseTargetRequiresSight(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        return TargetRequiresSightPattern().IsMatch(text);
+    }
+
+    /// <summary>
     /// Reads a spell's damage dice. Unlike a stat block there is no printed average, so
     /// the expression's own average stands in — which keeps the validator's
     /// average-matches-dice check meaningful for monsters without weakening it here.
@@ -369,6 +404,17 @@ internal static partial class SpellEffectParser
     [GeneratedRegex(
         @"the\s+next\s+attack\s+roll\s+made\s+against\s+it\s+before\s+the\s+end\s+of\s+your\s+next\s+turn\s+has\s+Advantage")]
     private static partial Regex NextAttackAdvantagePattern();
+
+    // "a/one creature (of your choice) (that) you can see" (#691) — see
+    // ParseTargetRequiresSight's own remarks for the corpus-wide verification and the
+    // Vicious Mockery trip-wire the trailing negative lookahead exists for. The
+    // singular determiner directly against the noun is what keeps a plural target
+    // ("three creatures of your choice that you can see", Bane) out: the "s" breaks
+    // the required whitespace between the noun and what follows.
+    [GeneratedRegex(
+        @"\b(?:a|one|the)\s+(?:creature|Humanoid|target)(?:\s+of\s+your\s+choice)?\s+(?:that\s+)?you\s+can\s+see\b(?!\s+or\s+hear)",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex TargetRequiresSightPattern();
 
     // Revivify's two sentences, whole: the one-minute window and the revive-with-N
     // must both be printed for the shape to structure.
