@@ -1,0 +1,15 @@
+{
+  "Source": "Synthetic (no PDF). Hand-authored so the left and right columns hold words at the same baseline: reading straight across would merge 'Left cell' with 'Right side' into one nonsense line. The column split at x=300 must keep them in separate columns. This is the exact hazard PageTextReader.ColumnBoundary guards, made minimal. Golden reasoned by hand.",
+  "Page": 1,
+  "Layout": "TwoColumn",
+  "Words": [
+    { "Text": "Right", "Font": "GillSans", "Left": 313, "Right": 350, "Height": 6, "Baseline": 200.0 },
+    { "Text": "Left", "Font": "Optima-Bold", "Left": 63, "Right": 90, "Height": 6, "Baseline": 200.0 },
+    { "Text": "side", "Font": "GillSans", "Left": 360, "Right": 390, "Height": 6, "Baseline": 199.0 },
+    { "Text": "cell", "Font": "Optima-Regular", "Left": 100, "Right": 130, "Height": 6, "Baseline": 200.0 }
+  ],
+  "ExpectedLines": [
+    { "Column": 0, "Baseline": 200.0, "Font": "Optima-Bold", "Text": "Left cell" },
+    { "Column": 1, "Baseline": 200.0, "Font": "GillSans", "Text": "Right side" }
+  ]
+}

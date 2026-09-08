@@ -20,6 +20,11 @@ if (options.CensusPath is { } censusPath)
     return RunCensus(options.OutputDirectory, censusPath);
 }
 
+if (options.Capture is { } capture)
+{
+    return RunCaptureFixture(options.PdfPath, capture);
+}
+
 if (!File.Exists(options.PdfPath))
 {
     Console.Error.WriteLine($"SRD PDF not found at '{options.PdfPath}'.");
@@ -393,6 +398,44 @@ static int RunCensus(string contentDirectory, string outputPath)
     return 0;
 }
 
+/// <summary>
+/// Captures one page's mechanical layout to a page fixture (#189). Reads the raw words the
+/// geometry front end would consume, optionally cropped to a baseline band so the committed
+/// fixture stays minimal, and writes them beside the golden lines the front end makes of them.
+/// This is the only fixture path that needs the PDF; it runs at authoring time, never in CI.
+/// </summary>
+static int RunCaptureFixture(string pdfPath, SrdExtract.CaptureFixtureOptions capture)
+{
+    if (!File.Exists(pdfPath))
+    {
+        Console.Error.WriteLine($"SRD PDF not found at '{pdfPath}'.");
+        Console.Error.WriteLine("Pass --pdf <path>. The PDF is not committed — see CLAUDE.md.");
+        return 1;
+    }
+
+    var words = PageTextReader.ReadPageWords(pdfPath, capture.Page);
+
+    var cropped = words
+        .Where(word => word.Baseline >= capture.MinBaseline && word.Baseline <= capture.MaxBaseline)
+        .ToList();
+
+    if (cropped.Count == 0)
+    {
+        Console.Error.WriteLine(
+            $"No words on page {capture.Page} within baseline [{capture.MinBaseline}, {capture.MaxBaseline}].");
+        return 1;
+    }
+
+    var fixture = PageFixture.Capture(capture.Source, capture.Page, capture.Layout, cropped);
+    File.WriteAllText(capture.OutputPath, fixture.ToJson());
+
+    Console.WriteLine(
+        $"Captured {cropped.Count} words / {fixture.ExpectedLines.Count} lines from page " +
+        $"{capture.Page} ({capture.Layout}) to {capture.OutputPath}");
+
+    return 0;
+}
+
 namespace SrdExtract
 {
     /// <summary>
@@ -441,11 +484,31 @@ namespace SrdExtract
         public const int MagicItemsLastPage = 253;
     }
 
-    internal sealed record ExtractOptions(string PdfPath, string OutputDirectory, bool Force, string? CensusPath)
+    /// <summary>
+    /// A <c>--capture-fixture</c> request: which page to capture, how it is laid out, the
+    /// citation to stamp on the fixture, and the baseline band to crop to (default: the whole
+    /// page). Baselines are measured up from the page bottom — see <see cref="Pdf.SourceWord"/>.
+    /// </summary>
+    internal sealed record CaptureFixtureOptions(
+        string OutputPath,
+        int Page,
+        PageLayout Layout,
+        string Source,
+        double MinBaseline,
+        double MaxBaseline);
+
+    internal sealed record ExtractOptions(
+        string PdfPath,
+        string OutputDirectory,
+        bool Force,
+        string? CensusPath,
+        CaptureFixtureOptions? Capture)
     {
         public const string Usage = """
             Usage: SrdExtract [--pdf <path>] [--out <directory>] [--force]
                    SrdExtract --census <path> [--out <directory>]
+                   SrdExtract --capture-fixture <path> --page <n> --source <text>
+                              [--layout two|full] [--ymin <n>] [--ymax <n>] [--pdf <path>]
 
               --pdf     Path to SRD_CC_v5.2.1.pdf. Defaults to ~/Downloads/SRD_CC_v5.2.1.pdf.
               --out     Directory to write content into, or read it from for --census.
@@ -455,6 +518,12 @@ namespace SrdExtract
                         --out (no PDF needed) and write every span nothing claimed to
                         <path> (#382's span-coverage census, stage 3 — read-only,
                         changes nothing under --out).
+              --capture-fixture  Skip extraction. Capture one page's mechanical layout to a
+                        page fixture at <path> for the extractor's page harness (#189).
+                --page    PDF page number to capture (required).
+                --source  Citation to stamp on the fixture, e.g. "SRD 5.2.1 p344" (required).
+                --layout  'two' (two-column body, default) or 'full' (a full-width table).
+                --ymin/--ymax  Crop to this baseline band, to keep the fixture minimal.
             """;
 
         public static ExtractOptions? Parse(string[] args)
@@ -467,6 +536,13 @@ namespace SrdExtract
             var output = Path.Combine("data", "srd");
             var force = false;
             string? census = null;
+
+            string? capturePath = null;
+            int? capturePage = null;
+            string? captureSource = null;
+            var captureLayout = PageLayout.TwoColumn;
+            var captureMin = 0.0;
+            var captureMax = double.MaxValue;
 
             for (var index = 0; index < args.Length; index++)
             {
@@ -484,6 +560,52 @@ namespace SrdExtract
                     case "--census" when index + 1 < args.Length:
                         census = args[++index];
                         break;
+                    case "--capture-fixture" when index + 1 < args.Length:
+                        capturePath = args[++index];
+                        break;
+                    case "--page" when index + 1 < args.Length:
+                        if (!int.TryParse(args[++index], NumberStyles.Integer, CultureInfo.InvariantCulture, out var page))
+                        {
+                            Console.Error.WriteLine($"--page expects an integer, got '{args[index]}'.");
+                            return null;
+                        }
+
+                        capturePage = page;
+                        break;
+                    case "--source" when index + 1 < args.Length:
+                        captureSource = args[++index];
+                        break;
+                    case "--layout" when index + 1 < args.Length:
+                        switch (args[++index].ToLower(CultureInfo.InvariantCulture))
+                        {
+                            case "two":
+                                captureLayout = PageLayout.TwoColumn;
+                                break;
+                            case "full":
+                                captureLayout = PageLayout.FullWidth;
+                                break;
+                            default:
+                                Console.Error.WriteLine($"--layout expects 'two' or 'full', got '{args[index]}'.");
+                                return null;
+                        }
+
+                        break;
+                    case "--ymin" when index + 1 < args.Length:
+                        if (!double.TryParse(args[++index], NumberStyles.Float, CultureInfo.InvariantCulture, out captureMin))
+                        {
+                            Console.Error.WriteLine($"--ymin expects a number, got '{args[index]}'.");
+                            return null;
+                        }
+
+                        break;
+                    case "--ymax" when index + 1 < args.Length:
+                        if (!double.TryParse(args[++index], NumberStyles.Float, CultureInfo.InvariantCulture, out captureMax))
+                        {
+                            Console.Error.WriteLine($"--ymax expects a number, got '{args[index]}'.");
+                            return null;
+                        }
+
+                        break;
                     case "-h" or "--help":
                         return null;
                     default:
@@ -492,7 +614,20 @@ namespace SrdExtract
                 }
             }
 
-            return new ExtractOptions(pdf, output, force, census);
+            CaptureFixtureOptions? capture = null;
+            if (capturePath is not null)
+            {
+                if (capturePage is null || captureSource is null)
+                {
+                    Console.Error.WriteLine("--capture-fixture requires both --page and --source.");
+                    return null;
+                }
+
+                capture = new CaptureFixtureOptions(
+                    capturePath, capturePage.Value, captureLayout, captureSource, captureMin, captureMax);
+            }
+
+            return new ExtractOptions(pdf, output, force, census, capture);
         }
     }
 }
