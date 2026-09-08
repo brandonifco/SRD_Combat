@@ -1301,8 +1301,9 @@ public sealed partial class Encounter
     /// </summary>
     /// <remarks>
     /// A no-op for the overwhelmingly common case — a fight whose combatants emit no auras
-    /// — which is every combatant the extractor produces today (#676 is the content half)
-    /// and the whole hand-authored skirmish cast, so the frozen transcript stays byte-flat.
+    /// — which is every extracted monster but the Ghast (#676 taught the extractor its
+    /// Stench trait) and the whole hand-authored skirmish cast, so the frozen transcript
+    /// stays byte-flat.
     /// Emitters are visited in initiative order so a victim caught by two emitters rolls
     /// against them in a fixed sequence, keeping the dice stream reproducible.
     /// </remarks>

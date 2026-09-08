@@ -692,8 +692,12 @@ public class RealMonsterCombatTests
                 Spawn(Content.MonstersById["monster.bandit"], "bandit", "bandits", new GridPosition(1, 4)),
             ],
             // Initiatives; the claw's d20 and its two damage dice; the bandit's failed
-            // Constitution save (3 + 0 vs DC 10).
-            new ScriptedRandomSource(20, 1, 15, 1, 1, 3));
+            // Constitution save (3 + 0 vs DC 10); a fourth, trailing d20 (20) for the
+            // Stench aura's own Constitution save the bandit rolls at its own turn's
+            // start (#676) — adjacent to the still-living ghast, within the printed
+            // 5-foot Emanation. Scripted to succeed so the bandit banks immunity
+            // rather than also taking Poisoned, which this test does not assert on.
+            new ScriptedRandomSource(20, 1, 15, 1, 1, 3, 20));
 
         var bandit = encounter.Combatants.Single(combatant => combatant.Id == "bandit");
 
@@ -702,7 +706,9 @@ public class RealMonsterCombatTests
 
         // "Until the end of its next turn": the ghast's turn ends, the bandit's own
         // turn comes round — a skip, since Paralyzed brings Incapacitated — and the
-        // clock frees it at that turn's end.
+        // clock frees it at that turn's end. The Stench aura fires first, ahead of
+        // that skip (Encounter.BeginTurn's own ordering), and the scripted 20 above
+        // is what it consumes.
         encounter.EndTurn();
 
         Assert.False(bandit.HasCondition(ConditionType.Paralyzed));
@@ -727,6 +733,78 @@ public class RealMonsterCombatTests
 
         Assert.Null(encounter.Attack("Claw", zombie));
         Assert.False(zombie.HasCondition(ConditionType.Paralyzed));
+    }
+
+    [Fact]
+    public void TheRealGhastStenchesAnAdjacentVictimAtTheStartOfItsTurn()
+    {
+        // #676: the extractor now recognises Stench's printed shape ("any creature
+        // that starts its turn in a 5-foot Emanation originating from the ghast")
+        // and populates MonsterEntry.Aura, so the real Ghast actually emits it —
+        // #670's Encounter.FireAuras, exercised against the real stat block rather
+        // than TraitAuraTests's hand-authored fixture. The bandit wins initiative
+        // outright, so its own turn begins the instant the fight starts
+        // (RollInitiative calls BeginTurn immediately) and the aura fires before
+        // either creature has taken a single action.
+        var ghast = Content.MonstersById["monster.ghast"];
+        var bandit = Content.MonstersById["monster.bandit"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(ghast, "ghast", "undead", new GridPosition(0, 4)),
+                Spawn(bandit, "victim", "bandits", new GridPosition(1, 4)),
+            ],
+            // Initiatives: the ghast's 1 (+3 = 4) loses to the bandit's 20 (+1 = 21),
+            // so the bandit acts first; then its Constitution save against the
+            // printed DC 10 — a 3 (+1 = 4) fails.
+            new ScriptedRandomSource(1, 20, 3));
+
+        var victim = encounter.Combatants.Single(combatant => combatant.Id == "victim");
+
+        Assert.True(victim.HasCondition(ConditionType.Poisoned));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Entry
+                && step.Narration.Contains("Ghast's Stench washes over Bandit", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Condition
+                && step.Narration.Contains("Bandit has the Poisoned condition", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheRealGhastGrantsRestOfFightImmunityOnASuccessfulStenchSave()
+    {
+        // The other half of #676's win condition: a save that succeeds banks the
+        // printed "immune to this ghast's Stench for 24 hours" — read as immune for
+        // the rest of the encounter (AuraEffect's own reading) — so the bandit takes
+        // no Poisoned and, a full round later, does not roll again. The scripted die
+        // carries exactly one Constitution save; a re-roll on the second turn would
+        // overrun it.
+        var ghast = Content.MonstersById["monster.ghast"];
+        var bandit = Content.MonstersById["monster.bandit"];
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [
+                Spawn(ghast, "ghast", "undead", new GridPosition(0, 4)),
+                Spawn(bandit, "victim", "bandits", new GridPosition(1, 4)),
+            ],
+            // Initiatives (bandit first, as above), then a saving 20 (+1 = 21 vs DC 10).
+            new ScriptedRandomSource(1, 20, 20));
+
+        var victim = encounter.Combatants.Single(combatant => combatant.Id == "victim");
+
+        Assert.False(victim.HasCondition(ConditionType.Poisoned));
+
+        encounter.EndTurn(); // the ghast's turn
+        encounter.EndTurn(); // round two: the bandit starts its turn in range again
+
+        Assert.False(victim.HasCondition(ConditionType.Poisoned));
+        Assert.Equal(
+            1,
+            encounter.Log.Count(step => step.Narration.Contains("washes over", StringComparison.Ordinal)));
     }
 
     [Theory]

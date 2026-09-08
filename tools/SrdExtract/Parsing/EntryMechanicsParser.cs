@@ -223,9 +223,21 @@ internal static partial class EntryMechanicsParser
 
         if (ParseSave(text, conditions, coverage, speedDecreaseRider?.Feet) is { } save)
         {
+            // #676: a Trait-section save may still be one the engine fires — not
+            // through UseEntry's own section gate below, but through
+            // Encounter.FireAuras (#670), which reads MonsterEntry.Aura directly and
+            // does not go near UseEntry or its section refusal at all. ParseAura only
+            // recognises the one printed shape #670 executes (the Ghast's Stench); see
+            // its own remarks for the gate and the misattribution risk it guards
+            // against.
+            var aura = section == MonsterEntrySection.Trait
+                ? ParseAura(bareName, text, coverage)
+                : null;
+
             // The entry's mechanics is SavingThrow — the other of the two the engine
-            // imposes riders from (design §2.5) — but only when Encounter.UseEntry can
-            // actually reach it. UseEntry refuses by section before it ever reads
+            // imposes riders from (design §2.5) — but only when something actually
+            // fires it: either UseEntry (Action/BonusAction), or, now, FireAuras for a
+            // recognised aura. UseEntry refuses by section before it ever reads
             // Mechanics (entry.not_an_action): a Trait, LegendaryAction or Reaction
             // entry never fires through it, so a rider parsed on one of those sections
             // is imposed by nothing and claiming its span would be the exact false
@@ -237,8 +249,11 @@ internal static partial class EntryMechanicsParser
             // whichever section prints it — only the condition it would impose is not.
             // The Speed-decrease rider (#665) is the same shape as a condition here —
             // an actual imposed game effect, not descriptive structure — so it is
-            // gated identically.
-            if (section is MonsterEntrySection.Action or MonsterEntrySection.BonusAction)
+            // gated identically. An aura-classified Trait entry earns the same claim
+            // as an Action/BonusAction entry because FireAuras really does call
+            // ResolveSaveEffect for it (Encounter.cs) — the rider is genuinely
+            // imposed, just on the aura's own clock rather than as a spent action.
+            if (section is MonsterEntrySection.Action or MonsterEntrySection.BonusAction || aura is not null)
             {
                 foreach (var (_, span, note) in claimableRiders)
                 {
@@ -251,7 +266,7 @@ internal static partial class EntryMechanicsParser
                 }
             }
 
-            return Build(bareName, section, text, EntryMechanics.SavingThrow, usage, conditions, coverage, save: save);
+            return Build(bareName, section, text, EntryMechanics.SavingThrow, usage, conditions, coverage, save: save, aura: aura);
         }
 
         if (section == MonsterEntrySection.Trait && MonsterTraitRegistry.Implements(bareName))
@@ -303,7 +318,8 @@ internal static partial class EntryMechanicsParser
         MonsterAttack? attack = null,
         SaveEffect? save = null,
         MultiattackEffect? multiattack = null,
-        ReactionEffect? reaction = null) =>
+        ReactionEffect? reaction = null,
+        AuraEffect? aura = null) =>
         new(
             name,
             section,
@@ -315,7 +331,8 @@ internal static partial class EntryMechanicsParser
             reaction,
             usage,
             conditions,
-            coverage.Residue());
+            coverage.Residue(),
+            aura);
 
     /// <summary>
     /// Every sentence of an entry the model could not classify at all — used only for
@@ -967,6 +984,107 @@ internal static partial class EntryMechanicsParser
             conditions,
             RangeFeet: rangeFeet,
             TargetSpeedDecreaseFeet: speedDecreaseFeet);
+    }
+
+    /// <summary>
+    /// Recognises the printed start-of-victim's-turn emanation shape and reads its
+    /// radius — the one Trait aura the engine executes today (#676, following #670's
+    /// <c>Encounter.FireAuras</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The shape, verbatim (SRD 5.2.1 p. 287).</b> "Stench. Constitution Saving
+    /// Throw: DC 10, any creature that starts its turn in a 5-foot Emanation
+    /// originating from the ghast. Failure: The target has the Poisoned condition
+    /// until the start of its next turn. Success: The target is immune to this
+    /// ghast's Stench for 24 hours." Two independent signals are read, and both must
+    /// agree with the entry's own name and each other before this returns non-null —
+    /// the misattribution guard this method exists to be, mirroring
+    /// <see cref="ParseParryReaction"/>'s own two-signal gate:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><b>The target clause</b> — literally "any creature that starts its turn
+    /// in a &lt;N&gt;-foot Emanation originating from the &lt;creature&gt;." — read by
+    /// <see cref="AuraTriggerPattern"/>, anchored on the whole clause (a printed "any
+    /// enemy" instead of "any creature", or "the aura" instead of a fresh
+    /// "N-foot Emanation originating from", fails this pattern outright; see below for
+    /// why that matters).</item>
+    /// <item><b>The printed immunity</b> — "Success: The target is immune to this
+    /// &lt;creature&gt;'s &lt;trait&gt; for 24 hours." — read by
+    /// <see cref="AuraImmunityPattern"/>, whose captured creature name must match the
+    /// target clause's own origin (the same creature emits and grants immunity) and
+    /// whose captured trait name must match this entry's own printed name (the
+    /// immunity is to <i>this</i> ability, not some other one). Requiring the
+    /// immunity clause as well as the target clause is what keeps this from ever
+    /// firing on an aura #670 did not build 24-hour immunity tracking for.</item>
+    /// </list>
+    /// <para>
+    /// <b>Misattribution risk, checked directly against the corpus (verified against
+    /// SRD 5.2.1).</b> Two other creatures print a save keyed on "starts its turn in"
+    /// an emanation-shaped area, and both are deliberately excluded, by wording alone
+    /// rather than by name:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>The <b>Hezrou</b>'s own Stench (p. 293) prints the identical target
+    /// clause shape — "any creature that starts its turn in a 10-foot Emanation
+    /// originating from the hezrou" — but no Success line at all: the Hezrou's Stench
+    /// never lets a victim become immune. <see cref="AuraTriggerPattern"/> matches it
+    /// (the target clause really is the same shape), but <see
+    /// cref="AuraImmunityPattern"/> finds nothing, so this method returns null and the
+    /// Hezrou's trigger/origin clauses stay residue exactly as before this slice — an
+    /// honest gap, not a silently wrong immunity rule invented for a creature that
+    /// prints none. (The Hezrou is CR 8, out of the CR≤4 pool this slice targets
+    /// regardless — #670's own scoping — but the guard holds independent of CR.)</item>
+    /// <item>The <b>Pit Fiend</b>'s Fear Aura (p. 312) prints "any <i>enemy</i> that
+    /// starts its turn in <i>the aura</i>" — "enemy" rather than "creature", and a
+    /// back-reference to an aura named in an earlier sentence rather than a fresh
+    /// "N-foot Emanation originating from" clause — so it fails
+    /// <see cref="AuraTriggerPattern"/> on both counts. It also gates its own
+    /// emanation on the pit fiend <i>not</i> being Incapacitated ("while it doesn't
+    /// have the Incapacitated condition"), the opposite of the Ghast's reading
+    /// (<see cref="AuraEffect"/>'s own remarks) — a real behavioural difference this
+    /// record has no field for, so leaving it unmatched is correct on two independent
+    /// grounds, not one fragile one.</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="bareName">The entry's own printed name, with any usage suffix stripped.</param>
+    /// <returns>
+    /// The aura signal, or null when this entry does not print the recognised shape.
+    /// </returns>
+    private static AuraEffect? ParseAura(string bareName, string text, EntryCoverage coverage)
+    {
+        var target = AuraTriggerPattern().Match(text);
+
+        if (!target.Success)
+        {
+            return null;
+        }
+
+        var immunity = AuraImmunityPattern().Match(text);
+
+        if (!immunity.Success)
+        {
+            return null;
+        }
+
+        if (!string.Equals(target.Groups["creature"].Value, immunity.Groups["creature"].Value, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(immunity.Groups["trait"].Value, bareName, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // The trigger clause's leading and trailing prose — "any creature that starts
+        // its turn in a" and "originating from the ghast" — is claimed on either side
+        // of the "5-foot Emanation" ParseArea already claims as save.area, so neither
+        // claim overlaps the other; together with the immunity sentence, this is
+        // exactly the four clauses #676's issue named as residue to clear.
+        coverage.Claim(new TextSpan(target.Groups["lead"].Index, target.Groups["lead"].Length), "aura.trigger");
+        coverage.Claim(new TextSpan(target.Groups["origin"].Index, target.Groups["origin"].Length), "aura.origin");
+        coverage.Claim(new TextSpan(immunity.Index, immunity.Length), "aura.immunity");
+
+        var radius = int.Parse(target.Groups["radius"].Value, CultureInfo.InvariantCulture);
+
+        return new AuraEffect(radius, AuraClock.StartOfVictimTurn);
     }
 
     /// <summary>
@@ -1918,6 +2036,30 @@ internal static partial class EntryMechanicsParser
     // ParseParryReaction's remarks for why the name gate is kept as well.
     [GeneratedRegex(@"^The [a-z][a-z' -]* adds (?<bonus>\d+) to its AC against that attack, possibly causing it to miss\.$")]
     private static partial Regex ParryResponsePattern();
+
+    // ParseAura's own two-signal gate, first half: the printed target clause naming
+    // who rolls the aura's save. Requires the literal word "creature" (the Pit Fiend's
+    // Fear Aura prints "any enemy" instead, and fails here on that word alone) and a
+    // fresh "N-foot Emanation originating from the X" (the Pit Fiend instead
+    // back-references "the aura" named in an earlier sentence, and also fails here).
+    // The Hezrou's own Stench prints this exact shape and does match — see
+    // ParseAura's own remarks for why the second signal (AuraImmunityPattern) is what
+    // excludes it. The comma anchors this to the position ParseSave's own
+    // SaveHeaderPattern leaves off at ("DC 10, any creature..."), the same convention
+    // SaveTargetClausePattern uses.
+    [GeneratedRegex(@",\s*(?<lead>any creature that starts its turn in a)\s+(?<radius>\d+)-foot Emanation\s+(?<origin>originating from the (?<creature>[a-z][a-z'-]*))\.")]
+    private static partial Regex AuraTriggerPattern();
+
+    // ParseAura's second signal: the printed 24-hour immunity, which only the Ghast's
+    // Stench carries among the corpus's start-of-turn emanation saves (the Hezrou's
+    // Stench prints no Success line at all). The captured creature name is checked
+    // against AuraTriggerPattern's own origin in ParseAura, and the captured trait
+    // name against the entry's own printed name — either mismatching means this
+    // Success line is naming a different emitter or a different ability than the one
+    // this entry's target clause just matched, and ParseAura refuses rather than
+    // guessing.
+    [GeneratedRegex(@"Success:\s*The target is immune to this (?<creature>[a-z][a-z'-]*)'s (?<trait>[A-Z][\w' -]*?) for 24 hours\.")]
+    private static partial Regex AuraImmunityPattern();
 
     // Deliberately does not require "makes" on each clause: the Bearded Devil "makes one
     // Beard attack and one Infernal Glaive attack", and the second clause has no verb of

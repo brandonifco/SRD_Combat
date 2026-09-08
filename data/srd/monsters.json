@@ -13552,6 +13552,10 @@
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false
           },
+          "aura": {
+            "emanationRadiusFeet": 5,
+            "clock": "StartOfVictimTurn"
+          },
           "appliedConditions": [
             {
               "condition": "Poisoned",
@@ -13566,12 +13570,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "any creature that starts its turn in a",
-            "originating from the ghast",
-            "The target has the Poisoned condition until the start of its next turn",
-            "Success: The target is immune to this ghast's Stench for 24 hours"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Bite",
