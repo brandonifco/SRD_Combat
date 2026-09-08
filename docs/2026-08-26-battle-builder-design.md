@@ -440,12 +440,17 @@ issue says so.
   the next re-baselining checkpoint knows the ladder moved underneath it.
 - **Determinism.** Same scenario, same seed, same fight, byte-for-byte in narration.
   Pinned by a test, not asserted in prose.
-- **No new modal surface before #327.** See below.
+- **No new surface — modal or top-level screen — hand-rolls its own focus cascade.**
+  See below. (Was "No new modal surface before #327" until #492 reworded the gate,
+  2026-09-08.)
 
 ## 9. The #327 gate, and why it applies to a thing it does not name
 
-CLAUDE.md's F3 entry gate reads: *"the PlayMode modal/state refactor (#327) lands before
-any new modal surface."*
+CLAUDE.md's F3 entry gate read, when this was written: *"the PlayMode modal/state
+refactor (#327) lands before any new modal surface."* (The gate now lives in
+`docs/finishing-plan.md` and, since #492 landed 2026-09-08, says "any new surface — a
+modal on `PlayMode` or a new top-level screen alike"; the gap this section reasons
+about is closed in the wording, and the reasoning below is why.)
 
 **The builder is not a `PlayMode` modal, and should not be one.** The client's three
 screens are top-level `FightScreen` subclasses chosen by a three-way ternary in

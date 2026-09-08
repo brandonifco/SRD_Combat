@@ -726,7 +726,11 @@ and all three are the steward's call, not the architect's:
    rather than at S8.
 2. **The gate's wording is already known to be wrong** (#492 — "any new *modal* surface"
    misses a new top-level screen). Fixing the wording and fixing the "issue number vs
-   deliverable" problem are the same edit; recommend doing them together.
+   deliverable" problem are the same edit; recommend doing them together. *(Outcome:
+   #327 closed 2026-08-30 at S8, so the deliverable-vs-issue-number half became moot
+   before it was acted on; #492's wording fix landed alone on 2026-09-08 — the gate in
+   `docs/finishing-plan.md` now says "any new surface" and names the hazard, a second
+   hand-rolled focus cascade, rather than the location.)*
 3. **Four `phase:FI-instrument` slices now gate on an `phase:F3-run-game` issue.** FI is
    running now; F3 has not started. Recommendation: **the slice issues below should carry
    no phase label of their own beyond `phase:F3-run-game` inherited from #327, and S0/S1
