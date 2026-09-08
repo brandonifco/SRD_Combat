@@ -841,6 +841,7 @@
                 "printedAverage": 3
               }
             ],
+            "advantageCondition": "TargetIsGrappledByAttacker",
             "imposesDisadvantageOnTargetsNextAttack": false
           },
           "mechanics": "Attack",
@@ -851,9 +852,7 @@
               "maximumTargetSize": "Large"
             }
           ],
-          "unmodelledClauses": [
-            "(with Advantage if the target is Grappled by the ankheg)"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Acid Spray",
@@ -6700,13 +6699,12 @@
                 "printedAverage": 12
               }
             ],
+            "advantageCondition": "TargetIsGrappledByAttacker",
             "imposesDisadvantageOnTargetsNextAttack": false
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target is Grappled by the bugbear)"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Quick Grapple",
@@ -6866,13 +6864,12 @@
                 "printedAverage": 9
               }
             ],
+            "advantageCondition": "TargetIsGrappledByAttacker",
             "imposesDisadvantageOnTargetsNextAttack": false
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target is Grappled by the bugbear)"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 272
@@ -23667,6 +23664,7 @@
                 "printedAverage": 4
               }
             ],
+            "advantageCondition": "TargetIsGrappledByAttacker",
             "alternative": {
               "amount": "2d8 + 3",
               "type": "Piercing",
@@ -23678,9 +23676,7 @@
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target is Grappled by the mimic)"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Pseudopod",
@@ -43952,13 +43948,12 @@
                 "printedAverage": 22
               }
             ],
+            "advantageCondition": "TargetIsMissingHitPoints",
             "imposesDisadvantageOnTargetsNextAttack": false
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target doesn't have all its Hit Points)"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 353
@@ -45087,13 +45082,12 @@
                 "printedAverage": 14
               }
             ],
+            "advantageCondition": "TargetIsMissingHitPoints",
             "imposesDisadvantageOnTargetsNextAttack": false
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target doesn't have all its Hit Points)"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 356
@@ -46336,13 +46330,12 @@
                 "printedAverage": 1
               }
             ],
+            "advantageCondition": "TargetIsMissingHitPoints",
             "imposesDisadvantageOnTargetsNextAttack": false
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target doesn't have all its Hit Points)"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 358
@@ -47893,6 +47886,7 @@
                 "printedAverage": 8
               }
             ],
+            "advantageCondition": "TargetIsMissingHitPoints",
             "alternative": {
               "amount": "1d4 + 3",
               "type": "Piercing",
@@ -47903,9 +47897,7 @@
           },
           "mechanics": "Attack",
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "(with Advantage if the target doesn't have all its Hit Points)"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 362

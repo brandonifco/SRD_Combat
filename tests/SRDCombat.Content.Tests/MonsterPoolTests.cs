@@ -57,14 +57,27 @@ public class MonsterPoolTests
         // Mephit's Speed-decrease rider structured too, but its Steam Breath still
         // carries an unrelated residue clause ("Being underwater doesn't grant
         // Resistance to this Fire damage") out of #665's scope, so it does not cross
-        // the coverage threshold this slice.
+        // the coverage threshold this slice. It rose 75 -> 78 on 2026-09-08 (#666,
+        // shape 2 of the #390 ledger): Ankheg, Bugbear Stalker and Bugbear Warrior
+        // all re-entered once their header's "(with Advantage if the target is
+        // Grappled by the [ankheg/bugbear])" parenthetical structured as an
+        // attack-roll circumstance
+        // (AttackRollAdvantageCondition, AttackRules.DescribeCircumstances) rather
+        // than sitting unread in AttackHeaderPattern's filler. The Mimic's identical
+        // parenthetical structures too, but its Pseudopod still carries an unrelated
+        // escape-Disadvantage residue clause, so it stays Diminished and out of the
+        // count. The Swarm of Piranhas' header parenthetical structures as well —
+        // honest coverage, not a pool-count movement, since PlausibleFoes.IsAquatic
+        // excludes it from every draw regardless of grade, so it never needs a themed
+        // slot in EncounterThemes for the same reason.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 75,
-            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 75 before the 2026-08-24 " +
-            "span-accounting regeneration (#382), 68 before #371's alternative-damage restorations " +
-            "(2026-08-25, PR #408), 81 when the genre cut landed (2026-08-20, TraditionalFoes), 116 " +
+            pool.Count >= 78,
+            $"The tier-1 pool has fallen to {pool.Count} monsters; it was 78 after #666 (2026-09-08), " +
+            "75 after #665 (2026-09-08) and before it, 74 after #409, 73 after #371's alternative-" +
+            "damage restorations (2026-08-25, PR #408), 68 right after the 2026-08-24 span-accounting " +
+            "regeneration (#382), 81 when the genre cut landed (2026-08-20, TraditionalFoes), 116 " +
             "before that cut, and 131 before #52 dropped the creatures the SRD prices as equipment " +
             "and #75 dropped the ones with nowhere to fight.");
     }
@@ -179,8 +192,12 @@ public class MonsterPoolTests
         // span-accounting regeneration (#382) gave the Ankheg's Bite honest residue of
         // its own — the Advantage parenthetical in its attack header, design §2.3's
         // own worked example ("(with Advantage if the target is Grappled by the
-        // ankheg)") — which drops the Ankheg to Diminished and makes it the wrong
-        // example for this test now.
+        // ankheg)") — which dropped the Ankheg to Diminished and made it the wrong
+        // example for this test between 2026-08-24 and 2026-09-08. #666 gave that
+        // parenthetical a structured field (AttackRollAdvantageCondition), so the
+        // Ankheg's Bite is fully modelled again and it could stand in for the Ghast
+        // here once more — the Ghast stays the chosen example because its Stench
+        // trait's dispatch gap (design §2.5) is the more instructive one.
         var ghast = Content.MonstersById["monster.ghast"];
 
         Assert.Equal(MonsterCoverage.Playable, MonsterPool.CoverageOf(ghast));

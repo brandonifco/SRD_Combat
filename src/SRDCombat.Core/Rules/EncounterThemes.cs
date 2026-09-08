@@ -92,8 +92,18 @@ public enum EncounterTheme
 /// themes are restored verbatim from before the 2026-08-24 removal (goblinoid and
 /// savage-hunter warbands, the same company an Ogre keeps). The Steam Mephit's own
 /// gap (an unrelated residue clause on the same Steam Breath entry) does not close in
-/// this slice, so it stays out. The other five of the original twelve stay out until
-/// their own gaps close.
+/// this slice, so it stays out. The eighth, ninth and tenth returned on 2026-09-08
+/// (#666, shape 2 of the #390 ledger): Ankheg, Bugbear Stalker and Bugbear Warrior,
+/// whose header parenthetical ("with Advantage if the target is Grappled by the
+/// [ankheg/bugbear]") now structures and executes as an attack-roll circumstance
+/// (<see cref="AttackRules.DescribeCircumstances"/>'s
+/// <c>AttacksOwnAdvantageConditionHolds</c>). All three themes are restored verbatim
+/// from the commit that first assigned them (<c>f656eef</c>, before the 2026-08-24
+/// removal) — Ankheg keeps its explicit loner reading, and both bugbears rejoin the
+/// goblinoid warband alongside the Bugbear from the traditional roster. Only two of
+/// the original twelve stay out: the Swarm of Piranhas (this same slice restores its
+/// grade honestly, but <c>PlausibleFoes.IsAquatic</c> excludes it from every draw
+/// regardless of grade, so it never needs a themed slot here) and the Steam Mephit.
 /// </para>
 /// </remarks>
 public static class EncounterThemes
@@ -150,6 +160,7 @@ public static class EncounterThemes
 
             // CR 1
             ["Animated Armor"] = [EncounterTheme.ArcaneAndAnimated],
+            ["Bugbear Warrior"] = [EncounterTheme.GoblinoidWarband],
             ["Dire Wolf"] = [EncounterTheme.WildPack],
             ["Giant Hyena"] = [EncounterTheme.SavageHunters, EncounterTheme.WildPack],
             ["Giant Vulture"] = [EncounterTheme.SavageHunters],
@@ -159,6 +170,7 @@ public static class EncounterThemes
             ["Spy"] = [EncounterTheme.Outlaws, EncounterTheme.Soldiery],
 
             // CR 2
+            ["Ankheg"] = [],
             ["Awakened Tree"] = [EncounterTheme.ArcaneAndAnimated],
             ["Azer Sentinel"] = [EncounterTheme.CultAndFiends],
             ["Bandit Captain"] = [EncounterTheme.Outlaws],
@@ -178,6 +190,7 @@ public static class EncounterThemes
             // CR 3
             ["Basilisk"] = [],
             ["Blue Dragon Wyrmling"] = [EncounterTheme.Draconic],
+            ["Bugbear Stalker"] = [EncounterTheme.GoblinoidWarband],
             ["Hell Hound"] = [EncounterTheme.CultAndFiends],
             ["Hobgoblin Captain"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.Soldiery],
             ["Knight"] = [EncounterTheme.Soldiery],

@@ -288,6 +288,44 @@ public class ContentSerializerTests
     }
 
     /// <summary>
+    /// The eight header-parenthetical entries (#666): <see cref="MonsterAttack.AdvantageCondition"/>
+    /// is the field that structures "(with Advantage if the target …)", carried onto
+    /// <see cref="SRDCombat.Core.Combat.CombatAttack"/> beside <see cref="MonsterAttack.Alternative"/>.
+    /// Like <c>Alternative</c> before #410, nothing else round-trips it on its own.
+    /// </summary>
+    [Fact]
+    public void RoundTrip_PreservesAMonsterAttacksAdvantageCondition()
+    {
+        var original = new MonsterAttack(
+            AttackKind.Melee,
+            AttackBonus: 5,
+            ReachFeet: 5,
+            NormalRangeFeet: null,
+            LongRangeFeet: null,
+            [new AttackDamage(DiceExpression.Parse("2d6 + 3"), DamageType.Slashing, 10)])
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsGrappledByAttacker,
+        };
+
+        var json = ContentSerializer.Serialize(original);
+
+        Assert.Contains("\"advantageCondition\": \"TargetIsGrappledByAttacker\"", json, StringComparison.Ordinal);
+
+        var restored = ContentSerializer.Deserialize<MonsterAttack>(json);
+
+        Assert.Equal(AttackRollAdvantageCondition.TargetIsGrappledByAttacker, restored.AdvantageCondition);
+
+        // Null — the overwhelming majority of attacks — is not written at all
+        // (JsonIgnoreCondition.WhenWritingNull), keeping every other attack's JSON
+        // byte-for-byte unchanged.
+        var withoutCondition = original with { AdvantageCondition = null };
+        var jsonWithout = ContentSerializer.Serialize(withoutCondition);
+
+        Assert.DoesNotContain("advantageCondition", jsonWithout, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(ContentSerializer.Deserialize<MonsterAttack>(jsonWithout).AdvantageCondition);
+    }
+
+    /// <summary>
     /// #386's engine half: <see cref="SaveEffect.RangeFeet"/> is the field an entry
     /// save's printed range will reach through once the extraction half structures it.
     /// Pins that a populated value round-trips — the same contract

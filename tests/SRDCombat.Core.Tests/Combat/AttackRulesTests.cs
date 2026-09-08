@@ -683,6 +683,218 @@ public class AttackRulesTests
             });
     }
 
+    #region Attack-roll Advantage circumstances (#666)
+
+    [Fact]
+    public void AdvantageCondition_TargetGrappledByAttacker_GrantsAdvantage()
+    {
+        // Ankheg's Bite, Bugbear Stalker's Morningstar, Bugbear Warrior's Light
+        // Hammer and Mimic's Bite all print this on the attack's own header.
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsGrappledByAttacker,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        target.AddCondition(ConditionType.Grappled, attacker.Id);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attack, target);
+
+        Assert.True(circumstances.AttacksOwnAdvantageConditionHolds);
+        Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_TargetGrappledByAnAlly_GrantsNothing()
+    {
+        // "By the attacker" is load-bearing: a target held by an ally does not
+        // satisfy this attacker's own printed circumstance.
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsGrappledByAttacker,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var ally = CombatTestData.Combatant("ally");
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        target.AddCondition(ConditionType.Grappled, ally.Id);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attack, target);
+
+        Assert.False(circumstances.AttacksOwnAdvantageConditionHolds);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_TargetNotGrappledAtAll_GrantsNothing()
+    {
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsGrappledByAttacker,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attack, target);
+
+        Assert.False(circumstances.AttacksOwnAdvantageConditionHolds);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_IsNotRetroactiveWithinTheSameAttack()
+    {
+        // The Ankheg's own sequence: the first Bite on an ungrappled target rolls
+        // Normal; the hit imposes the grapple; the Ankheg's NEXT Bite rolls with
+        // Advantage. Nothing is stored on the attack or the roll itself — this pins
+        // that the circumstance is read fresh, from live state, every time.
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsGrappledByAttacker,
+        };
+        var attacker = CombatTestData.Combatant("ankheg", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        var beforeGrapple = AttackRules.DescribeCircumstances(attacker, attack, target);
+        Assert.False(beforeGrapple.AttacksOwnAdvantageConditionHolds);
+
+        // The first Bite hits and its rider grapples the target — modelled directly
+        // here rather than through the rider machinery, which #390/#409 already pin.
+        target.AddCondition(ConditionType.Grappled, attacker.Id);
+
+        var afterGrapple = AttackRules.DescribeCircumstances(attacker, attack, target);
+        Assert.True(afterGrapple.AttacksOwnAdvantageConditionHolds);
+    }
+
+    [Fact]
+    public void AdvantageCondition_TargetOneHitPointBelowMaximum_GrantsAdvantage()
+    {
+        // "Doesn't have all its Hit Points" is any shortfall — one point is enough,
+        // a strictly wider gate than Bloodied.
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsMissingHitPoints,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        target.ReduceHitPoints(1);
+        Assert.False(target.IsBloodied);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attack, target);
+
+        Assert.True(circumstances.AttacksOwnAdvantageConditionHolds);
+        Assert.Equal(RollMode.Advantage, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_TargetAtFullHitPointsWithTemporaryHitPoints_GrantsNothing()
+    {
+        // Temporary Hit Points are "a buffer against losing real Hit Points" (glossary
+        // p. 190), not Hit Points themselves — a full-HP target carrying them still
+        // has all its (real) Hit Points.
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsMissingHitPoints,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        target.SetTemporaryHitPoints(10);
+        Assert.False(target.IsMissingHitPoints);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attack, target);
+
+        Assert.False(circumstances.AttacksOwnAdvantageConditionHolds);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_TargetHealedBackToFull_StopsGrantingAdvantage()
+    {
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsMissingHitPoints,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        target.ReduceHitPoints(5);
+        Assert.True(AttackRules.DescribeCircumstances(attacker, attack, target).AttacksOwnAdvantageConditionHolds);
+
+        target.RegainHitPoints(5);
+
+        var healed = AttackRules.DescribeCircumstances(attacker, attack, target);
+        Assert.False(healed.AttacksOwnAdvantageConditionHolds);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(healed, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_CancelsAgainstDisadvantageRatherThanOverriding()
+    {
+        // A missing-Hit-Points target (Advantage) attacked by a Poisoned attacker
+        // (Disadvantage) resolves Normal — the two sources are combined through
+        // D20Test.Combine like every other pair, never treated as if this one wins.
+        var attack = CombatTestData.MeleeAttack() with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsMissingHitPoints,
+        };
+        var attacker = CombatTestData.Combatant("a", stats: CombatTestData.Stats(attacks: [attack]));
+        var target = CombatTestData.Combatant("t", sideId: CombatTestData.Monsters, x: 1);
+
+        target.ReduceHitPoints(1);
+        attacker.AddCondition(ConditionType.Poisoned);
+
+        var circumstances = AttackRules.DescribeCircumstances(attacker, attack, target);
+
+        Assert.True(circumstances.AttacksOwnAdvantageConditionHolds);
+        Assert.True(circumstances.AttackerIsPoisoned);
+        Assert.Equal(RollMode.Normal, AttackRules.ResolveRollMode(circumstances, 5));
+    }
+
+    [Fact]
+    public void AdvantageCondition_CarriesThroughAnOpportunityAttack()
+    {
+        // "Every roll of that attack" (#666's spec) — the printed rule names the
+        // attack roll, not the Attack action, so an Opportunity Attack made with the
+        // same attack reads the same circumstance. The Advantage roll costs two d20s
+        // (D20Test.Roll) rather than the Normal path's one.
+        var monsterAttack = CombatTestData.MeleeAttack(bonus: 4) with
+        {
+            AdvantageCondition = AttackRollAdvantageCondition.TargetIsMissingHitPoints,
+        };
+        var hero = CombatTestData.Combatant(
+            "hero",
+            stats: CombatTestData.Stats(initiativeBonus: 10),
+            x: 1);
+        var monster = CombatTestData.Combatant(
+            "monster",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(attacks: [monsterAttack]));
+
+        var encounter = Encounter.Start(
+            new Battlefield(12, 12),
+            [hero, monster],
+            new ScriptedRandomSource(
+                10, 1,      // initiative: hero first
+                15, 18, 4)); // the Advantage opportunity attack (two d20s, higher wins), then its damage die
+
+        hero.ReduceHitPoints(1);
+        Assert.True(hero.IsMissingHitPoints);
+
+        Assert.Null(encounter.Move(new GridPosition(5, 0)));
+
+        // The OpportunityAttack-kind step narrates the provocation itself; the roll's
+        // own step — the one that would carry "with Advantage" — is the ordinary
+        // Attack-kind step ResolveAttack records regardless of which path called it.
+        Assert.Contains(encounter.Log, step => step.Kind == CombatStepKind.OpportunityAttack);
+        var swing = Assert.Single(encounter.Log, step => step.Kind == CombatStepKind.Attack);
+        Assert.Contains("with Advantage", swing.Narration, StringComparison.Ordinal);
+    }
+
+    #endregion
+
     [Fact]
     public void ADualModeAttackUsedInMelee_IsNotAtLongRange()
     {

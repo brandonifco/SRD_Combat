@@ -42,6 +42,13 @@ namespace SRDCombat.Core.Rules;
 /// unmodelled, so an enemy on the field is read as seeing the attacker unless it has the
 /// Blinded condition — the one part of sight the engine does express.
 /// </param>
+/// <param name="AttacksOwnAdvantageConditionHolds">
+/// This specific attack's own printed circumstance holds — see
+/// <see cref="AttackRollAdvantageCondition"/> (#666). Read from
+/// <see cref="CombatAttack.AdvantageCondition"/> at the instant of the roll; nothing is
+/// stored and nothing expires, because the printed rule is about the state of the
+/// roll, not a condition imposed on anyone.
+/// </param>
 /// <remarks>
 /// Every one defaults to false, because false is "nothing unusual is true" for all of
 /// them. That keeps a caller naming only the circumstance it cares about, and means the
@@ -63,7 +70,8 @@ public sealed record AttackCircumstances(
     bool TargetIsParalyzed = false,
     bool TargetIsStunned = false,
     bool RangedAttackInCloseCombat = false,
-    bool TargetIsPetrified = false);
+    bool TargetIsPetrified = false,
+    bool AttacksOwnAdvantageConditionHolds = false);
 
 /// <summary>The outcome of one attack roll, before damage is applied.</summary>
 /// <param name="Roll">The d20 roll.</param>
@@ -129,8 +137,25 @@ public static class AttackRules
             TargetIsStunned: target.HasCondition(ConditionType.Stunned),
             TargetIsPetrified: target.HasCondition(ConditionType.Petrified),
             RangedAttackInCloseCombat:
-                combatants is not null && InCloseCombat(attacker, attack, distance, combatants));
+                combatants is not null && InCloseCombat(attacker, attack, distance, combatants),
+            AttacksOwnAdvantageConditionHolds: MeetsAdvantageCondition(attack, attacker, target));
     }
+
+    /// <summary>
+    /// Whether this attack's own printed Advantage circumstance (#666) holds right now.
+    /// Evaluated fresh from live state at the instant of the roll — see
+    /// <see cref="AttackRollAdvantageCondition"/>'s remarks for why nothing here is
+    /// stored or retroactive.
+    /// </summary>
+    private static bool MeetsAdvantageCondition(CombatAttack attack, Combatant attacker, Combatant target) =>
+        attack.AdvantageCondition switch
+        {
+            null => false,
+            AttackRollAdvantageCondition.TargetIsGrappledByAttacker => IsGrappledBy(target, attacker),
+            AttackRollAdvantageCondition.TargetIsMissingHitPoints => target.IsMissingHitPoints,
+            _ => throw new NotSupportedException(
+                $"Unhandled attack-roll Advantage condition '{attack.AdvantageCondition}'."),
+        };
 
     /// <summary>
     /// Whether this ranged attack roll is being made within 5 feet of an able enemy.
@@ -204,6 +229,7 @@ public static class AttackRules
             || circumstances.TargetIsParalyzed
             || circumstances.TargetIsStunned
             || circumstances.TargetIsPetrified
+            || circumstances.AttacksOwnAdvantageConditionHolds
             || (circumstances.TargetIsProne && withinFiveFeet);
 
         var disadvantage =
@@ -377,9 +403,22 @@ public static class AttackRules
             // "if the target is Grappled by the mimic" (#409): the source of the
             // target's Grappled condition must be this attacker, not merely that it is
             // Grappled by anyone. A target held by an ally does not trigger the tier.
-            AttackDamageCondition.TargetIsGrappledByAttacker =>
-                target.ConditionState(ConditionType.Grappled)?.SourceId == attacker.Id,
+            AttackDamageCondition.TargetIsGrappledByAttacker => IsGrappledBy(target, attacker),
             _ => throw new NotSupportedException($"Unhandled damage condition '{condition}'."),
         };
     }
+
+    /// <summary>
+    /// Whether <paramref name="target"/> is Grappled and the source of that Grappled
+    /// condition is <paramref name="attacker"/> — shared by the Mimic's damage tier
+    /// (<see cref="AttackDamageCondition.TargetIsGrappledByAttacker"/>, #409) and the
+    /// attack-roll circumstance four other entries print
+    /// (<see cref="AttackRollAdvantageCondition.TargetIsGrappledByAttacker"/>, #666).
+    /// The Mimic's own Bite prints both riders keyed on the same state, so factoring
+    /// this out of #409's original inline check is what guarantees the two can never
+    /// disagree about whether the grapple is "theirs". A target held by an ally does
+    /// not satisfy this.
+    /// </summary>
+    private static bool IsGrappledBy(Combatant target, Combatant attacker) =>
+        target.ConditionState(ConditionType.Grappled)?.SourceId == attacker.Id;
 }

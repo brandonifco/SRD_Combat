@@ -178,6 +178,13 @@ internal static partial class StatBlockLineGrammar
         // and excluded from the claim, per design §2.3 and §7.1.
         coverage.Claim(AttackHeaderPattern(), header, "attack.header", "unread");
 
+        // Eight of those nine are one of two recognised attack-roll circumstances
+        // (#666) — claimed back out of the "unread" hole when they match. The ninth,
+        // the Doppelganger's "(with Advantage during the first round of each combat)",
+        // is an encounter-clock predicate this deliberately does not recognise, so it
+        // stays residue.
+        var advantageCondition = ParseAdvantageCondition(header.Groups["unread"], coverage);
+
         // "Melee or Ranged" is recorded as Melee, because what actually distinguishes a
         // dual-mode attack is that it carries both a reach and a range — Kind alone
         // cannot express it, and the two distance fields can.
@@ -219,7 +226,38 @@ internal static partial class StatBlockLineGrammar
         return new MonsterAttack(kind, bonus, reach, normalRange, longRange, damage)
         {
             Alternative = alternative,
+            AdvantageCondition = advantageCondition,
         };
+    }
+
+    /// <summary>
+    /// Reads the header's "(with Advantage if the target …)" parenthetical (#666) out
+    /// of the filler <see cref="AttackHeaderPattern"/> leaves unread, claiming it when
+    /// it is one of the two circumstances this shape prints. Anchored start-to-end
+    /// against the whole unread span rather than searched for within it, so a
+    /// parenthetical this does not recognise — the Doppelganger's "(with Advantage
+    /// during the first round of each combat)" — cannot partially match and leave a
+    /// claimed fragment beside unclaimed residue; it fails whole and stays whole
+    /// residue.
+    /// </summary>
+    private static AttackRollAdvantageCondition? ParseAdvantageCondition(Group unread, EntryCoverage coverage)
+    {
+        if (!unread.Success)
+        {
+            return null;
+        }
+
+        var match = AttackRollAdvantageConditionPattern().Match(unread.Value);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        coverage.Claim(new TextSpan(unread.Index, unread.Length), "attack.advantage_condition");
+
+        return match.Groups["grappler"].Success
+            ? AttackRollAdvantageCondition.TargetIsGrappledByAttacker
+            : AttackRollAdvantageCondition.TargetIsMissingHitPoints;
     }
 
     /// <summary>
@@ -559,11 +597,31 @@ internal static partial class StatBlockLineGrammar
     // follows, losing all 19 of the SRD's dual-mode attacks.
     // Distances are written both "5 ft." and "5 feet" in the source; both are accepted.
     // The (?<unread>[^.]*?) filler between the bonus and the reach/range clause is
-    // matched but never inspected — nine printed conditional-Advantage parentheticals
-    // and the Ancient Gold Dragon's Rend's bare "to hit" sit in this slot and are read
-    // by nobody, so the group is named and excluded from the claim (design §2.3, §7.1).
+    // matched but never inspected by this pattern itself — ParseAdvantageCondition
+    // reads it back out for the eight recognised attack-roll circumstances (#666);
+    // the Ancient Gold Dragon's Rend's bare "to hit" and the Doppelganger's "(with
+    // Advantage during the first round of each combat)" sit in the same slot and are
+    // read by nobody, so the group stays named and excluded from AttackHeaderPattern's
+    // own claim (design §2.3, §7.1).
     [GeneratedRegex(@"(?<kind>Melee or Ranged|Melee|Ranged)\s+Attack\s+Roll:\s*(?<bonus>[+-]\s?\d+)(?<unread>[^.]*?),\s*(?:reach\s+(?<reach>\d+)\s*(?:ft\.?|feet))?(?:\s*,?\s*(?:or|and)\s*)?(?:range\s+(?<range>\d+)(?:\s*/\s*(?<longRange>\d+))?\s*(?:ft\.?|feet))?")]
     private static partial Regex AttackHeaderPattern();
+
+    // The two attack-roll Advantage circumstances (#666), matched against the whole of
+    // AttackHeaderPattern's "unread" capture rather than searched for within it —
+    // anchored start-to-end so a parenthetical this does not recognise (the
+    // Doppelganger's "during the first round of each combat") fails whole rather than
+    // matching a fragment and leaving the rest as a suspicious partial claim. The
+    // grappler's bare-word name is claimed anyway, on AlternativeDamagePattern's and
+    // EmDashAlternativeDamagePattern's own stated precedent (design §2.3) — out of the
+    // wildcard convention's scope regardless, and pinned by CorpusRoundTripTests'
+    // trip-wire (#412's pattern) rather than trusted silently.
+    [GeneratedRegex(
+        @"^\s*\(with\s+Advantage\s+if\s+the\s+target\s+(?:" +
+        @"is\s+Grappled\s+by\s+the\s+(?<grappler>\w+)" +
+        @"|doesn't\s+have\s+all\s+its\s+Hit\s+Points" +
+        @")\)\s*$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex AttackRollAdvantageConditionPattern();
 
     // The parenthesised dice are optional: a few weak attacks deal a flat amount, which
     // the SRD prints as "Hit: 1 Piercing damage" with no dice and no average.

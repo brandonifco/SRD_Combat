@@ -115,6 +115,15 @@ public sealed record MonsterAttack(
     IReadOnlyList<AttackDamage> Damage)
 {
     /// <summary>
+    /// A circumstance of this attack's own roll that grants Advantage — the header
+    /// parenthetical "(with Advantage if the target …)" printed on nine corpus entries
+    /// (#666). Null for the overwhelming majority of attacks, which print no such
+    /// parenthetical. See <see cref="AttackRollAdvantageCondition"/> for the two
+    /// members and their printed wording.
+    /// </summary>
+    public AttackRollAdvantageCondition? AdvantageCondition { get; init; }
+
+    /// <summary>
     /// The saving throw a hit forces — the Ghast's Claw: "If the target is a
     /// non-Undead creature, it is subjected to the following effect. Constitution
     /// Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the
@@ -212,6 +221,78 @@ public enum AttackDamageCondition
     /// heavier bite.
     /// </summary>
     TargetIsGrappledByAttacker,
+}
+
+/// <summary>
+/// A circumstance of an attack's own roll — as opposed to its damage — that grants
+/// Advantage. Printed as the header parenthetical "(with Advantage if the target …)"
+/// on nine corpus entries (#666, SRD 5.2.1): four print <see
+/// cref="TargetIsGrappledByAttacker"/> and four print
+/// <see cref="TargetIsMissingHitPoints"/>. A ninth entry, the Doppelganger's Slam —
+/// "(with Advantage during the first round of each combat)", p. 280 right column —
+/// prints a third, different parenthetical in the same header slot: a predicate over
+/// the encounter clock rather than over attacker/target state, which this enum
+/// deliberately does not have a member for. It stays honest residue; do not widen this
+/// type to reach it. (The design conversation that named this slice's ninth entry
+/// cited the Djinni, on the facing column of the same page — the Djinni's own Slam
+/// does not exist and its printed attacks, Storm Blade and Storm Bolt, carry no such
+/// parenthetical; verified against the PDF, corrected here.)
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Deliberately not a member of <see cref="AttackDamageCondition"/></b>, even
+/// though that enum already has the grapple predicate this one needs (
+/// <see cref="AttackDamageCondition.TargetIsGrappledByAttacker"/>). That enum also
+/// carries <see cref="AttackDamageCondition.AttackRollHadAdvantage"/>, which would be
+/// circular if attached to the very roll it describes — "Advantage if the roll had
+/// Advantage" is not an expressible printed rule, and a shared enum would let content
+/// say it anyway. A separate closed set keeps the nonsensical value unrepresentable,
+/// the same reasoning that keeps <see cref="AlternativeAttackDamage"/> a separate
+/// shape from <see cref="AttackDamage.Condition"/>.
+/// </para>
+/// <para>
+/// <b>Evaluated per roll, from live state, nothing stored.</b> This is a fact about
+/// the instant of one attack roll — <see cref="SRDCombat.Core.Rules.AttackRules.DescribeCircumstances"/>
+/// reads it fresh every time — not a condition the engine imposes or a duration that
+/// expires. The Ankheg's first Bite on an ungrappled target rolls normally; the hit
+/// then grapples the target; the Ankheg's <em>next</em> Bite rolls with Advantage. A
+/// shark's first Bite against a full-Hit-Point target rolls normally; if it hits, the
+/// shark's next Bite (the second swing of its own Multiattack, or a later turn) rolls
+/// with Advantage. Escape, the grappler's death or a heal back to full stops it on the
+/// very next roll — there is no state to clear because none was ever recorded.
+/// </para>
+/// </remarks>
+public enum AttackRollAdvantageCondition
+{
+    /// <summary>
+    /// The target is Grappled by <em>this attacker</em> — Ankheg's Bite ("with
+    /// Advantage if the target is Grappled by the ankheg", p. 259), Bugbear Stalker's
+    /// Morningstar ("… by the bugbear", p. 271), Bugbear Warrior's Light Hammer
+    /// ("… by the bugbear", p. 272) and Mimic's Bite ("… by the mimic", p. 309).
+    /// Checked the same way — and by the same shared predicate — as
+    /// <see cref="AttackDamageCondition.TargetIsGrappledByAttacker"/>: the source of
+    /// the target's Grappled condition must be this attacker, not merely that it is
+    /// Grappled by anyone. A target held by an ally grants nothing.
+    /// </summary>
+    TargetIsGrappledByAttacker,
+
+    /// <summary>
+    /// The target "doesn't have all its Hit Points" — Giant Shark's Bite (p. 353),
+    /// Hunter Shark's Bite (p. 356), Piranha's Bite (p. 358) and Swarm of Piranhas'
+    /// Bites (p. 362), all worded identically.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not Bloodied.</b> Glossary p. 177: "A creature is Bloodied while it has half
+    /// its Hit Points or fewer remaining." "Doesn't have all its Hit Points" is any
+    /// shortfall at all — <c>CurrentHitPoints &lt; MaximumHitPoints</c>, one point of
+    /// damage is enough — a strictly wider gate than Bloodied. Temporary Hit Points do
+    /// not enter it either way: glossary p. 190 calls them "a buffer against losing
+    /// real Hit Points", not Hit Points themselves, so a full-HP creature carrying
+    /// temporary Hit Points still has all its (real) Hit Points, and a
+    /// below-maximum creature carrying them still doesn't. See
+    /// <see cref="SRDCombat.Core.Combat.Combatant.IsMissingHitPoints"/>, which this reads.
+    /// </remarks>
+    TargetIsMissingHitPoints,
 }
 
 /// <summary>

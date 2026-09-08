@@ -173,6 +173,71 @@ public sealed class CorpusRoundTripTests
             $"SavingThrow-branch fix.\nOffending entries:\n{string.Join('\n', offenders)}");
     }
 
+    /// <summary>
+    /// Trip-wire for #666, on #412's own pattern: the grappler name
+    /// <c>AttackRollAdvantageConditionPattern</c> captures ("by the ankheg", "by the
+    /// bugbear") is a bare <c>\w+</c>, out of the wildcard convention's scope and
+    /// claimed anyway (design §2.3) on the same precedent
+    /// <c>AlternativeDamagePattern</c>'s and <c>EmDashAlternativeDamagePattern</c>'s
+    /// own subject groups state. Nothing stores that captured word — the enum member
+    /// alone is derived — so nothing at runtime checks it names the attacker rather
+    /// than some other creature. This test is the check: for every corpus entry
+    /// graded <see cref="AttackRollAdvantageCondition.TargetIsGrappledByAttacker"/>,
+    /// the printed "Grappled by the &lt;word&gt;" names a word of the entry's own
+    /// monster, exactly as Ankheg, Bugbear Stalker, Bugbear Warrior and Mimic do
+    /// today. The first "Grappled by &lt;someone else&gt;" would be a misattribution
+    /// this test turns loud instead of leaving it to load silently — the omission
+    /// class #382 closed by construction does not cover a claim that reads the wrong
+    /// creature, which is exactly the risk a bare wildcard capture carries.
+    /// </summary>
+    [Fact]
+    public void EveryGrappledByAttackerAdvantageConditionNamesAWordOfItsOwnMonster()
+    {
+        var grapplerName = new Regex(
+            @"Grappled\s+by\s+the\s+(?<grappler>\w+)",
+            RegexOptions.IgnoreCase);
+
+        var matches = MonsterEntryPairs()
+            .Select(pair => (Monster: (string)pair[0], Entry: (MonsterEntry)pair[1]))
+            .Where(pair => pair.Entry.Attack?.AdvantageCondition
+                == AttackRollAdvantageCondition.TargetIsGrappledByAttacker)
+            .ToList();
+
+        // The census bar this slice claims (#666's spec): exactly four entries print
+        // this circumstance. A count that drifts means either a new corpus entry
+        // needs this trip-wire's attention or the pattern's own reach changed —
+        // either way, loud rather than silently trusted.
+        Assert.Equal(4, matches.Count);
+
+        var offenders = new List<string>();
+
+        foreach (var (monster, entry) in matches)
+        {
+            var match = grapplerName.Match(entry.Text);
+
+            if (!match.Success)
+            {
+                offenders.Add($"'{monster}' :: '{entry.Name}' — no \"Grappled by the <word>\" text found");
+                continue;
+            }
+
+            var grappler = match.Groups["grappler"].Value;
+
+            if (!monster.Contains(grappler, StringComparison.OrdinalIgnoreCase))
+            {
+                offenders.Add(
+                    $"'{monster}' :: '{entry.Name}' — captured grappler '{grappler}' is not a word of " +
+                    $"the monster's own name");
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "AttackRollAdvantageCondition.TargetIsGrappledByAttacker claimed on an entry whose printed " +
+            "grappler is not the entry's own monster — this needs a human reading of what the printed " +
+            $"text actually says, not a reflexive widening of the pattern:\n{string.Join('\n', offenders)}");
+    }
+
     [Fact]
     public void PriestsDivineAidRemainsAdjacentToAnIntactSpellcastingList()
     {

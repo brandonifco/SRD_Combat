@@ -96,6 +96,18 @@ Three consequences, each of which decides a real case in the corpus:
   target doesn't have all its Hit Points)"* and four more — none of which the engine
   applies. Crediting the whole match span would rebuild the goblin bug inside the very
   first pattern of the refactor. See §2.3.
+
+  > **Update (2026-09-08, #666):** eight of the nine now execute.
+  > `AttackRollAdvantageCondition` gives the header parenthetical a structured field —
+  > `TargetIsGrappledByAttacker` (four entries: Ankheg, Bugbear Stalker, Bugbear
+  > Warrior, Mimic) and `TargetIsMissingHitPoints` (four entries: Giant Shark, Hunter
+  > Shark, Piranha, Swarm of Piranhas) — read fresh at the instant of each roll, via
+  > `AttackRules.DescribeCircumstances`. The ninth, the Doppelganger's "(with Advantage
+  > during the first round of each combat)", is a predicate over the encounter clock
+  > rather than over attacker/target state and stays honest residue by design; the
+  > design conversation that scoped this slice mis-cited it as the Djinni's — both
+  > share page 280, but the Djinni's own attacks (Storm Blade, Storm Bolt) carry no
+  > such parenthetical, verified against the PDF.
 - **Stored is not modelled.** `ReactionEffect` holds the Trigger and Response strings
   verbatim, and `Encounter` has no reaction resolver at all. Copying prose into a record
   field is storage, not expression, so a reaction's trigger and response text is
@@ -991,6 +1003,19 @@ check the run against, not predictions):
   - **10 attack-header filler occupants**, not nine: the nine conditional-Advantage
     parentheticals plus the Ancient Gold Dragon's Rend, which prints a bare `to hit` in
     the same slot.
+
+    > **Update (2026-09-08, #666):** eight of the nine conditional-Advantage
+    > parentheticals now structure as `AttackRollAdvantageCondition` and execute as an
+    > attack-roll circumstance (`AttackRules.DescribeCircumstances`) — the
+    > `TargetIsGrappledByAttacker` and `TargetIsMissingHitPoints` branches, four
+    > entries each. Two occupants remain in the filler: the Doppelganger's "(with
+    > Advantage during the first round of each combat)", an encounter-clock predicate
+    > this deliberately does not model, and the Ancient Gold Dragon's Rend. 8 residue
+    > clauses vanished, 0 appeared; Ankheg, Bugbear Stalker and Bugbear Warrior
+    > re-entered the tier-1 pool (75 → 78), and the Swarm of Piranhas re-graded
+    > honestly without a pool-count movement (`PlausibleFoes.IsAquatic` excludes it
+    > regardless of grade); the Mimic's identical parenthetical structures too but its
+    > Pseudopod's unrelated residue keeps it Diminished.
   - **20 reaction bodies** (§7.5).
   - **3 petrifying-tier entries** — Basilisk, Medusa **and the Gorgon's Petrifying
     Breath**. `ParseAppliedConditions`' own comment says the corpus "prints this wording

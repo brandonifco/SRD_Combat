@@ -356,14 +356,17 @@ public sealed class EntryMechanicsCharacterizationTests
     }
 
     [Fact]
-    public void TheMimicEmDashOrPlusChainStructuresTheDamageButLeavesTheHeaderParentheticalAsResidue()
+    public void TheMimicEmDashOrPlusChainAndItsHeaderParentheticalBothStructure()
     {
-        // Mimic's Bite, verbatim as extracted (#409, SRD 5.2.1 p. 309). The Piercing
-        // base alternates on the target being Grappled by the mimic (the attacker), and
-        // the Acid is added unconditionally. The attack header carries a separate
-        // "(with Advantage if the target is Grappled by the mimic)" parenthetical that
-        // is nobody's structured field — it sits in AttackHeaderPattern's unread filler
-        // and stays honest residue, exactly as it did before #409 touched the damage.
+        // Mimic's Bite, verbatim as extracted (#409/#666, SRD 5.2.1 p. 309). The
+        // Piercing base alternates on the target being Grappled by the mimic (the
+        // attacker), and the Acid is added unconditionally. The attack header carries
+        // a separate "(with Advantage if the target is Grappled by the mimic)"
+        // parenthetical — before #666 this sat in AttackHeaderPattern's unread filler
+        // and stayed honest residue; #666 gives it a structured field
+        // (AttackRollAdvantageCondition.TargetIsGrappledByAttacker) read by the same
+        // shared IsGrappledBy predicate #409's damage tier already uses, so the two
+        // riders — keyed on the identical printed state — can never disagree.
         var entry = EntryMechanicsParser.Classify(
             "Bite",
             MonsterEntrySection.Action,
@@ -392,9 +395,86 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(AttackDamageCondition.TargetIsGrappledByAttacker, entry.Attack.Alternative.Condition);
         Assert.Equal(0, entry.Attack.Alternative.ReplacesComponentIndex);
 
-        // The damage clause is claimed; only the header parenthetical remains residue.
+        Assert.Equal(AttackRollAdvantageCondition.TargetIsGrappledByAttacker, entry.Attack.AdvantageCondition);
+
+        // The Mimic's Bite itself is fully modelled now; the entry still carries
+        // residue from its Pseudopod (untouched by this slice), so the Mimic as a
+        // whole stays Diminished rather than re-entering the pool.
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheAnkhegsBiteStructuresItsGrappledByAttackerAdvantageCircumstance()
+    {
+        // Ankheg's Bite, verbatim as extracted (#666, SRD 5.2.1 p. 259). No em-dash
+        // chain here — just the header parenthetical alongside plain damage — so this
+        // pins the simpler of the two shapes independently of the Mimic's combination.
+        var entry = EntryMechanicsParser.Classify(
+            "Bite",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the ankheg), reach 5 ft. " +
+            "Hit: 10 (2d6 + 3) Slashing damage plus 3 (1d6) Acid damage.");
+
+        Assert.Equal(AttackRollAdvantageCondition.TargetIsGrappledByAttacker, entry.Attack!.AdvantageCondition);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheGiantSharksBiteStructuresItsMissingHitPointsAdvantageCircumstance()
+    {
+        // Giant Shark's Bite, verbatim as extracted (#666, SRD 5.2.1 p. 353) — the
+        // "doesn't have all its Hit Points" branch, the second of the shape's two
+        // circumstances.
+        var entry = EntryMechanicsParser.Classify(
+            "Bite",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +9 (with Advantage if the target doesn't have all its Hit Points), " +
+            "reach 5 ft. Hit: 22 (3d10 + 6) Piercing damage.");
+
+        Assert.Equal(AttackRollAdvantageCondition.TargetIsMissingHitPoints, entry.Attack!.AdvantageCondition);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheSwarmOfPiranhasCombinesItsMissingHitPointsAdvantageWithItsOwnBloodiedTier()
+    {
+        // Swarm of Piranhas' Bites, verbatim (#666, SRD 5.2.1 p. 362) — the one entry
+        // where the header's missing-Hit-Points Advantage circumstance and #371's own
+        // "or…if the swarm is Bloodied" alternative damage tier both print on the same
+        // attack. The two are independent fields read from independent state (the
+        // target's Hit Points for one, the swarm's own for the other) and this pins
+        // that structuring one does not disturb the other.
+        var entry = EntryMechanicsParser.Classify(
+            "Bites",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +5 (with Advantage if the target doesn't have all its Hit Points), " +
+            "reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage, or 5 (1d4 + 3) Piercing damage if the swarm " +
+            "is Bloodied.");
+
+        Assert.Equal(AttackRollAdvantageCondition.TargetIsMissingHitPoints, entry.Attack!.AdvantageCondition);
+        Assert.NotNull(entry.Attack.Alternative);
+        Assert.Equal(AttackDamageCondition.AttackerIsBloodied, entry.Attack.Alternative!.Condition);
+        Assert.Null(entry.Attack.Alternative.ReplacesComponentIndex);
+        Assert.Empty(entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void TheDoppelgangersFirstRoundParentheticalIsNotAMatchedShapeAndStaysResidue()
+    {
+        // Doppelganger's Slam, verbatim (SRD 5.2.1 p. 280 right column) — the ninth
+        // attack-header Advantage parenthetical the corpus prints, and deliberately
+        // NOT one of #666's two circumstances: "during the first round of each
+        // combat" is a predicate over the encounter clock, not over attacker/target
+        // state, and AttackRollAdvantageConditionPattern must not widen to reach it.
+        var entry = EntryMechanicsParser.Classify(
+            "Slam",
+            MonsterEntrySection.Action,
+            "Melee Attack Roll: +6 (with Advantage during the first round of each combat), reach 5 ft. " +
+            "Hit: 11 (2d6 + 4) Bludgeoning damage.");
+
+        Assert.Null(entry.Attack!.AdvantageCondition);
         Assert.Equal(
-            ["(with Advantage if the target is Grappled by the mimic)"],
+            ["(with Advantage during the first round of each combat)"],
             entry.UnmodelledClauses);
     }
 

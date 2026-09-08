@@ -500,10 +500,13 @@ public class GauntletTests
         // extra dice on density and contested-region bias (#433); seed 2 replaced it,
         // then S3's site generation (#436) spent extra dice again — the whole random
         // stream shifts with every such change, and seed 2's party was then defeated at
-        // level 3 within the budget. Reselected once more for a seed that still reaches
-        // level 4 comfortably inside the budget; the accounting under test does not care
-        // which seed gets it there.
-        var random = new SeededRandomSource(5);
+        // level 3 within the budget. Seed 5 replaced that, then #666 (the tier-1 pool
+        // gaining Ankheg, Bugbear Stalker and Bugbear Warrior, 75 -> 78) shifted the
+        // encounter draw enough that seed 5's party was defeated at level 3 within the
+        // budget too — reselected once more for a seed that still reaches level 4
+        // comfortably inside the budget; the accounting under test does not care which
+        // seed gets it there.
+        var random = new SeededRandomSource(1);
 
         while (run.States[0].Level < 4 && run.Outcome == RunOutcome.InProgress && run.Next is not null)
         {
