@@ -135,10 +135,16 @@ screenshots show it; a watcher can narrate a fight with the log covered.
 
 **F3 — The run becomes a game.** The largest design gap; Fable-led design, spec'd
 before built. **Entry gate (2026-08-24): the PlayMode modal/state refactor (#327,
-pulled from F5)** lands before any new modal surface, running parallel to the phase's
-design specs so it costs no calendar — every F3 system below is a new modal, and
-landing five of them on the 39-field class first would pay for the refactor twice.
-Stated escape hatch: if F2's foresight work (#301–#303) needs new modal *states*
+pulled from F5)** lands before any new surface — a modal on `PlayMode` or a new
+top-level screen alike — running parallel to the phase's design specs so it costs no
+calendar. The hazard is not where a surface lives but a second hand-rolled focus
+cascade beside `PlayMode`'s: every F3 system below is a new surface, and each one built
+first either grows that cascade or hand-rolls its own, paying for the refactor once per
+surface instead of once. (Reworded 2026-09-08 for #492: "any new modal surface" let a
+top-level screen — the battle builder, #472 — past the letter while the reasoning
+still bound it.) The gate closed 2026-08-30 with #327 (S8, PR #579); the rule outlives
+it — a new surface routes focus and nesting through `FocusStack<T>`, never through a
+cascade of its own. Stated escape hatch: if F2's foresight work (#301–#303) needs new modal *states*
 rather than new drawing, the refactor pulls forward into F2 instead. Route choice
 (pick the next rung from 2–3 revealed options); loot as a
 pick-one-of-three moment, and at least a handful of items that change a turn rather
