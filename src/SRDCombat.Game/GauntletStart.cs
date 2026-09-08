@@ -16,7 +16,11 @@ namespace SRDCombat.Game;
 /// Godot-hosted test or a probe capture, and all three are tested decisions rather
 /// than incidental wiring, so they belong where a plain xUnit test can pin them —
 /// <see cref="ScenarioComposition"/> (#490a) is the model this follows: compute in
-/// <c>Game</c>, render in the client.
+/// <c>Game</c>, render in the client. Since #491 the client no longer calls this
+/// directly: <see cref="PlayModeLaunch.TryResolve"/> composes it with
+/// <see cref="SavePathArgument.TryResolve"/> and the mode selection into one result, so
+/// the order these gates run in is pinned by a test rather than by <c>OnReady</c>'s
+/// statement sequence.
 /// </para>
 /// <para>
 /// <b>This PR (#490b) is the gauntlet-start half</b> — the authoring/one-fight half

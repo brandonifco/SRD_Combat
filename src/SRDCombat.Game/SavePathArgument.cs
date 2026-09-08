@@ -20,7 +20,10 @@ namespace SRDCombat.Game;
 /// called once, before any mode branch, so the refusal fires the same way regardless of
 /// which of the four launch modes reaches it — the same reasoning
 /// <c>FightScreen.SeedArgument</c>'s own doc comment gives for resolving <c>--seed</c>
-/// first. <c>--save</c> happens to have no effect at all under <c>--one-fight</c> (there
+/// first. Since #491 the client reaches this through
+/// <see cref="PlayModeLaunch.TryResolve"/>, which calls it before
+/// <see cref="GauntletStart.Resolve"/> so a bare <c>--save</c> still wins over a bad
+/// gauntlet flag exactly as it did when this ran as its own block. <c>--save</c> happens to have no effect at all under <c>--one-fight</c> (there
 /// is no run to save — <c>PlayMode.Run.cs</c>'s autosave and <c>--continue</c>'s load both
 /// key off <c>_run</c>, which a one-fight launch never sets) but a typo'd flag is worth
 /// naming on every launch, not only the one where it would have mattered.
