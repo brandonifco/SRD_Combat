@@ -50,11 +50,18 @@ public class MonsterPoolTests
         // Snakes re-entered once its em-dash "or…if…plus" combination structured and
         // executed (the per-component alternative and its unconditional Poison). One of
         // #390's seven shape-1 names now stays out: the Swarm of Piranhas, blocked
-        // separately by an attack-header Advantage parenthetical.
+        // separately by an attack-header Advantage parenthetical. It rose 74 -> 75 on
+        // 2026-09-08 (#665, shape 3): the Ettin re-entered once its Morningstar's
+        // "Disadvantage on the next attack roll it makes before the end of its next
+        // turn" rider structured and executed on the bearer's own clock. The Steam
+        // Mephit's Speed-decrease rider structured too, but its Steam Breath still
+        // carries an unrelated residue clause ("Being underwater doesn't grant
+        // Resistance to this Fire damage") out of #665's scope, so it does not cross
+        // the coverage threshold this slice.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         Assert.True(
-            pool.Count >= 74,
+            pool.Count >= 75,
             $"The tier-1 pool has fallen to {pool.Count} monsters; it was 75 before the 2026-08-24 " +
             "span-accounting regeneration (#382), 68 before #371's alternative-damage restorations " +
             "(2026-08-25, PR #408), 81 when the genre cut landed (2026-08-20, TraditionalFoes), 116 " +
@@ -79,13 +86,14 @@ public class MonsterPoolTests
         // Disadvantage on the next attack roll it makes before the end of its next
         // turn", a rider nothing executes, hidden until now behind the old
         // "Hit:"-credits-the-whole-sentence bug. The census is telling the truth
-        // about a gap that was always there. TRANSITIONAL, not a tuning target — see
-        // TheTierOnePoolIsBigEnoughToBuildAGauntletFrom's comment; raise it back to 3
-        // when the Ettin (or another CR 4 creature) is restored.
+        // about a gap that was always there. It rose 2 -> 3 on 2026-09-08 (#665,
+        // shape 3): the rider now structures and executes on the bearer's own
+        // clock — see FeatureState.NextAttackDisadvantaged's doc comment — and the
+        // Ettin re-enters, restoring the floor this comment always said to expect.
         var pool = MonsterPool.Draw(Content.Monsters, TierOneMaximum);
 
         foreach (var (rating, floor) in new[]
-                 { (0m, 3), (0.125m, 4), (0.25m, 4), (0.5m, 4), (1m, 4), (2m, 4), (3m, 4), (4m, 2) })
+                 { (0m, 3), (0.125m, 4), (0.25m, 4), (0.5m, 4), (1m, 4), (2m, 4), (3m, 4), (4m, 3) })
         {
             var atRating = pool.Where(monster => monster.ChallengeRating == rating).ToArray();
 

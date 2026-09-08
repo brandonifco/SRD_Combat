@@ -64,6 +64,16 @@ public sealed record CombatAttack(
     /// </summary>
     public bool GrantsAdvantageAgainstTargetOnHit { get; init; }
 
+    /// <summary>
+    /// True when a hit leaves the target with Disadvantage on its own next attack
+    /// roll — carried from <see cref="MonsterAttack.ImposesDisadvantageOnTargetsNextAttack"/>,
+    /// whose doc comment has the printed wording and the bearer-clock reading. False
+    /// for every weapon attack (Sap's own field, <see cref="FeatureState.SappedBy"/>,
+    /// covers the mastery property) and for every stat-block attack that prints no
+    /// such rider.
+    /// </summary>
+    public bool ImposesDisadvantageOnTargetsNextAttack { get; init; }
+
     /// <summary>The furthest this attack can reach at all, in feet.</summary>
     public int MaximumRangeFeet =>
         Math.Max(ReachFeet ?? 0, LongRangeFeet ?? NormalRangeFeet ?? 0);
@@ -500,6 +510,7 @@ public sealed record CombatantStats(
             {
                 EmbeddedSave = entry.Attack.EmbeddedSave,
                 Alternative = entry.Attack.Alternative,
+                ImposesDisadvantageOnTargetsNextAttack = entry.Attack.ImposesDisadvantageOnTargetsNextAttack,
             })
             .ToArray();
 
@@ -835,6 +846,49 @@ public sealed class FeatureState
     /// clock Vex runs on (#153).
     /// </summary>
     public int GuidedOnAuthorTurn { get; internal set; }
+
+    /// <summary>
+    /// True while this creature carries a printed post-hit Disadvantage rider on its
+    /// own next attack roll — the Ettin's Morningstar and the Fire Giant's rock (see
+    /// <see cref="CombatAttack.ImposesDisadvantageOnTargetsNextAttack"/> for the
+    /// printed wording and the bearer-clock reading). Deliberately a field of its own
+    /// rather than reusing <see cref="SappedBy"/>: that field's expiry
+    /// (<c>Encounter.ExpireSapsFrom</c>) is keyed to the <em>attacker's</em> clock,
+    /// which is the correct reading for the Sap Weapon Mastery property but the wrong
+    /// one here — folding two differently-clocked printed effects onto one field is
+    /// how the next "looks implemented" omission gets built.
+    /// </summary>
+    /// <remarks>
+    /// Two things end it, mirroring Sap's own shape but on the bearer's clock instead
+    /// of the attacker's: the bearer's next attack roll consumes it, and the end of
+    /// the bearer's own next turn clears it whether it was used or not — see
+    /// <see cref="NextAttackDisadvantageEarnedOnTurn"/>.
+    /// </remarks>
+    public bool NextAttackDisadvantaged { get; internal set; }
+
+    /// <summary>
+    /// This creature's own turn count when <see cref="NextAttackDisadvantaged"/> was
+    /// applied. The end of a <em>later</em> turn of its own clears it — the same
+    /// stamped-clock off-by-one Vex's <see cref="VexEarnedOnTurn"/> guards against
+    /// (#153): a rider earned mid-round must survive through the end of the bearer's
+    /// next turn, not expire at the end of the turn it was earned on.
+    /// </summary>
+    public int NextAttackDisadvantageEarnedOnTurn { get; internal set; }
+
+    /// <summary>
+    /// Who imposed a printed EndOfTurn-boundary Speed decrease on this creature via a
+    /// save-based rider, mapped to the imposer's own turn count when it landed — the
+    /// Steam Mephit's Steam Breath (see
+    /// <see cref="Definitions.SaveEffect.TargetSpeedDecreaseFeet"/> for the printed
+    /// wording). Deliberately separate from <see cref="SlowedBy"/>, which is the Slow
+    /// Weapon Mastery property and clears at the imposer's turn <em>start</em>
+    /// (<c>Encounter.ExpireSapsFrom</c>) rather than its end — reusing that field
+    /// would release the target half a round early. Combined with
+    /// <see cref="SlowedBy"/> for the total Speed reduction, which stays capped at 10
+    /// feet regardless of how many sources of either shape are active, the same
+    /// non-stacking reading <see cref="SlowedBy"/>'s own doc comment already applies.
+    /// </summary>
+    public Dictionary<string, int> SpeedDecreasedBy { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The spell this creature is concentrating on, if any. A creature can concentrate

@@ -85,7 +85,15 @@ public enum EncounterTheme
 /// the em-dash "or…if…plus" chain #371 left as residue and #409 now structures and
 /// executes (the Bloodied-tier Piercing swap plus its always-on Poison) — themed with
 /// the two other snakes in the pool, the Giant Venomous Snake and the Flying Snake.
-/// The other six of the twelve stay out until their own gaps close.
+/// A seventh returned on 2026-09-08 (#665, shape 3 of the #390 ledger): the Ettin,
+/// whose Morningstar's Disadvantage rider now structures and executes on the bearer's
+/// own clock (<c>FeatureState.NextAttackDisadvantaged</c>) — its printed CR 4
+/// companions, Guard Captain and Red Dragon Wyrmling, carry no shared theme, so its
+/// themes are restored verbatim from before the 2026-08-24 removal (goblinoid and
+/// savage-hunter warbands, the same company an Ogre keeps). The Steam Mephit's own
+/// gap (an unrelated residue clause on the same Steam Breath entry) does not close in
+/// this slice, so it stays out. The other five of the original twelve stay out until
+/// their own gaps close.
 /// </para>
 /// </remarks>
 public static class EncounterThemes
@@ -180,6 +188,7 @@ public static class EncounterThemes
             ["Winter Wolf"] = [EncounterTheme.WildPack],
 
             // CR 4
+            ["Ettin"] = [EncounterTheme.GoblinoidWarband, EncounterTheme.SavageHunters],
             ["Guard Captain"] = [EncounterTheme.Soldiery],
             ["Red Dragon Wyrmling"] = [EncounterTheme.Draconic],
         };
