@@ -64,7 +64,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 5
+          "sizeFeet": 5,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -1382,7 +1383,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cone",
-          "sizeFeet": 15
+          "sizeFeet": 15,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -1481,7 +1483,8 @@
         "ability": "Charisma",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -1726,7 +1729,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 60
+          "sizeFeet": 60,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -1844,7 +1848,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -1897,7 +1902,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Cone",
-          "sizeFeet": 15
+          "sizeFeet": 15,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -2131,7 +2137,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Cone",
-          "sizeFeet": 60
+          "sizeFeet": 60,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -2186,7 +2193,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 10
+          "sizeFeet": 10,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -2425,7 +2433,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Emanation",
-          "sizeFeet": 10
+          "sizeFeet": 10,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -3111,7 +3120,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "HalfDamage",
@@ -3838,7 +3848,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cone",
-          "sizeFeet": 15
+          "sizeFeet": 15,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "HalfDamage",
@@ -4460,7 +4471,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -4585,7 +4597,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Cone",
-          "sizeFeet": 30
+          "sizeFeet": 30,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -4858,7 +4871,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -4989,7 +5003,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 10
+          "sizeFeet": 10,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -5470,7 +5485,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 60
+          "sizeFeet": 60,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -5796,7 +5812,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "HalfDamage",
@@ -6758,7 +6775,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Emanation",
-          "sizeFeet": 30
+          "sizeFeet": 30,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -6846,7 +6864,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 30
+          "sizeFeet": 30,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -7138,7 +7157,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -7236,7 +7256,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -7599,7 +7620,8 @@
         "area": {
           "shape": "Line",
           "sizeFeet": 100,
-          "widthFeet": 5
+          "widthFeet": 5,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -8393,7 +8415,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 40
+          "sizeFeet": 40,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -8963,7 +8986,8 @@
         "ability": "Intelligence",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 10
+          "sizeFeet": 10,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -9519,7 +9543,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cone",
-          "sizeFeet": 60
+          "sizeFeet": 60,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -10865,7 +10890,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 10
+          "sizeFeet": 10,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -11189,7 +11215,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 5
+          "sizeFeet": 5,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -11247,7 +11274,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cylinder",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -11297,7 +11325,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 40
+          "sizeFeet": 40,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -11560,7 +11589,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Emanation",
-          "sizeFeet": 15
+          "sizeFeet": 15,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -11680,7 +11710,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",
@@ -12026,7 +12057,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 60
+          "sizeFeet": 60,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -12087,7 +12119,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 60
+          "sizeFeet": 60,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -12382,7 +12415,8 @@
         "ability": "Constitution",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 15
+          "sizeFeet": 15,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -12899,7 +12933,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -13295,7 +13330,8 @@
         "ability": "Dexterity",
         "area": {
           "shape": "Cube",
-          "sizeFeet": 20
+          "sizeFeet": 20,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -13355,7 +13391,8 @@
         "ability": "Wisdom",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 30
+          "sizeFeet": 30,
+          "enemiesOnly": false
         },
         "failureDamage": [
           {
@@ -13614,7 +13651,8 @@
         "ability": "Charisma",
         "area": {
           "shape": "Sphere",
-          "sizeFeet": 15
+          "sizeFeet": 15,
+          "enemiesOnly": false
         },
         "failureDamage": [],
         "successOutcome": "NoEffect",

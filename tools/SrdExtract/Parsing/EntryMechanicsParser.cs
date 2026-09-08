@@ -754,6 +754,19 @@ internal static partial class EntryMechanicsParser
             area,
             text);
 
+        // #601: "each enemy in a ..." narrows the area to hostile creatures only —
+        // see SaveTargetClausePattern's own remarks for the reading and
+        // EffectArea.EnemiesOnly's doc comment for where the narrowing is applied.
+        // The trip-wire above already guarantees `area` is non-null whenever the
+        // target clause claimed an area shape at all, so an "enemy" selector always
+        // has a structured area to attach to here.
+        if (area is not null
+            && targetClaimed
+            && string.Equals(target.Groups["selector"].Value, "enemy", StringComparison.Ordinal))
+        {
+            area = area with { EnemiesOnly = true };
+        }
+
         // #386's extraction half: the printed "within N feet" a single target or a
         // point-aimed area (a Sphere's own point of origin) may be used at — read
         // independently of the target-clause match above, and deliberately so: a
@@ -1862,13 +1875,26 @@ internal static partial class EntryMechanicsParser
     // own AreaPattern match on the same text — see ParseSave's own remarks. Any
     // future branch for a printed Cube or Cylinder target clause must tag its shape
     // word the same way to stay covered by that check.
+    //
+    // Each area branch also tags its opening noun with a `selector` group (#601):
+    // almost every printed clause reads "each **creature** in a ...", reaching
+    // whoever the geometry catches, but a few — the Planetar's Holy Burst, the
+    // Rakshasa's Baleful Command, the Sphinx of Lore's Mind-Rending Roar — print
+    // "each **enemy** in a ..." instead, narrowing that same area to creatures
+    // hostile to whoever uses the entry. `selector` reads back which word matched;
+    // ParseSave folds "enemy" onto the structured `EffectArea.EnemiesOnly` and
+    // `Encounter.SaveVictims` is where the narrowing itself is applied (see
+    // AreaTargeting's own remarks — geometry and side are deliberately different
+    // questions). The "one creature" single-target branch names no selector: a
+    // single target is already whoever the caller aims at, so there is no printed
+    // word here to disagree with it.
     [GeneratedRegex(
         @",\s*(?:" +
-        @"each\s+creature\s+in\s+a\s+\d+-foot\s+(?<areaShape>Cone)" +
-        @"|each\s+creature\s+in\s+a\s+\d+-foot-long,?\s*\d+-foot-?\s?wide\s+(?<areaShape>Line)" +
-        @"|each\s+creature\s+in\s+a\s+\d+-foot\s+(?<areaShape>Emanation)\s+originating\s+from\s+the\s+" +
+        @"each\s+(?<selector>creature|enemy)\s+in\s+a\s+\d+-foot\s+(?<areaShape>Cone)" +
+        @"|each\s+(?<selector>creature|enemy)\s+in\s+a\s+\d+-foot-long,?\s*\d+-foot-?\s?wide\s+(?<areaShape>Line)" +
+        @"|each\s+(?<selector>creature|enemy)\s+in\s+a\s+\d+-foot\s+(?<areaShape>Emanation)\s+originating\s+from\s+the\s+" +
             @"(?<origin>[\w']+(?:\s+(?!(?:that|who|which|within|can)\b)[\w']+)*)" +
-        @"|each\s+creature\s+in\s+a\s+\d+-foot-radius\s+(?<areaShape>Sphere)\s+centered\s+on\s+a\s+point\b" +
+        @"|each\s+(?<selector>creature|enemy)\s+in\s+a\s+\d+-foot-radius\s+(?<areaShape>Sphere)\s+centered\s+on\s+a\s+point\b" +
         @"|one\s+creature\b(?!\s+(?:within\s+\d+\s+feet\s+)?(?:that\b|Grappled\b))" +
         @")")]
     // internal rather than private (#600): SrdExtract.Tests calls this directly to

@@ -66,6 +66,53 @@ public class EntrySaveTests
     }
 
     [Fact]
+    public void AnEnemiesOnlyAreaSparesAlliesTheGeometryStillCovers()
+    {
+        // The Planetar's Holy Burst prints "each enemy in a ... Sphere" rather than
+        // the far more common "each creature in a ..." (#601): the same geometric
+        // reach as AnAreaSaveRollsForEveryCreatureTheConeCatches above, but narrowed
+        // to creatures hostile to whoever uses the entry. An ally standing in the
+        // cone is caught by AreaTargeting's geometry and spared by the selector; the
+        // scripted die has exactly one save and one damage roll queued; it would
+        // throw if the ally rolled one it should never make.
+        var enemiesOnlyCone = ConeSave() with { Area = new EffectArea(AreaShape.Cone, 15, EnemiesOnly: true) };
+
+        var ally = CombatTestData.Combatant(
+            "ally",
+            sideId: CombatTestData.Monsters,
+            stats: CombatTestData.Stats(maximumHitPoints: 20, initiativeBonus: 0, attacks: []),
+            x: 2,
+            y: 5);
+
+        var encounter = Fight(
+            new ScriptedRandomSource(20, 1, 1, 1, 6, 1),
+            Breather("Holy Burst", enemiesOnlyCone),
+            ally,
+            Hero("a", x: 3));
+
+        Assert.Null(encounter.UseEntry("Holy Burst", new GridPosition(3, 5)));
+
+        // Both the ally and the hero stand in the cone's geometry (10 ft. and 15 ft.
+        // from the breather, both within the 15-ft. reach), so a plain "each
+        // creature" cone would have caught two — this one catches one.
+        Assert.Contains(
+            encounter.Log,
+            step => step.Kind == CombatStepKind.Entry
+                && step.Narration.Contains("Holy Burst fills a 15-foot Cone, catching 1 creature(s)", StringComparison.Ordinal));
+        Assert.Contains(
+            encounter.Log,
+            step => step.Narration.Contains("a takes", StringComparison.Ordinal)
+                && step.Narration.Contains("Fire damage", StringComparison.Ordinal));
+        // The ally never rolls a save or takes damage — only its initiative roll
+        // (unrelated to the entry) ever names it.
+        Assert.DoesNotContain(
+            encounter.Log,
+            step => (step.Kind == CombatStepKind.Entry || step.Kind == CombatStepKind.Damage)
+                && step.TargetId == "ally");
+        Assert.Equal(ally.Stats.MaximumHitPoints, ally.CurrentHitPoints);
+    }
+
+    [Fact]
     public void ARiderLandsOnlyOnAFailedSave()
     {
         // "Failure: ... the target has the Prone condition" — a success against a
