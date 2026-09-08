@@ -197,6 +197,70 @@ public class FlagRefusalTests
         Assert.Contains("0-9", error);
     }
 
+    // ---- WatchMode.TryResolveCapture (#654) ----
+
+    [Fact]
+    public void AnAbsentCaptureResolvesToNoPathRatherThanRefusing()
+    {
+        var ok = WatchMode.TryResolveCapture(given: false, text: null, out var path, out var error);
+
+        Assert.True(ok);
+        Assert.Null(path);
+        Assert.Null(error);
+    }
+
+    /// <summary>
+    /// A bare <c>--capture</c> (present, no value) used to be read the same as
+    /// <c>--capture</c> never having been passed at all — both <c>Main.cs</c>'s own
+    /// routing (<c>ArgumentValue("capture") is not null</c>) and this branch
+    /// (<c>ArgumentValue("capture") is { } path</c>) read it as absent, so a bare
+    /// <c>--capture</c> on its own silently opened the ordinary gauntlet instead of this
+    /// screen, and a bare <c>--capture</c> alongside an explicit <c>--watch</c> silently
+    /// skipped this whole branch, leaving a live, playable window with no PNG ever
+    /// written and no reason given.
+    /// </summary>
+    [Fact]
+    public void APresentButValuelessCaptureIsRefusedRatherThanReadAsAbsent()
+    {
+        var ok = WatchMode.TryResolveCapture(given: true, text: null, out var path, out var error);
+
+        Assert.False(ok);
+        Assert.Null(path);
+        Assert.Contains("--capture", error);
+        Assert.Contains("no value given", error);
+    }
+
+    [Fact]
+    public void APresentAndValuedCaptureResolvesToItsPathVerbatim()
+    {
+        var ok = WatchMode.TryResolveCapture(given: true, text: "out.png", out var path, out var error);
+
+        Assert.True(ok);
+        Assert.Equal("out.png", path);
+        Assert.Null(error);
+    }
+
+    /// <summary>
+    /// <c>Main.cs</c> routes to <see cref="WatchMode"/> whenever <c>--capture</c> is
+    /// present at all, bare or not — <c>HasArgument</c>, never
+    /// <c>ArgumentValue(...) is not null</c> — so a bare <c>--capture</c> reaches this
+    /// screen's own <see cref="TryResolveCapture"/> refusal above instead of being read
+    /// as absent one level higher and falling through to the ordinary gauntlet (#654).
+    /// <c>Main</c> is a live <c>Node</c> like <c>PlayMode</c>/<c>WatchMode</c>
+    /// themselves (this class's own remarks), so the routing predicate is a source
+    /// check, the same shape the <c>--create --level</c> forwarding guard below uses.
+    /// </summary>
+    [Fact]
+    public void MainRoutesOnCapturePresenceRatherThanItsParsedValue()
+    {
+        var source = File.ReadAllText(Path.Combine(ViewerRepositoryPaths.ClientSourceDirectory, "Main.cs"));
+
+        Assert.Contains(
+            "FightScreen.HasArgument(\"watch\") || FightScreen.HasArgument(\"capture\")",
+            source,
+            StringComparison.Ordinal);
+    }
+
     // ---- PlayMode's --create --level forwarding (#488, #602) ----
 
     /// <summary>

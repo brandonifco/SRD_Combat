@@ -232,6 +232,27 @@ public partial class PlayMode : FightScreen
             return;
         }
 
+        // Resolved once, before any mode branch below, so a bare --save (present with
+        // no value) is refused the same way regardless of which of the four launch
+        // modes reaches it — the same reasoning SeedArgument's own doc comment gives
+        // for --seed. SavePathArgument.TryResolve (#654) replaces the old
+        // `ArgumentValue("save") ?? "srdcombat-save.json"` fallback below, which read
+        // "the flag was passed with nothing after it" as "the flag was never passed"
+        // and silently wrote autosaves to the default path instead of naming the typo
+        // — and which used to run only after the --one-fight branch below had already
+        // returned, so a bare --save --one-fight was never even inspected.
+        if (!SavePathArgument.TryResolve(
+                HasArgument("save") ? FlagValue.Of(ArgumentValue("save")) : FlagValue.Absent,
+                out var savePath, out var saveError))
+        {
+            _phase = Phase.RunOver;
+            _interlude.Add(saveError!);
+            _subtitle = $"seed {_seed}";
+            return;
+        }
+
+        _savePath = savePath;
+
         // The gauntlet loop below never calls ResolveFight — it draws its own roster
         // every fight — so --spawn/--scenario here would silently do nothing (#463,
         // #476), --continue together with --level, or a bad --level, has nothing
@@ -307,8 +328,8 @@ public partial class PlayMode : FightScreen
         // _dice is not seeded here: EnterInterlude reseeds it once per fight, from
         // the run's own seed and how many fights are cleared — the one reseed point,
         // per RunDice's remarks — so anything set here would only be overwritten
-        // before it was ever read.
-        _savePath = ArgumentValue("save") ?? "srdcombat-save.json";
+        // before it was ever read. _savePath is already resolved above, before the
+        // --one-fight branch.
 
         // Collected rather than appended straight to _interlude: EnterInterlude below
         // starts every screen with _interlude.Clear(), so anything added before that
