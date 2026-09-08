@@ -1,5 +1,4 @@
 using SRDCombat.Core.Combat;
-using SRDCombat.Core.Definitions;
 using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Game;
@@ -9,23 +8,20 @@ namespace SRDCombat.Game;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>A display judgement, not a rule</b> — the same standing as
-/// <see cref="TargetChoice"/>. The engine models no sight: nothing here changes what an
-/// attack, a spell or a condition may do, and the engine refuses or allows everything
-/// exactly as it did. What this decides is what a client is entitled to <i>show</i> the
-/// player: a monster standing where no party member could see it is drawn as absent,
-/// because showing it would be the display scouting through walls on the player's
-/// behalf.
+/// <b>A side-aggregate over a Core rule.</b> The per-viewer geometry — walls block,
+/// creatures and distance do not, a viewer looks out of its whole space, eyes open means
+/// alive and neither Unconscious nor Blinded — now lives in
+/// <see cref="VisionRules"/> as a real <c>Core</c> predicate the engine can consult
+/// (#671). This type keeps only the <em>aggregation</em>: a square is seen by a side when
+/// at least one viewer on the side sees it, the union that draws the fog.
 /// </para>
 /// <para>
-/// <b>The readings, stated:</b> a square is seen when at least one qualifying viewer on
-/// the side has an unblocked centre-to-centre line to it —
-/// <see cref="CoverRules.LineBlocked"/>, the very judgement Total Cover refuses attacks
-/// with, so what can be seen and what can be shot at never disagree about a wall.
-/// Creatures never block sight (the cover table's own reading: crowds are not walls),
-/// and distance does not dim it, because the engine models neither darkness nor range
-/// of vision. A viewer qualifies while alive and neither Unconscious nor Blinded — the
-/// two conditions whose printed text closes the eyes — and always sees its own square.
+/// <b>The aggregation is still a display judgement, not a rule.</b> The engine consults
+/// no sight when it resolves an attack, a spell or a condition — that boundary crossing
+/// is #672's, wiring the individual readings to <see cref="VisionRules"/> one at a time.
+/// What this type decides is only what a client is entitled to <i>show</i> the player: a
+/// monster standing where no party member could see it is drawn as absent, because
+/// showing it would be the display scouting through walls on the player's behalf.
 /// </para>
 /// </remarks>
 public static class PartyVision
@@ -39,14 +35,8 @@ public static class PartyVision
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(combatants);
 
-        // A viewer looks out of its whole space, not out of one corner of it: a Large
-        // creature can see round a pillar its anchor square cannot. The other half of
-        // the fog reading — a creature is *seen* when any square of its space is seen —
-        // belongs to whoever asks whether a creature is visible, which today is the
-        // client (#430); nothing in this project asks it engine-side.
         var viewers = combatants
-            .Where(combatant => combatant.SideId == sideId && CanSee(combatant))
-            .SelectMany(combatant => combatant.Space.Squares())
+            .Where(combatant => combatant.SideId == sideId && VisionRules.HasOpenEyes(combatant))
             .ToList();
 
         var visible = new HashSet<GridPosition>();
@@ -55,7 +45,7 @@ public static class PartyVision
         {
             foreach (var viewer in viewers)
             {
-                if (square == viewer || !CoverRules.LineBlocked(field, viewer, square))
+                if (VisionRules.CanSee(field, viewer, square))
                 {
                     visible.Add(square);
                     break;
@@ -65,10 +55,4 @@ public static class PartyVision
 
         return visible;
     }
-
-    /// <summary>Whether this combatant's eyes are open: alive, not Unconscious, not Blinded.</summary>
-    private static bool CanSee(Combatant combatant) =>
-        !combatant.IsDead
-        && !combatant.HasCondition(ConditionType.Unconscious)
-        && !combatant.HasCondition(ConditionType.Blinded);
 }
