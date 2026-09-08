@@ -13,7 +13,12 @@ public partial class Main : Node2D
 {
     public override void _Ready()
     {
-        var watch = FightScreen.HasArgument("watch") || FightScreen.ArgumentValue("capture") is not null;
+        // HasArgument, not "ArgumentValue(...) is not null": a bare --capture (present,
+        // no value) is still --capture given, and routing it to WatchMode is what lets
+        // that screen's own OnReady refuse it by name (#654) rather than this method
+        // reading the flag as though it had never been passed and falling through to
+        // PlayMode with --capture silently doing nothing at all.
+        var watch = FightScreen.HasArgument("watch") || FightScreen.HasArgument("capture");
 
         if (watch)
         {

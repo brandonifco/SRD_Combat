@@ -64,7 +64,16 @@ godot --path client
 ```
 
 The run autosaves to `srdcombat-save.json` in the directory Godot was launched from
-(`--save=<path>` moves it), and `--continue` resumes it. Defeat does not touch the save —
+(`--save=<path>` moves it), and `--continue` resumes it. `--save` given bare (present,
+no `=value`) is refused by name on every one of this screen's own four launch modes
+(one-fight, continue, create, fresh gauntlet), resolved once before any of them — the
+same present-but-valueless policy `--spawn`/`--level` are already held to above — rather
+than silently falling back to the default path the way it used to (#654); it is inert
+under `--one-fight` (there is no run to save) but is still checked there, since a typo
+is worth naming regardless of which mode reaches it. `--save` is not read at all under
+`--watch`/`--capture` (a different screen, with nothing to save either way) — that is
+unrelated to this refusal, exactly as `--level` and every other gauntlet-only flag are
+already silently unread there too. Defeat does not touch the save —
 the file keeps the state after the last fight the party *won*, so reloading is a retry.
 `--level=1..5` starts a new run partway up — refused the same way spawn mode's own
 `--level` is, above: a non-numeric or out-of-range value names the value typed and the
@@ -452,11 +461,15 @@ left running with the reason unsaid, which a refused `--seed` still did in captu
 until #602 reordered the check that catches it. A non-numeric or out-of-range `--at`
 is refused the same way, to stdout with a non-zero exit, naming the value and the turn
 range actually resolved — never the silent "last turn" fallback or the silent clamp into
-range this used to do (#489). `--seed` and `--at` given bare (present with no `=value`)
+range this used to do (#489). `--seed`, `--at` and `--capture` given bare (present with no `=value`)
 are refused by name too, the same shape #470 already holds `--spawn`/`--level` to —
 `-- --seed` used to roll a fresh seed silently and `--capture=... --at` used to silently
 capture the last snapshot, both indistinguishable from the flag never having been passed
-at all until #602 closed the gap.
+at all until #602 closed the gap. A bare `--capture` on its own (without `--watch`) used
+to be indistinguishable from `--capture` never having been passed at all one level higher
+still — `Main.cs`'s own routing read it as absent and opened the ordinary gauntlet
+instead of this screen — until #654 closed that gap too, routing on presence alone and
+refusing the bare flag here, on this screen, the same way a bare `--at` already is.
 
 ### The probe
 

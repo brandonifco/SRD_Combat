@@ -50,8 +50,21 @@ public partial class WatchMode : FightScreen
         }
 
         // A capture run renders one frame and leaves, which is how a change to this
-        // screen gets checked without a person watching it.
-        if (ArgumentValue("capture") is { } path)
+        // screen gets checked without a person watching it. TryResolveCapture (#654)
+        // tells a bare --capture apart from an absent one the same way TryResolveAt
+        // already does for --at just below — Main.cs's own routing now treats a bare
+        // --capture as given too (HasArgument, not ArgumentValue(...) is not null), so
+        // this is the first point that can actually refuse it by name instead of
+        // silently skipping the whole branch, which used to leave a live, playable
+        // window open with no PNG ever written and no reason given.
+        if (!TryResolveCapture(HasArgument("capture"), ArgumentValue("capture"), out var path, out var captureError))
+        {
+            GD.Print(captureError);
+            GetTree().Quit(1);
+            return;
+        }
+
+        if (path is not null)
         {
             _playing = false;
 
@@ -81,6 +94,40 @@ public partial class WatchMode : FightScreen
 
             this.FireAndObserve(CaptureAndQuit(path));
         }
+    }
+
+    /// <summary>
+    /// Whether <c>--capture</c> was actually given, and its path when it was — split
+    /// from the Godot-reading half the same way <see cref="TryResolveAt"/> is (#654): a
+    /// bare <c>--capture</c> (present, no value) refuses rather than being read the same
+    /// as absent, which used to leave <c>Main.cs</c> routing away from this screen
+    /// entirely (<c>ArgumentValue("capture") is not null</c> reads a bare flag as
+    /// "capture not requested") and, even under an explicit <c>--watch --capture</c>,
+    /// this whole branch skipped silently — a live, playable window with no PNG ever
+    /// written and no reason given, the exact "present flag with an unusable value read
+    /// as absent" shape #489/#602 already closed for <c>--seed</c> and <c>--at</c>.
+    /// <paramref name="given"/> is not present succeeds with a null path (no capture
+    /// requested at all — the ordinary <c>--watch</c> screen).
+    /// </summary>
+    internal static bool TryResolveCapture(bool given, string? text, out string? path, out string? error)
+    {
+        if (!given)
+        {
+            path = null;
+            error = null;
+            return true;
+        }
+
+        if (text is null)
+        {
+            path = null;
+            error = "--capture: no value given (use --capture=<path>)";
+            return false;
+        }
+
+        path = text;
+        error = null;
+        return true;
     }
 
     /// <summary>
