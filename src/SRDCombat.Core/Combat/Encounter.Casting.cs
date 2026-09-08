@@ -101,11 +101,11 @@ public sealed partial class Encounter
 
         // "Choose a Humanoid that you can see within range": this checks the creature
         // TYPE half of that sentence only. The SIGHT half — "that you can see" — is
-        // Concealed's own refusal (target.unseen, VisionRules.CanSee, #673) and is not
-        // checked here; it is structured onto individual spells' targeting by #691,
-        // still open for the four spells that print it. A point-aimed cast has no
-        // creature to check; the spells that print the type gate all name a single
-        // target.
+        // Concealed's own refusal (target.unseen, VisionRules.CanSee, #673), checked
+        // below alongside Total Cover once the spell's own extracted
+        // TargetRequiresSight says the clause is printed (#691). A point-aimed cast
+        // has no creature to check; the spells that print the type gate all name a
+        // single target.
         if (spell.TargetCreatureType is { } requiredType
             && target is not null
             && target.Stats.Type != requiredType)
@@ -126,15 +126,31 @@ public sealed partial class Encounter
         // itself — an attack, a single-target save, a heal. A spell aimed at a point is
         // not targeting anyone: its area decides who is caught, and the Total Cover
         // exclusion inside AreaTargeting is the rule that decides it.
-        if (target is not null
+        var targetsACreatureDirectly = target is not null
             && !spell.IsSelfRanged
             && (spell.IsSpellAttack || spell.Heal is not null || spell.Revival is not null
-                || spell.Save is { Area: null })
-            && CoverRules.AgainstSpace(Battlefield, caster.Space, target.Space, _combatants) == CoverDegree.Total)
+                || spell.Save is { Area: null });
+
+        if (targetsACreatureDirectly
+            && CoverRules.AgainstSpace(Battlefield, caster.Space, target!.Space, _combatants) == CoverDegree.Total)
         {
             return new ActionRefusal(
                 "spell.total_cover",
                 $"{target.Name} has Total Cover from {caster.Name} and can't be targeted directly.");
+        }
+
+        // Concealed's mechanism (#673, generalized beyond Divine Spark by #691): "a
+        // creature you can see" is more than the Total Cover refusal once Invisible
+        // exists. Gated on the same "targets a creature directly" condition Total
+        // Cover just checked — an area effect merely aimed via a target reference is
+        // not targeting that creature, the same reading UseSaveEntry's own range check
+        // states — and on the spell's own extracted TargetRequiresSight, since most
+        // spells print no such clause at all.
+        if (targetsACreatureDirectly
+            && spell.TargetRequiresSight
+            && UnseenTargetRefusal(caster, target!) is { } unseen)
+        {
+            return unseen;
         }
 
         // Revivify's own gates, all before anything is spent. "Has died within the last

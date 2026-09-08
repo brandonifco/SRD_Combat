@@ -280,6 +280,20 @@ public static partial class SpellParser
             var isSpellAttack = SpellAttackPattern().IsMatch(body);
             var save = SpellEffectParser.ParseSave(body, classified.AppliedConditions);
 
+            // #691: read once against the raw text so the same reading reaches every
+            // shape a spell can resolve as — a Heal (Healing Word) carries no
+            // SaveEffect to hang this on, which is why SpellDefinition needs its own
+            // copy rather than only SaveEffect's. When the spell does resolve through
+            // a save, that SaveEffect's own copy is folded on just below so
+            // Encounter.UseSaveEntry's stat-block-shared field and Encounter.CastSpell's
+            // top-level field never disagree for the same spell.
+            var targetRequiresSight = SpellEffectParser.ParseTargetRequiresSight(body);
+
+            if (save is not null && targetRequiresSight)
+            {
+                save = save with { TargetRequiresSight = true };
+            }
+
             // An attack spell's rider is read by the spell grammar — the shared
             // grammar's head-clause rule refuses "On a hit," sentences it cannot
             // account for — and only a rider parsed whole replaces the refused one.
@@ -322,6 +336,7 @@ public static partial class SpellParser
                 Save = save,
                 Heal = heal,
                 Revival = revival,
+                TargetRequiresSight = targetRequiresSight,
                 Damage = SpellEffectParser.ParseDamage(body),
                 // Spirit Guardians' printed either/or (#375): the primary branch is
                 // already the sole component ParseDamage emits; this is the Necrotic

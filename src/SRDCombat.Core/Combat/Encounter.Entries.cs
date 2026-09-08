@@ -195,15 +195,16 @@ public sealed partial class Encounter
     /// (see <c>EntryMechanicsParser.ReadRange</c>'s own remarks for the full
     /// reasoning).
     /// A printed sight qualifier — "a creature the mummy can see" — is a different
-    /// question. Sight itself is modelled now (<see cref="VisionRules"/>, #671-#673) and
-    /// its mechanism exists (<c>target.unseen</c>, Divine Spark its one hard-coded
-    /// consumer, #673) — what stays unstructured is this <em>entry's own</em> "can see"
-    /// clause: extraction has not yet claimed it onto <see cref="SaveEffect"/> for the
-    /// 79 corpus entries that print it, so nothing here can ask
-    /// <c>SaveEffect.TargetRequiresSight</c> because it does not exist. That is #691's
-    /// content slice, not an engine gap. The area-shape gate above
-    /// (<see cref="AreaTargeting"/>) still decides who an area save reaches; the range
-    /// check only governs how far the save itself may be aimed.
+    /// question, and it is checked below rather than here: sight is modelled
+    /// (<see cref="VisionRules"/>, #671-#673), its mechanism exists (<c>target.unseen</c>,
+    /// Divine Spark its first consumer, #673), and extraction now claims this entry's
+    /// own "can see" clause onto <see cref="SaveEffect.TargetRequiresSight"/> for a
+    /// single target (#691) — a point-aimed area's own "the dragon can see" describes
+    /// the point's visibility, not a creature target's, so extraction never sets the
+    /// flag for one and this check only ever fires alongside the single-target Total
+    /// Cover check just below. The area-shape gate above (<see cref="AreaTargeting"/>)
+    /// still decides who an area save reaches; the range check only governs how far
+    /// the save itself may be aimed.
     /// </para>
     /// </remarks>
     private ActionRefusal? UseSaveEntry(Combatant actor, MonsterEntry entry, GridPosition? point, Combatant? target)
@@ -255,9 +256,9 @@ public sealed partial class Encounter
         // counts, the same rule regardless of area; only a bare point aim with no
         // creature reference (necessarily an area effect — a single-target save
         // already refused above without one) falls to the second check. Sight ("a
-        // creature the mummy can see") stays unenforced here — not for want of a sight
-        // model (#673 supplies one) but because this entry's own clause is not yet
-        // structured onto SaveEffect (#691) — this checks distance alone.
+        // creature the mummy can see") is its own separate check, below the Total
+        // Cover check this comment's own paragraph opens with (#691) — this one
+        // checks distance alone.
         if (target is not null && save.RangeFeet is { } range)
         {
             var rangeDistance = actor.DistanceFeetTo(target);
@@ -288,6 +289,18 @@ public sealed partial class Encounter
             return new ActionRefusal(
                 "entry.total_cover",
                 $"{target.Name} has Total Cover from {actor.Name} and can't be targeted directly.");
+        }
+
+        // Concealed's mechanism (#673, generalized beyond Divine Spark by #691): a
+        // single target this entry's own "can see" clause structured onto
+        // TargetRequiresSight must actually be seen, not merely uncovered. Gated the
+        // same way the Total Cover check just above is — a single target only, never
+        // an area effect merely aimed via a target reference.
+        if (save.Area is null && target is not null
+            && save.TargetRequiresSight
+            && UnseenTargetRefusal(actor, target) is { } unseen)
+        {
+            return unseen;
         }
 
         if ((point ?? target?.Position) is not { } aim)

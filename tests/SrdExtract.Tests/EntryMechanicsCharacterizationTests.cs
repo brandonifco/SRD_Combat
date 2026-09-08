@@ -146,17 +146,17 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.True(rider.IsFullyModelled);
 
         // The rider itself is fully modelled (nothing changes there). This is a
-        // single-target save entry, so the printed distance is now claimed —
-        // ReadRange structures "within 5 feet" onto SaveEffect.RangeFeet (#386) — but
-        // the sight qualifier stays permanently unenforced (the standing no-sight-
-        // model reading), and "one creature" itself is gated by the "that…" clause
-        // following it (design §7.6's own negative lookahead), so it is not claimed
-        // by SaveTargetClausePattern either. Both survive as residue, split into two
-        // chunks by the now-claimed "within 5 feet" that used to sit between them.
+        // single-target save entry, so the printed distance is claimed — ReadRange
+        // structures "within 5 feet" onto SaveEffect.RangeFeet (#386) — and, since
+        // #691, the sight qualifier is too: "that the gladiator can see" claims onto
+        // TargetRequiresSight, the leading "that" swallowed with it so the word is not
+        // left dangling alone. "One creature" itself is still gated by the "that…"
+        // clause following it (design §7.6's own negative lookahead), so it alone is
+        // not claimed by SaveTargetClausePattern and survives as the sole remaining
+        // residue.
         Assert.Equal(5, entry.Save!.RangeFeet);
-        Assert.Equal(
-            ["one creature", "that the gladiator can see"],
-            entry.UnmodelledClauses);
+        Assert.True(entry.Save.TargetRequiresSight);
+        Assert.Equal(["one creature"], entry.UnmodelledClauses);
     }
 
     [Fact]
@@ -899,6 +899,16 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.NotNull(rider.Duration);
         Assert.True(rider.Duration!.RepeatSaveAtTurnEnd);
         Assert.True(rider.IsFullyModelled);
+
+        // Misattribution trip-wire (#691): "the doppelganger that can see the
+        // doppelganger" names who can see the entry's own creature, not the reverse
+        // — an Emanation catches a creature that can see the doppelganger, not a
+        // creature the doppelganger can see. SaveSightPattern's word order ("the X
+        // can see", not "can see the X") already fails to match this text at all;
+        // this is also an Emanation rather than a single target, so ReadRange's own
+        // isSingleTarget gate would exclude it a second, independent way even if the
+        // wording were reversed. TargetRequiresSight must stay false either way.
+        Assert.False(entry.Save!.TargetRequiresSight);
     }
 
     [Fact]
@@ -1183,9 +1193,11 @@ public sealed class EntryMechanicsCharacterizationTests
         // lines are a different gap: a single-target save entry claims only the head
         // noun "one creature" (design §7.6) plus, since #386, the printed range —
         // "within 5 feet" is carved out of the qualifier below and structured onto
-        // RangeFeet — but the sight qualifier and the "that has 0 Hit Points" gate
-        // are printed rules UseSaveEntry does not enforce, so what's left of the
-        // qualifier splits into two honest residue chunks around the claimed range.
+        // RangeFeet — and, since #691, the sight qualifier "the wisp can see" claims
+        // onto TargetRequiresSight too, leaving only "one living creature" (the
+        // adjective "living" blocks SaveTargetClausePattern's own "one creature" head
+        // noun, so the whole phrase stays unclaimed) and the "that has 0 Hit Points"
+        // gate UseSaveEntry does not enforce as residue.
         var entry = EntryMechanicsParser.Classify(
             "Consume Life",
             MonsterEntrySection.BonusAction,
@@ -1194,9 +1206,10 @@ public sealed class EntryMechanicsCharacterizationTests
             "Hit Points.");
 
         Assert.Equal(5, entry.Save!.RangeFeet);
+        Assert.True(entry.Save.TargetRequiresSight);
         Assert.Equal(
             [
-                "one living creature the wisp can see",
+                "one living creature",
                 "that has 0 Hit Points",
                 "The target dies, and the wisp regains 10 (3d6) Hit Points",
             ],
@@ -1759,16 +1772,17 @@ public sealed class EntryMechanicsCharacterizationTests
         var rider = Assert.Single(entry.AppliedConditions);
         Assert.Equal(ConditionType.Blinded, rider.Condition);
 
-        // The other two lines are pre-existing and unrelated to the section gate: the
-        // single-target save's sight qualifier (design §7.6 claims only "one
-        // creature"; the printed range is now claimed too — #386 — so only "the solar
-        // can see" is left of the qualifier, distance carved out) and the recharge
-        // clause's own "Failure or Success:" side clause (#370 — claimed by nobody,
-        // design §4.1).
+        // The other line is pre-existing and unrelated to the section gate: the
+        // recharge clause's own "Failure or Success:" side clause (#370 — claimed by
+        // nobody, design §4.1). The single-target save's sight qualifier used to
+        // leave "the solar can see" as its own residue once "one creature" (design
+        // §7.6) and the printed range (#386) were carved out; since #691 that
+        // qualifier claims onto TargetRequiresSight too, so nothing of the target
+        // clause survives.
         Assert.Equal(120, entry.Save!.RangeFeet);
+        Assert.True(entry.Save.TargetRequiresSight);
         Assert.Equal(
             [
-                "the solar can see",
                 "The target has the Blinded condition for 1 minute",
                 "Failure or Success: The solar can't take this action again until the start of its next turn",
             ],
@@ -1784,9 +1798,11 @@ public sealed class EntryMechanicsCharacterizationTests
     {
         // Mummy's Dreadful Glare, verbatim. "one creature the mummy can see within 60
         // feet" — the sight-before-distance word order. ReadRange finds "within 60
-        // feet" wherever it sits and claims exactly that substring, leaving the sight
-        // qualifier ("the mummy can see") as its own residue rather than folding the
-        // now-claimed distance into it.
+        // feet" wherever it sits and claims exactly that substring; since #691 it also
+        // claims the sight qualifier ("the mummy can see") onto TargetRequiresSight,
+        // which moves this clause from residue to claimed — "one creature" is already
+        // claimed separately by SaveTargetClausePattern, so nothing of the target
+        // clause is left over at all.
         var entry = EntryMechanicsParser.Classify(
             "Dreadful Glare",
             MonsterEntrySection.Action,
@@ -1795,9 +1811,9 @@ public sealed class EntryMechanicsCharacterizationTests
             "Success: The target is immune to this mummy's Dreadful Glare for 24 hours.");
 
         Assert.Equal(60, entry.Save!.RangeFeet);
+        Assert.True(entry.Save.TargetRequiresSight);
         Assert.Equal(
             [
-                "the mummy can see",
                 "Success: The target is immune to this mummy's Dreadful Glare for 24 hours",
             ],
             entry.UnmodelledClauses);
@@ -1816,6 +1832,15 @@ public sealed class EntryMechanicsCharacterizationTests
         // remarks) — now opens: "within 90 feet" claims onto RangeFeet exactly as
         // the Mummy's single-target "within 60 feet" does above, leaving only the
         // sight qualifier ("the dragon can see") as residue.
+        //
+        // Misattribution trip-wire (#691): "the dragon can see" here describes the
+        // *point's* visibility to the dragon, not a creature target's — Concealed does
+        // not gate an area effect merely aimed at a point (design673's "Not
+        // Concealed" list) — so TargetRequiresSight must stay false despite the
+        // identical wording ReadRange claims for a genuine single target (see the
+        // Mummy's Dreadful Glare, above). ReadRange's own gate is isSingleTarget
+        // alone; this fixture is what proves the point-aimed-Sphere branch never
+        // opens it.
         var entry = EntryMechanicsParser.Classify(
             "Noxious Miasma",
             MonsterEntrySection.LegendaryAction,
@@ -1833,6 +1858,7 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.Equal(20, entry.Save.Area.SizeFeet);
         Assert.Null(entry.Save.Area.WidthFeet);
         Assert.Equal(90, entry.Save.RangeFeet);
+        Assert.False(entry.Save.TargetRequiresSight);
         Assert.Equal(
             [
                 "the dragon can see",
@@ -1840,6 +1866,26 @@ public sealed class EntryMechanicsCharacterizationTests
                 "Failure or Success: The dragon can't take this action again until the start of its next turn",
             ],
             entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void ADisjunctiveCanSeeOrHearIsNeverClaimedAsTargetRequiresSight()
+    {
+        // Not a real corpus entry with a save header — the Frost Giant's own "can see
+        // or hear" printing (War Cry, p.298) is an Unmodelled buff with no "Saving
+        // Throw: DC" line, so it never reaches ReadRange at all. This fixture pins the
+        // guard directly: hearing is not VisionRules.CanSee's question, so a single
+        // target that can be *heard but not seen* must not be refused target.unseen —
+        // claiming this clause would assert a stricter gate than the sentence prints,
+        // the misattribution class #691's own reasoning warns against (#407).
+        var entry = EntryMechanicsParser.Classify(
+            "Test Gaze",
+            MonsterEntrySection.Action,
+            "Wisdom Saving Throw: DC 12, one creature the giant can see or hear within 30 feet. " +
+            "Failure: 5 (1d6 + 2) Psychic damage.");
+
+        Assert.False(entry.Save!.TargetRequiresSight);
+        Assert.Contains("the giant can see or hear", entry.UnmodelledClauses);
     }
 
     [Fact]

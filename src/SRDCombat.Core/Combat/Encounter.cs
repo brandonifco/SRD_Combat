@@ -1725,6 +1725,21 @@ public sealed partial class Encounter
                 $"{actor.Name} is Charmed by {charmer.Name} and cannot catch them with {effectName}.");
     }
 
+    /// <summary>
+    /// Refuses targeting a creature the actor cannot see — Concealed's mechanism
+    /// (<c>target.unseen</c>, <see cref="VisionRules.CanSee"/>, #673). Introduced as
+    /// Divine Spark's own hard-coded check and generalized here (#691) once
+    /// extraction started structuring the printed "you can see" clause onto spells and
+    /// stat-block entries: <see cref="DivineSpark"/> calls this unconditionally (its
+    /// printed sight clause is not extracted — it is a hand-authored class feature,
+    /// not a corpus entry), while <c>CastSpell</c> and <c>UseSaveEntry</c> each call it
+    /// only when their own effect's extracted <c>TargetRequiresSight</c> flag is set.
+    /// </summary>
+    private ActionRefusal? UnseenTargetRefusal(Combatant actor, Combatant target) =>
+        VisionRules.CanSee(Battlefield, actor, target)
+            ? null
+            : new ActionRefusal("target.unseen", $"{target.Name} cannot be seen by {actor.Name}.");
+
     private void MakeOpportunityAttack(Combatant attacker, Combatant mover)
     {
         // "You can't attack the charmer" — the printed rule names the attack, not the

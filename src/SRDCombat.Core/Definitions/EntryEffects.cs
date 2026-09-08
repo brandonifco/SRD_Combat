@@ -164,6 +164,24 @@ public enum SaveSuccessOutcome
 /// Attack entries, out of #665's scope) is not structured here. Reading by designer,
 /// #665.
 /// </param>
+/// <param name="TargetRequiresSight">
+/// True when the printed single target must be seen by the actor using this entry — a
+/// Mummy's Dreadful Glare, "one creature the mummy can see within 60 feet" (#691,
+/// completing Concealed's mechanism from #673-E, whose one hard-coded consumer was
+/// Divine Spark). <c>UseSaveEntry</c> refuses
+/// <c>target.unseen</c> (<see cref="Rules.VisionRules.CanSee"/>) when this is set and
+/// the actor cannot see the chosen target — checked only for a single target
+/// (<see cref="Area"/> null); a point-aimed area's own "the dragon can see" describes
+/// the point's visibility to the actor, not a creature target's, and Concealed does
+/// not gate an effect aimed at a point (design673's reading, the "Not Concealed"
+/// list), so extraction never sets this field true for a point-aimed Sphere — see
+/// <c>EntryMechanicsParser.ReadRange</c>'s own remarks for the gate this shares.
+/// Defaults false for hand-authored stats and for every entry whose "can see" clause
+/// extraction leaves unclaimed (a reversed clause naming who can see <em>the
+/// entry's own creature</em>, such as the Doppelganger's Unsettling Visage, or a
+/// disjunctive "can see <em>or hear</em>" such as the Frost Giant's War Cry — neither
+/// is the actor-sees-target reading this field states).
+/// </param>
 public sealed record SaveEffect(
     Ability Ability,
     int? DifficultyClass,
@@ -174,7 +192,8 @@ public sealed record SaveEffect(
     bool CoverIgnored = false,
     bool ConstructsSaveAtDisadvantage = false,
     int? RangeFeet = null,
-    int? TargetSpeedDecreaseFeet = null);
+    int? TargetSpeedDecreaseFeet = null,
+    bool TargetRequiresSight = false);
 
 /// <summary>
 /// An effect that restores hit points: "regains a number of Hit Points equal to 2d8 plus

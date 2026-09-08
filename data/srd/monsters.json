@@ -116,7 +116,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -201,7 +202,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -228,7 +230,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": true
           },
           "usage": {
             "kind": "PerDay",
@@ -241,7 +244,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the aboleth can see",
             "The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target",
             "While Charmed, the target acts as an ally to the aboleth and is under its control while within 60 feet of it",
             "In addition, the aboleth and the target can communicate telepathically with each other over any distance",
@@ -417,7 +419,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -878,7 +881,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -1526,7 +1530,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "deathBurst": {},
           "appliedConditions": [],
@@ -2237,7 +2242,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -2578,7 +2584,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -2601,7 +2608,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Large or smaller creature the behir can see"
+            "one Large or smaller creature"
           ]
         },
         {
@@ -2628,7 +2635,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -2662,7 +2670,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -2927,7 +2936,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3085,7 +3095,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3258,7 +3269,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3296,11 +3308,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see",
             "and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -3490,7 +3502,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -3528,11 +3541,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see",
             "and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -3951,7 +3964,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4101,7 +4115,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4266,7 +4281,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4473,7 +4489,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4827,7 +4844,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -4862,7 +4880,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -5019,7 +5038,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5054,7 +5074,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -5230,7 +5251,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5265,7 +5287,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -5332,11 +5355,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see",
             "and the target's Speed is halved until the end of its next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -5499,7 +5522,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5534,7 +5558,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -5601,11 +5626,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see",
             "and the target's Speed is halved until the end of its next turn",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -5753,7 +5778,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5784,7 +5810,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -5943,7 +5970,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -5974,7 +6002,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -6151,7 +6180,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -6182,7 +6212,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -6263,7 +6294,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 90
+            "rangeFeet": 90,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -6451,7 +6483,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -6482,7 +6515,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -6563,7 +6597,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -6748,7 +6783,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 10
+            "rangeFeet": 10,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -6758,7 +6794,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Medium or smaller creature the bugbear can see",
+            "one Medium or smaller creature",
             "The target has the Grappled condition (escape DC 13)"
           ]
         }
@@ -7021,7 +7057,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -7194,7 +7231,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -7378,7 +7416,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -7388,7 +7427,6 @@
           ],
           "unmodelledClauses": [
             "The devil conjures a fiery chain to bind a creature",
-            "the devil can see",
             "and the target has the Restrained condition until the end of the devil's next turn, at which point the chain disappears",
             "If the target is Large or smaller, the devil moves the target up to 30 feet straight toward itself",
             "Success: The chain disappears"
@@ -7411,7 +7449,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -7623,7 +7662,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -7798,7 +7838,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -8192,7 +8233,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -8703,7 +8745,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -8729,7 +8772,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -8876,7 +8920,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -8902,7 +8947,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -9067,7 +9113,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -9095,7 +9142,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -9132,11 +9180,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 90
+            "rangeFeet": 90,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see",
             "Until the end of its next turn, the target rolls 1d6 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -9319,7 +9367,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -9347,7 +9396,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -9384,11 +9434,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the dragon can see",
             "Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -9569,7 +9619,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -9592,7 +9643,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Medium or smaller creature the couatl can see"
+            "one Medium or smaller creature"
           ]
         },
         {
@@ -10522,7 +10573,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -10702,7 +10754,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -10909,7 +10962,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -11045,7 +11099,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "PerDay",
@@ -12044,7 +12099,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -12053,7 +12109,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the erinyes can see",
             "and the target has the Restrained condition until the rope is destroyed, the erinyes uses a Bonus Action to release the target, or the erinyes uses Entangling Rope again"
           ]
         },
@@ -12265,7 +12320,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": true
           },
           "usage": {
             "kind": "Recharge",
@@ -12278,7 +12334,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Large or smaller creature the ettercap can see",
+            "one Large or smaller creature",
             "The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Bludgeoning, Poison, and Psychic damage)"
           ]
         },
@@ -13478,7 +13534,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -13600,7 +13657,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "aura": {
             "emanationRadiusFeet": 5,
@@ -13688,7 +13746,8 @@
                   }
                 ],
                 "coverIgnored": false,
-                "constructsSaveAtDisadvantage": false
+                "constructsSaveAtDisadvantage": false,
+                "targetRequiresSight": false
               },
               "excludedTargetType": "Undead"
             },
@@ -13888,7 +13947,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -13929,7 +13989,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "usage": {
             "kind": "Recharge",
@@ -13942,7 +14003,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Humanoid the ghost can see",
+            "one Humanoid",
             "The target is possessed by the ghost; the ghost disappears, and the target has the Incapacitated condition and loses control of its body",
             "The ghost now controls the body, but the target retains awareness",
             "The ghost can't be targeted by any attack, spell, or other effect, except ones that specifically target Undead",
@@ -14182,7 +14243,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -14264,7 +14326,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -14445,7 +14508,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -14592,7 +14656,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -14601,8 +14666,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one creature",
-            "that the gladiator can see"
+            "one creature"
           ]
         },
         {
@@ -15291,7 +15355,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15317,7 +15382,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -15474,7 +15540,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15500,7 +15567,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -15675,7 +15743,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15711,7 +15780,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -15745,7 +15815,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -15754,7 +15825,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the dragon can see",
             "and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it re appears in an unoccupied space of the dragon's choice within 120 feet of the dragon",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -15946,7 +16016,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -15982,7 +16053,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -16016,7 +16088,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -16025,7 +16098,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the dragon can see",
             "and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon",
             "Failure or Success: The dragon can't take this action again until the start of its next turn"
           ]
@@ -16176,7 +16248,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -16225,7 +16298,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -16512,7 +16586,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -16672,7 +16747,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -16848,7 +16924,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -16901,7 +16978,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 90
+            "rangeFeet": 90,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -17087,7 +17165,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -17140,7 +17219,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 90
+            "rangeFeet": 90,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -17815,7 +17895,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -17833,9 +17914,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "the naga can see"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -18202,7 +18281,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -18329,7 +18409,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -18491,7 +18572,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -18622,7 +18704,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -19509,11 +19592,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 10
+            "rangeFeet": 10,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the devil can see",
             "and the target receives an infernal wound if it doesn't have one",
             "While wounded, the target loses 10 (3d6) Hit Points at the start of each of its turns",
             "The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by succeeding on a DC 17 Wisdom (Medicine) check"
@@ -20124,7 +20207,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "targetRequiresSight": true
           },
           "usage": {
             "kind": "Recharge",
@@ -20137,7 +20221,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the incubus can see",
             "If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it",
             "Otherwise, the target takes 18 (4d8) Psychic damage"
           ]
@@ -20311,7 +20394,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -20513,7 +20597,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -20963,7 +21048,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -20996,12 +21082,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "the kraken can see"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Swallow",
@@ -21030,7 +21115,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -21106,7 +21192,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -21283,7 +21370,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -21296,7 +21384,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the lamia can see",
             "and the target is cursed for 1 hour",
             "Until the curse ends, the target has the Charmed and Poisoned conditions"
           ]
@@ -21656,7 +21743,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -22056,7 +22144,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "deathBurst": {},
           "appliedConditions": [],
@@ -22403,7 +22492,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -22426,7 +22516,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Medium or smaller creature the marilith can see"
+            "one Medium or smaller creature"
           ]
         },
         {
@@ -22655,7 +22745,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -22778,7 +22869,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "deathBurst": {},
           "appliedConditions": [],
@@ -22837,7 +22929,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -22972,7 +23065,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "deathBurst": {},
           "appliedConditions": [],
@@ -23041,7 +23135,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -23146,7 +23241,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "deathBurst": {},
           "appliedConditions": [],
@@ -23201,7 +23297,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -23320,7 +23417,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "deathBurst": {},
           "appliedConditions": [],
@@ -23376,7 +23474,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "targetSpeedDecreaseFeet": 10
+            "targetSpeedDecreaseFeet": 10,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -24094,7 +24193,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -24113,7 +24213,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the mummy can see",
             "Success: The target is immune to this mummy's Dreadful Glare for 24 hours"
           ]
         }
@@ -24323,7 +24422,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -24341,9 +24441,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "the mummy can see"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Spellcasting",
@@ -24589,7 +24687,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -25649,7 +25748,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -26148,7 +26248,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -26166,9 +26267,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "the pirate can see"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 314
@@ -26324,7 +26423,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -26342,9 +26442,7 @@
               }
             }
           ],
-          "unmodelledClauses": [
-            "the pirate can see"
-          ]
+          "unmodelledClauses": []
         },
         {
           "name": "Riposte",
@@ -26478,7 +26576,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -26822,7 +26921,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -27299,7 +27399,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -27322,7 +27423,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the pseudodragon can see",
             "Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it"
           ]
         }
@@ -27524,7 +27624,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -27708,7 +27809,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 20
+            "rangeFeet": 20,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "PerDay",
@@ -27932,7 +28034,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -28119,7 +28222,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -28268,7 +28372,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -28432,7 +28537,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -28638,7 +28744,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -28843,7 +28950,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -29292,7 +29400,8 @@
             "successOutcome": "NoEffect",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -29641,7 +29750,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 10
+            "rangeFeet": 10,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -29664,7 +29774,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Large or smaller creature the salamander can see"
+            "one Large or smaller creature"
           ]
         }
       ],
@@ -29781,12 +29891,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 90
+            "rangeFeet": 90,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
-          "unmodelledClauses": [
-            "the satyr can see"
-          ]
+          "unmodelledClauses": []
         }
       ],
       "sourcePage": 321
@@ -30027,7 +30136,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -30085,7 +30195,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 30
+            "rangeFeet": 30,
+            "targetRequiresSight": true
           },
           "usage": {
             "kind": "Recharge",
@@ -30093,7 +30204,7 @@
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "one Frightened creature the hag can see",
+            "one Frightened creature",
             "If the target has 20 Hit Points or fewer, it drops to 0 Hit Points",
             "Otherwise, the target takes 13 (3d8) Psychic damage"
           ]
@@ -30397,7 +30508,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -30723,7 +30835,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -30758,7 +30871,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -30914,7 +31028,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -30949,7 +31064,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -31123,7 +31239,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -31158,7 +31275,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -31222,7 +31340,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -31395,7 +31514,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -31430,7 +31550,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -31494,7 +31615,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -32014,11 +32136,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 600
+            "rangeFeet": 600,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the solar can see",
             "If the creature has 100 Hit Points or fewer, it dies",
             "It otherwise takes 24 (4d8 + 6) Piercing damage plus 36 (8d8) Radiant damage"
           ]
@@ -32075,7 +32197,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -32094,7 +32217,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the solar can see",
             "The target has the Blinded condition for 1 minute",
             "Failure or Success: The solar can't take this action again until the start of its next turn"
           ]
@@ -32122,7 +32244,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -32558,7 +32681,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -32615,11 +32739,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the sphinx can see",
             "The target gains 1 Exhaustion level",
             "While the target has any Exhaustion levels, it appears 3d10 years older",
             "Failure or Success: The sphinx can't take this action again until the start of its next turn"
@@ -32829,11 +32953,11 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the sphinx can see",
             "The target gains 1 Exhaustion level",
             "While the target has any Exhaustion levels, it appears 3d10 years older",
             "Failure or Success: The sphinx can't take this action again until the start of its next turn"
@@ -33127,11 +33251,12 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "the sprite can see (Celestials, Fiends, and Undead automatically fail the save)",
+            "(Celestials, Fiends, and Undead automatically fail the save)",
             "The sprite knows the target's emotions and alignment"
           ]
         },
@@ -33885,7 +34010,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -34054,7 +34180,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -34338,7 +34465,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -34408,7 +34536,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -35628,7 +35757,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -35853,7 +35983,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -36071,7 +36202,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -36127,7 +36259,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "PerDay",
@@ -36553,7 +36686,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -37601,7 +37735,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -37762,7 +37897,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -37936,7 +38072,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -37969,7 +38106,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -38164,7 +38302,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -38197,7 +38336,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 120
+            "rangeFeet": 120,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -38400,7 +38540,8 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [],
           "unmodelledClauses": [
@@ -38554,11 +38695,12 @@
             "appliedConditions": [],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [],
           "unmodelledClauses": [
-            "one living creature the wisp can see",
+            "one living creature",
             "that has 0 Hit Points",
             "The target dies, and the wisp regains 10 (3d6) Hit Points"
           ]
@@ -38699,7 +38841,8 @@
             "successOutcome": "HalfDamage",
             "appliedConditions": [],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -40866,7 +41009,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -40876,7 +41020,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Medium or smaller creature the snake can see",
+            "one Medium or smaller creature",
             "and the target has the Grappled condition (escape DC 12)"
           ]
         }
@@ -41547,7 +41691,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -41978,7 +42123,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 90
+            "rangeFeet": 90,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
@@ -42488,7 +42634,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 10
+            "rangeFeet": 10,
+            "targetRequiresSight": true
           },
           "appliedConditions": [
             {
@@ -42498,7 +42645,7 @@
             }
           ],
           "unmodelledClauses": [
-            "one Large or smaller creature the snake can see",
+            "one Large or smaller creature",
             "and the target has the Grappled condition (escape DC 14)"
           ]
         }
@@ -44290,7 +44437,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "targetRequiresSight": true
           },
           "usage": {
             "kind": "Recharge",
@@ -44303,7 +44451,6 @@
             }
           ],
           "unmodelledClauses": [
-            "the spider can see",
             "The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage)"
           ]
         }
@@ -45718,7 +45865,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 15
+            "rangeFeet": 15,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -45954,7 +46102,8 @@
             ],
             "coverIgnored": false,
             "constructsSaveAtDisadvantage": false,
-            "rangeFeet": 5
+            "rangeFeet": 5,
+            "targetRequiresSight": false
           },
           "appliedConditions": [
             {
@@ -48361,7 +48510,8 @@
               }
             ],
             "coverIgnored": false,
-            "constructsSaveAtDisadvantage": false
+            "constructsSaveAtDisadvantage": false,
+            "targetRequiresSight": false
           },
           "usage": {
             "kind": "Recharge",
