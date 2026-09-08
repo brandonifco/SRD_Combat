@@ -509,9 +509,9 @@ public sealed partial class Encounter
     /// <para>
     /// Taken automatically rather than offered, like Uncanny Dodge: a failed escape with
     /// a spare Second Wind is never a case where a player would decline, and the use
-    /// costs nothing when it does not work. Two ability checks call this today — the
-    /// grapple Escape here, and Hide's Stealth check (#673, <c>Encounter.Hiding.cs</c>)
-    /// — and any future one should too.
+    /// costs nothing when it does not work. Three ability checks call this today — the
+    /// grapple Escape here, Hide's Stealth check, and Search's Perception check (both
+    /// #673/#674, <c>Encounter.Hiding.cs</c>) — and any future one should too.
     /// </para>
     /// </remarks>
     private bool TryTacticalMind(Combatant combatant, int checkTotal, int difficultyClass) =>
