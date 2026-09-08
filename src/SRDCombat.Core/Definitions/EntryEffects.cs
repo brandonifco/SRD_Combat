@@ -73,7 +73,17 @@ public enum AreaShape
 /// <param name="Shape">The shape.</param>
 /// <param name="SizeFeet">The defining dimension — a Cone's length, an Emanation's radius.</param>
 /// <param name="WidthFeet">A Line's width. Null for every other shape.</param>
-public sealed record EffectArea(AreaShape Shape, int SizeFeet, int? WidthFeet = null);
+/// <param name="EnemiesOnly">
+/// True for a printed <c>"each enemy in a ..."</c> selector — the Planetar's Holy Burst,
+/// the Rakshasa's Baleful Command, the Sphinx of Lore's Mind-Rending Roar (#601) — as
+/// opposed to the far more common <c>"each creature in a ..."</c>, which is false here
+/// and reaches everyone the geometry covers. This is a selection rule, not a geometry
+/// one: <see cref="SRDCombat.Core.Combat.AreaTargeting"/> answers "which squares", and
+/// deliberately has no notion of sides to answer "which of the creatures standing in
+/// them" — that filter is applied where an area's squares become a list of combatants
+/// (<c>Encounter.SaveVictims</c>), against the side of whoever is using the entry.
+/// </param>
+public sealed record EffectArea(AreaShape Shape, int SizeFeet, int? WidthFeet = null, bool EnemiesOnly = false);
 
 /// <summary>What a successful saving throw achieves.</summary>
 public enum SaveSuccessOutcome

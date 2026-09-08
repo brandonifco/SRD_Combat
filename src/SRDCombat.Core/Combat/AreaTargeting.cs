@@ -53,6 +53,20 @@ namespace SRDCombat.Core.Combat;
 /// in place of "all straight lines" is <see cref="CoverRules.LineBlocked"/>'s stated
 /// reading.
 /// </para>
+/// <para>
+/// <b>Which squares an area covers is a different question from which of the creatures
+/// standing in them it actually reaches</b> (#601). Most printed selectors read "each
+/// <b>creature</b> in a ... Sphere" and catch everyone <see cref="Cover"/> returns, no
+/// further question asked. A handful — the Planetar's Holy Burst, the Rakshasa's
+/// Baleful Command, the Sphinx of Lore's Mind-Rending Roar — instead print "each
+/// <b>enemy</b> in a ... Sphere/Emanation", narrowing that same geometric set to
+/// creatures hostile to whoever is using the entry. That is a side comparison, and this
+/// class works in squares and battlefield geometry alone — it has no notion of a
+/// combatant, let alone a side — so the narrowing itself is not done here.
+/// <see cref="EntryEffects.EffectArea.EnemiesOnly"/> records the reading and
+/// <c>Encounter.SaveVictims</c> applies it, once <see cref="Cover"/>'s squares have
+/// already become a creature list.
+/// </para>
 /// </remarks>
 public static class AreaTargeting
 {

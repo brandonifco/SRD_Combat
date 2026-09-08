@@ -455,13 +455,13 @@ public sealed class EntryMechanicsCharacterizationTests
         Assert.True(incapacitated.IsFullyModelled);
         Assert.NotNull(incapacitated.Duration);
 
-        // The only residue left is the save's own target-clause qualifier (design
-        // §7.6 — the Emanation's origin word is claimed, "originating from the
-        // rakshasa" itself is glue-adjacent prose the target-clause matcher does not
-        // reach past), unrelated to the plural conjunction this fixture pins.
-        Assert.Equal(
-            ["each enemy in a", "originating from the rakshasa"],
-            entry.UnmodelledClauses);
+        // Zero residue: the whole target clause, "each enemy in a 30-foot Emanation
+        // originating from the rakshasa", now claims (#601 — SaveTargetClausePattern's
+        // `selector` group reads "enemy" the same way it already read "creature", and
+        // Area.EnemiesOnly records the reading). This fixture predates #601 and used
+        // to pin that clause as residue; it now pins the plural conjunction alone,
+        // unrelated to the area selector.
+        Assert.Empty(entry.UnmodelledClauses);
     }
 
     [Fact]
@@ -1765,6 +1765,74 @@ public sealed class EntryMechanicsCharacterizationTests
                 "and the target is pushed 5 feet straight away from the bulette",
             ],
             entry.UnmodelledClauses);
+    }
+
+    #endregion
+
+    #region Enemies-only selector (#601)
+
+    [Fact]
+    public void EachEnemyInASphereStructuresAnEnemiesOnlyArea()
+    {
+        // Planetar's Holy Burst, verbatim (p.315). The corpus's overwhelmingly common
+        // wording is "each creature in a ... Sphere" (AFullSaveHeaderParsesAbilityDcAreaAndDamage
+        // et al. above), reaching whoever the geometry catches; this instead prints
+        // "each enemy", narrowing that same Sphere to creatures hostile to the
+        // planetar. SaveTargetClausePattern's `selector` group reads that word and
+        // ParseSave folds it onto Area.EnemiesOnly (#601) — see that field's own doc
+        // comment and AreaTargeting's remarks for where the narrowing is actually
+        // applied (Encounter.SaveVictims, not here: this is a parsing-level claim,
+        // not an engine test). The sight qualifier stays residue exactly as it does
+        // for every other point-aimed Sphere (APointAimedSpheresPrintedRangeStructuresOntoRangeFeet).
+        var entry = EntryMechanicsParser.Classify(
+            "Holy Burst",
+            MonsterEntrySection.Action,
+            "Dexterity Saving Throw: DC 20, each enemy in a 20-foot-radius Sphere centered on " +
+            "a point the planetar can see within 120 feet. Failure: 24 (7d6) Radiant damage. " +
+            "Success: Half damage.");
+
+        Assert.NotNull(entry.Save!.Area);
+        Assert.Equal(AreaShape.Sphere, entry.Save.Area!.Shape);
+        Assert.Equal(20, entry.Save.Area.SizeFeet);
+        Assert.True(entry.Save.Area.EnemiesOnly);
+        Assert.Equal(120, entry.Save.RangeFeet);
+        Assert.Equal(["the planetar can see"], entry.UnmodelledClauses);
+    }
+
+    [Fact]
+    public void EachEnemyInAnEmanationStructuresAnEnemiesOnlyAreaToo()
+    {
+        // Rakshasa's Baleful Command, verbatim. The same "each enemy" selector on a
+        // self-originating Emanation rather than a point-aimed Sphere — pinning that
+        // the `selector` group fires across every area branch, not just Sphere's.
+        var entry = EntryMechanicsParser.Classify(
+            "Baleful Command",
+            MonsterEntrySection.Action,
+            "Wisdom Saving Throw: DC 18, each enemy in a 30-foot Emanation originating from " +
+            "the rakshasa. Failure: 28 (8d6) Psychic damage, and the target has the Frightened " +
+            "and Incapacitated conditions until the start of the rakshasa's next turn.");
+
+        Assert.NotNull(entry.Save!.Area);
+        Assert.Equal(AreaShape.Emanation, entry.Save.Area!.Shape);
+        Assert.Equal(30, entry.Save.Area.SizeFeet);
+        Assert.True(entry.Save.Area.EnemiesOnly);
+    }
+
+    [Fact]
+    public void EachCreatureInASphereIsNotEnemiesOnly()
+    {
+        // The far more common wording — Adult Green Dragon's Noxious Miasma, verbatim
+        // (p.294) — must not regress to EnemiesOnly now that the selector word is read
+        // at all: "creature" is the default, unnarrowed reading.
+        var entry = EntryMechanicsParser.Classify(
+            "Noxious Miasma",
+            MonsterEntrySection.LegendaryAction,
+            "Constitution Saving Throw: DC 17, each creature in a 20-foot-radius Sphere " +
+            "centered on a point the dragon can see within 90 feet. Failure: 7 (2d6) Poison " +
+            "damage, and the target takes a -2 penalty to AC until the end of its next turn.");
+
+        Assert.NotNull(entry.Save!.Area);
+        Assert.False(entry.Save.Area!.EnemiesOnly);
     }
 
     #endregion

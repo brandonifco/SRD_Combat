@@ -631,6 +631,28 @@ public sealed partial class Encounter
     }
 
     /// <summary>
+    /// Everyone a saving-throw effect actually reaches: <see cref="CreaturesIn"/>'s
+    /// geometric catch for an area, or the single named target for one that has none —
+    /// narrowed to hostile creatures only when the printed selector said "enemy" rather
+    /// than "creature" (#601; see <see cref="AreaTargeting"/>'s own remarks for why that
+    /// narrowing happens here and not inside the geometry itself). Both
+    /// <see cref="ResolveSaveEffect"/> and <see cref="CharmedHarmRefusal"/> ask this
+    /// same question — who does the effect land on — and must agree, so this is the one
+    /// place either of them may answer it.
+    /// </summary>
+    private IReadOnlyList<Combatant> SaveVictims(
+        SaveEffect save, Combatant source, GridPosition aim, Combatant? target)
+    {
+        var reached = save.Area is { } area
+            ? CreaturesIn(AreaTargeting.Cover(area, source.Position, aim, Battlefield))
+            : target is null ? [] : [target];
+
+        return save.Area is { EnemiesOnly: true }
+            ? reached.Where(victim => victim.SideId != source.SideId).ToArray()
+            : reached;
+    }
+
+    /// <summary>
     /// A creature that takes damage while concentrating must make a Constitution saving
     /// throw against DC 10 or half the damage, whichever is higher, or lose the spell.
     /// </summary>

@@ -1443,9 +1443,7 @@ public sealed partial class Encounter
             return null;
         }
 
-        var victims = save.Area is { } area
-            ? CreaturesIn(AreaTargeting.Cover(area, actor.Position, aim, Battlefield))
-            : target is null ? [] : [target];
+        var victims = SaveVictims(save, actor, aim, target);
 
         var charmer = victims.FirstOrDefault(victim =>
             string.Equals(victim.Id, charmerId, StringComparison.Ordinal));
@@ -2257,9 +2255,7 @@ public sealed partial class Encounter
         IReadOnlyList<AppliedCondition> riders,
         bool? magicalEffect = null)
     {
-        var affected = save.Area is { } area
-            ? CreaturesIn(AreaTargeting.Cover(area, source.Position, point, Battlefield))
-            : target is null ? [] : [target];
+        var affected = SaveVictims(save, source, point, target);
 
         if (save.Area is { } shape)
         {
