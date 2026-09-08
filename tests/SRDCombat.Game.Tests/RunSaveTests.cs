@@ -287,14 +287,14 @@ public class RunSaveTests
     }
 
     /// <summary>
-    /// A save written before #286 carries no seed at all — but unlike a content-version
-    /// mismatch, that is not refused. It loads exactly as written; <see cref="GauntletRun.Resume"/>
-    /// falls back to 0 the way it does for a missing <c>GoldCopper</c>, and it is the
-    /// client's job — not <see cref="RunSave"/>'s — to notice the gap and roll a real
-    /// seed once via <see cref="GauntletRun.AdoptSeed"/>, which now writes it to disk
-    /// immediately rather than waiting on the next autosave (#361) — see
-    /// <c>SaveFileTests</c> for the on-disk round trip, since adoption is no longer a
-    /// pure in-memory operation this test class can exercise.
+    /// A save written before #286 carries no seed at all, and that is not refused
+    /// either — same as a content-version mismatch since #355. It loads exactly as
+    /// written; <see cref="GauntletRun.Resume"/> falls back to 0 the way it does for a
+    /// missing <c>GoldCopper</c>, and it is the client's job — not <see cref="RunSave"/>'s —
+    /// to notice the gap and roll a real seed once via <see cref="GauntletRun.AdoptSeed"/>,
+    /// which now writes it to disk immediately rather than waiting on the next autosave
+    /// (#361) — see <c>SaveFileTests</c> for the on-disk round trip, since adoption is no
+    /// longer a pure in-memory operation this test class can exercise.
     /// </summary>
     [Fact]
     public void LoadingASeedlessSaveSucceedsAndResumingFallsBackToZero()
@@ -310,26 +310,33 @@ public class RunSaveTests
     }
 
     /// <summary>
-    /// The acceptance test for #287's primary gate: a save whose content version does
-    /// not match this build's is refused on <see cref="GauntletRun.Resume"/>, before
-    /// anything tries to resolve a single id out of it, with a message naming both —
-    /// truncated for display, per <see cref="RunSave.FromJson"/>'s sibling in
-    /// <c>ContentDrift</c>.
+    /// The acceptance test for #355: a save whose content version does not match this
+    /// build's is <em>not</em> refused on <see cref="GauntletRun.Resume"/> — it loads
+    /// exactly like an added-content save should, with every id it names still
+    /// resolving, and the mismatch surfaces as a notice naming both fingerprints
+    /// (truncated for display, per <see cref="RunSave.FromJson"/>'s sibling in
+    /// <c>ContentDrift</c>) rather than an exception. This reverses #287's original
+    /// policy — see <see cref="SavedRun.ContentVersion"/>'s remarks for why a
+    /// whole-roster refusal does not survive a content build that only grows.
     /// </summary>
     [Fact]
-    public void ResumeRefusesAMismatchedContentVersion()
+    public void ResumeNoticesAMismatchedContentVersionAndLoadsAnyway()
     {
         var saved = RunWithHistory().ToSave() with { ContentVersion = "not-a-real-fingerprint" };
 
-        var failure = Assert.Throws<InvalidDataException>(
-            () => GauntletRun.Resume(Content, saved));
+        var run = GauntletRun.Resume(Content, saved);
 
-        Assert.Contains("not-a-real-f", failure.Message, StringComparison.Ordinal);
-        Assert.Contains(Content.ContentFingerprint[..12], failure.Message, StringComparison.Ordinal);
-        Assert.Contains(
-            "The file is untouched — the build that wrote it can still play it, or start a new run.",
-            failure.Message,
-            StringComparison.Ordinal);
+        Assert.Equal(RunOutcome.InProgress, run.Outcome);
+
+        var notice = Assert.Single(
+            run.LevelUps, line => line.Contains("not-a-real-f", StringComparison.Ordinal));
+
+        Assert.Contains(Content.ContentFingerprint[..12], notice, StringComparison.Ordinal);
+
+        // The fingerprint keeps being stamped regardless — provenance for a bug report,
+        // never a gate — so the very next autosave carries the currently loaded content's
+        // value rather than perpetuating the mismatch.
+        Assert.Equal(Content.ContentFingerprint, run.ToSave().ContentVersion);
     }
 
     // The one test that stamps a save through the process-wide SaveFile seam —
@@ -359,11 +366,13 @@ public class RunSaveTests
     }
 
     /// <summary>
-    /// The acceptance test for #287's backstop: even with a save's content version
-    /// matching (so <see cref="GauntletRun.Resume"/>'s own coarse gate has nothing to
-    /// catch), a draft naming a class this content build does not have refuses cleanly
-    /// rather than throwing a bare <see cref="KeyNotFoundException"/> — the crash the
-    /// review found, past both clients' exception filters.
+    /// The acceptance test for #287's backstop, and since #355 the <em>only</em> gate a
+    /// content-version mismatch on its own no longer is: a draft naming a class this
+    /// content build does not have refuses cleanly, by name, rather than throwing a bare
+    /// <see cref="KeyNotFoundException"/> — the crash the review found, past both
+    /// clients' exception filters. This is the "renamed id" half of #355's acceptance
+    /// criteria; <see cref="ResumeNoticesAMismatchedContentVersionAndLoadsAnyway"/> is
+    /// the "added content, ids still resolve" half.
     /// </summary>
     [Fact]
     public void ResumingRefusesADraftNamingAClassThisContentDoesNotHave()

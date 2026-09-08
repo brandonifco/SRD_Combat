@@ -912,8 +912,9 @@ public abstract partial class FightScreen : Node2D
     /// " — " plus every notice <c>ResolveFight</c>'s <c>out</c> parameter carried back,
     /// trimmed to fit the heading's single, unwrapped line — or empty when there is
     /// nothing to say. Shared so a <c>--scenario</c> content-fingerprint mismatch (#476,
-    /// design §5's stated notice-not-refusal divergence) reads identically from
-    /// <see cref="PlayMode"/>'s one-fight subtitle and <see cref="WatchMode"/>'s.
+    /// design §5's stated notice-not-refusal reading — the same one a resumed save's own
+    /// fingerprint gets since #355) reads identically from <see cref="PlayMode"/>'s
+    /// one-fight subtitle and <see cref="WatchMode"/>'s.
     /// </summary>
     internal static string NoticeSuffix(IReadOnlyList<string> notices) =>
         notices.Count == 0 ? string.Empty : $" — {Trim(string.Join(" ", notices), 100)}";

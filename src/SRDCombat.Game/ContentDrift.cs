@@ -6,20 +6,22 @@ namespace SRDCombat.Game;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The backstop, not the only gate.</b> <see cref="GauntletRun.Resume"/> refuses a
-/// <em>present</em> content-version mismatch outright, before resolving anything — the
-/// cheap, early check that catches the overwhelming case, a save written against a
-/// content build this one is not. <see cref="Require{TValue}"/> is what keeps two
-/// rarer cases honest too: a save with no content version at all (written before
-/// #287, which is not refused — see <c>SavedRun.ContentVersion</c>'s remarks), and a
-/// same-version edge case where the fingerprint agreed by coincidence — a hand-edited
-/// save, or a content id renamed without the roster otherwise moving. Without it, a
-/// miss on <c>PregeneratedParty</c>, <c>Gauntlet</c>, <c>Loot</c> or <c>Shop</c>'s own
-/// dictionary indexers throws a bare <see cref="KeyNotFoundException"/> straight past
-/// both clients' exception filters (the review's finding this closes) — this throws
-/// <see cref="InvalidDataException"/> instead, the same type a content-version
-/// mismatch already refuses with, so a caller that wants "does this resolve" rather
-/// than a crash can catch exactly this and only this.
+/// <b>The gate, not merely a backstop (#355).</b> A <em>present</em>
+/// <see cref="SavedRun.ContentVersion"/> that disagrees with the loaded content's
+/// fingerprint is a notice, not a refusal — <see cref="GauntletRun.Resume"/> stamps it
+/// into <see cref="GauntletRun.LevelUps"/> and resolves anyway, because a content build
+/// growing (F4's whole business) moves the whole-roster fingerprint on every addition
+/// and must not orphan a save whose ids all still resolve. <see cref="Require{TValue}"/>
+/// is what actually catches drift, in every state a save's content version can be in: a
+/// mismatched one, a missing one (written before #287 — see
+/// <c>SavedRun.ContentVersion</c>'s remarks), and the same-version edge case where the
+/// fingerprint agreed by coincidence — a hand-edited save, or a content id renamed
+/// without the roster otherwise moving. Without it, a miss on <c>PregeneratedParty</c>,
+/// <c>Gauntlet</c>, <c>Loot</c> or <c>Shop</c>'s own dictionary indexers throws a bare
+/// <see cref="KeyNotFoundException"/> straight past both clients' exception filters (the
+/// review's finding this closes) — this throws <see cref="InvalidDataException"/>
+/// instead, so a caller that wants "does this resolve" rather than a crash can catch
+/// exactly this and only this.
 /// </para>
 /// </remarks>
 internal static class ContentDrift
