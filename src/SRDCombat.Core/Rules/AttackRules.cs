@@ -5,7 +5,14 @@ using SRDCombat.Core.Dice;
 namespace SRDCombat.Core.Rules;
 
 /// <summary>Why an attack roll was made with Advantage or Disadvantage.</summary>
-/// <param name="TargetIsDodging">The target took the Dodge action.</param>
+/// <param name="TargetIsDodging">
+/// The target took the Dodge action and retains its benefits (see
+/// <see cref="ConditionRules.RetainsDodgeBenefits"/>). Dodge's attack-roll half is
+/// printed "if you can see the attacker" — the dodger's own sight, asked with
+/// <see cref="VisionRules.CanSee(Battlefield, Combatant,
+/// Combatant)"/> when a battlefield is offered (#672), falling back to "not
+/// Blinded" otherwise, the same fallback <see cref="RangedAttackInCloseCombat"/> takes.
+/// </param>
 /// <param name="TargetIsProne">The target is Prone.</param>
 /// <param name="TargetIsUnconscious">The target is Unconscious.</param>
 /// <param name="AttackerIsProne">The attacker is Prone.</param>
@@ -22,10 +29,11 @@ namespace SRDCombat.Core.Rules;
 /// <param name="AttackerIsBlinded">The attacker is Blinded.</param>
 /// <param name="TargetIsBlinded">The target is Blinded.</param>
 /// <param name="AttackerIsFrightened">
-/// The attacker is Frightened. The printed Disadvantage applies "while the source of
-/// fear is within line of sight", and the engine has no model of sight — the source is
-/// read as always visible while it is on the field. The reading is recorded on
-/// <c>ConditionRules</c>.
+/// The attacker is Frightened <em>and</em> its source of fear is within line of sight
+/// (#672, consulting <see cref="VisionRules"/> via
+/// <see cref="ConditionRules.FrightenedSourceInSight"/>). A null or unresolvable
+/// source, and a caller that offers no battlefield, all read as in sight — the
+/// hampering default. The reading is recorded on <c>ConditionRules</c>.
 /// </param>
 /// <param name="TargetIsParalyzed">The target is Paralyzed.</param>
 /// <param name="TargetIsStunned">The target is Stunned.</param>
@@ -38,9 +46,13 @@ namespace SRDCombat.Core.Rules;
 /// "When you make a ranged attack roll with a weapon, a spell, or some other means, you
 /// have Disadvantage on the roll if you are within 5 feet of an enemy who can see you
 /// and doesn't have the Incapacitated condition." Any enemy counts, the target included.
-/// "Who can see you" rests on the same stated reading Frightened records: sight is
-/// unmodelled, so an enemy on the field is read as seeing the attacker unless it has the
-/// Blinded condition — the one part of sight the engine does express.
+/// "Who can see you" is <see cref="VisionRules.CanSee(Battlefield,
+/// Combatant, Combatant)"/> asked of the enemy toward the attacker (#672);
+/// a caller offering no battlefield falls back to the pre-#672 reading — any enemy not
+/// Blinded — the same fallback <see cref="AttackerIsFrightened"/> and
+/// <see cref="TargetIsDodging"/>'s sight half take. #429's within-5-feet geometry always
+/// gives an unblocked line here (trip-wire T1 in <c>VisionRulesTripWireTests</c>), so the
+/// two readings agree whenever a battlefield is offered.
 /// </param>
 /// <param name="AttacksOwnAdvantageConditionHolds">
 /// This specific attack's own printed circumstance holds — see
@@ -97,15 +109,23 @@ public static class AttackRules
     /// <summary>Works out the Advantage and Disadvantage applying to an attack.</summary>
     /// <param name="combatants">
     /// Everyone on the field, for the circumstances that depend on more than the two
-    /// creatures involved — today that is Ranged Attacks in Close Combat, which asks
-    /// about <em>any</em> enemy within 5 feet. Null means the caller has no field to
-    /// offer (a two-creature unit test), and those circumstances stay false.
+    /// creatures involved — Ranged Attacks in Close Combat (any enemy within 5 feet)
+    /// and Frightened (resolving the source by id). Null means the caller has no field
+    /// to offer (a two-creature unit test); Ranged Attacks in Close Combat stays false,
+    /// and Frightened's source is read as in sight, the hampering default.
+    /// </param>
+    /// <param name="battlefield">
+    /// The battlefield, for the circumstances that consult line of sight (#672) —
+    /// Ranged Attacks in Close Combat, Dodge's attack-roll half, and Frightened. Null
+    /// means the caller offers none (the two-creature unit tests): each of those falls
+    /// back to its pre-#672 reading rather than treating "no field" as "no sight".
     /// </param>
     public static AttackCircumstances DescribeCircumstances(
         Combatant attacker,
         CombatAttack attack,
         Combatant target,
-        IReadOnlyCollection<Combatant>? combatants = null)
+        IReadOnlyCollection<Combatant>? combatants = null,
+        Battlefield? battlefield = null)
     {
         ArgumentNullException.ThrowIfNull(attacker);
         ArgumentNullException.ThrowIfNull(attack);
@@ -116,12 +136,11 @@ public static class AttackRules
         return new AttackCircumstances(
             // Dodge is lost while Incapacitated or at Speed 0 (the printed exception,
             // shared with the Dexterity-save half through RetainsDodgeBenefits), and its
-            // attack-roll half alone is gated on "if you can see the attacker" — read as
-            // the dodger not being Blinded, the same sight reading Ranged Attacks in
-            // Close Combat records.
+            // attack-roll half alone is gated on "if you can see the attacker" — the
+            // dodger's own sight of the attacker (#672).
             TargetIsDodging: target.Turn.IsDodging
                 && ConditionRules.RetainsDodgeBenefits(target)
-                && !target.HasCondition(ConditionType.Blinded),
+                && Sees(battlefield, target, attacker),
             TargetIsProne: target.HasCondition(ConditionType.Prone),
             TargetIsUnconscious: target.HasCondition(ConditionType.Unconscious),
             AttackerIsProne: attacker.HasCondition(ConditionType.Prone),
@@ -132,14 +151,31 @@ public static class AttackRules
             AtLongRange: attack.IsAtLongRange(distance),
             AttackerIsBlinded: attacker.HasCondition(ConditionType.Blinded),
             TargetIsBlinded: target.HasCondition(ConditionType.Blinded),
-            AttackerIsFrightened: attacker.HasCondition(ConditionType.Frightened),
+            AttackerIsFrightened: attacker.HasCondition(ConditionType.Frightened)
+                && ConditionRules.FrightenedSourceInSight(attacker, battlefield, combatants),
             TargetIsParalyzed: target.HasCondition(ConditionType.Paralyzed),
             TargetIsStunned: target.HasCondition(ConditionType.Stunned),
             TargetIsPetrified: target.HasCondition(ConditionType.Petrified),
             RangedAttackInCloseCombat:
-                combatants is not null && InCloseCombat(attacker, attack, distance, combatants),
+                combatants is not null && InCloseCombat(attacker, attack, distance, combatants, battlefield),
             AttacksOwnAdvantageConditionHolds: MeetsAdvantageCondition(attack, attacker, target));
     }
+
+    /// <summary>
+    /// Whether <paramref name="viewer"/> can see <paramref name="other"/> — the shared
+    /// #672 fallback every sight-gated attack circumstance uses. Consults
+    /// <see cref="VisionRules.CanSee(Battlefield, Combatant,
+    /// Combatant)"/> when a battlefield is offered; otherwise falls back to the
+    /// pre-#672 reading — not Blinded — so a caller with no field (the two-creature unit
+    /// tests) sees exactly what it always did. <c>VisionRules.HasOpenEyes</c> already
+    /// tests "not Blinded" as part of its own qualifying-viewer check, so the two
+    /// readings agree whenever <paramref name="viewer"/> carries no other disqualifying
+    /// state; a battlefield only ever narrows the answer further, with line of sight.
+    /// </summary>
+    private static bool Sees(Battlefield? battlefield, Combatant viewer, Combatant other) =>
+        battlefield is not null
+            ? VisionRules.CanSee(battlefield, viewer, other)
+            : !viewer.HasCondition(ConditionType.Blinded);
 
     /// <summary>
     /// Whether this attack's own printed Advantage circumstance (#666) holds right now.
@@ -162,7 +198,7 @@ public static class AttackRules
     /// </summary>
     /// <remarks>
     /// The enemy must be alive (a corpse is not an enemy who can see anything), able to
-    /// see the attacker (read as: not Blinded — the reading is on
+    /// see the attacker (<see cref="Sees"/> — the reading is on
     /// <see cref="AttackCircumstances.RangedAttackInCloseCombat"/>), and not
     /// Incapacitated, which Unconscious and Paralyzed both bring with them.
     /// </remarks>
@@ -170,7 +206,8 @@ public static class AttackRules
         Combatant attacker,
         CombatAttack attack,
         int distanceFeet,
-        IReadOnlyCollection<Combatant> combatants)
+        IReadOnlyCollection<Combatant> combatants,
+        Battlefield? field)
     {
         if (!attack.IsRangedAttackRoll(distanceFeet))
         {
@@ -180,7 +217,7 @@ public static class AttackRules
         return combatants.Any(other =>
             other.SideId != attacker.SideId
             && !other.IsDead
-            && !other.HasCondition(ConditionType.Blinded)
+            && Sees(field, other, attacker)
             && !other.HasCondition(ConditionType.Incapacitated)
             && other.DistanceFeetTo(attacker) <= Battlefield.FeetPerSquare);
     }
@@ -260,9 +297,15 @@ public static class AttackRules
     /// </param>
     /// <param name="cover">
     /// The target's cover against this attack, already judged by the caller —
-    /// <see cref="CoverRules.Between"/> needs the battlefield, which this method never
-    /// sees. Half and Three-Quarters raise the AC to beat; Total never reaches here,
-    /// because "can't be targeted directly" is a refusal before anything is rolled.
+    /// <see cref="CoverRules.Between"/> needs the battlefield for that judgement, which
+    /// this method takes only for the sight-gated circumstances (#672;
+    /// <paramref name="battlefield"/>). Half and Three-Quarters raise the AC to beat;
+    /// Total never reaches here, because "can't be targeted directly" is a refusal
+    /// before anything is rolled.
+    /// </param>
+    /// <param name="battlefield">
+    /// The battlefield, for the sight-gated circumstances — see
+    /// <see cref="DescribeCircumstances"/>. Null when the caller has none to offer.
     /// </param>
     public static AttackRoll Resolve(
         IRandomSource random,
@@ -272,7 +315,8 @@ public static class AttackRules
         bool extraAdvantage = false,
         bool extraDisadvantage = false,
         IReadOnlyCollection<Combatant>? combatants = null,
-        CoverDegree cover = CoverDegree.None)
+        CoverDegree cover = CoverDegree.None,
+        Battlefield? battlefield = null)
     {
         ArgumentNullException.ThrowIfNull(random);
         ArgumentNullException.ThrowIfNull(attacker);
@@ -280,7 +324,7 @@ public static class AttackRules
         ArgumentNullException.ThrowIfNull(target);
 
         var distance = attacker.DistanceFeetTo(target);
-        var circumstances = DescribeCircumstances(attacker, attack, target, combatants);
+        var circumstances = DescribeCircumstances(attacker, attack, target, combatants, battlefield);
         var mode = D20Test.Combine(ResolveRollMode(circumstances, distance), extraAdvantage, extraDisadvantage);
 
         var armorClass = target.Stats.ArmorClass + CoverRules.Bonus(cover);

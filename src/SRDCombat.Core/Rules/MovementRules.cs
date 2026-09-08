@@ -436,13 +436,24 @@ public static class MovementRules
     /// taken at the step being judged rather than from <c>Position</c>, because this is
     /// asked one square at a time as the walk happens.
     /// </para>
+    /// <para>
+    /// "A creature that you can see leaves your reach" (#672) additionally requires the
+    /// enemy to have line of sight to the mover's space at <paramref name="from"/> — the
+    /// square being left, the same instant the trigger itself is printed against. A
+    /// Blinded enemy therefore makes no Opportunity Attacks, closing a gap #671 flagged:
+    /// cover already refused one through a wall (<c>Encounter.MakeOpportunityAttack</c>),
+    /// but nothing before this stopped a Blinded reactor swinging on a mover it could not
+    /// see.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<Combatant> FindOpportunityAttackers(
+        Battlefield field,
         Combatant mover,
         GridPosition from,
         GridPosition to,
         IReadOnlyCollection<Combatant> combatants)
     {
+        ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(mover);
         ArgumentNullException.ThrowIfNull(combatants);
 
@@ -462,6 +473,7 @@ public static class MovementRules
         return combatants
             .Where(enemy => enemy.SideId != mover.SideId)
             .Where(enemy => enemy.IsActive && enemy.Turn.HasReaction)
+            .Where(enemy => VisionRules.CanSee(field, enemy, mover.SpaceAt(from)))
             .Where(enemy =>
             {
                 var reach = MeleeReachFeet(enemy);

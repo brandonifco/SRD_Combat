@@ -1,5 +1,6 @@
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
+using SRDCombat.Core.Dice;
 
 namespace SRDCombat.Core.Rules;
 
@@ -43,11 +44,12 @@ namespace SRDCombat.Core.Rules;
 /// </item>
 /// <item>
 /// <b>Poisoned</b> — Disadvantage on the creature's attack rolls, in
-/// <c>AttackRules.ResolveRollMode</c>. The SRD also imposes it on ability checks, and
-/// nothing in a fight rolls one: <c>SkillRules</c> is used at character resolution to
-/// work out bonuses and never during combat. So this is complete for every roll the
-/// engine makes today, and is the one entry here to revisit the moment an in-combat
-/// ability check exists.
+/// <c>AttackRules.ResolveRollMode</c>, and Disadvantage on its ability checks, in
+/// <see cref="AbilityCheckMode"/>. The "revisit the moment an in-combat ability check
+/// exists" note this entry used to carry is discharged: <c>Encounter.Escape</c> is that
+/// check, and <see cref="AbilityCheckMode"/> is the one place its mode and Frightened's
+/// are decided together, so the two conditions cannot disagree about what hampers a
+/// roll.
 /// </item>
 /// <item>
 /// <b>Incapacitated</b> — <c>Combatant.CanAct</c> is false, so the creature takes no
@@ -59,10 +61,12 @@ namespace SRDCombat.Core.Rules;
 /// </item>
 /// <item>
 /// <b>Blinded</b> — Advantage on attack rolls against it, Disadvantage on its own, in
-/// <c>AttackRules</c>. Its "automatically fail any ability check that requires sight" is
-/// complete by vacancy: the only check the engine rolls in a fight is the grapple
-/// Escape, which does not require sight. Revisit alongside Poisoned's note above the
-/// moment a sight-based check exists.
+/// <c>AttackRules</c>; both printed unconditionally on the condition and untouched by
+/// #672. Its "automatically fail any ability check that requires sight" is complete by
+/// vacancy today: the only check the engine rolls in a fight is the grapple Escape,
+/// which does not require sight — <see cref="AbilityCheckMode"/> does not gate on
+/// Blinded at all. Hide's Dexterity (Stealth) check (#673) will be the first check that
+/// does require sight, and is where this vacancy closes.
 /// </item>
 /// <item>
 /// <b>Charmed</b> — cannot attack the charmer or target it with a damaging effect. The
@@ -75,13 +79,18 @@ namespace SRDCombat.Core.Rules;
 /// </item>
 /// <item>
 /// <b>Frightened</b> — Disadvantage on attack rolls and ability checks "while the source
-/// of fear is within line of sight", and no willing movement closer to the source. The
-/// engine has no model of sight, so the source is read as always within line of sight
-/// while it is on the field, dead or alive — sight does not require the source to be
-/// breathing, and the hampering direction is the safe one while sight is unmodelled.
-/// "Closer" is judged at the destination: <c>Encounter.Move</c> refuses a destination
-/// nearer the source than the square the creature stands in, and does not judge the
-/// path between them.
+/// of fear is within line of sight" (#672: <see cref="FrightenedSourceInSight"/>, built
+/// on <see cref="VisionRules.CanSee(Combat.Battlefield, Combat.Combatant,
+/// Combat.Combatant)"/>), and no willing movement closer to the source, unconditionally
+/// — print carries no sight qualifier on "Can't Approach", so that clause did not move.
+/// A dead source is still in sight: the predicate qualifies the <em>viewer</em>
+/// (Frightened's bearer), not the target, and print does not end Frightened on the
+/// source's death, so a corpse on the field is seen like any other occupied square. A
+/// null or unresolvable <c>SourceId</c>, and a caller offering no battlefield, both read
+/// as in sight — the hampering default, and the direction the engine took wholesale
+/// before this predicate existed. "Closer" is judged at the destination:
+/// <c>Encounter.Move</c> refuses a destination nearer the source than the square the
+/// creature stands in, and does not judge the path between them.
 /// </item>
 /// <item>
 /// <b>Paralyzed</b> — brings Incapacitated, Speed 0, auto-fails Strength and Dexterity
@@ -106,9 +115,12 @@ namespace SRDCombat.Core.Rules;
 /// </item>
 /// </list>
 /// <para>
-/// Everything else is deliberately absent, and the absences are the point. Deafened and
-/// Invisible each need a model (hearing, sight) that does not exist. Until one does the
-/// rider is reported as not modelled rather than imposed as scenery.
+/// Everything else is deliberately absent, and the absences are the point. Deafened
+/// needs a hearing model that does not exist. Invisible needs more than #672's line of
+/// sight gives it — the "seeing a creature" half of sight (Heavily Obscured, and the
+/// target not Invisible), not the "line of sight" half this engine now models — and
+/// waits on #673. Until each has its model the rider is reported as not modelled
+/// rather than imposed as scenery.
 /// </para>
 /// </remarks>
 public static class ConditionRules
@@ -200,6 +212,69 @@ public static class ConditionRules
         ArgumentNullException.ThrowIfNull(combatant);
 
         return !combatant.HasCondition(ConditionType.Incapacitated) && !IsImmobile(combatant);
+    }
+
+    /// <summary>
+    /// Whether a Frightened bearer's source of fear is within its line of sight — the
+    /// gate on both of Frightened's Disadvantage clauses (#672). Callers only reach this
+    /// once they already know the bearer has Frightened; it answers "is the source in
+    /// sight", not "is the bearer Frightened".
+    /// </summary>
+    /// <remarks>
+    /// Three cases all read as in sight, the hampering default, because each is a way
+    /// of not knowing otherwise rather than a way of knowing the source is out of sight:
+    /// a Frightened with no recorded <c>SourceId</c>; a <c>SourceId</c> that does not
+    /// resolve to anyone in <paramref name="combatants"/> (left the field, or never
+    /// matched); and a caller offering no <paramref name="battlefield"/> or no
+    /// <paramref name="combatants"/> at all — the two-creature unit tests, which read
+    /// exactly as they did before this predicate existed. A dead source still resolves
+    /// and is still seen: <see cref="VisionRules.CanSee(Combat.Battlefield,
+    /// Combat.Combatant, Combat.Combatant)"/> qualifies the viewer (the bearer), not the
+    /// target, and print does not end Frightened on the source's death.
+    /// </remarks>
+    public static bool FrightenedSourceInSight(
+        Combatant bearer,
+        Battlefield? battlefield,
+        IReadOnlyCollection<Combatant>? combatants)
+    {
+        ArgumentNullException.ThrowIfNull(bearer);
+
+        if (bearer.ConditionState(ConditionType.Frightened) is not { SourceId: { } sourceId })
+        {
+            return true;
+        }
+
+        if (battlefield is null || combatants is null)
+        {
+            return true;
+        }
+
+        var source = combatants.FirstOrDefault(
+            candidate => string.Equals(candidate.Id, sourceId, StringComparison.Ordinal));
+
+        return source is null || VisionRules.CanSee(battlefield, bearer, source);
+    }
+
+    /// <summary>
+    /// The roll mode for an in-combat ability check — the one seam Escape, Hide (#673)
+    /// and Search (#674) all call, so none of them can decide what hampers a check
+    /// differently from the others. Poisoned hampers unconditionally; Frightened hampers
+    /// only while its source is within sight (<see cref="FrightenedSourceInSight"/>).
+    /// Neither stacks with the other — Advantage and Disadvantage never do — so this
+    /// only ever needs to know whether either applies, not how many do.
+    /// </summary>
+    public static RollMode AbilityCheckMode(
+        Combatant checker,
+        Battlefield? battlefield,
+        IReadOnlyCollection<Combatant>? combatants)
+    {
+        ArgumentNullException.ThrowIfNull(checker);
+
+        var hampered = checker.HasCondition(ConditionType.Poisoned)
+            || (checker.HasCondition(ConditionType.Frightened)
+                && FrightenedSourceInSight(checker, battlefield, combatants));
+
+        return hampered ? RollMode.Disadvantage : RollMode.Normal;
     }
 
     /// <summary>

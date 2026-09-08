@@ -465,11 +465,10 @@ public sealed partial class Encounter
         var useAthletics = athletics >= acrobatics;
 
         // Poisoned and Frightened both impose Disadvantage on ability checks —
-        // Frightened's "while the source of fear is within line of sight", which the
-        // engine reads as always; the reading is on ConditionRules.
-        var hampered = combatant.HasCondition(ConditionType.Poisoned)
-            || combatant.HasCondition(ConditionType.Frightened);
-        var mode = hampered ? RollMode.Disadvantage : RollMode.Normal;
+        // Frightened's "while the source of fear is within line of sight" (#672); the
+        // shared reading is ConditionRules.AbilityCheckMode, so Hide (#673) and Search
+        // (#674) cannot disagree with Escape about what hampers a check.
+        var mode = ConditionRules.AbilityCheckMode(combatant, Battlefield, _combatants);
         var roll = D20Test.Roll(_random, Math.Max(athletics, acrobatics), mode);
         var escaped = roll.Total >= difficultyClass;
 
@@ -1549,7 +1548,7 @@ public sealed partial class Encounter
             // The SRD is precise that the Opportunity Attack "occurs right before it
             // leaves your reach", so the attack resolves while the mover is still in the
             // square it is leaving.
-            var attackers = MovementRules.FindOpportunityAttackers(mover, from, step, _combatants);
+            var attackers = MovementRules.FindOpportunityAttackers(Battlefield, mover, from, step, _combatants);
 
             foreach (var attacker in attackers)
             {
@@ -1923,7 +1922,8 @@ public sealed partial class Encounter
             extraAdvantage: recklessAdvantage || targetIsReckless || packTactics || steadyAim || vexed || guided,
             extraDisadvantage: sapped || nextAttackDisadvantaged,
             combatants: _combatants,
-            cover: cover);
+            cover: cover,
+            battlefield: Battlefield);
 
         // "Make an attack roll against an enemy" — the first printed way to extend a
         // Rage, and it is the roll rather than the hit, so it is recorded here before
@@ -2283,6 +2283,14 @@ public sealed partial class Encounter
 
         attacker.Features.CleaveUsedThisTurn = true;
 
+        // No battlefield offered here (#672, Codex round 1): C1/C2's rewire is
+        // byte-flat only because the caller already refused Total Cover before
+        // reaching AttackRules.Resolve (Attack's own check, above) — an invariant
+        // this method never establishes for its own second target, since Cleave's
+        // whole gate is proximity and reach, not cover. Passing the battlefield here
+        // would let Dodge's sight check see a wall Cleave itself does not check for,
+        // silently drawing this bonus swing's second target into a rewire scoped to
+        // the primary attack path. Falls back to "not Blinded", exactly as before.
         var result = AttackRules.Resolve(_random, attacker, attack, second, combatants: _combatants);
 
         var swing = result.Hit

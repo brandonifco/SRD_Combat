@@ -72,7 +72,17 @@ public enum MovementMode
     Swim,
 }
 
-/// <summary>Special senses. Ordinary sight is not modelled — every creature has it.</summary>
+/// <summary>
+/// Special senses. Ordinary sight is <c>SRDCombat.Core.Rules.VisionRules</c>'s
+/// line-of-sight predicate (#671/#672), which every creature has and none of these
+/// names govern; these are the senses that see <em>past</em> ordinary sight's limits
+/// (through Blinded, in Darkness, past Invisible), and they are not yet carried into
+/// combat — a monster's <see cref="MonsterDefinition.Senses"/> never reaches a
+/// <c>Combatant</c> or its <c>CombatantStats</c> today. <c>VisionRules.HasOpenEyes</c>
+/// states this as its own reading: a Blinded viewer with Blindsight still fails there,
+/// because nothing here is consulted. Wiring one is #673's decision, when Invisible
+/// gives Blindsight and Truesight something to matter for.
+/// </summary>
 public enum SenseType
 {
     Blindsight,

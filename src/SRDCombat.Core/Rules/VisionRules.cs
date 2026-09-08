@@ -129,16 +129,30 @@ public static class VisionRules
     /// </summary>
     public static bool CanSee(Battlefield field, Combatant viewer, Combatant target)
     {
+        ArgumentNullException.ThrowIfNull(target);
+
+        return CanSee(field, viewer, target.Space);
+    }
+
+    /// <summary>
+    /// Whether a qualifying viewer has line of sight to a given space: any square of it
+    /// is seen. This is the space-shaped sibling of <see cref="CanSee(Battlefield,
+    /// Combatant, Combatant)"/>, for a caller that has a hypothetical
+    /// <see cref="CreatureSpace"/> rather than a live creature to ask about — #672's
+    /// Opportunity Attack reading judges the mover's space at the square it is leaving,
+    /// not wherever <see cref="Combatant.Space"/> has already moved to.
+    /// </summary>
+    public static bool CanSee(Battlefield field, Combatant viewer, CreatureSpace targetSpace)
+    {
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(viewer);
-        ArgumentNullException.ThrowIfNull(target);
 
         if (!HasOpenEyes(viewer))
         {
             return false;
         }
 
-        foreach (var square in target.Space.Squares())
+        foreach (var square in targetSpace.Squares())
         {
             if (CanSee(field, viewer, square))
             {
