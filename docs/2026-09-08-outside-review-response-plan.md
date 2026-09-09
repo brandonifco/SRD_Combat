@@ -241,7 +241,7 @@ measurement re-run") stays but is joined by a roles target.
 | D3 The grade names what it grades | #231, sequenced after #390's last shape | `Playable` reads every section, with the demotion table produced *first* and the `MonsterPoolTests` floor lowered with a transitional annotation, because #390 ratchets the same number up. Plus a doc sentence distinguishing *entry* completeness from *whole-creature* fidelity (the footprint gap is the example), and the four named behaviours — Nimble Escape, Undead Fortitude, Redirect Attack, Split — as the first four mechanics to model because they are the ones the review could name from a census |
 | D4 Bodies are the size print says | #429 (S4), #430 (S5), #449 | The flip and its inventory in one PR per #429's criterion 9, then the clients. The named new stall class (a Large creature wedged in generated terrain) gets its direct demonstration per the standing convention |
 | D5 Three enemy roles | #312, #543, #314, NEW-12 | NEW-12 states the target: before F4 exits, the pool fields at least one **healer/protector**, one **space controller**, and one **urgent-priority target** (a caster is the natural third). This is a *coverage* target for what the pool contains, not the top-down role taxonomy #543 ruled out (Brandon, 2026-08-27) — each creature's behaviour still follows from what it is, in #543's sense; the roles say only which kinds of creature must be present. Because it changes a phase exit, it is §3 decision 7; #312 admits the casters, #314 gives the policy Dodge/Disengage/retreat behind an `ITacticsPolicy` seam so two policies A/B on the same seeds — which also answers the review's "the same policy plays both sides" objection |
-| D6 Six unoffered classes | #315 | Recommend **cut for v1.0** (§3 decision 4). Twelve classes at one-to-nine executing features each is the count-chasing the review warns against |
+| D6 Six unoffered classes | #315 | **Build them** (§3 decision 4, Brandon 2026-09-09, overruling the plan's recommendation to cut). #315 tracks the roster; one designer-spec'd slice per class, after the offered-but-thin classes (D1, #717) — the count-chasing the review warns against is answered by sequencing and spec-from-print, not by cutting |
 
 ### Track E — Evidence that can go red (F5, continuous)
 
@@ -256,7 +256,7 @@ the mechanism issue they answer.
 | E3 Independent rule exemplars | NEW-13 | A small hand-written fixture set — twenty or so stat-block entries and five spells with expectations **derived from the printed page by `srd-lookup`, not from the parser** — so the corpus tests' "parser and fixtures agree" has one lane where they cannot agree on the same mistake. Grows only when a misattribution is found, the same rule as the page fixtures |
 | E4 A replay bundle | NEW-14 | `--bug-report` (both clients) writes save + seed + content version + build hash + the fight number into one file, and CLAUDE.md's claim is rewritten to what that bundle actually reproduces. Recording the action sequence inside a fight is **not** in scope and **no issue owns it**: #481 captures a fight's *state* as a scenario, which the bundle can reuse, not the player's choices. Action recording stays deferred, and the narrowed claim says so |
 | E5 Suite time | #694 | Unchanged; the reviewer confirms its premise |
-| E6 Contract before history | NEW-15 | A convention, not a purge: a `///` comment leads with the current reading and moves incident narrative longer than a paragraph to `docs/history/` with a link. Applied only when a file is touched, never as a sweep; the five files the review named (Encounter partials, `FightScreen`, `EntryMechanicsParser`, `Combatant`, `SimpleTacticsPolicy`) are where it will first apply, not a pass of their own. Waits on decision 6. 37% comment lines is not the problem; a reader unable to find the rule under the story is |
+| E6 Contract before history | NEW-15 | A convention, not a purge: a `///` comment leads with the current reading and moves incident narrative longer than a paragraph to `docs/history/` with a link. Applied only when a file is touched, never as a sweep; the five files the review named (Encounter partials, `FightScreen`, `EntryMechanicsParser`, `Combatant`, `SimpleTacticsPolicy`) are where it will first apply, not a pass of their own. Adopted (decision 6, 2026-09-09; #715). 37% comment lines is not the problem; a reader unable to find the rule under the story is |
 
 ### Track F — A stranger plays five fights (F6, one item pulled forward)
 
@@ -266,7 +266,7 @@ the review's point is that **the evidence it produces is needed by C5, not after
 
 | Item | Issue | Note |
 | --- | --- | --- |
-| F1 A tester build | #326 (first slice) | The workflow audit's "Considered and rejected" list holds "Releases/tags now — F6's scope, gated behind F1–F5. Nothing is distributed yet" (`docs/2026-08-29-github-workflow-audit.md:108`); this re-proposes it on new evidence — C5's go/no-go wants a stranger's run report, which no clone-and-build path produces — and is §3 decision 5. If taken: a Linux build (Windows if the Godot export is already configured) of `main` after Track B, with `--seed` and the replay bundle from E4, distributed as a release asset, not a clone. The attribution screen (#323) and the art-licence line (#324) land with it because a distributed binary needs them; the masters strategy (#325) does not block it |
+| F1 A tester build | #326 (first slice) | The workflow audit's "Considered and rejected" list holds "Releases/tags now — F6's scope, gated behind F1–F5. Nothing is distributed yet" (`docs/2026-08-29-github-workflow-audit.md:108`); this re-proposes it on new evidence — C5's go/no-go wants a stranger's run report, which no clone-and-build path produces — and is §3 decision 5. Taken (decision 5, 2026-09-09; #716): a **Windows** build, with Linux alongside on the same export pipeline, of `main` after Track B, with `--seed` and the replay bundle from E4, distributed as a release asset, not a clone. The attribution screen (#323) and the art-licence line (#324) land with it because a distributed binary needs them; the masters strategy (#325) does not block it |
 | F2 A run-report template | NEW-16 | What the tester decided and why, where they were confused, what they thought a control did versus what it did, and whether they wanted another fight — recorded per fight, not per run. Used by C5's human run and by every F3 "human run report" acceptance criterion, which today has no form |
 | F3 One outside player on the five-fight slice | C5 | The go/no-go evidence for extending C1–C3 to cycles 2–6 |
 
@@ -275,14 +275,15 @@ the review's point is that **the evidence it produces is needed by C5, not after
 ```
 week 1     A1 A2 A3 A4-label A5 A6            (parallel, all small)
            C0: Brandon's played run begins
-weeks 2–3  B1 → B2 → B3 (#303, #301, #302) → B4 → B5     A4-aura (architect design → engineer)
-           D1, D2, E3 as capacity allows (no dependency on B); E6 once decision 6 is taken
-after C0   decisions 1–7 in §3 → C1 → C2 → C3 → C4        D4 (#429 is not paused; #551 struck its pacing gate)
-           E4; F1 if decision 5, prepared against post-B main
+weeks 2–3  B1 → B2 → B3 (#303, #301, #302) → B4 → B5     A4-aura (#713: architect design → engineer)
+           D1 (#717), D2, E3, E6 (#715) as capacity allows (no dependency on B)
+after C0   C0's report un-pauses #306–#311 (decision 2) → C1 → C2 → C3 → C4
+           D4 (#429 is not paused; #551 struck its pacing gate)
+           E4; F1 (#716, Windows) prepared against post-B main
            D3's demotion table (a census, not a pool change) after #390's last shape
 C5         five-fight slice + F2 template + F3 tester → go/no-go → cycles 2–6 → F3 exit re-baseline
-then       D3's grade flip (a pool change, so after the checkpoint), D5 if decision 7,
-           F4 exit, F5 push, F6 ship (second outside review + played run)
+then       D3's grade flip (a pool change, so after the checkpoint), D5 (#714), D6 (#315, one
+           class per slice), F4 exit, F5 push, F6 ship (second outside review + played run)
 ```
 
 What this sequencing deliberately does not do: it does not start a rules-engine
