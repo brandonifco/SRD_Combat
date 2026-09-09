@@ -528,18 +528,35 @@ public partial class PlayMode : FightScreen
         }
     }
 
-    /// <summary>How long the pointer must rest before a hint appears, in seconds.</summary>
-    private const double HoverDelaySeconds = 2;
+    /// <summary>
+    /// How long the pointer must rest before a hint appears, in seconds (#304). Was 2 —
+    /// "an eternity mid-fight" per the review that filed the issue — dropped to about
+    /// half a second now that #726/#728 made <see cref="RefreshAfterAction"/>'s own
+    /// highlight one <see cref="MovementRules.Reachable"/> call (sub-millisecond per
+    /// hover), which is what the old delay was originally covering for. The
+    /// terrain-vocabulary half of #304 — what an empty square's hint says — is a
+    /// separate, later slice; this constant is the whole of this one.
+    /// </summary>
+    private const double HoverDelaySeconds = 0.5;
 
     /// <summary>How far the pointer may drift and still count as resting.</summary>
     private const float HoverJitterPixels = 3;
+
+    /// <summary>
+    /// Whether <paramref name="hoverElapsedSeconds"/> of rest is enough to raise a hint
+    /// (#304). Extracted from <see cref="AdvanceHover"/> so the threshold itself — not
+    /// merely that some delay exists — is pinned by <c>SRDCombat.Viewer.Tests</c>
+    /// without a live Godot node.
+    /// </summary>
+    internal static bool HoverDelayElapsed(double hoverElapsedSeconds) =>
+        hoverElapsedSeconds >= HoverDelaySeconds;
 
     /// <summary>
     /// Counts the pointer's rest and raises a hint once it has been still long enough.
     /// </summary>
     private void AdvanceHover(double delta)
     {
-        if (_hoverElapsed >= HoverDelaySeconds)
+        if (HoverDelayElapsed(_hoverElapsed))
         {
             // Already asked and answered. The hint is *not* re-read every frame: it is
             // taken once when the pause completes, so it cannot flicker as the fight
@@ -549,7 +566,7 @@ public partial class PlayMode : FightScreen
 
         _hoverElapsed += delta;
 
-        if (_hoverElapsed < HoverDelaySeconds)
+        if (!HoverDelayElapsed(_hoverElapsed))
         {
             return;
         }
