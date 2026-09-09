@@ -233,6 +233,75 @@ public class RealCharacterTests
     }
 
     [Fact]
+    public void SpiritGuardiansCastsAsAOneShotSweepNotAPersistentAura()
+    {
+        // #706: Spirit Guardians prints a persistent 15-foot Emanation — Speed halved
+        // for any creature inside it, and a Wisdom save whenever a creature enters it or
+        // ends its turn there, once per turn — but the engine resolves it as a single
+        // save-and-damage sweep at the moment of casting and nothing more: no persistent
+        // object, no repeat saves, no Speed change. PreparableSpells.Approximation names
+        // this gap so both creation flows can print it; this test pins today's shape as
+        // the shape it is.
+        //
+        // THIS TEST MUST GO RED THE DAY THE AURA LANDS (the plan's NEW-5, routed to
+        // architect): a real persistent Emanation would deal further damage to a
+        // creature still standing in it at the end of its own turn, and would halve its
+        // Speed for as long as it stayed there — both assertions below would then fail,
+        // which is exactly the signal that the approximation and its caveat can come out.
+        var sheet = Build("class.cleric", "species.human", "background.acolyte", 5);
+        var cleric = Combatant("Cleric", sheet, 0, 0, [Content.SpellsById["spell.spirit-guardians"]]);
+
+        // Adjacent — 5 ft., well inside the printed 15-foot Emanation — and never moved
+        // for the rest of the test, so it stays inside it the whole time.
+        var goblin = Spawn("goblin", "monster.goblin-warrior", 0, 1);
+
+        var encounter = Encounter.Start(
+            new Battlefield(10, 10),
+            [cleric, goblin],
+            new SeededRandomSource(2026));
+
+        // Two combatants only, so whichever goes first, waiting for the cleric's turn
+        // costs at most one enemy turn — and CastSpell below requires it to be the
+        // cleric's turn to begin with.
+        while (encounter.ActiveCombatant?.Id != cleric.Id && !encounter.IsComplete)
+        {
+            SimpleTacticsPolicy.TakeTurn(encounter);
+        }
+
+        Assert.Null(encounter.CastSpell("spell.spirit-guardians", goblin));
+
+        // The one-shot sweep already landed: some damage, win or lose the save.
+        Assert.True(goblin.CurrentHitPoints < goblin.Stats.MaximumHitPoints);
+        var hitPointsAfterCast = goblin.CurrentHitPoints;
+
+        // Four more turn boundaries — two full round-trips with only these two
+        // combatants — calling EndTurn directly (not the tactics policy) so the goblin
+        // never chooses to leave the Emanation on its own; today's engine has no
+        // mechanism that would move it out from under the aura either way.
+        int? goblinMovementOnItsOwnTurn = null;
+
+        for (var i = 0; i < 4; i++)
+        {
+            encounter.EndTurn();
+
+            if (encounter.ActiveCombatant?.Id == goblin.Id)
+            {
+                goblinMovementOnItsOwnTurn = goblin.Turn.MovementFeet;
+            }
+        }
+
+        // No repeat saves, so no further damage from standing in the Emanation across
+        // four turn boundaries.
+        Assert.Equal(hitPointsAfterCast, goblin.CurrentHitPoints);
+
+        // No Speed change either: the printed "Any other creature's Speed is halved in
+        // the Emanation" does not execute, so the goblin's turn begins with its full,
+        // unhalved Speed despite standing inside it the whole time.
+        Assert.NotNull(goblinMovementOnItsOwnTurn);
+        Assert.Equal(goblin.Stats.SpeedFeet, goblinMovementOnItsOwnTurn);
+    }
+
+    [Fact]
     public void ARealWizardsSaveDifficultyClassMatchesTheRules()
     {
         var sheet = Build("class.wizard", "species.gnome", "background.sage", 5, armorId: null);

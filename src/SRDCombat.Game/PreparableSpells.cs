@@ -6,7 +6,9 @@ namespace SRDCombat.Game;
 
 /// <summary>
 /// The spells character creation may offer: a curated allowlist, per class, of spells
-/// verified by hand against print to execute faithfully.
+/// verified by hand against print to execute faithfully — with one named exception. The
+/// allowlist guarantees a clause-by-clause read against print; <see cref="Approximation"/>
+/// is where that guarantee is qualified rather than silently broken.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -65,6 +67,11 @@ namespace SRDCombat.Game;
 /// made against it ... has Advantage" rider now executes whole, structured at
 /// extraction and spent by the next roll against the lit target on the caster's
 /// turn-stamped clock.)
+/// This paragraph used to be the only place the gap was written down — a maintainer's
+/// note, not a player's. #706 made it a fact a client can print: <see cref="Approximation"/>
+/// carries the same reading, and both creation flows (<c>CreateMode.DescribeSpell</c>,
+/// <c>PartyCreator</c>'s take-prompt) append it at the point of choice, the way a species
+/// trait's "(not yet implemented)" already does.
 /// </para>
 /// </remarks>
 public static class PreparableSpells
@@ -124,8 +131,28 @@ public static class PreparableSpells
             .ToArray();
     }
 
-    /// <summary>Whether this spell is verified to execute faithfully for this class.</summary>
+    /// <summary>
+    /// Whether this spell is on the allowlist for this class — verified to execute
+    /// faithfully, except the one entry <see cref="Approximation"/> names.
+    /// </summary>
     public static bool Allows(string classId, string spellId) =>
         IdsByClassId.TryGetValue(classId, out var ids)
         && ids.Contains(spellId, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The printed-vs-executed gap for an allowlisted spell, or null for every entry
+    /// this list actually verifies clause-by-clause. Spirit Guardians is the one
+    /// exception today (see the class remarks): the printed spell is a persistent
+    /// 15-foot Emanation that halves Speed inside it and forces a Wisdom save whenever
+    /// a creature enters it or ends its turn there, while the engine casts it as a
+    /// single save-and-damage sweep at the moment of casting and does nothing further —
+    /// no repeat saves, no Speed change, no persistent object at all. Both creation
+    /// flows print this text at the point of choice rather than leaving the gap on a
+    /// doc comment only a maintainer reads.
+    /// </summary>
+    public static string? Approximation(string spellId) =>
+        string.Equals(spellId, "spell.spirit-guardians", StringComparison.OrdinalIgnoreCase)
+            ? "Approximated: cast as a one-time area strike, not the printed persistent " +
+              "aura — no repeat saves on later turns, and Speed is not halved inside it."
+            : null;
 }
