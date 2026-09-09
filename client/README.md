@@ -561,9 +561,11 @@ behind the throw, pinned by `CaptureOutcomeTests` with no Godot engine at all), 
 tightened across three more #719 review rounds — see below for exactly which predicates
 each round found missing). `ProbeExpectation` (`client/ProbeExpectation.cs`) has ten
 shapes, over a plain `ProbeSnapshot`: `FocusIs` (the focus layer expected), `NoticeCodeIs`
-(the refusal code expected, most often "no refusal at all" — `null`), `NoticeCodeStartsWith`
-(a refusal code expected to belong to a whole family, e.g. every code `Encounter.CastSpell`
-itself raises shares a `"spell."` prefix), `Unchanged<T>` (a resource — an actor's
+(the refusal code expected, most often "no refusal at all" — `null`), `NoticeCodeIsOneOf`
+(a refusal code expected to belong to a curated set — not a shared prefix: no prefix
+actually covers everything `Encounter.CastSpell` or `Encounter.Attack` can return,
+`target.unseen` and the Action/Bonus-Action/Reaction "already spent" codes included,
+#719's fourth review), `Unchanged<T>` (a resource — an actor's
 position, hit points, movement, and every resource its turn's economy tracks — the step's
 own action must not have touched), `Changed<T>` (the mirror: a resource — the active
 combatant's `Id`, the round — the step's own action must actually have moved),
@@ -588,13 +590,13 @@ effect, per step:
 | `play-1b-quit-confirm` | `FocusIs(QuitConfirm)` |
 | `play-2-stand-up-not-offered` | `NoticeCodeIs(null)`, `FocusIs(Board)`, and `Unchanged` on the commanded actor's position, hit points, movement, Action, Bonus Action, Reaction and remaining attacks — see below |
 | `play-2b-hint` | `NonEmpty` on the hovered button's *registered* hint (a broken registration is a fault before it is ever compared against anything), then `EqualsExpected` — the hint text actually produced equals that registered hint |
-| `play-2c-tab-armed` | `FocusIs(Targeting)` |
+| `play-2c-tab-armed` | `FocusIs(Targeting)` and `EqualsExpected` (the first Tab armed `TargetKind.Attack` specifically, not a routing regression's Potion or spell); with more than one *visible* enemy, `Changed` on the aimed target after the second Tab (with only one, `ReportSkip` — nothing to cycle to) |
 | `play-3-moved` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `EqualsExpected` (actor position == the clicked square), `Decreased` (movement remaining) |
-| `play-4-attacked` | `FocusIs(Board)`, and `AnyOf` — the combat log gained an entry (the attack resolved) *or* a notice was printed (the attack was refused); the attack itself can legitimately refuse (out of reach after a short move), but doing *nothing* is a fault |
+| `play-4-attacked` | the target is the nearest *visible* enemy (`PartyVision`, not `NearestEnemyOf`'s fog-blind pick); `EqualsExpected` that `TokenAt` agrees before the click; after it, `FocusIs(Board)` and `AnyOf` — a log entry naming both the actor and the target, or a refusal from Attack's own curated code set; the attack can legitimately refuse, but doing nothing (or an unrelated action) is a fault |
 | `play-5-feature` | none — optional coverage, `ReportSkip` when no second-row feature exists; can legitimately refuse when it does |
 | `play-6-turn-ended` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `Changed` (the active combatant's `Id` or the round — `Id`, not `Name`: two same-named combatants acting consecutively must not read as "no change") |
 | `play-7-spell-menu` | availability checked first (`ButtonOffered("Cast")`, `ReportSkip` if not this turn); when offered, `FocusIs(SpellMenu)` — a fault, not a skip, if Cast was offered and still failed to open it |
-| `play-8-cast` | first, the armed `Targeting` layer itself is `TargetKind.Spell` with the chosen spell (a menu row that armed an attack instead would let that attack's own evidence pass for the cast's — checked before the click that could exploit it); then `FocusIs(Board)` and `AnyOf` evidence attributed to *that spell specifically* — a new log entry naming it, or a `NoticeCodeStartsWith("spell.")` refusal; a spell menu confirmed open but showing zero rows is a fault, not unavailable coverage |
+| `play-8-cast` | `Armed.Spell.Id` equals the spell row 0 actually represents (`CastableSpells(caster)`, recomputed the same way `DrawSpellMenu` filled the row — not merely "some spell got armed"); then `FocusIs(Board)` and `AnyOf` evidence attributed to that spell specifically — a new log entry naming it, or a refusal from `NoticeCodeIsOneOf(CastSpellRefusalCodes)` (curated from the engine, not a `"spell."` prefix — `target.unseen` and the shared Action/Bonus-Action/Reaction codes do not start with it); a spell menu confirmed open but showing zero rows is a fault, not unavailable coverage |
 | `play-9-attack-menu` | availability checked first (`ButtonOffered("Attack")`; not offered this frame just loops to try again, no skip); when offered, `FocusIs(AttackMenu)` — a fault if it fails to open |
 | `run-9-outcome-card` | gated by `_focus.Holds<Outcome>()` before capture; three outcomes distinguished, not two — still running when the safety budget runs out is `ReportSkip` (the #180 stall guard below then faults on it separately), completed-and-shown is fine, and completed-with-Outcome-never-displayed (the old `HandleFightEnd` bypass) is a fault of its own, never silently accepted on the way to `run-9-after-fight` |
 | `run-9-after-fight` | the play-out loop faults if it exhausts its safety budget still mid-fight, rather than capturing that as "after the fight" (#180's own shape) |

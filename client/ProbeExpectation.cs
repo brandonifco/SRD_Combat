@@ -69,17 +69,28 @@ internal abstract record ProbeExpectation
     }
 
     /// <summary>
-    /// A refusal code the step expects to belong to a whole family, not one exact code —
-    /// every refusal <c>Encounter.CastSpell</c> itself raises shares a <c>"spell."</c>
-    /// prefix (#719, third review: attributing <c>play-8-cast</c>'s refusal evidence to
-    /// the cast specifically, not to whatever else might have printed a notice).
+    /// A refusal code the step expects to belong to a curated set, not one exact code.
     /// </summary>
-    internal sealed record NoticeCodeStartsWith(string Prefix) : ProbeExpectation
+    /// <remarks>
+    /// Replaces an earlier <c>NoticeCodeStartsWith("spell.")</c> (#719, third review),
+    /// found false at the fourth: <c>Encounter.CastSpell</c> can return
+    /// <c>target.unseen</c> (Concealed's shared mechanism, #673 — reachable from a
+    /// Blinded caster targeting an ally-only-visible enemy) and the
+    /// Action/Bonus-Action/Reaction "already spent" codes shared with every other
+    /// action, none of which start with <c>"spell."</c> — so the prefix would have
+    /// wrongly faulted a probe run that hit one of those, exactly the legitimate-refusal
+    /// shape this predicate exists not to reject. The set is curated from the engine's
+    /// own source (<c>PlayMode.Probe.cs</c>'s <c>AttackRefusalCodes</c> and
+    /// <c>CastSpellRefusalCodes</c>, each citing where every code in it comes from) —
+    /// not derived automatically, and not shrunk to a shared prefix that does not
+    /// actually hold.
+    /// </remarks>
+    internal sealed record NoticeCodeIsOneOf(IReadOnlyCollection<string> Codes) : ProbeExpectation
     {
         internal override string? Failure(ProbeSnapshot snapshot) =>
-            snapshot.NoticeCode is { } code && code.StartsWith(Prefix, StringComparison.Ordinal)
+            snapshot.NoticeCode is { } code && Codes.Contains(code)
                 ? null
-                : $"expected notice code to start with '{Prefix}', got "
+                : $"expected notice code to be one of [{string.Join(", ", Codes)}], got "
                     + $"{snapshot.NoticeCode ?? "(none)"} ({snapshot.Notice ?? "no notice printed"})";
     }
 

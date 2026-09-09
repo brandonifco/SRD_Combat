@@ -60,11 +60,31 @@ public class CaptureOutcomeTests
 
             if (thrown is null)
             {
-                // Some environments (root, a filesystem that ignores the mode bit)
-                // do not enforce this — nothing real to feed through in that case;
-                // the synthetic-error tests above still pin the decision itself.
-                return;
+                // Root, or a filesystem that does not enforce the mode bit, would not
+                // refuse this write — nothing real to feed through in that case. Made
+                // explicit rather than a silent return (#719, fifth review): a bare
+                // `return` here reads identically to "every assertion below passed",
+                // which none of them ran to prove. Xunit.Sdk.SkipException.ForSkip is
+                // xunit 2.9.3's own dynamic-skip primitive, but verified (TRX output)
+                // to report as Failed rather than Skipped under this project's actual
+                // pinned pair — xunit 2.9.3 core with xunit.runner.visualstudio 3.1.5,
+                // built for xunit v3's protocol — so a real Skip never reaches the
+                // gate as anything but green-if-silent. Assert.Fail is the mechanism
+                // that is actually honest here: loud and explicit, never a silent
+                // pass, on a runner where a true Skip is not available.
+                Assert.Fail(
+                    "the write into a chmod-555 directory unexpectedly succeeded — running as root, "
+                        + "or on a filesystem that does not enforce the mode bit.");
             }
+
+            // The real failure this write hit, specifically — not any exception at all
+            // (#719, fifth review): a coincidental, unrelated throw must not be mistaken
+            // for the permission refusal this test exists to demonstrate.
+            Assert.True(
+                thrown is UnauthorizedAccessException or IOException,
+                $"expected the write to fail with a permission error (UnauthorizedAccessException or "
+                    + $"IOException), got {thrown.GetType().Name}: {thrown.Message}");
+            Assert.Contains(path, thrown.Message);
 
             // Image.SavePng reports exactly Error.FileCantOpen for this shape —
             // confirmed live in the PR's own negative demonstration against a

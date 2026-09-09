@@ -277,35 +277,47 @@ public class ProbeExpectationTests
     }
 
     [Fact]
-    public void NoticeCodeStartsWithPassesWhenTheCodeHasThatPrefix()
+    public void NoticeCodeIsOneOfPassesWhenTheCodeIsInTheSet()
     {
-        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "Guiding Bolt needs a creature to target.  [spell.needs_target]");
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "Sacred Flame needs a creature to target.  [spell.needs_target]");
 
-        Assert.Null(new ProbeExpectation.NoticeCodeStartsWith("spell.").Failure(snapshot));
+        Assert.Null(new ProbeExpectation.NoticeCodeIsOneOf(["spell.needs_target", "target.unseen"]).Failure(snapshot));
     }
 
     [Fact]
-    public void NoticeCodeStartsWithFailsAndNamesThePrefixAndTheActualCodeWhenItDiffers()
+    public void NoticeCodeIsOneOfPassesForACodeThatWouldFailAPrefixCheck()
     {
-        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "Brenna has already used its action  [action.spent]");
+        // The named instance this predicate replaced NoticeCodeStartsWith for (#719,
+        // fourth review): target.unseen is a real code Encounter.CastSpell can return
+        // (a Blinded caster targeting an enemy only another party member can see), and
+        // it does not start with "spell." — a prefix check would have wrongly rejected
+        // this legitimate refusal as if it were unrelated evidence.
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "The Goblin cannot be seen by Brenna.  [target.unseen]");
 
-        // The named instance this predicate closes (#719, third review): a weapon
-        // attack's own refusal must not be mistaken for evidence of a cast.
-        var failure = new ProbeExpectation.NoticeCodeStartsWith("spell.").Failure(snapshot);
+        Assert.Null(new ProbeExpectation.NoticeCodeIsOneOf(["spell.needs_target", "target.unseen"]).Failure(snapshot));
+    }
+
+    [Fact]
+    public void NoticeCodeIsOneOfFailsAndListsTheSetAndTheActualCodeWhenItIsNotAMember()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "Brenna has already used its Reaction  [reaction.spent]");
+
+        var failure = new ProbeExpectation.NoticeCodeIsOneOf(["spell.needs_target", "target.unseen"]).Failure(snapshot);
 
         Assert.NotNull(failure);
-        Assert.Contains("spell.", failure);
-        Assert.Contains("action.spent", failure);
+        Assert.Contains("spell.needs_target", failure);
+        Assert.Contains("target.unseen", failure);
+        Assert.Contains("reaction.spent", failure);
     }
 
     [Fact]
-    public void NoticeCodeStartsWithFailsWhenNoNoticeWasPrinted()
+    public void NoticeCodeIsOneOfFailsWhenNoNoticeWasPrinted()
     {
         var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
 
-        var failure = new ProbeExpectation.NoticeCodeStartsWith("spell.").Failure(snapshot);
+        var failure = new ProbeExpectation.NoticeCodeIsOneOf(["spell.needs_target"]).Failure(snapshot);
 
         Assert.NotNull(failure);
-        Assert.Contains("spell.", failure);
+        Assert.Contains("spell.needs_target", failure);
     }
 }

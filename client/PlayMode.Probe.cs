@@ -137,13 +137,46 @@ public partial class PlayMode : FightScreen
         // nearest enemy, the second walks the ring — then Esc backs out, so the rest
         // of the probe starts from the same clean turn it always did.
         Press(Key.Tab);
+
+        // FocusIs(Targeting) alone does not say *which* action Tab armed (#719, fourth
+        // review) — a routing regression that armed a Potion or a spell instead of an
+        // attack would still land on the Targeting layer and pass unnoticed.
+        // PlayFocusRouter's own documented contract is that a cold Tab arms the Attack
+        // specifically.
+        Assert(
+            "play-2c-tab-armed",
+            new ProbeExpectation.FocusIs(typeof(PlayFocus.Targeting)),
+            new ProbeExpectation.EqualsExpected<TargetKind?>("what the first Tab armed", Armed?.Kind, TargetKind.Attack));
+
+        var cursorAfterFirstTab = _cursor;
+        var visibleEnemyCount = CommandedCombatant() is { } tabActive ? VisibleEnemiesOf(tabActive).Count : 0;
+
         Press(Key.Tab);
-        Assert("play-2c-tab-armed", new ProbeExpectation.FocusIs(typeof(PlayFocus.Targeting)));
+
+        if (visibleEnemyCount > 1)
+        {
+            // The second Tab is documented to "walk the ring" — with more than one
+            // visible enemy to walk to, the aimed target must actually have moved, or
+            // the second press did nothing (#719, fourth review: FocusIs(Targeting)
+            // alone cannot tell "cycled" from "did nothing", since a no-op leaves the
+            // same layer up).
+            Assert(
+                "play-2c-tab-armed",
+                new ProbeExpectation.Changed<GridPosition?>("the aimed target", cursorAfterFirstTab, _cursor));
+        }
+        else
+        {
+            // Only one visible enemy — the ring has nothing else to walk to, and the
+            // cursor staying put is correct, not a fault. Optional coverage, marked as
+            // such: the probe does not control how many enemies a board offers.
+            ReportSkip(directory, "play-2c-tab-cycled", "only one visible enemy — nothing for the second Tab to cycle to");
+        }
+
         await CaptureFrame(Path.Combine(directory, "play-2c-tab-armed.png"));
         Press(Key.Escape);
 
         if (CommandedCombatant() is { } active
-            && NearestEnemyOf(active) is { } target)
+            && NearestVisibleEnemyOf(active) is { } target)
         {
             if (_reachable.Count > 0)
             {
@@ -178,32 +211,49 @@ public partial class PlayMode : FightScreen
 
             var logCountBeforeAttack = _encounter?.Log.Count ?? 0;
 
+            // #719, fourth review: NearestEnemyOf used to pick the geometrically
+            // nearest enemy regardless of fog — a fog-hidden "nearest enemy" makes
+            // TokenAt treat the clicked square as empty, and the click below becomes a
+            // MOVE instead of an attack, whose own log entry satisfied the old "any log
+            // growth" check just as well as a real attack would have.
+            // NearestVisibleEnemyOf only ever offers a target the party can see; this
+            // assertion is the independent check that TokenAt — the exact function the
+            // real click handler consults — agrees, before the click that a mismatch
+            // could exploit is ever sent.
+            Assert(
+                "play-4-attacked",
+                new ProbeExpectation.EqualsExpected<Combatant?>("the token at the target's square", TokenAt(target.Position), target));
+
             Click(CentreOf(target.Position));
 
-            // Unlike the move above, this bare click's own attack can legitimately
-            // refuse (out of reach after a short move, no attack that reaches this
-            // target) — refusals included is documented, working-as-intended coverage
-            // here, the same as the feature click below. FocusIs(Board) alone is not
-            // evidence anything happened, though (#719, second review): deleting the
-            // click's own handler entirely would still leave the board uncovered, so
-            // it passed just as well as a real attack. AnyOf requires actual proof the
-            // click did something — the combat log gained an entry (a resolved attack)
-            // or a notice was printed (a refusal) — never neither.
+            // The attack itself can still legitimately refuse (out of reach after a
+            // short move, Total Cover, and so on) — refusals included is documented,
+            // working-as-intended coverage here, the same as the feature click below.
+            // FocusIs(Board) alone is not evidence anything happened (#719, second
+            // review): deleting the click's own handler entirely would still leave the
+            // board uncovered. Nor is "the log grew" alone evidence this action
+            // happened (#719, fourth review): an unrelated action — the move above,
+            // say — would satisfy it too. The evidence below is attributed to this
+            // attack specifically: a log entry naming both the actor and the target, or
+            // a refusal from Attack's own curated code set.
             Assert(
                 "play-4-attacked",
                 new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
                 new ProbeExpectation.AnyOf(
-                    "evidence the attack resolved or was refused",
+                    $"evidence the attack on {target.Name} resolved or was refused",
                     [
-                        new ProbeExpectation.Changed<int>("the combat log length", logCountBeforeAttack, _encounter?.Log.Count ?? 0),
-                        new ProbeExpectation.NoticePresent("the attack"),
+                        new ProbeExpectation.EqualsExpected<bool>(
+                            $"a log entry naming {active.Name} and {target.Name}",
+                            LogGrewNaming(logCountBeforeAttack, active.Name, target.Name),
+                            true),
+                        new ProbeExpectation.NoticeCodeIsOneOf(AttackRefusalCodes),
                     ]));
             await CaptureFrame(Path.Combine(directory, "play-4-attacked.png"));
         }
         else
         {
-            ReportSkip(directory, "play-3-moved", "the first commanded turn had no living enemy to walk toward");
-            ReportSkip(directory, "play-4-attacked", "the first commanded turn had no living enemy to attack");
+            ReportSkip(directory, "play-3-moved", "the first commanded turn had no visible living enemy to walk toward");
+            ReportSkip(directory, "play-4-attacked", "the first commanded turn had no visible living enemy to attack");
         }
 
         // A feature if this character brought one — Cunning Dash succeeds after a move,
@@ -276,23 +326,26 @@ public partial class PlayMode : FightScreen
 
                 if (_menuRows.Count > 0)
                 {
+                    // _menuRows carries only a rectangle and a delegate (#505), not the
+                    // spell that filled it — DrawSpellMenu fills both in the same pass,
+                    // over CastableSpells(caster) in order, so index 0 there is index 0
+                    // here (the same recomputation RunSlotMenuProbe already relies on).
+                    var expectedSpell = CastableSpells(caster).First();
+
                     Click(_menuRows[0].GetCenter());
 
-                    // #719, third review: row 0's own Action is opaque (_menuRows
-                    // carries a rectangle and a delegate, not the spell that filled
-                    // it — #505), so nothing above proves it armed a *spell* at all.
-                    // If ChooseSpell or DrawSpellMenu ever mis-routed row 0 onto an
-                    // attack instead, the very next click would run the attack
-                    // handler, and its own log entry or "client.no_attack" refusal
-                    // would satisfy an evidence check just as well as a real cast —
-                    // exactly the shape that let a weapon attack pass as this step.
-                    // Checked here, before the click that could exploit it, rather
-                    // than inferred afterward from what happened to succeed.
-                    if (Armed is not { Kind: TargetKind.Spell, Spell: { } armedSpell })
+                    // #719, third and fourth review: confirming *some* spell armed is
+                    // not enough — a menu that resolved a different spell than the one
+                    // it displayed at row 0 would still pass. Armed.Spell.Id is checked
+                    // against expectedSpell.Id directly, before the click that could
+                    // exploit a mismatch is ever sent.
+                    if (Armed is not { Kind: TargetKind.Spell, Spell: { } armedSpell }
+                        || armedSpell.Id != expectedSpell.Id)
                     {
                         throw new InvalidOperationException(
-                            "probe: required step 'play-8-cast' failed — the spell menu's first row "
-                                + "did not arm TargetKind.Spell before the target was clicked.");
+                            $"probe: required step 'play-8-cast' failed — the spell menu's first row "
+                                + $"({expectedSpell.Name}) did not arm that spell (armed: "
+                                + $"{Armed?.Spell?.Name ?? "nothing"}).");
                     }
 
                     var logCountBeforeCast = _encounter?.Log.Count ?? 0;
@@ -300,19 +353,17 @@ public partial class PlayMode : FightScreen
                     Click(CentreOf(victim.Position));
 
                     // Casting itself can still legitimately refuse (out of range, no
-                    // valid target) the same way the attack above can — ClearPending
-                    // runs whether the cast lands or is refused, so the focus popping
-                    // back to the board is one thing this asserts unconditionally.
-                    // The evidence below is attributed to *this spell specifically*
-                    // (#719, third review), not just "something happened": either a
-                    // log entry appended after the click names the spell by its
-                    // printed name (Encounter.Casting's own narration, "{caster}
-                    // casts {spell.Name}"), or the refusal is one of CastSpell's own
-                    // codes, which all share the "spell." prefix.
-                    var castNamedInLog = _encounter is { } encounterAfterCast
-                        && encounterAfterCast.Log.Skip(logCountBeforeCast)
-                            .Any(step => step.Narration.Contains(armedSpell.Name, StringComparison.Ordinal));
-
+                    // valid target, an unseen target) the same way the attack above
+                    // can — ClearPending runs whether the cast lands or is refused, so
+                    // the focus popping back to the board is one thing this asserts
+                    // unconditionally. The evidence below is attributed to *this
+                    // spell specifically*: a log entry naming it, or a refusal from
+                    // CastSpell's own curated code set — not a "spell." prefix (#719,
+                    // fourth review: CastSpell can return target.unseen and the
+                    // Action/Bonus-Action/Reaction codes shared with every other
+                    // action, none of which start with it — a prefix would have
+                    // wrongly faulted a legitimate refusal, e.g. a Blinded caster
+                    // targeting an enemy only another party member can see).
                     Assert(
                         "play-8-cast",
                         new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
@@ -320,8 +371,10 @@ public partial class PlayMode : FightScreen
                             $"evidence {armedSpell.Name} resolved or was refused",
                             [
                                 new ProbeExpectation.EqualsExpected<bool>(
-                                    $"a log entry naming {armedSpell.Name}", castNamedInLog, true),
-                                new ProbeExpectation.NoticeCodeStartsWith("spell."),
+                                    $"a log entry naming {armedSpell.Name}",
+                                    LogGrewNaming(logCountBeforeCast, armedSpell.Name),
+                                    true),
+                                new ProbeExpectation.NoticeCodeIsOneOf(CastSpellRefusalCodes),
                             ]));
                     await CaptureFrame(Path.Combine(directory, "play-8-cast.png"));
                 }
@@ -676,6 +729,121 @@ public partial class PlayMode : FightScreen
             .Where(enemy => !enemy.IsDead)
             .OrderBy(enemy => enemy.Position.DistanceFeetTo(active.Position))
             .FirstOrDefault();
+
+    /// <summary>
+    /// Living enemies the party can actually see, nearest first — the same fog filter
+    /// <see cref="TokenAt"/> and <see cref="PendingTargets"/> already apply, computed
+    /// directly here rather than assumed from a stale field.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="NearestEnemyOf"/> ignores the fog (#719, fourth review): the
+    /// geometrically nearest enemy can be one no party member can see, and clicking its
+    /// square is not a click <see cref="TokenAt"/> — the function the real click
+    /// handler consults — will recognise as occupied at all. A step that needs a target
+    /// the probe's own click can actually land on needs this, not <see
+    /// cref="NearestEnemyOf"/>.
+    /// </remarks>
+    private IReadOnlyList<Combatant> VisibleEnemiesOf(Combatant active)
+    {
+        if (_encounter is not { } encounter)
+        {
+            return [];
+        }
+
+        var visible = PartyVision.VisibleSquares(encounter.Battlefield, encounter.Combatants, PregeneratedParty.SideId);
+
+        return encounter.EnemiesOf(active)
+            .Where(enemy => !enemy.IsDead && visible.Contains(enemy.Position))
+            .OrderBy(enemy => enemy.Position.DistanceFeetTo(active.Position))
+            .ToList();
+    }
+
+    private Combatant? NearestVisibleEnemyOf(Combatant active) => VisibleEnemiesOf(active).FirstOrDefault();
+
+    /// <summary>
+    /// Whether any combat-log entry appended since <paramref name="countBefore"/>
+    /// names every one of <paramref name="names"/> — the evidence a required step
+    /// attributes to one specific action, not "the log grew" (#719, fourth review: an
+    /// unrelated action's own entry would satisfy a bare length check just as well).
+    /// </summary>
+    private bool LogGrewNaming(int countBefore, params string[] names) =>
+        _encounter is { } encounter
+        && encounter.Log.Skip(countBefore)
+            .Any(step => Array.TrueForAll(names, name => step.Narration.Contains(name, StringComparison.Ordinal)));
+
+    /// <summary>
+    /// Every refusal code <see cref="Encounter.Attack"/> — and the client's own "no
+    /// reaching attack" fallback right below — can produce.
+    /// </summary>
+    /// <remarks>
+    /// Curated from the engine's source rather than guessed from a prefix (#719, fourth
+    /// review): a prefix like <c>"attack."</c> would miss <c>action.spent</c>,
+    /// <c>combatant.cannot_act</c> and <c>encounter.complete</c>, all shared with other
+    /// actions. Sourced from <c>Encounter.Attack</c> and its two shared preambles,
+    /// <c>TryGetActingCombatant</c> and <c>CheckUsage</c>
+    /// (<c>Encounter.Entries.cs</c>); <c>client.no_attack</c> is this file's own
+    /// synthetic code for "no attack reaches", raised in <c>PlayMode.Input.cs</c> rather
+    /// than the engine. Re-derive by hand if <c>Encounter.Attack</c>'s own refusal set
+    /// changes — there is no enum or constant list in <c>Core</c> to read this from
+    /// automatically.
+    /// </remarks>
+    private static readonly HashSet<string> AttackRefusalCodes =
+    [
+        "encounter.complete",
+        "combatant.cannot_act",
+        "action.spent",
+        "attack.unknown",
+        "target.dead",
+        "attack.charmed",
+        "attack.out_of_range",
+        "attack.total_cover",
+        "attack.not_in_multiattack",
+        "attack.composition_exhausted",
+        "entry.not_recharged",
+        "entry.no_uses_left",
+        "client.no_attack",
+    ];
+
+    /// <summary>Every refusal code <see cref="Encounter.CastSpell(string,Combatant,int?)"/> can produce.</summary>
+    /// <remarks>
+    /// Curated the same way, and for the same reason, as <see cref="AttackRefusalCodes"/>
+    /// (#719, fourth review — this is the set that replaced the false
+    /// <c>NoticeCodeStartsWith("spell.")</c> claim): <c>CastSpell</c> can return
+    /// <c>target.unseen</c> (Concealed's shared mechanism, #673 — a Blinded caster
+    /// targeting an enemy only another party member can see reaches exactly this) and
+    /// the Action/Bonus-Action/Reaction "already spent" codes shared with every other
+    /// action, none of which start with <c>"spell."</c>. Sourced from
+    /// <c>Encounter.Casting.cs</c>'s <c>CastSpell</c> and <c>CheckCastingCost</c>, plus
+    /// <c>Encounter.cs</c>'s <c>UnseenTargetRefusal</c>. <c>combatant.cannot_act</c> is
+    /// deliberately absent: <c>CastSpell</c>'s own comment says it is not routed through
+    /// <c>TryGetActingCombatant</c>, so that code is not reachable from here. Re-derive
+    /// by hand if <c>CastSpell</c>'s own refusal set changes.
+    /// </remarks>
+    private static readonly HashSet<string> CastSpellRefusalCodes =
+    [
+        "encounter.complete",
+        "spell.not_a_caster",
+        "spell.unknown",
+        "spell.out_of_range",
+        "spell.wrong_target_type",
+        "spell.total_cover",
+        "spell.target_not_dead",
+        "spell.dead_too_long",
+        "spell.no_room_to_stand",
+        "spell.charmed",
+        "target.unseen",
+        "spell.needs_target",
+        "spell.not_implemented",
+        "spell.area_not_modelled",
+        "spell.save_effect_not_modelled",
+        "action.spent",
+        "bonus_action.spent",
+        "reaction.spent",
+        "spell.too_slow",
+        "spell.cantrip_needs_no_slot",
+        "spell.slot_below_spell",
+        "spell.no_slot",
+    ];
 
     /// <summary>
     /// A snapshot of exactly the facts a no-op click on a live <see cref="Combatant"/>
