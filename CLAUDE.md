@@ -373,10 +373,13 @@ the reverse. So nothing hardcodes one — the `probe-diff` skill's `find-display
 dotnet run --project src/SRDCombat.Console
 ```
 
-`--seed <n>` replays a run exactly (the seed prints at start, so "seed 12345" is a
-complete bug report — and within a run, `(seed, fight number)` reproduces that
-fight's encounter and every dice roll in it, regardless of the play history that got
-there; see `RunDice`'s remarks); `--level 1..5`, `--one-fight --difficulty
+`--seed <n>` fixes a run's whole dice stream (the seed prints at start), but the seed
+alone is not a complete bug report — the save (drafts, party state, gold, casualties,
+the seed and the content version: `RunSave.cs:59-122`) plus the seed is what
+reconstitutes a fight's start and every die in it, `(seed, fight number)` per
+`RunDice`'s remarks; nothing records the choices made inside a fight, so a full repro
+is the save from just before it, not the seed on its own; `--level 1..5`,
+`--one-fight --difficulty
 low|moderate|high`, `--create` for party creation; autosaves to
 `srdcombat-save.json` after every cleared fight, `--continue` resumes. **A save is
 drafts plus progress, never resolved sheets** — loading re-resolves at the level

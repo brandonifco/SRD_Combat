@@ -27,11 +27,15 @@ namespace SRDCombat.Game;
 /// attempt at <em>this same fight</em> spent, or how many rounds it ran, or what the
 /// player chose. A retry that made the identical choices from here would see the
 /// identical fight unfold, blow for blow — which is what "the same fight" promises
-/// a player who wants to learn a fight rather than gamble on a new one, and what
-/// makes a bug report of "seed 12345, fight 7" complete on its own: <em>within one
-/// run</em>, (seed, fight number) reproduces the fight regardless of the play history
-/// that got there, because nothing about a game's own actions consumes dice from a
-/// later fight's span.
+/// a player who wants to learn a fight rather than gamble on a new one: <em>within
+/// one run</em>, (seed, fight number) reproduces that fight's encounter and every
+/// die rolled in it regardless of the play history that got there, because nothing
+/// about a game's own actions consumes dice from a later fight's span. That is not,
+/// on its own, a complete bug report — the party's state entering the fight (hit
+/// points spent, resources used, loot taken) is not a function of the seed, so a
+/// full repro is the save from just before the fight (see <see cref="RunSave"/>),
+/// not the seed alone; nothing recorded here reproduces the choices made *inside* a
+/// fight.
 /// </para>
 /// <para>
 /// <b>Not <see cref="HashCode.Combine{T1, T2}"/> and not a string hash.</b> Neither
