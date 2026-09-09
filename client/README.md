@@ -557,35 +557,70 @@ disk for any of them. It throws now (`CaptureOutcome.FailureMessage` is the pure
 behind the throw, pinned by `CaptureOutcomeTests` with no Godot engine at all), which
 `ProbeFaults` turns into the same crashed-probe exit a thrown assertion already takes.
 
-**Every *required* step asserts a predicate before it captures, not after** (#705):
-the focus layer it expects (`ProbeExpectation.FocusIs`), or the notice/refusal code it
-expects (`ProbeExpectation.NoticeCodeIs`, most often "no refusal at all" — `null`). A
-failed predicate throws, naming the step, the same fault path as a crash. `play-2-refused`
-was the named instance this closes (#521): it called `ClickButton("Stand Up")` while the
-commanded character was not Prone, which `TurnOptions` never offers a button for, so the
-click found nothing and the capture was — confirmed live — a byte-copy of
-`play-1-turn-ready`, under a name that claimed a refusal it never produced. The step is
-renamed `play-2-stand-up-not-offered` and now asserts exactly what is true today: no
-refusal, the board unchanged. Retargeting it onto a refusal the probe can actually reach
-is #521's still-open decision, not this one's. `play-3-moved` and `play-6-turn-ended`
-assert their action produced no refusal at all, since both act on state the probe itself
-computed as legal (a reachable square, an always-available End Turn); `play-4-attacked`
-and `play-8-cast` assert only that the board is left in a clean state (no menu or armed
-target stranded open), since their own action — an attack after a short move, a cast at
-range — can legitimately refuse, and refusals there are working-as-intended coverage, the
-same as the feature click (`play-5-feature`).
+**Every *required* step asserts a predicate before it captures, not after** (#705, then
+tightened at #719's review — see below for exactly which predicates that review found
+missing). `ProbeExpectation` (`client/ProbeExpectation.cs`) has five shapes, over a plain
+`ProbeSnapshot`: `FocusIs` (the focus layer expected), `NoticeCodeIs` (the refusal code
+expected, most often "no refusal at all" — `null`), `Unchanged<T>` (a resource — an
+actor's position, hit points, movement, action economy — the step's own action must not
+have touched), `Changed<T>` (the mirror: a resource — the active combatant, the round —
+the step's own action must actually have moved), and `EqualsExpected<T>` (an observed
+value that must equal a specific target — the actor landing on the exact square clicked,
+a hover's hint text naming exactly the button hovered). A failed predicate throws, naming
+the step, the same fault path as a crash — never `ReportSkip`, below.
+
+**Why the plainer pair — `NoticeCodeIs(null)` plus `FocusIs(Board)` — is not, by itself,
+proof that a click did anything** (#719's review): both hold exactly as truly *before* a
+click that turns out to be a no-op as after it — the shape `play-2` itself was found in.
+So every step whose click is expected to succeed also asserts the click's own effect,
+per step:
+
+| Step | What it asserts |
+| --- | --- |
+| `play-1-turn-ready` | `FocusIs(Board)`; `NextCommandedTurn` itself throws if no commanded turn ever arrives |
+| `play-1b-quit-confirm` | `FocusIs(QuitConfirm)` |
+| `play-2-stand-up-not-offered` | `NoticeCodeIs(null)`, `FocusIs(Board)`, and `Unchanged` on the commanded actor's position, hit points, movement and action economy — see below |
+| `play-2b-hint` | `EqualsExpected` — the hint text produced equals the hovered button's own registered hint (was: nothing at all; only that a button existed *before* hovering) |
+| `play-2c-tab-armed` | `FocusIs(Targeting)` |
+| `play-3-moved` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `EqualsExpected` (actor position == the clicked square), `Decreased` (movement remaining) |
+| `play-4-attacked` | `FocusIs(Board)` only — the attack itself can legitimately refuse (out of reach after a short move) |
+| `play-5-feature` | none — optional coverage, `ReportSkip` when no second-row feature exists; can legitimately refuse when it does |
+| `play-6-turn-ended` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `Changed` (the active combatant or the round) |
+| `play-7-spell-menu` | availability checked first (`ButtonOffered("Cast")`, `ReportSkip` if not this turn); when offered, `FocusIs(SpellMenu)` — a fault, not a skip, if Cast was offered and still failed to open it |
+| `play-8-cast` | `FocusIs(Board)` only — casting itself can legitimately refuse (range, no valid target) |
+| `play-9-attack-menu` | gated by `_focus.Top is AttackMenu` before capture; `ReportSkip` if never reached |
+| `run-9-outcome-card` | gated by `_focus.Holds<Outcome>()` before capture; `ReportSkip` if the fight never completes in budget |
+| `run-9-after-fight` | the play-out loop faults if it exhausts its safety budget still mid-fight, rather than capturing that as "after the fight" (#180's own shape) |
+| `run-10-shop` | `FocusIs(Shop)` |
+| `run-0-interlude` | none — nothing has acted yet; the branch condition (`_phase == Phase.Interlude`) is itself the guarantee |
+| one-fight `play-9-spell-menu` | same availability-then-`FocusIs(SpellMenu)` shape as `play-7-spell-menu` |
+| one-fight `play-9-slot-menu` | `FocusIs(SlotMenu)` — a fault, since the clicked spell is already confirmed to support more than one slot level before it is clicked |
+
+`play-2-stand-up-not-offered` is the named instance (#521): `ClickButton("Stand Up")`
+while the commanded character is not Prone, which `TurnOptions` never offers a button
+for, so the click finds nothing and the capture was — confirmed live — a byte-copy of
+`play-1-turn-ready`, under a name (`play-2-refused`) that claimed a refusal it never
+produced. Renamed, it now asserts exactly what is true today: no refusal, the focus
+unchanged, *and* the commanded actor's own position, hit points, movement and action
+economy unchanged — the fact that actually rules out "something happened and simply
+didn't refuse". Retargeting it onto a refusal the probe can actually reach is #521's
+still-open decision, not this one's.
 
 **A step the probe could not reach — or could not confirm it reached — says so, it does
-not skip in silence.** Whether a character brought a feature, whether the second
-commanded turn is a caster's, whether Cast is actually offered that turn, whether fight 1
-stays clear long enough to reach a Long Rest, and whether a caster's slots span more than
-one level are all facts about a fight in progress, not guarantees; `play-7-spell-menu`
-checks that Cast actually opened the spell menu before capturing it, rather than
-capturing on the strength of the click alone (the same defect class `play-2`'s rename
-closes). A capture the probe could not produce writes `<name>.skipped.txt` next to where
-the PNG would have gone, naming why — so a shrunk capture set is a file to notice rather
-than a silent absence. This is reserved for coverage that is genuinely optional; a
-required step's failed predicate is the fault above, never this.
+not skip in silence — and a step that *was* reachable but whose own effect failed is a
+fault, never dressed up as the same "could not reach" skip** (#705, sharpened at #719's
+review). Whether a character brought a feature, whether the second commanded turn is a
+caster's, whether Cast is actually offered that turn, whether fight 1 stays clear long
+enough to reach a Long Rest, and whether a caster's slots span more than one level are
+all facts about a fight in progress, not guarantees, and each is checked by
+*availability* (`ButtonOffered`, before acting) rather than by whether the click's own
+effect happened to land: the old `play-7-spell-menu` reported "Cast was not offered"
+whenever the spell menu failed to open, which conflated an unreachable turn with a real
+defect the probe had just found. A capture the probe could not attempt writes
+`<name>.skipped.txt` next to where the PNG would have gone, naming why — so a shrunk
+capture set is a file to notice rather than a silent absence. This is reserved for
+coverage that is genuinely optional; a required step's failed predicate is the fault
+above, never this.
 
 ```bash
 scripts/probe-diff.sh <dirA> <dirB>

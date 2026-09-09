@@ -80,4 +80,50 @@ internal abstract record ProbeExpectation
                 ? null
                 : $"expected {Resource} unchanged, was {Before} now {After}";
     }
+
+    /// <summary>
+    /// The mirror of <see cref="Unchanged{T}"/>: a resource the step expects its own
+    /// action to have actually moved, rather than stayed exactly where it started.
+    /// </summary>
+    /// <remarks>
+    /// This is what a no-op click needs to be caught by and <see cref="NoticeCodeIs"/>
+    /// plus <see cref="FocusIs"/> alone cannot (#719 review): a button that found
+    /// nothing to click — the same shape #705's own play-2 step pinned — leaves the
+    /// board's focus and its refusal notice exactly as they already were, so both of
+    /// those predicates hold just as truly before the click as after it. Ending a turn
+    /// or moving to a square is not "no refusal happened"; it is "something specific
+    /// now differs" — the active combatant, the round, a position.
+    /// </remarks>
+    internal sealed record Changed<T>(string Resource, T Before, T After) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot) =>
+            EqualityComparer<T>.Default.Equals(Before, After)
+                ? $"expected {Resource} to change, was {Before} both times"
+                : null;
+    }
+
+    /// <summary>
+    /// An observed value the step expects to equal a specific target — the actor's
+    /// position landing exactly on the square that was clicked, a hover's hint text
+    /// naming exactly the button that was hovered. Distinct from <see
+    /// cref="Unchanged{T}"/>: that compares the same resource read at two points in
+    /// time and expects no drift; this compares one observed value against a
+    /// caller-computed expectation that need never have existed before the action ran.
+    /// </summary>
+    internal sealed record EqualsExpected<T>(string Resource, T Actual, T Expected) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot) =>
+            EqualityComparer<T>.Default.Equals(Actual, Expected)
+                ? null
+                : $"expected {Resource} to be {Expected}, was {Actual}";
+    }
+
+    /// <summary>A count the step expects to have gone down — movement actually spent by a move that actually happened, not merely "no refusal".</summary>
+    internal sealed record Decreased(string Resource, int Before, int After) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot) =>
+            After < Before
+                ? null
+                : $"expected {Resource} to decrease from {Before}, was {After}";
+    }
 }

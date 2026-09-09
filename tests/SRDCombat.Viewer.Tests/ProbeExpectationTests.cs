@@ -9,6 +9,13 @@ namespace SRDCombat.Viewer.Tests;
 /// (<c>ProbeFaultsTests</c> is the model this follows). What is plain-value here is the
 /// comparison itself: given a focus and a notice, does the expectation hold.
 /// </summary>
+/// <remarks>
+/// #719's review found that every "passes" test here had only ever been knocked out by
+/// a stub for the matching "fails" test's own defect (an "always accept" mutation), and
+/// no stub ever exercised the opposite direction (an "always reject" mutation, which
+/// would make every one of these "passes" tests go red on its own). Each predicate below
+/// now has both directions represented so each fact has its own red in the table.
+/// </remarks>
 public class ProbeExpectationTests
 {
     [Fact]
@@ -63,6 +70,13 @@ public class ProbeExpectationTests
 
         Assert.NotNull(failure);
         Assert.Contains("action.spent", failure);
+
+        // Tightened at #719's review: the message names the extracted code twice
+        // ("got action.spent" and the parenthesised full line), so a bare
+        // Contains("action.spent") alone still passes an implementation that dropped
+        // the full-notice half of the message entirely. This checks the prose that can
+        // only come from quoting the whole notice, not the code alone.
+        Assert.Contains("Brenna has already used its action", failure);
     }
 
     [Fact]
@@ -84,5 +98,69 @@ public class ProbeExpectationTests
         Assert.Contains("hp", failure);
         Assert.Contains("12", failure);
         Assert.Contains("9", failure);
+    }
+
+    [Fact]
+    public void ChangedPassesWhenBeforeAndAfterDiffer()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        Assert.Null(new ProbeExpectation.Changed<int>("round", 1, 2).Failure(snapshot));
+    }
+
+    [Fact]
+    public void ChangedFailsAndNamesTheResourceAndTheStuckValueWhenTheyAreEqual()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        // The no-op shape this predicate exists to catch (#719 review): a click that
+        // found nothing leaves "before" and "after" identical.
+        var failure = new ProbeExpectation.Changed<int>("round", 3, 3).Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("round", failure);
+        Assert.Contains("3", failure);
+    }
+
+    [Fact]
+    public void EqualsExpectedPassesWhenActualMatchesExpected()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        Assert.Null(new ProbeExpectation.EqualsExpected<string?>("hint", "Bonus Action.", "Bonus Action.").Failure(snapshot));
+    }
+
+    [Fact]
+    public void EqualsExpectedFailsAndNamesTheResourceAndBothValuesWhenTheyDiffer()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        var failure = new ProbeExpectation.EqualsExpected<string?>("hint", null, "Bonus Action.").Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("hint", failure);
+        Assert.Contains("Bonus Action.", failure);
+    }
+
+    [Fact]
+    public void DecreasedPassesWhenAfterIsLessThanBefore()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        Assert.Null(new ProbeExpectation.Decreased("movement", 30, 20).Failure(snapshot));
+    }
+
+    [Fact]
+    public void DecreasedFailsAndNamesTheResourceAndBothValuesWhenAfterDidNotDrop()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        // Equal, not merely greater — a move that spent zero feet is still a move that
+        // did nothing, and must fail this exactly the way an increase would.
+        var failure = new ProbeExpectation.Decreased("movement", 30, 30).Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("movement", failure);
+        Assert.Contains("30", failure);
     }
 }
