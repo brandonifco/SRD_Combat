@@ -172,15 +172,49 @@ public static class RunSave
                 $"Save format {saved.FormatVersion} is not this build's {CurrentFormatVersion}; refusing to guess.");
         }
 
+        // [JsonRequired] (and the compiler's own `required`) enforce that a property is
+        // *present* in the JSON, not that it is non-null — an explicit `null` for a
+        // reference-typed member sails past both and lands here as a real null. Every
+        // dereference below would otherwise be a NullReferenceException, which
+        // SaveFile.TryReadRun does not catch, so it would unwind straight past the
+        // .old/.bak fallback (#703). Checked structurally, before any of the
+        // content-independent range checks that already follow, so every one of those
+        // can keep assuming a non-null shape.
+        RequireNotNull(saved.Ladder, "Ladder");
+
+        for (var index = 0; index < saved.Ladder.Count; index++)
+        {
+            RequireNotNull(saved.Ladder[index], $"Ladder[{index}]");
+        }
+
         if (saved.Ladder.Count == 0)
         {
             throw new InvalidDataException("A saved run needs at least one rung.");
+        }
+
+        RequireNotNull(saved.Members, "Members");
+
+        for (var index = 0; index < saved.Members.Count; index++)
+        {
+            var member = saved.Members[index];
+
+            RequireNotNull(member, $"Members[{index}]");
+            RequireNotNull(member.Draft, $"Members[{index}].Draft");
+            RequireNotNull(member.State, $"Members[{index}].State");
+            RequireNotNull(member.Draft.BaseAbilityScores, $"Members[{index}].Draft.BaseAbilityScores");
+            RequireNotNull(
+                member.Draft.AbilityScoreImprovements,
+                $"Members[{index}].Draft.AbilityScoreImprovements");
+            RequireNotNull(member.State.SpellSlotsRemaining, $"Members[{index}].State.SpellSlotsRemaining");
+            RequireNotNull(member.State.Potions, $"Members[{index}].State.Potions");
         }
 
         if (saved.Members.Count == 0)
         {
             throw new InvalidDataException("A saved run needs at least one character.");
         }
+
+        RequireNotNull(saved.Casualties, "Casualties");
 
         if (saved.Cleared < 0 || saved.Cleared > saved.Ladder.Count)
         {
@@ -197,5 +231,20 @@ public static class RunSave
         }
 
         return saved;
+    }
+
+    /// <summary>
+    /// Refuses an explicit JSON <c>null</c> naming the property it stood in for, rather
+    /// than leaving it to dereference as a <see cref="NullReferenceException"/> further
+    /// down — the one exception <see cref="SaveFile"/>'s catch filter does not treat as
+    /// a corrupt save (#703).
+    /// </summary>
+    private static void RequireNotNull<T>(T? value, string property)
+        where T : class
+    {
+        if (value is null)
+        {
+            throw new InvalidDataException($"A saved run's {property} must not be null.");
+        }
     }
 }
