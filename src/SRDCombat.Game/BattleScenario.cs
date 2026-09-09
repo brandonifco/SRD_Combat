@@ -251,12 +251,15 @@ public sealed record ScenarioMember
 /// knockout carries into the next fight.
 /// </para>
 /// <para>
-/// <b><see cref="IsDead"/> excludes the member from the fight</b> the way a run's own dead
-/// are excluded (<see cref="Gauntlet.BeginNext"/>'s <c>survivors</c> filter) — no
-/// combatant is built for them at all, so none of this record's other fields are read for
-/// a member marked dead. A scenario whose every member is marked dead is refused at load,
-/// reusing <see cref="RunSave.FromJson"/>'s reasoning: there is no fight to build for
-/// nobody.
+/// <b><see cref="IsDead"/> excludes the member from the fielded fight</b> the way a run's
+/// own dead are excluded (<see cref="Gauntlet.BeginNext"/>'s <c>survivors</c> filter) —
+/// the existing construction mechanism is reused rather than skipped: every member,
+/// dead or not, passes through <see cref="PregeneratedParty.Resolve"/> and has this
+/// record's other fields validated against the resolved sheet exactly as a living
+/// member's are, and only the member's presence in the fielded party is what
+/// <see cref="IsDead"/> decides. A scenario whose every member is marked dead is refused
+/// at load, reusing <see cref="RunSave.FromJson"/>'s reasoning: there is no fight to build
+/// for nobody.
 /// </para>
 /// <para>
 /// <b><see cref="HitDiceRemaining"/> has no effect on the fight this builds</b> — a

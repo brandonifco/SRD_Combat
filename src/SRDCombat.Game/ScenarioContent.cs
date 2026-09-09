@@ -145,9 +145,16 @@ public static class ScenarioContent
     /// <see cref="PregeneratedParty.CarryingOver"/> at all, which is what makes "absent
     /// means full strength" byte-identical to the fight this method built before this
     /// field existed, rather than merely equivalent to it (acceptance criterion 1). A
-    /// member whose state marks it dead is dropped from the returned list entirely — the
-    /// way <see cref="Gauntlet.BeginNext"/>'s own <c>survivors</c> filter drops a run's
-    /// dead — so no combatant is ever built for it and none of its other fields are read.
+    /// member whose state marks it dead is <b>excluded from the fielded fight</b> — the
+    /// way <see cref="Gauntlet.BeginNext"/>'s own <c>survivors</c> filter excludes a
+    /// run's dead — reusing the same construction mechanism every other member goes
+    /// through rather than skipping it. <see cref="PregeneratedParty.Resolve"/> still
+    /// builds this member a combatant, exactly as it does for a member that stays, and
+    /// <see cref="ValidateStartingState"/> still checks every one of its fields against
+    /// that resolved sheet — an out-of-range value beside <c>IsDead: true</c> is refused
+    /// by name exactly as it would be for a living member (criterion 2 makes no
+    /// exception for the dead). Only the fielded party itself excludes the member
+    /// afterwards, so no combatant from this member ever takes a spawn square or a turn.
     /// Every other value is checked against this member's own resolved
     /// <see cref="PartyMember.Sheet"/> and <see cref="Combatant.Stats"/> and refused by
     /// name, never clamped (criterion 2); see <see cref="ValidateStartingState"/>.
@@ -180,12 +187,21 @@ public static class ScenarioContent
                 continue;
             }
 
+            // Validated exactly like a living member's — an out-of-range value beside
+            // IsDead: true is still an authored value nobody checked, and criterion 2
+            // promises every value is validated, not every value on a member who
+            // survives. Only the exclusion itself distinguishes a dead member: the
+            // CombatantCarryOver this produces is thrown away rather than carried,
+            // because a dead member's resolved values (hit points, resources) are never
+            // fielded — there is no combatant a dead member's carry-over could apply to.
+            var carryOver = ValidateStartingState(resolved, state);
+
             if (state.IsDead)
             {
                 continue;
             }
 
-            living.Add(resolved.CarryingOver(ValidateStartingState(resolved, state)));
+            living.Add(resolved.CarryingOver(carryOver));
         }
 
         return living;
@@ -198,11 +214,14 @@ public static class ScenarioContent
     /// wherever the author asked for more than the character has (#480 criterion 2).
     /// </summary>
     /// <remarks>
-    /// A dead member never reaches here — <see cref="ResolveParty"/> excludes it before
-    /// this is called, the same way a run's own dead are excluded before
-    /// <see cref="Gauntlet.BeginNext"/> builds a <see cref="CombatantCarryOver"/> for
-    /// anyone. Zero hit points and not dead is legal here exactly as it is on
-    /// <c>CharacterState</c>: downed-and-stable, not a range violation.
+    /// <b>A dead member reaches here too</b> — <see cref="ResolveParty"/> calls this for
+    /// every member that carries a <see cref="ScenarioStartingState"/>, dead or not, and
+    /// excludes the dead only afterwards, by discarding the <see cref="CombatantCarryOver"/>
+    /// this returns rather than by skipping the call. An out-of-range hit-point or
+    /// resource count beside <c>IsDead: true</c> is refused by name exactly as it would be
+    /// for a member who stays — criterion 2 checks every value, and a member marked dead
+    /// is not an exemption from that. Zero hit points and not dead is legal here exactly
+    /// as it is on <c>CharacterState</c>: downed-and-stable, not a range violation.
     /// </remarks>
     private static CombatantCarryOver ValidateStartingState(PartyMember member, ScenarioStartingState state)
     {
@@ -251,9 +270,29 @@ public static class ScenarioContent
             }
         }
 
-        if (state.Potions is { } potions && potions.Values.Any(count => count < 0))
+        if (state.Potions is { } potions)
         {
-            throw new InvalidDataException($"{owner}: starting potions carried cannot be negative.");
+            foreach (var (potency, count) in potions)
+            {
+                // The dictionary key is a bare enum value read off JSON as a number, so an
+                // undefined potency (a typo, or a value written by a build with more
+                // potencies than this one) is not caught by System.Text.Json the way an
+                // unknown property name is — PotionRules.Healing(potency) is the first
+                // place that would notice, and only once the potion is drunk mid-fight.
+                // Refused by name here instead, at load, the same as every other value
+                // this method checks against the resolved sheet.
+                if (!Enum.IsDefined(potency))
+                {
+                    throw new InvalidDataException(
+                        $"{owner}: starting potions name potency '{potency}', which is not a Potion of Healing "
+                        + "this build defines.");
+                }
+
+                if (count < 0)
+                {
+                    throw new InvalidDataException($"{owner}: starting potions carried cannot be negative.");
+                }
+            }
         }
 
         return new CombatantCarryOver(
