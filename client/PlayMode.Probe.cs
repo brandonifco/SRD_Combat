@@ -276,34 +276,65 @@ public partial class PlayMode : FightScreen
 
                 if (_menuRows.Count > 0)
                 {
+                    Click(_menuRows[0].GetCenter());
+
+                    // #719, third review: row 0's own Action is opaque (_menuRows
+                    // carries a rectangle and a delegate, not the spell that filled
+                    // it — #505), so nothing above proves it armed a *spell* at all.
+                    // If ChooseSpell or DrawSpellMenu ever mis-routed row 0 onto an
+                    // attack instead, the very next click would run the attack
+                    // handler, and its own log entry or "client.no_attack" refusal
+                    // would satisfy an evidence check just as well as a real cast —
+                    // exactly the shape that let a weapon attack pass as this step.
+                    // Checked here, before the click that could exploit it, rather
+                    // than inferred afterward from what happened to succeed.
+                    if (Armed is not { Kind: TargetKind.Spell, Spell: { } armedSpell })
+                    {
+                        throw new InvalidOperationException(
+                            "probe: required step 'play-8-cast' failed — the spell menu's first row "
+                                + "did not arm TargetKind.Spell before the target was clicked.");
+                    }
+
                     var logCountBeforeCast = _encounter?.Log.Count ?? 0;
 
-                    Click(_menuRows[0].GetCenter());
                     Click(CentreOf(victim.Position));
 
                     // Casting itself can still legitimately refuse (out of range, no
                     // valid target) the same way the attack above can — ClearPending
                     // runs whether the cast lands or is refused, so the focus popping
-                    // back to the board is one thing this asserts unconditionally. It
-                    // is not, on its own, evidence anything happened (#719, second
-                    // review): omitting spell resolution entirely while still calling
-                    // ClearPending would leave the board just as clean. AnyOf requires
-                    // the same proof play-4 does — the log gained an entry, or a
-                    // notice was printed.
+                    // back to the board is one thing this asserts unconditionally.
+                    // The evidence below is attributed to *this spell specifically*
+                    // (#719, third review), not just "something happened": either a
+                    // log entry appended after the click names the spell by its
+                    // printed name (Encounter.Casting's own narration, "{caster}
+                    // casts {spell.Name}"), or the refusal is one of CastSpell's own
+                    // codes, which all share the "spell." prefix.
+                    var castNamedInLog = _encounter is { } encounterAfterCast
+                        && encounterAfterCast.Log.Skip(logCountBeforeCast)
+                            .Any(step => step.Narration.Contains(armedSpell.Name, StringComparison.Ordinal));
+
                     Assert(
                         "play-8-cast",
                         new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
                         new ProbeExpectation.AnyOf(
-                            "evidence the cast resolved or was refused",
+                            $"evidence {armedSpell.Name} resolved or was refused",
                             [
-                                new ProbeExpectation.Changed<int>("the combat log length", logCountBeforeCast, _encounter?.Log.Count ?? 0),
-                                new ProbeExpectation.NoticePresent("the cast"),
+                                new ProbeExpectation.EqualsExpected<bool>(
+                                    $"a log entry naming {armedSpell.Name}", castNamedInLog, true),
+                                new ProbeExpectation.NoticeCodeStartsWith("spell."),
                             ]));
                     await CaptureFrame(Path.Combine(directory, "play-8-cast.png"));
                 }
                 else
                 {
-                    ReportSkip(directory, "play-8-cast", "the caster's spell menu offered no castable rows");
+                    // Cast was confirmed offered above (ButtonOffered("Cast")) and
+                    // its menu confirmed open (FocusIs(SpellMenu)) — a menu with
+                    // nothing to click is not a fact about this turn, it is those two
+                    // confirmations disagreeing with each other. A fault (#719, third
+                    // review), never the "unavailable coverage" this used to report.
+                    throw new InvalidOperationException(
+                        "probe: required step 'play-8-cast' failed — Cast was offered and its menu "
+                            + "opened, but the spell menu showed no castable rows.");
                 }
             }
         }
@@ -385,7 +416,26 @@ public partial class PlayMode : FightScreen
 
             if (!outcomeCaptured)
             {
-                ReportSkip(directory, "run-9-outcome-card", "the fight never completed within the probe's safety budget");
+                if (_phase == Phase.Fighting)
+                {
+                    // Still running: the loop's own safety budget ran out while the
+                    // fight was genuinely still in progress. The #180 guard just
+                    // below turns this into the stall fault with its own message —
+                    // nothing more to report here.
+                    ReportSkip(directory, "run-9-outcome-card", "the fight never completed within the probe's safety budget");
+                }
+                else
+                {
+                    // Completed, but not shown: phase moved on, so the fight plainly
+                    // did complete — the exact HandleFightEnd -> CompleteAndReport
+                    // bypass this loop exists to catch (see the comment above it),
+                    // not "never got that far" (#719, third review). Faulting here,
+                    // rather than silently falling through to capture
+                    // run-9-after-fight as though nothing were wrong.
+                    throw new InvalidOperationException(
+                        "probe: required step 'run-9-outcome-card' failed — the fight completed "
+                            + "but the Outcome card was never displayed.");
+                }
             }
 
             if (!attackMenuCaptured)

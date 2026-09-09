@@ -69,6 +69,21 @@ internal abstract record ProbeExpectation
     }
 
     /// <summary>
+    /// A refusal code the step expects to belong to a whole family, not one exact code —
+    /// every refusal <c>Encounter.CastSpell</c> itself raises shares a <c>"spell."</c>
+    /// prefix (#719, third review: attributing <c>play-8-cast</c>'s refusal evidence to
+    /// the cast specifically, not to whatever else might have printed a notice).
+    /// </summary>
+    internal sealed record NoticeCodeStartsWith(string Prefix) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot) =>
+            snapshot.NoticeCode is { } code && code.StartsWith(Prefix, StringComparison.Ordinal)
+                ? null
+                : $"expected notice code to start with '{Prefix}', got "
+                    + $"{snapshot.NoticeCode ?? "(none)"} ({snapshot.Notice ?? "no notice printed"})";
+    }
+
+    /// <summary>
     /// A resource the step expects its own action to have left untouched — the before
     /// and after are read by the caller, outside the snapshot, since what counts as
     /// "the resource" varies step to step (a position, an hp total, a turn count).

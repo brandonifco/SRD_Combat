@@ -558,19 +558,22 @@ behind the throw, pinned by `CaptureOutcomeTests` with no Godot engine at all), 
 `ProbeFaults` turns into the same crashed-probe exit a thrown assertion already takes.
 
 **Every *required* step asserts a predicate before it captures, not after** (#705,
-tightened twice more at #719's review rounds — see below for exactly which predicates
-each round found missing). `ProbeExpectation` (`client/ProbeExpectation.cs`) has eight
+tightened across three more #719 review rounds — see below for exactly which predicates
+each round found missing). `ProbeExpectation` (`client/ProbeExpectation.cs`) has ten
 shapes, over a plain `ProbeSnapshot`: `FocusIs` (the focus layer expected), `NoticeCodeIs`
-(the refusal code expected, most often "no refusal at all" — `null`), `Unchanged<T>` (a
-resource — an actor's position, hit points, movement, and every resource its turn's
-economy tracks — the step's own action must not have touched), `Changed<T>` (the mirror:
-a resource — the active combatant, the round — the step's own action must actually have
-moved), `EqualsExpected<T>` (an observed value that must equal a specific target — the
-actor landing on the exact square clicked), `Decreased` (a count that must have gone
-down), `NonEmpty` (a string that must be present and non-empty, checked *before* it is
-trusted as something else's expectation), and `AnyOf` (passes when at least one of
-several expectations does — the logical OR `PlayMode.Assert`'s own implicit AND across
-its parameter list cannot express). A failed predicate throws, naming the step, the same
+(the refusal code expected, most often "no refusal at all" — `null`), `NoticeCodeStartsWith`
+(a refusal code expected to belong to a whole family, e.g. every code `Encounter.CastSpell`
+itself raises shares a `"spell."` prefix), `Unchanged<T>` (a resource — an actor's
+position, hit points, movement, and every resource its turn's economy tracks — the step's
+own action must not have touched), `Changed<T>` (the mirror: a resource — the active
+combatant's `Id`, the round — the step's own action must actually have moved),
+`EqualsExpected<T>` (an observed value that must equal a specific target — the actor
+landing on the exact square clicked), `Decreased` (a count that must have gone down),
+`NonEmpty` (a string that must be present and non-empty, checked *before* it is trusted
+as something else's expectation), `NoticePresent` (some notice must have printed, code
+unspecified), and `AnyOf` (passes when at least one of several expectations does — the
+logical OR `PlayMode.Assert`'s own implicit AND across its parameter list cannot
+express). A failed predicate throws, naming the step, the same
 fault path as a crash — never `ReportSkip`, below.
 
 **Why the plainer pair — `NoticeCodeIs(null)` plus `FocusIs(Board)` — is not, by itself,
@@ -591,9 +594,9 @@ effect, per step:
 | `play-5-feature` | none — optional coverage, `ReportSkip` when no second-row feature exists; can legitimately refuse when it does |
 | `play-6-turn-ended` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `Changed` (the active combatant's `Id` or the round — `Id`, not `Name`: two same-named combatants acting consecutively must not read as "no change") |
 | `play-7-spell-menu` | availability checked first (`ButtonOffered("Cast")`, `ReportSkip` if not this turn); when offered, `FocusIs(SpellMenu)` — a fault, not a skip, if Cast was offered and still failed to open it |
-| `play-8-cast` | `FocusIs(Board)`, and the same `AnyOf` evidence as `play-4-attacked` — the log gained an entry or a notice was printed; casting itself can legitimately refuse (range, no valid target), but doing nothing is a fault |
+| `play-8-cast` | first, the armed `Targeting` layer itself is `TargetKind.Spell` with the chosen spell (a menu row that armed an attack instead would let that attack's own evidence pass for the cast's — checked before the click that could exploit it); then `FocusIs(Board)` and `AnyOf` evidence attributed to *that spell specifically* — a new log entry naming it, or a `NoticeCodeStartsWith("spell.")` refusal; a spell menu confirmed open but showing zero rows is a fault, not unavailable coverage |
 | `play-9-attack-menu` | availability checked first (`ButtonOffered("Attack")`; not offered this frame just loops to try again, no skip); when offered, `FocusIs(AttackMenu)` — a fault if it fails to open |
-| `run-9-outcome-card` | gated by `_focus.Holds<Outcome>()` before capture; `ReportSkip` if the fight never completes in budget |
+| `run-9-outcome-card` | gated by `_focus.Holds<Outcome>()` before capture; three outcomes distinguished, not two — still running when the safety budget runs out is `ReportSkip` (the #180 stall guard below then faults on it separately), completed-and-shown is fine, and completed-with-Outcome-never-displayed (the old `HandleFightEnd` bypass) is a fault of its own, never silently accepted on the way to `run-9-after-fight` |
 | `run-9-after-fight` | the play-out loop faults if it exhausts its safety budget still mid-fight, rather than capturing that as "after the fight" (#180's own shape) |
 | `run-10-shop` | `FocusIs(Shop)` |
 | `run-0-interlude` | none — nothing has acted yet; the branch condition (`_phase == Phase.Interlude`) is itself the guarantee |

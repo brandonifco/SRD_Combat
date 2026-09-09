@@ -255,4 +255,57 @@ public class ProbeExpectationTests
         Assert.Contains("the combat log length", failure);
         Assert.Contains("the attack", failure);
     }
+
+    [Fact]
+    public void AnyOfPassesWhenTheFirstOptionPassesAndALaterOneFails()
+    {
+        // #719, third review: both prior AnyOf tests only ever have their LAST option
+        // pass or their options all fail — a stub that checks only failures[^1] instead
+        // of every option (Array.TrueForAll) keeps both green. This is the case that
+        // catches it: the first option passes (the log actually grew) and the second
+        // fails (no notice) — must still pass overall, since one true option is enough.
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        var anyOf = new ProbeExpectation.AnyOf(
+            "evidence the attack resolved or was refused",
+            [
+                new ProbeExpectation.Changed<int>("the combat log length", 3, 4),
+                new ProbeExpectation.NoticePresent("the attack"),
+            ]);
+
+        Assert.Null(anyOf.Failure(snapshot));
+    }
+
+    [Fact]
+    public void NoticeCodeStartsWithPassesWhenTheCodeHasThatPrefix()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "Guiding Bolt needs a creature to target.  [spell.needs_target]");
+
+        Assert.Null(new ProbeExpectation.NoticeCodeStartsWith("spell.").Failure(snapshot));
+    }
+
+    [Fact]
+    public void NoticeCodeStartsWithFailsAndNamesThePrefixAndTheActualCodeWhenItDiffers()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "Brenna has already used its action  [action.spent]");
+
+        // The named instance this predicate closes (#719, third review): a weapon
+        // attack's own refusal must not be mistaken for evidence of a cast.
+        var failure = new ProbeExpectation.NoticeCodeStartsWith("spell.").Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("spell.", failure);
+        Assert.Contains("action.spent", failure);
+    }
+
+    [Fact]
+    public void NoticeCodeStartsWithFailsWhenNoNoticeWasPrinted()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        var failure = new ProbeExpectation.NoticeCodeStartsWith("spell.").Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("spell.", failure);
+    }
 }
