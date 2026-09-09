@@ -157,10 +157,11 @@ response plan are
 [`docs/2026-09-08-outside-review-response-plan.md`](2026-09-08-outside-review-response-plan.md),
 which sets this phase's build order: the systems below enter **cycle 1 as one
 five-fight slice, played by a human, before extension to cycles 2–6**. The
-played-run half of that commitment is still owed; the plan's §3 proposes that its
-report, with #542's verdict, replace the checkpoint as what lifts
-`paused:balance-design` from #306–#311 — a change to the written condition in the
-`file-issue` skill, Brandon's to take. Route choice
+played-run half of that commitment is still owed, and **Brandon decided on 2026-09-09
+that its report, with #542's verdict, is what lifts `paused:balance-design` from
+#306–#311** (the plan's §3 decision 2; the F4 balance issues keep the checkpoint; #708
+writes the condition into the framework doc and the `file-issue` skill). His verdict on
+the `112ed19` difficulty itself is in: not too hard (decision 3, on #542). Route choice
 (pick the next rung from 2–3 revealed options); loot as a
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
@@ -187,15 +188,14 @@ the slice that moves the visibility predicate from a display judgement into a `C
 rule, disturbing three readings that are correct only because no sight model exists);
 policy growth where measurement pays: Dodge/Disengage/retreat, behind an
 `ITacticsPolicy` seam so two policies A/B on the same seeds. Decide the six
-unoffered classes: ship or cut, not linger. **Roles before counts** (proposed
-2026-09-08 from the outside review, the plan's §3 decision 7, pending Brandon): before
-this phase exits the pool fields at least one healer or protector, one space controller
-and one urgent-priority target — a coverage target for what the pool contains, not the
-top-down taxonomy #543 ruled out; each creature still behaves as what it is — and the
-party side completes one class that does not yet play distinctly (the Ranger) before
-any new one is offered. Exit: distinct-creature measurement re-run; if decision 7 is
-taken, the three roles fielded; a property test that every generated encounter
-resolves.
+unoffered classes: **build them** (Brandon, 2026-09-09, the plan's §3 decision 4,
+overruling the plan's recommendation to cut; #315 tracks the roster, one designer-spec'd
+slice per class, the offered-but-thin classes first — the Ranger, #717). **Roles before
+counts** (2026-09-09, decision 7, taken; #714): before this phase exits the pool fields
+at least one healer or protector, one space controller and one urgent-priority target —
+a coverage target for what the pool contains, not the top-down taxonomy #543 ruled out;
+each creature still behaves as what it is. Exit: distinct-creature measurement re-run;
+the three roles fielded; a property test that every generated encounter resolves.
 
 **F5 — Confidence.** (Two items pulled forward on 2026-08-24: the extractor test
 project's first slice, #189, to F1 as the span refactor's safety net, and the
@@ -222,10 +222,11 @@ minutes; a parser edit fails a test on a machine without the PDF.
 **F6 — Ship.** In-game attribution screen (CC-BY requires notice in the distributed
 artifact, not just the repo); NOTICE covers the art and the masters' licence; an
 LFS-or-release-assets strategy for the 356 MB masters tree, 139 files; packaging
-(Linux + Windows), a player-facing README, a tagged release. **A first Linux tester
-build is proposed for pulling forward** (2026-09-08 plan, Track F and §3 decision 5,
-pending Brandon — it reverses the workflow audit's "Releases/tags now" rejection on
-new evidence) to land after F2's foresight work and before F3's five-fight slice is
+(Linux + Windows), a player-facing README, a tagged release. **A first tester build
+is pulled forward, and it is a Windows build** (Brandon, 2026-09-09: "need a windows
+build" — the plan's §3 decision 5, taken; #716; Linux alongside on the same pipeline; it
+reverses the workflow audit's "Releases/tags now" rejection on new evidence, recorded in
+that audit's list) to land after F2's foresight work and before F3's five-fight slice is
 judged, carrying the attribution screen and the art-licence notice with it, because
 the slice's go/no-go wants an outside player's run report rather than a bot's. Exit: a stranger downloads and
 plays without cloning.

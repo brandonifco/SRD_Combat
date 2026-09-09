@@ -291,19 +291,25 @@ not run pacing on any PR (the checkpoint rule stands; A5 is the one re-run and i
 correction, not a measurement); it does not touch art or audio.
 
 
-## 3. Decisions Brandon owns
+## 3. Decisions Brandon owns — answered 2026-09-09
 
-Listed with a recommendation each, so they can be answered in one sitting. **Until
-they are, the finishing-plan edits in §5 carry each as proposed, not taken.**
+Listed with a recommendation each; Brandon answered all seven in one message on
+2026-09-09. **Each item below carries his answer first, then the recommendation as it
+was put to him.** Two answers overruled the recommendation (4 and 5). The
+finishing-plan edits in §5 now carry each as taken.
 
-1. **Spirit Guardians.** Label now (A4, no decision needed) and **implement the aura**
+1. **Spirit Guardians.** *Answered: build the real aura; the caster's own party is
+   always exempt.* Filed as #713. — Label now (A4, no decision needed) and **implement the aura**
    (NEW-5) in the Track B window — recommended, because Core has the lifecycle and the
    alternative, withdrawal, deletes the pregen Cleric's level-5 identity. The design
    question inside it is the "designate creatures to be unaffected" clause: refuse it
    (the caster's allies are always affected unless the reading is written) or read it
    as "allies are exempt" and write that reading down. Recommend the second; it is
    what every table plays.
-2. **Un-pausing `paused:balance-design`.** The written condition
+2. **Un-pausing `paused:balance-design`.** *Answered: yes — the played run's report,
+   with #542's verdict, lifts the pause from #306–#311; F4's balance issues keep the
+   checkpoint.* Recorded on each of the six issues; #708 writes it into the framework
+   doc and the `file-issue` skill. — The written condition
    (`file-issue/SKILL.md:99`) is "until the re-baselining checkpoint (#542)", and #542
    says it is revisited after a played full run, with a run report. Recommend
    **confirming that reading and writing it down**: the pause lifts for F3's design
@@ -311,23 +317,30 @@ they are, the finishing-plan edits in §5 carry each as proposed, not taken.**
    verdict, recorded in the framework doc and the skill. F4's balance issues keep the
    F3-exit checkpoint as their condition. Until answered, the finishing plan states
    this as proposed, not done.
-3. **The `112ed19` difficulty verdict (#542)** — only the played run answers it. The
+3. **The `112ed19` difficulty verdict (#542).** *Answered: no, it is not too hard.*
+   Recorded on #542 as given; the run report is still owed under decision 2. — Only the played run answers it. The
    review's two automated clears at level 4 are consistent with the baseline's 32 of
    120, not evidence against it.
-4. **#315, the six unoffered classes.** Recommend **cut** for v1.0 and say so in the
+4. **#315, the six unoffered classes.** *Answered: build them* — the recommendation
+   below was overruled. #315 becomes the roster's tracking issue; the offered-but-thin
+   classes come first (the Ranger, #717), then the six, one designer-spec'd slice each.
+   — Recommend **cut** for v1.0 and say so in the
    character creator ("six classes in this release"), which is the honest product
    boundary the review asks for. Reopen after F6 if a played run wants a class the six
    cannot give.
-5. **Pulling the tester build forward (F1).** This reverses a recorded rejection
+5. **Pulling the tester build forward (F1).** *Answered: yes, and it must be a
+   Windows build* (Linux alongside, same pipeline). Filed as #716; the audit's
+   rejected list records the reversal. — This reverses a recorded rejection
    ("Releases/tags now", `docs/2026-08-29-github-workflow-audit.md:108`) on the new
    evidence that C5's go/no-go needs an outside player. Recommend yes: one Linux
    release asset after Track B, well before F6's packaging proper. The cost is
    #323/#324 landing early, which they must anyway. If yes, the audit's list gains the
    reversal and its date.
-6. **The comment convention (E6).** Recommend adopt, applied on touch, never as a
+6. **The comment convention (E6).** *Answered: adopted.* Filed as #715. — Recommend adopt, applied on touch, never as a
    sweep — the archive already holds the long form and the convention only says where
    the next paragraph goes.
-7. **Roles as an F4 exit criterion (D5, NEW-12).** #543 ruled out a role taxonomy as
+7. **Roles as an F4 exit criterion (D5, NEW-12).** *Answered: adopted.* Filed as
+   #714, with the #543 reconciliation in its body. — #543 ruled out a role taxonomy as
    the axis behaviour is built from; NEW-12 asks only that the pool *contain* a
    healer or protector, a space controller and an urgent-priority target, each behaving
    as what it is. Recommend adopt as a coverage target; if Brandon reads it as the
@@ -338,7 +351,11 @@ they are, the finishing-plan edits in §5 carry each as proposed, not taken.**
 ## 4. Issue manifest
 
 Issues to file with the `file-issue` skill once §3 is answered (Track A's do not wait
-on any decision and can be filed at once). Titles are working titles.
+on any decision and can be filed at once). Titles are working titles. **Filed so far
+(2026-09-09):** NEW-1 → #703, NEW-2 → #704, NEW-3 → #705, NEW-4 → #706, NEW-5 → #713,
+NEW-6 → #707, NEW-7 → #708, NEW-11 → #717, NEW-12 → #714, NEW-15 → #715, and Track F's
+tester build → #716. The Codex charter-mirror drift found while reviewing PR #701 is
+#702.
 
 | Ref | Title | Phase | Owner | Refs |
 | --- | --- | --- | --- | --- |
@@ -372,13 +389,15 @@ adjudication agree:
 
 - **F2 exit** gains the layout invariant line (Track B).
 - **F3** records the outside-review commitment and points here; its build order becomes
-  the five-fight slice first (Track C); the un-pause change is stated as proposed
-  (decision 2).
-- **F4** gains the roles target (Track D, NEW-12) as proposed (decision 7), alongside
-  the distinct-creature re-run.
+  the five-fight slice first (Track C); the un-pause change is decision 2, taken
+  2026-09-09.
+- **F4** gains the roles target (Track D, #714; decision 7, taken 2026-09-09) alongside
+  the distinct-creature re-run, and the class roster is now "build", not "ship or cut"
+  (decision 4, taken 2026-09-09 — the plan's recommendation to cut was overruled).
 - **F5** — *deferred to A6 (NEW-7), not in this PR*: the fixture paragraph (`:189-194`)
   is replaced by #694's finding there, with the rest of the docs sweep.
-- **F6** notes the tester build proposed for pulling forward (Track F, decision 5).
+- **F6** notes the tester build pulled forward — a **Windows** build (Track F, #716;
+  decision 5, taken 2026-09-09 — the plan had proposed Linux first).
 
 **What this plan does not change.** The phases, their order, the checkpoint rule for
 pacing, the art-and-audio-last sequencing, the honesty rule, and the standing law of
