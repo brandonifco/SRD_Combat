@@ -1,8 +1,6 @@
 using SRDCombat.Content;
-using SRDCombat.Core.Combat;
-using SRDCombat.Core.Dice;
-using SRDCombat.Core.Rules;
 using SRDCombat.Game;
+using SRDCombat.PacingMeasure;
 
 // The pacing series' instrument, committed so the methodology is code rather than
 // archaeology (#132). Every number in CLAUDE.md's measured series should come from this
@@ -21,6 +19,9 @@ using SRDCombat.Game;
 // it) for continuity with those recorded numbers; the two forms differ by the loot
 // itself AND by every dice draw after the first loot roll, so their absolute medians
 // are not comparable — compare builds only within one form and one seed range.
+//
+// The one-seed loop itself lives in PacingRun.RunSeed so tests/PacingMeasure.Tests can
+// drive it directly (#707) instead of only through this executable's console output.
 
 var noLoot = args.Contains("--no-loot");
 var (firstSeed, lastSeed) = SeedRange(args);
@@ -44,97 +45,24 @@ if (contentDirectory is null || !Directory.Exists(contentDirectory))
 }
 
 var content = ContentLoader.Load(contentDirectory);
+var ladder = GauntletLadder.Default();
 var results = new List<(int Cleared, int Level, RunEnd End)>();
 // Where the early deaths happen and what they were facing. This is the line that found
 // the level 1 wall: the runs dying in the opening were meeting 4.2 to 4.6 creatures where
 // the average draw is 3.0, which is invisible in "fights cleared" and invisible to the XP
 // budget, because XP prices a creature's worth and not how many act each round.
-var deaths = new List<(int Fight, string Difficulty, int Count, int Biggest)>();
-var fights = new List<(int Fight, string Difficulty, double HpLeft, int Downed, int Rounds, int Monsters)>();
+var deaths = new List<DeathRecord>();
+var fights = new List<FightRecord>();
 
 for (var seed = firstSeed; seed <= lastSeed; seed++)
 {
-    var run = GauntletRun.Start(content, GauntletLadder.Default(), startLevel, seed);
-    var end = RunEnd.Cleared;
+    var seedResult = PacingRun.RunSeed(content, ladder, startLevel, seed, noLoot);
 
-    while (run.Next is not null)
-    {
-        var step = run.Next!;
+    fights.AddRange(seedResult.Fights);
+    deaths.AddRange(seedResult.Deaths);
+    results.Add((seedResult.Cleared, seedResult.Level, seedResult.End));
 
-        // The one reseed point, matching both clients: everything from here through
-        // this fight's loot draws from RunDice.SeedFor(run.Seed, run.Cleared) — see
-        // RunDice's remarks. This measures the game as actually played, not a
-        // continuous per-seed stream a player's process never runs.
-        var random = new SeededRandomSource(RunDice.SeedFor(run.Seed, run.Cleared));
-        var rest = run.PrepareForNext(random);
-
-        // The Long Rest merchant is part of the game as played: the canonical run
-        // spends its winnings the way the auto-buyer does, so the economy's effect on
-        // pacing is measured rather than accrued and ignored.
-        if (rest == RestKind.Long)
-        {
-            Shop.AutoBuy(content, run);
-        }
-
-        var fight = run.BeginNext(random);
-
-        if (fight.Built.Monsters.Count == 0)
-        {
-            end = RunEnd.NoFight;
-            break;
-        }
-
-        SimpleTacticsPolicy.RunToCompletion(fight.Encounter);
-
-        // The policy's round limit fired: the fight cannot resolve, so the run's story
-        // ends here with whatever it had cleared. Counted separately from defeat rather
-        // than folded into it: a party that died and a fight that would not resolve look
-        // identical in "fights cleared" and mean opposite things about a change. A
-        // battlefield the policy cannot cross shows up here and nowhere else.
-        if (!fight.Encounter.IsComplete)
-        {
-            end = RunEnd.Stalled;
-            break;
-        }
-
-        var fightNumber = run.Cleared + 1;
-        var thisStep = step;
-
-        var heroes = fight.Encounter.Combatants
-            .Where(c => c.SideId == PregeneratedParty.SideId)
-            .ToArray();
-
-        fights.Add((
-            fightNumber,
-            thisStep.Difficulty.ToString(),
-            heroes.Sum(c => (double)c.CurrentHitPoints)
-                / Math.Max(1, heroes.Sum(c => c.Stats.MaximumHitPoints)),
-            heroes.Count(c => c.CurrentHitPoints == 0 || c.IsDead),
-            fight.Encounter.Round,
-            fight.Built.Monsters.Count));
-
-        run.CompleteFight(fight, noLoot ? null : random);
-
-        if (run.Outcome != RunOutcome.InProgress)
-        {
-            end = run.Outcome == RunOutcome.Defeated ? RunEnd.Defeated : RunEnd.Cleared;
-
-            if (end == RunEnd.Defeated)
-            {
-                deaths.Add((
-                    fightNumber,
-                    thisStep.Difficulty.ToString(),
-                    fight.Built.Monsters.Count,
-                    fight.Built.Monsters.Max(BiggestHit)));
-            }
-
-            break;
-        }
-    }
-
-    var level = run.Party.Max(member => member.Sheet.Level);
-    results.Add((run.Cleared, level, end));
-    Console.WriteLine($"seed {seed}: cleared {run.Cleared}, level {level}, {end}");
+    Console.WriteLine($"seed {seed}: cleared {seedResult.Cleared}, level {seedResult.Level}, {seedResult.End}");
 }
 
 var sorted = results.Select(result => result.Cleared).OrderBy(cleared => cleared).ToArray();
@@ -184,9 +112,16 @@ foreach (var group in deaths.Where(d => d.Fight <= 4)
         + $"avg {group.Average(d => d.Count):F1} monsters, avg biggest hit {group.Average(d => d.Biggest):F1}");
 }
 
+// #707: a party wipe is a complete encounter, so it used to be appended to `fights`
+// (for its hp-left, downed and rounds figures) and then reported under "won"/"cleared"
+// labels with everything else — one lost fight per defeated run, silently averaged into
+// a population its own label denies containing. Both reports below now read only the
+// fights the party actually won.
+var wonFights = fights.Where(f => f.Won).ToArray();
+
 Console.WriteLine("  by monster count (fights won, party hp left at end, characters downed):");
 
-foreach (var group in fights.GroupBy(f => f.Monsters).OrderBy(g => g.Key))
+foreach (var group in wonFights.GroupBy(f => f.Monsters).OrderBy(g => g.Key))
 {
     Console.WriteLine(
         $"    {group.Key} monsters: {group.Count(),4} won   "
@@ -194,9 +129,9 @@ foreach (var group in fights.GroupBy(f => f.Monsters).OrderBy(g => g.Key))
         + $"downed/fight {group.Average(f => (double)f.Downed):F2}");
 }
 
-Console.WriteLine("  per band (fights cleared, party hp left at end, characters downed, rounds):");
+Console.WriteLine("  per band (fights won, party hp left at end, characters downed, rounds):");
 
-foreach (var band in fights.GroupBy(f => (f.Fight - 1) / 5).OrderBy(g => g.Key))
+foreach (var band in wonFights.GroupBy(f => (f.Fight - 1) / 5).OrderBy(g => g.Key))
 {
     Console.WriteLine(
         $"    fights {band.Key * 5 + 1,2}-{band.Key * 5 + 5,2}: {band.Count(),4} won   "
@@ -206,12 +141,6 @@ foreach (var band in fights.GroupBy(f => (f.Fight - 1) / 5).OrderBy(g => g.Key))
 }
 
 return 0;
-
-static int BiggestHit(SRDCombat.Core.Definitions.MonsterDefinition monster) =>
-    monster.Entries.SelectMany(e => e.Attack is null ? [] : new[] { e.Attack })
-        .Select(a => a.Damage.Sum(d => d.PrintedAverage))
-        .DefaultIfEmpty(0)
-        .Max();
 
 static (int First, int Last) SeedRange(string[] args)
 {
@@ -278,20 +207,4 @@ static string? FindContentDirectory()
     }
 
     return null;
-}
-
-/// <summary>Why a run stopped, so that defeat and an unresolvable fight stay distinct.</summary>
-internal enum RunEnd
-{
-    /// <summary>The ladder ran out — the party survived everything put in front of it.</summary>
-    Cleared,
-
-    /// <summary>The party was defeated.</summary>
-    Defeated,
-
-    /// <summary>The policy's round limit fired: a fight that could not resolve.</summary>
-    Stalled,
-
-    /// <summary>The builder produced no monsters, which should not happen.</summary>
-    NoFight,
 }
