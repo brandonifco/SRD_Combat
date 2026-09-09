@@ -1511,8 +1511,9 @@ public static class SimpleTacticsPolicy
         // the order the candidates are scored in is the board's, exactly as before.
         // Both orders are deterministic and — because the tie-break chains below both
         // end on Square.X then Square.Y, which totally orders distinct squares — both
-        // pick the same winner; #726 knocked that out and the whole Core suite stayed
-        // green with the set iterated directly. This form is kept anyway because
+        // pick the same winner; #726 knocked that out and the six FrozenTranscript
+        // tests stayed green with the set iterated directly (the wider Core suite was
+        // not run under that stub — #729 is the focused pin). This form is kept anyway because
         // "unchanged by construction" is worth more than the handful of HashSet probes
         // it costs, and because nothing would have caught it if the reasoning were wrong.
         var reachable = MovementRules.Reachable(field, actor, actor.Turn.MovementFeet, encounter.Combatants);

@@ -395,10 +395,12 @@ public static class MovementRules
     /// <para>
     /// The public <see cref="StepCostFeet(Battlefield, Combatant, GridPosition,
     /// GridPosition, IReadOnlyCollection{Combatant})"/> overload deliberately builds this
-    /// lookup itself rather than calling here, and is left doing so: its duplication is
-    /// what <c>MovementRulesTests.StepCostFeet_SumsToPathCostFeet_ThroughAGenuinelyDead
-    /// CreaturesSquare</c> is a trip-wire for, and folding it in would leave that test
-    /// passing with nothing left to catch.
+    /// lookup itself rather than calling here, and is left doing so on purpose:
+    /// <c>MovementRulesTests.StepCostFeet_SumsToPathCostFeet_ThroughAGenuinelyDead
+    /// CreaturesSquare</c> asserts the concrete cost (10) as well as the sum, so it would
+    /// still catch a shared lookup that wrongly counted the dead — the duplication is kept
+    /// so the two readings of "who occupies this square" stay independently checkable,
+    /// not because the test depends on it.
     /// </para>
     /// </remarks>
     private static ILookup<GridPosition, Combatant> OccupiedSquares(
