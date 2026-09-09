@@ -64,17 +64,35 @@ command -v gh >/dev/null || { echo "queue-drift.sh: gh not on PATH" >&2; exit 2;
 json="$(gh api --paginate 'repos/{owner}/{repo}/issues?state=open&per_page=100' 2>/dev/null)" \
     || { echo "queue-drift.sh: could not query the issue queue (network or auth)" >&2; exit 2; }
 
-mapfile -t rows < <(
-    jq -r --arg waiver "$WAIVER" --arg gate "$GATE" '
-        .[] | select(.pull_request == null)
-        | . as $i
-        | ($i.body // "" | gsub("\n"; " ")) as $b
-        | [ (if ($b | test($waiver))    then "spot-check waiver (--seeds 1-20)" else empty end),
-            (if ($b | test($gate; "i")) then "per-PR both-ranges gate"          else empty end) ] as $hits
-        | select($hits | length > 0)
-        | "\($i.number)\t\($i.created_at[0:10])\t\($hits | join(" + "))\t\($i.title[0:72])"
-    ' <<<"$json" | sort -n
-)
+# Both patterns match case-insensitively. They did not at first: the waiver's `test`
+# carried no "i" while the gate's did, so a criterion opening a sentence with "Seeds
+# 1-20" walked straight past a guard that caught "seeds 1-20" — a false negative, and a
+# false negative here re-admits the drift the script exists to catch.
+#
+# jq's exit status is checked rather than assumed, and this is the defect that mattered
+# most: `mapfile -t rows < <(jq …)` hides jq's status entirely, so a malformed response
+# or a jq error produced an empty `rows`, and an empty `rows` reported "CLEAN" and
+# exited 0. A verifier that reports green when it could not answer is #528's shape
+# exactly, in the script written to close #528's shape. `set -uo pipefail` does not save
+# this — there is no `-e`, and a process substitution is not a pipeline.
+select='
+    .[] | select(.pull_request == null)
+    | . as $i
+    | ($i.body // "" | gsub("\n"; " ")) as $b
+    | [ (if ($b | test($waiver; "i")) then "spot-check waiver (--seeds 1-20)" else empty end),
+        (if ($b | test($gate; "i"))   then "per-PR both-ranges gate"          else empty end) ] as $hits
+    | select($hits | length > 0)
+    | "\($i.number)\t\($i.created_at[0:10])\t\($hits | join(" + "))\t\($i.title[0:72])"
+'
+if ! matched="$(jq -r --arg waiver "$WAIVER" --arg gate "$GATE" "$select" <<<"$json")"; then
+    echo "queue-drift.sh: the issue list did not parse — cannot say whether the queue is clean" >&2
+    exit 2
+fi
+# Not `mapfile < <(sort <<<"$matched")` unguarded: a here-string of the empty string is
+# still one empty line, which would make `rows` a one-element array of "" and put a
+# phantom row through the loop below.
+rows=()
+[[ -n "$matched" ]] && mapfile -t rows < <(sort -n <<<"$matched")
 
 new=(); old=(); skipped=()
 for row in "${rows[@]}"; do
