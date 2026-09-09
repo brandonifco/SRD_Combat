@@ -22,9 +22,12 @@ Pacing is measured at re-baselining checkpoints rather than restated here, where
 copied figure goes stale: see `CLAUDE.md`'s Pacing row for the current baseline and
 [`docs/status.md`](docs/status.md) for the generated test and content counts.
 
-**The ladder is a curve now.** Each five-fight cycle carries a **warband rung** — six to
-ten cheap creatures on the same printed XP budget, from the first cycle on, because being
-outnumbered is the one kind of difficulty the budget structurally cannot price.
+**The ladder is a curve now.** Each five-fight cycle carries a **warband rung**, marked
+from the first cycle on — but the six-to-ten-creature count only applies once the party
+is level 3 or higher; below that a marked rung fields an ordinary count instead, because
+a fragile party pays for being outnumbered in characters removed. Above the gate it is
+six to ten cheap creatures on the same printed XP budget, because being outnumbered is
+the one kind of difficulty the budget structurally cannot price.
 
 The ladder is still one five-fight cycle repeated six times, so structural variety between
 cycles is the open problem.
