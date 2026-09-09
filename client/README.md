@@ -622,10 +622,6 @@ Two things the arrangement never cost, and still does not:
   `dotnet build client/SRDCombat.Viewer.csproj` works on a machine that has never seen
   the editor. Only *running* the scene needs Godot itself.
 
-The cost it does have is the honest one: nothing in CI compiles this project, so a
-refactor in `src/` can break it silently. Build it before merging anything that touches
-the engine's public surface — that is the whole check.
-
 ## The rule this client is held to
 
 The same one as the console client: **it holds no rules.** Positions, hit points,
