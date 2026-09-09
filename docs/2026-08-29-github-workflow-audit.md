@@ -106,6 +106,11 @@ Recorded so they are not re-proposed without new evidence.
   carry the reasoning for each link; a dependency graph would show *that* #495 needs #493
   but not *why*, which is the part an agent actually needs.
 - **Releases/tags now.** F6's scope, gated behind F1–F5. Nothing is distributed yet.
+  **Reversed in part on 2026-09-09** (Brandon, the outside-review plan's §3 decision 5,
+  #716): one pre-release tester build — Windows, with Linux alongside — lands after F2's
+  foresight work, because F3's five-fight slice wants an outside player's run report
+  before the pattern extends to thirty fights. The rest of the rejection stands: no
+  tagged release proper, no player-facing README, until F6.
 - **Wholesale extraction of CLAUDE.md.** See below — a targeted split is proposed, not a
   teardown, and it is Brandon's call.
 
