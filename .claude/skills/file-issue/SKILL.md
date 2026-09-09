@@ -120,8 +120,60 @@ reference points both ways.
 - Decide a design question inside the issue. State the question, the readings you can
   see, and route it. Deciding it yourself is how partly-structured bugs ship.
 - File pacing numbers as evidence for an ordinary slice; pacing is measured at
-  checkpoints, and a PR is not required to carry it.
+  checkpoints, and a PR is not required to carry it. **This binds the acceptance
+  criteria you write, not just your own PRs** — see the measurement rule below.
 - Write "should be easy" or estimate effort. Write what must be true when it is done.
 - Leave the reason off a cross-reference.
+
+## The measurement criterion, written correctly
+
+An issue's acceptance criteria are what an engineer *executes*, so a retired rule
+copied into one is worse than the same rule left in a charter a reviewer merely
+consults. On 2026-09-09 a queue-truth review found **23 open issues** still mandating
+the gate #551 retired on 2026-08-28 (#712), and one of them — #475 criterion 4 — would
+have written it into a shipped source header, where #417's docs-grep gate could never
+reach it because no diff would have deleted anything. The hand review found 22; the
+guard found the 23rd (#542, the checkpoint issue itself) on its first live run, which is
+the argument for running it rather than sweeping by eye.
+
+**Never write these into an acceptance criterion. Both were retired 2026-08-28:**
+
+- `--seeds 1-20` "with the structural proof in the PR body" — the spot-check waiver,
+  retired along with the universal gate it was an exception to;
+- "both canonical ranges against a same-build baseline", "PacingMeasure on both
+  ranges", "the two-canonical-range gameplay gate" — the per-PR sweep itself.
+
+**Write instead** what a PR actually owes: direct evidence the change is correct
+(focused tests, deterministic pins wherever behaviour is seeded), and — where the
+change carries an obvious severe risk, meaning a stall, an unwinnable encounter or
+broken progression — **that specific risk named and shown not to occur**, aimed at the
+risk rather than swept for. Route the difficulty question to the re-baselining
+checkpoint (#542) instead of to the PR.
+
+**Do not delete a criterion that survived the retirement.** A hard zero-`Stalled`
+assertion, a named severe risk, or a dice-consumption trip-wire is precisely what the
+current rule asks for and is usually stronger evidence than the sweep it sat next to.
+#429, #437, #438 and #478 are the worked mixed cases.
+
+Before filing, and when grooming:
+
+```bash
+./scripts/queue-drift.sh
+```
+
+It fails on an open issue filed since the sweep whose body carries a **known wording**
+of either retired form. It matches a curated phrase list against a normalised body, so
+it cannot tell you no issue *mandates* the rule — a paraphrase is still a paraphrase.
+Read it as "no known wording found", and write the criterion correctly yourself; the
+list is regression-tested by `scripts/test-queue-drift.sh` (which `validate.sh` runs)
+rather than trusted.
+
+**If it flags an issue you just filed, edit the body.** The "correct by dated comment"
+convention protects issues that predate the sweep and have history worth preserving; an
+issue filed an hour ago has none, and a comment would leave a body a fresh engineer
+still executes.
+
+The live query is not in `validate.sh` — it needs the network, and the merge gate must
+not. The fixtures are.
 
 For a worked mechanism issue and a worked bug issue, read `references/examples.md`.
