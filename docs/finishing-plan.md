@@ -134,7 +134,7 @@ formations; supersedes #243, whose two items it absorbs). Exit: probe
 screenshots show it; a watcher can narrate a fight with the log covered; and,
 added 2026-09-08 from the outside review's first-shop overflow finding, **no
 interactive control on any screen lies outside the viewport at 1080p or 720p**,
-pinned by a layout-invariant test (filed from
+pinned by a layout-invariant test (to be filed from
 [`docs/2026-09-08-outside-review-response-plan.md`](2026-09-08-outside-review-response-plan.md),
 Track B).
 
@@ -157,8 +157,10 @@ response plan are
 [`docs/2026-09-08-outside-review-response-plan.md`](2026-09-08-outside-review-response-plan.md),
 which sets this phase's build order: the systems below enter **cycle 1 as one
 five-fight slice, played by a human, before extension to cycles 2–6**. The
-played-run half of that commitment is still owed and, with #542's verdict, is what
-lifts `paused:balance-design` from #306–#311. Route choice
+played-run half of that commitment is still owed; the plan's §3 proposes that its
+report, with #542's verdict, replace the checkpoint as what lifts
+`paused:balance-design` from #306–#311 — a change to the written condition in the
+`file-issue` skill, Brandon's to take. Route choice
 (pick the next rung from 2–3 revealed options); loot as a
 pick-one-of-three moment, and at least a handful of items that change a turn rather
 than a stat; shop trade-offs (retire the strictly-better gate); failure stakes
@@ -185,13 +187,14 @@ the slice that moves the visibility predicate from a display judgement into a `C
 rule, disturbing three readings that are correct only because no sight model exists);
 policy growth where measurement pays: Dodge/Disengage/retreat, behind an
 `ITacticsPolicy` seam so two policies A/B on the same seeds. Decide the six
-unoffered classes: ship or cut, not linger. **Roles before counts** (2026-09-08,
-from the outside review): before this phase exits the pool fields at least one
-healer or protector, one space controller and one urgent-priority target, each
-with a doctrine in #543's sense — and the party side completes one class that
-does not yet play distinctly (the Ranger) before any new one is offered. Exit:
-distinct-creature measurement
-re-run; the three roles fielded; a property test that every generated encounter
+unoffered classes: ship or cut, not linger. **Roles before counts** (proposed
+2026-09-08 from the outside review, the plan's §3 decision 7, pending Brandon): before
+this phase exits the pool fields at least one healer or protector, one space controller
+and one urgent-priority target — a coverage target for what the pool contains, not the
+top-down taxonomy #543 ruled out; each creature still behaves as what it is — and the
+party side completes one class that does not yet play distinctly (the Ranger) before
+any new one is offered. Exit: distinct-creature measurement re-run; if decision 7 is
+taken, the three roles fielded; a property test that every generated encounter
 resolves.
 
 **F5 — Confidence.** (Two items pulled forward on 2026-08-24: the extractor test
@@ -220,10 +223,11 @@ minutes; a parser edit fails a test on a machine without the PDF.
 artifact, not just the repo); NOTICE covers the art and the masters' licence; an
 LFS-or-release-assets strategy for the 356 MB masters tree, 139 files; packaging
 (Linux + Windows), a player-facing README, a tagged release. **A first Linux tester
-build is pulled forward** (2026-09-08 plan, Track F) to land after F2's foresight
-work and before F3's five-fight slice is judged, carrying the attribution screen and
-the art-licence notice with it, because the slice's go/no-go wants an outside
-player's run report rather than a bot's. Exit: a stranger downloads and
+build is proposed for pulling forward** (2026-09-08 plan, Track F and §3 decision 5,
+pending Brandon — it reverses the workflow audit's "Releases/tags now" rejection on
+new evidence) to land after F2's foresight work and before F3's five-fight slice is
+judged, carrying the attribution screen and the art-licence notice with it, because
+the slice's go/no-go wants an outside player's run report rather than a bot's. Exit: a stranger downloads and
 plays without cloning.
 
 **Sequencing rationale.** F1 first because every later phase builds on saves,

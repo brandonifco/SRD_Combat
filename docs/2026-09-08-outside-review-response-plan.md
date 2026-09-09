@@ -59,10 +59,14 @@ Every claim was verified against `e253c9d` by reading the code and the issue que
 - **Saves (claim 1).** The blast radius is `Resume` and the play loop, not `FromJson`.
   A null *element* in `ladder` or `members`, a null `draft`, or a null
   `abilityScoreImprovements` survives `FromJson` and crashes minutes into a fight at
-  `Gauntlet.cs:492`/`:622`/`:876`, past both clients' `InvalidDataException or
-  ArgumentException` filters (`Program.cs:110`, `PlayMode.cs:381`). Worse by this
-  project's doctrine: `"spellSlotsRemaining": null` is **silently repaired** to a full
-  complement (`Combatant.cs:1412`). No test anywhere feeds a null collection — every
+  `Gauntlet.cs:622`/`:876`, past both clients' `InvalidDataException or
+  ArgumentException` filters (`Program.cs:110`, `PlayMode.cs:381`); a null *ladder
+  rung* is worse than a crash — `Next` (`Gauntlet.cs:491-493`) returns it as null and
+  both clients read null as "run over", so the run **ends silently**. Also silent:
+  `"spellSlotsRemaining": null` passes `RunState.cs:40`'s `[JsonRequired]` (presence
+  only) and reaches Core, where null legitimately means "a full complement"
+  (`Combatant.cs:1246`) — so a corrupt save refills every slot, and the refusal
+  belongs at the save boundary, not in Core. No test anywhere feeds a null collection — every
   existing theory *removes* the property, which produces the `JsonException` that *is*
   caught. `SaveFileTests.cs:156` is the exact near-miss.
 - **Shop (claim 2).** Escape works regardless of layout (`PlayFocus.Shop.Escape ⇒
@@ -96,8 +100,11 @@ Every claim was verified against `e253c9d` by reading the code and the issue que
   affected too. `tools/PacingMeasure` has no tests at all.
 - **Shop filter (claim 8).** The mastery-trade refusal is **not** in the offer filter:
   `TradesAwayAMastery` gates only `AutoBuy` (`Shop.cs:284`), and its comment says the
-  stall still shows those swaps to a human. What blocks sidegrades is the `after <=
-  before` average-damage gate at `Shop.cs:453`. #308 already names retiring it.
+  stall still shows a swap that *gains* damage and loses a mastery to a human. What
+  blocks sidegrades is the `after <= before` average-damage gate at `Shop.cs:453`, and
+  `BestAverage` (`:555`) is dice average only, so an equal-damage swap is dropped before
+  any list exists, mastery or not. The review's conclusion stands; only its mechanism
+  is misattributed. #308 already names retiring the gate.
 - **Party breadth (claim 9).** "Six classes" hides a spread of one to nine executing
   features: Barbarian 9, Rogue 8, Fighter 8, Cleric 5 (+8 spells), Ranger 5 (all shared
   with Fighter/Rogue, +1 spell), Wizard 1 (+10 spells). The Ranger is mechanically a
@@ -109,23 +116,30 @@ Every claim was verified against `e253c9d` by reading the code and the issue que
   with #449's area-origin rulings already made. #429's body says 15 of 73; today it is
   17 of 78 because Ankheg and Ettin re-entered.
 - **`paused:balance-design`.** Six of the eight F3 design issues carry a label whose
-  only definition is its GitHub description ("Paused 2026-08-28"). No document says why,
-  or what un-pauses it. §3 makes that a decision.
+  definition is its GitHub description ("Paused 2026-08-28") plus one sentence in the
+  `file-issue` skill (`SKILL.md:99`): "paused until the re-baselining checkpoint
+  (#542)". Nothing in `docs/` records why. Read literally, that condition is circular
+  for F3 — the checkpoint *is* F3's exit, so the design work the phase consists of
+  would wait for the phase to end. §3 decision 2 proposes changing the written
+  condition, and A6 records whichever Brandon picks.
 
 ### Where the review was wrong, so nobody chases it
 
 - Escape closes the shop; the review implied only Escape *might*. Severity is "offers
   unreachable", real but milder.
 - `ended:` and `shape:` are not contaminated by the pacing label bug.
-- Equal-damage weapons *with a mastery change* are already shown to a human; the bot
-  declines them. The strictly-better damage gate is the actual blocker.
+- The review reads the mastery rule as part of the offer filter. It is not — it is
+  the bot's rule only — but that does not help the player: the average-damage gate
+  drops every equal-damage swap before a human sees it. Same conclusion, different
+  mechanism, and C1's spec must retire the gate at `Shop.cs:453`, not the bot's rule.
 - The client README's contradiction has a true half and a false half: line 589 (in
   the solution, CI runs it) is true; line 613 ("nothing in CI compiles this project")
   is a fossil from before 2026-08-15. `validate.sh` builds the whole solution on both
   legs.
 - `RunDice.cs:19-34` states its claim carefully ("a retry that made the identical
-  choices from here would see the identical fight unfold"). CLAUDE.md's flat "seed
-  12345 is a complete bug report" is the loose one. Save + seed *does* reconstitute
+  choices from here would see the identical fight unfold"). CLAUDE.md's "seed 12345 is
+  a complete bug report" carries the `(seed, fight number)` qualifier and points at
+  `RunDice`, but its headline sentence is the looser of the two. Save + seed *does* reconstitute
   the next fight; what nothing records is the player's actions inside it.
 - #581 is a docs-accuracy follow-up, not a shop issue; it does confirm the shop landed in
   `PlayMode.Draw.cs`/`Input.cs`, not `Run.cs` as the refactor design doc says.
@@ -150,11 +164,11 @@ item ships as its own PR with a knockout-verified test.
 
 | Item | Issue | Owner | Acceptance |
 | --- | --- | --- | --- |
-| A1 Explicit-null saves and scenarios refused, not crashed | NEW-1 (refs #526) | engineer | `RunSave.FromJson` refuses a null `Ladder`, `Members`, `Casualties`, any null element of `Ladder`/`Members`, a null `Draft`/`State`, and null `BaseAbilityScores`/`AbilityScoreImprovements`/`SpellSlotsRemaining`/`Potions` with `InvalidDataException` naming the property — which is already in `TryReadRun`'s filter, so the `.bak` path starts working with **no change to `SaveFile.cs`**. `ScenarioFile` gets `case null:` arms for `party`/`enemies` and per-element checks. The `SpellSlotsRemaining` silent repair becomes a refusal. Theories mirror the existing removal theories with `JsonValue` null. One **executable-boundary** test in `SRDCombat.Console.Tests` proves `--continue` against a null-poisoned primary loads the backup. Knockout table in the PR. Do **not** widen the catch — that would hide programmer bugs as corruption |
+| A1 Explicit-null saves and scenarios refused, not crashed | NEW-1 (refs #526) | engineer | `RunSave.FromJson` refuses a null `Ladder`, `Members`, `Casualties`, any null element of `Ladder`/`Members`, a null `Draft`/`State`, and null `BaseAbilityScores`/`AbilityScoreImprovements`/`SpellSlotsRemaining`/`Potions` with `InvalidDataException` naming the property — which is already in `TryReadRun`'s filter, so the `.bak` path starts working with **no change to `SaveFile.cs`**. `ScenarioFile` gets `case null:` arms for `party`/`enemies` and per-element checks. The `SpellSlotsRemaining` refusal lands in `RunSave.FromJson`, **not** in Core, where null is a documented reading. Theories mirror the existing removal theories with `JsonValue` null. One **executable-boundary** test in `SRDCombat.Console.Tests` proves `--continue` against a null-poisoned primary loads the backup. Knockout table in the PR. Do **not** widen the catch — that would hide programmer bugs as corruption |
 | A2 The shop fits the window | NEW-2 | engineer, then `probe-diff` | A static `ShopRowsThatFit(screenHeight, effectCounts)` in the `BarTop`/`GroundLine` style, pinned at 1080p and 720p for 0–40 offers; Back and the purse always on screen; wheel and PageUp/PageDown page the list (or `Shop` becomes a `RowMenu` so `TakesRowKeys` gives it keys); a "N more…" affordance. The probe's shop step asserts `_shopBackButton` bottom ≤ `ScreenHeight` *before* clicking — a computed-centre click on an off-screen rect is a fault. `project.godot` gains a minimum window size. Captures re-baselined per the skill |
-| A3 The probe's refusal step refuses | #521 + NEW-3 | designer decides, engineer builds | #521's decision: retarget the step at a refusal the button row actually surfaces (recommended: arm an attack, click a square out of reach, assert the `attack.*` refusal code in `_notice`), or the debug-only doomed action. NEW-3 is independent and has no design question: `CaptureFrame` **throws** on `SavePng` failure so `ProbeFaults` exits 1, and every *required* probe step asserts a state predicate (refusal code seen, resources unchanged, expected focus layer) — `ReportSkip` stays for unreachable optional steps only. `client/README.md:515` and `probe-diff/SKILL.md:67` corrected in the same diff |
+| A3 The probe's refusal step refuses | #521 + NEW-3 | designer decides, engineer builds | #521's decision: retarget the step at a refusal the button row actually surfaces (recommended: arm an attack, click a square out of reach, assert the `attack.*` refusal code in `_notice`), or the debug-only doomed action. NEW-3 is independent and has no design question: both `CaptureFrame`s (`FightScreen.cs:2776` and `CreateMode.cs:1308`) **throw** on `SavePng` failure so `ProbeFaults` exits 1, and every *required* probe step asserts a state predicate (refusal code seen, resources unchanged, expected focus layer) — `ReportSkip` stays for unreachable optional steps only. `client/README.md:515` and `probe-diff/SKILL.md:67` corrected in the same diff; #180 (the probe never reaching the interlude) is closed or re-scoped, since the probe has reached the interlude and the shop since #499's S0 |
 | A4 Spirit Guardians says what it is | NEW-4 (label), NEW-5 (aura) | engineer (label, now); architect → engineer (aura) | **Now:** `DescribeSpell` appends the same "(not yet implemented: persistent aura, halved Speed, saves each turn)" tag `DescribeSpecies` uses; the allowlist header stops saying "verified to execute faithfully" over an entry it exempts; a test pins that four `EndTurn`s after a cast deal no damage and the Ogre keeps 40 ft — so the gap is a red test the moment the aura lands. **Then (Track B window):** the aura itself, see §3 decision 1. Withdrawing the spell is not recommended — it would strip the pregen Cleric's level-5 identity and the whole point is to make labels true |
-| A5 `PacingMeasure` counts what it labels | NEW-6 | analyst specifies, engineer builds | The fight tuple carries `Won`; both `GroupBy` blocks filter on it; labels match. A minimal test project pins one scripted defeated run's exclusion. Then **re-run seeds 1–120 and 200–320 once** — this is a re-baselining act, not a per-PR measurement — and correct the per-band and by-monster-count lines in CLAUDE.md's Pacing row, noting inline that the earlier series was contaminated so the two are never compared as if alike. `shape:`/`ended:`/median stand |
+| A5 `PacingMeasure` counts what it labels | NEW-6 | analyst specifies, engineer builds | The fight tuple carries `Won`; both `GroupBy` blocks filter on it; labels match. A minimal test project pins one scripted defeated run's exclusion. Then **re-run seeds 1–120 and 200–320 once, against `112ed19`'s engine** (a worktree at that commit with only the tool fix applied) — a correction of the standing baseline's contaminated readout, not a measurement of a new commit, which the 2026-08-28 rule forbids outside a checkpoint — and correct the per-band and by-monster-count lines in CLAUDE.md's Pacing row, noting inline that the earlier series was contaminated so the two are never compared as if alike. `shape:`/`ended:`/median stand |
 | A6 Docs say what is true | NEW-7 | steward | One PR: `client/README.md:613-615` deleted; root `README.md:21-34` stops quoting figures and points at the Pacing row and `docs/status.md`; finishing plan's fixture paragraph (`:189-194`, with its own 34-vs-27 contradiction) replaced by #694's finding; the outside-review commitment recorded in the finishing plan, which currently never mentions it; CLAUDE.md's "seed is a complete bug report" becomes "save + seed reproduces the next fight; nothing records the choices inside it"; `docs/status.md` regenerated; `paused:balance-design` defined in the framework doc with its un-pause condition (§3 decision 2); #581's addendum |
 
 **Exit:** all six merged; A1–A3 each with a knockout table; A5's corrected per-band
@@ -172,7 +186,7 @@ preview would otherwise pay and produces the path data #303 needs.
 | B2 | #304 | The latency half is one constant (`HoverDelaySeconds = 2` → 0.5) and ships first as its own PR; the terrain-vocabulary half follows | engineer |
 | B3 | #303, #301, #302 | Path preview from B1's predecessor map; opportunity-attack threat squares from `FindOpportunityAttackers` (zero client references today); range envelope and exact `AreaTargeting` coverage on hover. In that order — each composes with the last, and #302 is the one that needs new focus *states*, so it routes through `FocusStack<T>` per the F3 entry rule | engineer, `probe-diff` per PR |
 | B4 | #299 | Health thresholds and death-save pips; downed tokens draw no bar today and `DeathSave` has zero client references | engineer |
-| B5 | #305, #329, NEW-9 | Log space; font scale off a viewport-derived factor instead of 68 literal `fontSize:` sites; **NEW-9: a layout-invariant test family** — every interactive rect on every screen is inside the viewport at 1080p and 720p, the generalisation of A2's fix so the next long list cannot overflow | engineer |
+| B5 | #305, #329, NEW-9 | Log space; font scale off a viewport-derived factor instead of 76 literal `fontSize:` sites (`grep -rc "fontSize:" client --include=*.cs`, 2026-09-08); **NEW-9: a layout-invariant test family** — every interactive rect on every screen is inside the viewport at 1080p and 720p, the generalisation of A2's fix so the next long list cannot overflow | engineer |
 | B6 | #495 | Keyboard `M - Move` stepping — after B3, since it re-uses the preview | engineer |
 
 Art and audio (#300, #460, #462, #437–#440's art asks) stay sequenced last per
@@ -217,7 +231,7 @@ measurement re-run") stays but is joined by a roles target.
 | D2 One species trait executes | #291 slice | Darkvision, once the registry keys on owning species (the Dwarf 120 ft vs 60 ft trip-wire at `OriginContentTests.cs:166` is already in place) — the first trait that makes species a choice with a combat consequence, and the one fog slice 2 (#545) will need anyway |
 | D3 The grade names what it grades | #231, sequenced after #390's last shape | `Playable` reads every section, with the demotion table produced *first* and the `MonsterPoolTests` floor lowered with a transitional annotation, because #390 ratchets the same number up. Plus a doc sentence distinguishing *entry* completeness from *whole-creature* fidelity (the footprint gap is the example), and the four named behaviours — Nimble Escape, Undead Fortitude, Redirect Attack, Split — as the first four mechanics to model because they are the ones the review could name from a census |
 | D4 Bodies are the size print says | #429 (S4), #430 (S5), #449 | The flip and its inventory in one PR per #429's criterion 9, then the clients. The named new stall class (a Large creature wedged in generated terrain) gets its direct demonstration per the standing convention |
-| D5 Three enemy roles | #312, #543, #314, NEW-12 | NEW-12 states the target: before F4 exits, the pool fields at least one **healer/protector**, one **space controller**, and one **urgent-priority target** (a caster is the natural third), each with a doctrine in #543's sense; #312 admits the casters, #314 gives the policy Dodge/Disengage/retreat behind an `ITacticsPolicy` seam so two policies A/B on the same seeds — which also answers the review's "the same policy plays both sides" objection |
+| D5 Three enemy roles | #312, #543, #314, NEW-12 | NEW-12 states the target: before F4 exits, the pool fields at least one **healer/protector**, one **space controller**, and one **urgent-priority target** (a caster is the natural third). This is a *coverage* target for what the pool contains, not the top-down role taxonomy #543 ruled out (Brandon, 2026-08-27) — each creature's behaviour still follows from what it is, in #543's sense; the roles say only which kinds of creature must be present. Because it changes a phase exit, it is §3 decision 7; #312 admits the casters, #314 gives the policy Dodge/Disengage/retreat behind an `ITacticsPolicy` seam so two policies A/B on the same seeds — which also answers the review's "the same policy plays both sides" objection |
 | D6 Six unoffered classes | #315 | Recommend **cut for v1.0** (§3 decision 4). Twelve classes at one-to-nine executing features each is the count-chasing the review warns against |
 
 ### Track E — Evidence that can go red (F5, continuous)
@@ -243,7 +257,7 @@ the review's point is that **the evidence it produces is needed by C5, not after
 
 | Item | Issue | Note |
 | --- | --- | --- |
-| F1 A tester build | #326 (first slice) | A Linux build (Windows if the Godot export is already configured) of `main` after Track B, with `--seed` and the replay bundle from E4, distributed as a release asset, not a clone. The attribution screen (#323) and the art-licence line (#324) land with it because a distributed binary needs them; the masters strategy (#325) does not block it |
+| F1 A tester build | #326 (first slice) | The workflow audit's "Considered and rejected" list holds "Releases/tags now — F6's scope, gated behind F1–F5. Nothing is distributed yet" (`docs/2026-08-29-github-workflow-audit.md:108`); this re-proposes it on new evidence — C5's go/no-go wants a stranger's run report, which no clone-and-build path produces — and is §3 decision 5. If taken: a Linux build (Windows if the Godot export is already configured) of `main` after Track B, with `--seed` and the replay bundle from E4, distributed as a release asset, not a clone. The attribution screen (#323) and the art-licence line (#324) land with it because a distributed binary needs them; the masters strategy (#325) does not block it |
 | F2 A run-report template | NEW-16 | What the tester decided and why, where they were confused, what they thought a control did versus what it did, and whether they wanted another fight — recorded per fight, not per run. Used by C5's human run and by every F3 "human run report" acceptance criterion, which today has no form |
 | F3 One outside player on the five-fight slice | C5 | The go/no-go evidence for extending C1–C3 to cycles 2–6 |
 
@@ -268,7 +282,8 @@ correction, not a measurement); it does not touch art or audio.
 
 ## 3. Decisions Brandon owns
 
-Listed with a recommendation each, so they can be answered in one sitting.
+Listed with a recommendation each, so they can be answered in one sitting. **Until
+they are, the finishing-plan edits in §5 carry each as proposed, not taken.**
 
 1. **Spirit Guardians.** Label now (A4, no decision needed) and **implement the aura**
    (NEW-5) in the Track B window — recommended, because Core has the lifecycle and the
@@ -277,11 +292,13 @@ Listed with a recommendation each, so they can be answered in one sitting.
    (the caster's allies are always affected unless the reading is written) or read it
    as "allies are exempt" and write that reading down. Recommend the second; it is
    what every table plays.
-2. **Un-pausing `paused:balance-design`.** The label was applied 2026-08-28 with no
-   written condition. Recommend: the pause lifts for F3's design issues (#306–#311) the
-   day the played run's report exists, and the report plus #542's verdict are recorded
-   in the framework doc as the un-pause. F4's balance issues stay paused until the F3
-   checkpoint re-baselines.
+2. **Un-pausing `paused:balance-design`.** The written condition
+   (`file-issue/SKILL.md:99`) is "until the re-baselining checkpoint (#542)", which for
+   F3 is circular (§1). Recommend **changing it**: the pause lifts for F3's design issues
+   (#306–#311) the day the played run's report exists, with the report and #542's
+   verdict recorded in the framework doc and the skill as the un-pause. F4's balance
+   issues keep the checkpoint condition. Until answered, the finishing plan states
+   this as proposed, not done.
 3. **The `112ed19` difficulty verdict (#542)** — only the played run answers it. The
    review's two automated clears at level 4 are consistent with the baseline's 32 of
    120, not evidence against it.
@@ -289,12 +306,21 @@ Listed with a recommendation each, so they can be answered in one sitting.
    character creator ("six classes in this release"), which is the honest product
    boundary the review asks for. Reopen after F6 if a played run wants a class the six
    cannot give.
-5. **Pulling the tester build forward (F1).** Recommend yes: one Linux release asset
-   after Track B, well before F6's packaging proper. The cost is #323/#324 landing
-   early, which they must anyway.
+5. **Pulling the tester build forward (F1).** This reverses a recorded rejection
+   ("Releases/tags now", `docs/2026-08-29-github-workflow-audit.md:108`) on the new
+   evidence that C5's go/no-go needs an outside player. Recommend yes: one Linux
+   release asset after Track B, well before F6's packaging proper. The cost is
+   #323/#324 landing early, which they must anyway. If yes, the audit's list gains the
+   reversal and its date.
 6. **The comment convention (E6).** Recommend adopt, applied on touch, never as a
    sweep — the archive already holds the long form and the convention only says where
    the next paragraph goes.
+7. **Roles as an F4 exit criterion (D5, NEW-12).** #543 ruled out a role taxonomy as
+   the axis behaviour is built from; NEW-12 asks only that the pool *contain* a
+   healer or protector, a space controller and an urgent-priority target, each behaving
+   as what it is. Recommend adopt as a coverage target; if Brandon reads it as the
+   taxonomy #543 rejected, D5 falls back to #312 and #543 alone and the F4 edit is
+   reverted.
 
 
 ## 4. Issue manifest
@@ -333,11 +359,12 @@ Made in the same PR as this document, so the plan and this adjudication agree:
 
 - **F2 exit** gains the layout invariant line (Track B).
 - **F3** records the outside-review commitment and points here; its build order becomes
-  the five-fight slice first (Track C).
-- **F4** gains the roles target (Track D, NEW-12) alongside the distinct-creature
-  re-run.
+  the five-fight slice first (Track C); the un-pause change is stated as proposed
+  (decision 2).
+- **F4** gains the roles target (Track D, NEW-12) as proposed (decision 7), alongside
+  the distinct-creature re-run.
 - **F5** loses the fixture paragraph in favour of #694's finding (A6 does the edit).
-- **F6** notes the tester build pulled forward (Track F).
+- **F6** notes the tester build proposed for pulling forward (Track F, decision 5).
 
 **What this plan does not change.** The phases, their order, the checkpoint rule for
 pacing, the art-and-audio-last sequencing, the honesty rule, and the standing law of
