@@ -7,7 +7,12 @@ taken by the tactics policy, one turn per beat so you can watch what happens to 
 Between fights an interlude reports what the run reports — the rest taken, who returned,
 who levelled, what was found — and a Continue button marches on. At each Long Rest a
 Shop button opens the merchant's stall: every offer at its printed price, the purse in
-the header, the unaffordable dimmed, a click buys, Back or Esc returns. `--one-fight` plays a
+the header, the unaffordable dimmed, a click buys, Back or Esc returns. The stall pages
+rather than growing past the window (#704): only as many offers as fit above Back are
+drawn, a "N more…" line names what is scrolled out of view, and the mouse wheel (one
+offer) or Page Up/Down (one window) move the list — Back and the purse line are on
+screen at every offer count, at any window size down to the floor below.
+`--one-fight` plays a
 single encounter instead; `--watch` keeps the original read-only screen, which resolves
 one fight up front and lets you scrub through it. Either takes
 `--spawn="Ogre, 2 Goblin Warrior"` to field exactly that cast instead of drawing from
@@ -108,7 +113,14 @@ fight into whatever ground is left — so the controls are visible at every wind
 and resolution, and the window refuses to shrink below 960×540, where there would be no
 ground left to give. (They were laid out on a fixed 1920×1080 canvas once, and on any
 screen shorter than that the button row sat below the window's bottom edge, invisible
-no matter how the window was sized.)
+no matter how the window was sized.) The floor is set once, in code
+(`FightScreen._Ready`, `GetWindow().MinSize = new Vector2I(960, 540)`) — Godot 4 has no
+`project.godot` setting for a window's minimum size (only its starting
+`viewport_width`/`viewport_height`; see
+[godot-proposals#7586](https://github.com/godotengine/godot-proposals/issues/7586),
+which proposes adding one and confirms today's engine does not have it), so this is the
+one place the floor can live and it already covers every `FightScreen` screen, the
+merchant's stall included.
 
 **The field fills the window, and a camera frames the fight over it.** Everything else
 — the heading, the initiative list, the log, the banner and the buttons — floats on

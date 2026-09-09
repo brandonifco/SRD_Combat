@@ -516,11 +516,22 @@ public partial class PlayMode : FightScreen
     /// header, the unaffordable dimmed the way the console stars them — a thing worth
     /// saving toward is worth seeing.
     /// </summary>
+    /// <remarks>
+    /// <b>Draws only the window <see cref="ShopLayout.Fit"/> returns</b> (#704). Before
+    /// this, every offer went into one column with nothing to stop <c>y</c> running past
+    /// <see cref="FightScreen.ScreenHeight"/> — 25 offers already pushed the Back button
+    /// itself off the bottom of a 1920×1080 window. The offer list and the "N more…" line
+    /// below it now stay inside whatever room <see cref="FightScreen.ScreenHeight"/>
+    /// actually has, at every offer count, so Back and the purse line are always on
+    /// screen — pinned by <c>ShopLayoutTests</c>.
+    /// </remarks>
     private void DrawShop(GauntletRun run)
     {
         _shopRows.Clear();
 
         var offers = Shop.Offers(_content!, run.Party, run.States);
+        var shop = Shopping!;
+        var offset = ShopLayout.ClampOffset(shop.Offset, offers.Count);
         var y = UiTop + 8f;
 
         DrawString(
@@ -530,7 +541,24 @@ public partial class PlayMode : FightScreen
             fontSize: 14,
             modulate: Ink);
 
-        y += 26;
+        // ShopLayout.HeaderHeight is this line's own height (26) plus the 8 it started
+        // at — named once so ShopLayoutTests adds the header up the same way this does.
+        y = UiTop + ShopLayout.HeaderHeight;
+
+        // A line's worth of room is reserved here whether or not it is scrolled past the
+        // top — see ShopLayout.MoreLineReserve's remarks — so the offers below never move
+        // depending on whether this text happens to be drawn.
+        if (offset > 0)
+        {
+            DrawString(
+                TextFont,
+                new Vector2(UiLeft, y + 12),
+                $"↑ {offset} more above — wheel up or Page Up",
+                fontSize: 11,
+                modulate: Dim);
+        }
+
+        y += ShopLayout.MoreLineReserve;
 
         if (offers.Count == 0)
         {
@@ -540,52 +568,76 @@ public partial class PlayMode : FightScreen
                 "Nothing here would improve anybody.",
                 fontSize: 13,
                 modulate: Dim);
-            y += 22;
+            y += ShopLayout.EmptyMessageHeight;
+            _shopVisibleCount = 0;
         }
-
-        foreach (var offer in offers)
+        else
         {
-            // What the price buys, under the price. The lines are the offer's own —
-            // a shopper choosing between a suit of armor and a blade is comparing
-            // rules, and rules are never this client's to compute.
-            var effects = offer.Effect.Lines;
-            var affordable = offer.CostCopper <= run.GoldCopper;
-            var rect = new Rect2(UiLeft, y, ShopRowWidth, 19 + (effects.Count * 15));
+            var effectLineCounts = offers.Select(offer => offer.Effect.Lines.Count).ToList();
+            var window = ShopLayout.Fit(ScreenHeight - y, effectLineCounts, offset);
 
-            _shopRows.Add((rect, offer));
+            _shopVisibleCount = window.VisibleCount;
 
-            DrawRect(rect, GridLine);
-            DrawString(
-                TextFont,
-                new Vector2(rect.Position.X + 8, rect.Position.Y + 14),
-                offer.Description,
-                fontSize: 12,
-                modulate: affordable ? Ink : Dim);
-
-            var line = rect.Position.Y + 28;
-
-            foreach (var effect in effects)
+            for (var index = window.FirstIndex; index < window.FirstIndex + window.VisibleCount; index++)
             {
+                var offer = offers[index];
+
+                // What the price buys, under the price. The lines are the offer's own —
+                // a shopper choosing between a suit of armor and a blade is comparing
+                // rules, and rules are never this client's to compute.
+                var effects = offer.Effect.Lines;
+                var affordable = offer.CostCopper <= run.GoldCopper;
+                var rect = new Rect2(UiLeft, y, ShopRowWidth, ShopLayout.RowHeight(effects.Count));
+
+                _shopRows.Add((rect, offer));
+
+                DrawRect(rect, GridLine);
                 DrawString(
                     TextFont,
-                    new Vector2(rect.Position.X + 20, line),
-                    effect,
-                    fontSize: 11,
-                    modulate: affordable ? Dim : new Color(Dim, 0.55f));
-                line += 15;
+                    new Vector2(rect.Position.X + 8, rect.Position.Y + 14),
+                    offer.Description,
+                    fontSize: 12,
+                    modulate: affordable ? Ink : Dim);
+
+                var line = rect.Position.Y + 28;
+
+                foreach (var effect in effects)
+                {
+                    DrawString(
+                        TextFont,
+                        new Vector2(rect.Position.X + 20, line),
+                        effect,
+                        fontSize: 11,
+                        modulate: affordable ? Dim : new Color(Dim, 0.55f));
+                    line += 15;
+                }
+
+                y += rect.Size.Y + ShopLayout.RowGap;
             }
 
-            y += rect.Size.Y + 4;
+            if (window.HasMore)
+            {
+                var hidden = offers.Count - (window.FirstIndex + window.VisibleCount);
+
+                DrawString(
+                    TextFont,
+                    new Vector2(UiLeft, y + 12),
+                    $"↓ {hidden} more below — wheel down or Page Down",
+                    fontSize: 11,
+                    modulate: Dim);
+            }
+
+            y += ShopLayout.MoreLineReserve;
         }
 
-        if (Shopping?.Notice is { } notice)
+        if (shop.Notice is { } notice)
         {
-            y += 6;
+            y += ShopLayout.NoticeGap;
             DrawString(TextFont, new Vector2(UiLeft, y + 12), Trim(notice, 78), fontSize: 13, modulate: MonsterColour);
-            y += 18;
+            y += ShopLayout.NoticeLineHeight;
         }
 
-        _shopBackButton = new Rect2(UiLeft, y + 12, 110, 32);
+        _shopBackButton = new Rect2(UiLeft, y + ShopLayout.BackButtonGap, 110, ShopLayout.BackButtonHeight);
 
         DrawRect(_shopBackButton, GridLine);
         DrawRect(_shopBackButton, Dim, filled: false, width: 1);

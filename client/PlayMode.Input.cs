@@ -274,6 +274,52 @@ public partial class PlayMode : FightScreen
     private PlayFocus.Shop? Shopping => _focus.Topmost<PlayFocus.Shop>();
 
     /// <summary>
+    /// The stall's own wheel scroll (#704) — one row per notch. Kept out of
+    /// <see cref="PlayFocusRouter"/> because a wheel notch is never a
+    /// <see cref="ClientKey"/>; see <see cref="_UnhandledInput"/>'s remarks.
+    /// </summary>
+    private bool HandleShopWheelInput(InputEvent @event)
+    {
+        switch (@event)
+        {
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp, Pressed: true }:
+                ScrollShop(-1);
+                return true;
+
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelDown, Pressed: true }:
+                ScrollShop(1);
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Moves the stall's scroll window by <paramref name="rows"/> offers, clamped to
+    /// however many are on sale this visit. Recomputes the offer list rather than caching
+    /// it — <see cref="DrawShop"/> already does the same on every frame the stall is open,
+    /// so this stays the one place that count comes from rather than a second copy that
+    /// could drift from it.
+    /// </summary>
+    private void ScrollShop(int rows)
+    {
+        if (Shopping is not { } shop || _run is not { } run)
+        {
+            return;
+        }
+
+        var offerCount = Shop.Offers(_content!, run.Party, run.States).Count;
+        var offset = ShopLayout.ClampOffset(shop.Offset + rows, offerCount);
+
+        if (offset != shop.Offset)
+        {
+            _focus.ReplaceTop(shop with { Offset = offset });
+            QueueRedraw();
+        }
+    }
+
+    /// <summary>
     /// How many rows the open menu has, or zero when none is open — or when the layer on
     /// top has changed since <c>_menuRows</c> was last filled (<see cref="MenuRowList"/>).
     /// </summary>
@@ -388,19 +434,41 @@ public partial class PlayMode : FightScreen
     /// <para>
     /// <b>The click cascade moved too, in #503 (S4)</b> — a pixel's route now comes from
     /// <see cref="PlayFocusRouter.RouteClick"/> via <see cref="HandleClick"/>, the same
-    /// division of labour as this method's own keyboard half. Three mouse paths stay here
+    /// division of labour as this method's own keyboard half. Four mouse paths stay here
     /// by design rather than by omission: the camera (wheel zoom, middle- or right-drag
     /// pan) is nobody's decision, just settling an input before anything else can misread
-    /// it; the hover clock only ever clears a tooltip; and the outcome card's left-click
-    /// commit, immediately below, is a boundary this method drew on purpose — it precedes
-    /// <see cref="HandleClick"/> entirely and is not one of the click pipeline's nine
-    /// steps. Folding it in would need its own scoped slice with a left-button-and-
-    /// ordering characterization test, not a drive-by move.
+    /// it; the shop's own wheel scroll (#704) is the same kind of settling, for the one
+    /// screen the camera never reaches; the hover clock only ever clears a tooltip; and
+    /// the outcome card's left-click commit, immediately below, is a boundary this method
+    /// drew on purpose — it precedes <see cref="HandleClick"/> entirely and is not one of
+    /// the click pipeline's nine steps. Folding any of them in would need its own scoped
+    /// slice with a left-button-and-ordering characterization test, not a drive-by move.
+    /// </para>
+    /// <para>
+    /// <b>The wheel is a mouse button in Godot</b> (<c>MouseButton.WheelUp</c>/
+    /// <c>WheelDown</c>), so <see cref="Translate"/> already turns it into a
+    /// <see cref="ClientInputKind.MousePressed"/> <see cref="ClientInput"/> before this
+    /// method ever sees the raw event — <see cref="PlayFocusRouter.Route"/> reports
+    /// <see cref="RouteAction.Unhandled"/> for it every time, the same as it does for a
+    /// click, since <c>input.IsKey</c> is false. Page Up/Down are ordinary keys and *do*
+    /// go through the router (see its own remarks on <see cref="RouteAction.ScrollShop"/>);
+    /// only the wheel's raw <see cref="InputEventMouseButton"/> is read here, because a
+    /// row-at-a-time scroll has no keyboard equivalent to share a <see cref="ClientKey"/>
+    /// with.
     /// </para>
     /// </remarks>
     public override void _UnhandledInput(InputEvent @event)
     {
         if (Perform(PlayFocusRouter.Route(_focus, Translate(@event), Context())))
+        {
+            return;
+        }
+
+        // The stall's own wheel scroll (#704): one row per notch, regardless of phase —
+        // unlike the camera below, the shop is only ever open outside a fight, so gating
+        // this on Phase.Fighting the way the camera is would leave the wheel exactly as
+        // dead here as the bug report found it.
+        if (Shopping is not null && HandleShopWheelInput(@event))
         {
             return;
         }
@@ -552,6 +620,8 @@ public partial class PlayMode : FightScreen
                 Key.Up => ClientKey.Up,
                 Key.Down => ClientKey.Down,
                 Key.Space => ClientKey.Space,
+                Key.Pageup => ClientKey.PageUp,
+                Key.Pagedown => ClientKey.PageDown,
                 _ => ClientKey.Other,
             },
             // Space is the End Turn hotkey and reaches ActionForKey as a space character,
@@ -680,6 +750,16 @@ public partial class PlayMode : FightScreen
                 Run(() => Invoke(action));
                 return true;
 
+            case RouteAction.ScrollShop:
+                // A router-issued scroll is always a page (Page Up/Down) rather than a
+                // single row — the wheel's own row-at-a-time step is applied directly by
+                // HandleShopWheelInput, which never goes through the router at all (see
+                // _UnhandledInput's remarks). _shopVisibleCount is last frame's page
+                // size; a fresh stall that has not drawn yet reads zero, so a page is at
+                // least one row rather than a no-op.
+                ScrollShop(route.StepY * Math.Max(_shopVisibleCount, 1));
+                break;
+
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(route), route.Action, "No handler for this route.");
@@ -798,11 +878,14 @@ public partial class PlayMode : FightScreen
 
                     // The engine's answer either way: a purchase re-lists the stall
                     // with the purse lighter, a refusal is shown with its code like
-                    // every other rule.
+                    // every other rule. The scroll window rides along (#704) — a
+                    // purchase deep in a long list must not snap the shopper back to
+                    // its top to read the answer.
                     _focus.ReplaceTop(new PlayFocus.Shop(
                         shopping.Purchase(offer) is { } refusal
                             ? $"[{refusal.Code}] {refusal.Message}"
-                            : $"Bought: {offer.Description}."));
+                            : $"Bought: {offer.Description}.",
+                        Shopping?.Offset ?? 0));
                 }
 
                 break;

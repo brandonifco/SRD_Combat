@@ -182,6 +182,24 @@ public class PlayFocusTests
     }
 
     /// <summary>
+    /// The scroll window rides the layer the same way the notice does (#704): a fresh
+    /// stall opens at the top, and a purchase's <c>ReplaceTop</c> carries whatever offset
+    /// the shopper had scrolled to rather than snapping them back to it.
+    /// </summary>
+    [Fact]
+    public void TheShopsScrollOffsetDefaultsToZeroAndRidesAReplaceTop()
+    {
+        var focus = new FocusStack<PlayFocus>(new PlayFocus.Board());
+        focus.Push(new PlayFocus.Shop());
+
+        Assert.Equal(0, focus.Topmost<PlayFocus.Shop>()!.Offset);
+
+        focus.ReplaceTop(new PlayFocus.Shop("Bought: a Potion of Healing.", Offset: 4));
+
+        Assert.Equal(4, focus.Topmost<PlayFocus.Shop>()!.Offset);
+    }
+
+    /// <summary>
     /// The quit card holds the turn open, so auto-end-turn cannot advance beneath it.
     /// </summary>
     /// <remarks>

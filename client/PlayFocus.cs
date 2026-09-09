@@ -99,7 +99,16 @@ internal abstract record PlayFocus
     /// </para>
     /// </remarks>
     /// <param name="Notice">What the last purchase or refusal said, or null.</param>
-    internal sealed record Shop(string? Notice = null) : PlayFocus
+    /// <param name="Offset">
+    /// The scroll window's first visible offer (#704). Lives here rather than on
+    /// <c>PlayMode</c> for the same reason <paramref name="Notice"/> does: the stall can
+    /// only ever have one of these open at a time, so the state belongs to the layer that
+    /// is that stall, not to a field the node would have to remember to reset itself.
+    /// Moved by the mouse wheel (one row) and PageUp/PageDown (one window), both clamped
+    /// by <see cref="ShopLayout.ClampOffset"/> against however many offers are on sale
+    /// this visit.
+    /// </param>
+    internal sealed record Shop(string? Notice = null, int Offset = 0) : PlayFocus
     {
         internal override EscapeMeaning Escape => EscapeMeaning.CloseSelf;
 
