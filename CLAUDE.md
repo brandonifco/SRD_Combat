@@ -66,6 +66,10 @@ Not required reading — linked so you never have to search for them.
   the project review found wanting.
 - [`docs/2026-08-21-project-review.md`](docs/2026-08-21-project-review.md) — the
   independent four-viewpoint audit the plan is built from. Every plan item cites it.
+- [`docs/2026-09-08-outside-review-response-plan.md`](docs/2026-09-08-outside-review-response-plan.md)
+  — the pre-F3 outside review (Codex, at `e253c9d`), every claim adjudicated against
+  the code, and the six-track response plan with its issue manifest and the decisions
+  that are Brandon's.
 - [`docs/2026-08-11-design-and-development-plan.md`](docs/2026-08-11-design-and-development-plan.md)
   — the original design doc: kickoff decisions, the architecture, why it diverges from
   `5eGoldBox`.
