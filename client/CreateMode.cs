@@ -1317,6 +1317,9 @@ public partial class CreateMode : Node2D
     /// screens have, duplicated rather than shared — it needs a live <see
     /// cref="CanvasItem"/> to redraw and a viewport to read back from, so it cannot
     /// move to a plain composed class the way the font and the colours did (#327 S7).
+    /// Since #705, a failed <c>SavePng</c> throws (<see
+    /// cref="CaptureOutcome.FailureMessage"/>) rather than printing and moving on — the
+    /// same fix as <c>FightScreen.CaptureFrame</c>, kept in step with it.
     /// </summary>
     private async Task CaptureFrame(string path)
     {
@@ -1329,9 +1332,12 @@ public partial class CreateMode : Node2D
         var image = GetViewport().GetTexture().GetImage();
         var error = image.SavePng(path);
 
-        GD.Print(error == Error.Ok
-            ? $"captured to {path}"
-            : $"could not save {path}: {error}");
+        if (CaptureOutcome.FailureMessage(path, error) is { } failure)
+        {
+            throw new InvalidOperationException(failure);
+        }
+
+        GD.Print($"captured to {path}");
     }
 
     private void ClickRow(int index)

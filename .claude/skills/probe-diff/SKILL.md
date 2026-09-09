@@ -64,9 +64,11 @@ Each differing capture is one of:
   not what the PR claimed either; say it.
 - **A capture that vanished or a `.skipped.txt` that appeared.** The probe could not
   reach that step any more. That is a regression in the probe's reach until shown
-  otherwise, and `play-2-refused` being a byte-copy of `play-1-turn-ready` (#499) is the
-  reminder that a capture existing is not the same as a capture showing what its name
-  says.
+  otherwise, and the old `play-2-refused` being a byte-copy of `play-1-turn-ready`
+  (#521) is the reminder that a capture existing is not the same as a capture showing
+  what its name says — which is also why every required step now asserts a predicate
+  before it captures, not after (#705); a differing capture whose predicate would have
+  failed is a fault in the tree you are testing, not a diff to read.
 
 Open the PNGs. A bounding box tells you where; only the picture tells you what.
 
@@ -84,7 +86,7 @@ number floats above the token" carries the box over the token and nothing else.
 ## The capture set, for orientation
 
 The main run (`--seed=1 --probe=<dir>`): `run-0-interlude`, `play-1-turn-ready`,
-`play-1b-quit-confirm`, `play-2-refused`, `play-2b-hint`, `play-2c-tab-armed`,
+`play-1b-quit-confirm`, `play-2-stand-up-not-offered`, `play-2b-hint`, `play-2c-tab-armed`,
 `play-3-moved`, `play-4-attacked`, `play-5-feature`, `play-6-turn-ended`,
 `play-7-spell-menu`, `play-8-cast`, `play-9-attack-menu`, `run-9-outcome-card`,
 `run-9-after-fight`, `run-10-shop`. The one-fight run adds `play-9-spell-menu` and
