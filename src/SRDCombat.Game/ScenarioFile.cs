@@ -196,6 +196,18 @@ public static class ScenarioFile
                 errors.Add($"party.members[{index}].draft.name: a character needs a name to be narrated by.");
             }
         }
+
+        // Structural, not content-dependent — a member's StartingState.IsDead needs no
+        // resolved sheet to read — so this belongs here rather than in ScenarioContent,
+        // the same way RunSave.FromJson's own all-dead check needs no content either
+        // (#480 acceptance criterion 4). Reuses that method's reasoning verbatim: a save
+        // written after a won fight can never have every character dead, and neither can
+        // a scenario an author actually means to run — refusing here says so before the
+        // encounter factory is ever asked to build a fight for nobody.
+        if (members.Count > 0 && members.All(member => member?.StartingState?.IsDead == true))
+        {
+            errors.Add("party.members: every member is marked dead; there is no fight to build for nobody.");
+        }
     }
 
     private static void CheckEnemies(ScenarioEnemies enemies, List<string> errors)

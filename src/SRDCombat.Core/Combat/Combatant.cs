@@ -1238,7 +1238,13 @@ public sealed record ActiveCondition(
 /// not track. A creature carried in at 0 hit points arrives down — dead if its stat
 /// block says so, Unconscious if it makes Death Saving Throws.
 /// </remarks>
-/// <param name="CurrentHitPoints">Hit points on arrival, clamped to the maximum.</param>
+/// <param name="CurrentHitPoints">
+/// Hit points on arrival, clamped to the maximum. Zero and not dead means downed and
+/// stable — the reading <c>SRDCombat.Game.CharacterState</c>'s own doc comment states —
+/// and <see cref="Combatant.ApplyCarryOver"/> marks the creature stable rather than
+/// leaving it to roll a fresh Death Saving Throw for a fight it did nothing to enter
+/// that way.
+/// </param>
 /// <param name="RagesRemaining">Rages left, or null for all of them.</param>
 /// <param name="SecondWindRemaining">Second Wind uses left, or null for all.</param>
 /// <param name="ActionSurgeRemaining">Action Surge uses left, or null for all.</param>
@@ -1425,8 +1431,18 @@ public sealed class Combatant
         }
 
         // A creature brought in at 0 hit points is already down. Going through the same
-        // path a blow would take keeps Unconscious, Prone and the dying state consistent
-        // with how every other creature reaches 0.
+        // path a blow would take keeps Unconscious and Prone consistent with how every
+        // other creature reaches 0 — but unlike a blow landing mid-fight, arriving at 0
+        // is never the start of a fresh Death Save sequence. CombatantCarryOver carries
+        // no Death Save progress (DeathSaveSuccesses/Failures are not fields on it, and
+        // could not be resumed meaningfully across a fight boundary anyway), so there is
+        // only one honest reading of "brought in at 0 and not dead": the creature is
+        // already downed-and-stable, exactly the state CharacterState's own doc comment
+        // and RunState.AfterFight's comment name for a survivor who went down and lived —
+        // "Zero and not dead means downed and stable." Leaving IsStable false here would
+        // make a carried-over 0-hit-point creature roll a live Death Save on its very
+        // first turn of a fight it did nothing to enter that way, silently spending a
+        // die roll (and risking death) nobody authored.
         if (CurrentHitPoints == 0)
         {
             if (Stats.DiesAtZeroHitPoints)
@@ -1436,6 +1452,7 @@ public sealed class Combatant
             else
             {
                 AddCondition(ConditionType.Unconscious);
+                MarkStable();
             }
         }
     }
