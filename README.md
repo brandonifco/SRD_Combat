@@ -18,17 +18,13 @@ four, every option shown with its printed SRD text — or take the pre-made one.
 has played a run 18 fights deep and died on the 19th; nobody has yet played one to its
 end.
 
-Automated runs on seeds 1–120 clear a median of **18 fights of 30**, with 27 of 120 runs
-clearing all thirty and 57 reaching level 4; seeds 200–320 read 18, 31 and 50
-(measured 2026-08-21).
+Pacing is measured at re-baselining checkpoints rather than restated here, where a
+copied figure goes stale: see `CLAUDE.md`'s Pacing row for the current baseline and
+[`docs/status.md`](docs/status.md) for the generated test and content counts.
 
 **The ladder is a curve now.** Each five-fight cycle carries a **warband rung** — six to
-ten cheap creatures on the same printed XP budget, from level 3 up, because being
-outnumbered is the one kind of difficulty the budget structurally cannot price. Party hit
-points left at the end of a fight used to measure a flat 75–81% in every band of the run;
-it now falls from 83% in the opening five fights to 69% in the last five. Runs ending
-somewhere in the middle, rather than dying at once or clearing everything, went from 47 of
-120 to 83.
+ten cheap creatures on the same printed XP budget, from the first cycle on, because being
+outnumbered is the one kind of difficulty the budget structurally cannot price.
 
 The ladder is still one five-fight cycle repeated six times, so structural variety between
 cycles is the open problem.
