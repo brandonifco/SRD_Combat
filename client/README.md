@@ -191,19 +191,35 @@ display: a shown button can still be refused, and absent is honest where inert w
 be. A line under the buttons reads out what is left to spend — slots, feature uses,
 potions — straight off the engine's state.
 
-**Hovering one of those blue squares previews the route a click on it would actually
-walk (#303).** A brighter wash lights the squares `MovementRules.FindPath` answers for
-the hovered square — the identical call, with the identical arguments,
-`Encounter.Move` makes internally, so the preview can never show a different route
-than the one the click is about to take (`PlayMode.HoverPreviewPath`). It appears the
-instant the pointer settles on a reachable square, with none of the half-second rest
-the button hints wait out (`PlayMode.HoverDelaySeconds`) — the reachable wash
-underneath it is already instant, and a route is advice about the very click the wash
-is already advertising, not a fact that benefits from being held back. Fog still
-holds: a square along the route that the party cannot presently see is dropped from
-what is drawn, to the same standard a hidden monster's token, ring and hover hint are
-already held to, so the *shape* of a route can never tell the player about an unseen
-occupant the fog itself would not.
+**Hovering one of those blue squares previews the route a walk there would take if the
+move is accepted (#303).** A brighter wash lights the squares `MovementRules.FindPath`
+answers for the hovered square — the identical call, with the identical arguments,
+`Encounter.Move` makes internally, so the preview can never show a route the walk
+itself would not take (`PlayMode.HoverPreviewPath`). It appears the instant the
+pointer settles on a reachable square, with none of the half-second rest the button
+hints wait out (`PlayMode.HoverDelaySeconds`) — the reachable wash underneath it is
+already instant, and a route is advice about the very click the wash is already
+advertising, not a fact that benefits from being held back. "If the move is accepted"
+is doing real work in that first sentence: the reachable wash's own eligibility is
+what a route inherits, and that eligibility is geometry and budget, not every one of
+`Encounter.Move`'s refusals — a Frightened character can still be shown a route into a
+square `Move` will refuse with `movement.frightened` (moving closer to what frightens
+them), because the wash that offers the square in the first place does not model that
+clause either. The refusal still prints, with its code, the moment the click is
+actually made; the preview is advice about the walk, never a promise the click cannot
+be refused.
+
+**What the fog does and does not hold.** A square along the route that the party
+cannot presently see is dropped from what is *drawn* — to the same standard a hidden
+monster's token, ring and hover hint are already held to, so a route's picture never
+shows more ground than the fog already would. What fog does **not** do is change the
+route itself: `HoverPreviewPath` asks for it with the same full knowledge of every
+combatant `Encounter.Move` already has, so an unseen occupant blocking the cheaper
+corridor can still make the route (and the reachable wash it sits inside, which was
+never fog-aware either) go the other way — the shape of an available route can, in
+that sense, hint at something the party has not seen. This is not new to the preview:
+the reachable wash it sits inside has always been computed the same way. Both are
+being tracked for a proper fix rather than papered over here.
 
 Arguments go after Godot's `--` separator. `--seed=<n>` picks the run — the same promise
 the console client makes, that a seed is a complete bug report; without one the seed is
@@ -540,9 +556,11 @@ produces, in order: `run-0-interlude`, a commanded turn (`play-1-turn-ready`), t
 confirm (`play-1b-quit-confirm` — Esc asks, a key that is not Esc backs out unharmed), an
 unavailable action attempted on purpose (`play-2-stand-up-not-offered` — Stand Up while
 not Prone; see below, this is not a refusal), a hover hint
-(`play-2b-hint`), Tab-arming (`play-2c-tab-armed`), the move step's own path preview
-(`play-2d-path-preview` — hovering the square the walk below is about to take), a walk
-and an attack (`play-3-moved`, `play-4-attacked`), a feature (`play-5-feature`), End Turn
+(`play-2b-hint`), Tab-arming (`play-2c-tab-armed`, and its own path-preview assertions
+against a square hovered just before the arm), the move step's own path preview
+(`play-2d-path-preview` — hovering the square the walk below is about to take, and a
+camera zoom checked against it), a walk and an attack (`play-3-moved`, `play-4-attacked`),
+a feature (`play-5-feature`), End Turn
 (`play-6-turn-ended`), a second commanded character's cast flow if it is a caster's turn
 (`play-7-spell-menu`, `play-8-cast`), then plays fight 1 out to its end, capturing along
 the way whichever party member carrying more than one weapon takes a turn first — Brenna,
@@ -606,7 +624,9 @@ effect, per step:
 | `play-2-stand-up-not-offered` | `NoticeCodeIs(null)`, `FocusIs(Board)`, and `Unchanged` on the commanded actor's position, hit points, movement, Action, Bonus Action, Reaction and remaining attacks — see below |
 | `play-2b-hint` | `NonEmpty` on the hovered button's *registered* hint (a broken registration is a fault before it is ever compared against anything), then `EqualsExpected` — the hint text actually produced equals that registered hint |
 | `play-2c-tab-armed` | `FocusIs(Targeting)` and `EqualsExpected` (the first Tab armed `TargetKind.Attack` specifically, not a routing regression's Potion or spell); with more than one *visible* enemy, `Changed` on the aimed target after the second Tab (with only one, `ReportSkip` — nothing to cycle to) |
+| `play-2c-tab-armed-preview` (#303, PR #731 round 1) | A reachable square is hovered *before* Tab arms anything; `NonEmpty` on the preview it produced, so the later empty check has something real to have lost. After Tab: `EqualsExpected` — the preview equals the empty string, with no mouse motion in between, proving `ArmTargeting` itself (not a stray hover) cleared it. After the matching Esc disarms: `NonEmpty` again — the preview returns with the pointer still on the same square, proving `PlayFocusRouter.Route`'s own `Perform`-triggered recompute, not a coincidence |
 | `play-2d-path-preview` (#303) | `FocusIs(Board)` (a hover must not itself open or close anything); `NonEmpty` on the expected route (a broken expectation is a fault before it is compared against anything); `EqualsExpected` — the previewed path (`PlayMode.HoverPreviewPath`'s own field) equals `MovementRules.FindPath`'s answer for the same square, both rendered through `PathAsText` since `EqualsExpected<T>` compares by `EqualityComparer<T>.Default` and two structurally-equal lists are not `Equals` by that measure |
+| `play-5b-camera-zoom-preview` (#303, PR #731 round 1) | No capture — assertions only, sandwiched between a wheel zoom and its exact inverse so nothing survives into `play-3-moved`'s own frame. `Changed<float>` on `GridLeft` (the zoom must actually have moved the mapping); with the pointer's screen position unchanged by the zoom itself, `EqualsExpected` — the preview matches `MovementRules.FindPath` for whichever square that fixed pixel now maps to, proving `HandleCameraInput`'s own consumed branch re-triggered the preview rather than leaving the pre-zoom route standing |
 | `play-3-moved` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `EqualsExpected` (actor position == the clicked square), `Decreased` (movement remaining) |
 | `play-4-attacked` | the target is the nearest *visible* enemy (`PartyVision`, not `NearestEnemyOf`'s fog-blind pick); `EqualsExpected` that `TokenAt` agrees before the click; after it, `FocusIs(Board)` and `AnyOf` — a log entry naming both the actor and the target, or a refusal from Attack's own curated code set; the attack can legitimately refuse, but doing nothing (or an unrelated action) is a fault |
 | `play-5-feature` | none — optional coverage, `ReportSkip` when no second-row feature exists; can legitimately refuse when it does |

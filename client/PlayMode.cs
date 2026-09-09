@@ -84,6 +84,18 @@ public partial class PlayMode : FightScreen
     /// </summary>
     private readonly List<GridPosition> _previewPath = [];
 
+    /// <summary>
+    /// Which square <see cref="_previewPath"/> was last computed for, or null — tracked
+    /// separately from <see cref="_pointer"/> (#303, PR #731 round 1 review): <see
+    /// cref="_pointer"/> is deliberately jitter-filtered for the tooltip's own reasons
+    /// (<see cref="HoverJitterPixels"/>), and comparing pixel distance is exactly the
+    /// bug — a pointer one pixel from a grid line can cross it in a two-pixel move,
+    /// well under that threshold, and be looking at a different walk the instant it
+    /// happens. <see cref="PreviewSquareChanged"/> compares this against the pointer's
+    /// current square instead.
+    /// </summary>
+    private GridPosition? _previewSquare;
+
     /// <summary>Squares nobody in the party can see — the fog of war, <c>PartyVision</c>'s answer.</summary>
     private readonly HashSet<GridPosition> _unseen = [];
 
@@ -479,6 +491,13 @@ public partial class PlayMode : FightScreen
         // The camera glides after whatever the board is doing, never gating it.
         if (AdvanceCamera(delta))
         {
+            // The camera's own automatic glide moves GridLeft/GridTop/CellPixels under
+            // a pointer that may not have moved a single pixel — a turn's opening
+            // re-centre on the new active combatant, say (#303 defect #3, PR #731
+            // round 1 review). UpdatePreviewPath re-maps the tracked pointer against
+            // whatever the camera answers right now, the same as the manual branches
+            // in _UnhandledInput already do for a drag or a zoom.
+            UpdatePreviewPath(_pointer);
             QueueRedraw();
         }
 

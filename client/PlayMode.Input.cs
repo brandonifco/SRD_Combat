@@ -159,6 +159,12 @@ public partial class PlayMode : FightScreen
             _cursor = nearest.Position;
         }
 
+        // Arming is every path's own last step — Tab's cold-arm, a button, a menu row
+        // — so this is the one place that closes #303 defect #4 (PR #731 round 1
+        // review) for all of them at once: the preview's own gate (Armed is null)
+        // only helps once something re-asks it, and a click that arms Targeting is
+        // not itself a mouse motion or a completed action.
+        UpdatePreviewPath(_pointer);
         QueueRedraw();
     }
 
@@ -471,6 +477,14 @@ public partial class PlayMode : FightScreen
     {
         if (Perform(PlayFocusRouter.Route(_focus, Translate(@event), Context())))
         {
+            // Any successfully routed keyboard action can change whether the preview
+            // should show at all — arming an attack with a cold Tab, or Esc handing it
+            // back — without ever moving the mouse (#303 defect #4, PR #731 round 1
+            // review). UpdatePreviewPath's own gate (Board focus, nothing armed) is
+            // only as good as the last time it ran, so this makes every routed action
+            // a trigger for it too, not only mouse motion and completed acts.
+            UpdatePreviewPath(_pointer);
+            QueueRedraw();
             return;
         }
 
@@ -488,28 +502,63 @@ public partial class PlayMode : FightScreen
         // them.
         if (_phase == Phase.Fighting && HandleCameraInput(@event))
         {
+            // HandleCameraInput consumes its event whole and returns before the plain
+            // motion branch below ever sees it (#303 defect #3, PR #731 round 1
+            // review): a drag's own InputEventMouseMotion never reaches that branch at
+            // all, and a wheel zoom carries no motion event to reach in the first
+            // place — yet both can change what GridLeft/GridTop/CellPixels answer for
+            // the very same screen pixel. So this updates the tracked pointer (a
+            // drag's final position; a zoom leaves it where it was, which still needs
+            // re-mapping against the new scale) and refreshes the preview
+            // unconditionally, rather than only on the motion this branch stole.
+            if (@event is InputEventMouseMotion cameraMotion)
+            {
+                _pointer = cameraMotion.Position;
+            }
+
+            UpdatePreviewPath(_pointer);
+            QueueRedraw();
             return;
         }
 
         if (@event is InputEventMouseMotion motion)
         {
-            // Only real movement restarts the clock. Godot reports motion for sub-pixel
-            // drift too, and a hand resting on a button is never perfectly still.
+            var redraw = false;
+
+            // Only real movement restarts the hint clock. Godot reports motion for
+            // sub-pixel drift too, and a hand resting on a button is never perfectly
+            // still.
             if (_pointer.DistanceTo(motion.Position) > HoverJitterPixels)
             {
                 _pointer = motion.Position;
                 _hoverElapsed = 0;
-                _hint = null;
 
-                // The path preview (#303) is deliberately not gated behind
-                // HoverDelaySeconds the way _hint is: the reachable wash it sits inside
-                // already lights up with no delay at all, and a route is advice about
-                // the very same click a hint only explains in words — holding it back
-                // would make the one strictly more informative of the two the slower
-                // one to appear. UpdatePreviewPath reads no more than HintAt does
-                // (nothing it touches is animated or ambient), so nothing here is
-                // covering for work the way the hover delay never was either.
-                UpdatePreviewPath();
+                if (_hint is not null)
+                {
+                    _hint = null;
+                    redraw = true;
+                }
+            }
+
+            // The path preview tracks the pointer's *square*, never its pixel distance
+            // (#303 defect #2, PR #731 round 1 review): HoverJitterPixels exists only
+            // to stop the tooltip flickering on sub-pixel drift, which has nothing to
+            // do with when a route should change — a pointer one pixel from a grid
+            // line can cross it in a two-pixel move, well under that threshold, and be
+            // looking at a different walk the instant it happens. So this asks
+            // PreviewSquareChanged on every raw motion sample, independent of the
+            // jitter-gated branch above, and it is deliberately not gated behind
+            // HoverDelaySeconds either: the reachable wash the preview sits inside
+            // already lights up with no delay at all, and a route is advice about the
+            // very same click a hint only explains in words.
+            if (PreviewSquareChanged(_previewSquare, SquareAt(motion.Position)))
+            {
+                UpdatePreviewPath(motion.Position);
+                redraw = true;
+            }
+
+            if (redraw)
+            {
                 QueueRedraw();
             }
 
@@ -587,20 +636,39 @@ public partial class PlayMode : FightScreen
     }
 
     /// <summary>
-    /// Recomputes <see cref="_previewPath"/> for wherever <see cref="_pointer"/> is right
-    /// now, against the board's current state.
+    /// Recomputes <see cref="_previewPath"/> for whatever square <paramref
+    /// name="pixel"/> maps to right now, against the board's current state.
     /// </summary>
     /// <remarks>
-    /// Called from the real-motion branch of <see cref="_UnhandledInput"/> so the route
-    /// tracks the pointer live, and from <see cref="RefreshAfterAction"/> so a turn
-    /// change or a completed move refreshes it immediately rather than leaving the
-    /// previous mover's route on screen until the pointer next twitches.
+    /// <para>
+    /// Called from every place that can change either <em>where</em> the preview
+    /// should point or <em>whether</em> it should show at all (PR #731 round 1
+    /// review, defects #2-#4): the jitter-independent motion branch and the
+    /// camera-consumed branch of <see cref="_UnhandledInput"/>, every successfully
+    /// routed keyboard action (arming or disarming Targeting can change the answer
+    /// with the mouse dead still), <see cref="ArmTargeting"/> itself (a click on a
+    /// button or a menu row arms the same way), the camera's own automatic glide in
+    /// <c>PlayMode._Process</c>, and <see cref="RefreshAfterAction"/> so a turn change
+    /// or a completed move refreshes it immediately rather than leaving the previous
+    /// mover's route on screen until the pointer next twitches.
+    /// </para>
+    /// <para>
+    /// Takes the pixel explicitly rather than always reading <see cref="_pointer"/>:
+    /// <see cref="_pointer"/> is deliberately jitter-filtered for the tooltip's own
+    /// reasons, and the preview must not inherit that filter (see
+    /// <see cref="PreviewSquareChanged"/>) — a camera drag's own final position is a
+    /// pixel this method needs to see even on a motion sample too small to move
+    /// <see cref="_pointer"/> itself.
+    /// </para>
     /// </remarks>
-    private void UpdatePreviewPath()
+    private void UpdatePreviewPath(Vector2 pixel)
     {
+        _previewSquare = SquareAt(pixel);
         _previewPath.Clear();
 
-        if (_phase != Phase.Fighting || _encounter is not { } encounter)
+        if (_phase != Phase.Fighting
+            || _encounter is not { } encounter
+            || !PreviewMayShow(_focus.Top is PlayFocus.Board, Armed is not null))
         {
             return;
         }
@@ -608,11 +676,37 @@ public partial class PlayMode : FightScreen
         _previewPath.AddRange(HoverPreviewPath(
             encounter.Battlefield,
             CommandedCombatant(),
-            SquareAt(_pointer),
+            _previewSquare,
             _reachable,
             encounter.Combatants,
             _unseen));
     }
+
+    /// <summary>
+    /// Whether the path preview must recompute for a pointer that was over <paramref
+    /// name="previousSquare"/> and is now over <paramref name="newSquare"/> —
+    /// deliberately independent of any pixel distance (#303 defect #2, PR #731 round 1
+    /// review). <see cref="HoverJitterPixels"/> exists only to stop the tooltip
+    /// flickering on sub-pixel drift; a route's destination is a grid square, not a
+    /// pixel, and a pointer one pixel from a grid line can cross it in a two-pixel
+    /// move — well under that threshold — and be looking at a different walk the
+    /// instant it happens. So this compares squares, never distance, and the jitter
+    /// gate in <see cref="_UnhandledInput"/> governs the hint clock alone.
+    /// </summary>
+    internal static bool PreviewSquareChanged(GridPosition? previousSquare, GridPosition? newSquare) =>
+        previousSquare != newSquare;
+
+    /// <summary>
+    /// Whether the path preview may show at all right now (#303 defect #4, PR #731
+    /// round 1 review) — only while the click under the pointer would actually be a
+    /// move: the board itself sits on top of the focus stack, and nothing is armed.
+    /// With an attack, a spell, a potion or similar armed (Tab's cold-arm, a button, a
+    /// menu row — <see cref="ArmTargeting"/> is every one of their last steps), or a
+    /// menu open over the board, a click on reachable-looking ground clears targeting
+    /// or resolves the menu instead of walking there, so a movement route drawn
+    /// underneath it would be advice about a click that is not on offer.
+    /// </summary>
+    internal static bool PreviewMayShow(bool focusIsBoard, bool armed) => focusIsBoard && !armed;
 
     /// <summary>
     /// The path a click on <paramref name="hovered"/> would actually walk right now
@@ -636,14 +730,23 @@ public partial class PlayMode : FightScreen
     /// always agreeing); checking it first only saves the search.
     /// </para>
     /// <para>
-    /// <b>Fog holds by filtering the answer, not by asking a different question.</b> The
-    /// route itself is asked for exactly as <see cref="Encounter.Move"/> would ask for
-    /// it — clipping the search to what is currently seen would make the preview lie
-    /// about where the real click actually lands — but a square the party cannot
-    /// presently see is dropped from what comes back, to the same standard
-    /// <c>client/README.md</c>'s "fog of war" already holds a hidden occupant's token,
-    /// ring and hover hint to: nothing here should let the *shape* of a route (a detour
-    /// around an unseen body, say) tell the player something the fog itself would not.
+    /// <b>Fog holds by filtering what is drawn, not by asking a different question —
+    /// and that is a narrower claim than it first sounds</b> (qualified after Codex's
+    /// PR #731 round 1 review). The route itself is asked for exactly as <see
+    /// cref="Encounter.Move"/> would ask for it — clipping the search to what is
+    /// currently seen would make the preview lie about where the real click actually
+    /// lands — and a square the party cannot presently see is dropped from what comes
+    /// back, to the same standard <c>client/README.md</c>'s "fog of war" already holds
+    /// a hidden occupant's token, ring and hover hint to: a route's picture never shows
+    /// more ground than the fog already would. What this does <em>not</em> do is make
+    /// the route itself fog-blind: <see cref="MovementRules.FindPath"/> is asked with
+    /// full knowledge of every combatant, seen or not, exactly as <see
+    /// cref="_reachable"/> (<see cref="MovementRules.Reachable"/>) already is — so an
+    /// unseen occupant blocking the cheaper corridor can still make the offered route
+    /// go the other way, which is a route's *shape* telling the player something the
+    /// fog itself would not. Not a regression this slice introduces — the reachable
+    /// wash has always been computed this way — and not fixed here; see
+    /// <c>client/README.md</c>'s own qualification of the same claim.
     /// </para>
     /// </remarks>
     internal static IReadOnlyList<GridPosition> HoverPreviewPath(
@@ -1326,7 +1429,7 @@ public partial class PlayMode : FightScreen
         // resting on, and a turn ending on a still pointer must not leave the previous
         // mover's route on screen, or worse, this mover's route drawn against the stale
         // reachable set an instant before it was refreshed.
-        UpdatePreviewPath();
+        UpdatePreviewPath(_pointer);
 
         QueueRedraw();
     }
