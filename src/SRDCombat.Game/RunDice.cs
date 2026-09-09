@@ -19,19 +19,28 @@ namespace SRDCombat.Game;
 /// <para>
 /// <b>The deliberate reading, stated once here rather than argued at every call
 /// site</b> (the same reason <c>AreaTargeting</c>'s judgement calls live in its own
-/// doc comment): retrying a fight — after a defeat, or a plain <c>--continue</c> —
-/// does not merely draw the same monsters on the same battlefield. It re-plays the
-/// exact same dice for the exact same sequence of engine calls, because
-/// <see cref="SeedFor"/> is a pure function of the run's own seed and how many fights
-/// came before this one, indifferent to how much dice a differently-played earlier
-/// attempt at <em>this same fight</em> spent, or how many rounds it ran, or what the
-/// player chose. A retry that made the identical choices from here would see the
-/// identical fight unfold, blow for blow — which is what "the same fight" promises
-/// a player who wants to learn a fight rather than gamble on a new one, and what
-/// makes a bug report of "seed 12345, fight 7" complete on its own: <em>within one
-/// run</em>, (seed, fight number) reproduces the fight regardless of the play history
-/// that got there, because nothing about a game's own actions consumes dice from a
-/// later fight's span.
+/// doc comment): retrying a fight from its own start — after a defeat, or a plain
+/// <c>--continue</c> from the autosave taken at that start — re-plays the exact same
+/// dice for the exact same sequence of engine calls from that point on, because
+/// <see cref="SeedFor"/> is a pure function of the run's own seed and how many
+/// fights came before this one: a retry that made the identical choices from here
+/// would see the identical fight unfold, blow for blow — which is what "the same
+/// fight" promises a player who wants to learn a fight rather than gamble on a new
+/// one.
+/// </para>
+/// <para>
+/// <b>What (seed, fight number) does <em>not</em> fix on its own.</b> The tuple
+/// fixes that span's whole random source, not what gets drawn from it. A Short Rest
+/// spends a variable number of hit-die rolls depending on how wounded the party is
+/// when it rests, and a fight's own budget is drawn against whoever survived to
+/// it — so a run that played differently up to this point reaches it with a
+/// different wound total or a different survivor roster, and draws a different
+/// encounter from the identical seed. Reproducing a specific fight therefore needs
+/// the run's saved state as of that fight's start (see <see cref="RunSave"/> — this
+/// is what the autosave already is) plus the seed, not the seed or the fight number
+/// alone. And even with the save, nothing recorded here reproduces the choices made
+/// <em>inside</em> the fight itself; a bug report narrower than "the save from just
+/// before it" needs a replay bundle this project does not yet have (#722).
 /// </para>
 /// <para>
 /// <b>Not <see cref="HashCode.Combine{T1, T2}"/> and not a string hash.</b> Neither

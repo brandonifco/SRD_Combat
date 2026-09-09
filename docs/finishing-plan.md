@@ -208,12 +208,18 @@ landed.** What is still unreachable is `PlayMode` as a live Godot node — nothi
 constructs it or calls `OnReady` in a test — so #490 covers that as well as the argv
 boundary, and `client/README.md` says the same);
 console client tests (1.9k lines,
-currently untested, #317); shared test-support project; xUnit content
-fixtures (**34 executable `ContentLoader.Load` call sites** across the suite, measured at `8988604`: Content 13, Game 18, SrdExtract 3. `TestContent.Srd` — the shared holder #473 introduced, which three classes already read instead of loading their own — is the seam this issue flips; `Game.Tests` took **6m59s** Debug /
-4m25s Release measured 2026-08-27 in an uncontended worktree — the suite has regressed 3x
-against the 2m14s recorded at the
-2026-08-25 exit run, down from the 7m22s this item was filed at — the fixture case
-stands on the 27 loads, not the wall clock); the
+currently untested, #317); shared test-support project; getting
+`Game.Tests` under three minutes (#694, split off #319) — **not** by converting to
+xUnit content fixtures: #694 found the `ICollectionFixture` route a ~10x regression,
+since it would force every content-hungry class into one serial collection and undo
+xUnit's cross-collection parallelism, and found #319's load-once premise already met
+by #580 (`bc6d7fd`), which moved every content-hungry class onto a single
+`static readonly TestContent.Srd` — one `ContentLoader.Load` per assembly. What #694
+leaves open is the suite's actual cost, full-gauntlet simulation
+(`SeededLootRun*`, `RunSaveTests`, `GauntletTests`, `ScenarioRunnerTests`): a few
+full-run tests stay, for the facts only a whole run can pin, while the rest move to
+property tests started nearer the state each fact needs rather than simulating thirty
+fights to reach it; the
 `Encounter` guard-preamble helper, and the action seam if the class list grows —
 trigger-based, with #369 (Turn Undead) the likeliest trigger.
 Runs continuously alongside F2–F4; has its own closing push. Exit: suite under ~3

@@ -1167,29 +1167,24 @@ public partial class PlayMode : FightScreen
             BuildButtons(commanded);
         }
 
-        // Where the active party member could walk. FindPath is the engine's own
-        // reachability — allies cost double, enemies block, the budget is what is left
-        // this turn — and the two condition gates mirror Move's early refusals so the
-        // advice does not light squares the engine would refuse.
+        // Where the active party member could walk. MovementRules.Reachable is the
+        // engine's own reachability — allies cost double, enemies block, the budget is
+        // what is left this turn — and the two condition gates mirror Move's early
+        // refusals so the advice does not light squares the engine would refuse.
+        //
+        // One bounded search for the whole board (#726/#328). This asked FindPath once
+        // per square instead — 504 searches on the 28 × 18 grid the review quoted, 784
+        // on the warband board #726 measured — after every action by every combatant,
+        // most of them draining the entire frontier only to answer "no".
+        // The answer is the same set: Reachable returns exactly the squares FindPath
+        // answers non-null for, pinned square-by-square in MovementRulesTests.
         if (commanded is { } mover
             && _encounter is { } encounter
             && !mover.HasCondition(ConditionType.Prone)
             && ConditionRules.ImmobilisedBy(mover) is null)
         {
-            for (var x = 0; x < GridWidth; x++)
-            {
-                for (var y = 0; y < GridHeight; y++)
-                {
-                    var square = new GridPosition(x, y);
-
-                    if (MovementRules.FindPath(
-                            encounter.Battlefield, mover, square, mover.Turn.MovementFeet, encounter.Combatants)
-                        is not null)
-                    {
-                        _reachable.Add(square);
-                    }
-                }
-            }
+            _reachable.UnionWith(MovementRules.Reachable(
+                encounter.Battlefield, mover, mover.Turn.MovementFeet, encounter.Combatants));
         }
 
         // The fog of war: squares nobody in the party can see (asked for from play,

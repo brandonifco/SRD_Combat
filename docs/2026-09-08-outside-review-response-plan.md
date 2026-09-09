@@ -367,7 +367,7 @@ tester build → #716. The Codex charter-mirror drift found while reviewing PR #
 | NEW-5 | Spirit Guardians executes as the printed aura: end-of-turn and enters-area saves, halved Speed, dropped with concentration | F2 | architect → engineer | NEW-4, `FireAuras` |
 | NEW-6 | `PacingMeasure` excludes lost fights from rows labelled won and cleared; per-band baseline corrected once | F5 | analyst, engineer | #542 |
 | NEW-7 | Docs sweep from the 2026-09-08 review: client README CI claim, root README pacing figures, fixture paragraph, bug-report claim, `paused:balance-design` definition, status regeneration | F5 | steward | #694, #581, #542 |
-| NEW-8 | `MovementRules.Reachable`: one bounded search yields every reachable square and its path, for the client, the policy and the preview | F2 | architect | #328, #303 |
+| NEW-8 | `MovementRules.Reachable`: one bounded search yields the reachable *set* for the client and the policy; a route to a chosen square stays `FindPath`'s per-destination answer (decision (a), #726 / PR #728) | F2 | architect | #328, #303 |
 | NEW-9 | Layout invariant: every interactive rect on every screen is inside the viewport at 1080p and 720p | F2 | engineer | NEW-2, #329 |
 | NEW-10 | The five-fight slice: route, loot and shop trade-offs in cycle 1 only, human-tested before cycles 2–6 | F3 | designer | #306, #307, #308 |
 | NEW-11 | The Ranger plays like a Ranger: Hunter's Prey, Favored Enemy, and a spell list longer than one | F4 | designer spec → engineer | #315 |

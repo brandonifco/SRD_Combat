@@ -53,7 +53,7 @@ board. File found-but-deferred work as an issue.
 | Console client | `src/SRDCombat.Console` | `tests/SRDCombat.Console.Tests` — argument parsing and the executable's own refusal boundary; the interactive half (`PartyCreator`, `CommandLoop`, `Display`) stays untested, #317 |
 | Godot client | `client/` | `tests/SRDCombat.Viewer.Tests` |
 | PDF extractor | `tools/SrdExtract` | `tests/SrdExtract.Tests` |
-| Pacing instrument | `tools/PacingMeasure` | — |
+| Pacing instrument | `tools/PacingMeasure` | `tests/PacingMeasure.Tests` — pins the one-seed core (`PacingRun.RunSeed`, extracted #707) and drives `PacingReport.WonRows`, the exact gate `Program.cs`'s two report blocks call, so a defeated run's lost fight is excluded from the rows the report labels "won"/"cleared"; `Program.cs`'s own `Console.WriteLine` formatting stays unpinned |
 | Shared test support — repo-root and corpus-path finding (`RepositoryPaths`, #318) | `tests/SRDCombat.TestSupport` (referenced by the test projects above; project-specific paths stay local as `Core`/`Game`/`ViewerRepositoryPaths`) | *n/a — support library, no xUnit* |
 
 ### Background, when you need the reasoning
@@ -112,7 +112,7 @@ What a script cannot generate is the *reading* of a measurement, so those stay h
 | --- | --- |
 | Playable | The whole gauntlet, console and Godot clients, character creation in both, autosave/`--continue`, fog of war, 28 × 18 board |
 | Party depth | 6 of 12 classes offered, 17 of 339 spells execute, 6 of 8 masteries, ~24 class-feature names, 13 magic item names |
-| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. Per-band hp-left 84→76→69→71→74→72% (1–120) and 82→75→70→71→…% (200–320). **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wanted Brandon's verdict — **given 2026-09-09: not too hard** (recorded on #542; his played-run report is still owed, as the condition that un-pauses #306–#311) — and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention. **This row now moves at re-baselining checkpoints, not per PR** (2026-08-28): `112ed19` stands as the baseline until the next checkpoint measures against it, and work landing in between is not swept |
+| Pacing | Measured at `112ed19`, 2026-08-27 — the **current baseline**, superseding the F1-exit entry, which #433/#451 (battlefield S1) moved. Seeds 1–120: median 18 of 30, **32 clear all**, 53 reach level 4, died-by-fight-4 9; ended Cleared 32 / Defeated 88. Seeds 200–320: median 18, **33 clear all**, 53 reach level 4, died-by-fight-4 14 (of 121); ended Cleared 33 / Defeated 88. **Zero `Stalled`** in both. **Per-band hp-left, corrected 2026-09-09 (#707): 86→78→74→74→76→77% (1–120) and 84→77→74→74→75→76% (200–320).** The series first quoted here (2026-08-27, read `84→76→69→71→74→72%` and `82→75→70→71→…%`) was contaminated: `PacingMeasure` appended every *completed* encounter to its fight rows — including the one that ends a defeated run in a party wipe — before reporting them under "fights won"/"fights cleared" labels, so one lost fight per defeated run (88 of them in each range) was silently averaged into hp-left, downed and rounds figures the label denied containing. The fix gates both report blocks on `FightRecord.Won`; `shape:`, `ended:`, median and cleared-all read `results`, which was never affected and is unchanged above. **The two per-band series are not directly comparable** — read only the corrected one going forward. **The overhaul made the run markedly harder**: against the F1-exit baseline (43 clear all on both ranges, died-by-fight-4 10/8) roughly a quarter of previously-winnable runs now fail, and the second range's early deaths nearly doubled. #451 measured and quoted that deliberately — it is an accepted change, not a regression — but it is a difficulty shift of the size that wanted Brandon's verdict — **given 2026-09-09: not too hard** (recorded on #542; his played-run report is still owed, as the condition that un-pauses #306–#311) — and S3–S7 land on top of it. #435/#527 (S2) then measured **byte-flat** against this baseline, as a vocabulary slice should. The median saturates at 18 — read `shape:`, `ended:` and the per-band lines, per the standing convention. **This row now moves at re-baselining checkpoints, not per PR** (2026-08-28): `112ed19` stands as the baseline until the next checkpoint measures against it, and work landing in between is not swept |
 | Coverage gaps | The console client was the last wholly untested production code (**#317**); `tests/SRDCombat.Console.Tests` now pins its argument-parsing seam and the executable's own refusal boundary, narrowing rather than closing #317 — `PartyCreator`, `CommandLoop` and `Display` (the interactive, `Console.ReadLine`-driven half) remain untested (line counts: [`docs/status.md`](docs/status.md)). **A blanket "N% untested" figure is retired rather than restated**: the old 24% was a directory proxy that counted a whole tree as untested the moment it had no test project, and it stopped being reproducible once `tools/SrdExtract` (#189) and the Godot client (#190) got theirs — `SRDCombat.Viewer.Tests` now pins the focus stack, the router, the log highlighter, sprite metrics and the draw scale, so `client/` is neither untested nor tested but partly each, and one number cannot say which. What is still true and still specific: **#490** named two halves of the live Godot argv boundary, and #490a/#490b (2026-09) closed the first — the `--spawn`/`--scenario`/`--level` decision and its refusal wording moved to plain-value seams (`SRDCombat.Game.ScenarioComposition`, `SRDCombat.Game.GauntletStart`) that `SRDCombat.Game.Tests` pins directly, knockout-verified. What remains is the second half, unchanged: **`PlayMode` as a live node — no Viewer test constructs it or invokes `OnReady`**, so whether Godot's own argv actually reaches these seams stays probe-only, the same gap #500–#502 and #473/#474 already left for the focus stack, the router and the scenario type |
 
 **What works.** A whole run, end to end, in both clients: grid combat with cover
@@ -135,8 +135,9 @@ plan's opening section: [`docs/finishing-plan.md`](docs/finishing-plan.md).
 - **F3** the run becomes a game — route choice, loot decisions, stakes, the XP curve.
   Entry gate: the PlayMode modal refactor (#327). **A re-baselining checkpoint.**
 - **F4** depth and variety — enemy casters, CR fill-ins, fog slice 2 (#545)
-- **F5** confidence — client and console tests, content fixtures (#319), suite under
-  ~3 minutes. Runs continuously alongside F2–F4
+- **F5** confidence — client and console tests, `Game.Tests` under three minutes by
+  shortening the full-gauntlet simulation tests rather than fixtures (#694). Runs
+  continuously alongside F2–F4
 - **F6** ship — in-game attribution, packaging, a tagged release
 
 **Sequencing rationale**: F1 first because everything builds on saves, accounting and
@@ -373,10 +374,18 @@ the reverse. So nothing hardcodes one — the `probe-diff` skill's `find-display
 dotnet run --project src/SRDCombat.Console
 ```
 
-`--seed <n>` replays a run exactly (the seed prints at start, so "seed 12345" is a
-complete bug report — and within a run, `(seed, fight number)` reproduces that
-fight's encounter and every dice roll in it, regardless of the play history that got
-there; see `RunDice`'s remarks); `--level 1..5`, `--one-fight --difficulty
+`--seed <n>` fixes a run's whole dice stream (the seed prints at start), but the seed
+is not a complete bug report on its own — `(seed, fight number)` fixes *a random
+source*, not what gets drawn from it: a Short Rest spends a variable number of
+hit-die rolls depending on how wounded the party is, and a fight's budget is drawn
+against whoever survived to it, so a differently-played run reaches the same fight
+number with a different wound total or roster and draws a different encounter from
+the identical seed (per `RunDice`'s remarks). Reproducing a specific fight needs the
+run's saved state as of that fight's start (drafts, party state, gold, casualties,
+the seed and the content version: `RunSave.cs:59-122` — the autosave already is
+this) plus the seed, not the seed alone; and even with the save, nothing recorded
+here reproduces the choices made *inside* the fight itself (#722, open). `--level
+1..5`, `--one-fight --difficulty
 low|moderate|high`, `--create` for party creation; autosaves to
 `srdcombat-save.json` after every cleared fight, `--continue` resumes. **A save is
 drafts plus progress, never resolved sheets** — loading re-resolves at the level
@@ -412,12 +421,29 @@ re-running the suite to find out whether a commit passed.
 
 New machine: `mise install && ./scripts/doctor.sh` first (see Environment).
 
-**The other two scripts generate rather than check.** `./scripts/status.sh` writes
+**Two more scripts generate rather than check.** `./scripts/status.sh` writes
 [`docs/status.md`](docs/status.md) — test, content and line counts, measured not typed;
 never hand-edit that file. `./scripts/agent-tokens.sh` reports what agent sessions on
 this project actually cost in context, from Claude Code's own transcripts; it is the
 instrument for the question "did that change make agents cheaper", the way
 `tools/PacingMeasure` is the instrument for balance.
+
+**And one checks the queue rather than the tree.** `./scripts/queue-drift.sh` fails when
+an open issue filed since 2026-09-09 carries a known wording of a measurement rule this
+project retired —
+the per-PR both-ranges pacing gate or the `--seeds 1-20` spot-check waiver, both retired
+by #551 on 2026-08-28. It exists because #417's docs-grep gate structurally cannot catch
+this class: a convention retired in one commit leaves copies in every artifact that
+quotes it, and a grep for what a diff *deleted* finds none of them. The sweep that found
+22 such issues, and one criterion that would have written the retired rule into a shipped
+source header, is #712; #702 is the same drift in the Codex charter mirrors. **It
+matches a curated phrase list, so a clean run means "no known wording found", never "no
+issue mandates it"** — Codex's review of PR #724 found four wordings that walked past
+the first version, and the list is regression-tested by `scripts/test-queue-drift.sh`
+rather than trusted. Its live query is deliberately **not** in `validate.sh` — that needs
+the network, and the merge gate must not — but the fixtures are, since the matching is
+the half a diff can regress. Run the live one when filing or grooming issues; the
+`file-issue` skill says so too.
 
 ## Standing conventions
 

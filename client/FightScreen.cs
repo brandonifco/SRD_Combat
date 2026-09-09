@@ -2772,7 +2772,13 @@ public abstract partial class FightScreen : Node2D
     /// </summary>
     protected static IReadOnlyList<string> Wrap(string text, int width) => Chrome.Wrap(text, width);
 
-    /// <summary>Renders one frame to a PNG. The verification loop for these screens.</summary>
+    /// <summary>
+    /// Renders one frame to a PNG. The verification loop for these screens — and, since
+    /// #705, a postcondition in its own right: a capture that could not be written
+    /// throws (<see cref="CaptureOutcome.FailureMessage"/>) rather than printing and
+    /// moving on, so a probe run whose output directory is missing or unwritable fails
+    /// loudly instead of exiting 0 with PNGs it never actually wrote.
+    /// </summary>
     protected async Task CaptureFrame(string path)
     {
         QueueRedraw();
@@ -2784,9 +2790,12 @@ public abstract partial class FightScreen : Node2D
         var image = GetViewport().GetTexture().GetImage();
         var error = image.SavePng(path);
 
-        GD.Print(error == Error.Ok
-            ? $"captured to {path}"
-            : $"could not save {path}: {error}");
+        if (CaptureOutcome.FailureMessage(path, error) is { } failure)
+        {
+            throw new InvalidOperationException(failure);
+        }
+
+        GD.Print($"captured to {path}");
     }
 
     // ClientArguments.cs (#327 S7) holds the argument dialect; these forward so no

@@ -542,6 +542,16 @@ and a second place client code lives. Rejected on evidence.
   fields becoming **36** and one enum deleted. S8 then splits that file by concern into
   five partials of 300–700 lines each. S8 is **navigational, not structural** — labelled
   that way in its issue so nobody mistakes it for the win.
+
+  **Addendum, actual sizes (#581, measured 2026-09-09 in a clean worktree with
+  `wc -l client/PlayMode*.cs`):** `PlayMode.cs` 547, `PlayMode.Run.cs` 244,
+  `PlayMode.Input.cs` 1,222, `PlayMode.Draw.cs` 1,029, `PlayMode.Probe.cs` 469. Input.cs
+  and Draw.cs exceed the forecast 700-line ceiling — the source underneath them has
+  grown since this section was written, and S8 deliberately did not invent
+  sub-concerns to force either file back under 700 (that would be a second concern
+  riding one PR). Whether Input.cs now warrants a further split is deferred to the
+  `FightScreen` re-read already scheduled at §12.3; nothing here recommends splitting
+  it speculatively.
 - **Nine PRs.** Each is small; the chain is long. S7 runs in parallel and S0 gates only
   S1–S5, so the critical path is shorter than the count suggests.
 
@@ -707,9 +717,14 @@ exist and already drive the creation screen through one class of each menu shape
 ### S8 — `PlayMode.cs` splits into partials
 
 `PlayMode.cs` (state and lifecycle), `PlayMode.Input.cs`, `PlayMode.Draw.cs`,
-`PlayMode.Run.cs` (interlude, shop, fight end, save), `PlayMode.Probe.cs`. **Pure file
+`PlayMode.Run.cs` (interlude, fight end, save), `PlayMode.Probe.cs`. **Pure file
 moves; a diff with zero logic changes.** Navigational, not structural — this is the slice
 that answers "monolith" directly and the one that proves the least.
+
+**Addendum, shop placement (#581, as landed):** the shop did not land in `Run.cs`. It
+sits in `PlayMode.Draw.cs` (drawing the stall) and `PlayMode.Input.cs` (its click
+handling), grouped there by the existing textual split rather than carved into its own
+partial — a sixth file for one screen was not worth it.
 
 ---
 

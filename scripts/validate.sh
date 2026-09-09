@@ -98,16 +98,44 @@ python_tests() {
   python3 "$test_file"
 }
 
+# scripts/queue-drift.sh matches a curated phrase list, which is the mechanism
+# CLAUDE.md's bug 2 warns about: a keyword list always has false negatives, and a
+# false negative there re-admits the drift it exists to catch. Codex's review of
+# PR #724 found four wordings that walked past the first version. So the phrase
+# list is regression-tested rather than trusted.
+#
+# Only the fixture-driven half runs here. The live query needs the network and a
+# GitHub token, and the merge gate must pass without either — so the guard's
+# *matching* is gated and its *querying* is not, which is the half that can
+# actually regress in a diff.
+queue_drift_tests() {
+  local test_file=scripts/test-queue-drift.sh
+  echo; echo "== queue-drift fixtures ($test_file) =="
+
+  # Missing is a repo regression (renamed or deleted), not an environment gap, so it
+  # fails rather than skipping — the same reasoning python_tests states above for
+  # #599, and for the same reason: a step that passes vacuously gates nothing. There
+  # is no environment half to guard here; bash and jq are already required by the
+  # gate itself.
+  if [[ ! -f "$test_file" ]]; then
+    echo "ERROR: $test_file is missing (renamed or deleted?) — the queue-drift guard's phrase list is ungated (#712)." >&2
+    return 1
+  fi
+
+  bash "$test_file"
+}
+
 case "${1:-}" in
   sdk-pin) sdk_pin ;;
   fast)
     sdk_pin; dotnet restore "$SLN"
-    build Debug; build Release; git diff --check; docs_grep ;;
+    build Debug; build Release; queue_drift_tests; git diff --check; docs_grep ;;
   full)
     sdk_pin; dotnet restore "$SLN"
     build Debug; test_suite Debug
     build Release; test_suite Release
     python_tests
+    queue_drift_tests
     git diff --check; docs_grep ;;
   ci)
     case "${2:-}" in
@@ -122,6 +150,7 @@ case "${1:-}" in
         # green `ci Release` — which `validate.sh full` never exercises.
         if [[ "$2" == "Debug" ]]; then
           python_tests
+          queue_drift_tests
         fi
         ;;
       *) usage ;;
