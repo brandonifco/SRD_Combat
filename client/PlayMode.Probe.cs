@@ -17,7 +17,8 @@ public partial class PlayMode : FightScreen
     /// <summary>
     /// Drives the screen through the real input path and captures each result: the
     /// run's opening interlude, then commanded turns — an unavailable action attempted
-    /// on purpose, Tab arming and cycling from a cold turn, a walk, a swing, a feature,
+    /// on purpose, Tab arming and cycling from a cold turn, a hovered move's path
+    /// preview, a walk, a swing, a feature,
     /// and when a caster's turn comes, the spell menu and a cast. How a change to this
     /// screen gets checked without a person clicking.
     /// </summary>
@@ -184,6 +185,38 @@ public partial class PlayMode : FightScreen
                     .OrderBy(square => square.DistanceFeetTo(target.Position))
                     .ThenBy(square => square.X).ThenBy(square => square.Y)
                     .First();
+
+                // #303: hovering the very square the click below is about to walk to
+                // must preview the exact route that click will take. The expectation is
+                // computed with the same MovementRules.FindPath call — and the same
+                // arguments — HoverPreviewPath itself makes, never a second guess at
+                // what the route should look like: this asserts the plumbing wires the
+                // pointer to that call, not that the call is right (MovementRulesTests
+                // and HoverPreviewPathTests already pin that).
+                var expectedPreview = _encounter is { } encounterForPreview
+                    ? MovementRules.FindPath(
+                        encounterForPreview.Battlefield,
+                        active,
+                        step,
+                        active.Turn.MovementFeet,
+                        encounterForPreview.Combatants)?.Steps ?? []
+                    : [];
+
+                GetViewport().PushInput(new InputEventMouseMotion
+                {
+                    Position = CentreOf(step),
+                    GlobalPosition = CentreOf(step),
+                });
+
+                Assert(
+                    "play-2d-path-preview",
+                    new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
+                    new ProbeExpectation.NonEmpty("the previewed path", PathAsText(expectedPreview)),
+                    new ProbeExpectation.EqualsExpected<string>(
+                        "the previewed path",
+                        PathAsText(_previewPath),
+                        PathAsText(expectedPreview)));
+                await CaptureFrame(Path.Combine(directory, "play-2d-path-preview.png"));
 
                 var movementBeforeStep = active.Turn.MovementFeet;
 
@@ -695,6 +728,17 @@ public partial class PlayMode : FightScreen
         GD.Print($"probe: skipped {name} — {reason}");
         File.WriteAllText(Path.Combine(directory, name + ".skipped.txt"), reason + "\n");
     }
+
+    /// <summary>
+    /// A path rendered as one comparable string. <see
+    /// cref="ProbeExpectation.EqualsExpected{T}"/> compares with
+    /// <c>EqualityComparer&lt;T&gt;.Default</c>, which is reference equality for a list
+    /// — two structurally identical <see cref="GridPosition"/> sequences built by two
+    /// different calls would never compare equal as lists, so play-2d-path-preview
+    /// compares this instead.
+    /// </summary>
+    private static string PathAsText(IReadOnlyList<GridPosition> path) =>
+        string.Join(" ", path.Select(square => $"({square.X},{square.Y})"));
 
     /// <summary>
     /// Checks <paramref name="expectations"/> against the screen's live state right now

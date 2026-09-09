@@ -29,6 +29,15 @@ internal static class Palette
     internal static readonly Color Ink = new("d8d8e0");
     internal static readonly Color Dim = new("8a8a96");
 
+    /// <summary>
+    /// The hovered move's route (#303) — <c>ActiveRing</c>'s own hue, since a path
+    /// preview is the same "here is what your attention is on" signal the turn cursor
+    /// already draws in, at higher opacity than <c>PartyColour</c>'s reachable wash
+    /// (0.16) so the one square out of many that the pointer means to walk to reads as
+    /// singled out rather than merely part of the crowd.
+    /// </summary>
+    internal static readonly Color PathPreview = new(ActiveRing.R, ActiveRing.G, ActiveRing.B, 0.35f);
+
     /// <summary>The translucent wash the overlays share, so the field reads underneath.</summary>
     internal static readonly Color Veil = new(Background.R, Background.G, Background.B, 0.85f);
 }

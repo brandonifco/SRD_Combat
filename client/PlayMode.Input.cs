@@ -499,12 +499,18 @@ public partial class PlayMode : FightScreen
             {
                 _pointer = motion.Position;
                 _hoverElapsed = 0;
+                _hint = null;
 
-                if (_hint is not null)
-                {
-                    _hint = null;
-                    QueueRedraw();
-                }
+                // The path preview (#303) is deliberately not gated behind
+                // HoverDelaySeconds the way _hint is: the reachable wash it sits inside
+                // already lights up with no delay at all, and a route is advice about
+                // the very same click a hint only explains in words — holding it back
+                // would make the one strictly more informative of the two the slower
+                // one to appear. UpdatePreviewPath reads no more than HintAt does
+                // (nothing it touches is animated or ambient), so nothing here is
+                // covering for work the way the hover delay never was either.
+                UpdatePreviewPath();
+                QueueRedraw();
             }
 
             return;
@@ -578,6 +584,91 @@ public partial class PlayMode : FightScreen
         {
             QueueRedraw();
         }
+    }
+
+    /// <summary>
+    /// Recomputes <see cref="_previewPath"/> for wherever <see cref="_pointer"/> is right
+    /// now, against the board's current state.
+    /// </summary>
+    /// <remarks>
+    /// Called from the real-motion branch of <see cref="_UnhandledInput"/> so the route
+    /// tracks the pointer live, and from <see cref="RefreshAfterAction"/> so a turn
+    /// change or a completed move refreshes it immediately rather than leaving the
+    /// previous mover's route on screen until the pointer next twitches.
+    /// </remarks>
+    private void UpdatePreviewPath()
+    {
+        _previewPath.Clear();
+
+        if (_phase != Phase.Fighting || _encounter is not { } encounter)
+        {
+            return;
+        }
+
+        _previewPath.AddRange(HoverPreviewPath(
+            encounter.Battlefield,
+            CommandedCombatant(),
+            SquareAt(_pointer),
+            _reachable,
+            encounter.Combatants,
+            _unseen));
+    }
+
+    /// <summary>
+    /// The path a click on <paramref name="hovered"/> would actually walk right now
+    /// (#303) — <see cref="MovementRules.FindPath"/>'s own answer, asked with exactly the
+    /// arguments <see cref="Encounter.Move"/> passes it internally (the mover's own
+    /// remaining <see cref="TurnResources.MovementFeet"/>, the encounter's own
+    /// combatants), so the drawn route can never diverge from the one a click on that
+    /// square would produce. This is the only place the client asks <c>FindPath</c> for
+    /// a route to one destination — <see cref="_reachable"/> (<see
+    /// cref="MovementRules.Reachable"/>) answers "which squares", this answers "and by
+    /// what way", and neither re-derives the other's search.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Empty for three reasons, each an acceptance case of its own: <paramref
+    /// name="mover"/> is null (nobody commanded), <paramref name="hovered"/> is null (the
+    /// pointer is off the board or nowhere in particular), or the square is not in
+    /// <paramref name="reachable"/> — <see cref="MovementRules.Reachable"/>'s own set for
+    /// this mover and budget, so anything missing from it is a square <c>FindPath</c>
+    /// would refuse anyway (<see cref="MovementRules.Reachable"/>'s remarks on the two
+    /// always agreeing); checking it first only saves the search.
+    /// </para>
+    /// <para>
+    /// <b>Fog holds by filtering the answer, not by asking a different question.</b> The
+    /// route itself is asked for exactly as <see cref="Encounter.Move"/> would ask for
+    /// it — clipping the search to what is currently seen would make the preview lie
+    /// about where the real click actually lands — but a square the party cannot
+    /// presently see is dropped from what comes back, to the same standard
+    /// <c>client/README.md</c>'s "fog of war" already holds a hidden occupant's token,
+    /// ring and hover hint to: nothing here should let the *shape* of a route (a detour
+    /// around an unseen body, say) tell the player something the fog itself would not.
+    /// </para>
+    /// </remarks>
+    internal static IReadOnlyList<GridPosition> HoverPreviewPath(
+        Battlefield field,
+        Combatant? mover,
+        GridPosition? hovered,
+        IReadOnlyCollection<GridPosition> reachable,
+        IReadOnlyCollection<Combatant> combatants,
+        IReadOnlySet<GridPosition> unseen)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(reachable);
+        ArgumentNullException.ThrowIfNull(combatants);
+        ArgumentNullException.ThrowIfNull(unseen);
+
+        if (mover is null || hovered is not { } square || !reachable.Contains(square))
+        {
+            return [];
+        }
+
+        var path = MovementRules.FindPath(field, mover, square, mover.Turn.MovementFeet, combatants);
+
+        return path is null
+            ? []
+            : path.Steps.Where(step => !unseen.Contains(step)).ToList();
     }
 
     /// <summary>
@@ -1229,6 +1320,13 @@ public partial class PlayMode : FightScreen
 
             _fogTexture = BuildFogTexture(looked.Battlefield);
         }
+
+        // Recomputed here too, not only on the next real mouse motion (#303): _reachable
+        // and _unseen above just changed underneath whatever the pointer happens to be
+        // resting on, and a turn ending on a still pointer must not leave the previous
+        // mover's route on screen, or worse, this mover's route drawn against the stale
+        // reachable set an instant before it was refreshed.
+        UpdatePreviewPath();
 
         QueueRedraw();
     }

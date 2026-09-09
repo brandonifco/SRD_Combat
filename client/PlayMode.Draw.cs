@@ -71,6 +71,19 @@ public partial class PlayMode : FightScreen
                 new Color(PartyColour, 0.16f));
         }
 
+        // The route the hovered reachable square would actually be walked by (#303):
+        // MovementRules.FindPath's own answer, computed in UpdatePreviewPath and never
+        // re-derived here. Drawn over the reachable wash and, like it, before the fog
+        // texture below — so a route into ground the party cannot presently see is dimmed
+        // by the same shadow that dims the highlight, on top of HoverPreviewPath already
+        // having dropped any square the fog itself would not reveal.
+        foreach (var square in _previewPath)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                PathPreview);
+        }
+
         // The fog of war, drawn smooth: the per-square set is painted into a small
         // image and upscaled bilinearly (BuildFogTexture), so the shadow's edge
         // feathers across a square instead of stepping — the blockiness was the other

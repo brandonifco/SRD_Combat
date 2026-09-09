@@ -74,6 +74,16 @@ public partial class PlayMode : FightScreen
     private double _pace = SecondsPerTurn;
     private readonly HashSet<GridPosition> _reachable = [];
 
+    /// <summary>
+    /// The route a move would actually walk if committed to whichever reachable square
+    /// the pointer is over right now (#303) — <see cref="MovementRules.FindPath"/>'s own
+    /// answer, so what is drawn can never diverge from what a click on that square would
+    /// do. Empty whenever nothing is hovered, nobody is commanded, or the hovered square
+    /// is not one <see cref="_reachable"/> already offers. See
+    /// <see cref="HoverPreviewPath"/> for the computation and its fog rule.
+    /// </summary>
+    private readonly List<GridPosition> _previewPath = [];
+
     /// <summary>Squares nobody in the party can see — the fog of war, <c>PartyVision</c>'s answer.</summary>
     private readonly HashSet<GridPosition> _unseen = [];
 
