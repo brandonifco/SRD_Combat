@@ -135,8 +135,9 @@ plan's opening section: [`docs/finishing-plan.md`](docs/finishing-plan.md).
 - **F3** the run becomes a game — route choice, loot decisions, stakes, the XP curve.
   Entry gate: the PlayMode modal refactor (#327). **A re-baselining checkpoint.**
 - **F4** depth and variety — enemy casters, CR fill-ins, fog slice 2 (#545)
-- **F5** confidence — client and console tests, content fixtures (#319), suite under
-  ~3 minutes. Runs continuously alongside F2–F4
+- **F5** confidence — client and console tests, `Game.Tests` under three minutes by
+  shortening the full-gauntlet simulation tests rather than fixtures (#694). Runs
+  continuously alongside F2–F4
 - **F6** ship — in-game attribution, packaging, a tagged release
 
 **Sequencing rationale**: F1 first because everything builds on saves, accounting and
