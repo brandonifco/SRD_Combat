@@ -5,7 +5,7 @@
      saturating pacing median means, why a coverage percentage was retired — stay in
      CLAUDE.md, which a script has no business writing. -->
 
-Generated from `6820fa3` on branch `docs/708-review-docs-sweep`
+Generated from `406387e` on branch `docs/708-review-docs-sweep`
 (2026-09-09). Regenerate with `./scripts/status.sh --tests`.
 
 ## Tests
@@ -44,11 +44,11 @@ C# lines, excluding `bin/` and `obj/`.
 
 | Tree | Lines |
 | --- | ---: |
-| `src/` | 33390 |
+| `src/` | 33395 |
 | &nbsp;&nbsp;of which `src/SRDCombat.Console` | 2451 |
 | `client/` | 10960 |
 | `tools/` | 9160 |
-| **Production total** | **53510** |
+| **Production total** | **53515** |
 | `tests/` | 48716 |
 
 ## What this file deliberately does not say
