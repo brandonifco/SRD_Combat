@@ -126,10 +126,12 @@ reference points both ways.
 
 An issue's acceptance criteria are what an engineer *executes*, so a retired rule
 copied into one is worse than the same rule left in a charter a reviewer merely
-consults. On 2026-09-09 a queue-truth review found **22 open issues** still mandating
+consults. On 2026-09-09 a queue-truth review found **23 open issues** still mandating
 the gate #551 retired on 2026-08-28 (#712), and one of them — #475 criterion 4 — would
 have written it into a shipped source header, where #417's docs-grep gate could never
-reach it because no diff would have deleted anything.
+reach it because no diff would have deleted anything. The hand review found 22; the
+guard found the 23rd (#542, the checkpoint issue itself) on its first live run, which is
+the argument for running it rather than sweeping by eye.
 
 **Never write these into an acceptance criterion. Both were retired 2026-08-28:**
 
@@ -156,7 +158,19 @@ Before filing, and when grooming:
 ./scripts/queue-drift.sh
 ```
 
-It fails on any open issue filed since the sweep that mandates either retired form.
-It is not in `validate.sh` — it needs the network, and the merge gate must not.
+It fails on an open issue filed since the sweep whose body carries a **known wording**
+of either retired form. It matches a curated phrase list against a normalised body, so
+it cannot tell you no issue *mandates* the rule — a paraphrase is still a paraphrase.
+Read it as "no known wording found", and write the criterion correctly yourself; the
+list is regression-tested by `scripts/test-queue-drift.sh` (which `validate.sh` runs)
+rather than trusted.
+
+**If it flags an issue you just filed, edit the body.** The "correct by dated comment"
+convention protects issues that predate the sweep and have history worth preserving; an
+issue filed an hour ago has none, and a comment would leave a body a fresh engineer
+still executes.
+
+The live query is not in `validate.sh` — it needs the network, and the merge gate must
+not. The fixtures are.
 
 For a worked mechanism issue and a worked bug issue, read `references/examples.md`.
