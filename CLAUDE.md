@@ -412,12 +412,23 @@ re-running the suite to find out whether a commit passed.
 
 New machine: `mise install && ./scripts/doctor.sh` first (see Environment).
 
-**The other two scripts generate rather than check.** `./scripts/status.sh` writes
+**Two more scripts generate rather than check.** `./scripts/status.sh` writes
 [`docs/status.md`](docs/status.md) — test, content and line counts, measured not typed;
 never hand-edit that file. `./scripts/agent-tokens.sh` reports what agent sessions on
 this project actually cost in context, from Claude Code's own transcripts; it is the
 instrument for the question "did that change make agents cheaper", the way
 `tools/PacingMeasure` is the instrument for balance.
+
+**And one checks the queue rather than the tree.** `./scripts/queue-drift.sh` fails when
+an open issue filed since 2026-09-09 mandates a measurement rule this project retired —
+the per-PR both-ranges pacing gate or the `--seeds 1-20` spot-check waiver, both retired
+by #551 on 2026-08-28. It exists because #417's docs-grep gate structurally cannot catch
+this class: a convention retired in one commit leaves copies in every artifact that
+quotes it, and a grep for what a diff *deleted* finds none of them. The sweep that found
+22 such issues, and one criterion that would have written the retired rule into a shipped
+source header, is #712; #702 is the same drift in the Codex charter mirrors. It is
+deliberately **not** part of `validate.sh` — it needs the network, and the merge gate
+must not. Run it when filing or grooming issues; the `file-issue` skill says so too.
 
 ## Standing conventions
 
