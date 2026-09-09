@@ -531,10 +531,11 @@ public partial class PlayMode : FightScreen
     /// <summary>
     /// How long the pointer must rest before a hint appears, in seconds (#304). Was 2 —
     /// "an eternity mid-fight" per the review that filed the issue — dropped to about
-    /// half a second now that #726/#728 made <see cref="RefreshAfterAction"/>'s own
-    /// highlight one <see cref="MovementRules.Reachable"/> call (sub-millisecond per
-    /// hover), which is what the old delay was originally covering for. The
-    /// terrain-vocabulary half of #304 — what an empty square's hint says — is a
+    /// half a second. This is a rest-detection threshold, not a cost budget: the hover
+    /// path calls <see cref="HintAt"/>, which reads a button's hint or an occupant's
+    /// line and recomputes nothing on the board, so the delay was never covering for
+    /// work (#726/#728's <see cref="RefreshAfterAction"/> speed-up is unrelated to it).
+    /// The terrain-vocabulary half of #304 — what an empty square's hint says — is a
     /// separate, later slice; this constant is the whole of this one.
     /// </summary>
     private const double HoverDelaySeconds = 0.5;

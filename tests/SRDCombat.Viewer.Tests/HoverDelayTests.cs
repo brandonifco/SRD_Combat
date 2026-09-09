@@ -3,9 +3,9 @@ namespace SRDCombat.Viewer.Tests;
 /// <summary>
 /// <see cref="PlayMode.HoverDelayElapsed"/> (#304) — the latency half of the tooltip
 /// issue. The review that filed it measured the old delay at two seconds and called it
-/// "an eternity mid-fight"; #726/#728 made the per-hover highlight cost sub-millisecond
-/// (<c>RefreshAfterAction</c> down to one <see cref="MovementRules.Reachable"/> call),
-/// which is what the old delay was covering for, so it drops to about half a second.
+/// "an eternity mid-fight"; it drops to about half a second. The delay is a
+/// rest-detection threshold, not a cost budget — the hover path reads a hint and
+/// recomputes nothing — so nothing else had to change first.
 /// Pinned here because <see cref="PlayMode.AdvanceHover"/> itself needs a live Godot
 /// node (<c>_pointer</c>, <c>QueueRedraw</c>) and this decision is the one part of it
 /// that does not.
