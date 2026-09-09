@@ -32,6 +32,24 @@ the detail that only becomes actionable once you are in the code.
   move on a *fallen ally* (asked twice from play, scoped exactly that narrowly), and
   `ClearSharedSquares` displaces on wake-up. The pathfinder tie-breaks against
   wandering (it pays real pacing via fewer provoked attacks).
+- **There are two movement questions and one search** (#726). `MovementRules.Explore`
+  is the Dijkstra; `FindPath` is its early-exit caller (one destination, a route back)
+  and `Reachable` is its drained caller (every square the mover may *end* on, no
+  routes). **The set, deliberately, and never the routes**: `FindPath`'s equal-cost
+  tie-break `AxesOpened` is measured *against a destination*, so a search with none has
+  nothing to break ties with, and one drained search's predecessor tree is not the set
+  of routes `FindPath` returns. A caller that needs a route asks `FindPath` for the one
+  square it chose — the client's highlight and the policy's reposition scan each take
+  one `Reachable` call in place of one `FindPath` per board square (504 on the 28 × 18
+  grid the review quoted; boards scale with the encounter and reach 784), and
+  `SimpleTacticsPolicy.ProvokedDamageAlong` still prices exactly the walk it priced
+  before. Making the tie-break destination-independent so the predecessors *are* the
+  routes was considered and rejected: it would move equal-cost walks, which moves
+  provoked damage, which moves the fight — a behaviour change wanting its own issue and
+  its own transcript read. The reasoning is written out on `MovementRules.Reachable`;
+  the agreement of the two answers is pinned by `MovementRulesTests.Reachable_*`, which
+  compares them square by square over difficult terrain, occupied squares, a Large body
+  and the board edge.
 - **Encounter building is three published steps** — `EncounterBudget` (printed page
   202, exactly), `EncounterBuilder` (spends it; count bounds and taste weights are
   ours and stated), `EncounterFactory` (places it; layouts draw from level 3).

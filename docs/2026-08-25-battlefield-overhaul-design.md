@@ -324,7 +324,11 @@ stand leaves no half-room).
   #256 — that is the gate working, not a reason to stay sparse.
 - **Performance.** #328 (504 pathfinds per action) predates this and gets worse with
   more blocked squares only marginally; the span-aware BFS runs at generation time
-  only. No new per-action cost.
+  only. No new per-action cost. *(Superseded in part, 2026-09-09: #726 replaced the
+  per-square `FindPath` loop with one `MovementRules.Reachable` search — 186 ms → 0.27 ms
+  on a seed-1 warband board — so the pathfinding half of this risk is gone. What #328
+  still names, the full-board line of sight and the fog texture upload after every
+  action, is untouched.)*
 
 ## 9. Deployment: zones and formations
 

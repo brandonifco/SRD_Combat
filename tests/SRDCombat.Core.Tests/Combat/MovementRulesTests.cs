@@ -472,4 +472,167 @@ public class MovementRulesTests
         Assert.Equal(path.CostFeet, sum);
         Assert.Equal(10, sum); // 5 + 5 — a corpse costs nothing extra, unlike the merely-downed shape above.
     }
+
+    /// <summary>
+    /// The <see cref="MovementRules.Reachable"/> seam's pin (#726): the one drained
+    /// search answers <em>exactly</em> the squares <see cref="MovementRules.FindPath"/>
+    /// returns a route for, asked square by square over the whole board.
+    /// </summary>
+    /// <remarks>
+    /// This is the whole safety argument for replacing a 504-<c>FindPath</c> loop with
+    /// one search, and it is deliberately a comparison rather than a list of expected
+    /// squares: a list can be wrong in the same direction as the code. Each caller below
+    /// <em>also</em> asserts the concrete set, because two implementations that agree on
+    /// "nothing is reachable" agree vacuously.
+    /// </remarks>
+    private static IReadOnlySet<GridPosition> AssertReachableMatchesFindPath(
+        Battlefield field,
+        Combatant mover,
+        int budgetFeet,
+        IReadOnlyCollection<Combatant> combatants)
+    {
+        var reachable = MovementRules.Reachable(field, mover, budgetFeet, combatants);
+
+        foreach (var square in field.AllSquares())
+        {
+            var routed = MovementRules.FindPath(field, mover, square, budgetFeet, combatants) is not null;
+            var included = reachable.Contains(square);
+
+            Assert.True(
+                routed == included,
+                $"{square}: FindPath {(routed ? "routes there" : "refuses it")}, "
+                + $"Reachable {(included ? "includes it" : "leaves it out")}.");
+        }
+
+        return reachable;
+    }
+
+    [Fact]
+    public void Reachable_MatchesFindPath_OnOpenGround()
+    {
+        var field = new Battlefield(20, 20);
+        var mover = CombatTestData.Combatant("m", x: 10, y: 10);
+
+        var reachable = AssertReachableMatchesFindPath(field, mover, 30, [mover]);
+
+        // Thirty feet is six squares, diagonals cost the same as straight steps, so the
+        // reach is a 13 × 13 block centred on the mover — less the mover's own square,
+        // which is not a destination.
+        Assert.Equal((13 * 13) - 1, reachable.Count);
+        Assert.DoesNotContain(mover.Position, reachable);
+        Assert.Contains(new GridPosition(16, 16), reachable);
+        Assert.DoesNotContain(new GridPosition(17, 16), reachable);
+    }
+
+    [Fact]
+    public void Reachable_MatchesFindPath_AcrossDifficultTerrain()
+    {
+        // Three squares of rough ground east of the mover, at ten feet each: thirty feet
+        // buys three squares here where it would buy six on open ground.
+        var field = new Battlefield(
+            9,
+            1,
+            difficultTerrain: [new GridPosition(1, 0), new GridPosition(2, 0), new GridPosition(3, 0)]);
+
+        var mover = CombatTestData.Combatant("m", x: 0, y: 0);
+
+        var reachable = AssertReachableMatchesFindPath(field, mover, 30, [mover]);
+
+        Assert.Equal(
+            [new GridPosition(1, 0), new GridPosition(2, 0), new GridPosition(3, 0)],
+            reachable.OrderBy(square => square.X).ToArray());
+    }
+
+    [Fact]
+    public void Reachable_MatchesFindPath_ThroughOccupiedSquares()
+    {
+        // A one-square corridor holding all three end-of-move answers at once: an able
+        // ally (walk through, never stop), a downed ally (walk through and stop, the
+        // engine's one house rule), and a downed enemy (walk through, never stop). The
+        // set that comes back is deliberately not contiguous.
+        var field = new Battlefield(7, 1);
+        var mover = CombatTestData.Combatant("m", x: 0, y: 0);
+        var ally = CombatTestData.Combatant("ally", x: 1, y: 0);
+        var downedAlly = CombatTestData.Combatant("downed-ally", x: 3, y: 0);
+        var downedEnemy = CombatTestData.Combatant("downed-enemy", sideId: CombatTestData.Monsters, x: 5, y: 0);
+
+        downedAlly.AddCondition(ConditionType.Unconscious);
+        downedEnemy.AddCondition(ConditionType.Unconscious);
+
+        Combatant[] everyone = [mover, ally, downedAlly, downedEnemy];
+
+        var reachable = AssertReachableMatchesFindPath(field, mover, 60, everyone);
+
+        Assert.Equal(
+            [
+                new GridPosition(2, 0),
+                new GridPosition(3, 0),
+                new GridPosition(4, 0),
+                new GridPosition(6, 0),
+            ],
+            reachable.OrderBy(square => square.X).ToArray());
+    }
+
+    [Fact]
+    public void Reachable_MatchesFindPath_ForALargeBody()
+    {
+        // FootprintMovementTests' gap fixture: a wall down column 2 with a single open
+        // square at (2,2). A Large body needs two adjacent open squares in that column
+        // and never gets them, so the whole eastern half is unreachable however much
+        // movement it has — and the answer must be the same set whichever way it is
+        // asked.
+        var wall = Enumerable.Range(0, 5)
+            .Where(y => y != 2)
+            .Select(y => new GridPosition(2, y))
+            .ToArray();
+
+        var field = new Battlefield(6, 5, blocked: wall);
+
+        var ogre = CombatTestData.Combatant(
+            "ogre",
+            stats: CombatTestData.Stats(size: CreatureSize.Large),
+            x: 0,
+            y: 2);
+
+        var reachable = AssertReachableMatchesFindPath(field, ogre, 60, [ogre]);
+
+        // Only anchors in column 0 keep the whole 2 × 2 body clear of the wall, and the
+        // southernmost anchor is y = 3 because y = 4 would hang the body off the board.
+        Assert.Equal(
+            [new GridPosition(0, 0), new GridPosition(0, 1), new GridPosition(0, 3)],
+            reachable.OrderBy(square => square.Y).ToArray());
+    }
+
+    [Fact]
+    public void Reachable_MatchesFindPath_AtTheBoardEdge()
+    {
+        // Nothing blocks this board; the edge does. A Large creature's anchor is its
+        // north-west square, so the last column and the last row hold no legal anchor
+        // at all, and a reachability answer that forgot the footprint would light them.
+        var field = new Battlefield(5, 5);
+
+        var ogre = CombatTestData.Combatant(
+            "ogre",
+            stats: CombatTestData.Stats(size: CreatureSize.Large),
+            x: 0,
+            y: 0);
+
+        var reachable = AssertReachableMatchesFindPath(field, ogre, 60, [ogre]);
+
+        Assert.Equal((4 * 4) - 1, reachable.Count);
+        Assert.DoesNotContain(new GridPosition(4, 1), reachable);
+        Assert.DoesNotContain(new GridPosition(1, 4), reachable);
+        Assert.Contains(new GridPosition(3, 3), reachable);
+    }
+
+    [Fact]
+    public void Reachable_IsEmptyWithNothingLeftToSpend()
+    {
+        // A turn with its movement spent reaches nowhere — and in particular does not
+        // reach the square the mover is standing on, which is not a destination.
+        var field = new Battlefield(5, 5);
+        var mover = CombatTestData.Combatant("m", x: 2, y: 2);
+
+        Assert.Empty(AssertReachableMatchesFindPath(field, mover, 0, [mover]));
+    }
 }

@@ -1501,13 +1501,34 @@ public static class SimpleTacticsPolicy
         // everywhere and decide nothing.
         var shoots = reach > Battlefield.FeetPerSquare;
 
+        // One bounded search says which squares this turn's movement can end on (#726);
+        // the routes are then asked for one at a time, because FindPath's tie-break is
+        // measured against a destination and a destinationless search has none — see
+        // MovementRules.Reachable's remarks. That keeps ProvokedDamageAlong pricing
+        // exactly the walk it priced before this seam existed.
+        //
+        // Iterated as AllSquares().Where(reachable) rather than over the set itself so
+        // the order the candidates are scored in is the board's, exactly as before.
+        // Both orders are deterministic and — because the tie-break chains below both
+        // end on Square.X then Square.Y, which totally orders distinct squares — both
+        // pick the same winner; #726 knocked that out and the whole Core suite stayed
+        // green with the set iterated directly. This form is kept anyway because
+        // "unchanged by construction" is worth more than the handful of HashSet probes
+        // it costs, and because nothing would have caught it if the reasoning were wrong.
+        var reachable = MovementRules.Reachable(field, actor, actor.Turn.MovementFeet, encounter.Combatants);
+
         return field.AllSquares()
+            .Where(reachable.Contains)
             .Select(square => (Square: square, Path: MovementRules.FindPath(
                 field,
                 actor,
                 square,
                 actor.Turn.MovementFeet,
                 encounter.Combatants)))
+            // Inert now — Reachable returns exactly the squares FindPath answers
+            // non-null for, pinned square-by-square in MovementRulesTests — and kept as
+            // the guard that a drift between the two would degrade this scan rather
+            // than throw inside the scorer below.
             .Where(candidate => candidate.Path is not null)
             .Select(candidate =>
             {
