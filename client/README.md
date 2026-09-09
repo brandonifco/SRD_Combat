@@ -557,70 +557,85 @@ disk for any of them. It throws now (`CaptureOutcome.FailureMessage` is the pure
 behind the throw, pinned by `CaptureOutcomeTests` with no Godot engine at all), which
 `ProbeFaults` turns into the same crashed-probe exit a thrown assertion already takes.
 
-**Every *required* step asserts a predicate before it captures, not after** (#705, then
-tightened at #719's review — see below for exactly which predicates that review found
-missing). `ProbeExpectation` (`client/ProbeExpectation.cs`) has five shapes, over a plain
-`ProbeSnapshot`: `FocusIs` (the focus layer expected), `NoticeCodeIs` (the refusal code
-expected, most often "no refusal at all" — `null`), `Unchanged<T>` (a resource — an
-actor's position, hit points, movement, action economy — the step's own action must not
-have touched), `Changed<T>` (the mirror: a resource — the active combatant, the round —
-the step's own action must actually have moved), and `EqualsExpected<T>` (an observed
-value that must equal a specific target — the actor landing on the exact square clicked,
-a hover's hint text naming exactly the button hovered). A failed predicate throws, naming
-the step, the same fault path as a crash — never `ReportSkip`, below.
+**Every *required* step asserts a predicate before it captures, not after** (#705,
+tightened twice more at #719's review rounds — see below for exactly which predicates
+each round found missing). `ProbeExpectation` (`client/ProbeExpectation.cs`) has eight
+shapes, over a plain `ProbeSnapshot`: `FocusIs` (the focus layer expected), `NoticeCodeIs`
+(the refusal code expected, most often "no refusal at all" — `null`), `Unchanged<T>` (a
+resource — an actor's position, hit points, movement, and every resource its turn's
+economy tracks — the step's own action must not have touched), `Changed<T>` (the mirror:
+a resource — the active combatant, the round — the step's own action must actually have
+moved), `EqualsExpected<T>` (an observed value that must equal a specific target — the
+actor landing on the exact square clicked), `Decreased` (a count that must have gone
+down), `NonEmpty` (a string that must be present and non-empty, checked *before* it is
+trusted as something else's expectation), and `AnyOf` (passes when at least one of
+several expectations does — the logical OR `PlayMode.Assert`'s own implicit AND across
+its parameter list cannot express). A failed predicate throws, naming the step, the same
+fault path as a crash — never `ReportSkip`, below.
 
 **Why the plainer pair — `NoticeCodeIs(null)` plus `FocusIs(Board)` — is not, by itself,
-proof that a click did anything** (#719's review): both hold exactly as truly *before* a
-click that turns out to be a no-op as after it — the shape `play-2` itself was found in.
-So every step whose click is expected to succeed also asserts the click's own effect,
-per step:
+proof that a click did anything** (#719's first review round): both hold exactly as truly
+*before* a click that turns out to be a no-op as after it — the shape `play-2` itself was
+found in. So every step whose click is expected to succeed also asserts the click's own
+effect, per step:
 
 | Step | What it asserts |
 | --- | --- |
 | `play-1-turn-ready` | `FocusIs(Board)`; `NextCommandedTurn` itself throws if no commanded turn ever arrives |
 | `play-1b-quit-confirm` | `FocusIs(QuitConfirm)` |
-| `play-2-stand-up-not-offered` | `NoticeCodeIs(null)`, `FocusIs(Board)`, and `Unchanged` on the commanded actor's position, hit points, movement and action economy — see below |
-| `play-2b-hint` | `EqualsExpected` — the hint text produced equals the hovered button's own registered hint (was: nothing at all; only that a button existed *before* hovering) |
+| `play-2-stand-up-not-offered` | `NoticeCodeIs(null)`, `FocusIs(Board)`, and `Unchanged` on the commanded actor's position, hit points, movement, Action, Bonus Action, Reaction and remaining attacks — see below |
+| `play-2b-hint` | `NonEmpty` on the hovered button's *registered* hint (a broken registration is a fault before it is ever compared against anything), then `EqualsExpected` — the hint text actually produced equals that registered hint |
 | `play-2c-tab-armed` | `FocusIs(Targeting)` |
 | `play-3-moved` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `EqualsExpected` (actor position == the clicked square), `Decreased` (movement remaining) |
-| `play-4-attacked` | `FocusIs(Board)` only — the attack itself can legitimately refuse (out of reach after a short move) |
+| `play-4-attacked` | `FocusIs(Board)`, and `AnyOf` — the combat log gained an entry (the attack resolved) *or* a notice was printed (the attack was refused); the attack itself can legitimately refuse (out of reach after a short move), but doing *nothing* is a fault |
 | `play-5-feature` | none — optional coverage, `ReportSkip` when no second-row feature exists; can legitimately refuse when it does |
-| `play-6-turn-ended` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `Changed` (the active combatant or the round) |
+| `play-6-turn-ended` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `Changed` (the active combatant's `Id` or the round — `Id`, not `Name`: two same-named combatants acting consecutively must not read as "no change") |
 | `play-7-spell-menu` | availability checked first (`ButtonOffered("Cast")`, `ReportSkip` if not this turn); when offered, `FocusIs(SpellMenu)` — a fault, not a skip, if Cast was offered and still failed to open it |
-| `play-8-cast` | `FocusIs(Board)` only — casting itself can legitimately refuse (range, no valid target) |
-| `play-9-attack-menu` | gated by `_focus.Top is AttackMenu` before capture; `ReportSkip` if never reached |
+| `play-8-cast` | `FocusIs(Board)`, and the same `AnyOf` evidence as `play-4-attacked` — the log gained an entry or a notice was printed; casting itself can legitimately refuse (range, no valid target), but doing nothing is a fault |
+| `play-9-attack-menu` | availability checked first (`ButtonOffered("Attack")`; not offered this frame just loops to try again, no skip); when offered, `FocusIs(AttackMenu)` — a fault if it fails to open |
 | `run-9-outcome-card` | gated by `_focus.Holds<Outcome>()` before capture; `ReportSkip` if the fight never completes in budget |
 | `run-9-after-fight` | the play-out loop faults if it exhausts its safety budget still mid-fight, rather than capturing that as "after the fight" (#180's own shape) |
 | `run-10-shop` | `FocusIs(Shop)` |
 | `run-0-interlude` | none — nothing has acted yet; the branch condition (`_phase == Phase.Interlude`) is itself the guarantee |
 | one-fight `play-9-spell-menu` | same availability-then-`FocusIs(SpellMenu)` shape as `play-7-spell-menu` |
-| one-fight `play-9-slot-menu` | `FocusIs(SlotMenu)` — a fault, since the clicked spell is already confirmed to support more than one slot level before it is clicked |
+| one-fight `play-9-slot-menu` | availability established by `castable.FindIndex(...) >= 0` (a spell castable at more than one slot level exists this turn — `ReportSkip` otherwise); once found, `FocusIs(SlotMenu)` is a fault if it fails, and a spell found in `castable` but missing from the drawn `_menuRows` is itself a fault (a "the two are populated in the same pass" assumption broken), never folded into the same skip as "no such spell exists" |
 
 `play-2-stand-up-not-offered` is the named instance (#521): `ClickButton("Stand Up")`
 while the commanded character is not Prone, which `TurnOptions` never offers a button
 for, so the click finds nothing and the capture was — confirmed live — a byte-copy of
 `play-1-turn-ready`, under a name (`play-2-refused`) that claimed a refusal it never
 produced. Renamed, it now asserts exactly what is true today: no refusal, the focus
-unchanged, *and* the commanded actor's own position, hit points, movement and action
-economy unchanged — the fact that actually rules out "something happened and simply
-didn't refuse". Retargeting it onto a refusal the probe can actually reach is #521's
-still-open decision, not this one's.
+unchanged, *and* the commanded actor's position, hit points, movement, Action, Bonus
+Action, Reaction and remaining attacks (`Combatant.Features.AttacksRemainingThisAction`)
+all unchanged — widened at #719's second review round from Action alone, which a
+misrouted click spending only a Bonus Action would have passed undetected. Retargeting
+this step onto a refusal the probe can actually reach is #521's still-open decision, not
+this one's.
+
+**`FocusIs(Board)` alone is not evidence an action resolved**, either (#719's second
+review round): deleting a click's own handler entirely can still leave the board
+uncovered, the same way a no-op leaves the focus and the notice untouched. `play-4-attacked`
+and `play-8-cast` both need positive evidence the click did something — the combat log
+gaining an entry (a resolved attack or cast) or a notice being printed (a refusal) — and
+`AnyOf` is exactly that "one of these, not neither" check.
 
 **A step the probe could not reach — or could not confirm it reached — says so, it does
 not skip in silence — and a step that *was* reachable but whose own effect failed is a
-fault, never dressed up as the same "could not reach" skip** (#705, sharpened at #719's
-review). Whether a character brought a feature, whether the second commanded turn is a
-caster's, whether Cast is actually offered that turn, whether fight 1 stays clear long
-enough to reach a Long Rest, and whether a caster's slots span more than one level are
-all facts about a fight in progress, not guarantees, and each is checked by
-*availability* (`ButtonOffered`, before acting) rather than by whether the click's own
-effect happened to land: the old `play-7-spell-menu` reported "Cast was not offered"
-whenever the spell menu failed to open, which conflated an unreachable turn with a real
-defect the probe had just found. A capture the probe could not attempt writes
-`<name>.skipped.txt` next to where the PNG would have gone, naming why — so a shrunk
-capture set is a file to notice rather than a silent absence. This is reserved for
-coverage that is genuinely optional; a required step's failed predicate is the fault
-above, never this.
+fault, never dressed up as the same "could not reach" skip** (#705, sharpened across
+#719's review rounds). Whether a character brought a feature, whether the second
+commanded turn is a caster's, whether Cast or Attack is actually offered that turn,
+whether fight 1 stays clear long enough to reach a Long Rest, and whether a caster's
+slots span more than one level are all facts about a fight in progress, not guarantees,
+and each is checked by *availability* (`ButtonOffered`, or `castable`'s own index, before
+acting) rather than by whether the click's own effect happened to land: the old
+`play-7-spell-menu` reported "Cast was not offered" whenever the spell menu failed to
+open, and the old attack-menu and slot-menu branches folded a real failure into "no such
+character took a turn" and "no such spell exists" respectively — all three conflated an
+unreachable turn with a real defect the probe had just found. A capture the probe could
+not attempt writes `<name>.skipped.txt` next to where the PNG would have gone, naming
+why — so a shrunk capture set is a file to notice rather than a silent absence. This is
+reserved for coverage that is genuinely optional; a required step's failed predicate is
+the fault above, never this.
 
 ```bash
 scripts/probe-diff.sh <dirA> <dirB>

@@ -126,4 +126,60 @@ internal abstract record ProbeExpectation
                 ? null
                 : $"expected {Resource} to decrease from {Before}, was {After}";
     }
+
+    /// <summary>
+    /// A string a step expects to be present and non-empty — checked before the caller
+    /// trusts it as an expectation to compare something else against.
+    /// </summary>
+    /// <remarks>
+    /// Closes a specific hole (#719, second review): <c>play-2b-hint</c> compares the
+    /// hint actually produced against the hovered button's <em>registered</em> hint via
+    /// <see cref="EqualsExpected{T}"/>. If registration itself broke — the dictionary
+    /// lookup failing, or a future <c>TurnOptions.Hint</c> case returning empty — the
+    /// registered hint and the produced hint would both independently be null, and
+    /// <c>null == null</c> would pass <see cref="EqualsExpected{T}"/> exactly as if the
+    /// hint had actually matched. This predicate is run first, against the registered
+    /// value alone, so a broken registration is a fault before it ever reaches the
+    /// comparison that a broken pair of nulls could slip past.
+    /// </remarks>
+    internal sealed record NonEmpty(string Resource, string? Value) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot) =>
+            string.IsNullOrEmpty(Value)
+                ? $"expected {Resource} to be a non-empty string, was {(Value is null ? "null" : "empty")}"
+                : null;
+    }
+
+    /// <summary>Some notice must have been printed — any code, unspecified. The complement of <see cref="NoticeCodeIs"/> with a null expectation.</summary>
+    internal sealed record NoticePresent(string Resource) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot) =>
+            snapshot.Notice is null
+                ? $"expected {Resource} to have printed a notice, got none"
+                : null;
+    }
+
+    /// <summary>
+    /// Passes when at least one of <paramref name="Options"/> passes — the logical OR
+    /// <c>PlayMode.Assert</c>'s implicit AND across its own parameter list cannot
+    /// express on its own.
+    /// </summary>
+    /// <remarks>
+    /// The shape this exists for (#719, second review): a bare board click either
+    /// resolves (the combat log gains an entry) or is refused (a notice is printed) —
+    /// never neither, unless the click found nothing to act on at all, which is exactly
+    /// the no-op this is meant to catch. Neither branch alone is the right assertion,
+    /// since either can legitimately be the one that happens.
+    /// </remarks>
+    internal sealed record AnyOf(string Resource, ProbeExpectation[] Options) : ProbeExpectation
+    {
+        internal override string? Failure(ProbeSnapshot snapshot)
+        {
+            var failures = Options.Select(option => option.Failure(snapshot)).ToArray();
+
+            return Array.TrueForAll(failures, failure => failure is not null)
+                ? $"expected at least one of {Resource}'s conditions to hold — {string.Join("; ", failures)}"
+                : null;
+        }
+    }
 }

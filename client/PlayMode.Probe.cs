@@ -23,24 +23,30 @@ public partial class PlayMode : FightScreen
     /// </summary>
     /// <remarks>
     /// <b>Every required step below asserts a predicate before it trusts its own
-    /// capture's name</b> (#705, sharpened at #719's review): the focus layer (<see
-    /// cref="ProbeExpectation.FocusIs"/>), the refusal code (<see
+    /// capture's name</b> (#705, sharpened across #719's review rounds): the focus layer
+    /// (<see cref="ProbeExpectation.FocusIs"/>), the refusal code (<see
     /// cref="ProbeExpectation.NoticeCodeIs"/>), a resource the action must have left
     /// alone (<see cref="ProbeExpectation.Unchanged{T}"/>) or must actually have moved
-    /// (<see cref="ProbeExpectation.Changed{T}"/>), or an observed value that must equal
-    /// a specific target (<see cref="ProbeExpectation.EqualsExpected{T}"/>) — or, for
-    /// coverage a fight in progress may or may not offer, <see cref="ReportSkip"/>,
-    /// named at the branch that could not even be <i>attempted</i> (checked by <see
-    /// cref="ButtonOffered"/> before acting, never by whether the click's own effect
-    /// happened to land — #719's review: the old shape reported a reachable step's own
-    /// failure as if the step had been unreachable). A failed <see
-    /// cref="ProbeExpectation"/> throws via <see cref="Assert"/>, the same fault path a
-    /// crash already takes (<see cref="ProbeFaults"/>): a required step's postcondition
-    /// not holding is a fault, never a silently mislabelled PNG. <c>NoticeCodeIs(null)</c>
-    /// and <c>FocusIs(Board)</c> alone are not proof a click did anything — both hold
-    /// exactly as truly before a no-op click as after it — so every step whose click is
-    /// expected to succeed also asserts that click's own effect; the full table is in
-    /// <c>client/README.md</c>, "The probe".
+    /// (<see cref="ProbeExpectation.Changed{T}"/>), an observed value that must equal a
+    /// specific target (<see cref="ProbeExpectation.EqualsExpected{T}"/>), a count that
+    /// must have gone down (<see cref="ProbeExpectation.Decreased"/>), a string that must
+    /// be present before it is trusted as someone else's expectation (<see
+    /// cref="ProbeExpectation.NonEmpty"/>), or at least one of several conditions holding
+    /// (<see cref="ProbeExpectation.AnyOf"/>, for "the log grew or a notice printed" —
+    /// neither alone is required, but doing neither is a fault) — or, for coverage a
+    /// fight in progress may or may not offer, <see cref="ReportSkip"/>, named at the
+    /// branch that could not even be <i>attempted</i> (checked by <see
+    /// cref="ButtonOffered"/>, or by an index into a computed list, before acting, never
+    /// by whether the click's own effect happened to land — #719's review: the old shape
+    /// reported a reachable step's own failure as if the step had been unreachable). A
+    /// failed <see cref="ProbeExpectation"/> throws via <see cref="Assert"/>, the same
+    /// fault path a crash already takes (<see cref="ProbeFaults"/>): a required step's
+    /// postcondition not holding is a fault, never a silently mislabelled PNG.
+    /// <c>NoticeCodeIs(null)</c> and <c>FocusIs(Board)</c> alone are not proof a click did
+    /// anything — both hold exactly as truly before a no-op click as after it, and
+    /// deleting a click's handler entirely can leave the board just as clean — so every
+    /// step whose click is expected to succeed also asserts that click's own effect; the
+    /// full table is in <c>client/README.md</c>, "The probe".
     /// </remarks>
     private void RunProbeIfAsked()
     {
@@ -104,8 +110,11 @@ public partial class PlayMode : FightScreen
         // is exactly the shape this step exists to rule out. ActorVitals is the
         // predicate that actually distinguishes "nothing happened" from "something
         // happened and just didn't refuse": the commanded actor's position, hit
-        // points, movement and action economy, unchanged by construction whenever the
-        // click found no button at all.
+        // points, movement, and every resource its turn's economy tracks — Action,
+        // Bonus Action, Reaction, and the Attack action's own remaining swings — all
+        // unchanged by construction whenever the click found no button at all. Widened
+        // at #719's second review from Action alone, which a misrouted click spending
+        // only a Bonus Action would have passed undetected.
         var beforeStandUp = ActorVitals(CommandedCombatant());
         ClickButton("Stand Up");
         var afterStandUp = ActorVitals(CommandedCombatant());
@@ -115,7 +124,8 @@ public partial class PlayMode : FightScreen
             new ProbeExpectation.NoticeCodeIs(null),
             new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
             new ProbeExpectation.Unchanged<ActorVitalsSnapshot?>(
-                "the commanded actor's position, hit points, movement and action economy",
+                "the commanded actor's position, hit points, movement, Action, Bonus Action, "
+                    + "Reaction and remaining attacks",
                 beforeStandUp,
                 afterStandUp));
         await CaptureFrame(Path.Combine(directory, "play-2-stand-up-not-offered.png"));
@@ -166,14 +176,28 @@ public partial class PlayMode : FightScreen
                 ReportSkip(directory, "play-3-moved", "no reachable square was open for this turn's move step");
             }
 
+            var logCountBeforeAttack = _encounter?.Log.Count ?? 0;
+
             Click(CentreOf(target.Position));
 
             // Unlike the move above, this bare click's own attack can legitimately
             // refuse (out of reach after a short move, no attack that reaches this
             // target) — refusals included is documented, working-as-intended coverage
-            // here, the same as the feature click below. What must hold regardless is
-            // that a bare board click never leaves an armed layer behind.
-            Assert("play-4-attacked", new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)));
+            // here, the same as the feature click below. FocusIs(Board) alone is not
+            // evidence anything happened, though (#719, second review): deleting the
+            // click's own handler entirely would still leave the board uncovered, so
+            // it passed just as well as a real attack. AnyOf requires actual proof the
+            // click did something — the combat log gained an entry (a resolved attack)
+            // or a notice was printed (a refusal) — never neither.
+            Assert(
+                "play-4-attacked",
+                new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
+                new ProbeExpectation.AnyOf(
+                    "evidence the attack resolved or was refused",
+                    [
+                        new ProbeExpectation.Changed<int>("the combat log length", logCountBeforeAttack, _encounter?.Log.Count ?? 0),
+                        new ProbeExpectation.NoticePresent("the attack"),
+                    ]));
             await CaptureFrame(Path.Combine(directory, "play-4-attacked.png"));
         }
         else
@@ -252,14 +276,29 @@ public partial class PlayMode : FightScreen
 
                 if (_menuRows.Count > 0)
                 {
+                    var logCountBeforeCast = _encounter?.Log.Count ?? 0;
+
                     Click(_menuRows[0].GetCenter());
                     Click(CentreOf(victim.Position));
 
                     // Casting itself can still legitimately refuse (out of range, no
                     // valid target) the same way the attack above can — ClearPending
                     // runs whether the cast lands or is refused, so the focus popping
-                    // back to the board is the one thing this asserts unconditionally.
-                    Assert("play-8-cast", new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)));
+                    // back to the board is one thing this asserts unconditionally. It
+                    // is not, on its own, evidence anything happened (#719, second
+                    // review): omitting spell resolution entirely while still calling
+                    // ClearPending would leave the board just as clean. AnyOf requires
+                    // the same proof play-4 does — the log gained an entry, or a
+                    // notice was printed.
+                    Assert(
+                        "play-8-cast",
+                        new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
+                        new ProbeExpectation.AnyOf(
+                            "evidence the cast resolved or was refused",
+                            [
+                                new ProbeExpectation.Changed<int>("the combat log length", logCountBeforeCast, _encounter?.Log.Count ?? 0),
+                                new ProbeExpectation.NoticePresent("the cast"),
+                            ]));
                     await CaptureFrame(Path.Combine(directory, "play-8-cast.png"));
                 }
                 else
@@ -311,10 +350,19 @@ public partial class PlayMode : FightScreen
                     && CommandedCombatant() is { } menuCandidate
                     && menuCandidate.Stats.Attacks.Count > 1)
                 {
-                    ClickButton("Attack");
-
-                    if (_focus.Top is PlayFocus.AttackMenu)
+                    // Carrying more than one named attack is not the same fact as
+                    // "Attack is offered this instant" (action already spent, no
+                    // target in range) — ButtonOffered checks the second, separately,
+                    // so a turn that doesn't offer it yet simply loops to try again
+                    // next frame, the same as before. Once offered and clicked,
+                    // failing to open the menu is a fault (#719, second review): the
+                    // old shape let this fall through silently, so a broken
+                    // AttackMenu button was reported, wrongly, as "no such character
+                    // ever took a turn" below.
+                    if (ButtonOffered("Attack"))
                     {
+                        ClickButton("Attack");
+                        Assert("play-9-attack-menu", new ProbeExpectation.FocusIs(typeof(PlayFocus.AttackMenu)));
                         await CaptureFrame(Path.Combine(directory, "play-9-attack-menu.png"));
                         attackMenuCaptured = true;
                         Press(Key.Escape);
@@ -452,12 +500,25 @@ public partial class PlayMode : FightScreen
                     var castable = CastableSpells(caster).ToList();
                     var upcastIndex = castable.FindIndex(spell => SlotLevelsFor(caster, spell).Count > 1);
 
-                    if (upcastIndex < 0 || upcastIndex >= _menuRows.Count)
+                    // upcastIndex < 0 and upcastIndex >= _menuRows.Count used to share
+                    // one skip message, but they are different facts (#719, second
+                    // review): the first is "no such spell exists this turn" (a fact
+                    // about the fight, ReportSkip); the second means an upcastable
+                    // spell WAS found — availability is established — and the "the two
+                    // are populated in the same pass" assumption above broke, which is
+                    // a fault, not a second way to spell "not available".
+                    if (upcastIndex < 0)
                     {
                         ReportSkip(
                             directory,
                             "play-9-slot-menu",
                             "the caster's spell menu offered no spell castable at more than one slot level");
+                    }
+                    else if (upcastIndex >= _menuRows.Count)
+                    {
+                        throw new InvalidOperationException(
+                            $"probe: required step 'play-9-slot-menu' failed — an upcastable spell was found at "
+                                + $"castable index {upcastIndex} but the drawn spell menu only has {_menuRows.Count} rows.");
                     }
                     else
                     {
@@ -572,19 +633,51 @@ public partial class PlayMode : FightScreen
     /// moment the live object itself changes underneath it (#719 review, play-2's
     /// "board unchanged" claim).
     /// </summary>
-    private readonly record struct ActorVitalsSnapshot(GridPosition Position, int HitPoints, int Movement, bool HasAction);
+    /// <remarks>
+    /// Widened at #719's second review: the first version compared only <see
+    /// cref="Combatant.Turn"/>'s <c>HasAction</c>, so a misrouted click that spent only
+    /// the Bonus Action or the Reaction — or burned a swing off <see
+    /// cref="FeatureState.AttacksRemainingThisAction"/> without touching the
+    /// Action itself — passed <c>play-2</c> undetected. Every resource a turn's economy
+    /// actually tracks is compared now: the Action, the Bonus Action, the Reaction, and
+    /// the Attack action's own remaining swings.
+    /// </remarks>
+    private readonly record struct ActorVitalsSnapshot(
+        GridPosition Position,
+        int HitPoints,
+        int Movement,
+        bool HasAction,
+        bool HasBonusAction,
+        bool HasReaction,
+        int AttacksRemaining);
 
     /// <summary>Null when nobody is commanded — a real fact worth comparing, not a value to paper over.</summary>
     private static ActorVitalsSnapshot? ActorVitals(Combatant? combatant) =>
         combatant is null
             ? null
-            : new ActorVitalsSnapshot(combatant.Position, combatant.CurrentHitPoints, combatant.Turn.MovementFeet, combatant.Turn.HasAction);
+            : new ActorVitalsSnapshot(
+                combatant.Position,
+                combatant.CurrentHitPoints,
+                combatant.Turn.MovementFeet,
+                combatant.Turn.HasAction,
+                combatant.Turn.HasBonusAction,
+                combatant.Turn.HasReaction,
+                combatant.Features.AttacksRemainingThisAction);
 
     /// <summary>The two facts that "a turn actually ended" moves — who is acting, and which round it is.</summary>
+    /// <param name="ActiveCombatant">
+    /// <see cref="Combatant.Id"/>, not <see cref="Combatant.Name"/> (#719, second
+    /// review) — a name is not a turn identity: "2 Giant Wasps" is a legal encounter
+    /// (<c>EncounterFactory</c>'s own comment), and two same-named combatants acting
+    /// consecutively would make a name-keyed comparison see no change where the active
+    /// combatant plainly did change. <c>Id</c> is assigned uniquely per combatant
+    /// (<c>$"monster{index}"</c> for monsters) specifically so a repeated name never
+    /// collides with it.
+    /// </param>
     private readonly record struct TurnStateSnapshot(string? ActiveCombatant, int Round);
 
     private TurnStateSnapshot TurnState() =>
-        new(_encounter?.ActiveCombatant?.Name, _encounter?.Round ?? -1);
+        new(_encounter?.ActiveCombatant?.Id, _encounter?.Round ?? -1);
 
     /// <summary>
     /// Waits for a commanded turn to come up. Throws rather than returning silently
@@ -706,9 +799,16 @@ public partial class PlayMode : FightScreen
 
         // Every button on this row is built from a TurnAction (BuildButtons' one call
         // site), and TurnOptions.Hint returns non-empty text for every TurnAction, so
-        // this is always registered — expecting null here would silently accept
-        // "nothing was found to hover" as a pass.
+        // this is always registered.
         var expectedHint = _buttonHints.TryGetValue(hovered.Caption, out var hint) ? hint : null;
+
+        // Checked before the comparison below, not folded into it (#719, second
+        // review): if registration itself broke, expectedHint and the hint HintAt
+        // reads at runtime would both independently be null, and EqualsExpected's own
+        // null == null would pass — the exact "both sides went missing together" shape
+        // a bare comparison cannot catch. NonEmpty rules that out on its own, first.
+        Assert("play-2b-hint", new ProbeExpectation.NonEmpty($"the registered hint for '{hovered.Caption}'", expectedHint));
+
         var centre = hovered.Rect.Position + (hovered.Rect.Size / 2);
 
         GetViewport().PushInput(new InputEventMouseMotion

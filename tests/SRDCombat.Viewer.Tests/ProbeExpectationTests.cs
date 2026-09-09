@@ -163,4 +163,96 @@ public class ProbeExpectationTests
         Assert.Contains("movement", failure);
         Assert.Contains("30", failure);
     }
+
+    [Fact]
+    public void NonEmptyPassesWhenTheValueIsNonEmpty()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        Assert.Null(new ProbeExpectation.NonEmpty("hint", "Bonus Action.").Failure(snapshot));
+    }
+
+    [Fact]
+    public void NonEmptyFailsAndNamesTheResourceWhenTheValueIsNull()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        // The shape this predicate exists for (#719, third review): a broken hint
+        // registration reads back as null here, not as an empty string.
+        var failure = new ProbeExpectation.NonEmpty("hint", null).Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("hint", failure);
+    }
+
+    [Fact]
+    public void NonEmptyFailsAndNamesTheResourceWhenTheValueIsEmpty()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        var failure = new ProbeExpectation.NonEmpty("hint", string.Empty).Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("hint", failure);
+    }
+
+    [Fact]
+    public void NoticePresentPassesWhenANoticeWasPrinted()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), "out of range  [attack.out_of_range]");
+
+        Assert.Null(new ProbeExpectation.NoticePresent("the attack").Failure(snapshot));
+    }
+
+    [Fact]
+    public void NoticePresentFailsAndNamesTheResourceWhenNoNoticeWasPrinted()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        var failure = new ProbeExpectation.NoticePresent("the attack").Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("the attack", failure);
+    }
+
+    [Fact]
+    public void AnyOfPassesWhenAtLeastOneOptionPasses()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        var anyOf = new ProbeExpectation.AnyOf(
+            "evidence the attack resolved or was refused",
+            [
+                new ProbeExpectation.Changed<int>("the combat log length", 3, 3),
+                new ProbeExpectation.NoticePresent("the attack"),
+            ]);
+
+        // The log did not grow, but a notice printed — exactly the refusal shape play-4
+        // and play-8 both need to accept.
+        var snapshotWithNotice = new ProbeSnapshot(new PlayFocus.Board(), "out of range  [attack.out_of_range]");
+
+        Assert.Null(anyOf.Failure(snapshotWithNotice));
+    }
+
+    [Fact]
+    public void AnyOfFailsAndListsEveryOptionsFailureWhenAllFail()
+    {
+        var snapshot = new ProbeSnapshot(new PlayFocus.Board(), null);
+
+        // The no-op shape this predicate exists to catch (#719, second review): the
+        // click found nothing, so neither the log grew nor a notice was printed.
+        var anyOf = new ProbeExpectation.AnyOf(
+            "evidence the attack resolved or was refused",
+            [
+                new ProbeExpectation.Changed<int>("the combat log length", 3, 3),
+                new ProbeExpectation.NoticePresent("the attack"),
+            ]);
+
+        var failure = anyOf.Failure(snapshot);
+
+        Assert.NotNull(failure);
+        Assert.Contains("evidence the attack resolved or was refused", failure);
+        Assert.Contains("the combat log length", failure);
+        Assert.Contains("the attack", failure);
+    }
 }
