@@ -545,9 +545,10 @@ public class ScenarioContentTests
     }
 
     /// <summary>
-    /// Criterion 4: a member marked dead is excluded from the fight the way a run's own
-    /// dead are (<see cref="Gauntlet.BeginNext"/>'s <c>survivors</c> filter) — no
-    /// combatant is built for it at all.
+    /// Criterion 4: a member marked dead is excluded from the fielded fight the way a
+    /// run's own dead are (<see cref="Gauntlet.BeginNext"/>'s <c>survivors</c> filter).
+    /// It is still resolved and validated like any other member — the existing
+    /// construction mechanism is reused — and only its carry-over is discarded.
     /// </summary>
     [Fact]
     public void AMemberMarkedDeadIsExcludedFromTheResolvedParty()

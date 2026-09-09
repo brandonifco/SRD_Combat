@@ -269,8 +269,11 @@ equivalent to it. Every other value is checked against that member's own resolve
 and refused by name — never clamped — the moment it asks for more than the character has:
 hit points above the maximum, hit dice above the level, a spell slot level or count the
 sheet does not grant, or a resource above the class table's own allowance. A member
-marked dead is dropped before a combatant is ever built for it, the way a run's own dead
-are dropped in `Gauntlet.BeginNext`; a scenario whose every explicit member is marked dead
+marked dead is resolved and validated exactly like a living one — every authored value
+is checked — and then excluded from the fielded fight, the way a run's own dead are
+excluded in `Gauntlet.BeginNext` (the intermediate combatant `Resolve` builds is simply
+not fielded; corrected 2026-09-09 from "dropped before a combatant is built", which the
+code never did); a scenario whose every explicit member is marked dead
 is refused at `ScenarioFile.FromJson` — structural, not content-dependent, since a
 `bool` needs no resolved sheet — reusing `RunSave.FromJson`'s own reasoning: there is no
 fight to build for nobody. `HitDiceRemaining` is carried and validated but has no effect
