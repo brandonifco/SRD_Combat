@@ -116,8 +116,9 @@ foreach (var group in deaths.Where(d => d.Fight <= 4)
 // (for its hp-left, downed and rounds figures) and then reported under "won"/"cleared"
 // labels with everything else — one lost fight per defeated run, silently averaged into
 // a population its own label denies containing. Both reports below now read only the
-// fights the party actually won.
-var wonFights = fights.Where(f => f.Won).ToArray();
+// fights the party actually won, through the same PacingReport.WonRows gate
+// tests/PacingMeasure.Tests drives directly (rather than a copy of its logic).
+var wonFights = PacingReport.WonRows(fights);
 
 Console.WriteLine("  by monster count (fights won, party hp left at end, characters downed):");
 

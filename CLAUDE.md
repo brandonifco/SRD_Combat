@@ -53,7 +53,7 @@ board. File found-but-deferred work as an issue.
 | Console client | `src/SRDCombat.Console` | `tests/SRDCombat.Console.Tests` — argument parsing and the executable's own refusal boundary; the interactive half (`PartyCreator`, `CommandLoop`, `Display`) stays untested, #317 |
 | Godot client | `client/` | `tests/SRDCombat.Viewer.Tests` |
 | PDF extractor | `tools/SrdExtract` | `tests/SrdExtract.Tests` |
-| Pacing instrument | `tools/PacingMeasure` | `tests/PacingMeasure.Tests` — pins the one-seed core (`PacingRun.RunSeed`, extracted #707) so a defeated run's lost fight is excluded from the rows the report labels "won"/"cleared"; the report's console output itself stays unpinned |
+| Pacing instrument | `tools/PacingMeasure` | `tests/PacingMeasure.Tests` — pins the one-seed core (`PacingRun.RunSeed`, extracted #707) and drives `PacingReport.WonRows`, the exact gate `Program.cs`'s two report blocks call, so a defeated run's lost fight is excluded from the rows the report labels "won"/"cleared"; `Program.cs`'s own `Console.WriteLine` formatting stays unpinned |
 | Shared test support — repo-root and corpus-path finding (`RepositoryPaths`, #318) | `tests/SRDCombat.TestSupport` (referenced by the test projects above; project-specific paths stay local as `Core`/`Game`/`ViewerRepositoryPaths`) | *n/a — support library, no xUnit* |
 
 ### Background, when you need the reasoning
