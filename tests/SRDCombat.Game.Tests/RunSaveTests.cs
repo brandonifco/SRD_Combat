@@ -117,6 +117,92 @@ public class RunSaveTests
         Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ---- #703: an explicit JSON null, rather than a missing property, must be refused
+    // by name too. [JsonRequired]/`required` only enforce presence, so `"ladder": null`
+    // deserializes fine and used to dereference straight into a NullReferenceException
+    // that SaveFile.TryReadRun's catch filter does not treat as a corrupt save — these
+    // mirror the removal theories above but assign JsonValue null instead of removing
+    // the property.
+
+    [Theory]
+    [InlineData("ladder", "Ladder")]
+    [InlineData("members", "Members")]
+    [InlineData("casualties", "Casualties")]
+    public void AnExplicitNullOnASavedRunMemberIsRefusedNamingIt(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document[property] = null;
+
+        var failure = Assert.Throws<InvalidDataException>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ANullLadderElementIsRefusedNamingItsIndex()
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["ladder"]!.AsArray()[0] = null;
+
+        var failure = Assert.Throws<InvalidDataException>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains("Ladder[0]", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ANullMembersElementIsRefusedNamingItsIndex()
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]!.AsArray()[0] = null;
+
+        var failure = Assert.Throws<InvalidDataException>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains("Members[0]", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("draft", "Draft")]
+    [InlineData("state", "State")]
+    public void AnExplicitNullOnASavedMemberMemberIsRefusedNamingIt(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]![0]![property] = null;
+
+        var failure = Assert.Throws<InvalidDataException>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("baseAbilityScores", "BaseAbilityScores")]
+    [InlineData("abilityScoreImprovements", "AbilityScoreImprovements")]
+    public void AnExplicitNullOnACharacterDraftMemberIsRefusedNamingIt(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]![0]!["draft"]![property] = null;
+
+        var failure = Assert.Throws<InvalidDataException>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // Core's own reading — a null SpellSlotsRemaining on a live Combatant means "a full
+    // complement" (Combatant.cs) — is untouched: this is the save boundary refusing a
+    // structurally impossible file before it ever reaches Core, not a change to what
+    // null means once it gets there.
+    [Theory]
+    [InlineData("spellSlotsRemaining", "SpellSlotsRemaining")]
+    [InlineData("potions", "Potions")]
+    public void AnExplicitNullOnACharacterStateMemberIsRefusedNamingIt(string property, string expectedName)
+    {
+        var document = JsonNode.Parse(RunSave.ToJson(RunWithHistory()))!.AsObject();
+        document["members"]![0]!["state"]![property] = null;
+
+        var failure = Assert.Throws<InvalidDataException>(() => RunSave.FromJson(document.ToJsonString()));
+
+        Assert.Contains(expectedName, failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void ASaveHoldsChoicesAndProgressAndNothingDerived()
     {

@@ -81,6 +81,14 @@ internal enum RouteAction
     /// <summary>Open the merchant's stall.</summary>
     OpenShop,
 
+    /// <summary>
+    /// Move the stall's scroll window by <c>StepY</c> pages (Page Up/Down, from
+    /// <see cref="Route(FocusStack{PlayFocus},ClientInput,RouteContext)"/>) or rows (the
+    /// wheel, handled outside the router — see its call site's remarks). Positive scrolls
+    /// toward later offers.
+    /// </summary>
+    ScrollShop,
+
     /// <summary>Start the next fight.</summary>
     ContinueFight,
 
@@ -246,6 +254,17 @@ internal static class PlayFocusRouter
         if (input.IsKey && focus.Holds<PlayFocus.Outcome>())
         {
             return new Route(RouteAction.CommitOutcome);
+        }
+
+        // The stall pages by keyboard too (#704), and it must answer before the gate right
+        // below: the shop is only ever open outside a fight, and SuppressesBoard is true
+        // for it precisely so the board's own keys stay dead behind it — the same gate
+        // that shuts everything else out would shut this out as well if it sat after.
+        // Page Up/Down move a whole window at a time; the wheel (handled outside the
+        // router — see PlayMode._UnhandledInput's remarks) moves one row.
+        if (focus.Top is PlayFocus.Shop && input.Key is ClientKey.PageUp or ClientKey.PageDown)
+        {
+            return new Route(RouteAction.ScrollShop, StepY: input.Key == ClientKey.PageDown ? 1 : -1);
         }
 
         if (!input.IsKey || !context.Fighting || focus.Top.SuppressesBoard)

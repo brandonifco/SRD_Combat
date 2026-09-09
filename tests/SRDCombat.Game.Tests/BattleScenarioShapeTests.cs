@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
@@ -221,6 +222,61 @@ public class BattleScenarioShapeTests
 
         Assert.False(load.IsValid);
         Assert.Contains("notes", Assert.Single(load.Errors), StringComparison.OrdinalIgnoreCase);
+    }
+
+    // ---- #703: an explicit JSON null, rather than a missing property, must be reported
+    // as a ScenarioLoad error naming what was null — never thrown. `required` only
+    // enforces presence, so `"party": null` and `"enemies": null` deserialize fine and
+    // used to fall through CheckParty's/CheckEnemies' pattern matches (which none of them
+    // match on a genuine null) into a dereference that threw instead of returning a
+    // reported error.
+
+    [Fact]
+    public void ANullPartyIsRefusedNamingItInsteadOfThrowing()
+    {
+        var document = JsonNode.Parse(ScenarioFile.ToJson(Budgeted))!.AsObject();
+        document["party"] = null;
+
+        var load = ScenarioFile.FromJson(document.ToJsonString());
+
+        Assert.False(load.IsValid);
+        Assert.Contains("party", string.Join('\n', load.Errors), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ANullEnemiesIsRefusedNamingItInsteadOfThrowing()
+    {
+        var document = JsonNode.Parse(ScenarioFile.ToJson(Budgeted))!.AsObject();
+        document["enemies"] = null;
+
+        var load = ScenarioFile.FromJson(document.ToJsonString());
+
+        Assert.False(load.IsValid);
+        Assert.Contains("enemies", string.Join('\n', load.Errors), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ANullPartyMemberElementIsRefusedNamingItsIndexInsteadOfThrowing()
+    {
+        var document = JsonNode.Parse(ScenarioFile.ToJson(Explicit))!.AsObject();
+        document["party"]!["members"]!.AsArray()[0] = null;
+
+        var load = ScenarioFile.FromJson(document.ToJsonString());
+
+        Assert.False(load.IsValid);
+        Assert.Contains("party.members[0]", string.Join('\n', load.Errors), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ANullEnemyRosterElementIsRefusedNamingItsIndexInsteadOfThrowing()
+    {
+        var document = JsonNode.Parse(ScenarioFile.ToJson(Explicit))!.AsObject();
+        document["enemies"]!["roster"]!.AsArray()[0] = null;
+
+        var load = ScenarioFile.FromJson(document.ToJsonString());
+
+        Assert.False(load.IsValid);
+        Assert.Contains("enemies.roster[0]", string.Join('\n', load.Errors), StringComparison.Ordinal);
     }
 
     [Fact]

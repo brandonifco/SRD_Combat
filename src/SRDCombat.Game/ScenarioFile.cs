@@ -120,8 +120,30 @@ public static class ScenarioFile
             errors.Add("name: a scenario needs a label to be reported and found by.");
         }
 
-        CheckParty(scenario.Party, errors);
-        CheckEnemies(scenario.Enemies, errors);
+        // `required` (and [JsonRequired] elsewhere) only enforce that a property is
+        // *present* in the JSON, not that it is non-null: an explicit `party: null` or
+        // `enemies: null` sails past that check and would otherwise reach CheckParty's
+        // or CheckEnemies' own pattern matches as a genuine null, which none of their
+        // property patterns match — falling through to a dereference that throws
+        // instead of returning a reported error (#703).
+        if (scenario.Party is null)
+        {
+            errors.Add("party: must not be null.");
+        }
+        else
+        {
+            CheckParty(scenario.Party, errors);
+        }
+
+        if (scenario.Enemies is null)
+        {
+            errors.Add("enemies: must not be null.");
+        }
+        else
+        {
+            CheckEnemies(scenario.Enemies, errors);
+        }
+
         CheckObjective(scenario.Objective, errors);
 
         return errors.Count == 0 ? new ScenarioLoad(scenario, []) : new ScenarioLoad(null, errors);
@@ -161,6 +183,12 @@ public static class ScenarioFile
 
         for (var index = 0; index < members.Count; index++)
         {
+            if (members[index] is null)
+            {
+                errors.Add($"party.members[{index}]: must not be null.");
+                continue;
+            }
+
             CheckLevel(members[index].Level, $"party.members[{index}].level", errors);
 
             if (string.IsNullOrWhiteSpace(members[index].Draft.Name))
@@ -208,6 +236,12 @@ public static class ScenarioFile
 
         for (var index = 0; index < roster.Count; index++)
         {
+            if (roster[index] is null)
+            {
+                errors.Add($"enemies.roster[{index}]: must not be null.");
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(roster[index].MonsterId))
             {
                 errors.Add($"enemies.roster[{index}].monsterId: no monster named.");
