@@ -36,6 +36,15 @@ internal static class ShopLayout
     /// </summary>
     internal const float HeaderHeight = 34f;
 
+    /// <summary>
+    /// Where the purse line's own baseline sits, relative to the panel's top
+    /// (<c>FightScreen.UiTop</c>). <c>DrawShop</c> reads this directly rather than the
+    /// literal <c>8f</c> it used to — a test asserting the purse stays on screen is only
+    /// evidence once it is checking the number the drawing call actually uses (Codex
+    /// review round, #710).
+    /// </summary>
+    internal const float PurseLineTop = 8f;
+
     /// <summary>The height of the "nothing here would improve anybody" line, when there are no offers to page through at all.</summary>
     internal const float EmptyMessageHeight = 22f;
 
@@ -131,4 +140,25 @@ internal static class ShopLayout
     /// </summary>
     internal static int ClampOffset(int requestedOffset, int offerCount) =>
         Math.Clamp(requestedOffset, 0, Math.Max(0, offerCount - 1));
+
+    /// <summary>
+    /// The scroll wheel's and Page Up/Down's one shared arithmetic: moves
+    /// <paramref name="storedOffset"/> by <paramref name="rows"/>, clamped to
+    /// <paramref name="offerCount"/>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Normalises the stored offset before applying the delta</b> (Codex review
+    /// round, #710) — a purchase can shrink the offer list out from under a scrolled-down
+    /// stall, leaving <c>PlayFocus.Shop.Offset</c> pointing past the new end even though
+    /// <c>DrawShop</c>'s own <see cref="ClampOffset"/> call already displays a clamped
+    /// window. The naive <c>ClampOffset(storedOffset + rows, offerCount)</c> adds the
+    /// delta to that stale, unclamped value first: a stored 22 against 21 remaining
+    /// offers (already displaying from 20) plus Wheel Up's -1 computes
+    /// <c>ClampOffset(21, 21) == 20</c> — the same offset as before, so the wheel looks
+    /// dead. Clamping <paramref name="storedOffset"/> to what is actually on screen
+    /// *first*, then applying the delta, moves relative to the displayed window instead
+    /// of the stale stored one.
+    /// </remarks>
+    internal static int Scroll(int storedOffset, int rows, int offerCount) =>
+        ClampOffset(ClampOffset(storedOffset, offerCount) + rows, offerCount);
 }

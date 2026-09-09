@@ -532,7 +532,7 @@ public partial class PlayMode : FightScreen
         var offers = Shop.Offers(_content!, run.Party, run.States);
         var shop = Shopping!;
         var offset = ShopLayout.ClampOffset(shop.Offset, offers.Count);
-        var y = UiTop + 8f;
+        var y = UiTop + ShopLayout.PurseLineTop;
 
         DrawString(
             TextFont,
@@ -541,8 +541,9 @@ public partial class PlayMode : FightScreen
             fontSize: 14,
             modulate: Ink);
 
-        // ShopLayout.HeaderHeight is this line's own height (26) plus the 8 it started
-        // at — named once so ShopLayoutTests adds the header up the same way this does.
+        // ShopLayout.HeaderHeight is this line's own height (26) plus PurseLineTop
+        // (8) it started at — named once so ShopLayoutTests adds the header up the
+        // same way this does.
         y = UiTop + ShopLayout.HeaderHeight;
 
         // A line's worth of room is reserved here whether or not it is scrolled past the

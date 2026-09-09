@@ -302,6 +302,16 @@ public partial class PlayMode : FightScreen
     /// so this stays the one place that count comes from rather than a second copy that
     /// could drift from it.
     /// </summary>
+    /// <remarks>
+    /// <see cref="ShopLayout.Scroll"/> normalises <c>shop.Offset</c> against the current
+    /// offer count before applying <paramref name="rows"/> (Codex review round, #710) — a
+    /// purchase can shrink the list out from under a scrolled-down stall, leaving the
+    /// stored offset past the end even though <see cref="DrawShop"/>'s own display is
+    /// already clamped. Adding the delta to that stale value first (the naive
+    /// <c>ClampOffset(shop.Offset + rows, offerCount)</c> this used to be) could compute
+    /// the same clamped result twice in a row, making the wheel or Page Up/Down look dead
+    /// right after a purchase thinned the list.
+    /// </remarks>
     private void ScrollShop(int rows)
     {
         if (Shopping is not { } shop || _run is not { } run)
@@ -310,7 +320,7 @@ public partial class PlayMode : FightScreen
         }
 
         var offerCount = Shop.Offers(_content!, run.Party, run.States).Count;
-        var offset = ShopLayout.ClampOffset(shop.Offset + rows, offerCount);
+        var offset = ShopLayout.Scroll(shop.Offset, rows, offerCount);
 
         if (offset != shop.Offset)
         {

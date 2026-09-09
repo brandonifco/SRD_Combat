@@ -182,12 +182,26 @@ public class PlayFocusTests
     }
 
     /// <summary>
-    /// The scroll window rides the layer the same way the notice does (#704): a fresh
-    /// stall opens at the top, and a purchase's <c>ReplaceTop</c> carries whatever offset
-    /// the shopper had scrolled to rather than snapping them back to it.
+    /// <c>PlayFocus.Shop.Offset</c> defaults to zero on a fresh stall, and a
+    /// <c>FocusStack.ReplaceTop</c> carries whatever offset the replacement record is
+    /// constructed with — the same "the pop/replace takes the payload with it" mechanics
+    /// <see cref="TheShopsNoticeRidesTheLayerAndLeavesWithIt"/> pins for <c>Notice</c>.
     /// </summary>
+    /// <remarks>
+    /// <b>Narrowed after Codex's #710 review round.</b> This does not exercise
+    /// <c>PlayMode</c>'s actual purchase handler — the real decision, that a purchase's
+    /// replacement <c>PlayFocus.Shop</c> is built with <c>Shopping?.Offset ?? 0</c> rather
+    /// than snapping back to zero, lives in <c>PlayMode.PerformClick</c>'s
+    /// <c>PurchaseShopRow</c> case, an instance method on a live Godot node nothing in
+    /// this suite constructs (the same gap #490/#190 leave for the rest of
+    /// <c>PlayMode</c>'s argv and live-node surface). Removing
+    /// <c>Shopping?.Offset ?? 0</c> from that call site would leave this test green, since
+    /// it constructs the replacement itself rather than going through
+    /// <c>PurchaseShopRow</c> — a limitation named in the PR body rather than implied by
+    /// this test's old, broader name.
+    /// </remarks>
     [Fact]
-    public void TheShopsScrollOffsetDefaultsToZeroAndRidesAReplaceTop()
+    public void AReplacementShopRecordCanCarryANonZeroOffsetThroughReplaceTop()
     {
         var focus = new FocusStack<PlayFocus>(new PlayFocus.Board());
         focus.Push(new PlayFocus.Shop());

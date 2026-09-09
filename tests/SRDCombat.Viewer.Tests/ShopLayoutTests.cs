@@ -18,12 +18,16 @@ namespace SRDCombat.Viewer.Tests;
 /// numbers, so retuning any one of them moves both sides together.
 /// </para>
 /// <para>
-/// <b>Knockout-verified (#704):</b> restoring <see cref="ShopLayout.Fit"/> to the old,
-/// unbounded behaviour — returning every offer from <c>firstIndex</c> to the end
-/// regardless of <c>roomBelowHeader</c> — fails <see cref="BackButtonNeverLeavesTheViewport"/>
-/// and <see cref="BackButtonStaysOnScreenAtEveryScrollPosition"/> at both resolutions
-/// (6 of 16 tests in this file, RED), the same shape as the issue's own reproduction: 25
-/// offers overflowing a 1080-tall window.
+/// <b>Knockout-verified (#704 and its #710 review round):</b> restoring
+/// <see cref="ShopLayout.Fit"/> to the old, unbounded behaviour — returning every offer
+/// from <c>firstIndex</c> to the end regardless of <c>roomBelowHeader</c> — fails
+/// <see cref="BackButtonNeverLeavesTheViewport"/> and
+/// <see cref="BackButtonStaysOnScreenAtEveryScrollPosition"/> at both resolutions, the
+/// same shape as the issue's own reproduction: 25 offers overflowing a 1080-tall window.
+/// Every other test in this file has its own recorded stub — the exact table (which stub,
+/// which tests, RED or GREEN) lives in the PR body rather than duplicated here, since a
+/// count copied into a doc comment is exactly the kind of figure that drifts the moment
+/// one more test is added.
 /// </para>
 /// </remarks>
 public class ShopLayoutTests
@@ -112,16 +116,25 @@ public class ShopLayoutTests
     }
 
     /// <summary>
-    /// The other half of "on screen": the purse line, drawn at a fixed <c>UiTop + 8</c>
-    /// regardless of how many offers follow it, is nowhere near either window's bottom
-    /// edge. Named separately from the Back button because it is a different rect, even
-    /// though nothing in this change could plausibly move it.
+    /// The other half of "on screen": the purse line, drawn at <c>UiTop +
+    /// <see cref="ShopLayout.PurseLineTop"/></c> regardless of how many offers follow it,
+    /// is nowhere near either window's bottom edge. Named separately from the Back button
+    /// because it is a different rect, even though nothing in this change could plausibly
+    /// move it.
     /// </summary>
+    /// <remarks>
+    /// <b>Reads the constant <c>DrawShop</c> actually draws with</b> (Codex review round,
+    /// #710) — this used to add a bare literal <c>8f</c> to <see cref="UiTop"/> and
+    /// compare it to itself, which stayed green even if the purse line moved or the
+    /// drawing call were deleted entirely, since nothing about that arithmetic touched
+    /// production code. Knockout: push <see cref="ShopLayout.PurseLineTop"/> past both
+    /// screen heights and this goes RED (below).
+    /// </remarks>
     [Theory]
     [MemberData(nameof(ScreenHeights))]
     public void ThePurseLineIsAlwaysOnScreen(float screenHeight)
     {
-        Assert.True(UiTop + 8f < screenHeight);
+        Assert.True(UiTop + ShopLayout.PurseLineTop < screenHeight);
     }
 
     /// <summary>
@@ -208,5 +221,32 @@ public class ShopLayoutTests
     public void ClampOffsetStaysInsideTheOfferList(int requested, int offerCount, int expected)
     {
         Assert.Equal(expected, ShopLayout.ClampOffset(requested, offerCount));
+    }
+
+    // ---- ShopLayout.Scroll -------------------------------------------------------------
+
+    /// <summary>
+    /// The regression Codex's review round found (#710): a purchase can shrink the offer
+    /// list out from under a scrolled-down stall. <c>DrawShop</c>'s own display already
+    /// clamps to what fits (offer count 21 displays from offset 20), but the *stored*
+    /// <c>PlayFocus.Shop.Offset</c> stayed at its pre-purchase value (22) until something
+    /// wrote it back. The naive <c>ClampOffset(storedOffset + rows, offerCount)</c> adds
+    /// the wheel's delta to that stale 22 first: <c>ClampOffset(21, 21) == 20</c> — the
+    /// same offset already on screen, so Wheel Up looks like it did nothing. Clamping the
+    /// stored value to the *current* list before applying the delta moves relative to
+    /// what is actually displayed (20), landing on 19.
+    /// </summary>
+    [Fact]
+    public void ScrollNormalisesAStaleStoredOffsetBeforeApplyingTheDelta()
+    {
+        Assert.Equal(19, ShopLayout.Scroll(storedOffset: 22, rows: -1, offerCount: 21));
+    }
+
+    [Theory]
+    [InlineData(0, -5, 10, 0)]
+    [InlineData(5, 50, 10, 9)]
+    public void ScrollClampsTheResultToTheOfferList(int storedOffset, int rows, int offerCount, int expected)
+    {
+        Assert.Equal(expected, ShopLayout.Scroll(storedOffset, rows, offerCount));
     }
 }
