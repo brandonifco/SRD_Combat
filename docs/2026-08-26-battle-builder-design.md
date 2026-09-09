@@ -258,6 +258,28 @@ settled that this section did not:
    it. S2 owns choosing monsters, rolling the board and building the `Fight`; it does not
    need to write party resolution again.
 
+**Landed in S8 (#480).** `ScenarioMember` grew one nullable field, `StartingState`, of a
+new type `ScenarioStartingState` beside it — every value on it optional and meaning "the
+resolved sheet's own full strength" when absent, the same convention
+`CombatantCarryOver` already states. `ScenarioContent.ResolveParty` is the one place a
+member's state is validated and applied: a null `StartingState` never calls
+`PregeneratedParty.CarryingOver` at all, which is what keeps "absent means full strength"
+byte-identical to the fight this method built before the field existed rather than merely
+equivalent to it. Every other value is checked against that member's own resolved sheet
+and refused by name — never clamped — the moment it asks for more than the character has:
+hit points above the maximum, hit dice above the level, a spell slot level or count the
+sheet does not grant, or a resource above the class table's own allowance. A member
+marked dead is dropped before a combatant is ever built for it, the way a run's own dead
+are dropped in `Gauntlet.BeginNext`; a scenario whose every explicit member is marked dead
+is refused at `ScenarioFile.FromJson` — structural, not content-dependent, since a
+`bool` needs no resolved sheet — reusing `RunSave.FromJson`'s own reasoning: there is no
+fight to build for nobody. `HitDiceRemaining` is carried and validated but has no effect
+on the built fight, because a scenario is one fight and Hit Point Dice are only spent on a
+rest; it round-trips anyway for S9 (#481), which will capture the same shape off a live
+run. The preset party (`PregeneratedLevel`) carries no starting state at all — the model
+has no per-member identity to hang one on until a scenario names its members explicitly,
+which is the reading this slice settled rather than assumed.
+
 ## 5a. Where scenarios live: a committed `scenarios/` directory
 
 **Decided by Brandon, 2026-08-26**, over the alternative of a private user directory

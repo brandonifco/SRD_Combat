@@ -1,5 +1,6 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
+using SRDCombat.Core.Combat;
 using SRDCombat.Core.Definitions;
 
 namespace SRDCombat.Game;
@@ -137,6 +138,20 @@ public static class ScenarioContent
     /// caller that wants a list; this is the method for a caller that has already
     /// checked.
     /// </para>
+    /// <para>
+    /// <b>A member's <see cref="ScenarioStartingState"/> is applied here, once the sheet
+    /// it must be validated against exists</b> (S8, #480). A null
+    /// <see cref="ScenarioMember.StartingState"/> never calls
+    /// <see cref="PregeneratedParty.CarryingOver"/> at all, which is what makes "absent
+    /// means full strength" byte-identical to the fight this method built before this
+    /// field existed, rather than merely equivalent to it (acceptance criterion 1). A
+    /// member whose state marks it dead is dropped from the returned list entirely — the
+    /// way <see cref="Gauntlet.BeginNext"/>'s own <c>survivors</c> filter drops a run's
+    /// dead — so no combatant is ever built for it and none of its other fields are read.
+    /// Every other value is checked against this member's own resolved
+    /// <see cref="PartyMember.Sheet"/> and <see cref="Combatant.Stats"/> and refused by
+    /// name, never clamped (criterion 2); see <see cref="ValidateStartingState"/>.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<PartyMember> ResolveParty(BattleScenario scenario, SrdContent content)
     {
@@ -153,11 +168,111 @@ public static class ScenarioContent
                 "the scenario names neither a pregenerated level nor members; "
                 + "ScenarioFile.FromJson refuses this, so it was built in memory rather than loaded.");
 
-        return
-        [
-            .. members.Select((member, index) =>
-                PregeneratedParty.Resolve(content, member.Draft, member.Level, x: 0, y: index)),
-        ];
+        var living = new List<PartyMember>();
+
+        foreach (var (member, index) in members.Select((member, index) => (member, index)))
+        {
+            var resolved = PregeneratedParty.Resolve(content, member.Draft, member.Level, x: 0, y: index);
+
+            if (member.StartingState is not { } state)
+            {
+                living.Add(resolved);
+                continue;
+            }
+
+            if (state.IsDead)
+            {
+                continue;
+            }
+
+            living.Add(resolved.CarryingOver(ValidateStartingState(resolved, state)));
+        }
+
+        return living;
+    }
+
+    /// <summary>
+    /// Turns a member's authored <see cref="ScenarioStartingState"/> into the
+    /// <see cref="CombatantCarryOver"/> <see cref="PregeneratedParty.CarryingOver"/>
+    /// takes, refusing by name against <paramref name="member"/>'s own resolved sheet
+    /// wherever the author asked for more than the character has (#480 criterion 2).
+    /// </summary>
+    /// <remarks>
+    /// A dead member never reaches here — <see cref="ResolveParty"/> excludes it before
+    /// this is called, the same way a run's own dead are excluded before
+    /// <see cref="Gauntlet.BeginNext"/> builds a <see cref="CombatantCarryOver"/> for
+    /// anyone. Zero hit points and not dead is legal here exactly as it is on
+    /// <c>CharacterState</c>: downed-and-stable, not a range violation.
+    /// </remarks>
+    private static CombatantCarryOver ValidateStartingState(PartyMember member, ScenarioStartingState state)
+    {
+        var owner = member.Draft.Name;
+        var sheet = member.Sheet;
+        var character = member.Combatant.Stats.Character;
+
+        if (state.CurrentHitPoints is { } hitPoints && (hitPoints < 0 || hitPoints > sheet.MaximumHitPoints))
+        {
+            throw new InvalidDataException(
+                $"{owner}: starting hit points {hitPoints} is out of range (0-{sheet.MaximumHitPoints}).");
+        }
+
+        if (state.HitDiceRemaining is { } hitDice && (hitDice < 0 || hitDice > sheet.Level))
+        {
+            throw new InvalidDataException(
+                $"{owner}: starting hit dice remaining {hitDice} is out of range (0-{sheet.Level}).");
+        }
+
+        RequireResourceInRange(owner, "rages remaining", state.RagesRemaining, character?.RageUses ?? 0);
+        RequireResourceInRange(
+            owner, "Second Wind uses remaining", state.SecondWindRemaining, character?.SecondWindUses ?? 0);
+        RequireResourceInRange(
+            owner, "Action Surge uses remaining", state.ActionSurgeRemaining, character?.ActionSurgeUses ?? 0);
+        RequireResourceInRange(
+            owner,
+            "Channel Divinity uses remaining",
+            state.ChannelDivinityRemaining,
+            character?.ChannelDivinityUses ?? 0);
+
+        if (state.SpellSlotsRemaining is { } slots)
+        {
+            foreach (var (slotLevel, count) in slots)
+            {
+                if (!sheet.SpellSlots.TryGetValue(slotLevel, out var maximum))
+                {
+                    throw new InvalidDataException(
+                        $"{owner}: starting spell slots name level {slotLevel}, which this character has none of.");
+                }
+
+                if (count < 0 || count > maximum)
+                {
+                    throw new InvalidDataException(
+                        $"{owner}: starting level {slotLevel} spell slots {count} is out of range (0-{maximum}).");
+                }
+            }
+        }
+
+        if (state.Potions is { } potions && potions.Values.Any(count => count < 0))
+        {
+            throw new InvalidDataException($"{owner}: starting potions carried cannot be negative.");
+        }
+
+        return new CombatantCarryOver(
+            state.CurrentHitPoints ?? sheet.MaximumHitPoints,
+            state.RagesRemaining,
+            state.SecondWindRemaining,
+            state.ActionSurgeRemaining,
+            state.SpellSlotsRemaining,
+            state.Potions,
+            state.ChannelDivinityRemaining);
+    }
+
+    /// <summary>One resource's remaining count, checked against the class table's own allowance.</summary>
+    private static void RequireResourceInRange(string owner, string label, int? value, int maximum)
+    {
+        if (value is { } count && (count < 0 || count > maximum))
+        {
+            throw new InvalidDataException($"{owner}: starting {label} {count} is out of range (0-{maximum}).");
+        }
     }
 
     /// <summary>

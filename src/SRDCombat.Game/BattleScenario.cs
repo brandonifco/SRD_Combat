@@ -1,5 +1,6 @@
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
+using SRDCombat.Core.Combat;
 using SRDCombat.Core.Rules;
 
 namespace SRDCombat.Game;
@@ -203,6 +204,96 @@ public sealed record ScenarioMember
 
     /// <summary>The level to resolve the draft at.</summary>
     public required int Level { get; init; }
+
+    /// <summary>
+    /// What this member carries into the fight from an earlier one — wounds and spent
+    /// resources — or null for full strength.
+    /// </summary>
+    /// <remarks>
+    /// S8 (#480): a scenario party at full strength tests an opening, and a great many of
+    /// the fights worth testing are not openings. This rides
+    /// <see cref="PregeneratedParty.CarryingOver"/> exactly as a gauntlet's own survivors
+    /// do (<see cref="Gauntlet.BeginNext"/>) — no new path onto a combatant.
+    /// </remarks>
+    public ScenarioStartingState? StartingState { get; init; }
+}
+
+/// <summary>
+/// A member's optional starting condition — wounds and spent resources carried in from
+/// an earlier fight, shaped on <see cref="CharacterState"/>, which already exists and
+/// already serializes on <c>SavedMember</c> (S8, #480).
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Absent means full strength, and every field states that on its own.</b> The same
+/// convention <see cref="CombatantCarryOver"/> already states for the engine's own
+/// carry-in record: every field beyond <see cref="IsDead"/> is nullable, and null means
+/// "unchanged from the resolved sheet's own maximum" rather than zero — a scenario that
+/// wants to say only "no slots left" does not have to also restate full hit points. A
+/// <see cref="ScenarioMember"/> whose <see cref="ScenarioMember.StartingState"/> is null
+/// is untouched by any of this: <see cref="ScenarioContent.ResolveParty"/> never calls
+/// <see cref="PregeneratedParty.CarryingOver"/> at all in that case, which is what makes
+/// "absent means full strength" byte-identical to the fight this format built before this
+/// type existed (#480 acceptance criterion 1), rather than merely equivalent to it.
+/// </para>
+/// <para>
+/// <b>Every value here is refused by name against the resolved sheet, never clamped</b>
+/// (#480's load-bearing criterion 2) — hit points above the sheet's maximum, hit dice
+/// above the character's level, a spell slot level the character has none of, more slots
+/// at a level than the sheet grants, or a resource above the class table's own allowance,
+/// each fail loudly in <see cref="ScenarioContent.ResolveParty"/> naming the member and
+/// the field. A clamp here would let Brandon believe he tested a state he never authored
+/// — the same reasoning the <c>--level</c> fallback shape #463 removed.
+/// </para>
+/// <para>
+/// <b>Zero hit points and not dead is legal</b>, matching <see cref="CharacterState"/>'s
+/// own semantics: downed-and-stable, the same state a gauntlet character who survived a
+/// knockout carries into the next fight.
+/// </para>
+/// <para>
+/// <b><see cref="IsDead"/> excludes the member from the fight</b> the way a run's own dead
+/// are excluded (<see cref="Gauntlet.BeginNext"/>'s <c>survivors</c> filter) — no
+/// combatant is built for them at all, so none of this record's other fields are read for
+/// a member marked dead. A scenario whose every member is marked dead is refused at load,
+/// reusing <see cref="RunSave.FromJson"/>'s reasoning: there is no fight to build for
+/// nobody.
+/// </para>
+/// <para>
+/// <b><see cref="HitDiceRemaining"/> has no effect on the fight this builds</b> — a
+/// scenario is one fight, and Hit Point Dice are spent only on a Short or Long Rest,
+/// which <see cref="ScenarioRunner"/> never takes mid-scenario. It is carried and
+/// validated anyway, because it is part of the same shape S9 (#481) will capture verbatim
+/// off a live run, and a field that round-trips loses nothing by being inert here.
+/// </para>
+/// </remarks>
+public sealed record ScenarioStartingState
+{
+    /// <summary>Hit points on arrival, or null for the sheet's maximum.</summary>
+    public int? CurrentHitPoints { get; init; }
+
+    /// <summary>Hit Point Dice left, or null for one per character level.</summary>
+    public int? HitDiceRemaining { get; init; }
+
+    /// <summary>Rages left, or null for all of them.</summary>
+    public int? RagesRemaining { get; init; }
+
+    /// <summary>Second Wind uses left, or null for all.</summary>
+    public int? SecondWindRemaining { get; init; }
+
+    /// <summary>Action Surge uses left, or null for all.</summary>
+    public int? ActionSurgeRemaining { get; init; }
+
+    /// <summary>Channel Divinity uses left, or null for all.</summary>
+    public int? ChannelDivinityRemaining { get; init; }
+
+    /// <summary>Spell slots left by level, or null for a full complement.</summary>
+    public IReadOnlyDictionary<int, int>? SpellSlotsRemaining { get; init; }
+
+    /// <summary>Potions of Healing carried, by potency, or null for none.</summary>
+    public IReadOnlyDictionary<HealingPotion, int>? Potions { get; init; }
+
+    /// <summary>Dead for good. See this type's remarks for what that excludes.</summary>
+    public bool IsDead { get; init; }
 }
 
 /// <summary>

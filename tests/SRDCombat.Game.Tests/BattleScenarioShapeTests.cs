@@ -59,7 +59,29 @@ public class BattleScenarioShapeTests
         FormatVersion = ScenarioFile.CurrentFormatVersion,
         Name = "vesh-against-two-ogres",
         Notes = "What one level 3 Fighter can do about a pair of Ogres.",
-        Party = new ScenarioParty { Members = [new ScenarioMember { Draft = Draft, Level = 4 }] },
+        Party = new ScenarioParty
+        {
+            Members =
+            [
+                new ScenarioMember
+                {
+                    Draft = Draft,
+                    Level = 4,
+                    StartingState = new ScenarioStartingState
+                    {
+                        CurrentHitPoints = 12,
+                        HitDiceRemaining = 2,
+                        RagesRemaining = 1,
+                        SecondWindRemaining = 1,
+                        ActionSurgeRemaining = 1,
+                        ChannelDivinityRemaining = 1,
+                        SpellSlotsRemaining = new Dictionary<int, int> { [1] = 2 },
+                        Potions = new Dictionary<HealingPotion, int> { [HealingPotion.Greater] = 1 },
+                        IsDead = false,
+                    },
+                },
+            ],
+        },
         Enemies = new ScenarioEnemies
         {
             Roster = [new ScenarioRosterEntry { MonsterId = "monster.ogre", Count = 2 }],
@@ -110,6 +132,17 @@ public class BattleScenarioShapeTests
         Assert.Equal("armor.chain-mail", member.Draft.ArmorId);
         Assert.True(member.Draft.HasShield);
         Assert.Equal(["weapon.longsword"], member.Draft.WeaponIds);
+
+        var state = member.StartingState!;
+        Assert.Equal(12, state.CurrentHitPoints);
+        Assert.Equal(2, state.HitDiceRemaining);
+        Assert.Equal(1, state.RagesRemaining);
+        Assert.Equal(1, state.SecondWindRemaining);
+        Assert.Equal(1, state.ActionSurgeRemaining);
+        Assert.Equal(1, state.ChannelDivinityRemaining);
+        Assert.Equal(2, state.SpellSlotsRemaining![1]);
+        Assert.Equal(1, state.Potions![HealingPotion.Greater]);
+        Assert.False(state.IsDead);
 
         Assert.Null(read.Enemies.Budget);
         var entry = Assert.Single(read.Enemies.Roster!);
@@ -188,10 +221,11 @@ public class BattleScenarioShapeTests
         }
 
         // The premise: if the walk stops finding properties, the assertions above pass by
-        // examining nothing. Eight on BattleScenario, two on ScenarioParty, two on
-        // ScenarioMember, two on ScenarioEnemies, two on ScenarioRosterEntry, seven on
+        // examining nothing. Eight on BattleScenario, two on ScenarioParty, three on
+        // ScenarioMember (S8, #480, added StartingState), nine on the ScenarioStartingState
+        // it points at, two on ScenarioEnemies, two on ScenarioRosterEntry, seven on
         // ScenarioBudget, two on ObjectiveSpec.
-        Assert.Equal(25, walked);
+        Assert.Equal(35, walked);
     }
 
     /// <summary>
@@ -381,6 +415,63 @@ public class BattleScenarioShapeTests
                 },
             }).Errors),
             StringComparison.Ordinal);
+
+    /// <summary>
+    /// S8 (#480) acceptance criterion 4, reusing <see cref="RunSave.FromJson"/>'s own
+    /// reasoning: a save written after a won fight can never have every character dead,
+    /// and a scenario an author actually means to run cannot either. Structural, not
+    /// content-dependent — <c>IsDead</c> needs no resolved sheet to read — so this lives
+    /// in <see cref="ScenarioFile.FromJson"/> rather than in <see cref="ScenarioContent"/>.
+    /// </summary>
+    [Fact]
+    public void EveryMemberMarkedDeadIsRefused() =>
+        Assert.Contains(
+            "there is no fight to build for nobody",
+            string.Join('\n', Load(Explicit with
+            {
+                Party = new ScenarioParty
+                {
+                    Members =
+                    [
+                        new ScenarioMember
+                        {
+                            Draft = Draft,
+                            Level = 3,
+                            StartingState = new ScenarioStartingState { IsDead = true },
+                        },
+                        new ScenarioMember
+                        {
+                            Draft = Draft,
+                            Level = 3,
+                            StartingState = new ScenarioStartingState { IsDead = true },
+                        },
+                    ],
+                },
+            }).Errors),
+            StringComparison.Ordinal);
+
+    /// <summary>
+    /// The complement: at least one living member is enough to load fine. This is what
+    /// tells the all-dead guard apart from a guard that fires on any dead member at all.
+    /// </summary>
+    [Fact]
+    public void AtLeastOneLivingMemberLoadsFineEvenWithOthersMarkedDead() =>
+        Assert.True(Load(Explicit with
+        {
+            Party = new ScenarioParty
+            {
+                Members =
+                [
+                    new ScenarioMember { Draft = Draft, Level = 3 },
+                    new ScenarioMember
+                    {
+                        Draft = Draft,
+                        Level = 3,
+                        StartingState = new ScenarioStartingState { IsDead = true },
+                    },
+                ],
+            },
+        }).IsValid);
 
     [Fact]
     public void EnemiesNamingNeitherModeIsRefusedSayingSo() =>
