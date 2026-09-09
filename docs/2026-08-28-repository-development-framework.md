@@ -56,6 +56,16 @@ Pinned Action provenance:
 - Planning: no milestones and no Projects. Existing phase labels and
   `paused:balance-design` were present; no priority label existed. The token had only
   `read:project`, so Project creation requires a later `project` scope authorization.
+  **`paused:balance-design`, defined** (#708): applied 2026-08-28 to anything about
+  pacing, balance, pool composition or tactics (the written condition, unchanged, is
+  `.claude/skills/file-issue/SKILL.md`'s labels section). The label's own description
+  reads "Paused 2026-08-28"; the un-pause condition it points at is #542, which said
+  the pause lifts "after Brandon has played a full run or several", bringing a
+  played-run report rather than only numbers. **Changed 2026-09-09** (the
+  2026-09-08 outside-review response plan's §3 decision 2, Brandon's): that played-run
+  report, together with #542's verdict on the `112ed19` difficulty shift, is what
+  un-pauses the F3 design issues (#306–#311). F4's balance issues are not included in
+  that answer and keep the F3-exit re-baselining checkpoint as their own condition.
 - Repository surfaces: Wiki enabled, Discussions disabled, no releases or tags.
 - Remote branches not merged into `origin/main`: `art/ship-bugbear-warrior-441`,
   `design/327-playmode-refactor`, `fix/510-quit-confirm-holds-turn-open`, and

@@ -135,8 +135,9 @@ plan's opening section: [`docs/finishing-plan.md`](docs/finishing-plan.md).
 - **F3** the run becomes a game — route choice, loot decisions, stakes, the XP curve.
   Entry gate: the PlayMode modal refactor (#327). **A re-baselining checkpoint.**
 - **F4** depth and variety — enemy casters, CR fill-ins, fog slice 2 (#545)
-- **F5** confidence — client and console tests, content fixtures (#319), suite under
-  ~3 minutes. Runs continuously alongside F2–F4
+- **F5** confidence — client and console tests, `Game.Tests` under three minutes by
+  shortening the full-gauntlet simulation tests rather than fixtures (#694). Runs
+  continuously alongside F2–F4
 - **F6** ship — in-game attribution, packaging, a tagged release
 
 **Sequencing rationale**: F1 first because everything builds on saves, accounting and
@@ -373,10 +374,18 @@ the reverse. So nothing hardcodes one — the `probe-diff` skill's `find-display
 dotnet run --project src/SRDCombat.Console
 ```
 
-`--seed <n>` replays a run exactly (the seed prints at start, so "seed 12345" is a
-complete bug report — and within a run, `(seed, fight number)` reproduces that
-fight's encounter and every dice roll in it, regardless of the play history that got
-there; see `RunDice`'s remarks); `--level 1..5`, `--one-fight --difficulty
+`--seed <n>` fixes a run's whole dice stream (the seed prints at start), but the seed
+is not a complete bug report on its own — `(seed, fight number)` fixes *a random
+source*, not what gets drawn from it: a Short Rest spends a variable number of
+hit-die rolls depending on how wounded the party is, and a fight's budget is drawn
+against whoever survived to it, so a differently-played run reaches the same fight
+number with a different wound total or roster and draws a different encounter from
+the identical seed (per `RunDice`'s remarks). Reproducing a specific fight needs the
+run's saved state as of that fight's start (drafts, party state, gold, casualties,
+the seed and the content version: `RunSave.cs:59-122` — the autosave already is
+this) plus the seed, not the seed alone; and even with the save, nothing recorded
+here reproduces the choices made *inside* the fight itself (#722, open). `--level
+1..5`, `--one-fight --difficulty
 low|moderate|high`, `--create` for party creation; autosaves to
 `srdcombat-save.json` after every cleared fight, `--continue` resumes. **A save is
 drafts plus progress, never resolved sheets** — loading re-resolves at the level

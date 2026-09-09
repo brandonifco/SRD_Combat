@@ -97,7 +97,10 @@ Every issue carries exactly one phase label; that is how the board is read
 | `phase:FI-instrument` | the battle builder, scenario batch, other human instruments |
 
 Add `paused:balance-design` to anything about pacing, balance, pool composition or
-tactics — those are paused until the re-baselining checkpoint (#542). Add `bug`,
+tactics. The F3 design issues (#306–#311) un-pause on Brandon's played-run report
+together with #542's verdict on the `112ed19` difficulty shift (2026-09-09, the
+2026-09-08 outside-review response plan's §3 decision 2); F4's balance issues keep
+the re-baselining checkpoint (#542) as their own condition. Add `bug`,
 `enhancement`, `documentation` or `question` as the kind warrants.
 
 ## Filing
