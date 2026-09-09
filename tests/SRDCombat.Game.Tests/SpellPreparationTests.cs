@@ -147,6 +147,36 @@ public class SpellPreparationTests
     }
 
     [Fact]
+    public void OnlySpiritGuardiansCarriesAnApproximation()
+    {
+        // #706: the allowlist's promise is "verified to execute faithfully" — Spirit
+        // Guardians is the one named exception, kept for the pregens rather than cut.
+        // Every other allowlisted spell must carry no approximation at all, or the
+        // promise the header makes is false for an entry nobody flagged.
+        var everyAllowlistedId = new[] { "class.cleric", "class.wizard", "class.ranger" }
+            .SelectMany(classId => PreparableSpells.For(Content, classId))
+            .Select(spell => spell.Id)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        // Sixteen verified spells and Spirit Guardians itself — a change to either
+        // count is a visible test change rather than a silent drift.
+        Assert.Equal(17, everyAllowlistedId.Length);
+
+        Assert.NotNull(PreparableSpells.Approximation("spell.spirit-guardians"));
+
+        foreach (var id in everyAllowlistedId.Where(id =>
+            !string.Equals(id, "spell.spirit-guardians", StringComparison.OrdinalIgnoreCase)))
+        {
+            Assert.Null(PreparableSpells.Approximation(id));
+        }
+
+        // A spell nobody offers (verified or otherwise) also carries none — the method
+        // answers "does this id carry a stated gap", not "is this id allowlisted".
+        Assert.Null(PreparableSpells.Approximation("spell.fireball-does-not-exist"));
+    }
+
+    [Fact]
     public void PreparesInChosenOrderUpToThePrintedColumns()
     {
         var draft = Cleric() with

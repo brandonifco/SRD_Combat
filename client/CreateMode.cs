@@ -1048,8 +1048,21 @@ public partial class CreateMode : Node2D
         (weapon.Properties == WeaponProperty.None ? "" : $", properties: {weapon.Properties}") +
         $". Mastery property: {weapon.Mastery}.";
 
-    private static string DescribeSpell(SpellDefinition spell) =>
-        $"{spell.Name} — {spell.CastingTimeText}, {spell.RangeText}, {spell.DurationText}.\n\n{spell.Text}";
+    // Internal rather than private: a plain-value seam SRDCombat.Viewer.Tests calls
+    // directly, the way #490a/#490b extracted one for the Godot argv boundary — this
+    // node is otherwise only reachable live, under OnReady.
+    internal static string DescribeSpell(SpellDefinition spell)
+    {
+        // #706: Spirit Guardians is on the verified allowlist with one named gap
+        // (PreparableSpells.Approximation) — printed here, at the point of choice, the
+        // same way DescribeSpecies appends "(not yet implemented)" for a trait
+        // CharacterCreation.TraitExecutes doesn't claim.
+        var approximation = PreparableSpells.Approximation(spell.Id);
+        var caveat = approximation is null ? "" : $"\n\n{approximation}";
+
+        return $"{spell.Name} — {spell.CastingTimeText}, {spell.RangeText}, " +
+            $"{spell.DurationText}.\n\n{spell.Text}{caveat}";
+    }
 
     private IReadOnlyList<string> SkillOptions() => CharacterCreation.SkillChoices(_class!).Options;
 

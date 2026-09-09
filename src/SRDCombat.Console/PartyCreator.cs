@@ -704,7 +704,7 @@ internal static class PartyCreator
 
                 System.Console.WriteLine();
                 System.Console.WriteLine($"  {spell.Name} — {spell.CastingTimeText}, {spell.RangeText}");
-                System.Console.WriteLine(Wrap(spell.Text, indent: "  "));
+                System.Console.WriteLine(Wrap(DescribeSpellPrompt(spell), indent: "  "));
 
                 var take = Ask($"  Take {spell.Name}? (y/n): ");
 
@@ -794,6 +794,20 @@ internal static class PartyCreator
             System.Console.WriteLine($"  Level 1 — {feature.Name}:");
             System.Console.WriteLine(Wrap(feature.Text, indent: "    "));
         }
+    }
+
+    // Internal rather than private: a plain-value seam SRDCombat.Console.Tests calls
+    // directly, printed before "Take {spell.Name}?" is asked in ChooseSpells above.
+    /// <summary>
+    /// The spell's printed text, plus — for the one allowlisted entry that carries a
+    /// stated gap (#706, <see cref="PreparableSpells.Approximation"/>) — the
+    /// approximation caveat, at the point of choice, the same rule DescribeSpecies
+    /// follows for a species trait it doesn't claim.
+    /// </summary>
+    internal static string DescribeSpellPrompt(SpellDefinition spell)
+    {
+        var approximation = PreparableSpells.Approximation(spell.Id);
+        return approximation is null ? spell.Text : $"{spell.Text}\n\n{approximation}";
     }
 
     private static void DescribeSpecies(SpeciesDefinition species)
