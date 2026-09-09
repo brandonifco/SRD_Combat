@@ -5,21 +5,21 @@
      saturating pacing median means, why a coverage percentage was retired — stay in
      CLAUDE.md, which a script has no business writing. -->
 
-Generated from `83ae869` on branch `feature/536-trade-command`
-(2026-09-03). Regenerate with `./scripts/status.sh --tests`.
+Generated from `6820fa3` on branch `docs/708-review-docs-sweep`
+(2026-09-09). Regenerate with `./scripts/status.sh --tests`.
 
 ## Tests
 
-**5,003 passing**, 0 failed, 2 skipped, 5,005 total, across 6 test projects.
+**5,431 passing**, 0 failed, 2 skipped, 5,433 total, across 6 test projects.
 
 | Test project | Passing | Skipped |
 | --- | ---: | ---: |
-| `SrdExtract.Tests` | 3,338 | 0 |
-| `SRDCombat.Core.Tests` | 720 | 1 |
-| `SRDCombat.Game.Tests` | 433 | 0 |
-| `SRDCombat.Content.Tests` | 237 | 0 |
-| `SRDCombat.Viewer.Tests` | 230 | 1 |
-| `SRDCombat.Console.Tests` | 45 | 0 |
+| `SrdExtract.Tests` | 3,402 | 0 |
+| `SRDCombat.Core.Tests` | 911 | 1 |
+| `SRDCombat.Game.Tests` | 521 | 0 |
+| `SRDCombat.Content.Tests` | 286 | 0 |
+| `SRDCombat.Viewer.Tests` | 247 | 1 |
+| `SRDCombat.Console.Tests` | 64 | 0 |
 
 ## Content
 
@@ -44,12 +44,12 @@ C# lines, excluding `bin/` and `obj/`.
 
 | Tree | Lines |
 | --- | ---: |
-| `src/` | 29327 |
-| &nbsp;&nbsp;of which `src/SRDCombat.Console` | 2304 |
-| `client/` | 10608 |
-| `tools/` | 7567 |
-| **Production total** | **47502** |
-| `tests/` | 37413 |
+| `src/` | 33390 |
+| &nbsp;&nbsp;of which `src/SRDCombat.Console` | 2451 |
+| `client/` | 10960 |
+| `tools/` | 9160 |
+| **Production total** | **53510** |
+| `tests/` | 48716 |
 
 ## What this file deliberately does not say
 
