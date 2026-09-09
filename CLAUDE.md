@@ -374,12 +374,17 @@ dotnet run --project src/SRDCombat.Console
 ```
 
 `--seed <n>` fixes a run's whole dice stream (the seed prints at start), but the seed
-alone is not a complete bug report — the save (drafts, party state, gold, casualties,
-the seed and the content version: `RunSave.cs:59-122`) plus the seed is what
-reconstitutes a fight's start and every die in it, `(seed, fight number)` per
-`RunDice`'s remarks; nothing records the choices made inside a fight, so a full repro
-is the save from just before it, not the seed on its own; `--level 1..5`,
-`--one-fight --difficulty
+is not a complete bug report on its own — `(seed, fight number)` fixes *a random
+source*, not what gets drawn from it: a Short Rest spends a variable number of
+hit-die rolls depending on how wounded the party is, and a fight's budget is drawn
+against whoever survived to it, so a differently-played run reaches the same fight
+number with a different wound total or roster and draws a different encounter from
+the identical seed (per `RunDice`'s remarks). Reproducing a specific fight needs the
+run's saved state as of that fight's start (drafts, party state, gold, casualties,
+the seed and the content version: `RunSave.cs:59-122` — the autosave already is
+this) plus the seed, not the seed alone; and even with the save, nothing recorded
+here reproduces the choices made *inside* the fight itself (#722, open). `--level
+1..5`, `--one-fight --difficulty
 low|moderate|high`, `--create` for party creation; autosaves to
 `srdcombat-save.json` after every cleared fight, `--continue` resumes. **A save is
 drafts plus progress, never resolved sheets** — loading re-resolves at the level
