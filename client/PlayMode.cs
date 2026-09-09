@@ -189,6 +189,14 @@ public partial class PlayMode : FightScreen
     private Rect2 _shopBackButton;
     private bool _shopAvailable;
     private readonly List<(Rect2 Rect, ShopOffer Offer)> _shopRows = [];
+
+    /// <summary>
+    /// How many offers the stall's window last drew (#704) — <see cref="ShopLayout.Fit"/>'s
+    /// own answer, kept so a Page Up/Down press can jump by a whole page rather than the
+    /// wheel's single row. Zero before the stall has drawn once, which
+    /// <see cref="PlayMode.ScrollShop"/> reads as "at least one row" rather than a no-op.
+    /// </summary>
+    private int _shopVisibleCount;
     private bool _fightEndHandled;
 
     protected override string Title => "SRD_Combat — playing";

@@ -321,6 +321,51 @@ public class PlayFocusRouterTests
         Assert.Equal(RouteAction.Unhandled, Route(Board(), ClientInput.Typed('d'), between));
     }
 
+    // ---- the shop's own paging (#704) -------------------------------------------------
+
+    /// <summary>
+    /// Interlude, the shop open: the real context Page Up/Down must work in.
+    /// <see cref="TheKeyboardIsNotTheBoardsBetweenFights"/> is the same shape with
+    /// <c>Fighting: false</c> — the fact this section exists to answer differently for
+    /// one focus.
+    /// </summary>
+    private static readonly RouteContext Interlude = new(false, false, 0, true, true, true);
+
+    /// <summary>
+    /// Page Down/Up must reach the stall despite <c>context.Fighting</c> being false —
+    /// the shop only ever opens between fights, so a keyboard branch gated on
+    /// <c>context.Fighting</c> the way every other one is would leave paging exactly as
+    /// dead as the bug report found the wheel (#704).
+    /// </summary>
+    [Fact]
+    public void PageDownScrollsTheShopForwardByAPageEvenBetweenFights()
+    {
+        var route = PlayFocusRouter.Route(With(new PlayFocus.Shop()), ClientInput.Pressed(ClientKey.PageDown), Interlude);
+
+        Assert.Equal(RouteAction.ScrollShop, route.Action);
+        Assert.Equal(1, route.StepY);
+    }
+
+    [Fact]
+    public void PageUpScrollsTheShopBackByAPage()
+    {
+        var route = PlayFocusRouter.Route(With(new PlayFocus.Shop()), ClientInput.Pressed(ClientKey.PageUp), Interlude);
+
+        Assert.Equal(RouteAction.ScrollShop, route.Action);
+        Assert.Equal(-1, route.StepY);
+    }
+
+    /// <summary>
+    /// Page Up/Down are ordinary, unclaimed keys everywhere else — they must not, say,
+    /// silently arm an attack or move the cursor by falling through to a later branch.
+    /// </summary>
+    [Fact]
+    public void PageKeysDoNothingWithoutTheShopOpen()
+    {
+        Assert.Equal(RouteAction.Unhandled, Route(Board(), ClientInput.Pressed(ClientKey.PageDown), Fighting()));
+        Assert.Equal(RouteAction.Unhandled, Route(Board(), ClientInput.Pressed(ClientKey.PageUp), Interlude));
+    }
+
     // ---- Tab -------------------------------------------------------------------------
 
     [Fact]

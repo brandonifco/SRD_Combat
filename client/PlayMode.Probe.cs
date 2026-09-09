@@ -231,6 +231,22 @@ public partial class PlayMode : FightScreen
             {
                 Click(_shopButton.GetCenter());
                 await CaptureFrame(Path.Combine(directory, "run-10-shop.png"));
+
+                // #704: a computed-centre click on a rect the window cannot show is not a
+                // click at all — the pixel it lands on is off the viewport, so nothing is
+                // there to receive it. Before the stall had a floor, this is exactly how
+                // the probe could click Back and still pass at any offer count: the rect
+                // existed on paper and the click landed nowhere, silently. Faulting here
+                // makes an unreachable Back button a probe failure again rather than a
+                // click that quietly did nothing.
+                if (_shopBackButton.Position.Y + _shopBackButton.Size.Y > ScreenHeight)
+                {
+                    throw new InvalidOperationException(
+                        $"probe: shop Back button's bottom edge ({_shopBackButton.Position.Y + _shopBackButton.Size.Y}) "
+                            + $"is past the window's own bottom edge ({ScreenHeight}) — a computed-centre click on it "
+                            + "would land off screen.");
+                }
+
                 Click(_shopBackButton.GetCenter());
             }
             else

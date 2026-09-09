@@ -41,6 +41,12 @@ internal enum ClientKey
     Up,
     Down,
     Space,
+
+    /// <summary>Pages the merchant's stall up, when it is open (#704).</summary>
+    PageUp,
+
+    /// <summary>Pages the merchant's stall down, when it is open (#704).</summary>
+    PageDown,
 }
 
 /// <summary>
