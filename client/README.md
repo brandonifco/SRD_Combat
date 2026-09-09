@@ -716,8 +716,9 @@ of the engine's own and every refusal is displayed, never interpreted. The one c
 the client makes — which attack a click means — is a player convenience, not a rule, and
 it is shared with the console client (`AttackChoice` in `SRDCombat.Game`) so the two
 cannot drift apart on it. Even the movement highlight is the engine's own
-`MovementRules.FindPath`, asked once per square; the play screen decides only what to
-colour.
+`MovementRules.Reachable`, one bounded search for the whole board (#726 — it used to be
+`FindPath` asked once per square); the play screen decides only what to colour, and a
+route to one chosen square is still `FindPath`'s answer for that destination.
 
 The screens split over one design fact, written on `WatchMode`: `IRandomSource` is
 consumed as a fight goes, so scrubbing means resolving once and snapshotting every turn,

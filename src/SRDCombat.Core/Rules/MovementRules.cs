@@ -92,6 +92,17 @@ public static class MovementRules
     /// arrived at some other way is the Prone condition, not a shove to the nearest
     /// free square.
     /// </para>
+    /// <para>
+    /// <b>This is the early-exit caller of the one search.</b> The Dijkstra itself lives
+    /// in <see cref="Explore"/> and is shared with <see cref="Reachable"/>, so the route
+    /// to a square and the answer to "can it be reached at all" cannot drift apart —
+    /// they are the same frontier, expanded by the same code and priced by the same
+    /// step cost. What stays local to this method is the two destination-dependent
+    /// judgements: the <c>CanEndOn</c> pre-check below, and the <see cref="AxesOpened"/>
+    /// tie-break, which needs somewhere to be going before it means anything.
+    /// <see cref="Reachable"/>'s remarks explain why that keeps a square's *route* a
+    /// separate question from its reachability.
+    /// </para>
     /// </remarks>
     public static MovementPath? FindPath(
         Battlefield field,
@@ -109,19 +120,7 @@ public static class MovementRules
             return null;
         }
 
-        // Anyone still on the field occupies their square, conscious or not. Reading it
-        // as "active" let a creature end its move on a downed one — harmless until
-        // healing arrived, at which point the downed creature stood up inside somebody
-        // else and the next path finder found two combatants in one square.
-        //
-        // Keyed as a lookup rather than a dictionary for the same reason: two creatures
-        // sharing a square is a state this method must survive rather than throw on,
-        // whatever produced it. Every occupant of a square is consulted, so a square
-        // holding both a friend and a stranger is judged by the stranger.
-        var occupants = combatants
-            .Where(other => other.Id != mover.Id && !other.IsDead)
-            .SelectMany(other => other.Space.Squares(), (other, square) => (Square: square, Creature: other))
-            .ToLookup(entry => entry.Square, entry => entry.Creature);
+        var occupants = OccupiedSquares(mover, combatants);
 
         // A move may end on a downed creature, and nowhere else.
         //
@@ -147,6 +146,151 @@ public static class MovementRules
             return null;
         }
 
+        var search = Explore(field, mover, destination, budgetFeet, occupants);
+
+        return search.DestinationCostFeet is { } cost
+            ? new MovementPath(Reconstruct(search.CameFrom, mover.Position, destination), cost)
+            : null;
+    }
+
+    /// <summary>
+    /// Every square this creature could <em>end</em> a move on within a movement budget,
+    /// from one bounded search — squares it can only pass through excluded.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why it exists (#726, #328).</b> "Where can I go?" was being asked one
+    /// destination at a time. The Godot client lit its movement highlight by calling
+    /// <see cref="FindPath"/> once per square of the board — 504 searches on the 28 × 18
+    /// grid the review quoted, 784 on the board #726's measurement actually landed on,
+    /// after every action by every combatant, most of them draining the entire
+    /// budget-bounded frontier only to answer "no" — and
+    /// <c>SimpleTacticsPolicy.ScoreSquares</c> ran the same full-board loop for its
+    /// reposition scan. A Dijkstra from the mover already settles every reachable square
+    /// on its way to any one of them; <see cref="FindPath"/> simply threw that away at
+    /// its early exit. This keeps it.
+    /// </para>
+    /// <para>
+    /// <b>The set only, never the routes — the decision, and why.</b> One drained
+    /// search's predecessor tree is <em>not</em> the set of routes
+    /// <see cref="FindPath"/> returns, because <see cref="FindPath"/>'s second key —
+    /// <see cref="AxesOpened"/>, "how often does this step move away from where I am
+    /// going" — is measured against a destination, and a search with no destination has
+    /// nothing to measure it against. Equal-cost routes are plentiful on a grid where
+    /// diagonals are free, so the tie-break is not decoration: it decides which of many
+    /// twenty-five-foot walks a token is seen to take, and
+    /// <c>SimpleTacticsPolicy.ProvokedDamageAlong</c> prices Opportunity Attacks along
+    /// exactly that walk. So <b>this method answers reachability and nothing else</b>,
+    /// and a caller that needs a route calls <see cref="FindPath"/> for the one
+    /// destination it actually chose.
+    /// </para>
+    /// <para>
+    /// The alternative was considered and rejected: make the tie-break
+    /// destination-independent (prefer, say, the straightest or earliest-diagonal route)
+    /// so one search's predecessors <em>are</em> the routes. It would be faster still
+    /// for the policy, and it would change routes — every equal-cost walk currently
+    /// chosen by <see cref="AxesOpened"/> is a candidate to move, which moves what
+    /// <c>ProvokedDamageAlong</c> charges, which moves which square the policy picks,
+    /// which moves the fight. That is a behaviour change wanting its own issue, its own
+    /// transcript read and its own pacing verdict, and it buys nothing the two consumers
+    /// here were asking for: the client's highlight wants a set, and the policy needs
+    /// the same route it prices today. The cost of the split is one extra search per
+    /// destination a caller commits to — one per hover for #303's path preview, and
+    /// #726 measured that at 0.20 ms (Release) / 0.40 ms (Debug) for a thirty-foot mover
+    /// on a 784-square warband board, against the one-per-square-per-action this
+    /// replaces. A hover is a frame's worth of budget; a board was not.
+    /// </para>
+    /// <para>
+    /// <b>Why the two agree.</b> <see cref="FindPath"/> answers non-null for exactly the
+    /// squares this returns, and the reason is that every destination-dependent
+    /// judgement in <see cref="FindPath"/> is either applied here too or provably inert.
+    /// The <c>CanEndOn</c> pre-check is applied here, per square. The
+    /// <see cref="AxesOpened"/> key can never beat cost (see <see cref="Beats"/>), so it
+    /// changes which equal-cost route is kept and never which squares are within budget.
+    /// And <see cref="Explore"/>'s stricter <c>CanEndOn</c> test on the step that enters
+    /// the destination is inert given that pre-check: the creatures it consults occupy
+    /// ground the destination's space covers, so the pre-check has already refused the
+    /// square if any of them fails. Argued here; <em>pinned</em> by
+    /// <c>MovementRulesTests.Reachable_*</c>, which compares the two answers square by
+    /// square over difficult terrain, occupied squares, a Large body and the board edge.
+    /// </para>
+    /// <para>
+    /// The mover's own square is not in the set, matching <see cref="FindPath"/>'s
+    /// refusal of a destination equal to the start: "stay where you are" is not a move,
+    /// and the client's highlight would otherwise offer a square whose click the engine
+    /// refuses.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlySet<GridPosition> Reachable(
+        Battlefield field,
+        Combatant mover,
+        int budgetFeet,
+        IReadOnlyCollection<Combatant> combatants)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(mover);
+        ArgumentNullException.ThrowIfNull(combatants);
+
+        var occupants = OccupiedSquares(mover, combatants);
+        var search = Explore(field, mover, destination: null, budgetFeet, occupants);
+        var reachable = new HashSet<GridPosition>();
+
+        foreach (var square in search.Best.Keys)
+        {
+            // Every square the search settled other than the start got there through a
+            // SpaceFits check, so only the two end-of-move questions are left: the start
+            // is not a destination, and a square whose space holds anyone the mover may
+            // not stop on is transit-only.
+            if (square != mover.Position
+                && !Overlapped(occupants, mover.SpaceAt(square)).Any(other => !CanEndOn(mover, other)))
+            {
+                reachable.Add(square);
+            }
+        }
+
+        return reachable;
+    }
+
+    /// <summary>What one bounded search found: the settled squares, the tree of steps that reached them, and — when the search was aimed at a destination and got there — what that destination cost.</summary>
+    /// <param name="Best">Every square settled within budget, with the cost and wandering of the best route to it. Partial when <see cref="DestinationCostFeet"/> is non-null, because an aimed search stops on arrival.</param>
+    /// <param name="CameFrom">Each settled square's predecessor on its best route.</param>
+    /// <param name="DestinationCostFeet">The destination's cost in feet, or null when the search had no destination or never reached it.</param>
+    private sealed record Exploration(
+        Dictionary<GridPosition, (int Cost, int Wandered)> Best,
+        Dictionary<GridPosition, GridPosition> CameFrom,
+        int? DestinationCostFeet);
+
+    /// <summary>
+    /// The one movement search, shared by <see cref="FindPath"/> and
+    /// <see cref="Reachable"/> so the route to a square and the fact that it is
+    /// reachable can never come from two different pieces of code.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A uniform-cost search from <c>mover.Position</c>, bounded by
+    /// <paramref name="budgetFeet"/>. <paramref name="destination"/> is what separates
+    /// the two callers and is the <em>only</em> thing that does: given one, the search
+    /// stops the moment that square is settled, carries
+    /// <see cref="AxesOpened"/> as its equal-cost tie-break, and applies the stricter
+    /// end-of-move test to the step that enters it; given none, it drains the whole
+    /// budget and every step is judged by the pass-through rule alone. Both are
+    /// Dijkstra over the same weights, so a square's cheapest cost is the same number
+    /// either way — see <see cref="Reachable"/>'s remarks for why that makes the two
+    /// answers agree.
+    /// </para>
+    /// <para>
+    /// The occupants lookup is a parameter rather than built here because both callers
+    /// need it for their own end-of-move checks, and building it twice per query is
+    /// waste this search's own history warns about — see the pricing note in the loop.
+    /// </para>
+    /// </remarks>
+    private static Exploration Explore(
+        Battlefield field,
+        Combatant mover,
+        GridPosition? destination,
+        int budgetFeet,
+        ILookup<GridPosition, Combatant> occupants)
+    {
         var start = (Cost: 0, Wandered: 0);
         var best = new Dictionary<GridPosition, (int Cost, int Wandered)> { [mover.Position] = start };
         var cameFrom = new Dictionary<GridPosition, GridPosition>();
@@ -160,9 +304,9 @@ public static class MovementRules
                 continue;
             }
 
-            if (current == destination)
+            if (destination is { } arrived && current == arrived)
             {
-                return new MovementPath(Reconstruct(cameFrom, mover.Position, destination), reached.Cost);
+                return new Exploration(best, cameFrom, reached.Cost);
             }
 
             var currentSpace = mover.SpaceAt(current);
@@ -186,8 +330,11 @@ public static class MovementRules
                 if (met.Length > 0)
                 {
                     // Pass through only what the printed clause names — an ally, or
-                    // anyone Incapacitated — and stop only on the downed.
-                    var blocked = next == destination
+                    // anyone Incapacitated — and stop only on the downed. The
+                    // destination arm is FindPath's alone: a destinationless search is
+                    // asking which squares are *walkable*, and Reachable applies the
+                    // end-of-move test itself, to every square, afterwards.
+                    var blocked = destination is { } aim && next == aim
                         ? met.Any(other => !CanEndOn(mover, other))
                         : met.Any(other => !CanPassThrough(mover, other));
 
@@ -199,7 +346,7 @@ public static class MovementRules
 
                 // `entered`/`met` are already in hand from the blocked-check just above —
                 // the private overload prices them directly rather than the public
-                // StepCostFeet rebuilding an occupants lookup per neighbour. FindPath's
+                // StepCostFeet rebuilding an occupants lookup per neighbour. This
                 // Dijkstra can visit this line thousands of times in one search (every
                 // legal neighbour of every node it explores), so a per-call lookup rebuild
                 // here is not a rounding error: it turned one full-board reposition scan
@@ -209,7 +356,11 @@ public static class MovementRules
 
                 var candidate = (
                     Cost: reached.Cost + stepCost,
-                    Wandered: reached.Wandered + AxesOpened(current, next, destination));
+                    // No destination, nothing to wander away from: the key is held at
+                    // nought so Beats reduces to plain cost, which is what a
+                    // reachability question wants and all it can honestly answer.
+                    Wandered: reached.Wandered
+                        + (destination is { } goal ? AxesOpened(current, next, goal) : 0));
 
                 if (candidate.Cost > budgetFeet
                     || !Beats(candidate, best.GetValueOrDefault(next, (int.MaxValue, int.MaxValue))))
@@ -223,8 +374,42 @@ public static class MovementRules
             }
         }
 
-        return null;
+        return new Exploration(best, cameFrom, null);
     }
+
+    /// <summary>
+    /// Who stands where, for a given mover: every square of every other creature's
+    /// space, keyed to the creatures standing in it.
+    /// </summary>
+    /// <remarks>
+    /// Anyone still on the field occupies their square, conscious or not. Reading it as
+    /// "active" let a creature end its move on a downed one — harmless until healing
+    /// arrived, at which point the downed creature stood up inside somebody else and the
+    /// next path finder found two combatants in one square.
+    /// <para>
+    /// Keyed as a lookup rather than a dictionary for the same reason: two creatures
+    /// sharing a square is a state the movement rules must survive rather than throw on,
+    /// whatever produced it. Every occupant of a square is consulted, so a square holding
+    /// both a friend and a stranger is judged by the stranger.
+    /// </para>
+    /// <para>
+    /// The public <see cref="StepCostFeet(Battlefield, Combatant, GridPosition,
+    /// GridPosition, IReadOnlyCollection{Combatant})"/> overload deliberately builds this
+    /// lookup itself rather than calling here, and is left doing so on purpose:
+    /// <c>MovementRulesTests.StepCostFeet_SumsToPathCostFeet_ThroughAGenuinelyDead
+    /// CreaturesSquare</c> asserts the concrete cost (10) as well as the sum, so it would
+    /// still catch a shared lookup that wrongly counted the dead — the duplication is kept
+    /// so the two readings of "who occupies this square" stay independently checkable,
+    /// not because the test depends on it.
+    /// </para>
+    /// </remarks>
+    private static ILookup<GridPosition, Combatant> OccupiedSquares(
+        Combatant mover,
+        IReadOnlyCollection<Combatant> combatants) =>
+        combatants
+            .Where(other => other.Id != mover.Id && !other.IsDead)
+            .SelectMany(other => other.Space.Squares(), (other, square) => (Square: square, Creature: other))
+            .ToLookup(entry => entry.Square, entry => entry.Creature);
 
     /// <summary>
     /// The movement cost in feet of one step of a walk: entering <paramref name="step"/> from
