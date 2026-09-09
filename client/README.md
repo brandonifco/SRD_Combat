@@ -523,8 +523,9 @@ for that reason.
 
 Both write into the same directory; their capture names do not collide. What the main run
 produces, in order: `run-0-interlude`, a commanded turn (`play-1-turn-ready`), the quit
-confirm (`play-1b-quit-confirm` — Esc asks, a key that is not Esc backs out unharmed), a
-refusal on purpose (`play-2-refused` — Stand Up while not Prone), a hover hint
+confirm (`play-1b-quit-confirm` — Esc asks, a key that is not Esc backs out unharmed), an
+unavailable action attempted on purpose (`play-2-stand-up-not-offered` — Stand Up while
+not Prone; see below, this is not a refusal), a hover hint
 (`play-2b-hint`), Tab-arming (`play-2c-tab-armed`), a walk and an attack
 (`play-3-moved`, `play-4-attacked`), a feature (`play-5-feature`), End Turn
 (`play-6-turn-ended`), a second commanded character's cast flow if it is a caster's turn
@@ -548,13 +549,43 @@ a fault is printed (`probe: crashed — …`, with the exception) and the run ex
 fire-and-forget call at the Godot lifecycle boundary stays, since `RunProbeIfAsked` and
 `OnReady` cannot themselves be `async`, but nothing thrown downstream disappears again.
 
-**A step the probe could not reach says so — it does not skip in silence.** Whether a
-character brought a feature, whether the second commanded turn is a caster's, whether
-fight 1 stays clear long enough to reach a Long Rest, and whether a caster's slots span
-more than one level are all facts about a fight in progress, not guarantees. A capture
-the probe could not produce writes `<name>.skipped.txt` next to where the PNG would have
-gone, naming why — so a shrunk capture set is a file to notice rather than a silent
-absence.
+**A capture that could not be written is a fault, not a printed line** (#705). `CaptureFrame`
+(`FightScreen.cs`, duplicated in `CreateMode.cs`) used to print `could not save … : {error}`
+on a failed `Image.SavePng` and carry on regardless — a probe pointed at a missing or
+unwritable output directory still exited 0, with every step "succeeding" and no PNG on
+disk for any of them. It throws now (`CaptureOutcome.FailureMessage` is the pure decision
+behind the throw, pinned by `CaptureOutcomeTests` with no Godot engine at all), which
+`ProbeFaults` turns into the same crashed-probe exit a thrown assertion already takes.
+
+**Every *required* step asserts a predicate before it captures, not after** (#705):
+the focus layer it expects (`ProbeExpectation.FocusIs`), or the notice/refusal code it
+expects (`ProbeExpectation.NoticeCodeIs`, most often "no refusal at all" — `null`). A
+failed predicate throws, naming the step, the same fault path as a crash. `play-2-refused`
+was the named instance this closes (#521): it called `ClickButton("Stand Up")` while the
+commanded character was not Prone, which `TurnOptions` never offers a button for, so the
+click found nothing and the capture was — confirmed live — a byte-copy of
+`play-1-turn-ready`, under a name that claimed a refusal it never produced. The step is
+renamed `play-2-stand-up-not-offered` and now asserts exactly what is true today: no
+refusal, the board unchanged. Retargeting it onto a refusal the probe can actually reach
+is #521's still-open decision, not this one's. `play-3-moved` and `play-6-turn-ended`
+assert their action produced no refusal at all, since both act on state the probe itself
+computed as legal (a reachable square, an always-available End Turn); `play-4-attacked`
+and `play-8-cast` assert only that the board is left in a clean state (no menu or armed
+target stranded open), since their own action — an attack after a short move, a cast at
+range — can legitimately refuse, and refusals there are working-as-intended coverage, the
+same as the feature click (`play-5-feature`).
+
+**A step the probe could not reach — or could not confirm it reached — says so, it does
+not skip in silence.** Whether a character brought a feature, whether the second
+commanded turn is a caster's, whether Cast is actually offered that turn, whether fight 1
+stays clear long enough to reach a Long Rest, and whether a caster's slots span more than
+one level are all facts about a fight in progress, not guarantees; `play-7-spell-menu`
+checks that Cast actually opened the spell menu before capturing it, rather than
+capturing on the strength of the click alone (the same defect class `play-2`'s rename
+closes). A capture the probe could not produce writes `<name>.skipped.txt` next to where
+the PNG would have gone, naming why — so a shrunk capture set is a file to notice rather
+than a silent absence. This is reserved for coverage that is genuinely optional; a
+required step's failed predicate is the fault above, never this.
 
 ```bash
 scripts/probe-diff.sh <dirA> <dirB>
