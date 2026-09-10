@@ -209,6 +209,23 @@ public partial class PlayMode : FightScreen
     private string? _notice;
     private bool _probeStarted;
 
+    /// <summary>
+    /// True once the probe's <c>play-2e-threat-preview</c> step (#301) has found and
+    /// captured a real Opportunity-Attack threat mark — searched fresh across the
+    /// opening commanded turn and every later one in the fight-1 play-out loop, never
+    /// twice, and never again once one lands. See <c>PlayMode.Probe.cs</c>'s
+    /// <c>TryCaptureThreatPreview</c>.
+    /// </summary>
+    private bool _threatPreviewCaptured;
+
+    /// <summary>
+    /// The commanded combatant <c>TryCaptureThreatPreview</c> last searched for a
+    /// threatened square, so a turn spanning many probe frames (animations, the
+    /// pace delay) is searched once rather than once per frame — cheap on its own,
+    /// but the play-out loop calls it every frame for however long a turn takes.
+    /// </summary>
+    private string? _threatPreviewLastAttemptedId;
+
     /// <summary>True while the quit card is asking whether Esc really meant it.</summary>
 
     /// <summary>How much of the fight's log has already been scanned for walks to play.</summary>
