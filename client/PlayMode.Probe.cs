@@ -503,6 +503,34 @@ public partial class PlayMode : FightScreen
                             true),
                         new ProbeExpectation.NoticeCodeIsOneOf(AttackRefusalCodes),
                     ]));
+
+            // #299: the one place this can be checked live. xUnit cannot construct a
+            // live `Token` at all (#490/#190 — a Node-derived scene, not reachable from
+            // the test host), so `HealthBandTests`/`PanelRowTests` build hand-authored
+            // Tokens instead. This recomputes the real board's own two calls —
+            // `FightScreen.TokenFrom` off the actual struck `Combatant`, then
+            // `BarColourFor`/`RowFor` off that Token, exactly as `PlayMode.Draw`'s own
+            // redraw does every frame — and checks the wiring rather than the
+            // arithmetic: that a token drawn from a real fight still carries
+            // `Combatant.IsBloodied` unchanged, and that the board's bar colour and the
+            // panel's row colour still agree for it. A monster on this seed's opening
+            // exchange is rarely dropped to 0 (that is Death Save territory, pinned by
+            // `DeathSavePipsTests` instead, not captured here), so this is ordinarily
+            // the Healthy/Bloodied boundary rather than Downed — either is a valid
+            // outcome for this check.
+            var struckToken = TokenFrom(target, _labels);
+
+            Assert(
+                "play-4-attacked",
+                new ProbeExpectation.EqualsExpected<bool>(
+                    $"{target.Name}'s Token.IsBloodied against Combatant.IsBloodied ({target.CurrentHitPoints}/{target.Stats.MaximumHitPoints} hp)",
+                    struckToken.IsBloodied,
+                    target.IsBloodied),
+                new ProbeExpectation.EqualsExpected<Color>(
+                    $"{target.Name}'s board bar colour against its panel row colour",
+                    BarColourFor(struckToken),
+                    RowFor(struckToken, active: false, hidden: false).StateColour));
+
             await CaptureFrame(Path.Combine(directory, "play-4-attacked.png"));
         }
         else

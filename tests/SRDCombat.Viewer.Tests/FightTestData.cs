@@ -21,10 +21,12 @@ namespace SRDCombat.Viewer.Tests;
 /// <para>
 /// Deliberately smaller than <c>CombatTestData</c> rather than shared with it: that
 /// type is <c>internal</c> to another test assembly, and lifting it into the shared
-/// test-support project is #318's job, not this one's. What is here is the four fields
-/// <see cref="LogHighlighter"/> reads and nothing else — if a third project wants the
-/// same builders, that is the trigger to do #318 rather than to copy this a second
-/// time.
+/// test-support project is #318's job, not this one's. What is here started as the four
+/// fields <see cref="LogHighlighter"/> reads and has grown by the same rule since —
+/// <c>Stats</c>'s <c>maximumHitPoints</c> and <c>diesAtZeroHitPoints</c> parameters
+/// (#299) are what a downed, Death-Save-rolling combatant needs and nothing else — if a
+/// third project wants the same builders, that is the trigger to do #318 rather than to
+/// copy this a second time.
 /// </para>
 /// </remarks>
 internal static class FightTestData
@@ -85,10 +87,12 @@ internal static class FightTestData
     public static CombatantStats Stats(
         IReadOnlyList<CombatAttack>? attacks = null,
         IReadOnlyList<MonsterEntry>? entries = null,
-        CombatantFeatures? character = null) =>
+        CombatantFeatures? character = null,
+        int maximumHitPoints = 20,
+        bool diesAtZeroHitPoints = true) =>
         new(
             ArmorClass: 13,
-            MaximumHitPoints: 20,
+            MaximumHitPoints: maximumHitPoints,
             SpeedFeet: 30,
             InitiativeBonus: 2,
             Abilities(),
@@ -97,7 +101,7 @@ internal static class FightTestData
             new Dictionary<DamageType, DamageResponse>(),
             [],
             attacks ?? [Attack("Sword")],
-            DiesAtZeroHitPoints: true)
+            DiesAtZeroHitPoints: diesAtZeroHitPoints)
         {
             Entries = entries ?? [],
             Character = character,
