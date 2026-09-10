@@ -70,6 +70,11 @@ Not required reading — linked so you never have to search for them.
   — the pre-F3 outside review (Codex, at `e253c9d`), every claim adjudicated against
   the code, and the six-track response plan with its issue manifest and the decisions
   that are Brandon's.
+- [`docs/2026-09-10-monster-behaviour-profiles-design.md`](docs/2026-09-10-monster-behaviour-profiles-design.md)
+  — monster behaviour profiles, morale and telegraphed intent: twelve decisions with their
+  reasoning and what each rejected, answering #543 and three of the enemy-AI audit's five open
+  questions. Read it before touching `SimpleTacticsPolicy` or `MonsterDoctrine`. Its §4 census
+  is why leadership is curated rather than derived from CR.
 - [`docs/2026-08-11-design-and-development-plan.md`](docs/2026-08-11-design-and-development-plan.md)
   — the original design doc: kickoff decisions, the architecture, why it diverges from
   `5eGoldBox`.
