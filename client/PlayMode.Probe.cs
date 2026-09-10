@@ -1108,8 +1108,9 @@ public partial class PlayMode : FightScreen
         // #734 review round 1: the keyboard cursor's own ring and the threat mark
         // draw the identical bordered Rect2 at the identical width on whatever square
         // each sits on, so a cursor parked on a threatened step is the one case that
-        // proves the draw order actually chosen (the mark drawn after the cursor
-        // ring, PlayMode.Draw.cs) — neither one is a plain function DrawTests can
+        // proves the inset actually chosen (ThreatMarkInsetPixels, PlayMode.Draw.cs:
+        // draw order alone cannot separate two same-width strokes on one rectangle)
+        // — neither one is a plain function DrawTests can
         // pin, so this capture is the seam. _cursor is set directly rather than
         // walked there with synthesized arrow presses: what this proves is which
         // shape survives on top once both are drawn on the same square, not that

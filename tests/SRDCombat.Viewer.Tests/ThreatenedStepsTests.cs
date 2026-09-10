@@ -151,14 +151,17 @@ public class ThreatenedStepsTests
     [Fact]
     public void AFoggedSquareStillProvokesLeavingIt()
     {
-        var field = new Battlefield(6, 4);
+        var field = new Battlefield(6, 5);
         var mover = new Combatant(
-            "Mover", "Mover", FightTestData.Heroes, FightTestData.Stats(), new GridPosition(0, 2));
-        var reacher = Reacher("Corner", x: 2, y: -1, reachFeet: 5);
+            "Mover", "Mover", FightTestData.Heroes, FightTestData.Stats(), new GridPosition(0, 3));
+        // The reacher sits on the board's top row (#734 review round 2: an earlier
+        // version placed it at y: -1, which passed only because nothing in the reach
+        // chain checks bounds — an invariant asserted nowhere).
+        var reacher = Reacher("Corner", x: 2, y: 0, reachFeet: 5);
 
-        var a = new GridPosition(1, 1);
-        var b = new GridPosition(2, 0);
-        var c = new GridPosition(3, 1);
+        var a = new GridPosition(1, 2);
+        var b = new GridPosition(2, 1);
+        var c = new GridPosition(3, 2);
         var path = new List<GridPosition> { a, b, c };
         var unseen = new HashSet<GridPosition> { b };
 
