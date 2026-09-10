@@ -181,7 +181,8 @@ public partial class PlayMode : FightScreen
         // #302: the range envelope the board is drawing right now for the just-armed
         // attack must equal AttackRangeEnvelope's own answer for the exact same actor
         // and weapon (Tab's cold arm names none, so Attack is null here — the
-        // generous, every-carried-weapon union PlayMode.README already documents) —
+        // generous, every-carried-weapon union AttackChoice.BestFor decides for the
+        // click and client/README.md documents) —
         // never a second guess at what the envelope should look like.
         if (CommandedCombatant() is { } rangeActor && _encounter is { } rangeEncounter)
         {

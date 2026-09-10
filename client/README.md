@@ -280,8 +280,9 @@ family's own `PreviewMayShow` already answers false.
 target could stand in for the click to actually reach, split into a normal band and —
 for a ranged weapon with a printed long range — a fainter far band paying
 Disadvantage, straight off `CombatAttack.CanReach`/`IsAtLongRange`. Tab's cold arm
-(no weapon named) reads generously, the same way `TargetChoice` already does for
-that case: the union of every carried attack's own reach, normal band only, since
+(no weapon named) reads generously, the same way `AttackChoice.BestFor` — the seam
+the click itself goes through — already does for that case (`TargetChoice`, by contrast,
+admits any living enemy when no attack is named): the union of every carried attack's own reach, normal band only, since
 combining several weapons' long-range bands into one picture could show a
 Disadvantage warning that belongs to a weapon the click never ends up using. A
 non-area spell gets the same treatment off its own printed

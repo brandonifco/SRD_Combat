@@ -104,7 +104,8 @@ public class AttackRangeEnvelopeTests
     public void NoChosenAttackUnionsEveryCarriedAttacksReachWithNoLongBand()
     {
         // Tab's cold arm: no weapon named, so the envelope is generous — the union of
-        // every carried attack's own reach (TargetChoice's own reading, restated here
+        // every carried attack's own reach (AttackChoice.BestFor's reading — the click's
+        // own seam; TargetChoice admits any living enemy — restated here
         // for the same reason). The ranged attack's own 30 ft reach dominates the melee
         // weapon's 5 ft, so the union collapses to the ranged attack's own circle.
         var melee = Melee(5);

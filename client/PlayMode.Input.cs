@@ -844,7 +844,9 @@ public partial class PlayMode : FightScreen
     /// </summary>
     /// <remarks>
     /// <b>Tab's cold arm names no weapon, and the reading here is the same "generous"
-    /// one <see cref="TargetChoice"/> already states for exactly that case</b>: with no
+    /// one <see cref="AttackChoice.BestFor"/> makes for the click itself</b> (not
+    /// <see cref="TargetChoice"/>, which admits any living enemy when no attack is named —
+    /// qc on PR #738): with no
     /// attack chosen, a click still swings whichever carried attack reaches
     /// (<c>AttackChoice.BestFor</c>), so the envelope shown is the union of every
     /// carried attack's own reach — normal band only, since combining several weapons'
