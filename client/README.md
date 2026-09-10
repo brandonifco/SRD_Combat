@@ -268,6 +268,64 @@ Barren) is tracked as its own issue, #735: the theme is a deterministic hash of 
 battlefield's own geometry with no override (#731 found this for the path preview
 already), so there is no cheap way to force all three for one seed's probe capture.
 
+**Arming an attack or a spell shows what it can reach before the click commits it
+(#302).** The movement family above (the reachable wash, the route preview, the
+threat mark) all answer "where could I walk"; this is the same seam's other half,
+for "what could I hit". `PlayMode.Input.cs`'s `UpdatePreviewPath` recomputes
+whichever family applies — the two are mutually exclusive by construction, since
+`Armed` being an attack or a spell is exactly the condition under which the movement
+family's own `PreviewMayShow` already answers false.
+
+*Range.* An armed attack's envelope (`PlayMode.AttackRangeEnvelope`) is every square a
+target could stand in for the click to actually reach, split into a normal band and —
+for a ranged weapon with a printed long range — a fainter far band paying
+Disadvantage, straight off `CombatAttack.CanReach`/`IsAtLongRange`. Tab's cold arm
+(no weapon named) reads generously, the same way `TargetChoice` already does for
+that case: the union of every carried attack's own reach, normal band only, since
+combining several weapons' long-range bands into one picture could show a
+Disadvantage warning that belongs to a weapon the click never ends up using. A
+non-area spell gets the same treatment off its own printed
+`SpellDefinition.TargetRangeFeet` (`PlayMode.SpellRangeEnvelope`) — empty for a
+self-ranged spell, and empty for Sight or Unlimited range too, since a wash over the
+whole board would say nothing the spell's own printed range text does not already.
+
+*Area.* An armed area spell shows exactly what `AreaTargeting.Cover` would cover for
+the hovered square — the identical call `Encounter.CastSpell`'s own `SaveVictims`
+makes internally (`PlayMode.AreaCoverage`), never a client-side re-derivation of the
+geometry. The creatures it would actually catch are marked with a ring, filtered the
+same way `Encounter.CreaturesIn` filters them (alive, and occupying a covered
+square) and narrowed to enemies only when the spell's own `EnemiesOnly` selector says
+so (#601's reading, asked here the same way `SaveVictims` asks it).
+
+*Out of range.* A hovered target outside the envelope is marked — a border on the
+square, dimmer and less saturated than the Opportunity-Attack threat mark so the two
+are never confused, plus the same refusal code the click would actually produce
+named in the status line. The code is never invented: a chosen weapon's own
+`attack.out_of_range` (`Encounter.Attack`'s check), Tab's cold arm's own
+`client.no_attack` fallback when nothing carried reaches (`PlayMode.ActivateSquare`'s
+own path, mirrored by `PlayMode.AttackOutOfRangeCode`), or a spell's own
+`spell.out_of_range` (`Encounter.CastSpell`'s check, mirrored by
+`PlayMode.SpellOutOfRangeCode`) — the same two questions, "does the model express
+it" and "what would the engine actually say", this project asks everywhere else.
+
+**Fog holds for the targeting family too, on both of its own halves.** The range
+envelope is ambient board geometry, the same standing the reachable wash already
+has — not fog-trimmed, since a hidden square inside it reads through the fog's own
+shadow exactly as the reachable wash already does, never any brighter. The area
+coverage is specific, committed advice about one aim point instead, held to the
+route preview's own stricter standard (#732): a square the party cannot presently
+see is dropped from what is *drawn*, though `AreaTargeting.Cover` itself is asked
+with full knowledge, so the coverage's *shape* can still hint at unseen geometry the
+same qualified way a route's shape already can. A caught creature is reported only
+when it is both inside the covered squares and not itself hidden — the same standard
+a hidden occupant's token, ring and hover hint are already held to, so a Sphere
+dropped over fogged ground never announces a monster standing in it before the fog
+itself would. This is asked once, at the square level (a hidden creature's own
+square was already dropped from what is covered), rather than a second time per
+creature: the earlier shape asked both and checked only the creature's anchor
+square, which could have hidden a multi-square creature whose *other* occupied
+square genuinely sat in visible, covered ground.
+
 **Four wiring gaps Codex's adversarial review found, each fixed at its own seam.**
 `_pointer` used to be one field doing two jobs — the tooltip's own jitter-filtered
 rest position, and what every refresh (a routed keyboard action, a camera change,

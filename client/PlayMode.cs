@@ -106,6 +106,63 @@ public partial class PlayMode : FightScreen
     /// </summary>
     private readonly List<GridPosition> _threatenedSteps = [];
 
+    /// <summary>
+    /// The normal-range band of an armed attack's or non-area spell's envelope (#302)
+    /// — every square a target could stand in for the click that is about to happen to
+    /// actually reach. Computed in <see cref="UpdateTargetingPreview"/>, the targeting
+    /// family's own counterpart to the movement family's <see cref="_previewPath"/>:
+    /// the two are never populated in the same frame, since <see cref="Armed"/> being
+    /// an attack or a spell is exactly the condition under which
+    /// <see cref="PreviewMayShow"/> already answers false for the route preview.
+    /// </summary>
+    private readonly List<GridPosition> _rangeNormal = [];
+
+    /// <summary>
+    /// The long-range band of an armed ranged attack (#302) — beyond its own printed
+    /// normal range but still reachable at Disadvantage
+    /// (<see cref="SRDCombat.Core.Combat.CombatAttack.IsAtLongRange"/>). Always empty
+    /// for a melee attack, a spell, or an attack with no chosen weapon (Tab's cold arm
+    /// reads several attacks generously rather than picking one to show a long band
+    /// for — see <see cref="AttackRangeEnvelope"/>'s own remarks).
+    /// </summary>
+    private readonly List<GridPosition> _rangeLong = [];
+
+    /// <summary>
+    /// Exactly what an armed area spell would cover for the hovered origin (#302) —
+    /// <c>AreaTargeting.Cover</c>'s own answer for the caster's square and the hovered
+    /// square, fog-trimmed the same way <see cref="_previewPath"/> is. Recomputed on
+    /// every hover, unlike <see cref="_rangeNormal"/>/<see cref="_rangeLong"/>, whose
+    /// envelope depends only on the actor and the weapon — never a second guess at
+    /// what the aim point would actually cover.
+    /// </summary>
+    private readonly List<GridPosition> _areaCoverage = [];
+
+    /// <summary>
+    /// The ids of the creatures <see cref="_areaCoverage"/> would actually catch —
+    /// visible ones only, the same fog standard a hidden creature's token, ring and
+    /// hover hint are already held to (#732's leak shape, the other side of it here).
+    /// </summary>
+    private readonly HashSet<string> _areaCaughtIds = [];
+
+    /// <summary>
+    /// True when the square or creature under the pointer is outside the armed
+    /// attack's or spell's own range (#302) — the same fact the click would be refused
+    /// for, shown before the click rather than after it. <see
+    /// cref="_targetingOutOfRangeCode"/> names which of the click's own refusal codes
+    /// applies.
+    /// </summary>
+    private bool _targetingOutOfRange;
+
+    /// <summary>
+    /// The refusal code the click would actually produce right now, whenever <see
+    /// cref="_targetingOutOfRange"/> is true — <c>attack.out_of_range</c> when a named
+    /// weapon is armed, <c>client.no_attack</c> for Tab's cold arm (this client's own
+    /// fallback when no carried attack reaches — see <see cref="ActivateSquare"/>), or
+    /// <c>spell.out_of_range</c> for a spell. Never invented: each is the literal code
+    /// the engine or this screen's own click path already uses.
+    /// </summary>
+    private string? _targetingOutOfRangeCode;
+
     /// <summary>Squares nobody in the party can see — the fog of war, <c>PartyVision</c>'s answer.</summary>
     private readonly HashSet<GridPosition> _unseen = [];
 

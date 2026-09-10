@@ -124,6 +124,11 @@ public abstract partial class FightScreen : Node2D
     protected static Color Dim => Palette.Dim;
     protected static Color PathPreview => Palette.PathPreview;
     protected static Color ThreatMark => Palette.ThreatMark;
+    protected static Color RangeNormal => Palette.RangeNormal;
+    protected static Color RangeLong => Palette.RangeLong;
+    protected static Color AreaCoverageColour => Palette.AreaCoverage;
+    protected static Color AreaCaught => Palette.AreaCaught;
+    protected static Color OutOfRange => Palette.OutOfRange;
 
     /// <summary>
     /// The active-combatant ring's blink period, in seconds (#494) — a played-run
