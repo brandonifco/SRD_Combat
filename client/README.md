@@ -168,28 +168,45 @@ the mouse wheel is the camera's zoom, not a panel scroll — so unlike the merch
 stall, which the wheel and Page Up/Down do scroll, this panel borrows only `Fit`'s
 windowing shape from that pattern, not its scrolling half.
 
-**The log's floor is 45 lines at 1920×1080, 20 at 1280×720** — two different numbers
-because a single floor tuned for 1080p's 968px of room below the panel's header is
-unreachable at 720p's 608px without collapsing every fight to one visible row (measured:
-a 45-line floor there computes a capacity of 0, and even hiding everyone but the active
-combatant tops out at 31 lines — worse for every fight, not better). Capacity works out
-to 8 rows at 1080p, 11 at 720p; a 14-combatant fight — a party of four plus a warband of
-ten, the worst case this project fields — shows 8 rows and holds the log at 45 lines at
-1080p (up from 38 before #305), and shows 11 rows at 20 lines at 720p:
+**The panel shows 8 rows at both resolutions** (`InitiativePanelLayout.MinRows`) — a
+single constant now, not a per-height floor. An earlier version of this fix picked the
+log's floor by a hard threshold on window height and derived the row count from that,
+which turned out to be badly non-monotone: resizing the window by one pixel could swing
+capacity from 21 rows to 1 (a second review found this before it shipped). The reason
+runs deeper than a threshold picked wrong — showing one more row always frees 19px of
+panel space, and a log line costs 17px, so *any* formula that lets the row count climb
+smoothly as the window grows is provably forced to cost the log a line at the climb
+itself, however the threshold is chosen. The fix is to not attempt the climb inside any
+room a real window can reach: the row count is the flat constant 8 everywhere from just
+below the smallest reachable window up through arbitrarily large ones, so there is
+nothing left to dip.
+
+Because 1080p and 720p now share one row count, they no longer share the same log floor
+— 1080p's taller window turns those 8 rows into more log room than 720p's shorter one
+does. A 14-combatant fight — a party of four plus a warband of ten, the worst case this
+project fields — shows 8 rows and holds the log at 45 lines at 1080p (unchanged from the
+threshold-based version, up from 38 before #305) and 24 lines at 720p (more than that
+version's own 20, since 720p no longer pages as early: its previous count of 11 rows was
+never a deliberate choice, only the old per-height floor constant working out to that
+number incidentally):
 
 | Combatants | 1080p shown | 1080p hidden | 1080p log lines | 720p shown | 720p hidden | 720p log lines |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 1 | 0 | 53 | 1 | 0 | 31 |
 | 4 | 4 | 0 | 49 | 4 | 0 | 28 |
 | 8 | 8 | 0 | 45 | 8 | 0 | 24 |
-| 11 | 8 | 3 | 45 | 11 | 0 | 20 |
-| 14 | 8 | 6 | 45 | 11 | 3 | 20 |
+| 11 | 8 | 3 | 45 | 8 | 3 | 24 |
+| 14 | 8 | 6 | 45 | 8 | 6 | 24 |
 
 (The full 1–14 table is `InitiativePanelLayoutTests.ExactTableForBothResolutions`,
-pinned row by row.) Once a fight's combatant count passes its resolution's own capacity,
-the log's line count stops moving entirely — every further combatant is absorbed by the
-panel's own hidden count instead, which is the "no longer shrinks as the initiative list
-grows" acceptance criterion made exact rather than merely bounded below.
+pinned row by row; two further rooms cited in review, 848px and 912px, are pinned
+directly in `ExactValuesAtTheCitedIntermediateRooms`.) Once a fight's combatant count
+passes 8, the log's line count stops moving entirely — every further combatant is
+absorbed by the panel's own hidden count instead, which is the "no longer shrinks as
+the initiative list grows" acceptance criterion made exact rather than merely bounded
+below, and `InitiativePanelLayoutTests.CapacityAndLogLinesAreMonotoneInRoom` sweeps
+every window height from well below 720p to well above 1080p checking that neither
+value ever drops as the window grows.
 
 **Verifying this at 1280×720 with a live capture is not currently possible.** The
 client's window opens fullscreen (`project.godot`'s `window/size/mode=3`, with no
