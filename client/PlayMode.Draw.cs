@@ -96,6 +96,41 @@ public partial class PlayMode : FightScreen
                 PathPreview);
         }
 
+        // The armed attack's or spell's own range envelope (#302): every square a
+        // target could stand in for the click that is about to happen to actually
+        // reach — CombatAttack.CanReach/IsAtLongRange or SpellDefinition.TargetRangeFeet,
+        // computed in UpdateTargetingPreview and never re-derived here. Drawn before the
+        // fog, like the reachable wash it sits beside: an envelope is ambient advice
+        // about the whole board's geometry, not a route committed to one destination, so
+        // it is not fog-trimmed the same strict way _previewPath and _areaCoverage below
+        // are — a hidden square inside the envelope reads through the fog's own shadow
+        // exactly as the reachable wash already does, never any brighter than that.
+        foreach (var square in _rangeNormal)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                RangeNormal);
+        }
+
+        foreach (var square in _rangeLong)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                RangeLong);
+        }
+
+        // Exactly what an armed area spell would cover for the hovered origin (#302):
+        // AreaTargeting.Cover's own answer, already fog-trimmed in UpdateTargetingPreview
+        // (#732) — a square the party cannot presently see is never in this list at all,
+        // unlike the range envelope above, because a coverage preview is specific advice
+        // about one committed aim point rather than the board's ambient geometry.
+        foreach (var square in _areaCoverage)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                AreaCoverageColour);
+        }
+
         // The fog of war, drawn smooth: the per-square set is painted into a small
         // image and upscaled bilinearly (BuildFogTexture), so the shadow's edge
         // feathers across a square instead of stepping — the blockiness was the other
@@ -154,6 +189,26 @@ public partial class PlayMode : FightScreen
                 width: 3f);
         }
 
+        // Out of range, before the click (#302): the hovered square holds a candidate
+        // an armed attack or spell cannot presently reach — TargetingPreviewMayShow's
+        // own family, drawn the same "opaque border after the fog" way the threat mark
+        // above is, and for the identical reason: a warning reads as one when it is not
+        // another translucent wash. A dimmer, less saturated red than ThreatMark's own
+        // so the two are never mistaken for each other — a threatened step is a cost a
+        // walk would pay, this is a target the click could not reach at all.
+        if (_targetingOutOfRange && _previewSquare is { } outOfRangeSquare)
+        {
+            DrawRect(
+                new Rect2(
+                    GridLeft + (outOfRangeSquare.X * CellPixels) + ThreatMarkInsetPixels,
+                    GridTop + (outOfRangeSquare.Y * CellPixels) + ThreatMarkInsetPixels,
+                    CellPixels - (2 * ThreatMarkInsetPixels),
+                    CellPixels - (2 * ThreatMarkInsetPixels)),
+                OutOfRange,
+                filled: false,
+                width: 3f);
+        }
+
         // Holds first, then the walk: a held token is how somebody *looked* before a
         // blow whose picture has not played, and where anybody stands is the walk's own
         // question. Together they make the screen tell the fight in order — the walk,
@@ -180,6 +235,23 @@ public partial class PlayMode : FightScreen
                     && AttackChoice.BestFor(commanded, enemy, encounter.Combatants) is not null)
                 {
                     DrawCircle(CentreOf(enemy.Position), (CellPixels / 2f) - 4, MonsterColour, filled: false, width: 2);
+                }
+            }
+        }
+
+        // Who an armed area spell's coverage would actually catch (#302) — ids only,
+        // computed in UpdateTargetingPreview against AreaTargeting.Cover, filtered here
+        // against shown (the fog-withheld list above) rather than against every
+        // combatant, so a hidden creature the id set might still (correctly) name never
+        // draws a ring: the fog rule holds at the drawing step too, not only where the
+        // ids themselves were computed.
+        if (_areaCaughtIds.Count > 0)
+        {
+            foreach (var token in shown)
+            {
+                if (_areaCaughtIds.Contains(token.Id))
+                {
+                    DrawCircle(CentreOf(new GridPosition(token.X, token.Y)), (CellPixels / 2f) - 4, AreaCaught, filled: false, width: 2);
                 }
             }
         }
@@ -1064,16 +1136,20 @@ public partial class PlayMode : FightScreen
 
         if (Armed is { Kind: TargetKind.Spell, Spell: { } spell } castingAt)
         {
+            var suffix = OutOfRangeSuffix();
+
             return castingAt.Slot is { } slot
-                ? $"choose a target for {spell.Name} (level {slot} slot) — click it, Tab cycles, Enter takes it; Esc cancels"
-                : $"choose a target for {spell.Name} — click it, Tab cycles, Enter takes it; Esc cancels";
+                ? $"choose a target for {spell.Name} (level {slot} slot) — click it, Tab cycles, Enter takes it; Esc cancels{suffix}"
+                : $"choose a target for {spell.Name} — click it, Tab cycles, Enter takes it; Esc cancels{suffix}";
         }
 
         if (Armed is { Kind: TargetKind.Attack } swingingAt)
         {
+            var suffix = OutOfRangeSuffix();
+
             return swingingAt.Attack is { } attack
-                ? $"choose a target for {attack.Name} — click it, Tab cycles, Enter takes it; Esc cancels"
-                : "choose a target — Tab cycles, Enter attacks with the best weapon; Esc cancels";
+                ? $"choose a target for {attack.Name} — click it, Tab cycles, Enter takes it; Esc cancels{suffix}"
+                : $"choose a target — Tab cycles, Enter attacks with the best weapon; Esc cancels{suffix}";
         }
 
         if (Armed is { Kind: TargetKind.Potion })
@@ -1090,6 +1166,16 @@ public partial class PlayMode : FightScreen
 
         return "the other side is acting…   [esc] quit";
     }
+
+    /// <summary>
+    /// " — out of range [code]" whenever <see cref="_targetingOutOfRange"/> is set, or
+    /// nothing (#302) — the same refusal code the click would produce, named in the
+    /// status line rather than only marked on the square, so the fact reads even where
+    /// the mark itself might not (a screen reader, a paused screenshot with the cursor
+    /// off the board).
+    /// </summary>
+    private string OutOfRangeSuffix() =>
+        _targetingOutOfRange ? $"  — out of range [{_targetingOutOfRangeCode}]" : string.Empty;
 
     private static string Tick(bool available) => available ? "✓" : "✗";
 }

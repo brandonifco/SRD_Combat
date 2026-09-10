@@ -687,10 +687,33 @@ public partial class PlayMode : FightScreen
         _previewSquare = SquareAt(pixel);
         _previewPath.Clear();
         _threatenedSteps.Clear();
+        _rangeNormal.Clear();
+        _rangeLong.Clear();
+        _areaCoverage.Clear();
+        _areaCaughtIds.Clear();
+        _targetingOutOfRange = false;
+        _targetingOutOfRangeCode = null;
 
-        if (_phase != Phase.Fighting
-            || _encounter is not { } encounter
-            || !PreviewMayShow(_focus.Top is PlayFocus.Board, Armed is not null, OverOverlay(pixel)))
+        if (_phase != Phase.Fighting || _encounter is not { } encounter)
+        {
+            return;
+        }
+
+        // The targeting family takes over whenever an attack or a spell is armed
+        // (#302) — the counterpart to the movement family just below, which
+        // PreviewMayShow already refuses the moment anything is armed. The two are
+        // mutually exclusive by construction: Armed is not null only while
+        // PlayFocus.Targeting sits on top, and the movement branch's own gate reads
+        // exactly that.
+        if (Armed is { Kind: TargetKind.Attack or TargetKind.Spell } armed
+            && TargetingPreviewMayShow(armed: true, OverOverlay(pixel))
+            && CommandedCombatant() is { } actor)
+        {
+            UpdateTargetingPreview(encounter, actor, armed);
+            return;
+        }
+
+        if (!PreviewMayShow(_focus.Top is PlayFocus.Board, Armed is not null, OverOverlay(pixel)))
         {
             return;
         }
@@ -721,6 +744,294 @@ public partial class PlayMode : FightScreen
                 ThreatenedSteps(encounter.Battlefield, mover, hoveredPath, visibleEnemies, _unseen));
         }
     }
+
+    /// <summary>
+    /// Whether the targeting preview (#302) — the range envelope, the area coverage,
+    /// the out-of-range mark — may show at all right now: something is actually armed,
+    /// and the pointer is not over the fixed chrome. Deliberately independent of which
+    /// focus layer is on top the way <see cref="PreviewMayShow"/> is not: <see
+    /// cref="Armed"/> being non-null already implies <see cref="PlayFocus.Targeting"/>
+    /// is the top layer (arming is the only way onto that layer, and nothing pushes a
+    /// further layer over it — see <see cref="PlayFocus.Targeting"/>'s own remarks), so
+    /// asking again here would only restate that invariant rather than test anything.
+    /// </summary>
+    internal static bool TargetingPreviewMayShow(bool armed, bool overOverlay) => armed && !overOverlay;
+
+    /// <summary>
+    /// Fills the targeting-preview fields for an armed attack or spell (#302) — the
+    /// targeting family's own counterpart to <see cref="UpdatePreviewPath"/>'s movement
+    /// branch, called from the exact same place so it recomputes everywhere the route
+    /// preview does. Every number drawn from here is the engine's own:
+    /// <see cref="SRDCombat.Core.Combat.CombatAttack.CanReach"/> and
+    /// <see cref="SRDCombat.Core.Combat.CombatAttack.IsAtLongRange"/> for an attack,
+    /// <see cref="SpellDefinition.TargetRangeFeet"/> for a ranged spell, and
+    /// <see cref="AreaTargeting.Cover"/> — the identical call
+    /// <see cref="Encounter.CastSpell"/> makes internally — for an area. Nothing here
+    /// re-derives any of those; this only asks each its own question for the hovered
+    /// square and the commanded actor.
+    /// </summary>
+    private void UpdateTargetingPreview(Encounter encounter, Combatant actor, PlayFocus.Targeting armed)
+    {
+        if (armed.Kind == TargetKind.Attack)
+        {
+            var envelope = AttackRangeEnvelope(encounter.Battlefield, actor, armed.Attack);
+            _rangeNormal.AddRange(envelope.Normal);
+            _rangeLong.AddRange(envelope.Long);
+
+            if (_previewSquare is { } hovered
+                && TokenAt(hovered) is { } target
+                && target.SideId != actor.SideId)
+            {
+                var code = AttackOutOfRangeCode(actor.Stats.Attacks, armed.Attack, actor.DistanceFeetTo(target));
+
+                if (code is not null)
+                {
+                    _targetingOutOfRange = true;
+                    _targetingOutOfRangeCode = code;
+                }
+            }
+
+            return;
+        }
+
+        if (armed is not { Kind: TargetKind.Spell, Spell: { } spell })
+        {
+            return;
+        }
+
+        if (spell.Save?.Area is { } area)
+        {
+            if (_previewSquare is not { } origin)
+            {
+                return;
+            }
+
+            var preview = AreaCoverage(encounter.Battlefield, actor, spell, area, origin, encounter.Combatants, _unseen);
+            _areaCoverage.AddRange(preview.Squares);
+
+            foreach (var id in preview.CaughtCombatantIds)
+            {
+                _areaCaughtIds.Add(id);
+            }
+
+            if (preview.OutOfRange)
+            {
+                _targetingOutOfRange = true;
+                _targetingOutOfRangeCode = "spell.out_of_range";
+            }
+
+            return;
+        }
+
+        _rangeNormal.AddRange(SpellRangeEnvelope(encounter.Battlefield, actor, spell));
+
+        if (_previewSquare is { } hoveredSquare
+            && TokenAt(hoveredSquare) is { } spellTarget
+            && SpellOutOfRangeCode(spell, actor.DistanceFeetTo(spellTarget)) is { } spellCode)
+        {
+            _targetingOutOfRange = true;
+            _targetingOutOfRangeCode = spellCode;
+        }
+    }
+
+    /// <summary>
+    /// The normal- and long-range bands of an armed attack's envelope (#302): every
+    /// square on the battlefield a target could stand in for the click that is about to
+    /// happen to actually reach, split the way the attack's own numbers split it —
+    /// <see cref="SRDCombat.Core.Combat.CombatAttack.CanReach"/> for the whole envelope,
+    /// <see cref="SRDCombat.Core.Combat.CombatAttack.IsAtLongRange"/> for the far band a
+    /// ranged attack pays Disadvantage inside.
+    /// </summary>
+    /// <remarks>
+    /// <b>Tab's cold arm names no weapon, and the reading here is the same "generous"
+    /// one <see cref="AttackChoice.BestFor"/> makes for the click itself</b> (not
+    /// <see cref="TargetChoice"/>, which admits any living enemy when no attack is named —
+    /// qc on PR #738): with no
+    /// attack chosen, a click still swings whichever carried attack reaches
+    /// (<c>AttackChoice.BestFor</c>), so the envelope shown is the union of every
+    /// carried attack's own reach — normal band only, since combining several weapons'
+    /// own long-range bands into one picture would show a Disadvantage warning that
+    /// might belong to a weapon the click never ends up using.
+    /// </remarks>
+    internal static (IReadOnlyCollection<GridPosition> Normal, IReadOnlyCollection<GridPosition> Long)
+        AttackRangeEnvelope(Battlefield field, Combatant actor, CombatAttack? attack)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        var normal = new List<GridPosition>();
+        var far = new List<GridPosition>();
+
+        foreach (var square in field.AllSquares())
+        {
+            var distance = actor.DistanceFeetTo(square);
+
+            if (attack is not null)
+            {
+                if (attack.IsAtLongRange(distance))
+                {
+                    far.Add(square);
+                }
+                else if (attack.CanReach(distance))
+                {
+                    normal.Add(square);
+                }
+            }
+            else if (actor.Stats.Attacks.Any(candidate => candidate.CanReach(distance)))
+            {
+                normal.Add(square);
+            }
+        }
+
+        return (normal, far);
+    }
+
+    /// <summary>
+    /// The refusal code a click on <paramref name="target"/> would produce for an armed
+    /// attack right now, at <paramref name="distanceFeet"/> — or null when the click
+    /// would reach. Mirrors <see cref="ActivateSquare"/>'s own two paths exactly, so the
+    /// code shown before the click is never invented: a chosen weapon (<paramref
+    /// name="chosen"/> non-null) refuses through <c>Encounter.Attack</c>'s own
+    /// <c>attack.out_of_range</c>; Tab's cold arm has no weapon to hand the engine at
+    /// all, so a victim nothing in <paramref name="carried"/> reaches falls through to
+    /// this screen's own <c>client.no_attack</c> fallback instead.
+    /// </summary>
+    internal static string? AttackOutOfRangeCode(
+        IReadOnlyList<CombatAttack> carried, CombatAttack? chosen, int distanceFeet)
+    {
+        ArgumentNullException.ThrowIfNull(carried);
+
+        if (chosen is not null)
+        {
+            return chosen.CanReach(distanceFeet) ? null : "attack.out_of_range";
+        }
+
+        return carried.Any(candidate => candidate.CanReach(distanceFeet)) ? null : "client.no_attack";
+    }
+
+    /// <summary>
+    /// The range envelope of a non-area spell (#302) — every square within
+    /// <see cref="SpellDefinition.TargetRangeFeet"/>, the same number
+    /// <see cref="Encounter.CastSpell"/> checks a target against. Empty for a
+    /// self-ranged spell (nothing to aim at but the caster) and for one with no
+    /// printed distance at all — Touch already reads as five feet inside
+    /// <see cref="SpellDefinition.TargetRangeFeet"/> itself, so only Sight and
+    /// Unlimited reach here, and a wash covering the whole board would say nothing a
+    /// player does not already know from the spell's own printed range text.
+    /// </summary>
+    internal static IReadOnlyCollection<GridPosition> SpellRangeEnvelope(
+        Battlefield field, Combatant actor, SpellDefinition spell)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(actor);
+        ArgumentNullException.ThrowIfNull(spell);
+
+        if (spell.IsSelfRanged || spell.TargetRangeFeet is not { } range)
+        {
+            return [];
+        }
+
+        return field.AllSquares().Where(square => actor.DistanceFeetTo(square) <= range).ToArray();
+    }
+
+    /// <summary>
+    /// The refusal code a click aimed at a creature <paramref name="distanceFeet"/> away
+    /// would produce for an armed spell right now, or null when the click would reach —
+    /// <see cref="Encounter.CastSpell"/>'s own <c>spell.out_of_range</c>, the one code
+    /// its range check ever returns, for both the creature-aimed and the point-aimed
+    /// overload. A self-ranged spell has no range to be out of.
+    /// </summary>
+    internal static string? SpellOutOfRangeCode(SpellDefinition spell, int distanceFeet)
+    {
+        ArgumentNullException.ThrowIfNull(spell);
+
+        return !spell.IsSelfRanged && spell.TargetRangeFeet is { } range && distanceFeet > range
+            ? "spell.out_of_range"
+            : null;
+    }
+
+    /// <summary>
+    /// What an armed area spell would cover for the hovered origin, and who it would
+    /// actually catch (#302) — <see cref="AreaTargeting.Cover"/> called with exactly the
+    /// arguments <c>Encounter.SaveVictims</c> passes it (the caster's own square as the
+    /// origin, the hovered square as the aim point), so the drawn coverage can never
+    /// diverge from what the real cast would resolve.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Out of range short-circuits before the geometry is even asked</b>, the same
+    /// order <see cref="Encounter.CastSpell"/>'s own point-aimed check runs in: a
+    /// self-ranged area (an Emanation centred on the caster, or a Cone/Line whose range
+    /// is "Self") has nothing to be out of range of, so only a spell with a real
+    /// <see cref="SpellDefinition.TargetRangeFeet"/> is checked at all.
+    /// </para>
+    /// <para>
+    /// <b>Fog trims the drawn squares the same way <see cref="_previewPath"/> is
+    /// trimmed</b> (#732): a square the party cannot presently see is dropped from what
+    /// is drawn, never from what <see cref="AreaTargeting.Cover"/> is asked — clipping
+    /// the query itself would make the preview lie about where the real cast's area
+    /// actually lands the instant the fog cleared. <b>A caught creature is reported only
+    /// when it is both inside the covered squares and not itself hidden</b> — the same
+    /// standard a hidden occupant's token, ring and hover hint are already held to — so
+    /// a Sphere dropped over fogged ground never announces a monster standing in it
+    /// before the fog itself would.
+    /// </para>
+    /// </remarks>
+    internal static AreaCoveragePreview AreaCoverage(
+        Battlefield field,
+        Combatant caster,
+        SpellDefinition spell,
+        EffectArea area,
+        GridPosition hoveredOrigin,
+        IReadOnlyCollection<Combatant> combatants,
+        IReadOnlySet<GridPosition> unseen)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(caster);
+        ArgumentNullException.ThrowIfNull(spell);
+        ArgumentNullException.ThrowIfNull(area);
+        ArgumentNullException.ThrowIfNull(combatants);
+        ArgumentNullException.ThrowIfNull(unseen);
+
+        if (SpellOutOfRangeCode(spell, caster.DistanceFeetTo(hoveredOrigin)) is not null)
+        {
+            return new AreaCoveragePreview([], [], OutOfRange: true);
+        }
+
+        var squares = AreaTargeting.Cover(area, caster.Position, hoveredOrigin, field)
+            .Where(square => !unseen.Contains(square))
+            .ToArray();
+
+        var covered = squares.ToHashSet();
+
+        // No separate "is this combatant's own square unseen" guard: covered has
+        // already dropped every unseen square from the raw AreaTargeting.Cover answer
+        // above, so a combatant whose occupied square is fogged can never overlap
+        // covered at all — checking the combatant's own position again here would be
+        // redundant for a single-square creature and, for a multi-square one straddling
+        // the fog boundary, actively wrong (an anchor-only check could hide a creature
+        // one of whose *other* occupied squares genuinely is in visible, covered
+        // ground). Mirrors Encounter.CreaturesIn's own shape exactly, fog folded into
+        // the squares it is handed rather than re-asked of the creature.
+        var caught = combatants.Where(combatant =>
+            combatant.IsActive && combatant.Space.Squares().Any(covered.Contains));
+
+        var reached = area.EnemiesOnly
+            ? caught.Where(combatant => combatant.SideId != caster.SideId)
+            : caught;
+
+        return new AreaCoveragePreview(squares, reached.Select(combatant => combatant.Id).ToArray(), OutOfRange: false);
+    }
+
+    /// <summary>
+    /// What an armed area spell's coverage looks like for one hovered origin (#302): the
+    /// exact squares, who it would catch (visible creatures only), and whether the
+    /// origin itself is out of the spell's own range — see <see cref="AreaCoverage"/>.
+    /// </summary>
+    internal readonly record struct AreaCoveragePreview(
+        IReadOnlyCollection<GridPosition> Squares,
+        IReadOnlyCollection<string> CaughtCombatantIds,
+        bool OutOfRange);
 
     /// <summary>
     /// Whether the path preview must recompute for a pointer that was over <paramref

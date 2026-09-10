@@ -178,6 +178,34 @@ public partial class PlayMode : FightScreen
             new ProbeExpectation.FocusIs(typeof(PlayFocus.Targeting)),
             new ProbeExpectation.EqualsExpected<TargetKind?>("what the first Tab armed", Armed?.Kind, TargetKind.Attack));
 
+        // #302: the range envelope the board is drawing right now for the just-armed
+        // attack must equal AttackRangeEnvelope's own answer for the exact same actor
+        // and weapon (Tab's cold arm names none, so Attack is null here — the
+        // generous, every-carried-weapon union AttackChoice.BestFor decides for the
+        // click and client/README.md documents) —
+        // never a second guess at what the envelope should look like.
+        if (CommandedCombatant() is { } rangeActor && _encounter is { } rangeEncounter)
+        {
+            var expectedEnvelope = PlayMode.AttackRangeEnvelope(rangeEncounter.Battlefield, rangeActor, Armed?.Attack);
+
+            Assert(
+                "play-2g-attack-range",
+                new ProbeExpectation.NonEmpty("the expected range envelope", PathAsText([.. expectedEnvelope.Normal])),
+                new ProbeExpectation.EqualsExpected<string>(
+                    "the drawn range envelope's normal band",
+                    PathAsText([.. _rangeNormal.OrderBy(s => s.X).ThenBy(s => s.Y)]),
+                    PathAsText([.. expectedEnvelope.Normal.OrderBy(s => s.X).ThenBy(s => s.Y)])),
+                new ProbeExpectation.EqualsExpected<string>(
+                    "the drawn range envelope's long band",
+                    PathAsText([.. _rangeLong.OrderBy(s => s.X).ThenBy(s => s.Y)]),
+                    PathAsText([.. expectedEnvelope.Long.OrderBy(s => s.X).ThenBy(s => s.Y)])));
+            await CaptureFrame(Path.Combine(directory, "play-2g-attack-range.png"));
+        }
+        else
+        {
+            ReportSkip(directory, "play-2g-attack-range", "no commanded actor was available right after Tab armed the attack");
+        }
+
         // #303 defect #4: the pointer has not moved since the NonEmpty check above —
         // this is the exact shape Codex's review named, a cold Tab with no mouse
         // motion in between — so a preview still showing here means ArmTargeting's own
@@ -850,6 +878,101 @@ public partial class PlayMode : FightScreen
                     // from and taking its index into _menuRows — the two are populated
                     // in the same pass, so the indices agree.
                     var castable = CastableSpells(caster).ToList();
+
+                    // #302: an area spell's coverage preview, tried here first — before
+                    // anything below clicks a row and closes this menu — with the
+                    // spell menu fresh and _menuRows still lined up with castable.
+                    // The pregenerated party's one caster (the Cleric) only reaches
+                    // Spirit Guardians' Emanation at level 5 (its 3rd-level slot), so
+                    // this is best-effort coverage on whatever level --one-fight
+                    // started at, not guaranteed reach the way the upcast check below
+                    // is — see client/README.md's "Arming an attack or a spell" for
+                    // what this pins when it lands.
+                    var areaSpellIndex = castable.FindIndex(spell => spell.Save?.Area is not null);
+
+                    if (areaSpellIndex < 0)
+                    {
+                        ReportSkip(directory, "play-9-area-spell", "the caster's spell menu offered no area spell this turn");
+                    }
+                    else if (areaSpellIndex >= _menuRows.Count)
+                    {
+                        throw new InvalidOperationException(
+                            $"probe: required step 'play-9-area-spell' failed — an area spell was found at "
+                                + $"castable index {areaSpellIndex} but the drawn spell menu only has {_menuRows.Count} rows.");
+                    }
+                    else
+                    {
+                        var areaSpell = castable[areaSpellIndex];
+                        Click(_menuRows[areaSpellIndex].GetCenter());
+
+                        // A spell castable at more than one slot level opens the Slot
+                        // menu first (ChooseSpell, PlayMode.Input.cs) — take the first
+                        // slot offered so this reaches Targeting the same way a player
+                        // choosing any slot would.
+                        if (_focus.Top is PlayFocus.SlotMenu && _menuRows.Count > 0)
+                        {
+                            Click(_menuRows[0].GetCenter());
+                        }
+
+                        if (Armed is not { Kind: TargetKind.Spell, Spell: { } armedAreaSpell }
+                            || armedAreaSpell.Id != areaSpell.Id)
+                        {
+                            throw new InvalidOperationException(
+                                $"probe: required step 'play-9-area-spell' failed — the spell menu's area-spell "
+                                    + $"row ({areaSpell.Name}) did not arm that spell (armed: "
+                                    + $"{Armed?.Spell?.Name ?? "nothing"}).");
+                        }
+
+                        if (CommandedCombatant() is { } areaCaster && _encounter is { } areaEncounter)
+                        {
+                            // The caster's own square: always in range (distance zero),
+                            // and the only square an Emanation like Spirit Guardians
+                            // needs at all — its Cover answer ignores the aim point
+                            // entirely (AreaTargeting's own remarks).
+                            var hovered = areaCaster.Position;
+
+                            GetViewport().PushInput(new InputEventMouseMotion
+                            {
+                                Position = CentreOf(hovered),
+                                GlobalPosition = CentreOf(hovered),
+                            });
+
+                            var expectedArea = PlayMode.AreaCoverage(
+                                areaEncounter.Battlefield,
+                                areaCaster,
+                                armedAreaSpell,
+                                armedAreaSpell.Save!.Area!,
+                                hovered,
+                                areaEncounter.Combatants,
+                                _unseen);
+
+                            Assert(
+                                "play-9-area-spell",
+                                new ProbeExpectation.NonEmpty(
+                                    "the expected area coverage", PathAsText([.. expectedArea.Squares])),
+                                new ProbeExpectation.EqualsExpected<string>(
+                                    "the drawn area coverage",
+                                    PathAsText([.. _areaCoverage.OrderBy(s => s.X).ThenBy(s => s.Y)]),
+                                    PathAsText([.. expectedArea.Squares.OrderBy(s => s.X).ThenBy(s => s.Y)])));
+                            await CaptureFrame(Path.Combine(directory, "play-9-area-spell.png"));
+                        }
+
+                        // Back out without casting — Esc un-arms Targeting to the menu
+                        // that armed it, a second Esc closes that menu — and reopen
+                        // fresh, so the upcast check right below still finds an
+                        // unclicked SpellMenu exactly as it did before this step
+                        // existed.
+                        Press(Key.Escape);
+                        Press(Key.Escape);
+                        ClickButton("Cast");
+                        Assert("play-9-spell-menu", new ProbeExpectation.FocusIs(typeof(PlayFocus.SpellMenu)));
+
+                        // _menuRows is repopulated by the next _Draw, not by the click
+                        // itself — the same wait the very first open of this menu
+                        // relies on, above.
+                        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                    }
+
                     var upcastIndex = castable.FindIndex(spell => SlotLevelsFor(caster, spell).Count > 1);
 
                     // upcastIndex < 0 and upcastIndex >= _menuRows.Count used to share

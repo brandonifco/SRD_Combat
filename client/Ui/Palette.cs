@@ -52,4 +52,53 @@ internal static class Palette
 
     /// <summary>The translucent wash the overlays share, so the field reads underneath.</summary>
     internal static readonly Color Veil = new(Background.R, Background.G, Background.B, 0.85f);
+
+    /// <summary>
+    /// The normal-range band of an armed attack's or spell's envelope (#302) — every
+    /// square a target could stand in for the click that is about to happen to
+    /// actually reach, queried from the engine's own <c>CombatAttack.CanReach</c> /
+    /// <c>SpellDefinition.TargetRangeFeet</c>, never re-derived. A cool teal, distinct
+    /// from <see cref="PathPreview"/>'s amber (a route) and <see cref="ThreatMark"/>'s
+    /// warm red (a warning), so "you may aim here" reads as its own kind of advice.
+    /// </summary>
+    internal static readonly Color RangeNormal = new(0.30f, 0.74f, 0.66f, 0.22f);
+
+    /// <summary>
+    /// The long-range band of an armed ranged attack (#302) — beyond
+    /// <c>CombatAttack</c>'s own printed normal range but still reachable at
+    /// Disadvantage (<c>CombatAttack.IsAtLongRange</c>). <see cref="RangeNormal"/>'s own
+    /// hue at roughly half the opacity, so the two read as one continuous envelope with
+    /// a fainter far edge rather than two unrelated colours.
+    /// </summary>
+    internal static readonly Color RangeLong = new(RangeNormal.R, RangeNormal.G, RangeNormal.B, 0.11f);
+
+    /// <summary>
+    /// Exactly what an armed area spell would cover for the hovered origin (#302) —
+    /// <c>AreaTargeting.Cover</c>'s own answer, the identical call
+    /// <c>Encounter.CastSpell</c> makes to resolve the real cast. A violet — the same
+    /// family <c>LogHighlighter.ActionName</c> colours a spell's own name — so the wash
+    /// reads as "this spell" rather than competing with <see cref="RangeNormal"/>'s
+    /// cooler, weapon-flavoured advice.
+    /// </summary>
+    internal static readonly Color AreaCoverage = new(0.68f, 0.55f, 0.86f, 0.30f);
+
+    /// <summary>
+    /// A creature an armed area spell's coverage would actually catch (#302) — <see
+    /// cref="AreaCoverage"/>'s own hue at full opacity, drawn as a ring the same way the
+    /// plain "can this attack reach them" ring already is. Distinct from <see
+    /// cref="ThreatMark"/> and <see cref="MonsterColour"/> so a caught ally is never
+    /// misread as a threat.
+    /// </summary>
+    internal static readonly Color AreaCaught = new("b48ee0");
+
+    /// <summary>
+    /// The square a hovered target sits on when it is outside an armed attack's or
+    /// spell's own range (#302) — shown before the click, for the same refusal
+    /// (<c>attack.out_of_range</c>, <c>client.no_attack</c>, <c>spell.out_of_range</c>)
+    /// the click would produce after it. A muted, desaturated red: a warning, but
+    /// deliberately less saturated than <see cref="ThreatMark"/>'s so the two are never
+    /// confused — a threatened step is a cost a walk would pay, this is a target the
+    /// click could not reach at all.
+    /// </summary>
+    internal static readonly Color OutOfRange = new("a04a52");
 }
