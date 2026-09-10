@@ -2770,8 +2770,10 @@ public abstract partial class FightScreen : Node2D
 
         // Combatants hidden above the window (everyone earlier in turn order this
         // round) are named in the header itself — space that already exists regardless
-        // of any count, so it costs the log nothing new (#746 review). Combatants
-        // hidden below get their own reserved line after the rows, further down.
+        // of any count, so it costs the log nothing new. Combatants hidden below are
+        // named in DrawLog's own "COMBAT LOG" label the same way, further down — see
+        // InitiativePanelLayout's type-level remarks for why paging never reserves a
+        // line of its own for either direction (#305, round 2).
         var heading = regions.HiddenAboveCount > 0
             ? $"INITIATIVE — {regions.HiddenAboveCount} above"
             : "INITIATIVE";
@@ -2802,16 +2804,10 @@ public abstract partial class FightScreen : Node2D
             y += 19;
         }
 
-        if (regions.HiddenBelowCount > 0)
-        {
-            DrawString(
-                TextFont,
-                new Vector2(PanelLeft, y + InitiativePanelLayout.MoreLineBaselineOffset),
-                $"{regions.HiddenBelowCount} more below",
-                fontSize: 11,
-                modulate: Dim);
-        }
-
+        // Combatants hidden below get no reserved line of their own (#305, round 2 —
+        // see InitiativePanelLayout's type-level remarks): DrawLog folds this count
+        // into the "COMBAT LOG" label itself instead, exactly as this method folds
+        // HiddenAboveCount into "INITIATIVE" above.
         return regions;
     }
 
@@ -2904,10 +2900,19 @@ public abstract partial class FightScreen : Node2D
     {
         var top = UiTop + 16 + regions.LogTop;
 
+        // Combatants hidden below the initiative panel's own window are named here,
+        // in the label that already draws regardless of any count — not a new
+        // reserved line, so hiding a row never costs the log any of its own room
+        // (#305, round 2; InitiativePanelLayout's type-level remarks explain why that
+        // is what guarantees hiding a row always buys at least one log line).
+        var logHeading = regions.HiddenBelowCount > 0
+            ? $"COMBAT LOG — {regions.HiddenBelowCount} below"
+            : "COMBAT LOG";
+
         DrawString(
             TextFont,
             new Vector2(PanelLeft, top - InitiativePanelLayout.LogLabelBaselineOffset),
-            "COMBAT LOG",
+            logHeading,
             fontSize: 12,
             modulate: Dim);
 

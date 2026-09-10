@@ -12,32 +12,48 @@ namespace SRDCombat.Viewer;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The bug this closes</b>: <c>DrawLog</c> used to start its own <c>top</c> at
-/// <c>UiTop + 16 + (tokenCount * 19) + 26</c> — a warband's row count fed straight into
-/// the log's starting position with nothing capping it. Past <see
-/// cref="PanelCapacity"/> the panel now pages instead of growing further, so the log's
-/// own room stops shrinking there rather than continuing indefinitely.
+/// <b>Brandon's decision (2026-09-10, second and final round on #305): page the panel
+/// at 1920×1080 too.</b> The first round of this fix left <c>PanelCapacity</c> at 29
+/// for 1080p — above every combatant count this project fields (a party of four plus a
+/// warband of up to ten, 14 total) — so the floor never bound at the only resolution
+/// the client ships at, and the fix changed nothing a player could see. Brandon's call:
+/// keep the combat log at a stated floor even in the biggest fights by paging
+/// initiative rows there too, with the active row always visible and hiding a few rows
+/// in the busiest fights accepted as the cost.
 /// </para>
 /// <para>
-/// <b>Where this actually changes anything, and where it does not</b> (qc's review of
-/// PR #746): 1920×1080 is the only resolution this client ever runs at
-/// (<c>project.godot</c>'s <c>window/size/mode=3</c> opens fullscreen, and there is no
-/// <c>window/stretch</c> entry to make a smaller logical viewport reachable — see the
-/// <c>Fit</c> remarks below on why a live capture cannot currently show the 1280×720
-/// case). <see cref="PanelCapacity"/> there is 29, so for every combatant count this
-/// project fields today (a party of four plus a warband of up to ten, 14 total) the
-/// panel never pages and <see cref="Fit"/> returns the *same* log room this fight
-/// already had on `main` — the floor in <see cref="MinLogLines"/> does not bind at the
-/// shipping resolution for any fight this project currently generates. At 1280×720
-/// (reachable only by resizing a windowed build, or by a future capability that runs
-/// the client at that size) capacity is 10, so paging starts at 11 combatants — the
-/// same count the log's own room was already down to 20 lines under the old, uncapped
-/// arithmetic, so paging there buys at most one additional line at the threshold and
-/// nothing per additional combatant after that until the floor's own headroom is used
-/// up. **Whether that trade — and whether 1080p's own inertness — is the right call is
-/// with Brandon**; the constants below (<see cref="MinLogLines"/>,
-/// <see cref="PanelCapacity"/>'s formula) are deliberately left as measured rather than
-/// retuned pending that answer.
+/// <b>The chosen floors, and what they cost at 14 combatants</b> (measured by
+/// <c>InitiativePanelLayoutTests</c>, not estimated): <see cref="MinLogLinesAt1080p"/>
+/// (45) makes <see cref="PanelCapacity"/> exactly <b>8</b> at 1080p — a 14-combatant
+/// fight shows 8 rows, hides 6, and the log holds <b>45 lines</b> (up from 38 under the
+/// old, unpaged arithmetic — see the full count-by-count table in this class's own
+/// tests and the PR body). <see cref="MinLogLinesAt720p"/> (20, unchanged from the
+/// first round) makes capacity <b>11</b> at 720p — a 14-combatant fight there shows 11
+/// rows, hides 3, log holds 20 lines. Two different floors rather than one shared
+/// number because a single floor tuned for 1080p's 968px of room is unreachable at
+/// 720p's 608px without collapsing the panel to a single row for every fight (measured:
+/// a 45-line floor at 720p computes a capacity of 0 even hiding everyone but the active
+/// combatant caps out at 31 lines) — the task's own "or a per-height floor" allowance.
+/// </para>
+/// <para>
+/// <b>Hiding a row must never cost the log a line</b> (qc's second-round review: the
+/// first round's 720p/11 case hid a row and gained nothing, because a separate "N more
+/// below" line cost its own 16px of newly-reserved space against the 19px a hidden row
+/// frees — a one-time cost that could match or exceed the first row's own gain,
+/// depending on where the two independent roundings happened to land). The fix folds
+/// the "below" notice into the existing "COMBAT LOG" label itself
+/// (<c>FightScreen.DrawLog</c>: <c>"COMBAT LOG — N below"</c>) exactly the way the
+/// first round already folded the "above" notice into the existing "INITIATIVE"
+/// header — neither notice ever costs new vertical space, so <see cref="Fit"/>'s
+/// <c>logTop</c> is <i>always</i> <c>visibleCount * RowHeight + GapAfterPanel</c>, paged
+/// or not. That is not merely convenient: it is what makes every hidden row a strict,
+/// provable log-line gain, since hiding one more row always frees exactly <see
+/// cref="RowHeight"/> (19px), which exceeds <see cref="LogLineHeight"/> (17px) — so
+/// <c>floor((logRoom + 19) / 17) &gt; floor(logRoom / 17)</c> for every possible
+/// <c>logRoom</c>, unconditionally. No per-count exception is needed, and none is
+/// pinned as one; <c>HidingARowNeverCostsTheLogALine</c> checks all fourteen pinned
+/// counts at both heights precisely because the guarantee is structural, not
+/// coincidental.
 /// </para>
 /// <para>
 /// <b>The panel pages rather than compacting</b> ("should shrink" versus "should page"
@@ -57,49 +73,38 @@ namespace SRDCombat.Viewer;
 /// moment the active turn advanced past <see cref="PanelCapacity"/> rows into the
 /// round. <c>PanelFirstIndex</c> starts at <c>activeIndex</c> and slides back only far
 /// enough to keep the window inside the list, so every reachable window still contains
-/// the active row — see the next paragraph for the one further guarantee this needs at
-/// a degenerate window size.
+/// the active row.
 /// </para>
 /// <para>
-/// <b>The active row always shows, even where the log's own floor cannot</b> (PR #746
-/// review): a room small enough that <see cref="PanelCapacity"/> computes 0 would
-/// otherwise show no panel rows at all — including the one combatant this panel exists
-/// to always track — while still (nonsensically) claiming a windowed view. <see
-/// cref="Fit"/> therefore never shows fewer than one row once the list overflows
-/// (<c>Math.Max(1, capacity)</c>): the log's own <see cref="MinLogLines"/> promise is
-/// the one that yields at that extreme, not the active row's visibility.
+/// <b>The active row always shows, even where the log's own floor cannot</b>: a room
+/// small enough that <see cref="PanelCapacity"/> computes 0 would otherwise show no
+/// panel rows at all — including the one combatant this panel exists to always track —
+/// while still (nonsensically) claiming a windowed view. <see cref="Fit"/> therefore
+/// never shows fewer than one row once the list overflows (<c>Math.Max(1, capacity)</c>):
+/// the log's own floor is the one that yields at that extreme, not the active row's
+/// visibility.
 /// </para>
 /// <para>
-/// <b>Hidden combatants are reported on whichever side they are actually hidden</b>
-/// (PR #746 review): a window that starts at <c>activeIndex</c> can leave combatants
-/// hidden *above* it (everyone earlier in turn order this round), *below* it
-/// (everyone later), or both at once — <see cref="Regions.HiddenAboveCount"/> and
+/// <b>Hidden combatants are reported on whichever side they are actually hidden</b>: a
+/// window that starts at <c>activeIndex</c> can leave combatants hidden <i>above</i> it
+/// (everyone earlier in turn order this round), <i>below</i> it (everyone later), or
+/// both at once — <see cref="Regions.HiddenAboveCount"/> and
 /// <see cref="Regions.HiddenBelowCount"/> are reported separately rather than as one
 /// combined count, because a single "+N more" line drawn below the rows would say
 /// "more" even when every hidden combatant is actually earlier in the order, already
-/// acted, and not merely undrawn. <c>FightScreen.DrawTurnOrder</c> folds the "above"
-/// count into the existing "INITIATIVE" header (space that already exists regardless
-/// of any count, so it costs the log nothing new) and reserves a line below the rows
-/// only when <see cref="Regions.HiddenBelowCount"/> is actually positive — <see
-/// cref="PanelCapacity"/>'s own reserved budget therefore still only ever needs to
-/// account for one such line, not two.
+/// acted, and not merely undrawn.
 /// </para>
 /// <para>
 /// <b>None of these hidden rows are reachable by any input.</b> A click anywhere on
 /// the panel's own column is chrome, not a square
-/// (<c>FightScreen.PlayMode.OverOverlay</c>: <c>pixel.X >= PanelLeft - 16</c>), so it
-/// backs out of anything armed rather than acting on a hidden row; the mouse wheel
-/// during a fight is the camera's zoom, not a panel scroll (wheel scrolling exists only
-/// for the merchant's stall, <c>HandleShopWheelInput</c>). So unlike
-/// <see cref="ShopLayout"/>'s own offer list — which the wheel and Page Up/Down do
-/// scroll — this panel borrows only <c>Fit</c>'s windowing shape from that pattern, not
-/// its scrolling half: a hidden row is genuinely off-screen for the whole turn it stays
-/// hidden, recoverable only by watching the active window slide as turns pass.
-/// </para>
-/// <para>
-/// <b><see cref="MinLogLines"/> is a floor the seam is built to guarantee, not
-/// evidence that any fight today needs it</b> — see the resolution note above for
-/// which fights actually reach it.
+/// (<c>PlayMode.OverOverlay</c>: <c>pixel.X >= PanelLeft - 16</c>), so it backs out of
+/// anything armed rather than acting on a hidden row; the mouse wheel during a fight is
+/// the camera's zoom, not a panel scroll (wheel scrolling exists only for the
+/// merchant's stall, <c>HandleShopWheelInput</c>). So unlike <see cref="ShopLayout"/>'s
+/// own offer list — which the wheel and Page Up/Down do scroll — this panel borrows
+/// only <c>Fit</c>'s windowing shape from that pattern, not its scrolling half: a
+/// hidden row is genuinely off-screen for the whole turn it stays hidden, recoverable
+/// only by watching the active window slide as turns pass.
 /// </para>
 /// </remarks>
 internal static class InitiativePanelLayout
@@ -108,47 +113,20 @@ internal static class InitiativePanelLayout
     internal const float RowHeight = 19f;
 
     /// <summary>
-    /// Room for the "N more below" line under the visible panel rows, reserved only
-    /// when <see cref="Regions.HiddenBelowCount"/> would be positive — unlike <see
-    /// cref="ShopLayout.MoreLineReserve"/>, which the stall reserves unconditionally.
-    /// A fight under <see cref="PanelCapacity"/> never pages, so it pays nothing for a
-    /// line it never draws. Combatants hidden *above* the window cost nothing here at
-    /// all — they are named in the existing "INITIATIVE" header instead, which needs no
-    /// new reserve — so this is still the only line <see cref="PanelCapacity"/> budgets
-    /// for.
-    /// </summary>
-    internal const float MoreLineReserve = 16f;
-
-    /// <summary>
-    /// The y-offset below the panel's visible rows where the "N more below" line's own
-    /// baseline sits (<c>FightScreen.DrawTurnOrder</c>'s <c>y + MoreLineBaselineOffset</c>) —
-    /// named so a test reads the same value the drawing call does rather than a copied
-    /// literal (Codex review round, #710's own precedent).
-    /// </summary>
-    internal const float MoreLineBaselineOffset = 12f;
-
-    /// <summary>
-    /// A conservative estimate of the "N more below" line's own drawn height — it draws
-    /// at <c>fontSize: 11</c>, and this is that same size, used only to prove the line's
-    /// drawn rect does not run into the log's own "COMBAT LOG" label (see
-    /// <c>InitiativePanelLayoutTests.MoreLineNeverCollidesWithTheLogLabel</c>) rather
-    /// than to lay anything out.
-    /// </summary>
-    internal const float MoreLineTextHeight = 11f;
-
-    /// <summary>
-    /// The gap between the panel's rows (or the reserved "N more below" line beneath
-    /// them) and the combat log's first line — holds the "COMBAT LOG" label, which
-    /// draws <see cref="LogLabelBaselineOffset"/> above the first line. Matches the
-    /// literal <c>26</c> <c>DrawLog</c> used to add directly onto <c>tokenCount * 19</c>
-    /// before this change.
+    /// The gap between the panel's rows and the combat log's first line — holds the
+    /// "COMBAT LOG" label, which draws <see cref="LogLabelBaselineOffset"/> above the
+    /// first line. Matches the literal <c>26</c> <c>DrawLog</c> used to add directly
+    /// onto <c>tokenCount * 19</c> before #305. This is the <i>only</i> gap
+    /// <see cref="Fit"/> ever adds between the rows and the log — see the type-level
+    /// remarks on why paging never costs a second, separate reserve.
     /// </summary>
     internal const float GapAfterPanel = 26f;
 
     /// <summary>
     /// How far above the log's first content line the "COMBAT LOG" label's own baseline
-    /// sits (<c>DrawLog</c>'s <c>top - LogLabelBaselineOffset</c>) — named for the same
-    /// reason <see cref="MoreLineBaselineOffset"/> is.
+    /// sits (<c>DrawLog</c>'s <c>top - LogLabelBaselineOffset</c>) — named so a test
+    /// reads the same value the drawing call does rather than a copied literal (Codex
+    /// review round, #710's own precedent).
     /// </summary>
     internal const float LogLabelBaselineOffset = 12f;
 
@@ -159,12 +137,42 @@ internal static class InitiativePanelLayout
     internal const float LogFooterMargin = 20f;
 
     /// <summary>
-    /// The log's guaranteed floor, in lines, at every combatant count and both named
-    /// resolutions (1920×1080, 1280×720) — the number <see cref="PanelCapacity"/> is
-    /// solved backwards from. See the type-level remarks for which of those two
-    /// resolutions any fight today actually reaches.
+    /// The log's guaranteed floor at 1920×1080, in lines — chosen (PR #746, round 2) so
+    /// that <see cref="PanelCapacity"/> computes 8 there: a 14-combatant fight, the
+    /// worst case this project fields, shows 8 rows, hides 6, and holds the log at 45
+    /// lines (up from 38 under the pre-#305 arithmetic). See the type-level remarks for
+    /// why 1080p and 720p carry different floors.
     /// </summary>
-    internal const int MinLogLines = 20;
+    internal const int MinLogLinesAt1080p = 45;
+
+    /// <summary>
+    /// The log's guaranteed floor at 1280×720, in lines — unchanged from #305's first
+    /// round. Kept lower than <see cref="MinLogLinesAt1080p"/> because 720p has far
+    /// less room to begin with (608px below the panel's header against 1080p's 968px):
+    /// a 45-line floor there computes a capacity of 0, collapsing every fight to a
+    /// single visible row for a ceiling of only 31 lines even then — worse for every
+    /// fight, not better. <see cref="PanelCapacity"/> at 720p with this floor is 11.
+    /// </summary>
+    internal const int MinLogLinesAt720p = 20;
+
+    /// <summary>
+    /// The room, in pixels, above which <see cref="MinLogLinesAt1080p"/> applies rather
+    /// than <see cref="MinLogLinesAt720p"/> — 1080p's own <c>roomBelowHeader</c> is 968,
+    /// 720p's is 608, so 800 sits cleanly between the two named resolutions this seam
+    /// is tuned for. This project tests and ships at exactly those two heights (see
+    /// every other layout seam's own <c>ScreenHeights</c> theory data); a continuous
+    /// formula scaling the floor with arbitrary room was not built because there is no
+    /// third resolution to tune it against.
+    /// </summary>
+    internal const float FloorThresholdRoom = 800f;
+
+    /// <summary>
+    /// The log's guaranteed floor, in lines, for a given <paramref name="roomBelowHeader"/> —
+    /// <see cref="MinLogLinesAt1080p"/> above <see cref="FloorThresholdRoom"/>,
+    /// <see cref="MinLogLinesAt720p"/> at or below it.
+    /// </summary>
+    internal static int LogLinesFloor(float roomBelowHeader) =>
+        roomBelowHeader > FloorThresholdRoom ? MinLogLinesAt1080p : MinLogLinesAt720p;
 
     /// <summary>
     /// The panel's visible rows and the log's own top and line budget, for one frame —
@@ -182,18 +190,21 @@ internal static class InitiativePanelLayout
     /// </param>
     /// <param name="HiddenBelowCount">
     /// Combatants later in turn order than the visible window's own end, left off it —
-    /// 0 when the window reaches the list's end. Reported in the reserved "N more
-    /// below" line, drawn only when this is positive.
+    /// 0 when the window reaches the list's end. Reported in the "COMBAT LOG" label
+    /// itself, not a reserved line — see the type-level remarks on why paging must
+    /// never cost a separate reserve.
     /// </param>
     /// <param name="LogTop">
     /// Where the combat log's own content starts, measured from the same origin
     /// <c>roomBelowHeader</c> in <see cref="Fit"/> was measured from (the panel's first
-    /// row — <c>UiTop + 16</c> in <c>FightScreen</c>).
+    /// row — <c>UiTop + 16</c> in <c>FightScreen</c>). Always exactly
+    /// <c>PanelVisibleCount * RowHeight + GapAfterPanel</c>, whether or not anything is
+    /// hidden.
     /// </param>
     /// <param name="LogLines">
     /// How many log lines fit below <see cref="LogTop"/> — never less than
-    /// <see cref="MinLogLines"/> for any window large enough for at least one panel row
-    /// through <see cref="PanelCapacity"/> to hold that promise; at a window smaller
+    /// <see cref="LogLinesFloor"/> for any window large enough for at least one panel
+    /// row through <see cref="PanelCapacity"/> to hold that promise; at a window smaller
     /// than that, the active row's own visibility takes priority instead (see the
     /// type-level remarks).
     /// </param>
@@ -207,16 +218,32 @@ internal static class InitiativePanelLayout
 
     /// <summary>
     /// The most panel rows <see cref="Fit"/> will page down to for the given room,
-    /// leaving <see cref="MinLogLines"/> lines plus every fixed margin clear beneath
+    /// leaving <see cref="LogLinesFloor"/> lines plus every fixed margin clear beneath
     /// them — not a floor on how few rows ever show (see <see cref="Fit"/>'s own
     /// <c>Math.Max(1, …)</c> for that).
     /// </summary>
     internal static int PanelCapacity(float roomBelowHeader)
     {
-        var reserved = MoreLineReserve + GapAfterPanel + LogFooterMargin + (MinLogLines * LogLineHeight);
+        var floor = LogLinesFloor(roomBelowHeader);
+        var reserved = GapAfterPanel + LogFooterMargin + (floor * LogLineHeight);
         var available = roomBelowHeader - reserved;
 
         return Math.Max(0, (int)(available / RowHeight));
+    }
+
+    /// <summary>
+    /// The log's own line count for a panel showing exactly <paramref
+    /// name="visibleCount"/> rows — the pure function <see cref="Fit"/>'s own
+    /// <c>logLines</c> line is, exposed so a test can compute the "one more row shown"
+    /// counterfactual <see cref="Fit"/>'s hidden-row guarantee rests on without
+    /// duplicating the arithmetic as a second, independent copy.
+    /// </summary>
+    internal static int LogLinesForVisibleCount(float roomBelowHeader, int visibleCount)
+    {
+        var logTop = (visibleCount * RowHeight) + GapAfterPanel;
+        var logRoom = roomBelowHeader - logTop - LogFooterMargin;
+
+        return Math.Max(0, (int)(logRoom / LogLineHeight));
     }
 
     /// <summary>
@@ -253,7 +280,7 @@ internal static class InitiativePanelLayout
         {
             // However small the window, the active combatant's own row always shows —
             // showing zero rows (the one this panel exists to track included) is worse
-            // than a log that falls short of MinLogLines at a window this degenerate.
+            // than a log that falls short of LogLinesFloor at a window this degenerate.
             visibleCount = Math.Max(1, capacity);
 
             var clampedActive = Math.Clamp(activeIndex, 0, combatantCount - 1);
@@ -262,13 +289,13 @@ internal static class InitiativePanelLayout
             hiddenBelow = combatantCount - (firstIndex + visibleCount);
         }
 
-        // The "N more below" line's own room is reserved only when it is actually
-        // going to draw. Combatants hidden above cost nothing here — see the
-        // type-level remarks on why that count is reported in the header instead.
-        var moreLineSpace = hiddenBelow > 0 ? MoreLineReserve : 0f;
-        var logTop = (visibleCount * RowHeight) + moreLineSpace + GapAfterPanel;
-        var logRoom = roomBelowHeader - logTop - LogFooterMargin;
-        var logLines = Math.Max(0, (int)(logRoom / LogLineHeight));
+        // No separate reserve for either hidden direction: "above" is named in the
+        // existing "INITIATIVE" header and "below" in the existing "COMBAT LOG" label
+        // (FightScreen.DrawTurnOrder / DrawLog), so LogTop is always exactly the rows
+        // plus the one fixed gap — see the type-level remarks on why this is what makes
+        // every hidden row a guaranteed log-line gain rather than merely a usual one.
+        var logTop = (visibleCount * RowHeight) + GapAfterPanel;
+        var logLines = LogLinesForVisibleCount(roomBelowHeader, visibleCount);
 
         return new Regions(firstIndex, visibleCount, hiddenAbove, hiddenBelow, logTop, logLines);
     }

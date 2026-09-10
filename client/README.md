@@ -144,35 +144,59 @@ why. A key is a property of its action rather than of its place in the row, so `
 Dodge whenever Dodge is offered and never anything else.
 
 **The initiative panel pages rather than squeezing the log, past a capacity worked out
-from the window's own height** (#305): the panel and the log share one column, and the
-panel used to win it outright — every combatant it drew pushed the log's own start
-down, with nothing capping how far. `InitiativePanelLayout.Fit` (the `ShopLayout.Fit`
-style of #704/#710, cited by #727) caps that: past its own computed capacity the panel
-shows a window of rows instead of the whole list, the window always starting at the
-active combatant so whoever is acting is never hidden, sliding back only far enough to
-stay inside the list once the active turn nears its end. Combatants earlier in turn
-order than the window are named in the "INITIATIVE" header itself ("2 above"); those
-later are named in a reserved line below the rows ("2 more below") — the two are
-tracked and reported separately, since a window that starts mid-list can hide
-combatants on both sides at once, and a single combined count could not say which. None
-of these hidden rows are reachable by any input during a fight: a click anywhere on the
-panel's own column is chrome, not a square, and the mouse wheel is the camera's zoom,
-not a panel scroll — so unlike the merchant's stall, which the wheel and Page Up/Down do
-scroll, this panel borrows only `Fit`'s windowing shape from that pattern, not its
-scrolling half.
+from the window's own height, at 1920×1080 too** (#305, Brandon's decision on the
+round-2 review, 2026-09-10): the panel and the log share one column, and the panel used
+to win it outright — every combatant it drew pushed the log's own start down, with
+nothing capping how far. `InitiativePanelLayout.Fit` (the `ShopLayout.Fit` style of
+#704/#710, cited by #727) caps that: past its own computed capacity the panel shows a
+window of rows instead of the whole list, the window always starting at the active
+combatant so whoever is acting is never hidden, sliding back only far enough to stay
+inside the list once the active turn nears its end — hiding a few rows in the busiest
+fights is accepted as the cost of a log that never shrinks below its own floor.
+Combatants earlier in turn order than the window are named in the "INITIATIVE" header
+itself ("2 above"); those later are named in the "COMBAT LOG" label itself ("2 below")
+— the two are tracked and reported separately, since a window that starts mid-list can
+hide combatants on both sides at once and a single combined count could not say which.
+Neither notice reserves a line of its own: both fold into text that already draws
+regardless of any count, which is what guarantees hiding a row always buys the log at
+least one more line rather than occasionally buying nothing (a first-round bug: a
+separately reserved "more below" line's own 16px could cost as much as the 19px a
+hidden row frees, and once two independent roundings landed unluckily, hiding a row
+gained the log nothing at all). None of these hidden rows are reachable by any input
+during a fight: a click anywhere on the panel's own column is chrome, not a square, and
+the mouse wheel is the camera's zoom, not a panel scroll — so unlike the merchant's
+stall, which the wheel and Page Up/Down do scroll, this panel borrows only `Fit`'s
+windowing shape from that pattern, not its scrolling half.
 
-**Where this actually changes what a fight looks like, and where it does not.** The log
-keeps a floor of 20 lines below the panel's window, but 1920×1080 is the only resolution
-this client currently runs at (`project.godot`'s `window/size/mode=3` opens fullscreen),
-and the panel's own capacity there — 29 — is above every combatant count this project
-fields today, a party of four plus a warband of up to ten. So at the resolution anyone
-actually plays at, the panel never pages for a fight this size, and the log's room is
-unchanged from before this fix. At 1280×720, reachable only by resizing a windowed
-build, capacity is 10, so an eleven-plus-combatant fight does page — buying at most one
-additional log line at the threshold and none beyond it, since the log was already down
-to the 20-line floor there under the old, uncapped arithmetic. Whether that trade, and
-whether 1080p's own inertness, are the right shape for this panel is an open design
-question, not one this fix settled on its own.
+**The log's floor is 45 lines at 1920×1080, 20 at 1280×720** — two different numbers
+because a single floor tuned for 1080p's 968px of room below the panel's header is
+unreachable at 720p's 608px without collapsing every fight to one visible row (measured:
+a 45-line floor there computes a capacity of 0, and even hiding everyone but the active
+combatant tops out at 31 lines — worse for every fight, not better). Capacity works out
+to 8 rows at 1080p, 11 at 720p; a 14-combatant fight — a party of four plus a warband of
+ten, the worst case this project fields — shows 8 rows and holds the log at 45 lines at
+1080p (up from 38 before #305), and shows 11 rows at 20 lines at 720p:
+
+| Combatants | 1080p shown | 1080p hidden | 1080p log lines | 720p shown | 720p hidden | 720p log lines |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 0 | 53 | 1 | 0 | 31 |
+| 4 | 4 | 0 | 49 | 4 | 0 | 28 |
+| 8 | 8 | 0 | 45 | 8 | 0 | 24 |
+| 11 | 8 | 3 | 45 | 11 | 0 | 20 |
+| 14 | 8 | 6 | 45 | 11 | 3 | 20 |
+
+(The full 1–14 table is `InitiativePanelLayoutTests.ExactTableForBothResolutions`,
+pinned row by row.) Once a fight's combatant count passes its resolution's own capacity,
+the log's line count stops moving entirely — every further combatant is absorbed by the
+panel's own hidden count instead, which is the "no longer shrinks as the initiative list
+grows" acceptance criterion made exact rather than merely bounded below.
+
+**Verifying this at 1280×720 with a live capture is not currently possible.** The
+client's window opens fullscreen (`project.godot`'s `window/size/mode=3`, with no
+`window/stretch` entry to make a smaller logical viewport reachable), so a `--probe` run
+always reports 1920×1080 regardless of any `--resolution` argument passed alongside it.
+Closing that gap — a `--window-size` argument, or a temporary non-fullscreen mode for
+captures — is #727's, not filed again here.
 
 The log is colour-coded: party names blue, monster names orange, and the named thing
 being used — a weapon, a spell, a feature, a mastery property — violet, with **damage in
