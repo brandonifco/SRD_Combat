@@ -2752,8 +2752,6 @@ public abstract partial class FightScreen : Node2D
             new Rect2(PanelLeft - 16, 8, ScreenWidth - PanelLeft + 8, ScreenHeight - 16),
             Veil);
 
-        DrawString(TextFont, new Vector2(PanelLeft, UiTop - 8), "INITIATIVE", fontSize: 12, modulate: Dim);
-
         var activeIndex = 0;
 
         for (var i = 0; i < tokens.Count; i++)
@@ -2770,15 +2768,29 @@ public abstract partial class FightScreen : Node2D
         // longer push the combat log's own top further down with every combatant added.
         var regions = InitiativePanelLayout.Fit(ScreenHeight - (UiTop + 16), tokens.Count, activeIndex);
 
+        // Combatants hidden above the window (everyone earlier in turn order this
+        // round) are named in the header itself — space that already exists regardless
+        // of any count, so it costs the log nothing new (#746 review). Combatants
+        // hidden below get their own reserved line after the rows, further down.
+        var heading = regions.HiddenAboveCount > 0
+            ? $"INITIATIVE — {regions.HiddenAboveCount} above"
+            : "INITIATIVE";
+
+        DrawString(TextFont, new Vector2(PanelLeft, UiTop - 8), heading, fontSize: 12, modulate: Dim);
+
         var y = UiTop + 16;
 
         for (var i = regions.PanelFirstIndex; i < regions.PanelFirstIndex + regions.PanelVisibleCount; i++)
         {
             var token = tokens[i];
 
-            // A combatant the fog hides keeps its row — initiative order is knowledge
-            // the party has from the fight itself — but its state is withheld, because
-            // hit points read through a wall would be the panel scouting for free.
+            // A combatant the fog hides keeps its row *while its row is drawn at all* —
+            // initiative order is knowledge the party has from the fight itself, but
+            // its state is withheld, because hit points read through a wall would be
+            // the panel scouting for free. A combatant the panel has paged out instead
+            // (HiddenAboveCount/HiddenBelowCount above) has no row regardless of fog —
+            // paging and fog withhold different things, and only fog's withholding is
+            // this flag's concern.
             var hidden = unseen?.Contains(token.Id) == true && !token.IsDead;
             var row = RowFor(token, active: token.Id == activeId, hidden);
 
@@ -2790,16 +2802,12 @@ public abstract partial class FightScreen : Node2D
             y += 19;
         }
 
-        if (regions.PanelHiddenCount > 0)
+        if (regions.HiddenBelowCount > 0)
         {
-            // The active row is always inside the window InitiativePanelLayout.Fit
-            // returns (it starts the window at the active index), so this line never
-            // needs to say which combatant is missing — the one the panel exists to
-            // show is never among them.
             DrawString(
                 TextFont,
-                new Vector2(PanelLeft, y + 12),
-                $"+{regions.PanelHiddenCount} more",
+                new Vector2(PanelLeft, y + InitiativePanelLayout.MoreLineBaselineOffset),
+                $"{regions.HiddenBelowCount} more below",
                 fontSize: 11,
                 modulate: Dim);
         }
@@ -2896,7 +2904,12 @@ public abstract partial class FightScreen : Node2D
     {
         var top = UiTop + 16 + regions.LogTop;
 
-        DrawString(TextFont, new Vector2(PanelLeft, top - 12), "COMBAT LOG", fontSize: 12, modulate: Dim);
+        DrawString(
+            TextFont,
+            new Vector2(PanelLeft, top - InitiativePanelLayout.LogLabelBaselineOffset),
+            "COMBAT LOG",
+            fontSize: 12,
+            modulate: Dim);
 
         // The log appends and never replaces — the one thing GoldBox's got wrong and this
         // project committed to in Phase 3. The window shows the tail of what has happened
