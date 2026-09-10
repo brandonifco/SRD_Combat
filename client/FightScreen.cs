@@ -2733,7 +2733,12 @@ public abstract partial class FightScreen : Node2D
             : Math.Max(0.25f, MathF.Floor(fits * 4f) / 4f);
     }
 
-    internal void DrawTurnOrder(
+    /// <summary>
+    /// Draws the initiative panel and returns the <see cref="InitiativePanelLayout.Regions"/>
+    /// it drew to — the caller passes the same value into <see cref="DrawLog"/> so the
+    /// two never compute the boundary between them two different ways (#305).
+    /// </summary>
+    internal InitiativePanelLayout.Regions DrawTurnOrder(
         IReadOnlyList<Token> tokens,
         string? activeId,
         IReadOnlySet<string>? unseen = null)
@@ -2747,15 +2752,47 @@ public abstract partial class FightScreen : Node2D
             new Rect2(PanelLeft - 16, 8, ScreenWidth - PanelLeft + 8, ScreenHeight - 16),
             Veil);
 
-        DrawString(TextFont, new Vector2(PanelLeft, UiTop - 8), "INITIATIVE", fontSize: 12, modulate: Dim);
+        var activeIndex = 0;
+
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            if (tokens[i].Id == activeId)
+            {
+                activeIndex = i;
+                break;
+            }
+        }
+
+        // #305: the panel no longer draws every row unconditionally — past
+        // InitiativePanelLayout.PanelCapacity it pages, so a big enough warband can no
+        // longer push the combat log's own top further down with every combatant added.
+        var regions = InitiativePanelLayout.Fit(ScreenHeight - (UiTop + 16), tokens.Count, activeIndex);
+
+        // Combatants hidden above the window (everyone earlier in turn order this
+        // round) are named in the header itself — space that already exists regardless
+        // of any count, so it costs the log nothing new. Combatants hidden below are
+        // named in DrawLog's own "COMBAT LOG" label the same way, further down — see
+        // InitiativePanelLayout's type-level remarks for why paging never reserves a
+        // line of its own for either direction (#305, round 2).
+        var heading = regions.HiddenAboveCount > 0
+            ? $"INITIATIVE — {regions.HiddenAboveCount} above"
+            : "INITIATIVE";
+
+        DrawString(TextFont, new Vector2(PanelLeft, UiTop - 8), heading, fontSize: 12, modulate: Dim);
 
         var y = UiTop + 16;
 
-        foreach (var token in tokens)
+        for (var i = regions.PanelFirstIndex; i < regions.PanelFirstIndex + regions.PanelVisibleCount; i++)
         {
-            // A combatant the fog hides keeps its row — initiative order is knowledge
-            // the party has from the fight itself — but its state is withheld, because
-            // hit points read through a wall would be the panel scouting for free.
+            var token = tokens[i];
+
+            // A combatant the fog hides keeps its row *while its row is drawn at all* —
+            // initiative order is knowledge the party has from the fight itself, but
+            // its state is withheld, because hit points read through a wall would be
+            // the panel scouting for free. A combatant the panel has paged out instead
+            // (HiddenAboveCount/HiddenBelowCount above) has no row regardless of fog —
+            // paging and fog withhold different things, and only fog's withholding is
+            // this flag's concern.
             var hidden = unseen?.Contains(token.Id) == true && !token.IsDead;
             var row = RowFor(token, active: token.Id == activeId, hidden);
 
@@ -2766,6 +2803,12 @@ public abstract partial class FightScreen : Node2D
 
             y += 19;
         }
+
+        // Combatants hidden below get no reserved line of their own (#305, round 2 —
+        // see InitiativePanelLayout's type-level remarks): DrawLog folds this count
+        // into the "COMBAT LOG" label itself instead, exactly as this method folds
+        // HiddenAboveCount into "INITIATIVE" above.
+        return regions;
     }
 
     /// <summary>One panel row, exactly as <see cref="DrawTurnOrder"/> draws it and nothing it works out again.</summary>
@@ -2848,11 +2891,30 @@ public abstract partial class FightScreen : Node2D
                 .Split(", ", StringSplitOptions.RemoveEmptyEntries)
                 .Where(condition => Array.IndexOf(ImpliedByDowned, condition) < 0));
 
-    protected void DrawLog(IReadOnlyList<CombatStep> log, int count, int tokenCount)
+    /// <summary>
+    /// Draws the combat log into the region <paramref name="regions"/> names — the same
+    /// value <see cref="DrawTurnOrder"/> just returned for this frame, so the log's own
+    /// top is never a second, independent piece of arithmetic (#305).
+    /// </summary>
+    internal void DrawLog(IReadOnlyList<CombatStep> log, int count, InitiativePanelLayout.Regions regions)
     {
-        var top = UiTop + 16 + (tokenCount * 19) + 26;
+        var top = UiTop + 16 + regions.LogTop;
 
-        DrawString(TextFont, new Vector2(PanelLeft, top - 12), "COMBAT LOG", fontSize: 12, modulate: Dim);
+        // Combatants hidden below the initiative panel's own window are named here,
+        // in the label that already draws regardless of any count — not a new
+        // reserved line, so hiding a row never costs the log any of its own room
+        // (#305, round 2; InitiativePanelLayout's type-level remarks explain why that
+        // is what guarantees hiding a row always buys at least one log line).
+        var logHeading = regions.HiddenBelowCount > 0
+            ? $"COMBAT LOG — {regions.HiddenBelowCount} below"
+            : "COMBAT LOG";
+
+        DrawString(
+            TextFont,
+            new Vector2(PanelLeft, top - InitiativePanelLayout.LogLabelBaselineOffset),
+            logHeading,
+            fontSize: 12,
+            modulate: Dim);
 
         // The log appends and never replaces — the one thing GoldBox's got wrong and this
         // project committed to in Phase 3. The window shows the tail of what has happened
@@ -2863,7 +2925,11 @@ public abstract partial class FightScreen : Node2D
         // sentence, the cut reliably removed the one thing the reader needed: "d20 11+5
         // = 16 vs AC 18 — …" said everything except the answer (#161). A client whose
         // whole job is to print what the engine explained cannot afford that.
-        var room = Math.Max(0, (ScreenHeight - top - 20) / 17);
+        //
+        // The room itself comes from InitiativePanelLayout.Fit rather than being
+        // recomputed here from tokenCount (#305): it no longer shrinks without bound as
+        // the initiative list grows, because the panel above pages once it would.
+        var room = regions.LogLines;
 
         // Held back to whatever the animation has actually shown, so the narration and
         // the picture of it land together.

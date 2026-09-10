@@ -143,6 +143,78 @@ Prone. The status line above still reads out what is left, so a row that has shr
 why. A key is a property of its action rather than of its place in the row, so `D` is
 Dodge whenever Dodge is offered and never anything else.
 
+**The initiative panel pages rather than squeezing the log, past a capacity worked out
+from the window's own height, at 1920×1080 too** (#305, Brandon's decision on the
+round-2 review, 2026-09-10): the panel and the log share one column, and the panel used
+to win it outright — every combatant it drew pushed the log's own start down, with
+nothing capping how far. `InitiativePanelLayout.Fit` (the `ShopLayout.Fit` style of
+#704/#710, cited by #727) caps that: past its own computed capacity the panel shows a
+window of rows instead of the whole list, the window always starting at the active
+combatant so whoever is acting is never hidden, sliding back only far enough to stay
+inside the list once the active turn nears its end — hiding a few rows in the busiest
+fights is accepted as the cost of a log that never shrinks below its own floor.
+Combatants earlier in turn order than the window are named in the "INITIATIVE" header
+itself ("2 above"); those later are named in the "COMBAT LOG" label itself ("2 below")
+— the two are tracked and reported separately, since a window that starts mid-list can
+hide combatants on both sides at once and a single combined count could not say which.
+Neither notice reserves a line of its own: both fold into text that already draws
+regardless of any count, which is what guarantees hiding a row always buys the log at
+least one more line rather than occasionally buying nothing (a first-round bug: a
+separately reserved "more below" line's own 16px could cost as much as the 19px a
+hidden row frees, and once two independent roundings landed unluckily, hiding a row
+gained the log nothing at all). None of these hidden rows are reachable by any input
+during a fight: a click anywhere on the panel's own column is chrome, not a square, and
+the mouse wheel is the camera's zoom, not a panel scroll — so unlike the merchant's
+stall, which the wheel and Page Up/Down do scroll, this panel borrows only `Fit`'s
+windowing shape from that pattern, not its scrolling half.
+
+**The panel shows 8 rows at both resolutions** (`InitiativePanelLayout.MinRows`) — a
+single constant now, not a per-height floor. An earlier version of this fix picked the
+log's floor by a hard threshold on window height and derived the row count from that,
+which turned out to be badly non-monotone: resizing the window by one pixel could swing
+capacity from 21 rows to 1 (a second review found this before it shipped). The reason
+runs deeper than a threshold picked wrong — showing one more row always frees 19px of
+panel space, and a log line costs 17px, so *any* formula that lets the row count climb
+smoothly as the window grows is provably forced to cost the log a line at the climb
+itself, however the threshold is chosen. The fix is to not attempt the climb inside any
+room a real window can reach: the row count is the flat constant 8 everywhere from just
+below the smallest reachable window up through arbitrarily large ones, so there is
+nothing left to dip.
+
+Because 1080p and 720p now share one row count, they no longer share the same log floor
+— 1080p's taller window turns those 8 rows into more log room than 720p's shorter one
+does. A 14-combatant fight — a party of four plus a warband of ten, the worst case this
+project fields — shows 8 rows and holds the log at 45 lines at 1080p (unchanged from the
+threshold-based version, up from 38 before #305) and 24 lines at 720p (more than that
+version's own 20, since 720p no longer pages as early: its previous count of 11 rows was
+never a deliberate choice, only the old per-height floor constant working out to that
+number incidentally):
+
+| Combatants | 1080p shown | 1080p hidden | 1080p log lines | 720p shown | 720p hidden | 720p log lines |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 0 | 53 | 1 | 0 | 31 |
+| 4 | 4 | 0 | 49 | 4 | 0 | 28 |
+| 8 | 8 | 0 | 45 | 8 | 0 | 24 |
+| 11 | 8 | 3 | 45 | 8 | 3 | 24 |
+| 14 | 8 | 6 | 45 | 8 | 6 | 24 |
+
+(The full 1–14 table is `InitiativePanelLayoutTests.ExactTableForBothResolutions`,
+pinned row by row; two further rooms cited in review, 848px and 912px, are pinned
+directly in `ExactValuesAtTheCitedIntermediateRooms`.) Once a fight's combatant count
+passes 8, the log's line count stops moving entirely — every further combatant is
+absorbed by the panel's own hidden count instead, which is the "no longer shrinks as
+the initiative list grows" acceptance criterion made exact rather than merely bounded
+below, and `InitiativePanelLayoutTests.CapacityAndLogLinesAreMonotoneInRoom` sweeps
+every window height from well below 720p to well above 1080p checking that neither
+value ever drops as the window grows.
+
+**Verifying this at 1280×720 with a live capture is not currently possible.** The
+client's window opens fullscreen (`project.godot`'s `window/size/mode=3`, with no
+`window/stretch` entry to make a smaller logical viewport reachable), so a `--probe` run
+always reports 1920×1080 regardless of any `--resolution` argument passed alongside it.
+Closing that gap — a `--window-size` argument, or a temporary non-fullscreen mode for
+captures — is #727's, not filed again here.
+
 The log is colour-coded: party names blue, monster names orange, and the named thing
 being used — a weapon, a spell, a feature, a mastery property — violet, with **damage in
 bright red and a miss in yellow**, the two outcomes a reader scans for. A round beginning
@@ -183,8 +255,10 @@ reaches; the **fog of war** shadows every square no party member can see (`Party
 in `Game`: a wall blocks the line, sight is the whole party's union, and Unconscious or
 Blinded eyes count for nothing), drawn smooth so its edge feathers rather than steps. A
 monster standing in the fog is invisible — no token, no ring, no hover hint, no Tab
-stop, and the initiative panel shows its row as `unseen` — until someone's line to it
-clears. All of it is advice, not rules — a click anywhere is sent to the engine, and **a
+stop, and, while its row is inside the initiative panel's own visible window (#305: a
+row the panel has paged out has no row drawn at all, fog or no fog), that row shows
+`unseen` — until someone's line to it clears. All of it is advice, not rules — a click
+anywhere is sent to the engine, and **a
 refusal is shown with its code** rather than swallowed, because a refusal is the engine
 explaining a rule. The second row is filtered by what the character *has*, which is
 display: a shown button can still be refused, and absent is honest where inert would not
