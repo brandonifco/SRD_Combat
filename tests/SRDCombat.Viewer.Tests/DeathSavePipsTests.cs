@@ -127,7 +127,49 @@ public class DeathSavePipsTests
         Assert.Equal("2/3 successes, 1/3 failures", pips.SummaryText());
 
         var row = FightScreen.RowFor(token, active: false, hidden: false);
+
+        // The engine's own zero-hit-point handling already gave this combatant
+        // Unconscious and Prone (Combatant.AddCondition adds Prone alongside it), and
+        // Combatant.Conditions synthesises Incapacitated on top — all three implied by
+        // "Downed" and filtered by RowFor's ConditionsBeyondDowned, so the state carries
+        // none of them and nothing survives to print here (#743 review).
         Assert.Equal("Downed — 2/3 successes, 1/3 failures", row.State);
+    }
+
+    /// <summary>
+    /// #743 review: a downed combatant can carry a condition Downed does not imply and
+    /// nothing else clears — <c>Encounter.EndBrokenGrapples</c> only ends a grapple from
+    /// the grappler's own side (its death, incapacity or the pair moving out of range),
+    /// never because the grappled creature itself went down — so a downed, still-Grappled
+    /// fighter is a real state the panel must keep saying, not silently drop the moment
+    /// "Downed" starts covering the row instead of "X/Y hp — Grappled".
+    /// </summary>
+    [Fact]
+    public void DownedCombatant_KeepsAConditionDownedDoesNotImply()
+    {
+        var combatant = FightTestData.Combatant(
+            "Grappled Downed Fighter",
+            stats: FightTestData.Stats(maximumHitPoints: 20, diesAtZeroHitPoints: false));
+
+        DamageRules.Apply(combatant, 20, DamageType.Slashing);
+        Assert.True(combatant.IsDying);
+
+        // Applied after going down, the way a grappler holding on through a knockdown
+        // would still have it — Grappled is not one of Downed's own implied conditions.
+        combatant.AddCondition(ConditionType.Grappled);
+
+        var rolls = new ScriptedD20(3); // one failure, still Downed and not yet Stable.
+        DeathSaveRules.Roll(rolls, combatant);
+
+        var token = FightScreen.TokenFrom(combatant, Labels.For([combatant]));
+        Assert.Contains("Grappled", token.Conditions);
+
+        var row = FightScreen.RowFor(token, active: false, hidden: false);
+
+        Assert.Equal("Downed — Grappled — 0/3 successes, 1/3 failures", row.State);
+        Assert.DoesNotContain("Unconscious", row.State, StringComparison.Ordinal);
+        Assert.DoesNotContain("Prone", row.State, StringComparison.Ordinal);
+        Assert.DoesNotContain("Incapacitated", row.State, StringComparison.Ordinal);
     }
 
     [Fact]

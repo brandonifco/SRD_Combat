@@ -2808,15 +2808,45 @@ public abstract partial class FightScreen : Node2D
         var state = band switch
         {
             HealthBand.Dead => "dead",
-            HealthBand.Downed => "Downed — " + DeathSavePips
-                .For(token.DeathSaveSuccesses, token.DeathSaveFailures, token.IsStable)
-                .SummaryText(),
-            _ => $"{token.HitPoints}/{token.MaximumHitPoints} hp" +
-                (token.Conditions.Length > 0 ? $" — {token.Conditions}" : string.Empty),
+            HealthBand.Downed => "Downed"
+                + AppendConditions(ConditionsBeyondDowned(token.Conditions))
+                + " — " + DeathSavePips
+                    .For(token.DeathSaveSuccesses, token.DeathSaveFailures, token.IsStable)
+                    .SummaryText(),
+            _ => $"{token.HitPoints}/{token.MaximumHitPoints} hp" + AppendConditions(token.Conditions),
         };
 
         return new PanelRow(prefix, identityColour, state, stateColour);
     }
+
+    /// <summary>" — {conditions}", or nothing when there are none to append.</summary>
+    private static string AppendConditions(string conditions) =>
+        conditions.Length > 0 ? $" — {conditions}" : string.Empty;
+
+    /// <summary>
+    /// Every condition read minus the three <c>Downed</c> already implies and the
+    /// state text says outright: Unconscious and Prone (a downed, non-instantly-dying
+    /// creature always carries both — <c>DamageRules.ApplyToDyingCreature</c>/its
+    /// standing counterpart adds Unconscious, and <c>Combatant.AddCondition</c> adds
+    /// Prone with it, "per its own definition"), and Incapacitated (synthesised by
+    /// <c>Combatant.Conditions</c> whenever a <c>BringsIncapacitated</c> condition is
+    /// present — Unconscious is one). Dropping all three there and stopping is what a
+    /// bare "Downed" state used to do, silently: a Grappled, Restrained or
+    /// Poisoned-with-a-duration downed combatant lost the one readout that answers
+    /// "can the Cleric actually reach them", because <c>Encounter.EndBrokenGrapples</c>
+    /// and every other break-condition sweep clears a rider only from the *other* side
+    /// of it (the grappler's death, incapacity or range) — a downed creature keeps
+    /// whatever else was on it (#743 review).
+    /// </summary>
+    private static readonly string[] ImpliedByDowned = ["Unconscious", "Prone", "Incapacitated"];
+
+    private static string ConditionsBeyondDowned(string conditions) => conditions.Length == 0
+        ? conditions
+        : string.Join(
+            ", ",
+            conditions
+                .Split(", ", StringSplitOptions.RemoveEmptyEntries)
+                .Where(condition => Array.IndexOf(ImpliedByDowned, condition) < 0));
 
     protected void DrawLog(IReadOnlyList<CombatStep> log, int count, int tokenCount)
     {
