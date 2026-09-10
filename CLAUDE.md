@@ -70,6 +70,12 @@ Not required reading — linked so you never have to search for them.
   — the pre-F3 outside review (Codex, at `e253c9d`), every claim adjudicated against
   the code, and the six-track response plan with its issue manifest and the decisions
   that are Brandon's.
+- [`docs/2026-09-10-monster-behaviour-profiles-design.md`](docs/2026-09-10-monster-behaviour-profiles-design.md)
+  — monster behaviour profiles, morale and telegraphed intent: thirteen decisions with their
+  reasoning and what each rejected. Settles how behaviour is structured, assigned and made
+  legible; the roster of profiles itself is deliberately still open. Its §4 census is why
+  leadership is curated rather than derived from CR, and its D13 reconciles the design with
+  the `KillLeader` objective the engine already ships.
 - [`docs/2026-08-11-design-and-development-plan.md`](docs/2026-08-11-design-and-development-plan.md)
   — the original design doc: kickoff decisions, the architecture, why it diverges from
   `5eGoldBox`.

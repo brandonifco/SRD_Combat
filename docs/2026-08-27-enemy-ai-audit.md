@@ -186,6 +186,16 @@ Stated plainly, because an audit that only lists absences is not an audit.
 
 Questions, not proposals — per the mandate.
 
+> **Partly answered 2026-09-10** by [`docs/2026-09-10-monster-behaviour-profiles-design.md`](2026-09-10-monster-behaviour-profiles-design.md):
+> **Q3** (should anything flee) — yes; morale is a Wisdom save, the marker is `Frightened`, and a
+> broken creature leaves the board for full credit. **Q1** — the *leadership* half only, and as a
+> curated officer list rather than a derivation, after a census found CR-margin detection naming
+> an Ochre Jelly a warband leader; role as a general axis (archer, brute, skirmisher, lurker,
+> controller) remains open. **Q5** — its *hold* is lifted, Brandon having waived the baseline
+> objection on 2026-09-10, but #314 is still open and the question this section actually asks —
+> what the measurement story is — is not answered. **Q2** (reactions) and **Q4** (terrain) are
+> untouched.
+
 1. **Is role the right axis?** The pool has no notion of archer, brute, skirmisher, lurker,
    leader or controller, and a creature's printed stat block is where such a thing would
    have to be derived from or curated against. Deriving it invites bug 2 from CLAUDE.md's
