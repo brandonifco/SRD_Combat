@@ -655,7 +655,7 @@ public abstract partial class FightScreen : Node2D
     /// the fight moves on, so a held reference would make every snapshot show the last
     /// frame. The play screen rebuilds tokens each draw for the same price.
     /// </remarks>
-    protected sealed record Token(
+    internal sealed record Token(
         string Id,
         string Name,
         char Label,
@@ -668,7 +668,11 @@ public abstract partial class FightScreen : Node2D
         bool IsDown,
         string Conditions,
         string? ClassName,
-        CreatureSize Size);
+        CreatureSize Size,
+        bool IsBloodied,
+        bool IsStable,
+        int DeathSaveSuccesses,
+        int DeathSaveFailures);
 
     public override void _Ready()
     {
@@ -1201,7 +1205,7 @@ public abstract partial class FightScreen : Node2D
         _manualForActiveId = _lastActiveId;
     }
 
-    protected static Token TokenFrom(Combatant combatant, Labels labels) => new(
+    internal static Token TokenFrom(Combatant combatant, Labels labels) => new(
         combatant.Id,
         combatant.Name,
         labels.Of(combatant),
@@ -1214,10 +1218,14 @@ public abstract partial class FightScreen : Node2D
         !combatant.IsDead && combatant.CurrentHitPoints == 0,
         string.Join(", ", combatant.Conditions),
         combatant.Stats.Character?.ClassName,
-        combatant.Stats.Size);
+        combatant.Stats.Size,
+        combatant.IsBloodied,
+        combatant.IsStable,
+        combatant.DeathSaveSuccesses,
+        combatant.DeathSaveFailures);
 
     /// <summary>Initiative order, not build order: it is what a watcher actually tracks.</summary>
-    protected static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
+    internal static List<Token> TokensFrom(Encounter encounter, Labels labels) =>
         [.. encounter.TurnOrder.Select(combatant => TokenFrom(combatant, labels))];
 
     /// <summary>Whether a walk or a pose is playing or waiting to play.</summary>
@@ -1238,7 +1246,7 @@ public abstract partial class FightScreen : Node2D
     /// nothing to show is dead time; and a flinch is skipped for a victim the same blow
     /// felled, whose fall says it better.
     /// </remarks>
-    protected void QueueActs(IReadOnlyList<CombatStep> log, int from, int to, IReadOnlyList<Token> tokens)
+    internal void QueueActs(IReadOnlyList<CombatStep> log, int from, int to, IReadOnlyList<Token> tokens)
     {
         var idle = !ActInProgress;
         var first = -1;
@@ -1533,10 +1541,13 @@ public abstract partial class FightScreen : Node2D
 
     /// <summary>
     /// The tokens with every not-yet-depicted consequence rolled back to how it looked
-    /// when last shown: hit points, posture and conditions. Position stays live — where
-    /// someone stands is <see cref="WithWalk"/>'s question, not this one's.
+    /// when last shown: hit points, posture, conditions, and (#299) the health band and
+    /// Death Save progress that ride on them — a blow that both drops a combatant to 0
+    /// and rolls its first failed save must not show the failure before the fall has
+    /// played. Position stays live — where someone stands is <see cref="WithWalk"/>'s
+    /// question, not this one's.
     /// </summary>
-    protected IReadOnlyList<Token> WithHeldAppearances(IReadOnlyList<Token> tokens)
+    internal IReadOnlyList<Token> WithHeldAppearances(IReadOnlyList<Token> tokens)
     {
         if (_heldAppearances.Count == 0)
         {
@@ -1551,6 +1562,10 @@ public abstract partial class FightScreen : Node2D
                     IsDead = held.IsDead,
                     IsDown = held.IsDown,
                     Conditions = held.Conditions,
+                    IsBloodied = held.IsBloodied,
+                    IsStable = held.IsStable,
+                    DeathSaveSuccesses = held.DeathSaveSuccesses,
+                    DeathSaveFailures = held.DeathSaveFailures,
                 }
                 : token)];
     }
@@ -1665,7 +1680,7 @@ public abstract partial class FightScreen : Node2D
     }
 
     /// <summary>The tokens with the walking one drawn where its hop has reached.</summary>
-    protected IReadOnlyList<Token> WithWalk(IReadOnlyList<Token> tokens)
+    internal IReadOnlyList<Token> WithWalk(IReadOnlyList<Token> tokens)
     {
         if (_walkPath is not { } path || _walkerId is not { } walkerId)
         {
@@ -2182,7 +2197,7 @@ public abstract partial class FightScreen : Node2D
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
-    protected void DrawTokens(IReadOnlyList<Token> tokens, string? activeId)
+    internal void DrawTokens(IReadOnlyList<Token> tokens, string? activeId)
     {
         // What the board shows is what a hold captures: the next blow's victim must be
         // rolled back to how it *looked*, and how it looked is this list, exactly.
@@ -2241,8 +2256,18 @@ public abstract partial class FightScreen : Node2D
             }
 
             // A hit point bar under each standing token: the one number a watcher tracks.
-            if (token.IsDead || token.IsDown)
+            // Dead has nothing left to show. Downed swaps the bar for the Death Save
+            // readout (#299) — the fraction below would draw as an empty bar at 0 hit
+            // points either way, but "empty" and "dying, two failures in" are not the
+            // same fact, and this is the one place a watcher can see the difference.
+            if (token.IsDead)
             {
+                continue;
+            }
+
+            if (token.IsDown)
+            {
+                DrawDeathSavePips(token, centre);
                 continue;
             }
 
@@ -2261,8 +2286,16 @@ public abstract partial class FightScreen : Node2D
             // play). Both now read GroundLine, so they cannot drift apart again.
             var barTop = BarTop(centre.Y, CellPixels);
 
+            // The fill is the health readout's own colour (#299) via `BarColourFor` —
+            // not the team/state identity colour the sprite and label above still use.
+            // Before this the bar filled in whichever of party-blue, monster-red,
+            // dead-grey or down-brown the token already drew in, which told a watcher
+            // nothing about how hurt anyone was that the bar's own length did not
+            // already say less ambiguously. `RowFor` computes the panel's own state
+            // colour through the identical call, which is what keeps the two agreeing —
+            // see `HealthBandTests.BoardBarAndPanelRowAgreeOnColour`.
             DrawRect(new Rect2(barLeft, barTop, CellPixels - 12, BarHeight), GridLine);
-            DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, BarHeight), colour);
+            DrawRect(new Rect2(barLeft, barTop, (CellPixels - 12) * fraction, BarHeight), BarColourFor(token));
         }
 
         // After the tokens, so a shot passes in front of what it flies over.
@@ -2474,6 +2507,55 @@ public abstract partial class FightScreen : Node2D
     internal static float BarTop(float centreY, float cellPixels) =>
         GroundLine(centreY, cellPixels);
 
+    /// <summary>
+    /// The hit point bar's fill colour for one standing token (#299) — the single call
+    /// both <see cref="DrawTokens"/> (the board) and <see cref="RowFor"/> (the panel)
+    /// make, so the two cannot independently decide a combatant's health band.
+    /// </summary>
+    internal static Color BarColourFor(Token token) =>
+        HealthReadout.ColourFor(HealthReadout.BandFor(token.IsDead, token.IsDown, token.IsBloodied));
+
+    /// <summary>
+    /// A downed token's Death Save readout (#299), drawn where the hit point bar would
+    /// otherwise sit — six segments across the same strip <see cref="BarTop"/> and
+    /// <see cref="GroundLine"/> already place: three success pips, then three failure
+    /// pips, filled per <see cref="DeathSavePips"/>. A Stable creature draws one solid
+    /// segment in <see cref="Palette.StableColour"/> instead — its own counts are zero
+    /// (<c>Combatant.MarkStable</c> resets them) and have nothing left to be a pip of.
+    /// </summary>
+    private void DrawDeathSavePips(Token token, Vector2 centre)
+    {
+        var barLeft = centre.X - (CellPixels / 2f) + 6;
+        var barTop = BarTop(centre.Y, CellPixels);
+        var width = CellPixels - 12;
+
+        var pips = DeathSavePips.For(token.DeathSaveSuccesses, token.DeathSaveFailures, token.IsStable);
+
+        if (pips.IsStable)
+        {
+            DrawRect(new Rect2(barLeft, barTop, width, BarHeight), Palette.StableColour);
+            return;
+        }
+
+        var totalPips = DeathSavePips.PipsPerRow * 2;
+        var pipWidth = width / totalPips;
+
+        for (var i = 0; i < DeathSavePips.PipsPerRow; i++)
+        {
+            var filled = pips.SuccessFilled(i);
+            DrawRect(
+                new Rect2(barLeft + (i * pipWidth), barTop, pipWidth - 1, BarHeight),
+                filled ? Palette.DeathSaveSuccessColour : GridLine);
+        }
+
+        for (var i = 0; i < DeathSavePips.PipsPerRow; i++)
+        {
+            var filled = pips.FailureFilled(i);
+            var x = barLeft + ((DeathSavePips.PipsPerRow + i) * pipWidth);
+            DrawRect(new Rect2(x, barTop, pipWidth - 1, BarHeight), filled ? Palette.DeathSaveFailureColour : GridLine);
+        }
+    }
+
     /// <summary>The token as animated art, with the letter kept in the cell's corner.</summary>
     /// <remarks>
     /// <para>
@@ -2651,7 +2733,7 @@ public abstract partial class FightScreen : Node2D
             : Math.Max(0.25f, MathF.Floor(fits * 4f) / 4f);
     }
 
-    protected void DrawTurnOrder(
+    internal void DrawTurnOrder(
         IReadOnlyList<Token> tokens,
         string? activeId,
         IReadOnlySet<string>? unseen = null)
@@ -2675,30 +2757,65 @@ public abstract partial class FightScreen : Node2D
             // the party has from the fight itself — but its state is withheld, because
             // hit points read through a wall would be the panel scouting for free.
             var hidden = unseen?.Contains(token.Id) == true && !token.IsDead;
+            var row = RowFor(token, active: token.Id == activeId, hidden);
 
-            var colour = hidden ? Dim
-                : token.IsDead ? Dim
-                : token.IsDown ? DownColour
-                : token.IsParty ? PartyColour
-                : MonsterColour;
-            var marker = token.Id == activeId ? "▶ " : "  ";
+            DrawString(TextFont, new Vector2(PanelLeft, y), row.Prefix, fontSize: 13, modulate: row.IdentityColour);
 
-            var state = token.IsDead
-                ? "dead"
-                : hidden
-                    ? "unseen"
-                    : $"{token.HitPoints}/{token.MaximumHitPoints} hp" +
-                      (token.Conditions.Length > 0 ? $" — {token.Conditions}" : string.Empty);
-
-            DrawString(
-                TextFont,
-                new Vector2(PanelLeft, y),
-                $"{marker}{token.Label}  {token.Name,-22} {state}",
-                fontSize: 13,
-                modulate: colour);
+            var prefixWidth = TextFont.GetStringSize(row.Prefix, fontSize: 13).X;
+            DrawString(TextFont, new Vector2(PanelLeft + prefixWidth, y), row.State, fontSize: 13, modulate: row.StateColour);
 
             y += 19;
         }
+    }
+
+    /// <summary>One panel row, exactly as <see cref="DrawTurnOrder"/> draws it and nothing it works out again.</summary>
+    /// <param name="Prefix">The marker, label and name — team identity, unaffected by health.</param>
+    /// <param name="IdentityColour">The prefix's colour: team, or <see cref="Dim"/> dead/hidden.</param>
+    /// <param name="State">The hp reading, the Death Save readout, or "dead"/"unseen".</param>
+    /// <param name="StateColour">The state's own colour — <see cref="HealthReadout.ColourFor"/>'s answer, or <see cref="IdentityColour"/> when hidden.</param>
+    internal readonly record struct PanelRow(string Prefix, Color IdentityColour, string State, Color StateColour);
+
+    /// <summary>
+    /// Splits out of <see cref="DrawTurnOrder"/> (#299) so the fog rule and the health
+    /// band the panel reads can be pinned by a test without a live Godot node — this
+    /// assembly's tests cannot call a draw method directly (see this project's own
+    /// csproj remarks): <see cref="Godot.CanvasItem.DrawRect"/> and
+    /// <see cref="Godot.CanvasItem.DrawString"/> touch the native engine and terminate
+    /// the test host outside one. Every fact this returns is read off <paramref
+    /// name="token"/>'s own fields; nothing here re-derives a threshold from a number.
+    /// </summary>
+    internal static PanelRow RowFor(Token token, bool active, bool hidden)
+    {
+        // Team identity, not health — this half of the row still needs to say "ally" or
+        // "enemy" at a glance, which a health band alone cannot.
+        var identityColour = hidden ? Dim : token.IsDead ? Dim : token.IsParty ? PartyColour : MonsterColour;
+        var marker = active ? "▶ " : "  ";
+        var prefix = $"{marker}{token.Label}  {token.Name,-22} ";
+
+        if (hidden)
+        {
+            // A fog reading is neither a health state nor an identity one — it overrides
+            // both, and carries no more than "unseen" ever did.
+            return new PanelRow(prefix, identityColour, "unseen", identityColour);
+        }
+
+        // The same `HealthBand` the board's hit point bar reads (`BarColourFor`) — see
+        // `HealthBandTests.BoardBarAndPanelRowAgreeOnColour`, which is what proves the
+        // two cannot independently decide a combatant's health band.
+        var band = HealthReadout.BandFor(token.IsDead, token.IsDown, token.IsBloodied);
+        var stateColour = HealthReadout.ColourFor(band);
+
+        var state = band switch
+        {
+            HealthBand.Dead => "dead",
+            HealthBand.Downed => "Downed — " + DeathSavePips
+                .For(token.DeathSaveSuccesses, token.DeathSaveFailures, token.IsStable)
+                .SummaryText(),
+            _ => $"{token.HitPoints}/{token.MaximumHitPoints} hp" +
+                (token.Conditions.Length > 0 ? $" — {token.Conditions}" : string.Empty),
+        };
+
+        return new PanelRow(prefix, identityColour, state, stateColour);
     }
 
     protected void DrawLog(IReadOnlyList<CombatStep> log, int count, int tokenCount)

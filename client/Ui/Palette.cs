@@ -30,6 +30,37 @@ internal static class Palette
     internal static readonly Color Dim = new("8a8a96");
 
     /// <summary>
+    /// The health readout's "fine" colour (#299) — more than half its hit points, the
+    /// side of the SRD's own printed Bloodied threshold (glossary p. 177) that carries
+    /// no warning. A green found nowhere else in this file, so a standing hit-point bar
+    /// or hp line reading healthy is its own colour rather than borrowing a team's.
+    /// </summary>
+    internal static readonly Color HealthyColour = new("5ab06a");
+
+    /// <summary>
+    /// The health readout's threshold colour (#299) — "half its Hit Points or fewer",
+    /// the SRD's own printed Bloodied condition (glossary p. 177, quoted on
+    /// <c>HealthBand</c>). Distinct from <see cref="MonsterColour"/> and
+    /// <see cref="ThreatMark"/> so a Bloodied ally never reads as an enemy's own
+    /// identity colour or a targeting warning.
+    /// </summary>
+    internal static readonly Color BloodiedColour = new("c9433f");
+
+    /// <summary>A filled Death Saving Throw success pip (#299) — <see cref="HealthyColour"/>'s family; good news, drawn small.</summary>
+    internal static readonly Color DeathSaveSuccessColour = new("6fcf8f");
+
+    /// <summary>A filled Death Saving Throw failure pip (#299) — <see cref="BloodiedColour"/>'s family, one shade darker so three filled pips read as "close" rather than as loud as the death they are one step from.</summary>
+    internal static readonly Color DeathSaveFailureColour = new("a83232");
+
+    /// <summary>
+    /// A downed character who has stopped rolling Death Saves (#299,
+    /// <c>Combatant.MarkStable</c>) — its own hue rather than <see cref="HealthyColour"/>,
+    /// since Stable is not "fine": the creature is still at 0 hit points and still
+    /// Unconscious, only no longer one bad roll from dying.
+    /// </summary>
+    internal static readonly Color StableColour = new("6a8caf");
+
+    /// <summary>
     /// The hovered move's route (#303) — <c>ActiveRing</c>'s own hue, since a path
     /// preview is the same "here is what your attention is on" signal the turn cursor
     /// already draws in, at higher opacity than <c>PartyColour</c>'s reachable wash
