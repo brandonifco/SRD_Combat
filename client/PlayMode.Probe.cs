@@ -17,7 +17,8 @@ public partial class PlayMode : FightScreen
     /// <summary>
     /// Drives the screen through the real input path and captures each result: the
     /// run's opening interlude, then commanded turns — an unavailable action attempted
-    /// on purpose, Tab arming and cycling from a cold turn, a walk, a swing, a feature,
+    /// on purpose, Tab arming and cycling from a cold turn, a hovered move's path
+    /// preview, a walk, a swing, a feature,
     /// and when a caster's turn comes, the spell menu and a cast. How a change to this
     /// screen gets checked without a person clicking.
     /// </summary>
@@ -133,6 +134,35 @@ public partial class PlayMode : FightScreen
         await HoverFirstButton();
         await CaptureFrame(Path.Combine(directory, "play-2b-hint.png"));
 
+        // #303 defect #4 (Codex review, PR #731 round 1): arming Attack must clear the
+        // path preview even though the mouse never moves between the arm and this
+        // check — hovering a reachable square first gives the assertion below
+        // something real to lose, rather than an already-empty list a broken gate
+        // could pass by accident.
+        var previewProbeSquare = _reachable.Count > 0 ? _reachable.First() : (GridPosition?)null;
+
+        if (previewProbeSquare is { } squareToHover)
+        {
+            var previewPixel = CentreOf(squareToHover);
+
+            GetViewport().PushInput(new InputEventMouseMotion
+            {
+                Position = previewPixel,
+                GlobalPosition = previewPixel,
+            });
+
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.NonEmpty("the path preview before arming", PathAsText(_previewPath)));
+        }
+        else
+        {
+            ReportSkip(
+                directory,
+                "play-2c-tab-armed-preview",
+                "no reachable square was open this turn to preview before arming");
+        }
+
         // Tab from a cold turn: the first press arms the attack and aims at the
         // nearest enemy, the second walks the ring — then Esc backs out, so the rest
         // of the probe starts from the same clean turn it always did.
@@ -147,6 +177,20 @@ public partial class PlayMode : FightScreen
             "play-2c-tab-armed",
             new ProbeExpectation.FocusIs(typeof(PlayFocus.Targeting)),
             new ProbeExpectation.EqualsExpected<TargetKind?>("what the first Tab armed", Armed?.Kind, TargetKind.Attack));
+
+        // #303 defect #4: the pointer has not moved since the NonEmpty check above —
+        // this is the exact shape Codex's review named, a cold Tab with no mouse
+        // motion in between — so a preview still showing here means ArmTargeting's own
+        // UpdatePreviewPath call regressed, not that the pointer wandered off.
+        if (previewProbeSquare is not null)
+        {
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.EqualsExpected<string>(
+                    "the path preview while Attack is armed",
+                    PathAsText(_previewPath),
+                    string.Empty));
+        }
 
         var cursorAfterFirstTab = _cursor;
         var visibleEnemyCount = CommandedCombatant() is { } tabActive ? VisibleEnemiesOf(tabActive).Count : 0;
@@ -175,6 +219,43 @@ public partial class PlayMode : FightScreen
         await CaptureFrame(Path.Combine(directory, "play-2c-tab-armed.png"));
         Press(Key.Escape);
 
+        // The disarm's own mirror of the check above: the pointer still rests on
+        // exactly the square it was hovering before Tab ever armed anything, so the
+        // preview reappearing here — with no mouse motion since — is Escape's own
+        // route back through PlayFocusRouter.Route triggering the same
+        // UpdatePreviewPath call arming did, not a coincidence of the pointer moving.
+        if (previewProbeSquare is not null)
+        {
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.NonEmpty("the path preview after Escape disarmed", PathAsText(_previewPath)));
+        }
+
+        // #303 defect (Codex review, PR #731 round 2): the disarm check above proved
+        // Esc's own keyboard-routed recompute; this proves the *mouse's* — arming
+        // Attack again, then clicking the hovered square itself (nobody stands there,
+        // so ActivateSquare's Attack branch takes its ClearPending-and-do-nothing
+        // cancel path rather than swinging) must restore the preview too, since
+        // ClearPending is the one call site every mouse-driven "back to Board, nothing
+        // armed" transition shares.
+        if (previewProbeSquare is { } squareToRearm)
+        {
+            Press(Key.Tab);
+
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.FocusIs(typeof(PlayFocus.Targeting)));
+
+            Click(CentreOf(squareToRearm));
+
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
+                new ProbeExpectation.NonEmpty(
+                    "the path preview after a mouse click cancelled Attack targeting",
+                    PathAsText(_previewPath)));
+        }
+
         if (CommandedCombatant() is { } active
             && NearestVisibleEnemyOf(active) is { } target)
         {
@@ -184,6 +265,130 @@ public partial class PlayMode : FightScreen
                     .OrderBy(square => square.DistanceFeetTo(target.Position))
                     .ThenBy(square => square.X).ThenBy(square => square.Y)
                     .First();
+
+                // #303: hovering the very square the click below is about to walk to
+                // must preview the exact route that click will take. The expectation is
+                // computed with the same MovementRules.FindPath call — and the same
+                // arguments — HoverPreviewPath itself makes, never a second guess at
+                // what the route should look like: this asserts the plumbing wires the
+                // pointer to that call, not that the call is right (MovementRulesTests
+                // and HoverPreviewPathTests already pin that).
+                var expectedPreview = _encounter is { } encounterForPreview
+                    ? MovementRules.FindPath(
+                        encounterForPreview.Battlefield,
+                        active,
+                        step,
+                        active.Turn.MovementFeet,
+                        encounterForPreview.Combatants)?.Steps ?? []
+                    : [];
+
+                GetViewport().PushInput(new InputEventMouseMotion
+                {
+                    Position = CentreOf(step),
+                    GlobalPosition = CentreOf(step),
+                });
+
+                Assert(
+                    "play-2d-path-preview",
+                    new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
+                    new ProbeExpectation.NonEmpty("the previewed path", PathAsText(expectedPreview)),
+                    new ProbeExpectation.EqualsExpected<string>(
+                        "the previewed path",
+                        PathAsText(_previewPath),
+                        PathAsText(expectedPreview)));
+                await CaptureFrame(Path.Combine(directory, "play-2d-path-preview.png"));
+
+                // #303 defect #3 (Codex review, PR #731 round 1): a wheel zoom is
+                // consumed entirely by HandleCameraInput and carries no motion event at
+                // all — so a pointer that never itself moved could sit over a different
+                // world square once the zoom rescaled the camera underneath it, with
+                // the preview still showing the old square's route. Zoomed at a corner
+                // far from the pointer, deliberately: ZoomAt keeps the square under
+                // *its own* anchor fixed, so zooming under the pointer itself would
+                // prove nothing. Checked here, with _reachable still the whole turn's
+                // budget, rather than later once this turn's own move has spent most of
+                // it down to nothing: the zoom is undone (the exact inverse factor, same
+                // anchor) before the click below, so nothing here is meant to survive
+                // into play-3-moved's own capture.
+                if (_encounter is { } cameraCheckEncounter)
+                {
+                    var anchorPixel = CentreOf(step);
+                    var zoomAnchor = new Vector2(20, 20);
+
+                    var gridLeftBeforeZoom = GridLeft;
+
+                    GetViewport().PushInput(new InputEventMouseButton
+                    {
+                        ButtonIndex = MouseButton.WheelUp,
+                        Pressed = true,
+                        Position = zoomAnchor,
+                        GlobalPosition = zoomAnchor,
+                    });
+
+                    // The zoom must actually have changed the mapping, or the check
+                    // below would pass by coincidence (the same square, never
+                    // re-mapped) rather than by the fix. ZoomAt mutates GridLeft/
+                    // GridTop/CellPixels synchronously, with no frame to wait for.
+                    Assert(
+                        "play-5b-camera-zoom-preview",
+                        new ProbeExpectation.Changed<float>("GridLeft after the zoom", gridLeftBeforeZoom, GridLeft));
+
+                    var squareUnderPointerAfterZoom = SquareAt(anchorPixel);
+
+                    var expectedAfterZoom = squareUnderPointerAfterZoom is { } afterSquare
+                        ? MovementRules.FindPath(
+                            cameraCheckEncounter.Battlefield,
+                            active,
+                            afterSquare,
+                            active.Turn.MovementFeet,
+                            cameraCheckEncounter.Combatants)?.Steps ?? []
+                        : [];
+
+                    if (squareUnderPointerAfterZoom is { } distinctSquare
+                        && distinctSquare != step
+                        && expectedAfterZoom.Count > 0)
+                    {
+                        // NonEmpty first (#719's own lesson, reused here): a broken
+                        // mapping and a broken preview could both independently land on
+                        // empty, which EqualsExpected alone would wave through as
+                        // agreement. expectedAfterZoom.Count > 0 above already rules
+                        // that out for the expectation's own side.
+                        Assert(
+                            "play-5b-camera-zoom-preview",
+                            new ProbeExpectation.EqualsExpected<string>(
+                                "the previewed path once the zoom left the pointer's screen position "
+                                    + "over a different, still-reachable world square",
+                                PathAsText(_previewPath),
+                                PathAsText(expectedAfterZoom)));
+                    }
+                    else
+                    {
+                        ReportSkip(
+                            directory,
+                            "play-5b-camera-zoom-preview",
+                            "the zoom did not leave the pointer over a different, still-reachable square to preview");
+                    }
+
+                    // Undo the zoom — the exact inverse, same anchor — before this
+                    // turn's real move click below, so nothing here survives into
+                    // play-3-moved's own capture.
+                    GetViewport().PushInput(new InputEventMouseButton
+                    {
+                        ButtonIndex = MouseButton.WheelDown,
+                        Pressed = true,
+                        Position = zoomAnchor,
+                        GlobalPosition = zoomAnchor,
+                    });
+
+                    // Re-hover the move's own destination so the preview and _pointer
+                    // are exactly what they were before this check ran, whatever the
+                    // zoom-and-back left CellPixels at.
+                    GetViewport().PushInput(new InputEventMouseMotion
+                    {
+                        Position = anchorPixel,
+                        GlobalPosition = anchorPixel,
+                    });
+                }
 
                 var movementBeforeStep = active.Turn.MovementFeet;
 
@@ -695,6 +900,17 @@ public partial class PlayMode : FightScreen
         GD.Print($"probe: skipped {name} — {reason}");
         File.WriteAllText(Path.Combine(directory, name + ".skipped.txt"), reason + "\n");
     }
+
+    /// <summary>
+    /// A path rendered as one comparable string. <see
+    /// cref="ProbeExpectation.EqualsExpected{T}"/> compares with
+    /// <c>EqualityComparer&lt;T&gt;.Default</c>, which is reference equality for a list
+    /// — two structurally identical <see cref="GridPosition"/> sequences built by two
+    /// different calls would never compare equal as lists, so play-2d-path-preview
+    /// compares this instead.
+    /// </summary>
+    private static string PathAsText(IReadOnlyList<GridPosition> path) =>
+        string.Join(" ", path.Select(square => $"({square.X},{square.Y})"));
 
     /// <summary>
     /// Checks <paramref name="expectations"/> against the screen's live state right now

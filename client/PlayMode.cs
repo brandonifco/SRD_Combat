@@ -74,6 +74,26 @@ public partial class PlayMode : FightScreen
     private double _pace = SecondsPerTurn;
     private readonly HashSet<GridPosition> _reachable = [];
 
+    /// <summary>
+    /// The route a move would actually walk if committed to whichever reachable square
+    /// the pointer is over right now (#303) — <see cref="MovementRules.FindPath"/>'s own
+    /// answer, so what is drawn can never diverge from what a click on that square would
+    /// do. Empty whenever nothing is hovered, nobody is commanded, or the hovered square
+    /// is not one <see cref="_reachable"/> already offers. See
+    /// <see cref="HoverPreviewPath"/> for the computation and its fog rule.
+    /// </summary>
+    private readonly List<GridPosition> _previewPath = [];
+
+    /// <summary>
+    /// Which square <see cref="_previewPath"/> was last computed for, or null (#303,
+    /// PR #731 round 1 review). <see cref="PreviewSquareChanged"/> compares this
+    /// against the pointer's current square on every raw motion sample — comparing
+    /// pixel distance instead was the original bug (<see cref="HoverJitterPixels"/>
+    /// exists for the tooltip's own reasons, unrelated to which square a route
+    /// should point at) — so this is a square, never a pixel.
+    /// </summary>
+    private GridPosition? _previewSquare;
+
     /// <summary>Squares nobody in the party can see — the fog of war, <c>PartyVision</c>'s answer.</summary>
     private readonly HashSet<GridPosition> _unseen = [];
 
@@ -101,14 +121,32 @@ public partial class PlayMode : FightScreen
     /// </remarks>
     private readonly Dictionary<string, string> _buttonHints = [];
 
-    /// <summary>Where the pointer is, and how long it has rested there.</summary>
-    /// <remarks>
-    /// <b>Hints wait, deliberately.</b> A tooltip that appears the instant the pointer
-    /// crosses something turns a glance across the row into a flicker of popups; a pause
-    /// is the player asking. Movement past <see cref="HoverJitterPixels"/> restarts the
-    /// clock, so a hand that never quite stops still settles.
-    /// </remarks>
+    /// <summary>
+    /// Where the pointer actually is right now — updated on every raw motion sample,
+    /// unconditionally (#303, PR #731 round 3 review). Every refresh that recomputes
+    /// the path preview from a remembered pixel (a routed keyboard action, a camera
+    /// change, <see cref="RefreshAfterAction"/>) reads this one, so it must never lag
+    /// behind an in-square move: a pointer that drifts from A to B in a two-pixel
+    /// sample well under <see cref="HoverJitterPixels"/> is looking at B's square the
+    /// instant it happens, and a refresh that read a stale A here would restore A's
+    /// route for a click that is about to walk to B. <see cref="_hintAnchor"/> is the
+    /// tooltip's own separate, deliberately jitter-filtered pixel — the two used to be
+    /// the same field, which is exactly how this bug happened.
+    /// </summary>
     private Vector2 _pointer;
+
+    /// <summary>
+    /// The pixel the hover hint last considered "settled" — <see cref="_pointer"/>
+    /// before round 3, kept only for the tooltip's own reasons now that
+    /// <see cref="_pointer"/> itself updates unconditionally. A tooltip that appeared
+    /// the instant the pointer crossed something would turn a glance across the row
+    /// into a flicker of popups; movement past <see cref="HoverJitterPixels"/> from
+    /// here restarts <see cref="_hoverElapsed"/> and moves this anchor to match, so a
+    /// hand that never quite stops still settles, and the tooltip itself draws beside
+    /// this pixel rather than chasing every sub-pixel twitch of <see cref="_pointer"/>.
+    /// </summary>
+    private Vector2 _hintAnchor;
+
     private double _hoverElapsed;
     private string? _hint;
 
@@ -469,6 +507,13 @@ public partial class PlayMode : FightScreen
         // The camera glides after whatever the board is doing, never gating it.
         if (AdvanceCamera(delta))
         {
+            // The camera's own automatic glide moves GridLeft/GridTop/CellPixels under
+            // a pointer that may not have moved a single pixel — a turn's opening
+            // re-centre on the new active combatant, say (#303 defect #3, PR #731
+            // round 1 review). UpdatePreviewPath re-maps the tracked pointer against
+            // whatever the camera answers right now, the same as the manual branches
+            // in _UnhandledInput already do for a drag or a zoom.
+            UpdatePreviewPath(_pointer);
             QueueRedraw();
         }
 

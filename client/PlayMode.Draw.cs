@@ -71,6 +71,19 @@ public partial class PlayMode : FightScreen
                 new Color(PartyColour, 0.16f));
         }
 
+        // The route the hovered reachable square would actually be walked by (#303):
+        // MovementRules.FindPath's own answer, computed in UpdatePreviewPath and never
+        // re-derived here. Drawn over the reachable wash and, like it, before the fog
+        // texture below — so a route into ground the party cannot presently see is dimmed
+        // by the same shadow that dims the highlight, on top of HoverPreviewPath already
+        // having dropped any square the fog itself would not reveal.
+        foreach (var square in _previewPath)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                PathPreview);
+        }
+
         // The fog of war, drawn smooth: the per-square set is painted into a small
         // image and upscaled bilinearly (BuildFogTexture), so the shadow's edge
         // feathers across a square instead of stepping — the blockiness was the other
@@ -361,10 +374,15 @@ public partial class PlayMode : FightScreen
         var width = lines.Max(line => TextFont.GetStringSize(line, fontSize: 12).X) + 20;
         var height = (lines.Length * 17) + 14;
 
-        var x = Math.Min(_pointer.X + 16, ScreenWidth - width - 8);
-        var y = _pointer.Y + 22 + height > ScreenHeight
-            ? _pointer.Y - height - 10
-            : _pointer.Y + 22;
+        // Anchored to _hintAnchor — the pointer's last *settled* pixel — rather than
+        // _pointer, which now tracks every raw motion sample unconditionally (#303
+        // defect, PR #731 round 2 review): the tooltip would otherwise chase the
+        // cursor's own sub-pixel drift instead of sitting still beside whatever it is
+        // explaining.
+        var x = Math.Min(_hintAnchor.X + 16, ScreenWidth - width - 8);
+        var y = _hintAnchor.Y + 22 + height > ScreenHeight
+            ? _hintAnchor.Y - height - 10
+            : _hintAnchor.Y + 22;
 
         var panel = new Rect2(Math.Max(8, x), Math.Max(8, y), width, height);
 
