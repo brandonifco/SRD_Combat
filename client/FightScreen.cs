@@ -2733,7 +2733,12 @@ public abstract partial class FightScreen : Node2D
             : Math.Max(0.25f, MathF.Floor(fits * 4f) / 4f);
     }
 
-    internal void DrawTurnOrder(
+    /// <summary>
+    /// Draws the initiative panel and returns the <see cref="InitiativePanelLayout.Regions"/>
+    /// it drew to — the caller passes the same value into <see cref="DrawLog"/> so the
+    /// two never compute the boundary between them two different ways (#305).
+    /// </summary>
+    internal InitiativePanelLayout.Regions DrawTurnOrder(
         IReadOnlyList<Token> tokens,
         string? activeId,
         IReadOnlySet<string>? unseen = null)
@@ -2749,10 +2754,28 @@ public abstract partial class FightScreen : Node2D
 
         DrawString(TextFont, new Vector2(PanelLeft, UiTop - 8), "INITIATIVE", fontSize: 12, modulate: Dim);
 
+        var activeIndex = 0;
+
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            if (tokens[i].Id == activeId)
+            {
+                activeIndex = i;
+                break;
+            }
+        }
+
+        // #305: the panel no longer draws every row unconditionally — past
+        // InitiativePanelLayout.PanelCapacity it pages, so a big enough warband can no
+        // longer push the combat log's own top further down with every combatant added.
+        var regions = InitiativePanelLayout.Fit(ScreenHeight - (UiTop + 16), tokens.Count, activeIndex);
+
         var y = UiTop + 16;
 
-        foreach (var token in tokens)
+        for (var i = regions.PanelFirstIndex; i < regions.PanelFirstIndex + regions.PanelVisibleCount; i++)
         {
+            var token = tokens[i];
+
             // A combatant the fog hides keeps its row — initiative order is knowledge
             // the party has from the fight itself — but its state is withheld, because
             // hit points read through a wall would be the panel scouting for free.
@@ -2766,6 +2789,22 @@ public abstract partial class FightScreen : Node2D
 
             y += 19;
         }
+
+        if (regions.PanelHiddenCount > 0)
+        {
+            // The active row is always inside the window InitiativePanelLayout.Fit
+            // returns (it starts the window at the active index), so this line never
+            // needs to say which combatant is missing — the one the panel exists to
+            // show is never among them.
+            DrawString(
+                TextFont,
+                new Vector2(PanelLeft, y + 12),
+                $"+{regions.PanelHiddenCount} more",
+                fontSize: 11,
+                modulate: Dim);
+        }
+
+        return regions;
     }
 
     /// <summary>One panel row, exactly as <see cref="DrawTurnOrder"/> draws it and nothing it works out again.</summary>
@@ -2848,9 +2887,14 @@ public abstract partial class FightScreen : Node2D
                 .Split(", ", StringSplitOptions.RemoveEmptyEntries)
                 .Where(condition => Array.IndexOf(ImpliedByDowned, condition) < 0));
 
-    protected void DrawLog(IReadOnlyList<CombatStep> log, int count, int tokenCount)
+    /// <summary>
+    /// Draws the combat log into the region <paramref name="regions"/> names — the same
+    /// value <see cref="DrawTurnOrder"/> just returned for this frame, so the log's own
+    /// top is never a second, independent piece of arithmetic (#305).
+    /// </summary>
+    internal void DrawLog(IReadOnlyList<CombatStep> log, int count, InitiativePanelLayout.Regions regions)
     {
-        var top = UiTop + 16 + (tokenCount * 19) + 26;
+        var top = UiTop + 16 + regions.LogTop;
 
         DrawString(TextFont, new Vector2(PanelLeft, top - 12), "COMBAT LOG", fontSize: 12, modulate: Dim);
 
@@ -2863,7 +2907,11 @@ public abstract partial class FightScreen : Node2D
         // sentence, the cut reliably removed the one thing the reader needed: "d20 11+5
         // = 16 vs AC 18 — …" said everything except the answer (#161). A client whose
         // whole job is to print what the engine explained cannot afford that.
-        var room = Math.Max(0, (ScreenHeight - top - 20) / 17);
+        //
+        // The room itself comes from InitiativePanelLayout.Fit rather than being
+        // recomputed here from tokenCount (#305): it no longer shrinks without bound as
+        // the initiative list grows, because the panel above pages once it would.
+        var room = regions.LogLines;
 
         // Held back to whatever the animation has actually shown, so the narration and
         // the picture of it land together.

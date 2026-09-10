@@ -258,8 +258,8 @@ public partial class PlayMode : FightScreen
 
         DrawTokens(shown, active?.Id);
         DrawHeading(_subtitle, StatusLine(commanded));
-        DrawTurnOrder(tokens, active?.Id, unseenIds);
-        DrawLog(encounter.Log, encounter.Log.Count, tokens.Count);
+        var initiativeRegions = DrawTurnOrder(tokens, active?.Id, unseenIds);
+        DrawLog(encounter.Log, encounter.Log.Count, initiativeRegions);
 
         // The bottom strip's own veil, before anything is written on it.
         if (active is not null || commanded is not null || _notice is not null)

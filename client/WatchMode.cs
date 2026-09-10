@@ -362,8 +362,8 @@ public partial class WatchMode : FightScreen
             $"round {snapshot.Round}   turn {_index} of {_snapshots.Count - 1}   " +
             (_playing ? "playing" : "paused")
             + "   [space] play/pause  [←/→] step  [wheel/middle-drag] camera  [esc] quit");
-        DrawTurnOrder(snapshot.Tokens, snapshot.ActiveId);
-        DrawLog(_log, snapshot.LogCount, _snapshots[0].Tokens.Count);
+        var initiativeRegions = DrawTurnOrder(snapshot.Tokens, snapshot.ActiveId);
+        DrawLog(_log, snapshot.LogCount, initiativeRegions);
     }
 
     private async Task CaptureAndQuit(string path)

@@ -143,6 +143,19 @@ Prone. The status line above still reads out what is left, so a row that has shr
 why. A key is a property of its action rather than of its place in the row, so `D` is
 Dodge whenever Dodge is offered and never anything else.
 
+**The initiative panel pages rather than squeezing the log** (#305): the panel and the
+log share one column, and the panel used to win it outright — every combatant it drew
+pushed the log's own start down, so a warband of ten left the log with the least room
+exactly when a fight was busiest. Past a capacity worked out from the window's own
+height (`InitiativePanelLayout.Fit`, in the `ShopLayout.Fit` style of #704/#710, cited
+by #727), the panel shows a window of rows instead of the whole list, with a "+N more"
+line naming what is left out — the window always starts at the active combatant, so
+whoever is acting is never among the hidden rows, and slides back only far enough to
+stay inside the list once the active turn nears its end. The log keeps a floor of 20
+lines below that window at both 1920×1080 and 1280×720, regardless of how large the
+initiative list grows — a fight small enough to need no paging costs the log nothing
+this row would otherwise have cost it.
+
 The log is colour-coded: party names blue, monster names orange, and the named thing
 being used — a weapon, a spell, a feature, a mastery property — violet, with **damage in
 bright red and a miss in yellow**, the two outcomes a reader scans for. A round beginning
