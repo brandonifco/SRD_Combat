@@ -231,6 +231,31 @@ public partial class PlayMode : FightScreen
                 new ProbeExpectation.NonEmpty("the path preview after Escape disarmed", PathAsText(_previewPath)));
         }
 
+        // #303 defect (Codex review, PR #731 round 2): the disarm check above proved
+        // Esc's own keyboard-routed recompute; this proves the *mouse's* — arming
+        // Attack again, then clicking the hovered square itself (nobody stands there,
+        // so ActivateSquare's Attack branch takes its ClearPending-and-do-nothing
+        // cancel path rather than swinging) must restore the preview too, since
+        // ClearPending is the one call site every mouse-driven "back to Board, nothing
+        // armed" transition shares.
+        if (previewProbeSquare is { } squareToRearm)
+        {
+            Press(Key.Tab);
+
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.FocusIs(typeof(PlayFocus.Targeting)));
+
+            Click(CentreOf(squareToRearm));
+
+            Assert(
+                "play-2c-tab-armed-preview",
+                new ProbeExpectation.FocusIs(typeof(PlayFocus.Board)),
+                new ProbeExpectation.NonEmpty(
+                    "the path preview after a mouse click cancelled Attack targeting",
+                    PathAsText(_previewPath)));
+        }
+
         if (CommandedCombatant() is { } active
             && NearestVisibleEnemyOf(active) is { } target)
         {

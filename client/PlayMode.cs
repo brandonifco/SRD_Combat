@@ -85,14 +85,12 @@ public partial class PlayMode : FightScreen
     private readonly List<GridPosition> _previewPath = [];
 
     /// <summary>
-    /// Which square <see cref="_previewPath"/> was last computed for, or null — tracked
-    /// separately from <see cref="_pointer"/> (#303, PR #731 round 1 review): <see
-    /// cref="_pointer"/> is deliberately jitter-filtered for the tooltip's own reasons
-    /// (<see cref="HoverJitterPixels"/>), and comparing pixel distance is exactly the
-    /// bug — a pointer one pixel from a grid line can cross it in a two-pixel move,
-    /// well under that threshold, and be looking at a different walk the instant it
-    /// happens. <see cref="PreviewSquareChanged"/> compares this against the pointer's
-    /// current square instead.
+    /// Which square <see cref="_previewPath"/> was last computed for, or null (#303,
+    /// PR #731 round 1 review). <see cref="PreviewSquareChanged"/> compares this
+    /// against the pointer's current square on every raw motion sample — comparing
+    /// pixel distance instead was the original bug (<see cref="HoverJitterPixels"/>
+    /// exists for the tooltip's own reasons, unrelated to which square a route
+    /// should point at) — so this is a square, never a pixel.
     /// </summary>
     private GridPosition? _previewSquare;
 
@@ -123,14 +121,32 @@ public partial class PlayMode : FightScreen
     /// </remarks>
     private readonly Dictionary<string, string> _buttonHints = [];
 
-    /// <summary>Where the pointer is, and how long it has rested there.</summary>
-    /// <remarks>
-    /// <b>Hints wait, deliberately.</b> A tooltip that appears the instant the pointer
-    /// crosses something turns a glance across the row into a flicker of popups; a pause
-    /// is the player asking. Movement past <see cref="HoverJitterPixels"/> restarts the
-    /// clock, so a hand that never quite stops still settles.
-    /// </remarks>
+    /// <summary>
+    /// Where the pointer actually is right now — updated on every raw motion sample,
+    /// unconditionally (#303, PR #731 round 3 review). Every refresh that recomputes
+    /// the path preview from a remembered pixel (a routed keyboard action, a camera
+    /// change, <see cref="RefreshAfterAction"/>) reads this one, so it must never lag
+    /// behind an in-square move: a pointer that drifts from A to B in a two-pixel
+    /// sample well under <see cref="HoverJitterPixels"/> is looking at B's square the
+    /// instant it happens, and a refresh that read a stale A here would restore A's
+    /// route for a click that is about to walk to B. <see cref="_hintAnchor"/> is the
+    /// tooltip's own separate, deliberately jitter-filtered pixel — the two used to be
+    /// the same field, which is exactly how this bug happened.
+    /// </summary>
     private Vector2 _pointer;
+
+    /// <summary>
+    /// The pixel the hover hint last considered "settled" — <see cref="_pointer"/>
+    /// before round 3, kept only for the tooltip's own reasons now that
+    /// <see cref="_pointer"/> itself updates unconditionally. A tooltip that appeared
+    /// the instant the pointer crossed something would turn a glance across the row
+    /// into a flicker of popups; movement past <see cref="HoverJitterPixels"/> from
+    /// here restarts <see cref="_hoverElapsed"/> and moves this anchor to match, so a
+    /// hand that never quite stops still settles, and the tooltip itself draws beside
+    /// this pixel rather than chasing every sub-pixel twitch of <see cref="_pointer"/>.
+    /// </summary>
+    private Vector2 _hintAnchor;
+
     private double _hoverElapsed;
     private string? _hint;
 

@@ -374,10 +374,15 @@ public partial class PlayMode : FightScreen
         var width = lines.Max(line => TextFont.GetStringSize(line, fontSize: 12).X) + 20;
         var height = (lines.Length * 17) + 14;
 
-        var x = Math.Min(_pointer.X + 16, ScreenWidth - width - 8);
-        var y = _pointer.Y + 22 + height > ScreenHeight
-            ? _pointer.Y - height - 10
-            : _pointer.Y + 22;
+        // Anchored to _hintAnchor — the pointer's last *settled* pixel — rather than
+        // _pointer, which now tracks every raw motion sample unconditionally (#303
+        // defect, PR #731 round 2 review): the tooltip would otherwise chase the
+        // cursor's own sub-pixel drift instead of sitting still beside whatever it is
+        // explaining.
+        var x = Math.Min(_hintAnchor.X + 16, ScreenWidth - width - 8);
+        var y = _hintAnchor.Y + 22 + height > ScreenHeight
+            ? _hintAnchor.Y - height - 10
+            : _hintAnchor.Y + 22;
 
         var panel = new Rect2(Math.Max(8, x), Math.Max(8, y), width, height);
 
