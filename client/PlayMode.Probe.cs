@@ -390,6 +390,72 @@ public partial class PlayMode : FightScreen
                     });
                 }
 
+                // #301: which reachable square, if any, previews a route that crosses a
+                // square ThreatenedSteps marks as provoking an Opportunity Attack. Tried
+                // across every square _reachable actually offers this turn — not just
+                // the move's own destination above — because there is no guarantee the
+                // nearest-to-target square happens to cross one. Each hover is asked of
+                // the live screen exactly the way a player's mouse would ask it, so the
+                // first one whose preview provokes is the one this asserts against.
+                GridPosition? threatProbeSquare = null;
+
+                foreach (var candidate in _reachable)
+                {
+                    var candidatePixel = CentreOf(candidate);
+
+                    GetViewport().PushInput(new InputEventMouseMotion
+                    {
+                        Position = candidatePixel,
+                        GlobalPosition = candidatePixel,
+                    });
+
+                    if (_threatenedSteps.Count > 0)
+                    {
+                        threatProbeSquare = candidate;
+                        break;
+                    }
+                }
+
+                if (threatProbeSquare is not null && _encounter is { } threatEncounter)
+                {
+                    // Computed independently of the screen's own _threatenedSteps —
+                    // the same visible-enemies filter UpdatePreviewPath builds, asked
+                    // of ThreatenedSteps a second time here, so this checks the wiring
+                    // rather than comparing the field with itself.
+                    var visibleEnemies = threatEncounter.Combatants
+                        .Where(combatant => combatant.SideId != active.SideId && !_unseen.Contains(combatant.Position))
+                        .ToList();
+
+                    var expectedThreatened = ThreatenedSteps(
+                        threatEncounter.Battlefield, active, _previewPath, visibleEnemies);
+
+                    Assert(
+                        "play-2e-threat-preview",
+                        new ProbeExpectation.NonEmpty(
+                            "the threatened steps on the previewed route", PathAsText(expectedThreatened)),
+                        new ProbeExpectation.EqualsExpected<string>(
+                            "the threatened steps on the previewed route",
+                            PathAsText(_threatenedSteps),
+                            PathAsText(expectedThreatened)));
+                    await CaptureFrame(Path.Combine(directory, "play-2e-threat-preview.png"));
+                }
+                else
+                {
+                    ReportSkip(
+                        directory,
+                        "play-2e-threat-preview",
+                        "no reachable square this turn previewed a route crossing a threatened step");
+                }
+
+                // Re-hover the move's own destination before the click below, so
+                // nothing from the threat check above survives into play-3-moved's
+                // own capture.
+                GetViewport().PushInput(new InputEventMouseMotion
+                {
+                    Position = CentreOf(step),
+                    GlobalPosition = CentreOf(step),
+                });
+
                 var movementBeforeStep = active.Turn.MovementFeet;
 
                 Click(CentreOf(step));

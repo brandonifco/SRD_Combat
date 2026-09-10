@@ -221,6 +221,29 @@ that sense, hint at something the party has not seen. This is not new to the pre
 the reachable wash it sits inside has always been computed the same way. Both are
 being tracked for a proper fix rather than papered over here.
 
+**A previewed route that would cost an Opportunity Attack says so, on the squares
+where it fires (#301).** Before this, threat was invisible until it happened — the
+review that opened #301 named the game's central positioning rule as having no display
+at all, and the two advisory layers that already existed (the reachable wash, a ring on
+an already-red token) as "the least visible things on screen". `PlayMode.ThreatenedSteps`
+walks the same previewed route `_previewPath` already draws, one real step at a time
+from the mover's own position, and asks `MovementRules.FindOpportunityAttackers` —
+never a re-derived reach check — whether that exact step provokes; a step it fires on
+is outlined in a saturated warning colour (`Palette.ThreatMark`) over the reachable
+wash and the route fill, opaque rather than another translucent layer, so it reads as
+a distinct warning rather than one more shade of the same advice. **Fog holds the same
+way it already does for a hidden occupant's token, ring and hover hint**: only enemies
+the party can presently see may mark a threat, so a monster nobody has spotted yet
+contributes no warning — showing one would leak its presence before the fog itself
+would, the #732 leak shape this is deliberately the other side of. Recomputed
+everywhere the route itself is: every `UpdatePreviewPath` call, so a routed keyboard
+action, a camera change or `RefreshAfterAction` never leaves a stale mark on screen,
+and gated by the exact same `PreviewMayShow` the route is — armed targeting or a menu
+over the board shows neither. Three-theme legibility (Woodland, Rocky, Barren) is left
+to the theme sweep: the theme is a deterministic hash of a battlefield's own geometry
+with no override (#731 found this for the path preview already), so there is no cheap
+way to force all three for one seed's probe capture.
+
 **Four wiring gaps Codex's adversarial review found, each fixed at its own seam.**
 `_pointer` used to be one field doing two jobs — the tooltip's own jitter-filtered
 rest position, and what every refresh (a routed keyboard action, a camera change,
@@ -580,7 +603,10 @@ not Prone; see below, this is not a refusal), a hover hint
 (`play-2b-hint`), Tab-arming (`play-2c-tab-armed`, and its own path-preview assertions
 against a square hovered just before the arm), the move step's own path preview
 (`play-2d-path-preview` — hovering the square the walk below is about to take, and a
-camera zoom checked against it), a walk and an attack (`play-3-moved`, `play-4-attacked`),
+camera zoom checked against it), whichever reachable square (if any) previews a route
+that crosses an Opportunity-Attack threat (`play-2e-threat-preview`, #301 — every
+reachable square is hovered in turn looking for one; `ReportSkip` if none this turn's
+board offers one), a walk and an attack (`play-3-moved`, `play-4-attacked`),
 a feature (`play-5-feature`), End Turn
 (`play-6-turn-ended`), a second commanded character's cast flow if it is a caster's turn
 (`play-7-spell-menu`, `play-8-cast`), then plays fight 1 out to its end, capturing along
@@ -647,6 +673,7 @@ effect, per step:
 | `play-2c-tab-armed` | `FocusIs(Targeting)` and `EqualsExpected` (the first Tab armed `TargetKind.Attack` specifically, not a routing regression's Potion or spell); with more than one *visible* enemy, `Changed` on the aimed target after the second Tab (with only one, `ReportSkip` — nothing to cycle to) |
 | `play-2c-tab-armed-preview` (#303, PR #731 rounds 1-2) | A reachable square is hovered *before* Tab arms anything; `NonEmpty` on the preview it produced, so the later empty check has something real to have lost. After Tab: `EqualsExpected` — the preview equals the empty string, with no mouse motion in between, proving `ArmTargeting` itself (not a stray hover) cleared it. After the matching Esc disarms: `NonEmpty` again — the preview returns with the pointer still on the same square, proving `PlayFocusRouter.Route`'s own `Perform`-triggered recompute, not a coincidence. A second cycle then re-arms with Tab and *clicks* the still-hovered square to cancel (nobody stands there, so `ActivateSquare`'s Attack branch takes its `ClearPending`-and-do-nothing path rather than swinging): `FocusIs(Board)` and `NonEmpty` again, proving the mouse-driven cancel restores the preview too, not only Esc's keyboard-routed one (round 2 review) |
 | `play-2d-path-preview` (#303) | `FocusIs(Board)` (a hover must not itself open or close anything); `NonEmpty` on the expected route (a broken expectation is a fault before it is compared against anything); `EqualsExpected` — the previewed path (`PlayMode.HoverPreviewPath`'s own field) equals `MovementRules.FindPath`'s answer for the same square, both rendered through `PathAsText` since `EqualsExpected<T>` compares by `EqualityComparer<T>.Default` and two structurally-equal lists are not `Equals` by that measure |
+| `play-2e-threat-preview` (#301) | Every square `_reachable` offers is hovered in turn looking for one whose previewed route provokes (`ReportSkip` if none this turn's board has); once found, `NonEmpty` on the independently-recomputed expectation (a broken expectation is a fault before it is compared against anything), then `EqualsExpected` — `_threatenedSteps` equals `PlayMode.ThreatenedSteps` asked again with the same visible-enemies filter `UpdatePreviewPath` builds, proving the wiring rather than comparing the field with itself |
 | `play-5b-camera-zoom-preview` (#303, PR #731 round 1) | No capture — assertions only, sandwiched between a wheel zoom and its exact inverse so nothing survives into `play-3-moved`'s own frame. `Changed<float>` on `GridLeft` (the zoom must actually have moved the mapping); with the pointer's screen position unchanged by the zoom itself, `EqualsExpected` — the preview matches `MovementRules.FindPath` for whichever square that fixed pixel now maps to, proving `HandleCameraInput`'s own consumed branch re-triggered the preview rather than leaving the pre-zoom route standing |
 | `play-3-moved` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `EqualsExpected` (actor position == the clicked square), `Decreased` (movement remaining) |
 | `play-4-attacked` | the target is the nearest *visible* enemy (`PartyVision`, not `NearestEnemyOf`'s fog-blind pick); `EqualsExpected` that `TokenAt` agrees before the click; after it, `FocusIs(Board)` and `AnyOf` — a log entry naming both the actor and the target, or a refusal from Attack's own curated code set; the attack can legitimately refuse, but doing nothing (or an unrelated action) is a fault |

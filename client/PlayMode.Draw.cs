@@ -84,6 +84,27 @@ public partial class PlayMode : FightScreen
                 PathPreview);
         }
 
+        // Opportunity-Attack threat on the previewed route (#301): a square this list
+        // contains is one MovementRules.FindOpportunityAttackers actually fires on for
+        // some enemy the party can currently see, if the walk being previewed above is
+        // the one actually taken (ThreatenedSteps, computed alongside _previewPath in
+        // UpdatePreviewPath, never re-derived here). Drawn as an opaque border rather
+        // than another translucent wash, over the reachable and path-preview fills so
+        // it reads as a distinct warning on top of "you can walk here" rather than one
+        // more shade of the same advice — the review that opened #301 named exactly
+        // that failure in the two washes that already existed. Composed with the fog
+        // texture the same way the path preview already is: drawn before it, so a
+        // threatened step the party can no longer see by the time this frame draws
+        // dims with the same shadow that dims everything else there.
+        foreach (var square in _threatenedSteps)
+        {
+            DrawRect(
+                new Rect2(GridLeft + (square.X * CellPixels), GridTop + (square.Y * CellPixels), CellPixels, CellPixels),
+                ThreatMark,
+                filled: false,
+                width: 3f);
+        }
+
         // The fog of war, drawn smooth: the per-square set is painted into a small
         // image and upscaled bilinearly (BuildFogTexture), so the shadow's edge
         // feathers across a square instead of stepping — the blockiness was the other

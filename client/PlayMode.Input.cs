@@ -686,6 +686,7 @@ public partial class PlayMode : FightScreen
     {
         _previewSquare = SquareAt(pixel);
         _previewPath.Clear();
+        _threatenedSteps.Clear();
 
         if (_phase != Phase.Fighting
             || _encounter is not { } encounter
@@ -694,13 +695,29 @@ public partial class PlayMode : FightScreen
             return;
         }
 
+        var mover = CommandedCombatant();
+
         _previewPath.AddRange(HoverPreviewPath(
             encounter.Battlefield,
-            CommandedCombatant(),
+            mover,
             _previewSquare,
             _reachable,
             encounter.Combatants,
             _unseen));
+
+        if (mover is not null)
+        {
+            // Only enemies the party can presently see may mark a threat (#301) — the
+            // same standard client/README.md's fog section already holds a hidden
+            // occupant's token, ring and hover hint to. Passing every enemy instead
+            // would show the player a threat sourced from a monster nobody has seen
+            // yet, the #732 leak shape this is deliberately the other side of.
+            var visibleEnemies = encounter.Combatants
+                .Where(combatant => combatant.SideId != mover.SideId && !_unseen.Contains(combatant.Position))
+                .ToList();
+
+            _threatenedSteps.AddRange(ThreatenedSteps(encounter.Battlefield, mover, _previewPath, visibleEnemies));
+        }
     }
 
     /// <summary>
@@ -815,6 +832,69 @@ public partial class PlayMode : FightScreen
         return path is null
             ? []
             : path.Steps.Where(step => !unseen.Contains(step)).ToList();
+    }
+
+    /// <summary>
+    /// Which of <paramref name="path"/>'s squares provoke an Opportunity Attack, if
+    /// <paramref name="mover"/> walks the path in order from its own actual position
+    /// (#301) — <see cref="MovementRules.FindOpportunityAttackers"/>'s own answer for
+    /// each step in turn, exactly the sequence <c>Encounter.WalkPath</c> asks it for
+    /// (mirrored, for the same reason, by <c>SimpleTacticsPolicy.ProvokedDamageAlong</c>
+    /// scoring a candidate move): nothing here re-derives who threatens what or how far
+    /// a reach extends, it only supplies the real from/to pair for each step and reads
+    /// back which of them <see cref="MovementRules.FindOpportunityAttackers"/> answers
+    /// non-empty for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Fog holds by restricting who may threaten, never by asking a different
+    /// question.</b> <paramref name="visibleEnemies"/> is the only source of attackers
+    /// this asks about — an enemy the party cannot presently see contributes no mark,
+    /// to the same standard <c>client/README.md</c>'s fog section already holds a
+    /// hidden occupant's token, ring and hover hint to. Passing every enemy instead of
+    /// only the visible ones would show a threat sourced from a monster nobody has
+    /// seen, the #732 leak shape this is the other side of.
+    /// </para>
+    /// <para>
+    /// Walks <paramref name="path"/> exactly as given — the same fog-filtered squares
+    /// <see cref="_previewPath"/> already draws, one call site's result read by the
+    /// other rather than a second, independently fog-filtered route computed here —
+    /// so a mark can never appear on ground the preview itself does not show. A route
+    /// whose one hidden interior square <see cref="HoverPreviewPath"/> already dropped
+    /// is, in that narrow case, judged as if its two visible neighbours were adjacent;
+    /// this is the same class of fog subtlety <see cref="HoverPreviewPath"/>'s own
+    /// remarks name and defer for the route's shape, not solved here either.
+    /// </para>
+    /// </remarks>
+    internal static IReadOnlyList<GridPosition> ThreatenedSteps(
+        Battlefield field,
+        Combatant? mover,
+        IReadOnlyList<GridPosition> path,
+        IReadOnlyCollection<Combatant> visibleEnemies)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(visibleEnemies);
+
+        if (mover is null || path.Count == 0)
+        {
+            return [];
+        }
+
+        var threatened = new List<GridPosition>();
+        var from = mover.Position;
+
+        foreach (var step in path)
+        {
+            if (MovementRules.FindOpportunityAttackers(field, mover, from, step, visibleEnemies).Count > 0)
+            {
+                threatened.Add(step);
+            }
+
+            from = step;
+        }
+
+        return threatened;
     }
 
     /// <summary>

@@ -38,6 +38,18 @@ internal static class Palette
     /// </summary>
     internal static readonly Color PathPreview = new(ActiveRing.R, ActiveRing.G, ActiveRing.B, 0.35f);
 
+    /// <summary>
+    /// A step on the previewed route whose crossing would provoke an Opportunity
+    /// Attack (#301) — a fully-opaque, saturated warning hue, drawn as a border rather
+    /// than another translucent wash. The review that opened #301 named the two
+    /// existing advisory layers as "the least visible things on screen (0.16-alpha
+    /// movement wash; red ring on a red token)"; a third barely-there wash on top of
+    /// those would repeat the complaint rather than answer it. Distinct from
+    /// <c>MonsterColour</c>'s muted red-orange (a token's own colour) so a threat mark
+    /// never reads as another enemy standing in the square.
+    /// </summary>
+    internal static readonly Color ThreatMark = new("ff5a3c");
+
     /// <summary>The translucent wash the overlays share, so the field reads underneath.</summary>
     internal static readonly Color Veil = new(Background.R, Background.G, Background.B, 0.85f);
 }
