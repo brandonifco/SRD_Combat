@@ -390,6 +390,28 @@ public partial class PlayMode : FightScreen
                     });
                 }
 
+                // #301: which reachable square, if any, previews a route that crosses a
+                // threatened step. TryCaptureThreatPreview does its own independent
+                // search (never the live _threatenedSteps field — see its own doc
+                // comment, #734 review round 1) and, if seed 1's opening turn has
+                // nothing to find, tries again on every later commanded turn in the
+                // fight-1 play-out loop below, where melee contact actually happens;
+                // the one skip this step can report is written once, after that loop,
+                // not here.
+                if (_encounter is { } threatEncounter)
+                {
+                    await TryCaptureThreatPreview(directory, threatEncounter, active);
+                }
+
+                // Re-hover the move's own destination before the click below, so
+                // nothing from the threat check above survives into play-3-moved's
+                // own capture.
+                GetViewport().PushInput(new InputEventMouseMotion
+                {
+                    Position = CentreOf(step),
+                    GlobalPosition = CentreOf(step),
+                });
+
                 var movementBeforeStep = active.Turn.MovementFeet;
 
                 Click(CentreOf(step));
@@ -623,6 +645,19 @@ public partial class PlayMode : FightScreen
             {
                 safety++;
 
+                // #301: the opening commanded turn (above) rarely has a threatened
+                // square to find — the pregenerated party starts well outside melee
+                // reach — so every later commanded turn gets its own try here too,
+                // until one lands or the fight ends. TryCaptureThreatPreview is a
+                // no-op the instant it has already captured or already tried this
+                // exact commanded combatant, so this costs nothing once past that.
+                if (!_threatPreviewCaptured
+                    && CommandedCombatant() is { } threatFighter
+                    && _encounter is { } threatEncounter)
+                {
+                    await TryCaptureThreatPreview(directory, threatEncounter, threatFighter);
+                }
+
                 if (_focus.Holds<PlayFocus.Outcome>())
                 {
                     if (!outcomeCaptured)
@@ -702,6 +737,15 @@ public partial class PlayMode : FightScreen
                     directory,
                     "play-9-attack-menu",
                     "no party member carrying more than one weapon attack took a turn before the fight ended");
+            }
+
+            if (!_threatPreviewCaptured)
+            {
+                ReportSkip(
+                    directory,
+                    "play-2e-threat-preview",
+                    "no reachable square on any commanded turn in fight 1 previewed a route crossing a "
+                        + "threatened step");
             }
 
             // #180's own shape, guarded against rather than merely fixed: a play-out
@@ -975,6 +1019,111 @@ public partial class PlayMode : FightScreen
     }
 
     private Combatant? NearestVisibleEnemyOf(Combatant active) => VisibleEnemiesOf(active).FirstOrDefault();
+
+    /// <summary>
+    /// Searches every square <see cref="_reachable"/> currently offers for one whose
+    /// previewed route crosses an Opportunity-Attack threat for <paramref
+    /// name="mover"/>, and if one exists, hovers it for real and asserts the live
+    /// <see cref="_threatenedSteps"/> against an independently-recomputed expectation
+    /// — capturing <c>play-2e-threat-preview.png</c> once for the whole probe run
+    /// (#301).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The search itself never reads <see cref="_threatenedSteps"/></b> — the field
+    /// under test (#734 review round 1). The step's first version searched by hovering
+    /// each candidate for real and checking whether the live field came back non-empty,
+    /// which meant a wiring bug that never marks anything at all (the <c>AddRange</c>
+    /// in <c>UpdatePreviewPath</c> missing, or the visible-enemies filter inverted so
+    /// every enemy reads as hidden) would make every candidate look "nothing to find"
+    /// — a skip, not a fault, hiding exactly the defect this step exists to catch.
+    /// The search below instead recomputes <see cref="HoverPreviewPath"/> and <see
+    /// cref="ThreatenedSteps"/> fresh for each candidate; only once a real candidate is
+    /// found does it touch the live screen at all, to prove the *wiring* — that hovering
+    /// for real produces the same answer the seam alone does.
+    /// </para>
+    /// <para>
+    /// Called once for the opening commanded turn and, if that turn has nothing to
+    /// find, again for every later commanded turn the fight-1 play-out loop drives —
+    /// melee contact, and so a real threatened square, is not guaranteed before the
+    /// party has closed distance. <see cref="_threatPreviewLastAttemptedId"/> keeps a
+    /// turn spanning many probe frames from re-searching every frame; <see
+    /// cref="_threatPreviewCaptured"/> stops the whole search, everywhere it is called,
+    /// the instant one capture lands.
+    /// </para>
+    /// </remarks>
+    private async Task TryCaptureThreatPreview(string directory, Encounter encounter, Combatant mover)
+    {
+        if (_threatPreviewCaptured || mover.Id == _threatPreviewLastAttemptedId)
+        {
+            return;
+        }
+
+        _threatPreviewLastAttemptedId = mover.Id;
+
+        var visibleEnemies = encounter.Combatants
+            .Where(combatant => combatant.SideId != mover.SideId && !_unseen.Contains(combatant.Position))
+            .ToList();
+
+        GridPosition? threatSquare = null;
+        IReadOnlyList<GridPosition> expectedThreatened = [];
+
+        foreach (var candidate in _reachable)
+        {
+            var candidatePath = HoveredPath(encounter.Battlefield, mover, candidate, _reachable, encounter.Combatants);
+            var candidateThreatened = ThreatenedSteps(
+                encounter.Battlefield, mover, candidatePath, visibleEnemies, _unseen);
+
+            if (candidateThreatened.Count > 0)
+            {
+                threatSquare = candidate;
+                expectedThreatened = candidateThreatened;
+                break;
+            }
+        }
+
+        if (threatSquare is not { } square)
+        {
+            return;
+        }
+
+        var pixel = CentreOf(square);
+
+        GetViewport().PushInput(new InputEventMouseMotion
+        {
+            Position = pixel,
+            GlobalPosition = pixel,
+        });
+
+        Assert(
+            "play-2e-threat-preview",
+            new ProbeExpectation.NonEmpty(
+                "the threatened steps on the previewed route", PathAsText(expectedThreatened)),
+            new ProbeExpectation.EqualsExpected<string>(
+                "the threatened steps on the previewed route",
+                PathAsText(_threatenedSteps),
+                PathAsText(expectedThreatened)));
+        await CaptureFrame(Path.Combine(directory, "play-2e-threat-preview.png"));
+
+        // #734 review round 1: the keyboard cursor's own ring and the threat mark
+        // draw the identical bordered Rect2 at the identical width on whatever square
+        // each sits on, so a cursor parked on a threatened step is the one case that
+        // proves the inset actually chosen (ThreatMarkInsetPixels, PlayMode.Draw.cs:
+        // draw order alone cannot separate two same-width strokes on one rectangle)
+        // — neither one is a plain function DrawTests can
+        // pin, so this capture is the seam. _cursor is set directly rather than
+        // walked there with synthesized arrow presses: what this proves is which
+        // shape survives on top once both are drawn on the same square, not that
+        // arrow-key routing can reach it (a separate, already-covered concern), and
+        // restoring it after keeps this step from moving the keyboard cursor out
+        // from under whatever a later step assumes about it.
+        var cursorBeforeThreatCapture = _cursor;
+        _cursor = square;
+        await CaptureFrame(Path.Combine(directory, "play-2f-threat-under-cursor.png"));
+        _cursor = cursorBeforeThreatCapture;
+
+        _threatPreviewCaptured = true;
+    }
 
     /// <summary>
     /// Whether any combat-log entry appended since <paramref name="countBefore"/>

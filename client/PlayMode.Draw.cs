@@ -21,6 +21,18 @@ public partial class PlayMode : FightScreen
     private const int FogPixelsPerSquare = 8;
 
     /// <summary>
+    /// How far the Opportunity-Attack threat mark's own square is shrunk in from a
+    /// full grid cell on every side (#301, #734 review round 2) — so its border sits
+    /// as a second, smaller outline inside the keyboard cursor's own square rather
+    /// than tracing the identical rectangle: two strokes of the same width around the
+    /// same Rect2 do not compose by draw order, since the later one repaints every
+    /// pixel the earlier one touched. Small enough that the mark still reads as
+    /// belonging to the same square, comfortably clear of the cursor's own 3-pixel
+    /// stroke width.
+    /// </summary>
+    private const float ThreatMarkInsetPixels = 5f;
+
+    /// <summary>
     /// Renders the fog one pixel per square and upscales it bilinearly, so the interior
     /// stays a solid shadow while the boundary ramps smoothly over about a square.
     /// </summary>
@@ -102,6 +114,42 @@ public partial class PlayMode : FightScreen
             DrawRect(
                 new Rect2(GridLeft + (caret.X * CellPixels), GridTop + (caret.Y * CellPixels), CellPixels, CellPixels),
                 ActiveRing,
+                filled: false,
+                width: 3f);
+        }
+
+        // Opportunity-Attack threat on the previewed route (#301): a square this list
+        // contains is one MovementRules.FindOpportunityAttackers actually fires on for
+        // some enemy the party can currently see, if the walk being previewed above is
+        // the one actually taken (ThreatenedSteps, computed alongside _previewPath in
+        // UpdatePreviewPath, never re-derived here). Drawn as an opaque border rather
+        // than another translucent wash, so it reads as a distinct warning on top of
+        // "you can walk here" rather than one more shade of the same advice — the
+        // review that opened #301 named exactly that failure in the two washes that
+        // already existed. Drawn *after* the fog, since a threatened square is never
+        // fogged by construction (ThreatenedSteps drops any square in _unseen — see
+        // its own remarks — so there is nothing left for the fog wash to dim here).
+        //
+        // Inset by ThreatMarkInsetPixels from the keyboard cursor's own square: the
+        // cursor draws the identical bordered Rect2 at the identical width on
+        // whatever square it sits on, and a first version of this drew the mark at
+        // that same geometry, merely *after* the cursor in draw order — which does
+        // nothing for two strokes of the same width around the same rectangle,
+        // since the later one paints directly over every pixel the earlier one did,
+        // full occlusion either way (#734 review round 2, caught by the capture
+        // this comment's own knockout named: play-2f-threat-under-cursor showed no
+        // second ring at all). Shrinking the mark's own square is what makes both
+        // borders survive as two concentric outlines instead of one replacing the
+        // other.
+        foreach (var square in _threatenedSteps)
+        {
+            DrawRect(
+                new Rect2(
+                    GridLeft + (square.X * CellPixels) + ThreatMarkInsetPixels,
+                    GridTop + (square.Y * CellPixels) + ThreatMarkInsetPixels,
+                    CellPixels - (2 * ThreatMarkInsetPixels),
+                    CellPixels - (2 * ThreatMarkInsetPixels)),
+                ThreatMark,
                 filled: false,
                 width: 3f);
         }

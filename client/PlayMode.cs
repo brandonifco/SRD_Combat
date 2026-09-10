@@ -94,6 +94,18 @@ public partial class PlayMode : FightScreen
     /// </summary>
     private GridPosition? _previewSquare;
 
+    /// <summary>
+    /// Which of <see cref="_previewPath"/>'s squares provoke an Opportunity Attack from
+    /// an enemy the party can currently see, if the walk is actually taken (#301) —
+    /// <see cref="ThreatenedSteps"/>'s own answer, computed alongside <see
+    /// cref="_previewPath"/> in <see cref="UpdatePreviewPath"/> from the same call, never
+    /// a second guess drawn independently of it. Empty under exactly the conditions
+    /// <see cref="_previewPath"/> itself is empty (nobody commanded, nothing hovered, the
+    /// preview gated off by <see cref="PreviewMayShow"/>), since a threat mark on a route
+    /// that is not itself shown would be advice about a walk the screen never offered.
+    /// </summary>
+    private readonly List<GridPosition> _threatenedSteps = [];
+
     /// <summary>Squares nobody in the party can see — the fog of war, <c>PartyVision</c>'s answer.</summary>
     private readonly HashSet<GridPosition> _unseen = [];
 
@@ -196,6 +208,23 @@ public partial class PlayMode : FightScreen
     private readonly FocusStack<PlayFocus> _focus = new(new PlayFocus.Board());
     private string? _notice;
     private bool _probeStarted;
+
+    /// <summary>
+    /// True once the probe's <c>play-2e-threat-preview</c> step (#301) has found and
+    /// captured a real Opportunity-Attack threat mark — searched fresh across the
+    /// opening commanded turn and every later one in the fight-1 play-out loop, never
+    /// twice, and never again once one lands. See <c>PlayMode.Probe.cs</c>'s
+    /// <c>TryCaptureThreatPreview</c>.
+    /// </summary>
+    private bool _threatPreviewCaptured;
+
+    /// <summary>
+    /// The commanded combatant <c>TryCaptureThreatPreview</c> last searched for a
+    /// threatened square, so a turn spanning many probe frames (animations, the
+    /// pace delay) is searched once rather than once per frame — cheap on its own,
+    /// but the play-out loop calls it every frame for however long a turn takes.
+    /// </summary>
+    private string? _threatPreviewLastAttemptedId;
 
     /// <summary>True while the quit card is asking whether Esc really meant it.</summary>
 

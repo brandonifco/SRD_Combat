@@ -686,6 +686,7 @@ public partial class PlayMode : FightScreen
     {
         _previewSquare = SquareAt(pixel);
         _previewPath.Clear();
+        _threatenedSteps.Clear();
 
         if (_phase != Phase.Fighting
             || _encounter is not { } encounter
@@ -694,13 +695,31 @@ public partial class PlayMode : FightScreen
             return;
         }
 
-        _previewPath.AddRange(HoverPreviewPath(
-            encounter.Battlefield,
-            CommandedCombatant(),
-            _previewSquare,
-            _reachable,
-            encounter.Combatants,
-            _unseen));
+        var mover = CommandedCombatant();
+
+        // The full, unfiltered route — shared by _previewPath's own fog-trim below
+        // and by ThreatenedSteps, which needs the walk's real adjacency rather than
+        // the already-thinned squares (#734 review round 1; see ThreatenedSteps' own
+        // remarks). One HoveredPath call rather than HoverPreviewPath's own duplicate
+        // of the same FindPath search.
+        var hoveredPath = HoveredPath(encounter.Battlefield, mover, _previewSquare, _reachable, encounter.Combatants);
+
+        _previewPath.AddRange(hoveredPath.Where(step => !_unseen.Contains(step)));
+
+        if (mover is not null)
+        {
+            // Only enemies the party can presently see may mark a threat (#301) — the
+            // same standard client/README.md's fog section already holds a hidden
+            // occupant's token, ring and hover hint to. Passing every enemy instead
+            // would show the player a threat sourced from a monster nobody has seen
+            // yet, the #732 leak shape this is deliberately the other side of.
+            var visibleEnemies = encounter.Combatants
+                .Where(combatant => combatant.SideId != mover.SideId && !_unseen.Contains(combatant.Position))
+                .ToList();
+
+            _threatenedSteps.AddRange(
+                ThreatenedSteps(encounter.Battlefield, mover, hoveredPath, visibleEnemies, _unseen));
+        }
     }
 
     /// <summary>
@@ -800,21 +819,130 @@ public partial class PlayMode : FightScreen
         IReadOnlyCollection<Combatant> combatants,
         IReadOnlySet<GridPosition> unseen)
     {
+        ArgumentNullException.ThrowIfNull(unseen);
+
+        return HoveredPath(field, mover, hovered, reachable, combatants)
+            .Where(step => !unseen.Contains(step))
+            .ToList();
+    }
+
+    /// <summary>
+    /// The engine's own route to <paramref name="hovered"/>, before fog trims what
+    /// <see cref="HoverPreviewPath"/> draws from it — <see
+    /// cref="MovementRules.FindPath"/>'s answer, full and unfiltered. Shared so <see
+    /// cref="ThreatenedSteps"/>'s caller can walk the walk's <em>real</em>
+    /// square-to-square adjacency rather than the fog-thinned one <see
+    /// cref="HoverPreviewPath"/> draws (#734 review round 1 — see
+    /// <see cref="ThreatenedSteps"/>'s own remarks for why that distinction is
+    /// load-bearing, not cosmetic).
+    /// </summary>
+    private static IReadOnlyList<GridPosition> HoveredPath(
+        Battlefield field,
+        Combatant? mover,
+        GridPosition? hovered,
+        IReadOnlyCollection<GridPosition> reachable,
+        IReadOnlyCollection<Combatant> combatants)
+    {
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(reachable);
         ArgumentNullException.ThrowIfNull(combatants);
-        ArgumentNullException.ThrowIfNull(unseen);
 
         if (mover is null || hovered is not { } square || !reachable.Contains(square))
         {
             return [];
         }
 
-        var path = MovementRules.FindPath(field, mover, square, mover.Turn.MovementFeet, combatants);
+        return MovementRules.FindPath(field, mover, square, mover.Turn.MovementFeet, combatants)?.Steps ?? [];
+    }
 
-        return path is null
-            ? []
-            : path.Steps.Where(step => !unseen.Contains(step)).ToList();
+    /// <summary>
+    /// Which of <paramref name="path"/>'s squares provoke an Opportunity Attack, if
+    /// <paramref name="mover"/> walks the path in order from its own actual position
+    /// (#301) — <see cref="MovementRules.FindOpportunityAttackers"/>'s own answer for
+    /// each step in turn, exactly the sequence <c>Encounter.WalkPath</c> asks it for
+    /// (mirrored, for the same reason, by <c>SimpleTacticsPolicy.ProvokedDamageAlong</c>
+    /// scoring a candidate move): nothing here re-derives who threatens what or how far
+    /// a reach extends, it only supplies the real from/to pair for each step and reads
+    /// back which of them <see cref="MovementRules.FindOpportunityAttackers"/> answers
+    /// non-empty for. <paramref name="path"/> is <see cref="HoveredPath"/>'s full,
+    /// unfiltered route — <b>not</b> the fog-thinned squares <see
+    /// cref="_previewPath"/> draws, see the remarks below for why that distinction
+    /// matters.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Fog holds by restricting who may threaten and which square is reported,
+    /// never by asking a different question about the walk itself</b> (corrected
+    /// #734 review round 1). <paramref name="visibleEnemies"/> is the only source of
+    /// attackers this asks about — an enemy the party cannot presently see
+    /// contributes no mark — and a step in <paramref name="unseen"/> is dropped from
+    /// the *result*, to the same standard <c>client/README.md</c>'s fog section
+    /// already holds a hidden occupant's token, ring and hover hint to.
+    /// </para>
+    /// <para>
+    /// <paramref name="path"/> must be the walk's real, full sequence — every square
+    /// <see cref="MovementRules.FindPath"/> actually routes through, fog or no fog —
+    /// because the trigger is about real adjacency: whether the mover's next square
+    /// leaves a reach the previous one was inside. Walking the already-fog-filtered
+    /// squares instead (this method's first version) could silently treat two
+    /// non-adjacent visible squares as if they bordered each other: mover leaves A
+    /// (visible, out of an enemy's reach) for B (fogged, inside that enemy's reach)
+    /// and then C (visible, out of reach again) — the real walk provokes leaving B,
+    /// but a check that never sees B compares A directly against C and finds no
+    /// change of reach at all, marking nothing. Walking the full path and dropping
+    /// only the *reported* square keeps the walk's own adjacency correct while still
+    /// never drawing a mark past what the preview itself shows.
+    /// </para>
+    /// <para>
+    /// <b>A provoking step is reported as the square entered, not the square left,
+    /// though the printed trigger fires in the square being left</b> ("the Opportunity
+    /// Attack occurs right before it leaves your reach", per <c>Encounter.WalkPath</c>'s
+    /// own remarks — the attack resolves while the mover still stands in <c>from</c>).
+    /// This is a deliberate, player-facing choice rather than a misreading of the rule:
+    /// the route is drawn as a sequence of squares the click would walk *into* — every
+    /// square in <see cref="_previewPath"/> already means "stepping here" — so marking
+    /// the square left would put the warning one square *behind* the step that actually
+    /// costs the swing, on ground the player may already be reading as cleared. Marking
+    /// the square entered keeps every warning on the same axis the route already draws
+    /// in: "reaching this square is what leaves the reach behind it".
+    /// </para>
+    /// </remarks>
+    internal static IReadOnlyList<GridPosition> ThreatenedSteps(
+        Battlefield field,
+        Combatant? mover,
+        IReadOnlyList<GridPosition> path,
+        IReadOnlyCollection<Combatant> visibleEnemies,
+        IReadOnlySet<GridPosition> unseen)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(visibleEnemies);
+        ArgumentNullException.ThrowIfNull(unseen);
+
+        // Nobody commanded: nothing to walk from. An empty path needs no separate
+        // guard — the loop below simply runs zero times and returns the empty list it
+        // started with (#734 review round 1: a path.Count == 0 branch here read as a
+        // guard but changed no behaviour either way, so it is not carried forward).
+        if (mover is null)
+        {
+            return [];
+        }
+
+        var threatened = new List<GridPosition>();
+        var from = mover.Position;
+
+        foreach (var step in path)
+        {
+            if (!unseen.Contains(step)
+                && MovementRules.FindOpportunityAttackers(field, mover, from, step, visibleEnemies).Count > 0)
+            {
+                threatened.Add(step);
+            }
+
+            from = step;
+        }
+
+        return threatened;
     }
 
     /// <summary>

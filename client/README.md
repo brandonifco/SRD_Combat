@@ -221,6 +221,53 @@ that sense, hint at something the party has not seen. This is not new to the pre
 the reachable wash it sits inside has always been computed the same way. Both are
 being tracked for a proper fix rather than papered over here.
 
+**A previewed route that would cost an Opportunity Attack says so, on the square it
+fires entering (#301).** Before this, threat was invisible until it happened — the
+review that opened #301 named the game's central positioning rule as having no display
+at all, and the two advisory layers that already existed (the reachable wash, a ring on
+an already-red token) as "the least visible things on screen". `PlayMode.ThreatenedSteps`
+walks the route's own full, unfiltered squares (`HoveredPath` — the same route
+`_previewPath` fog-trims for drawing, before that trim) one real step at a time from
+the mover's own position, and asks `MovementRules.FindOpportunityAttackers` — never a
+re-derived reach check — whether that exact step provokes; a step it fires on is
+outlined in a saturated warning colour (`Palette.ThreatMark`), opaque rather than
+another translucent layer, so it reads as a distinct warning rather than one more shade
+of the same advice. The mark lands on the square *entered* by the provoking step, not
+the square left, though the printed trigger fires "right before it leaves your reach"
+— a deliberate choice: the route is already drawn as a sequence of squares to step
+*into*, so marking the square left would put the warning one square behind the step
+that actually costs the swing.
+
+**Fog holds two ways at once, not one.** Only enemies the party can presently see may
+threaten a square at all — a monster nobody has spotted contributes no mark, the same
+standard a hidden occupant's token, ring and hover hint already meet, and showing one
+would leak its presence before the fog itself would (the #732 leak shape this is the
+other side of). Separately, a provoking step whose own square the party cannot
+presently see is dropped from what is *reported*, never from what is *walked*: judging
+adjacency against the already fog-trimmed squares (this feature's first version) could
+silently drop a real provoke whenever the hidden interior square was the one actually
+being left — a visible square, ten feet from an enemy, stepping into a fogged square
+five feet away, then on to another visible square ten feet away again leaves that
+enemy's reach exactly once, on the fogged square, and a check that never saw it
+compared the two visible ends directly and found no change of reach at all. Walking the
+whole route and dropping only the *reported* square keeps that adjacency correct while
+still never drawing a mark past what the route itself shows.
+
+Recomputed everywhere the route itself is: every `UpdatePreviewPath` call, so a routed
+keyboard action, a camera change or `RefreshAfterAction` never leaves a stale mark on
+screen, and gated by the exact same `PreviewMayShow` the route is — armed targeting or
+a menu over the board shows neither. **Drawn after the fog, and inset from the
+square's edge** (`ThreatMarkInsetPixels`, `PlayMode.Draw.cs`): a threatened square is
+never fogged by construction (the drop above), so there is nothing left for the fog
+wash to dim; and the keyboard cursor's ring draws the identical bordered square at the
+identical width on whatever square it sits on, so draw order alone cannot save the mark
+— two same-width strokes around the same rectangle paint the same pixels, and the later
+one wins whichever it is. Shrinking the mark's square is what lets both survive as
+concentric outlines when the cursor parks on a threatened step. Three-theme legibility (Woodland, Rocky,
+Barren) is tracked as its own issue, #735: the theme is a deterministic hash of a
+battlefield's own geometry with no override (#731 found this for the path preview
+already), so there is no cheap way to force all three for one seed's probe capture.
+
 **Four wiring gaps Codex's adversarial review found, each fixed at its own seam.**
 `_pointer` used to be one field doing two jobs — the tooltip's own jitter-filtered
 rest position, and what every refresh (a routed keyboard action, a camera change,
@@ -580,7 +627,15 @@ not Prone; see below, this is not a refusal), a hover hint
 (`play-2b-hint`), Tab-arming (`play-2c-tab-armed`, and its own path-preview assertions
 against a square hovered just before the arm), the move step's own path preview
 (`play-2d-path-preview` — hovering the square the walk below is about to take, and a
-camera zoom checked against it), a walk and an attack (`play-3-moved`, `play-4-attacked`),
+camera zoom checked against it), whichever reachable square (if any) previews a route
+that crosses an Opportunity-Attack threat (`play-2e-threat-preview`, #301 —
+`TryCaptureThreatPreview` searches every square `_reachable` offers by independently
+recomputing the route and its threat, never by reading the live field it is checking,
+tried on the opening commanded turn and again on every later one in the fight-1
+play-out loop below until one lands or the fight ends; `ReportSkip` if none ever does),
+the same square with the keyboard cursor parked on it
+(`play-2f-threat-under-cursor` — proving the mark still shows once the cursor's own
+ring shares the square, #301), a walk and an attack (`play-3-moved`, `play-4-attacked`),
 a feature (`play-5-feature`), End Turn
 (`play-6-turn-ended`), a second commanded character's cast flow if it is a caster's turn
 (`play-7-spell-menu`, `play-8-cast`), then plays fight 1 out to its end, capturing along
@@ -647,6 +702,8 @@ effect, per step:
 | `play-2c-tab-armed` | `FocusIs(Targeting)` and `EqualsExpected` (the first Tab armed `TargetKind.Attack` specifically, not a routing regression's Potion or spell); with more than one *visible* enemy, `Changed` on the aimed target after the second Tab (with only one, `ReportSkip` — nothing to cycle to) |
 | `play-2c-tab-armed-preview` (#303, PR #731 rounds 1-2) | A reachable square is hovered *before* Tab arms anything; `NonEmpty` on the preview it produced, so the later empty check has something real to have lost. After Tab: `EqualsExpected` — the preview equals the empty string, with no mouse motion in between, proving `ArmTargeting` itself (not a stray hover) cleared it. After the matching Esc disarms: `NonEmpty` again — the preview returns with the pointer still on the same square, proving `PlayFocusRouter.Route`'s own `Perform`-triggered recompute, not a coincidence. A second cycle then re-arms with Tab and *clicks* the still-hovered square to cancel (nobody stands there, so `ActivateSquare`'s Attack branch takes its `ClearPending`-and-do-nothing path rather than swinging): `FocusIs(Board)` and `NonEmpty` again, proving the mouse-driven cancel restores the preview too, not only Esc's keyboard-routed one (round 2 review) |
 | `play-2d-path-preview` (#303) | `FocusIs(Board)` (a hover must not itself open or close anything); `NonEmpty` on the expected route (a broken expectation is a fault before it is compared against anything); `EqualsExpected` — the previewed path (`PlayMode.HoverPreviewPath`'s own field) equals `MovementRules.FindPath`'s answer for the same square, both rendered through `PathAsText` since `EqualsExpected<T>` compares by `EqualityComparer<T>.Default` and two structurally-equal lists are not `Equals` by that measure |
+| `play-2e-threat-preview` (#301) | `TryCaptureThreatPreview` searches every square `_reachable` offers by asking `HoveredPath` and `ThreatenedSteps` fresh per candidate — never the live `_threatenedSteps` field, the thing under test, which a PR #734 review round found could mask a wiring defect that marks nothing as a skip rather than a fault. Once a candidate is found and hovered for real, `NonEmpty` on that independently-recomputed expectation, then `EqualsExpected` — the live `_threatenedSteps` equals it. Tried on the opening commanded turn and, if that finds nothing, again on every later commanded turn in the fight-1 play-out loop; `ReportSkip` only once, after that loop, if no turn in the whole fight ever found one |
+| `play-2f-threat-under-cursor` (#301) | No fresh assertion — the keyboard cursor (`_cursor`) is set directly onto the same threatened square `play-2e-threat-preview` just proved, and the capture exists to show, by eye and by `probe-diff`'s pixel box, that the threat mark's own ring and the cursor's ring are both still visible on the same square (`PlayMode.Draw.cs` insets the mark by `ThreatMarkInsetPixels` for exactly this reason — at the cursor's own geometry the two identical bordered `Rect2`s occlude each other whichever is drawn last). `_cursor` is restored immediately after |
 | `play-5b-camera-zoom-preview` (#303, PR #731 round 1) | No capture — assertions only, sandwiched between a wheel zoom and its exact inverse so nothing survives into `play-3-moved`'s own frame. `Changed<float>` on `GridLeft` (the zoom must actually have moved the mapping); with the pointer's screen position unchanged by the zoom itself, `EqualsExpected` — the preview matches `MovementRules.FindPath` for whichever square that fixed pixel now maps to, proving `HandleCameraInput`'s own consumed branch re-triggered the preview rather than leaving the pre-zoom route standing |
 | `play-3-moved` | `NoticeCodeIs(null)`, `FocusIs(Board)`, `EqualsExpected` (actor position == the clicked square), `Decreased` (movement remaining) |
 | `play-4-attacked` | the target is the nearest *visible* enemy (`PartyVision`, not `NearestEnemyOf`'s fog-blind pick); `EqualsExpected` that `TokenAt` agrees before the click; after it, `FocusIs(Board)` and `AnyOf` — a log entry naming both the actor and the target, or a refusal from Attack's own curated code set; the attack can legitimately refuse, but doing nothing (or an unrelated action) is a fault |
