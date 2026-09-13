@@ -17,7 +17,10 @@ public class RunIdentityTests
         var identity = RunIdentity.For(Content);
 
         Assert.Equal("srd-combat", identity.Ruleset.Id);
-        Assert.Equal(RunIdentity.RulesetRevision, identity.Ruleset.Version);
+        // A literal, not RunIdentity.RulesetRevision. Comparing the constant to itself
+        // passes for any value it could ever hold, which is no pin at all -- changing the
+        // constant to 7 left all seven tests green.
+        Assert.Equal(1, identity.Ruleset.Version);
     }
 
     /// <summary>

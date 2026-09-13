@@ -111,12 +111,32 @@ public static class RunIdentity
     /// in practice and has never been documented as a contract, which is why the kernel
     /// ships PCG32 instead of blessing it. This engine still uses <c>System.Random</c>
     /// (<c>Core/Dice</c>), and changing that is a separate decision with its own cost. What
-    /// this constant buys meanwhile is that the risk is recorded as data: if the generator
-    /// is ever replaced, or if a runtime changes the sequence underneath it, an identity
-    /// carrying this name is visibly a different identity rather than a silently different
-    /// one. The seeding routine is not named here — per the kernel's decision 0005 an
-    /// engine's own seed derivation belongs to its <see cref="RulesetVersion"/>, and
+    /// this constant buys meanwhile is narrower than it may look, and worth stating
+    /// exactly: if the generator is ever <em>replaced</em>, an identity carrying a different
+    /// name is visibly a different identity rather than a silently different one.
+    /// <para>
+    /// It buys nothing against the risk it names. This is a compile-time string; a runtime
+    /// that changed seeded <c>System.Random</c>'s sequence would produce a byte-identical
+    /// identity for a run that no longer replays — the silent divergence
+    /// <see cref="RandomAlgorithmId"/> exists to make visible. The name identifies an API
+    /// surface, not an algorithm, and there is no reference implementation for it to be
+    /// named after. Nothing here detects a runtime-level sequence change, and nothing can.
+    /// </para>
+    /// <para>
+    /// The kernel's decision 0005 lists exactly this combination — "keep
+    /// <c>System.Random</c> with a recorded algorithm id" — among its rejected
+    /// alternatives, on the ground that recording the identity of a generator whose
+    /// behaviour is not contractually stable records the wrong thing. That is a ruling on
+    /// what the <em>kernel</em> ships, and it does not bind an engine that has not migrated:
+    /// the alternative here is not "record nothing" but "record that this engine consumes
+    /// no randomness", which is what an absent algorithm asserts and is flatly false. Of the
+    /// two available, naming it is the honest one.
+    /// </para>
+    /// <para>
+    /// The seeding routine is not named here — per decision 0005 an engine's own seed
+    /// derivation belongs to its <see cref="RulesetVersion"/>, and
     /// <see cref="RunDice.SeedFor"/> is exactly such a derivation.
+    /// </para>
     /// </para>
     /// </remarks>
     public static readonly RandomAlgorithmId DiceAlgorithm = new("system-random-seeded");
