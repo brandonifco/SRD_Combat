@@ -5,4 +5,14 @@
     <ProjectReference Include="..\SRDCombat.Content\SRDCombat.Content.csproj" />
   </ItemGroup>
 
+  <!--
+    Replay-compatibility identity (RunIdentity). Referenced here and not in Core, which
+    has no PackageReference at all and stays that way: CLAUDE.md's first invariant is
+    "Core stays pure - no I/O, no ambient time, no packages", and run identity is not a
+    combat rule. Game is where the parts already live (RunSave, RunDice, Gauntlet).
+  -->
+  <ItemGroup>
+    <PackageReference Include="RulesKernel" Version="0.2.0" />
+  </ItemGroup>
+
 </Project>

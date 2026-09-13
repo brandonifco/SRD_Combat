@@ -1,3 +1,4 @@
+using RulesKernel.Identity;
 using SRDCombat.Content;
 using SRDCombat.Core.Characters;
 using SRDCombat.Core.Combat;
@@ -273,7 +274,23 @@ public sealed class GauntletRun
         Ladder = ladder;
         Party = party;
         Seed = seed;
+        Identity = RunIdentity.For(content);
     }
+
+    /// <summary>
+    /// What a replay of this run would have to match to be comparable: this engine's rules
+    /// revision, the content roster it resolved against, and the generator its dice came
+    /// from. See <see cref="RunIdentity"/> for what each part claims and does not claim.
+    /// </summary>
+    /// <remarks>
+    /// <b>Nothing persists it yet.</b> It is not in <see cref="ToSave"/> and not checked on
+    /// <see cref="Resume"/> — a save's shape is a compatibility surface, and this belongs to
+    /// the replay bundle #722 calls for rather than to the autosave. It is assembled here
+    /// because this is where the bundle's other parts already are: the save, the seed
+    /// (<see cref="Seed"/>), the content fingerprint and the fight number
+    /// (<see cref="Cleared"/>).
+    /// </remarks>
+    public ReplayCompatibilityIdentity Identity { get; }
 
     /// <summary>Starts a run with the pregenerated party.</summary>
     /// <param name="seed">
