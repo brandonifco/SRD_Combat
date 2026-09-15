@@ -12,7 +12,7 @@
     combat rule. Game is where the parts already live (RunSave, RunDice, Gauntlet).
   -->
   <ItemGroup>
-    <PackageReference Include="RulesKernel" Version="0.2.0" />
+    <PackageReference Include="RulesKernel" Version="0.3.0" />
   </ItemGroup>
 
 </Project>
